@@ -697,3 +697,19 @@ The final band at `0xceff..0xcf10` compares high word against 15 and low word ag
 `0x1f313..0x1f33c` calculates terrain addresses from saved origin words `2d9f:000c/000e` without checking the 96×96 map. Loader `0x4604e..0x4607b` restores those words. Offsets reach origin+(3,3). The switch at `0x1f478..0x1f492` also permits invalid rank >5 to bypass assignment of local `[bp-2]` before painting. Known annual/startup callers supply only 0–5, so an invalid rank is not established as normally reachable. No exploitability claim is made.
 
 Native import/update restrict origins to 0–92 and remembered rank to 0–5 or first-call sentinel 255; cash classification never calls the painter with an invalid rank. Bad inputs reject before terrain/state mutation. Tests include the last safe footprint, the first unsafe origin and invalid rank values. Retain this evidence if later input compatibility work changes the bounds policy.
+
+## SF-081 — full building allocator returns the last occupied slot
+
+**Status:** verified static full-table return; caller preflight/reachability unresolved; native construction fix pending.
+
+Allocator `0x1a0a8..0x1a17d` scans slots 1–126. With all active, the last iteration loads AX=126 at `0x1a137/0x1a13a`, tests its active flag at `0x1a142`, and branches through the byte increment to slot 127. The comparison at `0x1a131..0x1a135` then jumps to LEAVE/RETF without clearing AX. Its result is therefore 126, rather than zero. Generic addition `0x3a347..0x3a34c` treats any nonzero result as success before incrementing definition count and building book value. Whether higher-level UI guards always prevent this state remains to be established; this is not a proven ordinary-play defect or exploit.
+
+Native player construction is not live yet. Its implementation must return a clear allocation failure and preflight a free slot before debiting cash, modifying counts or painting. Preserve the exact original initialized/retained record bytes on successful allocation. Revisit the higher-level placement/capacity checks while wiring construction and update this entry with the chosen correction and tests.
+
+## SF-082 — building rectangle query scans a dense prefix without active checks
+
+**Status:** verified scan structure; caller/deletion lifecycle and ordinary impact unresolved; native construction handling pending.
+
+Rectangle query `0x1a17e..0x1a243` begins at slot 1 with visited count zero. It reads each record's type and definition dimensions, compares its coordinates with the requested rectangle, then increments both slot and visited count (`0x1a22e/0x1a231`). The only loop limit compares visited count to global building count `6190:2430` (`0x1a234..0x1a23d`); there is no active-flag test or independent slot bound in this routine. Under a sparse table, it can consider retained inactive coordinates or omit active records beyond that prefix. An inconsistent large count could also exceed record storage.
+
+The source instructions establish those conditional outcomes, not that all relevant callers encounter sparse or inconsistent state. Revisit compaction and caller guards while tracing construction. Native placement should scan bounded active records and validate their definitions before mutation; no construction implementation is claimed yet. Keep this evidence even if later caller tracing shows the original path maintains a dense prefix.
