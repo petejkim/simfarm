@@ -1,0 +1,26 @@
+{
+  "name": "simfarm-native",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "import": "tsx tools/import.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "test:browser": "PLAYWRIGHT_BROWSERS_PATH=.tools/playwright playwright test",
+    "analyze": ".venv/bin/python tools/analyze.py"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.4",
+    "@types/pngjs": "^6.0.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.3"
+  },
+  "dependencies": {
+    "pngjs": "^7.0.0"
+  }
+}

@@ -1,0 +1,11 @@
+import { Binary } from './binary';
+export interface CropDefinition { id: string; name: string; description: string; rawDefinition: number[] }
+export function readCrop(id: string, bytes: Uint8Array): CropDefinition {
+  if (bytes.length !== 5890) throw new Error('Unsupported crop definition size');
+  const b = new Binary(bytes);
+  return {
+    id, name: b.text(0x1500, 16).trim(),
+    description: b.text(0x1580, bytes.length - 0x1580).replace(/\r?\n/g, ' ').replace(/@/g, '').replace(/~/g, '\n').replace(/ +/g, ' ').trim(),
+    rawDefinition: Array.from(b.slice(0x1500, 128)),
+  };
+}
