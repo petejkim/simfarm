@@ -110,3 +110,15 @@ Recorded native guards for original attachment/field-edge address hazards in SF-
 Validation: all 50 Bun tests pass (48 in the full run plus two subsequent storage/integration cases), TypeScript/production build pass, and all five Chromium checks pass. Original truck overlays restore both world words exactly after erase/redraw; tests also verify byte ownership, graphics frames/orientation, movement and wear, collision effects, field borders/badges, all original building/animal counts, shed contents and malformed-reference rejection.
 
 The browser scheduler still runs calendar/weather/growth only. Remaining machinery integration is arrival/parking/store-back, release/detachment, rental policy, field-entry and the planting/harvest FSMs. Sound-effect events are recorded but not yet played. Next complete those dependencies, seed consumption/purchase, inventory and crop sales to expose the original farming loop. Save/load and other major systems remain required by the active full-game goal; no completion or external blocker is claimed.
+
+## 2026-10-07 — original planting passes and machinery return
+
+The preceding user-policy turn made progress by committing explicit retention and deferral rules in AGENTS.md (`dbfa55a`). Revalidated the worktree's uncommitted machinery/planting implementation against its source addresses and added integration coverage rather than restarting the reconstruction.
+
+Completed equipment arrival dispatch, return/detach/release, parking search, shed store-back, implement relocation and the twelve-step planting FSM. The sequence uses the same tractor for two different implements, changes the ground through both original passes, enters Growing and returns machines to their original storage or parking locations. Tests execute this sequence on all four supplied farms with the required owned equipment. The other farms require the outstanding rental path; the test boundary explicitly starts after seed validation, not at a completed player command.
+
+Retained and updated SF-010 after correcting whole-chain detachment. Added SF-012 for unchecked/unbounded parking search and SF-013 for the planting completion timestamp write to reserved slot zero. Native parking exhaustion returns a notice; the original bookkeeping write is preserved. No exploit is claimed.
+
+Validation: 59 Bun tests and TypeScript/production build pass. New checks include all original stored-machine round trips, rotated first-fit storage, fully blocked parking termination, tick wrap/pacing, both return modes, tractor-assisted implement relocation and complete planting/return on SCEN3–6. No browser/UI behavior changed in this increment.
+
+The full game goal remains active. Next recover seed consumption/purchase and automatic rental, connect machinery/planting to GameSimulation and React commands, then implement harvest, inventory and sales. The browser remains limited to calendar/weather/growing fields until those command prerequisites are connected; save/load and other major systems also remain unfinished.

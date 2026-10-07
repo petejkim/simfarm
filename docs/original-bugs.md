@@ -86,11 +86,11 @@ The same boundary hazard applies to attachment coordinates and field-pass border
 
 ## SF-010 — detach routine only clears the first two members of an equipment chain
 
-**Status:** confirmed routine-level behavior; reachability of longer chains in ordinary gameplay unverified; fix deferred with the detach port.
+**Status:** confirmed routine-level behavior; reachability of longer chains in ordinary gameplay unverified; fixed in native detachment.
 
 `0x112a0`–`0x112f1` traverses attachments but reloads the successor from the original head (`[bp+6]` at `0x112ca`) instead of the current member (`[bp-4]`). After clearing the head's links on the first iteration, the second iteration sees a zero successor and stops. A chain with two or more attachments can retain a disconnected member's parent link. In contrast, positioning at `0x1113e` advances its current-member argument and walks the whole chain.
 
-The original attachment primitive accepts equipment indices, but which user actions can construct a longer chain is not established. Native handling: positioning walks and validates the whole chain; the detach routine is not yet ported. Saved out-of-range, inactive, self-referencing and cyclic attachment links are rejected by the decoder. This does not establish an exploitable vulnerability in the original.
+The original attachment primitive accepts equipment indices, but which user actions can construct a longer chain is not established. Native handling: positioning and detachment walk and validate the whole chain. Detachment clears both links on every member; a three-member regression verifies the correction. Saved out-of-range, inactive, self-referencing and cyclic attachment links are rejected by the decoder. This does not establish an exploitable vulnerability in the original.
 
 Related limitation: drawn-flag helpers `0x119b6` and `0x119e4` update only the head and first attachment, while drawing and erasing walk the chain. The native refresh operation preserves this difference; consequences for longer chains remain deferred with the reachability investigation.
 
@@ -101,3 +101,19 @@ Related limitation: drawn-flag helpers `0x119b6` and `0x119e4` update only the h
 Storage removal `0x1aeb0` reads a signed item type at building +34 and an eight-bit slot at +58, using the selected storage cell. For item types 0..63 it passes that slot directly to equipment footprint lookup `0x10d9c`. The latter indexes the 127-slot equipment table without checking the index or active flag. A corrupted storage slot such as 255 can therefore read unrelated data as an equipment record and then use its type as a definition index. Further consequences and original loader validation outside this path have not been established.
 
 Native handling: equipment withdrawal resolves an existing decoded machine, requires the storage cell to identify that same slot, validates its footprint against the building, and fails before changing state on mismatch. Tests exercise all stored machines from all eight distributed farms; original bytes remain unchanged. The original generic removal path for non-equipment inventory has not yet been ported or audited.
+
+## SF-012 — parking search has no failure bound and wraps its radius counters
+
+**Status:** confirmed missing termination bound and byte-counter wrap; normal-game exhaustion and consequences remain unverified; guarded in the native port.
+
+The parking routine initializes two byte counters to zero (`0x14ea2`–`0x14ea7`), increments them for successive search rings (`0x14f6a`, `0x14f77`), sign-extends them for coordinate arithmetic, and repeats until a candidate succeeds (`0x15112`–`0x15118`). There is no exhausted-map exit. Candidate testing temporarily writes byte coordinates into the equipment record (`0x151c4`–`0x151d7`) before the unchecked occupancy routine described in SF-009. A fully obstructed map can therefore cause repeated searching, wrapped radii and reads outside the logical world. Original memory layout may cause a spurious successful candidate; an actual infinite loop or exploit has not been demonstrated.
+
+Native handling rejects off-map candidates and limits search to 96 rings, sufficient to cover the map from a valid machine origin. Exhaustion returns false and records a `parking-unavailable` notice instead of hanging the simulation. A fully obstructed-world regression verifies termination and unchanged coordinates. Revisit player-visible recovery when equipment management UI is added.
+
+## SF-013 — planting completion writes the reserved equipment slot's timestamp
+
+**Status:** confirmed bookkeeping discrepancy; harmful gameplay impact unproven; preserved.
+
+On completion of planting's second pass, the routine clears field +42 (`0x18391`), changes the field to Growing, then reloads field +42 to select the equipment whose timestamp it updates (`0x183ec`–`0x1840b`). This writes equipment slot zero instead of the tractor. Slot zero is reserved and the equipment dispatcher starts at slot one, so no harmful consequence is currently established. The tractor's movement-order routine already sets its timestamp during the same completion path.
+
+Native handling retains the slot-zero write explicitly. Revisit if later recovered code reads this reserved record; do not characterize this alone as a security vulnerability.

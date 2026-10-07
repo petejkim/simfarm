@@ -20,6 +20,10 @@ export class FieldRecord {
   get width(): number { return this.bytes[12]; }
   get height(): number { return this.bytes[13]; }
   get cropSlot(): number { return this.bytes[14]; }
+  get equipment(): number { return this.data.u16(42); }
+  set equipment(value: number) { this.data.view.setUint16(42, value, true); }
+  get pendingEquipment(): number { return this.data.u16(44); }
+  set pendingEquipment(value: number) { this.data.view.setUint16(44, value, true); }
   get status(): string { return FIELD_STATES[this.state] ?? `State ${this.state}`; }
   contains(x: number, y: number): boolean {
     // Original point query file 0x1b928: inclusive origin, exclusive far edge.

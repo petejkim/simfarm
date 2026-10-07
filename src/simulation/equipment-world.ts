@@ -9,14 +9,14 @@ export interface EquipmentRuntime {
   grassTravelCount: number;
   /** Animation clock 6190:13a0, used for livestock collision aftermath. */
   animationTick: number;
-  notices: ({ type: 'grass-wear' | 'forced-arrival'; slot: number } | { type: 'animal-hit'; slot: number })[];
+  notices: ({ type: 'grass-wear' | 'forced-arrival' | 'parking-unavailable'; slot: number } | { type: 'animal-hit'; slot: number })[];
 }
 const s8 = (n: number) => n << 24 >> 24;
 const inMap = (x: number, y: number) => x >= 0 && y >= 0 && x < 96 && y < 96;
 // Initialized tile-base table 6190:085e, indexed by definition +0 (not by equipment type).
 const graphicBases: Readonly<Record<number, number>> = { 40: 848, 42: 852, 44: 856, 50: 868, 52: 860, 54: 876, 71: 892, 72: 896, 82: 1028 };
 
-function chain(head: EquipmentRecord, world: EquipmentWorld): EquipmentRecord[] {
+export function equipmentChain(head: EquipmentRecord, world: EquipmentWorld): EquipmentRecord[] {
   const result = [head], visited = new Set([head.slot]);
   while (result.at(-1)!.attachment) {
     const next = world.equipment[result.at(-1)!.attachment];
@@ -24,6 +24,12 @@ function chain(head: EquipmentRecord, world: EquipmentWorld): EquipmentRecord[] 
     visited.add(next.slot); result.push(next);
   }
   return result;
+}
+
+export function equipmentImage(e: EquipmentRecord, world: EquipmentWorld, direction = e.direction, frame = e.bytes[42]): number {
+  const def = world.equipmentDefinitions[e.type], base = graphicBases[def.graphic];
+  if (base === undefined) throw new Error('Unsupported equipment graphic');
+  return base + s8(def.width) * s8(def.height) * (s8(def.bytes[10]) * (direction >> 1) + s8(frame));
 }
 
 /** 0x10d9c: definition dimensions, swapped only for directions 2 and 6. */
@@ -45,7 +51,7 @@ function eachCell(e: EquipmentRecord, world: EquipmentWorld, visit: (cell: World
 /** 0x104c2/0x1050c. Erase only the overlay; keep terrain and both words' other flags. */
 export function eraseEquipment(head: EquipmentRecord, world: EquipmentWorld): void {
   if (!head.active || !(head.flags & F.drawn)) return;
-  for (const e of chain(head, world)) {
+  for (const e of equipmentChain(head, world)) {
     eachCell(e, world, cell => { cell.terrain &= ~0x0800; cell.overlay &= 0xf800; });
     e.flags &= ~F.drawn;
   }
@@ -54,11 +60,8 @@ export function eraseEquipment(head: EquipmentRecord, world: EquipmentWorld): vo
 /** 0x102aa/0x10300, without the DOS viewport blit. The native renderer consumes the changed cells. */
 export function drawEquipment(head: EquipmentRecord, world: EquipmentWorld): void {
   if (!head.active || !(head.flags & F.drawn)) return;
-  for (const e of chain(head, world)) {
-    const def = world.equipmentDefinitions[e.type], base = graphicBases[def.graphic];
-    if (base === undefined) throw new Error('Unsupported equipment graphic');
-    const area = s8(def.width) * s8(def.height);
-    const first = base + area * (s8(def.bytes[10]) * (e.direction >> 1) + s8(e.bytes[42]));
+  for (const e of equipmentChain(head, world)) {
+    const first = equipmentImage(e, world);
     eachCell(e, world, (cell, part) => {
       cell.terrain |= 0x0800;
       cell.overlay = ((cell.overlay & 0xf800) | ((first + part) & 0xffff)) & 0xffff;
@@ -85,7 +88,7 @@ function hitAnimal(x: number, y: number, world: EquipmentWorld, runtime: Equipme
 /** 0x106d8/0x1070a. This is a visibility/occupancy test, not a movement veto.
  * It also applies the original animal-hit side effect when an occupied tile contains live livestock. */
 export function equipmentObstructed(head: EquipmentRecord, world: EquipmentWorld, runtime: EquipmentRuntime): boolean {
-  for (const e of chain(head, world)) {
+  for (const e of equipmentChain(head, world)) {
     const { width, height } = equipmentFootprint(e, world);
     for (let dx = 0; dx < width; dx++) for (let dy = 0; dy < height; dy++) {
       const x = e.x + dx, y = e.y + dy;
@@ -104,7 +107,7 @@ export function equipmentObstructed(head: EquipmentRecord, world: EquipmentWorld
 /** 0x119b6/0x119e4 only change the head and its first attachment's drawn flags. */
 export function refreshEquipment(head: EquipmentRecord, world: EquipmentWorld, runtime: EquipmentRuntime): void {
   const blocked = equipmentObstructed(head, world, runtime);
-  for (const e of chain(head, world).slice(0, 2)) e.flags = blocked ? e.flags & ~F.drawn : e.flags | F.drawn;
+  for (const e of equipmentChain(head, world).slice(0, 2)) e.flags = blocked ? e.flags & ~F.drawn : e.flags | F.drawn;
   if (!blocked) drawEquipment(head, world);
 }
 
@@ -177,7 +180,7 @@ export function traverseEquipmentField(e: EquipmentRecord, field: FieldRecord, t
     refreshEquipment(e, world, runtime); return true;
   }
   const dx = x - e.x, dy = y - e.y;
-  for (const child of chain(e, world).slice(1)) {
+  for (const child of equipmentChain(e, world).slice(1)) {
     child.bytes[5] += dx; child.bytes[6] += dy; child.bytes[49] = stride;
   }
   e.bytes[5] = x; e.bytes[6] = y; e.bytes[49] = stride;

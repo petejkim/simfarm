@@ -21,10 +21,13 @@ export class BuildingRecord {
     return { graphic: this.data.u16(10 + index * 2), type: this.data.view.getInt16(34 + index * 2, true), slot: this.bytes[58 + index] };
   }
   clearContent(index: number): void {
+    this.setContent(index, 217, -1, 0);
+  }
+  setContent(index: number, graphic: number, type: number, slot: number): void {
     this.content(index);
-    this.data.view.setUint16(10 + index * 2, 217, true);
-    this.data.view.setInt16(34 + index * 2, -1, true);
-    this.bytes[58 + index] = 0;
+    this.data.view.setUint16(10 + index * 2, graphic, true);
+    this.data.view.setInt16(34 + index * 2, type, true);
+    this.bytes[58 + index] = slot;
   }
 }
 

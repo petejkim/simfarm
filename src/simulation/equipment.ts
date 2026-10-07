@@ -92,7 +92,8 @@ function positionAttachment(parent: EquipmentRecord, child: EquipmentRecord, par
 
 /** 0x10f74–0x1113d. Call after erasing the machines' previous map occupancy. */
 export function attachEquipment(parent: EquipmentRecord, child: EquipmentRecord, definitions: readonly EquipmentDefinition[]): void {
-  if (!parent.active || !child.active || parent.slot === child.slot || parent.attachment || child.parent || child.attachment) throw new Error('Invalid equipment attachment');
+  if (!parent.active || !child.active || parent.slot === child.slot || parent.attachment ||
+    (child.parent && child.parent !== parent.slot) || child.attachment) throw new Error('Invalid equipment attachment');
   const def = definitions[child.type];
   const oldWidth = signedByte(parent.bytes[53]), oldHeight = signedByte(parent.bytes[54]);
   const width = signedByte(def.width), height = signedByte(def.height);

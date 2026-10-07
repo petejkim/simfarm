@@ -1,8 +1,8 @@
 import type { BuildingRecord } from '../formats/building';
 import { EQUIPMENT_FLAGS as F, type EquipmentRecord } from '../formats/equipment';
 import { worldIndex, type Scenario } from '../formats/scenario';
-import { findAvailableEquipment } from './equipment';
-import { equipmentFootprint } from './equipment-world';
+import { findAvailableEquipment, positionEquipmentAttachments } from './equipment';
+import { equipmentFootprint, equipmentImage } from './equipment-world';
 
 type BuildingWorld = Pick<Scenario, 'buildings' | 'buildingDefinitions' | 'cells'>;
 // Initialized tile table selected by definition +0; roof tile order is row-major.
@@ -71,4 +71,36 @@ export function reserveOwnedEquipment(world: Scenario, type: number, x: number, 
   if (e.flags & F.stored) withdrawStoredEquipment(e, world);
   e.flags |= F.reserved;
   return e;
+}
+
+/** First-fit scan 0x1abae, trying the definition's orientation then its transpose at each cell. */
+export function findStorageSpace(b: BuildingRecord, width: number, height: number, world: BuildingWorld): { x: number; y: number; rotated: boolean } | undefined {
+  const def = world.buildingDefinitions[b.type - 64];
+  const free = (x: number, y: number, w: number, h: number) => {
+    if (x + w > def.width || y + h > def.height) return false;
+    for (let dx = 0; dx < w; dx++) for (let dy = 0; dy < h; dy++) if (b.content((x + dx) * 3 + y + dy).type !== -1) return false;
+    return true;
+  };
+  for (let x = 0; x < def.width; x++) for (let y = 0; y < def.height; y++) {
+    if (free(x, y, width, height)) return { x, y, rotated: false };
+    if (free(x, y, height, width)) return { x, y, rotated: true };
+  }
+  return undefined;
+}
+
+/** Equipment branch of 0x1a596; requested map coordinates do not select the storage cell. */
+export function storeEquipment(b: BuildingRecord, e: EquipmentRecord, world: Scenario): boolean {
+  if (!b.active || !e.active || b.type < 66 || b.type > 69) return false;
+  const def = world.equipmentDefinitions[e.type], space = findStorageSpace(b, def.width, def.height, world);
+  if (!space) return false;
+  const direction = space.rotated ? 2 : 0, first = equipmentImage(e, world, direction, 0);
+  e.bytes[5] = b.x + space.x; e.bytes[6] = b.y + space.y; e.bytes[15] = direction;
+  e.flags |= F.stored;
+  positionEquipmentAttachments(e, world.equipment, world.equipmentDefinitions);
+  const width = space.rotated ? def.height : def.width, height = space.rotated ? def.width : def.height;
+  for (let dx = 0; dx < width; dx++) for (let dy = 0; dy < height; dy++) {
+    b.setContent((space.x + dx) * 3 + space.y + dy, first + dx * height + dy, e.type, e.slot);
+  }
+  toggleBuildingInterior(b, world); toggleBuildingInterior(b, world);
+  return true;
 }

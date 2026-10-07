@@ -2,7 +2,7 @@ import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { readScenario, worldIndex } from '../src/formats/scenario';
-import { findBuilding, reserveOwnedEquipment, toggleBuildingInterior, withdrawStoredEquipment } from '../src/simulation/building-storage';
+import { findBuilding, findStorageSpace, reserveOwnedEquipment, storeEquipment, toggleBuildingInterior, withdrawStoredEquipment } from '../src/simulation/building-storage';
 import { attachEquipment, positionEquipmentAttachments, setEquipmentDestination } from '../src/simulation/equipment';
 import { equipmentFootprint, eraseEquipment, moveEquipment, traverseEquipmentField, type EquipmentRuntime } from '../src/simulation/equipment-world';
 
@@ -57,6 +57,37 @@ test('every stored original machine can be withdrawn with exactly its footprint 
     }
   }
   assert.ok(withdrawals > 100);
+});
+
+test('all original stored machines fit back into their own sheds and can be withdrawn again', () => {
+  let returns = 0;
+  for (let i = 0; i < 8; i++) {
+    const world = readScenario(source(i));
+    for (const e of world.equipment.filter(e => e.active && (e.flags & 4))) {
+      const b = findBuilding(world, e.x, e.y)!, flags = b.flags;
+      withdrawStoredEquipment(e, world);
+      const empty = Uint8Array.from(b.bytes);
+      assert.equal(storeEquipment(b, e, world), true); returns++;
+      assert.equal(e.flags & 4, 4); assert.equal(b.flags, flags);
+      withdrawStoredEquipment(e, world);
+      assert.deepEqual(b.bytes, empty);
+      assert.equal(storeEquipment(b, e, world), true);
+    }
+  }
+  assert.ok(returns > 100);
+});
+
+test('storage tries both orientations at each cell in column order and rejects reserved cells', () => {
+  const world = readScenario(source(4)), b = world.buildings[3];
+  for (let i = 0; i < 12; i++) b.setContent(i, 217, -2, 0);
+  b.clearContent(0); b.clearContent(3); b.clearContent(6); b.clearContent(7);
+  assert.deepEqual(findStorageSpace(b, 1, 2, world), { x: 0, y: 0, rotated: true });
+  b.setContent(0, 217, -2, 0);
+  assert.deepEqual(findStorageSpace(b, 1, 2, world), { x: 1, y: 0, rotated: true });
+  b.setContent(3, 217, -2, 0);
+  assert.deepEqual(findStorageSpace(b, 1, 2, world), { x: 2, y: 0, rotated: false });
+  b.setContent(6, 217, -2, 0);
+  assert.equal(findStorageSpace(b, 1, 2, world), undefined);
 });
 
 test('owned allocator reserves and withdraws the nearest original tractor without stale shed contents', () => {
