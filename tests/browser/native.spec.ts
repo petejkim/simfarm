@@ -704,3 +704,65 @@ test('planner locks current prices, respects fixed harvests and clears future wo
   await page.locator('[data-plan-week="18"]').click();
   await expect(page.locator('#plan-selection')).toContainText('Fallow');
 });
+
+test('Loans panel borrows, quotes installments, saves balances and pays off through React', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto('/'); await expect(page.locator('#map-status')).toContainText('original terrain');
+  const cash = await page.locator('#farm-cash').textContent();
+  await page.locator('#loan-panel summary').click();
+  await page.locator('#loan-amount').fill('0'); await expect(page.locator('#borrow-loan')).toBeDisabled();
+  await page.locator('#loan-amount').fill('1000'); await expect(page.locator('#loan-quote')).toContainText('$57');
+  await page.locator('#borrow-loan').click();
+  await expect(page.locator('#loan-balance')).toHaveText('$1,000'); await expect(page.locator('#loan-installment')).toHaveText('$57');
+  await expect(page.locator('#loan-result')).toHaveText('Borrowed $1,000.');
+  const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const download = await pending, path = 'artifacts/browser-loan.simfarm.json'; await download.saveAs(path);
+  expect(JSON.parse(readFileSync(path, 'utf8')).runtime.finances.loan.principal).toBe(1000);
+  await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);
+  await expect(page.locator('#save-status')).toContainText('Loaded');
+  await page.locator('#loan-panel summary').click(); await expect(page.locator('#loan-balance')).toHaveText('$1,000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#loan-panel').scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: 'artifacts/browser-loans.png', fullPage: true });
+  await page.locator('#repay-loan').click();
+  await expect(page.locator('#loan-balance')).toHaveText('$0'); await expect(page.locator('#loan-installment')).toHaveText('$0');
+  await expect(page.locator('#farm-cash')).toHaveText(cash!); await expect(page.locator('#repay-loan')).toBeDisabled();
+  expect(errors).toEqual([]);
+});
+
+test('loaded loans collect the March installment at the month boundary', async ({ page }) => {
+  const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${name}`, import.meta.url));
+  const scenario = readScenario(source('SCEN4.SSM')); scenario.schedule.bytes.fill(0);
+  const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
+  const game = new GameSimulation(scenario, crops); game.dispatch({ type: 'borrow', amount: 1000 });
+  const save = JSON.parse(game.save(4));
+  Object.assign(save.scenario.farm.calendar, { day: 6, week: 3, month: 1 }); save.scenario.farm.cash = 4000;
+  await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'loan.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(save)) });
+  await expect(page.locator('#save-status')).toContainText('Loaded'); await page.locator('#loan-panel summary').click();
+  await page.locator('#next-day').click();
+  await expect(page.locator('#farm-date')).toContainText('March 1');
+  await expect(page.locator('#loan-balance')).toHaveText('$943'); await expect(page.locator('#farm-cash')).toHaveText('$3,943');
+});
+
+test('saved financial default stops time and actions, supports ending or restarting the farm', async ({ page }) => {
+  const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${name}`, import.meta.url));
+  const scenario = readScenario(source('SCEN4.SSM')); scenario.schedule.bytes.fill(0);
+  const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
+  const initial = new GameSimulation(scenario, crops), save = JSON.parse(initial.save(4));
+  Object.assign(save.scenario.farm.calendar, { day: 6, week: 3, month: 0 }); save.scenario.farm.cash = 0;
+  Object.assign(save.runtime.finances.debt, { balanceDue: 0xffffffff, balanceCountdown: 1 });
+  const game = GameSimulation.load(JSON.stringify(save), crops).simulation; game.dispatch({ type: 'advance-day' });
+  expect(game.getSnapshot().finances.defaultDecision?.status).toBe('pending');
+  const file = { name: 'default.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) };
+  await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(file);
+  await expect(page.getByRole('heading', { name: 'Unable to pay debts' })).toBeVisible();
+  await expect(page.locator('#play-pause')).toBeDisabled(); await expect(page.locator('#next-day')).toBeDisabled();
+  await page.locator('#loan-panel summary').click(); await expect(page.locator('#borrow-loan')).toBeDisabled();
+  await page.locator('#default-exit').click(); await expect(page.getByRole('heading', { name: 'Farm session ended' })).toBeVisible();
+  await expect(page.locator('#next-day')).toBeDisabled();
+  await page.locator('#load-farm-file').setInputFiles(file); await page.locator('#default-restart').click();
+  await expect(page.getByRole('heading', { name: 'Unable to pay debts' })).toHaveCount(0);
+  await expect(page.locator('#next-day')).toBeEnabled(); await expect(page.locator('#time-status')).toContainText('0 days advanced');
+  await page.locator('#loan-panel summary').click(); await expect(page.locator('#loan-overdue')).toHaveCount(0);
+});

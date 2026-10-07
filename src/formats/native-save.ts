@@ -120,7 +120,7 @@ function decodeWeather(value: unknown): WeatherState {
 export function writeNativeSave(state: SimulationState, scenarioId: number): string {
   number(scenarioId, 0, 7, 'scenario ID');
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 3, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 4, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -130,7 +130,7 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || (save.version !== 1 && save.version !== 2 && save.version !== 3)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4].includes(save.version)) fail('unsupported format or version');
   const scenarioId = number(save.scenarioId, 0, 7, 'scenario ID'), s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const random = object(r.random, 'random');
   const rng = new FarmRandom({ visual: number(random.visual, 0, 65535, 'visual RNG'),
@@ -145,7 +145,9 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
     disasterFlags: number(r.disasterFlags, 0, 65535, 'disaster flags'), grassTravelCount: number(r.grassTravelCount, 0, 65535, 'grass wear'),
     equipmentAnimationTick: number(r.equipmentAnimationTick, 0, 65535, 'equipment animation tick'),
     cropMarketPrices: numbers(r.cropMarketPrices, 16, 0, 65535, 'crop prices'),
-    finances: save.version >= 3 ? decodeFinancialState(r.finances) : readFinancialState(s.sourceBytes) };
+    finances: save.version >= 3 ? decodeFinancialState(save.version === 3
+      ? { ...object(r.finances, 'financial state'), defaultDecision: null } : r.finances) : readFinancialState(s.sourceBytes) };
+  if (state.finances.defaultDecision && !state.paused) fail('unpaused terminal default');
   if (state.elapsed >= 1) fail('fractional ticks');
   if (state.cropMarketPrices.some((price, i) => price !== s.cropDefinitions[i].price)) fail('inconsistent crop prices');
   return { scenarioId, state };

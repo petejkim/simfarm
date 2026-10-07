@@ -32,6 +32,10 @@ import { editFieldPlan, type FieldPlanEdit, type FieldPlanEditResult } from './f
 import { SIMULATION_SPEEDS, type SimulationState } from './save-state';
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
 import { copyFinancialState, readFinancialState, type FinancialState } from '../formats/finance';
+import { borrowLoan, repayLoanInFull, loanCreditLimit, payScheduledLoan, isLoanPaymentMonth, type BorrowResult, type RepayResult } from './loan';
+import { loanPaymentAccounts } from './finance-accounts';
+import { retryMonthlyDebts } from './monthly-finance';
+import { resolveDefaultDecision } from './default';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -48,6 +52,9 @@ export interface GameSnapshot {
   paused: boolean;
   speed: number;
   finances: FinancialState;
+  availableLoan: number;
+  lastLoanResult: ({ kind: 'borrow' } & BorrowResult) | ({ kind: 'repay' } & RepayResult) | null;
+  financeNotices: number[];
   cropMarketPrices: number[];
   lastPlantResult: PlantResult | null;
   lastHarvestResult: HarvestOrderResult | null;
@@ -61,6 +68,8 @@ export interface GameSnapshot {
   lastPlanEditResult: (FieldPlanEditResult & { fieldSlot: number; week: number }) | null;
 }
 export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused: boolean }
+  | { type: 'borrow'; amount: number } | { type: 'repay-loan' }
+  | { type: 'resolve-default'; choice: 'restart' | 'exit' }
   | { type: 'edit-field-plan'; fieldSlot: number; week: number; action: FieldPlanEdit }
   | { type: 'set-speed'; speed: number }
   | { type: 'set-auto-clear'; enabled: boolean }
@@ -117,6 +126,8 @@ export class GameSimulation {
   private lastTreatmentResult: TreatmentResult | null = null;
   private lastScheduleResult: ScheduleDispatchResult | null = null;
   private lastPlanEditResult: GameSnapshot['lastPlanEditResult'] = null;
+  private lastLoanResult: GameSnapshot['lastLoanResult'] = null;
+  private financeNotices: number[] = [];
 
   constructor(scenario: Scenario, crops: readonly CropDefinition[], seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState) {
     this.scenario = copyScenario(scenario);
@@ -171,7 +182,18 @@ export class GameSimulation {
   };
 
   dispatch(command: GameCommand): void {
-    if (command.type === 'set-paused') {
+    if (command.type === 'resolve-default') {
+      if (this.finances.defaultDecision?.status !== 'pending') return;
+      resolveDefaultDecision(this.finances.defaultDecision, command.choice);
+      this.publish(); return;
+    }
+    if (this.finances.defaultDecision) return; // Terminal choice/end state freezes every gameplay command.
+    if (command.type === 'borrow') {
+      this.lastLoanResult = { kind: 'borrow', ...borrowLoan(this.scenario, this.finances.loan,
+        this.finances.accounts.buildingBookValue, this.finances.loanRate, command.amount, this.weather.soilMoisture) };
+    } else if (command.type === 'repay-loan') {
+      this.lastLoanResult = { kind: 'repay', ...repayLoanInFull(this.scenario.farm, this.finances.loan, loanPaymentAccounts(this.finances)) };
+    } else if (command.type === 'set-paused') {
       if (this.paused === command.paused) return;
       this.paused = command.paused; this.elapsed = 0;
     } else if (command.type === 'set-speed') {
@@ -226,6 +248,7 @@ export class GameSimulation {
   }
 
   private advanceTick(): void {
+    if (this.finances.defaultDecision) return;
     const s = this.scenario, tick = s.farm.timerTicks = (s.farm.timerTicks + 1) & 0xffff;
     this.equipmentRuntime.animationTick = s.farm.animationTicks = (s.farm.animationTicks + 1) & 0xffff;
     const allocate = (world: Scenario, type: number, x: number, y: number) => reserveEquipment(world, type, x, y, tick);
@@ -268,12 +291,29 @@ export class GameSimulation {
       // 0xcbc6 indexes temperature before month/year rollover. Index 240 aliases DS:4368 (wind).
       const index = w.temperatureYear * 48 + before.month * 4 + before.week + 1;
       w.temperature = index === 240 ? w.wind : s.climate.temperature[index];
-      if (next.monthEnded) this.random.mixMonth(before.month + 1);
+      if (next.monthEnded) {
+        this.random.mixMonth(before.month + 1);
+        const retry = retryMonthlyDebts(s, this.finances.accounts, this.finances.debt, this.finances.clearing,
+          w.soilMoisture, before.month + 1);
+        this.financeNotices = retry.notices;
+        if (retry.pendingDefault) {
+          this.finances.defaultDecision = retry.pendingDefault.decision;
+          this.paused = true; this.elapsed = 0;
+          // Terminal source flow exits/restarts. Normalize the frozen date for
+          // valid native checkpoints; no later simulation phase can resume it.
+          s.farm.calendar = next.calendar; this.daysAdvanced++; return;
+        }
+      }
       if (next.yearEnded) {
         projectFieldScheduleYear(s, this.crops); // 0xcdfe, after dispatch and before weather-year changes.
+        this.finances.loanRate = (this.random.nextSimulation() & 7) + 8; // 0xcfa6..0xcfbc.
         w.temperatureYear = (w.temperatureYear + 1) % 5;
         w.precipitationYear = (w.precipitationYear + 1) % 5;
         w.windYear = (w.windYear + 1) % 5;
+      }
+      if (next.monthEnded && isLoanPaymentMonth(next.calendar.month)) {
+        const payment = payScheduledLoan(s.farm, this.finances.loan, this.finances.debt, loanPaymentAccounts(this.finances));
+        if (payment.notice) this.financeNotices.push(payment.notice);
       }
       w.windAnomaly = Math.max(0, w.windAnomaly - 2);
       advanceForecast(w, s.climate, next.calendar, this.random, s.cells);
@@ -291,6 +331,9 @@ export class GameSimulation {
   private publish(): void {
     this.snapshot = { revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
       finances: copyFinancialState(this.finances),
+      availableLoan: Math.min(Math.max(0, 9999999 - this.scenario.farm.cash),
+        loanCreditLimit(this.scenario, this.finances.accounts.buildingBookValue, this.finances.loan.principal, this.weather.soilMoisture)),
+      lastLoanResult: this.lastLoanResult ? { ...this.lastLoanResult } : null, financeNotices: [...this.financeNotices],
       weather: { ...this.weather, forecast: [...this.weather.forecast], nextForecast: [...this.weather.nextForecast] },
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, cropMarketPrices: [...this.cropMarketPrices],
       lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null,

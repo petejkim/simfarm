@@ -43,7 +43,7 @@ test('financial cold import pins original runtime initializers, sequential town 
 test('all original farms save and restore financial state independently of UI snapshots', () => {
   for (let id = 0; id < 8; id++) {
     const { game, crops } = setup(id), text = game.save(id), saved = JSON.parse(text);
-    assert.equal(saved.version, 3);
+    assert.equal(saved.version, 4);
     assert.deepEqual(saved.runtime.finances, encodeFinancialState(readFinancialState(source(`SCEN${id}.SSM`))));
     const view = game.getSnapshot().finances;
     view.accounts.assets.animalDefinitions[0].bytes.fill(255); view.accounts.otherDefinitions[0].bytes.fill(0);
@@ -72,12 +72,14 @@ test('native financial restore retains changed ledgers, raw definitions, debts, 
   const restored = GameSimulation.load(JSON.stringify(saved), crops).simulation;
   assert.deepEqual(JSON.parse(restored.save(4)).runtime.finances, f);
   restored.dispatch({ type: 'advance-day' });
-  // Finance events are not yet connected; ticking must not silently reimport balances.
-  assert.deepEqual(JSON.parse(restored.save(4)).runtime.finances, f);
+  // This source farm crosses a month boundary: retry both debts without resetting unrelated state.
+  const after = structuredClone(f); after.accounts.balancePayments += 98; after.accounts.taxExpenses += 99;
+  Object.assign(after.debt, { balanceDue: 0, balanceCountdown: 0, unpaidTaxes: 0, taxCountdown: 0 });
+  assert.deepEqual(JSON.parse(restored.save(4)).runtime.finances, after);
   f.loan.principal = 0; assert.equal(restored.getSnapshot().finances.loan.principal, 100);
 });
 
-test('legacy versions migrate absent finances once while preserving existing farm ledgers and malformed v3 is rejected', () => {
+test('legacy versions migrate absent finances once while preserving existing farm ledgers and malformed current state is rejected', () => {
   const { game, crops } = setup(), text = game.save(4), base = JSON.parse(text);
   for (const version of [1, 2]) {
     const old = structuredClone(base); old.version = version; delete old.runtime.finances;

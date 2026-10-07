@@ -35,11 +35,19 @@ export function encodeFinancialState(f: FinancialState) {
     clearing: { ...f.clearing, x: [...f.clearing.x], y: [...f.clearing.y] } };
 }
 
-/** Every member is mandatory in version 3. Do not silently replace damaged
+/** Every member is mandatory in the current version. Do not silently replace damaged
  * financial state with original-scenario balances or rerun startup. */
 export function decodeFinancialState(value: unknown): FinancialState {
   const f = object(value), a = object(f.accounts), assets = object(a.assets), debt = object(f.debt), town = object(f.town);
   const site = object(town.activeSite), clearing = object(f.clearing);
+  let defaultDecision: FinancialState['defaultDecision'] = null;
+  if (f.defaultDecision !== null) {
+    const d = object(f.defaultDecision);
+    if (d.status !== 'pending' && d.status !== 'restart' && d.status !== 'exit') fail();
+    const code = d.status === 'pending' ? 0 : d.status === 'restart' ? 2 : 1;
+    if (d.originalExitCode !== code) fail();
+    defaultDecision = { status: d.status, originalExitCode: code };
+  }
   const result: FinancialState = {
     accounts: { ...fields(a, ['buildingBookValue', 'landIncome', 'equipmentExpenses', 'balancePayments', 'taxExpenses']),
       homeRegionX: number(a.homeRegionX, 11), homeRegionY: number(a.homeRegionY, 11),
@@ -52,6 +60,7 @@ export function decodeFinancialState(value: unknown): FinancialState {
     debt: { ...fields(debt, ['balanceDue', 'unpaidTaxes']), balanceCountdown: number(debt.balanceCountdown, 255), taxCountdown: number(debt.taxCountdown, 255) },
     loan: fields(f.loan, ['principal', 'scheduledPayment', 'availableCredit', 'selectedAmount']),
     loanRate: number(f.loanRate, 65535), taxFailures: number(f.taxFailures, 255),
+    defaultDecision,
     town: { ...fields(town, ['townRevenue', 'expansionFunds']), developmentSpent: number(town.developmentSpent, 65535),
       activeSite: { regionX: number(site.regionX, 11), regionY: number(site.regionY, 11) },
       airportCount: number(town.airportCount, 255), recreationCount: number(town.recreationCount, 255),

@@ -29,7 +29,7 @@ function Game({ assets }: { assets: GameAssets }) {
       onLoad={loaded => setFarm(previous => ({ id: loaded.scenarioId, serial: previous.serial + 1, loaded }))} assets={assets}
       zoom={zoom} onZoomChange={setZoom} cropId={cropId} onCropChange={setCropId} />
     <footer><strong>Reconstruction in progress</strong>
-      <span>Land purchases, field care, the farming cycle and native save/load are running. Other original systems remain in progress.</span>
+      <span>Loans, land purchases, field care, the farming cycle and native save/load are running. Other original systems remain in progress.</span>
       <span id="audio-status" role="status">{music.message}</span>
     </footer>
   </>;

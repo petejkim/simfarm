@@ -530,3 +530,15 @@ Financial-state commit `e2af311` passes the complete 21-case Chromium suite, inc
 The preceding turn made progress through original loan calculations and canonical financial checkpoint commits. Revalidated clean state and recovered the borrow-confirmation and full-payoff mutations. Implemented both actions with refreshed credit, bounded cash capacity, source per-loan rounding, town shares and canonical account views. Added SF-074/075 for retained overdue debt after payoff and extreme cash-cap wrap behavior. Five targeted tests and type/build checks pass; the full suite is running. Next connect loan commands, scheduled payments/retries and terminal default handling to React/GameSimulation, while remaining annual/town systems stay explicitly incomplete.
 
 Borrow/payoff gate: all 289 Bun tests pass (46 files, 67.3 seconds), TypeScript/build and diff checks pass. Browser regressions follow from committed source before UI integration.
+
+Borrow/payoff commit `ebb08cc` passes both clean-source Chromium farming/save regressions.
+
+## 2026-10-07 — usable loans and live debt/default handling
+
+Connected borrowing/payoff to GameSimulation and added the expandable React Loans panel directly below time controls. The panel shows credit, principal, installments, the current rate and separate arrears, with a quote and clear outcome messages. Scheduled payments now run in original months after monthly retries; annual rate updates use the original simulation RNG at the recovered position. No annual tax or town-development substitute was added: those clock integrations remain next.
+
+Live unpayable defaults pause before later day phases, block all gameplay commands and remaining same-frame ticks, preserve the protected home/debt, and offer restart/end-session controls. Checkpoint v4 persists the decision and rejects inconsistent status/exit/paused combinations; v3 migrates without losing financial values. Restart remounts a fresh source farm. Clearing animation, annual collection/reset and town choices remain incomplete.
+
+Five new integration tests pass, including all-eight-farm commands, all-month installments, deterministic continuation, arrears-before-scheduled payment, actual forced-sale exhaustion, frozen save/load and terminal choices. Existing finance migration tests pass after updating their month-boundary expectation to the newly active retries. Type/build checks pass. Added three browser flows for borrowing/payoff/persistence, scheduled collection and default restart/end, including a narrow-screen screenshot. Full-suite and clean-source browser gates follow before final validation. Original files are untouched; Git remains writable, no push is made and the full game goal remains active.
+
+Live-loan pre-commit gate: all 294 Bun tests pass (47 files, 71.3 seconds), TypeScript/build and diff checks pass. The full browser suite, now 24 cases, is the committed-source gate for the new controls and clock behavior.

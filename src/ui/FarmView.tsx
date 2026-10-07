@@ -13,6 +13,7 @@ import { HarvestInventory } from './HarvestInventory';
 import { LandPanel, type MapTool } from './LandPanel';
 import { checkFieldPlacement } from '../simulation/field-placement';
 import { quoteLand } from '../simulation/land';
+import { LoanPanel } from './LoanPanel';
 
 const subscribeEmpty = () => () => {};
 const emptySnapshot = () => null;
@@ -99,6 +100,8 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
       {simulation && <SaveControls simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} />}
     </section>
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
+    {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
+      onRestart={() => onScenarioChange(id)} />}
     {data && <main>
       <section className="map-panel">
         <FarmMap scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}

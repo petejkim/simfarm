@@ -570,7 +570,7 @@ Terminal text at `6190:3efa` says the homestead was sold to pay debts. The prece
 
 ## SF-069 — declining restart can be mistaken for successful default payment
 
-**Status:** confirmed return-value/caller mismatch; native explicit outcomes separate payment and decision; live caller correction pending.
+**Status:** confirmed return-value/caller mismatch; native explicit outcomes separate payment and decision; live caller correction implemented.
 
 The default terminal dialog's nonzero result is left in AX when `0x1db72..0x1db7e` writes exit flag 1 and returns. Monthly callers test AX as payment success (`0xcc92`, `0xcd40`) and can clear the respective unpaid balance and emit a success notice even though no full debit succeeded. Exit is already requested, so visible/persistent consequences beyond this sequence remain unverified. A zero dialog result requests restart and returns zero instead.
 
@@ -629,3 +629,7 @@ Full payoff `0x47623..0x4768a` debits principal and clears `6190:b3ae/b3b2`. It 
 **Status:** arithmetic boundary confirmed; normal UI reachability unproven; native command guards capacity.
 
 Selection `0x46f21..0x46f43` wraps cash plus proposed loan before comparing with 9,999,999, and can subtract already-excessive cash from the cap. Ordinary source cash/credit constraints do not establish reachability of these extremes. Native submission computes nonnegative remaining capacity before clamping a request, rejecting already-full/over-cap cash without mutation. Tests inject maximum dwords to ensure this boundary cannot mint cash. Normal original borrowing and rounding remain unchanged.
+
+### SF-069 / SF-074 live loan follow-up
+
+Live monthly default now pauses before later financial/weather/crop phases and persists an unpaid terminal decision in checkpoint v4. End-session choice never turns into successful payment; restart reconstructs a fresh source farm. Integration tests preserve the home and debt through actual unpayable sales, same-frame suspension, save/load and both single-use choices. The Loans panel separately displays arrears and explains that main-loan payoff does not clear them (SF-074); the source accounting behavior remains preserved pending any explicit correction.

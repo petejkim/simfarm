@@ -7,6 +7,7 @@ import { readLoan, type LoanState } from './loan';
 import { readTownConstructionState } from './town';
 import type { TownDevelopmentState } from '../simulation/town-development';
 import { createClearingEffects, type ClearingEffects } from '../simulation/clearing-effects';
+import type { DefaultDecision } from '../simulation/default';
 
 /** Canonical financial state. Existing farm ledgers stay on Scenario.farm;
  * account views for tax/loan operations must reference these same owners. */
@@ -19,6 +20,7 @@ export interface FinancialState {
   taxFailures: number;
   town: TownDevelopmentState & { expansionFunds: number };
   clearing: ClearingEffects;
+  defaultDecision: DefaultDecision | null;
 }
 
 /** Fresh source import, NOT a native restore. Untransferred runtime accounts
@@ -32,7 +34,7 @@ export function readFinancialState(bytes: Uint8Array): FinancialState {
     annual: readAnnualLedger(bytes, { priorTaxExpenses: 0, ds3e70: 0, ds3e8c: 0, ds3e90: 0, ds3e94: 0, ds3e9c: 0 }),
     debt: readMonthlyDebtState(bytes, 0, 0), loan: readLoan(bytes), loanRate: 15, taxFailures: 0,
     town: { ...readTownConstructionState(bytes), activeSite, townRevenue: b.u32(0x2173c), expansionFunds: 40000, developmentSpent: 0 },
-    clearing: createClearingEffects() };
+    clearing: createClearingEffects(), defaultDecision: null };
 }
 
 export function copyFinancialState(f: FinancialState): FinancialState {
@@ -41,5 +43,6 @@ export function copyFinancialState(f: FinancialState): FinancialState {
     otherDefinitions: f.accounts.otherDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))) },
     annual: { ...f.annual }, debt: { ...f.debt }, loan: { ...f.loan },
     town: { ...f.town, activeSite: { ...f.town.activeSite }, recreationCoordinates: Uint8Array.from(f.town.recreationCoordinates) },
-    clearing: { ...f.clearing, x: Uint8Array.from(f.clearing.x), y: Uint8Array.from(f.clearing.y) } };
+    clearing: { ...f.clearing, x: Uint8Array.from(f.clearing.x), y: Uint8Array.from(f.clearing.y) },
+    defaultDecision: f.defaultDecision ? { ...f.defaultDecision } : null };
 }

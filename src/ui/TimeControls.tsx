@@ -19,12 +19,13 @@ export function TimeControls({ snapshot, onCommand }: { snapshot: GameSnapshot; 
     <div><span role="status" id="time-status">{paused ? 'Paused' : 'Running'} · {snapshot.daysAdvanced} days advanced</span>
       <label className="simulation-speed" htmlFor="simulation-speed"><span id="simulation-speed-label">Speed</span>
         <input id="simulation-speed" type="range" min="0" max={SIMULATION_SPEEDS.length - 1} step="1"
+          disabled={Boolean(snapshot.finances.defaultDecision)}
           aria-labelledby="simulation-speed-label"
           value={SIMULATION_SPEEDS.findIndex(speed => speed === snapshot.speed)} aria-valuetext={`${snapshot.speed}× simulation speed`}
           onChange={event => onCommand({ type: 'set-speed', speed: SIMULATION_SPEEDS[Number(event.target.value)] })} />
         <output id="simulation-speed-value" htmlFor="simulation-speed" title="At 1×, one real second advances one game day.">{snapshot.speed}×</output>
       </label>
-      <button id="play-pause" onClick={() => onCommand({ type: 'set-paused', paused: !paused })}>{paused ? 'Play' : 'Pause'}</button>
-      <button id="next-day" disabled={!paused} onClick={() => onCommand({ type: 'advance-day' })}>Next day</button></div>
+      <button id="play-pause" disabled={Boolean(snapshot.finances.defaultDecision)} onClick={() => onCommand({ type: 'set-paused', paused: !paused })}>{paused ? 'Play' : 'Pause'}</button>
+      <button id="next-day" disabled={!paused || Boolean(snapshot.finances.defaultDecision)} onClick={() => onCommand({ type: 'advance-day' })}>Next day</button></div>
   </section>;
 }

@@ -1,0 +1,107 @@
+import { test } from 'bun:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { readScenario } from '../src/formats/scenario';
+import { readCrop } from '../src/formats/crop';
+import { GameSimulation } from '../src/simulation/game';
+import { isLoanPaymentMonth } from '../src/simulation/loan';
+const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
+const setup = (id = 4) => {
+  const s = readScenario(source(`SCEN${id}.SSM`)); s.schedule.bytes.fill(0);
+  const crops = s.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
+  return { crops, game: new GameSimulation(s, crops) };
+};
+const restored = (mutate: (s: any) => void) => {
+  const { game, crops } = setup(), save = JSON.parse(game.save(4)); mutate(save);
+  return { game: GameSimulation.load(JSON.stringify(save), crops).simulation, crops };
+};
+const boundary = (s: any, month = 1) => Object.assign(s.scenario.farm.calendar, { day: 6, week: 3, month });
+
+test('live borrowing and full payoff work on every original farm, preserve checkpoints and detach feedback', () => {
+  for (let id = 0; id < 8; id++) {
+    const { game, crops } = setup(id), before = game.getSnapshot(), cash = before.scenario.farm.cash;
+    game.dispatch({ type: 'borrow', amount: 400 });
+    assert.equal(game.getSnapshot().scenario.farm.cash, cash + 400); assert.equal(game.getSnapshot().finances.loan.principal, 400);
+    assert.deepEqual(game.getSnapshot().lastLoanResult, { kind: 'borrow', ok: true, amount: 400, installment: 23 });
+    const loaded = GameSimulation.load(game.save(id), crops).simulation;
+    assert.equal(loaded.getSnapshot().finances.loan.principal, 400); assert.equal(loaded.getSnapshot().lastLoanResult, null);
+    loaded.dispatch({ type: 'repay-loan' });
+    assert.equal(loaded.getSnapshot().scenario.farm.cash, cash); assert.equal(loaded.getSnapshot().finances.loan.principal, 0);
+    assert.equal(loaded.getSnapshot().finances.accounts.balancePayments, before.finances.accounts.balancePayments + 400);
+    assert.equal(loaded.getSnapshot().finances.town.expansionFunds, before.finances.town.expansionFunds + 200);
+    assert.equal(loaded.getSnapshot().finances.town.townRevenue, before.finances.town.townRevenue + 100);
+    loaded.getSnapshot().finances.loan.principal = 99;
+    assert.equal(JSON.parse(loaded.save(id)).runtime.finances.loan.principal, 0);
+  }
+});
+
+test('live calendar charges only the four recovered loan months and restores identical next-month continuation', () => {
+  for (let month = 0; month < 12; month++) {
+    const { game, crops } = restored(s => {
+      boundary(s, month); s.scenario.farm.cash = 10000;
+      s.runtime.finances.loan.principal = 1000; s.runtime.finances.loan.scheduledPayment = 101;
+    });
+    const copy = GameSimulation.load(game.save(4), crops).simulation;
+    game.dispatch({ type: 'advance-day' }); copy.dispatch({ type: 'advance-day' });
+    const nextMonth = (month + 1) % 12, paid = isLoanPaymentMonth(nextMonth), state = game.getSnapshot();
+    assert.equal(state.scenario.farm.calendar.month, nextMonth);
+    assert.equal(state.finances.loan.principal, paid ? 899 : 1000);
+    assert.equal(state.scenario.farm.cash, paid ? 9899 : 10000);
+    assert.equal(state.finances.loan.scheduledPayment, 101);
+    if (month === 11) assert.ok(state.finances.loanRate >= 8 && state.finances.loanRate <= 15);
+    assert.deepEqual(JSON.parse(game.save(4)), JSON.parse(copy.save(4)));
+  }
+});
+
+test('monthly arrears run before a new installment, including the source overwrite/countdown behavior', () => {
+  const { game } = restored(s => {
+    boundary(s); s.scenario.farm.cash = 110;
+    Object.assign(s.runtime.finances.loan, { principal: 1000, scheduledPayment: 100 });
+    Object.assign(s.runtime.finances.debt, { balanceDue: 60, balanceCountdown: 2 });
+  });
+  const before = game.getSnapshot().finances;
+  game.dispatch({ type: 'advance-day' }); const after = game.getSnapshot();
+  assert.equal(after.scenario.farm.cash, 50); assert.equal(after.finances.loan.principal, 1000);
+  assert.equal(after.finances.debt.balanceDue, 100); assert.equal(after.finances.debt.balanceCountdown, 4);
+  assert.equal(after.finances.accounts.balancePayments, before.accounts.balancePayments + 60);
+  assert.equal(after.finances.town.expansionFunds, before.town.expansionFunds);
+  assert.deepEqual(after.financeNotices, [170, 166]);
+});
+
+test('unpayable live default freezes the entire frame, preserves home and debt, saves and resolves exactly once', () => {
+  const { game, crops } = restored(s => {
+    boundary(s, 0); s.scenario.farm.cash = 0;
+    Object.assign(s.runtime.finances.debt, { balanceDue: 0xffffffff, balanceCountdown: 1 });
+  });
+  game.dispatch({ type: 'set-paused', paused: false }); game.tick(30000);
+  const state = game.getSnapshot(), f = state.finances;
+  assert.deepEqual(f.defaultDecision, { status: 'pending', originalExitCode: 0 }); assert.equal(state.paused, true);
+  assert.equal(state.daysAdvanced, 1); assert.equal(f.debt.balanceDue, 0xffffffff);
+  assert.equal(state.scenario.regionalConditions[(f.accounts.homeRegionX * 12 + f.accounts.homeRegionY) * 7 + 1], 1);
+  const saved = game.save(4), loaded = GameSimulation.load(saved, crops).simulation;
+  for (const g of [game, loaded]) {
+    for (const command of [{ type: 'advance-day' }, { type: 'set-paused', paused: false }, { type: 'borrow', amount: 100 }, { type: 'repay-loan' }] as const) g.dispatch(command);
+    g.tick(30000); assert.deepEqual(JSON.parse(g.save(4)), JSON.parse(saved));
+  }
+  loaded.dispatch({ type: 'resolve-default', choice: 'exit' });
+  assert.deepEqual(loaded.getSnapshot().finances.defaultDecision, { status: 'exit', originalExitCode: 1 });
+  loaded.dispatch({ type: 'resolve-default', choice: 'restart' });
+  assert.equal(loaded.getSnapshot().finances.defaultDecision?.status, 'exit');
+  game.dispatch({ type: 'resolve-default', choice: 'restart' });
+  assert.deepEqual(game.getSnapshot().finances.defaultDecision, { status: 'restart', originalExitCode: 2 });
+  assert.equal(GameSimulation.load(loaded.save(4), crops).simulation.getSnapshot().finances.debt.balanceDue, 0xffffffff);
+});
+
+test('version-three migration retains finance balances; current terminal decisions require matching flags and a paused clock', () => {
+  const { game, crops } = setup(), original = JSON.parse(game.save(4));
+  const old = structuredClone(original); old.version = 3; delete old.runtime.finances.defaultDecision;
+  old.runtime.finances.loan.principal = 8765; old.runtime.finances.town.expansionFunds = 1234;
+  const migrated = GameSimulation.load(JSON.stringify(old), crops).simulation.getSnapshot().finances;
+  assert.equal(migrated.loan.principal, 8765); assert.equal(migrated.town.expansionFunds, 1234); assert.equal(migrated.defaultDecision, null);
+  for (const decision of [undefined, {}, { status: 'pending', originalExitCode: 1 }, { status: 'resume', originalExitCode: 0 }]) {
+    const bad = structuredClone(original); bad.runtime.finances.defaultDecision = decision;
+    assert.throws(() => GameSimulation.load(JSON.stringify(bad), crops));
+  }
+  original.runtime.finances.defaultDecision = { status: 'pending', originalExitCode: 0 }; original.runtime.paused = false;
+  assert.throws(() => GameSimulation.load(JSON.stringify(original), crops), /unpaused terminal default/);
+});
