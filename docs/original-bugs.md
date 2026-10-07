@@ -71,3 +71,21 @@ Native handling explicitly selects wind at index 240. A five-year calendar regre
 The forecast routine reads a signed precipitation count from the climate table, clamps negative values to zero (`0x1e865`–`0x1e872`), then indexes a 56-byte stack table with `count * 7 + day` (`0x1e89d`–`0x1e8ae`, cold path `0x1e8d5`–`0x1e8e6`). It does not clamp counts above seven. Such a value can read beyond the initialized pattern table and produce unrelated weather codes. All eight distributed scenarios contain counts within zero through seven.
 
 Native handling rejects imported climate counts above seven and validates the forecast lookup. The decoder regression includes a mutated scenario with count eight. The original hazard stays documented despite that native validation; additional memory consequences and exploitability are unproven.
+
+## SF-009 — equipment route scoring bypasses terrain and has unchecked map edges
+
+**Status:** confirmed routing behavior and missing coordinate checks; teleport appears to be a recovery mechanism, not a proven defect. Edge-read consequences during normal play remain unverified.
+
+The score routine at `0xfe6e` returns zero before inspecting terrain whenever a candidate is within squared distance four of its destination (`0xfef7`–`0xfefd`). Otherwise it indexes terrain from signed byte coordinates without a map-edge check (`0xff04`–`0xff17`). Negative or oversized coordinates can alias another map column or read adjacent data. Destination clamping in `0xf9e4` does not validate the three intermediate candidates. Establish the original callers' edge reachability before claiming a demonstrated corruption or vulnerability.
+
+If all three candidates score above 1882, `0xfcc3`–`0xfcea` directly copies the destination into the equipment position. Separately, `0x10202`–`0x102a1` forces arrival after 64 updates without reaching the destination and applies wear to types other than six. These are explicit recovery paths, not reasons to replace the algorithm with a modern shortest-path implementation. Terrain-category upper limits in scoring are inclusive (15–31, 150–172, 188–192), although other callers use exclusive limits.
+
+Native handling: the route planner preserves scoring, near-target bypass, tie order and the all-blocked destination fallback. It treats out-of-map candidates as blocked before any terrain read or near-target test. Tests cover category boundaries, route history, destination bypass, fallback and map edges. The 64-update recovery/wear branch is not yet integrated; full movement, occupancy and arrival dispatch remain outstanding. No security exploit is demonstrated.
+
+## SF-010 — detach routine only clears the first two members of an equipment chain
+
+**Status:** confirmed routine-level behavior; reachability of longer chains in ordinary gameplay unverified; fix deferred with the detach port.
+
+`0x112a0`–`0x112f1` traverses attachments but reloads the successor from the original head (`[bp+6]` at `0x112ca`) instead of the current member (`[bp-4]`). After clearing the head's links on the first iteration, the second iteration sees a zero successor and stops. A chain with two or more attachments can retain a disconnected member's parent link. In contrast, positioning at `0x1113e` advances its current-member argument and walks the whole chain.
+
+The original attachment primitive accepts equipment indices, but which user actions can construct a longer chain is not established. Native handling: positioning walks and validates the whole chain; the detach routine is not yet ported. Saved out-of-range, inactive, self-referencing and cyclic attachment links are rejected by the decoder. This does not establish an exploitable vulnerability in the original.

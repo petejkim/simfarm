@@ -101,7 +101,7 @@ Point query `0x1b928`–`0x1b994` tests inclusive origins and exclusive far edge
 ### Action and simulation reconstruction targets
 
 - Plow handler at `0x26c64` finds the field through `1957:01b8`, requires Waiting, then sets state 2 and substep 0 at `0x26ccf`. It schedules work; it does not instantly replace terrain.
-- Plant handler around `0x23fc7` sets state 3, substep 0 and crop slot +14 after seed/equipment/contract checks. Its marker update calls `15b3:1988` (file `0x196b8`). Reconstruct prerequisites before exposing planting.
+- Plant handler around `0x23fc7` sets state 3, substep 0 and crop slot +14 after seed/contract handling. Equipment is acquired later by the field FSM, not checked by this click handler. Its marker update calls `15b3:1988` (file `0x196b8`). Reconstruct prerequisites before exposing planting.
 - Field update loop `0x17d3c`–`0x18ccb` dispatches work state and substep. Equipment work FSM `0x156be`–`0x16abc` selects machines through `0d5f:1de6` (file `0x115d6`) and maintains field offsets +42/+44/+46. Machinery records have 56-byte stride at scenario `0x29f3` / runtime `3d9f:a6ba`.
 - Growth code around `0x1930f`–`0x195be` increments field age and computes graphic stages from crop definitions. Environmental mutation helper `0x19846`–`0x19c61` dispatches eighteen modes; exact units, ordering, random source and clock integration remain to be recovered.
 - Field status/marker routines `0x19002` and `0x196b8`–`0x19845` update badge tiles. Initial saved badges are rendered, but their dynamic updates are not implemented.
@@ -174,3 +174,39 @@ Field-water refresh (`0x18d16`–`0x19001`) sets water to twice global moisture,
 Initialization uses executable fresh-process defaults (soil moisture eight, wind five, weather-year selectors zero) and the forecast/temperature operations at `0x24ef`–`0x2532`. The startup temperature uses table entry zero, even when the loaded calendar is later in the year. **SSM does not serialize these runtime weather globals or RNG streams; an arbitrary DOS session's weather/random state cannot be inferred from this decoder alone.** Complete startup call ordering and all frame-dependent RNG consumers remain to be reconstructed. Explicit native seeds give reproducible native runs, not complete DOS replay parity.
 
 The exposed clock runs one day per browser second, pauses in background tabs, and resets on scenario changes. It does not claim original DOS timer pacing. The scheduler currently omits machinery/work orders, economy, buildings/pumps, livestock, disaster damage and town behavior. Wind alert bits are tracked for the weather arithmetic, but destructive disaster handlers are not implemented. Cash remains unchanged. These are known gameplay gaps, not completed systems.
+
+## Equipment data, routing and attachments
+
+Implemented `src/formats/equipment.ts` and `src/simulation/equipment.ts`. These are simulation primitives, not a completed machine scheduler. The scenario decoder and detached simulation snapshots now include equipment and saved type definitions.
+
+Loader `0x455bf`–`0x45600` reads count at SSM `0x29f1`, then 127 records of 56 bytes at `0x29f3` into `3d9f:a6ba`. Slot zero is reserved. The supplied farms have 49, 0, 42, 7, 28, 32, 54 and 0 active machines. Loader `0x45864`–`0x45888` reads twelve 18-byte type definitions at SSM `0x20994` into `6190:6db8`. Nine have populated graphics/type/dimensions; remaining bytes and unused definitions are retained.
+
+| Record offset | Recovered meaning / evidence |
+| --- | --- |
+| +0 word | Equipment type |
+| +2 word | Flags: 1 reserved, 2 moving, 4 stored, 8 field assignment, 0x20 active, 0x40 rental, 0x80 drawn on map |
+| +4 byte | Movement substate |
+| +5/+6 bytes | Current X/Y |
+| +7/+8 bytes | Destination X/Y |
+| +9..+14 | Three previous X/Y positions |
+| +15 byte | Direction: north 0, east 2, south 4, west 6 |
+| +17 byte | Condition/wear; allocator excludes high bits 0xc0 |
+| +30 word | Last movement tick |
+| +44/+46 words | Parent / attached equipment index |
+| +48/+49 bytes | Field slot / field traversal direction |
+| +50/+51 bytes | Stored home X/Y |
+| +53/+54 bytes | Current footprint dimensions |
+| +55 byte | Movement-update counter |
+
+Type definitions expose graphic word +0, type +2, owned count +4, price +6, width/height bytes +8/+9. Type names have not been guessed from graphics. Planting uses a tractor (type 0) with type 1 and then type 2 in separate phases; harvest uses types 4, 5 and 7.
+
+Ported operations:
+
+- `findAvailableEquipment`: selection portion of `0x115d6`–`0x11693`. Excludes inactive, condition >=192, rented, wrong-type, reserved, field-assigned and towing machines. Uses squared distance from `0xfb54`, keeps the first slot on ties, and permits stored equipment. It deliberately only selects: reservation, storage withdrawal and optional rental remain distinct unported operations.
+- `setEquipmentDestination`: `0xf9e4`–`0xfa65`, clamps destination to 0..95, resets three history entries and counter, writes the 16-bit tick, marks moving and substate one.
+- `equipmentTargetDirection`, `scoreEquipmentStep`, `planEquipmentStep`: `0xfba2`–`0xffe6`. Greedy cardinal candidates, Y-axis tie preference, perpendicular cost +5, grass cost 85, history cost 200, blocked cost 20000. The original discards the computed distance except for its near-destination bypass; it does not use that distance to rank remaining candidates. The planner returns the position/direction effect rather than applying a partial full-movement update. Map-edge reads are guarded; original fallback behavior is retained (SF-009).
+- `attachEquipment`, `positionEquipmentAttachments`: `0x10f74`–`0x1129e`. Link both members, expand head footprint using original dimensions/shifts, copy direction/field/traversal state, and reposition attachments with original cardinal geometry. Movement uses each parent's definition height, whereas initial attachment uses its pre-expansion current height. Uint8 writes preserve coordinate arithmetic. Callers must erase/redraw world occupancy separately.
+
+Tile constants used by routing were read through initialized ES segment references: `c750:085e` -> file `0x4f4be` = 15; `c752:099e` -> `0x4f5fe` = 16; `c750:0866/0868` = 150/161; `c752:09a3` = 11; `c750:08fe` = 188; `c752:09ee` = 4. Original direction vectors are at `6190:2274` (file `0x86964`).
+
+Further dispatch evidence narrows the next work. State 2 (Plowing) is a no-op in `0x17d3c`; it is not a separate worker dispatcher. The plow UI call `24e6:114a` resolves to overlay 3 `0x2fb14`, which writes the calendar plan. Main-loop `24e6:0fb0` resolves to `0x3709e`, a disaster dispatcher. Planting state 3 actually performs both equipment phases. Its movement driver is `0x14a12`; full movement `0xffe8` still needs erase/draw (`0x104c2`, `0x102aa`), collision/visibility (`0x106d8`), wear (`0x11972`) and arrival handlers. Storage withdrawal uses `0x1aeb0` to clear building contents, not just the equipment stored flag. Next port these dependencies, field traversal `0x108ce`, seed consumption/purchase `0x152d6`, then connect work orders and harvesting `0x156be` to inventory/sales.

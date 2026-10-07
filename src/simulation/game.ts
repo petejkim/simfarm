@@ -1,5 +1,6 @@
 import type { CropDefinition } from '../formats/crop';
 import { FieldRecord } from '../formats/field';
+import { EquipmentRecord, EquipmentDefinition } from '../formats/equipment';
 import type { Scenario } from '../formats/scenario';
 import { advanceCalendarDay } from './calendar';
 import { changeFieldCondition } from './field-conditions';
@@ -21,6 +22,8 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
 function copyScenario(scenario: Scenario): Scenario {
   return { ...scenario, cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
     fields: scenario.fields.map(f => new FieldRecord(f.slot, Uint8Array.from(f.bytes))),
+    equipment: scenario.equipment.map(e => new EquipmentRecord(e.slot, Uint8Array.from(e.bytes))),
+    equipmentDefinitions: scenario.equipmentDefinitions.map(e => new EquipmentDefinition(e.slot, Uint8Array.from(e.bytes))),
     farm: { ...scenario.farm, calendar: { ...scenario.farm.calendar } },
     regionalConditions: Uint8Array.from(scenario.regionalConditions),
     climate: { wind: [...scenario.climate.wind], precipitation: [...scenario.climate.precipitation], temperature: [...scenario.climate.temperature] } };
