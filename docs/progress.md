@@ -350,3 +350,11 @@ SF-039 records and corrects the original harvest editor's exclusion of crop slot
 The standalone editor is ready for GameSimulation/React integration. Full tests/build are being gated before this incremental commit; browser controls follow separately. The full original-game objective remains active.
 
 Editor primitive gate: all 177 Bun tests, type checking and production build pass. The browser path still uses the same manual generator output, covered by the prior 19 browser checks; the new editor primitive has not yet been exposed. Next add its simulation command and React controls, then run the complete browser gate.
+
+## 2026-10-07 — alternate-harvest decoder correction
+
+Cross-checking the editor's 239 write against the dispatcher exposed a native transcription error: the dispatcher subtracts 198, 11 and 30 cumulatively, yielding 239, not the previously recorded 231. Corrected the decoder and tests; retained 231 as unknown without rewriting save bytes. SF-040's original-defect claim is withdrawn and retained as audit history, with the exact subtraction/store evidence. No original mismatch exists. The editor's alternate action label/output semantics still need interpretation before it is exposed as a named browser operation.
+
+The 19 affected schedule/editor tests and TypeScript/build pass; the complete 177-test gate is rerunning before commit. Planner UI integration follows this correction.
+
+Correction gate: all 177 Bun tests pass. The correction is committed separately from the pending planner controls so the evidence repair remains reviewable.

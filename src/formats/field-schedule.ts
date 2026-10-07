@@ -17,7 +17,7 @@ export function describeScheduleEntry(code: number): ScheduleEntry {
   switch (code) {
     case 198: return { kind: 'contract' };
     case 209: return { kind: 'fallow' };
-    case 231: return { kind: 'alternate-harvest' };
+    case 239: return { kind: 'alternate-harvest' };
     case 440: return { kind: 'harvest' };
     case 852: return { kind: 'plow' };
     case 912: return { kind: 'fungicide' };

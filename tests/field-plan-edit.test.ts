@@ -22,7 +22,7 @@ test('editor dispatch table, calendar guards, slot offset and writer arguments a
   assert.equal(exe.subarray(0x2d0a0, 0x2d0a3).toString('hex'), '2aed49'); // Field slot minus one.
   assert.equal(exe.subarray(0x2e779, 0x2e780).toString('hex'), 'ffb6a4fde9eafd'); // Write from selected week.
   assert.equal(exe.subarray(0x2e535, 0x2e53b).toString('hex'), '3982aafd7213'); // Original strict upper bound (SF-039).
-  assert.equal(exe.subarray(0x2e59b, 0x2e5a2).toString('hex'), '26c7870000ef00'); // Unhandled marker 239 (SF-040).
+  assert.equal(exe.subarray(0x2e59b, 0x2e5a2).toString('hex'), '26c7870000ef00'); // Editor alternate harvest, corroborated by dispatcher subtraction chain.
 });
 
 test('all eight farms can plant a future crop while preserving every earlier and neighboring schedule word', () => {

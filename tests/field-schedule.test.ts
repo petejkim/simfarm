@@ -20,6 +20,12 @@ test('schedule layout agrees with loader count, overlay access strides and tile 
   assert.equal(exe.subarray(0x48af0, 0x48af5).toString('hex'), '817efaf000'); // 240 rows.
   assert.equal(FIELD_SCHEDULE_OFFSET + FIELD_SCHEDULE_SIZE, WORLD_OFFSET);
   for (let slot = 0; slot < 16; slot++) assert.equal(exe.readUInt16LE(0x4ec60 + 0x882 + slot * 2), 688 + slot * 8);
+  const alternate = [0x2f6eb, 0x2f6f0, 0x2f6f5].reduce((sum, offset) => {
+    assert.equal(exe[offset], 0x2d); // SUB AX, imm16, applied cumulatively.
+    return sum + exe.readUInt16LE(offset + 1);
+  }, 0);
+  assert.equal(alternate, exe.readUInt16LE(0x2e59b + 5));
+  assert.deepEqual(describeScheduleEntry(alternate), { kind: 'alternate-harvest' });
 });
 
 test('all eight schedules preserve every original word, extra column and original planted/harvest weeks', () => {
@@ -50,12 +56,12 @@ test('schedule access is bounded and preserves unknown codes without conflating 
     assert.throws(() => s.get(week, col)); assert.throws(() => s.set(week, col, 209));
   }
   for (const value of [-1, 65536, NaN, 0.5]) assert.throws(() => s.set(0, 0, value));
-  for (const value of [0, 1, 2, 3, 65535]) assert.deepEqual(describeScheduleEntry(value), { kind: 'unknown', code: value });
+  for (const value of [0, 1, 2, 3, 231, 65535]) assert.deepEqual(describeScheduleEntry(value), { kind: 'unknown', code: value });
   for (let slot = 0; slot < 16; slot++) {
     assert.deepEqual(describeScheduleEntry(832 + slot), { kind: 'plant', cropSlot: slot });
     for (let stage = 0; stage < 8; stage++) assert.deepEqual(describeScheduleEntry(688 + slot * 8 + stage), { kind: 'crop-stage', cropSlot: slot, stage });
   }
-  for (const [code, kind] of [[198, 'contract'], [209, 'fallow'], [231, 'alternate-harvest'], [440, 'harvest'],
+  for (const [code, kind] of [[198, 'contract'], [209, 'fallow'], [239, 'alternate-harvest'], [440, 'harvest'],
     [852, 'plow'], [912, 'fungicide'], [913, 'herbicide'], [914, 'pesticide'], [915, 'fertilizer']] as const) {
     assert.deepEqual(describeScheduleEntry(code), { kind });
   }

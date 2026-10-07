@@ -330,10 +330,10 @@ The calendar editor places a harvest at `0x2e4e0` and clears subsequent annual-p
 
 Native harvest editing stops at all sixteen planting words, including 847, preserving that crop and everything after it. A regression tests each crop slot separately and compares the entire retained suffix. Keep the original strict-branch bytes in the test and this record rather than silently redefining the executable behavior.
 
-## SF-040 — calendar editor action 16 writes an undispatched marker
+## SF-040 — withdrawn: alternate-harvest marker was misdecoded natively
 
-**Status:** confirmed editor/dispatcher mismatch; intended meaning unproven. Native fix deferred.
+**Status:** not an original defect. The initial mismatch claim is withdrawn; native decoder corrected, entry retained for audit history.
 
-Editor jump-table entry 16 at `0x2e7b8` routes to `0x2e58a`, which writes 239 (`0x2e59b`). The weekly dispatcher recognizes alternate-harvest word 231 instead, and otherwise ignores 239. The erase helper also explicitly recognizes 239. The intended action label and whether a missing handler or wrong constant caused this discrepancy remain unestablished; do not infer crop-disposal semantics merely from the nearby harvest branch.
+The original editor writes 239 at `0x2e59b`. Dispatcher `0x2f6eb..0x2f6fa` subtracts 198, then 11, then 30 before branching to alternate harvest: `198+11+30=239`. The previous native mapping incorrectly used 231, leading to a false claim that the editor's marker had no handler. Editor and executable dispatcher agree; the source is not changed.
 
-Native schedules preserve unknown 239 and the dispatcher continues to ignore it. The browser planner does not offer this unexplained action, nor silently translate it to 231. Revisit original icon/help evidence before exposing or correcting it. This is an incomplete original path, not a proven security vulnerability.
+Native decoding now dispatches 239 and preserves 231 as unknown. Byte-level regression checks the subtraction chain and editor store together, alongside work-state/flag tests. No automatic conversion of stored unknown words is performed. The alternate path enters machinery harvest unconditionally with field +7 bit 1 cleared; its intended player-facing label still requires icon/help evidence, so no crop-disposal semantics are invented.

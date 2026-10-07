@@ -86,7 +86,7 @@ test('calendar crop contracts and both harvest order variants retain original gu
   // Week zero isolates order dispatch from completion of the preceding harvest.
   world.farm.calendar.week = 0; world.schedule.set(0, 0, 440); f.bytes[2] = 0; f.bytes[3] = 9;
   run(); assert.equal(f.state, 0); assert.equal(f.step, 9);
-  world.schedule.set(0, 0, 231); run(); assert.equal(f.state, 5); assert.equal(f.step, 0); assert.equal(f.bytes[7] & 2, 0);
+  world.schedule.set(0, 0, 239); run(); assert.equal(f.state, 5); assert.equal(f.step, 0); assert.equal(f.bytes[7] & 2, 0);
   world.schedule.set(0, 0, 852); run(); assert.equal(f.state, 2); assert.equal(f.step, 0);
 });
 
