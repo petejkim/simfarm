@@ -52,3 +52,17 @@ Each cell is two little-endian uint16 values plus one byte. The loader stores th
 ## Development references
 
 [Vite's official guide](https://vite.dev/guide/) supplies the project/build conventions. [ScummVM's XMIDI parser](https://github.com/scummvm/scummvm/blob/master/audio/midiparser_xmidi.cpp) is a format cross-check for additive delay bytes, note durations, and a fixed 120 Hz clock; no ScummVM code is copied into this project.
+
+## Music — native conversion and temporary playback
+
+All eight `.xmi` members contain one IFF `EVNT` stream. Conversion uses additive delay bytes, VLQ note durations, explicit generated note-offs (minimum one tick), and a 120 Hz timeline. Standard MIDI type 0 output uses 60 PPQN and 500,000 microseconds per quarter note. Source tempo/time-signature metadata is retained in JSON; the source tempo is not used to change the XMIDI tick rate. Tests verify note balance and program changes for every track and malformed/truncated input rejection.
+
+Observed ordinary channel messages require note on/off, program changes and volume controller 7. `genfarm.xmi` additionally contains AIL infinite-loop controls 116/117, including a start at tick 59. The current export is **one linear pass**, and playback repeats the exported track after its end; it does not yet preserve those internal loop boundaries. AIL finite loops, indirect controller prefixes, and callbacks are rejected instead of silently misinterpreted. SysEx and source metadata remain in JSON and are not sent to the temporary synth.
+
+The browser schedules MIDI events into native Web Audio oscillators and noise percussion (no FM/AdLib). It responds to program families and channel volume, but is not a General MIDI instrument implementation. Replace it with a sampled GM engine and verify exact track loop behavior before claiming music fidelity. Browser tests measure nonzero waveform samples during playback and silence after Stop. An initial percussion stop-before-start error was caught by that test and fixed.
+
+## Native rendering — first layer, incomplete compositing
+
+The browser renders the first scenario word masked with `0x07ff` using the original 880-tile atlas. It supports all eight scenarios, scrolling/arrow navigation, zoom and tile inspection. A rendered Chromium screenshot is generated at `artifacts/native-browser.png`.
+
+Some farm cells currently show repeated placeholder graphics from the static atlas: the original game loads crop-specific graphics and composites additional state. The screenshot is evidence that native drawing works, not proof of full rendering fidelity. Trace crop loader file `0x46524` onward (especially `0x46654`, which reads the `0x1500` graphical prefix) to recover atlas substitutions. Rendering flags in the first word, second-word overlays, fences, sprites and seasonal palette effects remain to be mapped.

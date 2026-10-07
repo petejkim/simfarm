@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { PNG } from 'pngjs';
 import { readArchive } from '../src/formats/archive';
 import { readPalette, readBitmap, tileAtlas, decodePlanar, type Raster } from '../src/formats/graphics';
+import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
 import { readCrop, type CropDefinition } from '../src/formats/crop';
 
 const source = resolve(process.argv[2] ?? '../simfarm-dos');
@@ -46,6 +47,13 @@ for (let i = 0; i < 8; i++) {
   inputs.push({ name, size: bytes.length, sha256: sha256(bytes) });
   await writeFile(join(output, 'raw', name), bytes);
 }
-await json('catalog.json', { crops, tileCount: asset('ega16til.til').length / 128, palette });
+const music = [];
+for (const entry of entries.filter(e => e.name.endsWith('.xmi'))) {
+  const id = entry.name.slice(0, -4), sequence = decodeXmidi(entry.bytes);
+  await writeFile(join(output, `${id}.mid`), encodeMidi(sequence));
+  await json(`${id}.music.json`, sequence);
+  music.push({ id, duration: sequence.endTick / 120 });
+}
+await json('catalog.json', { crops, music, tileCount: asset('ega16til.til').length / 128, palette });
 await json('manifest.json', { inputs, entries: entries.map(({ name, offset, bytes }) => ({ name, offset, size: bytes.length, sha256: sha256(bytes) })) });
 console.log(`Imported ${entries.length} resources, ${crops.length} crops, ${asset('ega16til.til').length / 128} tiles. Source files unchanged.`);
