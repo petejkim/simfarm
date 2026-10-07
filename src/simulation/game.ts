@@ -36,6 +36,7 @@ import { borrowLoan, repayLoanInFull, loanCreditLimit, payScheduledLoan, isLoanP
 import { loanPaymentAccounts } from './finance-accounts';
 import { retryMonthlyDebts } from './monthly-finance';
 import { resolveDefaultDecision } from './default';
+import { TownLayouts } from '../formats/town';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -108,6 +109,7 @@ export class GameSimulation {
   private readonly random: FarmRandom;
   private readonly weather: WeatherState;
   private readonly finances: FinancialState;
+  private readonly townLayouts: TownLayouts;
   private readonly listeners = new Set<() => void>();
   private snapshot!: GameSnapshot;
   private daysAdvanced = 0;
@@ -129,8 +131,10 @@ export class GameSimulation {
   private lastLoanResult: GameSnapshot['lastLoanResult'] = null;
   private financeNotices: number[] = [];
 
-  constructor(scenario: Scenario, crops: readonly CropDefinition[], seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState) {
+  constructor(scenario: Scenario, crops: readonly CropDefinition[], townLayouts: TownLayouts,
+    seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState) {
     this.scenario = copyScenario(scenario);
+    this.townLayouts = new TownLayouts(townLayouts.bytes);
     this.finances = restored ? copyFinancialState(restored.finances) : readFinancialState(scenario.sourceBytes);
     this.crops = scenario.cropFiles.map(file => {
       const crop = crops.find(c => `${c.id}.crp` === file);
@@ -170,9 +174,9 @@ export class GameSimulation {
       finances: this.finances }, scenarioId);
   }
 
-  static load(text: string, crops: readonly CropDefinition[]): { scenarioId: number; simulation: GameSimulation } {
+  static load(text: string, crops: readonly CropDefinition[], townLayouts: TownLayouts): { scenarioId: number; simulation: GameSimulation } {
     const { scenarioId, state } = readNativeSave(text);
-    return { scenarioId, simulation: new GameSimulation(state.scenario, crops, state.random, state) };
+    return { scenarioId, simulation: new GameSimulation(state.scenario, crops, townLayouts, state.random, state) };
   }
 
   getSnapshot = (): GameSnapshot => this.snapshot;

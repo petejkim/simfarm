@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { readScenario } from '../src/formats/scenario';
 import { readCrop } from '../src/formats/crop';
 import { Binary } from '../src/formats/binary';
-import { GameSimulation } from '../src/simulation/game';
+import { GameSimulation } from './support/game';
 import { dispatchFieldSchedule } from '../src/simulation/field-calendar';
 import { describeScheduleEntry } from '../src/formats/field-schedule';
 import { FarmRandom } from '../src/simulation/random';

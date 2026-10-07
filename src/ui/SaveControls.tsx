@@ -31,7 +31,7 @@ export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad }:
       if (file.size > MAX_SAVE_BYTES) throw new Error('The file is too large.');
       const text = await file.text();
       if (controller.signal.aborted) return;
-      const restored = GameSimulation.load(text, assets.catalog.crops);
+      const restored = GameSimulation.load(text, assets.catalog.crops, assets.townLayouts);
       const original = await loadScenarioAssets(restored.scenarioId, controller.signal);
       const template = restored.simulation.getSnapshot().scenario.sourceBytes;
       if (template.some((byte, i) => byte !== original.scenario.sourceBytes[i])) {

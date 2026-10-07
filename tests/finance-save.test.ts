@@ -5,7 +5,7 @@ import { readFinancialState } from '../src/formats/finance';
 import { encodeFinancialState } from '../src/formats/finance-save';
 import { readScenario } from '../src/formats/scenario';
 import { readCrop } from '../src/formats/crop';
-import { GameSimulation } from '../src/simulation/game';
+import { GameSimulation } from './support/game';
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
 const setup = (id = 4) => {
   const scenario = readScenario(source(`SCEN${id}.SSM`));

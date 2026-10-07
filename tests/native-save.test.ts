@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { readScenario } from '../src/formats/scenario';
 import { readCrop } from '../src/formats/crop';
-import { GameSimulation } from '../src/simulation/game';
+import { GameSimulation } from './support/game';
 import { MAX_SAVE_BYTES, readNativeSave } from '../src/formats/native-save';
 import { TREATMENTS } from '../src/simulation/field-treatment';
 

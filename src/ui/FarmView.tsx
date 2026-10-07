@@ -34,8 +34,8 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   const load = useCallback(async (signal: AbortSignal) => {
     if (loaded) return loaded;
     const data = await loadScenarioAssets(id, signal);
-    return { tiles: data.tiles, simulation: new GameSimulation(data.scenario, assets.catalog.crops) };
-  }, [id, loaded, assets.catalog.crops]);
+    return { tiles: data.tiles, simulation: new GameSimulation(data.scenario, assets.catalog.crops, assets.townLayouts) };
+  }, [id, loaded, assets.catalog.crops, assets.townLayouts]);
   const resource = useResource(load);
   const simulation = resource.status === 'ready' ? resource.value.simulation : null;
   const snapshot = useSyncExternalStore(simulation?.subscribe ?? subscribeEmpty, simulation?.getSnapshot ?? emptySnapshot);

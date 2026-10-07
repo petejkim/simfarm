@@ -7,7 +7,7 @@ import { Binary } from '../src/formats/binary';
 import { FieldSchedule, readFieldSchedule, describeScheduleEntry, FIELD_SCHEDULE_OFFSET,
   FIELD_SCHEDULE_SIZE, SCHEDULE_WEEKS, SCHEDULE_COLUMNS } from '../src/formats/field-schedule';
 import { readCrop } from '../src/formats/crop';
-import { GameSimulation } from '../src/simulation/game';
+import { GameSimulation } from './support/game';
 
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
 

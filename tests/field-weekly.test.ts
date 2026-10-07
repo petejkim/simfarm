@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { readScenario, worldIndex, type Scenario } from '../src/formats/scenario';
 import { readCrop } from '../src/formats/crop';
 import { Binary } from '../src/formats/binary';
-import { GameSimulation } from '../src/simulation/game';
+import { GameSimulation } from './support/game';
 import { finishWeeklyFieldWork } from '../src/simulation/field-weekly';
 import { TREATMENTS } from '../src/simulation/field-treatment';
 import { equipmentChain, type EquipmentRuntime } from '../src/simulation/equipment-world';

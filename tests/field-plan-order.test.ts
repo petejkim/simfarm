@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { readScenario } from '../src/formats/scenario';
 import { readCrop } from '../src/formats/crop';
 import { recordFieldPlanOrder, type FieldPlanOrder } from '../src/simulation/field-plan-order';
-import { GameSimulation } from '../src/simulation/game';
+import { GameSimulation } from './support/game';
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
 function setup(id = 4) {
   const world = readScenario(source(`SCEN${id}.SSM`));

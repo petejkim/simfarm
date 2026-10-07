@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { readScenario, worldIndex } from '../src/formats/scenario';
 import { Binary } from '../src/formats/binary';
-import { GameSimulation } from '../src/simulation/game';
+import { GameSimulation } from './support/game';
 import { readCrop } from '../src/formats/crop';
 import { createInventoryItem, deliverStoredHarvest, releaseHarvestReservation, reserveHarvestStorage } from '../src/simulation/harvest-storage';
 

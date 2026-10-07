@@ -4,7 +4,7 @@ import { readArchive } from '../../src/formats/archive';
 import { decodePlanar, readPalette } from '../../src/formats/graphics';
 import { readScenario } from '../../src/formats/scenario';
 import { readCrop } from '../../src/formats/crop';
-import { GameSimulation } from '../../src/simulation/game';
+import { GameSimulation } from '../support/game';
 
 test('crop and masked pixels match source assets at original world coordinates; fields can be inspected', async ({ page }) => {
   const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${name}`, import.meta.url));
