@@ -45,6 +45,8 @@ import { summarizeFieldStatus, type FieldReport } from './field-report';
 import { beginTownExpansion } from './town';
 import { resolveTownChoice, type TownChoice, type TownConstructionResult } from './town-construction';
 import { updateClearingEffects } from './clearing-effects';
+import { updateHomestead, type HomesteadChange } from './homestead';
+import type { GameEvent } from './events';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -64,6 +66,7 @@ export interface GameSnapshot {
   finances: FinancialState;
   pendingTown: PendingTownExpansion | null;
   lastTownResult: TownConstructionResult | null;
+  lastHomesteadChange: HomesteadChange | null;
   taxAssessment: TaxAssessment;
   lastTaxSettlement: TaxSettlement | null;
   availableLoan: number;
@@ -125,6 +128,8 @@ export class GameSimulation {
   private readonly finances: FinancialState;
   private readonly townLayouts: TownLayouts;
   private readonly listeners = new Set<() => void>();
+  private readonly eventListeners = new Set<(event: GameEvent) => void>();
+  private events: GameEvent[] = [];
   private snapshot!: GameSnapshot;
   private daysAdvanced = 0;
   private paused = true;
@@ -147,6 +152,7 @@ export class GameSimulation {
   private pendingTown: PendingTownExpansion | null = null;
   private lastTownResult: TownConstructionResult | null = null;
   private lastTaxSettlement: TaxSettlement | null = null;
+  private lastHomesteadChange: HomesteadChange | null = null;
 
   constructor(scenario: Scenario, crops: readonly CropDefinition[], townLayouts: TownLayouts,
     seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState) {
@@ -205,6 +211,13 @@ export class GameSimulation {
     this.listeners.add(listener);
     return () => { this.listeners.delete(listener); };
   };
+  subscribeEvents = (listener: (event: GameEvent) => void): (() => void) => {
+    this.eventListeners.add(listener);
+    return () => { this.eventListeners.delete(listener); };
+  };
+  private requestMusic(track: 'dfarm' | 'ffarm' | 'cowman' | null): void {
+    if (track) this.events.push({ type: 'music', track });
+  }
 
   dispatch(command: GameCommand): void {
     if (command.type === 'choose-town') {
@@ -323,7 +336,7 @@ export class GameSimulation {
       this.disasterFlags = wind.storm ? this.disasterFlags | 8 : this.disasterFlags & ~8;
       if (wind.hurricane) this.disasterFlags |= 1;
       else if (w.wind < 70) this.disasterFlags &= ~1;
-      updateReportedFieldStatus(s, this.finances.statistics); // 0xbe8b, before water/status dispatch 0xbea3.
+      this.requestMusic(updateReportedFieldStatus(s, this.finances.statistics)); // 0xbe8b, before water/status dispatch 0xbea3.
       for (const field of s.fields.filter(f => f.active)) {
         updateFieldWater(field, s.cells, w.soilMoisture, this.disasterFlags);
         updateFieldStatus(field, this.crops[field.cropSlot], s.cells);
@@ -372,9 +385,11 @@ export class GameSimulation {
     const s = this.scenario, w = this.weather;
     resetAnnualLedgers(s.farm, this.finances.accounts, this.finances.annual, w); // 0xcdf9.
     projectFieldScheduleYear(s, this.crops); // 0xcdfe, after old row 48 and collection/choice.
-    updateAnnualStatistics(s, this.finances.statistics, this.finances.accounts.assets.equipmentBookValue,
-      this.finances.accounts.buildingBookValue, this.finances.loan.principal, w.soilMoisture); // 0xce0e/0xce13.
-    // Homestead changes and automatic MIDI delivery remain separately documented gaps.
+    this.requestMusic(updateAnnualStatistics(s, this.finances.statistics, this.finances.accounts.assets.equipmentBookValue,
+      this.finances.accounts.buildingBookValue, this.finances.loan.principal, w.soilMoisture)); // 0xce0e/0xce13.
+    this.lastHomesteadChange = updateHomestead(s.cells, this.finances.homestead, s.farm.cash); // 0xcf14.
+    if (this.lastHomesteadChange?.sound) this.events.push({ type: 'sound', sound: this.lastHomesteadChange.sound });
+    this.requestMusic(this.lastHomesteadChange?.music ?? null);
     this.finances.loanRate = (this.random.nextSimulation() & 7) + 8; // 0xcfa6..0xcfbc.
     w.temperatureYear = (w.temperatureYear + 1) % 5;
     w.precipitationYear = (w.precipitationYear + 1) % 5;
@@ -415,6 +430,7 @@ export class GameSimulation {
       pendingTown: this.pendingTown ? { ...this.pendingTown, site: { ...this.pendingTown.site } } : null,
       lastTownResult: this.lastTownResult ? this.lastTownResult.ok
         ? { ...this.lastTownResult, site: { ...this.lastTownResult.site } } : { ...this.lastTownResult } : null,
+      lastHomesteadChange: this.lastHomesteadChange ? { ...this.lastHomesteadChange } : null,
       taxAssessment: assessAnnualTax(this.scenario, this.weather.soilMoisture, this.finances.debt.unpaidTaxes),
       lastTaxSettlement: this.lastTaxSettlement ? { ...this.lastTaxSettlement, assessment: { ...this.lastTaxSettlement.assessment } } : null,
       availableLoan: Math.min(Math.max(0, 9999999 - this.scenario.farm.cash),
@@ -439,5 +455,9 @@ export class GameSimulation {
           workerFee: crop[57] === 1 ? f.bytes[58] | f.bytes[59] << 8 : 0 };
       }) };
     for (const listener of [...this.listeners]) listener();
+    // Deliver only after the simulation phase and snapshot are complete. Copy per
+    // observer so presentation cannot change another listener's request.
+    const events = this.events; this.events = [];
+    for (const event of events) for (const listener of [...this.eventListeners]) listener({ ...event });
   }
 }

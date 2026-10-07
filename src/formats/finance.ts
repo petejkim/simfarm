@@ -1,4 +1,5 @@
 import { Binary } from './binary';
+import { readHomestead, type HomesteadState } from './homestead';
 import { readAnnualStatistics, copyAnnualStatistics, type AnnualStatistics } from './annual-statistics';
 import { GoodsDefinition } from './inventory';
 import { readDefaultState, type DefaultState } from './default-state';
@@ -16,6 +17,7 @@ export interface FinancialState {
   accounts: DefaultState;
   annual: AnnualLedgerState;
   statistics: AnnualStatistics;
+  homestead: HomesteadState;
   debt: MonthlyDebtState;
   loan: LoanState;
   loanRate: number;
@@ -34,6 +36,7 @@ export function readFinancialState(bytes: Uint8Array): FinancialState {
   if (activeSite.regionX >= 12 || activeSite.regionY >= 12) throw new Error('Invalid active town site');
   return { accounts: readDefaultState(bytes, 0),
     statistics: readAnnualStatistics(bytes),
+    homestead: readHomestead(bytes),
     annual: readAnnualLedger(bytes, { priorTaxExpenses: 0, ds3e70: 0, ds3e8c: 0, ds3e90: 0, ds3e94: 0, ds3e9c: 0 }),
     debt: readMonthlyDebtState(bytes, 0, 0), loan: readLoan(bytes), loanRate: 15, taxFailures: 0,
     town: { ...readTownConstructionState(bytes), activeSite, townRevenue: b.u32(0x2173c), expansionFunds: 40000, developmentSpent: 0 },
@@ -44,7 +47,7 @@ export function copyFinancialState(f: FinancialState): FinancialState {
   return { ...f, accounts: { ...f.accounts, assets: { ...f.accounts.assets,
     animalDefinitions: f.accounts.assets.animalDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))) },
     otherDefinitions: f.accounts.otherDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))) },
-    annual: { ...f.annual }, statistics: copyAnnualStatistics(f.statistics), debt: { ...f.debt }, loan: { ...f.loan },
+    annual: { ...f.annual }, statistics: copyAnnualStatistics(f.statistics), homestead: { ...f.homestead }, debt: { ...f.debt }, loan: { ...f.loan },
     town: { ...f.town, activeSite: { ...f.town.activeSite }, recreationCoordinates: Uint8Array.from(f.town.recreationCoordinates) },
     clearing: { ...f.clearing, x: Uint8Array.from(f.clearing.x), y: Uint8Array.from(f.clearing.y) },
     defaultDecision: f.defaultDecision ? { ...f.defaultDecision } : null };

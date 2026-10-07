@@ -17,6 +17,7 @@ import { LoanPanel } from './LoanPanel';
 import { TaxPanel } from './TaxPanel';
 import { FarmReport } from './FarmReport';
 import { TownChoicePanel } from './TownChoicePanel';
+import type { GameEvent } from '../simulation/events';
 
 const subscribeEmpty = () => () => {};
 const emptySnapshot = () => null;
@@ -31,9 +32,10 @@ interface Props {
   onZoomChange: (zoom: number) => void;
   cropId: string;
   onCropChange: (id: string) => void;
+  onGameEvent: (event: GameEvent) => void;
 }
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
-export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange }: Props) {
+export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange, onGameEvent }: Props) {
   const load = useCallback(async (signal: AbortSignal) => {
     if (loaded) return loaded;
     const data = await loadScenarioAssets(id, signal);
@@ -42,6 +44,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   const resource = useResource(load);
   const simulation = resource.status === 'ready' ? resource.value.simulation : null;
   const snapshot = useSyncExternalStore(simulation?.subscribe ?? subscribeEmpty, simulation?.getSnapshot ?? emptySnapshot);
+  useEffect(() => simulation?.subscribeEvents(onGameEvent), [simulation, onGameEvent]);
   useEffect(() => {
     if (!simulation) return;
     let frame: number, previous: number | null = null;
@@ -103,6 +106,11 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
       {simulation && <SaveControls simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} />}
     </section>
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
+    {snapshot?.lastHomesteadChange?.notice && <div id="homestead-notice" className="homestead-notice" role="status">
+      <span>{snapshot.lastHomesteadChange.notice === 'improved'
+        ? 'Your home has been improved after a rise in cash.' : 'Your home has been downgraded after a fall in cash.'}</span>
+      <button id="view-home" onClick={() => setFocus({ x: snapshot.finances.homestead.x + 2, y: snapshot.finances.homestead.y + 2 })}>View home</button>
+    </div>}
     {simulation && snapshot && <TownChoicePanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
       onRestart={() => onScenarioChange(id)} />}

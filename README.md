@@ -1,6 +1,6 @@
 # SimFarm native preservation
 
-Incremental reconstruction of the supplied 16-bit DOS SimFarm as a native TypeScript/React/Vite browser game, developed with Bun. No DOS runtime or x86 emulator is used. The current build supports land purchase, new fields, planting, crop treatments, growing, harvesting, storage and crop sales, with machinery, weather, calendar progression and converted MIDI music. Positive-value corn farming cycles on existing fields and newly purchased/fertilized land are verified in the browser. Save/load and many other original systems remain unfinished.
+Incremental reconstruction of the supplied 16-bit DOS SimFarm as a native TypeScript/React/Vite browser game, developed with Bun. No DOS runtime or x86 emulator is used. The current build supports land purchase, new fields, planting, crop treatments, growing, harvesting, storage and crop sales, with machinery, weather, calendar progression and converted MIDI music. Positive-value corn farming cycles on existing fields and newly purchased/fertilized land are verified in the browser. Native save/load is available; DOS-compatible export and many other original systems remain unfinished.
 
 ## Run locally
 
@@ -49,8 +49,10 @@ sh tools/setup-analysis.sh
 
 Capstone and its dependencies are installed only in `.venv`. The analyzer writes an overlay map and requested disassembly ranges to ignored `artifacts`. Bun downloads use `.cache/bun`; browser binaries use `.tools/playwright`. `tools/bun` sets repository-local tool/cache paths, and `bunfig.toml` runs script dependencies with Bun even when they declare Node shebangs. See [Bun's runtime configuration](https://bun.sh/docs/runtime/bunfig) and [Vite's React plugin support](https://vite.dev/guide/features.html).
 
-React components in `src/ui` own menus, selections and lifecycle. `src/render` draws the native canvas, `src/formats` decodes original data, `src/assets` loads resources, and `src/audio` plays MIDI. Recovered simulation belongs outside React so game rules can be tested independently and future graphics/UI changes can reuse them.
+React components in `src/ui` own menus, selections and lifecycle. `src/render` draws the native canvas, `src/formats` decodes original data, `src/assets` loads resources, and `src/audio` plays MIDI and original PCM effects. Recovered simulation belongs outside React so game rules can be tested independently and future graphics/UI changes can reuse them.
 
 `src/simulation/GameSimulation` (implemented in `game.ts`) owns global game state, provides detached snapshots through `getSnapshot`/`subscribe`, and accepts commands. React uses `useSyncExternalStore`; hooks do not own simulation state. Recovered calendar, weather, field conditions, growth and expiry routines are tested against original data and executable-derived cases. Random streams are deterministic with explicit seeds; complete DOS startup/frame random consumption is not reproduced yet.
 
 See [the plan](docs/plan.md), [progress](docs/progress.md), and [binary evidence](docs/reverse-engineering.md). The world decoder, crop graphics substitution, masked tile layer, moving machinery and field operations come from original executable evidence. Remaining render passes and game rules require more reconstruction. Music uses original MIDI notes/program changes with a temporary Web Audio synthesizer; instrument fidelity and XMIDI looping are unfinished.
+
+At year-end your homestead changes with the original cash bands. Upgrade/downgrade notices include **View home** to center the map. **Play music** also enables automatic original track changes from farm conditions and home upgrades; **Stop music** keeps those requests silent. **Enable sounds** separately enables the original cheers/boos effects. Both audio controls start off. Native saves retain the house and its last applied rank without replaying its sounds on load.

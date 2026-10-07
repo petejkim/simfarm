@@ -11,3 +11,6 @@
 
 .town-choices{display:flex;flex-wrap:wrap;gap:10px}.town-choices button{margin:0}
 .farm-actions{border:0;padding:0;margin:0;min-width:0}
+.homestead-notice { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 1rem; border: 1px solid #48563f; }
+
+header { flex-wrap: wrap; }

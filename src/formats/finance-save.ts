@@ -43,7 +43,9 @@ export function encodeFinancialState(f: FinancialState) {
  * financial state with original-scenario balances or rerun startup. */
 export function decodeFinancialState(value: unknown): FinancialState {
   const f = object(value), a = object(f.accounts), assets = object(a.assets), debt = object(f.debt), town = object(f.town);
-  const site = object(town.activeSite), clearing = object(f.clearing), statistics = object(f.statistics);
+  const site = object(town.activeSite), clearing = object(f.clearing), statistics = object(f.statistics), homestead = object(f.homestead);
+  const rank = number(homestead.rank, 255);
+  if (rank > 5 && rank !== 255) fail();
   let defaultDecision: FinancialState['defaultDecision'] = null;
   if (f.defaultDecision !== null) {
     const d = object(f.defaultDecision);
@@ -53,6 +55,7 @@ export function decodeFinancialState(value: unknown): FinancialState {
     defaultDecision = { status: d.status, originalExitCode: code };
   }
   const result: FinancialState = {
+    homestead: { x: number(homestead.x, 92), y: number(homestead.y, 92), rank },
     accounts: { ...fields(a, ['buildingBookValue', 'landIncome', 'equipmentExpenses', 'balancePayments', 'taxExpenses']),
       homeRegionX: number(a.homeRegionX, 11), homeRegionY: number(a.homeRegionY, 11),
       assets: { ...fields(assets, ['equipmentBookValue', 'equipmentIncome', 'livestockIncome']),

@@ -2,6 +2,7 @@ import type { CropDefinition } from '../formats/crop';
 import { readScenario } from '../formats/scenario';
 import type { MidiSequence } from '../formats/xmidi';
 import { TownLayouts } from '../formats/town';
+import { decodeVoc } from '../formats/voc';
 
 export interface Catalog {
   crops: CropDefinition[];
@@ -45,4 +46,7 @@ export async function loadScenarioAssets(id: number, signal: AbortSignal) {
 }
 export async function loadMusic(id: string, signal: AbortSignal): Promise<MidiSequence> {
   return (await response(`${id}.music.json`, signal)).json();
+}
+export async function loadSound(id: 'cheers' | 'boos', signal: AbortSignal) {
+  return decodeVoc(new Uint8Array(await (await response(`raw/${id}.voc`, signal)).arrayBuffer()));
 }
