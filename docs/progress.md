@@ -138,3 +138,9 @@ Decoded saved inventory and goods definitions and implemented stored-seed remova
 This is the first part of the previously pending planting increment, split into smaller commits at the user's request. Browser planting controls and running machinery will follow in their own commits.
 
 Validation at this commit boundary: 68 Bun tests, TypeScript checking and production build pass. The existing browser controls are unchanged.
+
+## 2026-10-07 — planting commands and machinery scheduler
+
+Connected seed acquisition, recovered existing-field planting orders, crop-loader prices and equipment substeps to the independent GameSimulation. Commands run planting through both passes and return, followed by crop growth. SF-018 records the original destructive failure path; native failed seed acquisition preserves the crop and contract. Added all-eight-farm integration, duplicate-order, failure atomicity, snapshot ownership and frame-partition determinism coverage. UI controls are the next commit boundary.
+
+Validation at this commit boundary: all 71 Bun tests, TypeScript checking and production build pass. The final browser controls are validated in the following increment.

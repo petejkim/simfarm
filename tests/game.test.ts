@@ -58,6 +58,56 @@ test('manual and timed schedules produce the same crop, climate and calendar sta
   assert.equal(input.scenario.fields[1].state, 4);
 });
 
+test('player planting commands charge seed, run machinery and grow the crop on all eight original farms', () => {
+  for (let id = 0; id < 8; id++) {
+    const input = farm(id), game = new GameSimulation(input.scenario, input.crops), slot = input.scenario.fields.find(f => f.active)!.slot;
+    const seedPrice = game.getSnapshot().scenario.seedDefinitions[0].price + 20;
+    game.dispatch({ type: 'plant-field', fieldSlot: slot, cropSlot: 0 });
+    const ordered = game.getSnapshot();
+    assert.equal(ordered.scenario.fields[slot].state, 3);
+    assert.equal(ordered.scenario.farm.cash, 40000 - seedPrice);
+    assert.equal(ordered.lastPlantResult?.ok, true);
+    game.tick(10000); assert.equal(game.getSnapshot(), ordered); // Paused machinery stays paused too.
+    for (let n = 0; n < 12; n++) game.dispatch({ type: 'advance-day' });
+    const result = game.getSnapshot();
+    assert.equal(result.scenario.fields[slot].state, 4, `farm ${id}`);
+    assert.equal(result.scenario.fields[slot].cropSlot, 0);
+    assert.ok(result.scenario.fields[slot].bytes[34] >= 1);
+    assert.equal(result.scenario.equipment.some(e => e.active && (e.flags & 9)), false);
+    assert.equal(result.scenario.farm.seedExpenses, seedPrice);
+    assert.equal(input.scenario.farm.cash, 40000);
+  }
+});
+
+test('planting is deterministic across browser frame partitions, and rejects duplicate orders without paying again', () => {
+  const input = farm(1), a = new GameSimulation(input.scenario, input.crops), b = new GameSimulation(input.scenario, input.crops);
+  for (const game of [a, b]) {
+    game.dispatch({ type: 'plant-field', fieldSlot: 1, cropSlot: 3 });
+    const cash = game.getSnapshot().scenario.farm.cash;
+    game.dispatch({ type: 'plant-field', fieldSlot: 1, cropSlot: 3 });
+    assert.deepEqual(game.getSnapshot().lastPlantResult, { ok: false, reason: 'field-busy' });
+    assert.equal(game.getSnapshot().scenario.farm.cash, cash);
+    game.dispatch({ type: 'set-paused', paused: false });
+  }
+  a.tick(5000);
+  for (let i = 0; i < 300; i++) b.tick(1000 / 60);
+  assert.deepEqual(a.getSnapshot().scenario, b.getSnapshot().scenario);
+  assert.deepEqual(a.getSnapshot().cropMarketPrices, b.getSnapshot().cropMarketPrices);
+  const detached = a.getSnapshot(); detached.scenario.seedDefinitions[0].count = 999; detached.scenario.inventory[1].bytes.fill(255);
+  a.dispatch({ type: 'advance-day' });
+  assert.notEqual(a.getSnapshot().scenario.seedDefinitions[0].count, 999);
+  assert.notEqual(a.getSnapshot().scenario.inventory[1].type, 65535);
+});
+
+test('failed seed purchase leaves the current crop, contract and cash intact (SF-018)', () => {
+  const input = farm(4); input.scenario.farm.cash = 0;
+  const game = new GameSimulation(input.scenario, input.crops), before = game.getSnapshot();
+  game.dispatch({ type: 'plant-field', fieldSlot: 1, cropSlot: 0 });
+  const after = game.getSnapshot();
+  assert.deepEqual(after.lastPlantResult, { ok: false, reason: 'insufficient-funds' });
+  assert.deepEqual(after.scenario, before.scenario);
+});
+
 test('all eight original farms advance a year without invalid terrain or missing crop state', () => {
   for (let i = 0; i < 8; i++) {
     const input = farm(i), game = new GameSimulation(input.scenario, input.crops);

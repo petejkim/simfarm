@@ -12,6 +12,11 @@ import { updateFieldStatus } from './field-status';
 import { updateFieldWater } from './field-water';
 import { FarmRandom, type RandomState } from './random';
 import { applyDailyWeather, advanceForecast, initializeWeather, updateWeeklyWind, type WeatherState } from './weather';
+import { plantField, type PlantResult } from './plant-order';
+import { updatePlantingField } from './field-planting';
+import { updateEquipment } from './equipment-dispatch';
+import { reserveEquipment } from './equipment-rental';
+import type { EquipmentRuntime } from './equipment-world';
 
 export interface GameSnapshot {
   revision: number;
@@ -19,8 +24,11 @@ export interface GameSnapshot {
   weather: WeatherState;
   daysAdvanced: number;
   paused: boolean;
+  cropMarketPrices: number[];
+  lastPlantResult: PlantResult | null;
 }
-export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused: boolean };
+export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused: boolean }
+  | { type: 'plant-field'; fieldSlot: number; cropSlot: number };
 
 function copyScenario(scenario: Scenario): Scenario {
   return { ...scenario, cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
@@ -39,7 +47,7 @@ function copyScenario(scenario: Scenario): Scenario {
 }
 
 /** Owns mutable game state. React receives detached snapshots and submits commands.
- * The current scheduler covers calendar, climate and growing fields; machinery/economy/disasters remain to be ported.
+ * The scheduler covers calendar, climate, machinery, planting and growing fields; harvest and other systems remain.
  */
 export class GameSimulation {
   private readonly scenario: Scenario;
@@ -52,6 +60,10 @@ export class GameSimulation {
   private paused = true;
   private elapsed = 0;
   private disasterFlags = 0;
+  private dayTicks = 0;
+  private readonly equipmentRuntime: EquipmentRuntime = { grassTravelCount: 0, animationTick: 0, notices: [] };
+  private readonly cropMarketPrices: number[];
+  private lastPlantResult: PlantResult | null = null;
 
   constructor(scenario: Scenario, crops: readonly CropDefinition[], seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }) {
     this.scenario = copyScenario(scenario);
@@ -61,6 +73,12 @@ export class GameSimulation {
       return [...crop.rawDefinition];
     });
     this.random = new FarmRandom(seeds);
+    // Crop loading 0x466d0..0x46728 overrides saved crop/seed prices from the loaded definitions.
+    this.cropMarketPrices = this.crops.map(c => c[34] | c[35] << 8);
+    this.crops.forEach((c, slot) => {
+      this.scenario.cropDefinitions[slot].price = this.cropMarketPrices[slot];
+      this.scenario.seedDefinitions[slot].price = Math.max(5, (c[38] | c[39] << 8) >>> 2);
+    });
     this.weather = initializeWeather(this.scenario.climate, this.scenario.farm.calendar, this.scenario.farm.precipitationDays, this.random, this.scenario.cells);
     this.publish();
   }
@@ -75,8 +93,12 @@ export class GameSimulation {
     if (command.type === 'set-paused') {
       if (this.paused === command.paused) return;
       this.paused = command.paused; this.elapsed = 0;
+    } else if (command.type === 'plant-field') {
+      this.lastPlantResult = plantField(this.scenario, command.fieldSlot, command.cropSlot, this.crops,
+        this.cropMarketPrices, this.random, this.weather.soilMoisture);
     } else {
-      this.advanceDay();
+      const remaining = Math.max(1, this.scenario.farm.dayDelayTicks) - this.dayTicks;
+      for (let i = 0; i < remaining; i++) this.advanceTick();
     }
     this.publish();
   }
@@ -85,10 +107,23 @@ export class GameSimulation {
   tick(milliseconds: number): void {
     if (!Number.isFinite(milliseconds) || milliseconds < 0) throw new Error('Invalid elapsed time');
     if (this.paused) return;
-    this.elapsed += milliseconds;
-    if (this.elapsed < 1000) return;
-    while (this.elapsed >= 1000) { this.elapsed -= 1000; this.advanceDay(); }
+    this.elapsed += milliseconds * Math.max(1, this.scenario.farm.dayDelayTicks) / 1000;
+    const ticks = Math.floor(this.elapsed + 1e-9);
+    if (!ticks) return;
+    this.elapsed = Math.max(0, this.elapsed - ticks);
+    for (let i = 0; i < ticks; i++) this.advanceTick();
     this.publish();
+  }
+
+  private advanceTick(): void {
+    const s = this.scenario, tick = s.farm.timerTicks = (s.farm.timerTicks + 1) & 0xffff;
+    this.equipmentRuntime.animationTick = s.farm.animationTicks = (s.farm.animationTicks + 1) & 0xffff;
+    const allocate = (world: Scenario, type: number, x: number, y: number) => reserveEquipment(world, type, x, y, tick);
+    updateEquipment(s, this.equipmentRuntime, tick, s.farm.paceEquipment, allocate);
+    for (const field of s.fields) {
+      if (!updatePlantingField(field, this.crops[field.cropSlot], s, this.equipmentRuntime, tick, allocate)) break;
+    }
+    if (++this.dayTicks >= Math.max(1, s.farm.dayDelayTicks)) { this.dayTicks = 0; this.advanceDay(); }
   }
 
   private advanceDay(): void {
@@ -139,7 +174,8 @@ export class GameSimulation {
   private publish(): void {
     this.snapshot = { revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
       weather: { ...this.weather, forecast: [...this.weather.forecast], nextForecast: [...this.weather.nextForecast] },
-      daysAdvanced: this.daysAdvanced, paused: this.paused };
+      daysAdvanced: this.daysAdvanced, paused: this.paused, cropMarketPrices: [...this.cropMarketPrices],
+      lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null };
     for (const listener of [...this.listeners]) listener();
   }
 }
