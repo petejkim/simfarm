@@ -213,3 +213,19 @@ Native behavior preserves this original arithmetic, tested at the week boundary.
 Worker placement skips cells that already have terrain bit 0x0800 set (`0x16367`). Completion nevertheless clears that bit across the entire fixed 8×8 rectangle (`0x16433`) without checking whether the overlay is a worker. Any pre-existing vehicle/animal overlay in that rectangle can be hidden until another renderer or simulation update restores it. For annual crops the cleanup also overwrites every terrain cell with the original tile-36 masking operation.
 
 Native behavior currently reproduces this broad cleanup and guards map boundaries. A regression seeds an unrelated overlay, verifies placement leaves it alone, then confirms cleanup clears its visibility bit. Do not mistake this retained defect for entity deletion; live records are unchanged. Revisit ownership-aware cleanup when moving-entity animation/render passes are completed. No security exploit is claimed.
+
+## SF-026 — manual stored-crop sale counts crop income twice
+
+**Status:** confirmed accounting defect in the stored-crop sale branch; preserved in native stored-crop sale.
+
+The inventory sale handler at `0x4c43c` values the item through `0x1c3f2`, then calls cash credit `1a66:01c8` / `0x1ca28` with category 168 at `0x4c476`. That category already increments crop income `6190:3e60` at `0x1cb38`. The caller increments sales accumulator `3e44` at `0x4c488`, then adds the same amount to crop income again at `0x4c496`. Both far segment references `6190:cfcc` and `6190:cfce` contain `0x6190` in the initialized data segment, so this is not an alias-name error. Ordinary nonzero stored-crop sales therefore credit cash once but the crop-income ledger twice. Automatic harvest sale callers do not contain the second addition.
+
+The native sale port preserves this accounting quirk with a regression; a corrected ledger is a later enhancement. Cash is not doubled. No security vulnerability is claimed.
+
+## SF-027 — stored-crop sale credits before checking whether removal succeeds
+
+**Status:** confirmed inconsistent-state failure path; ordinary-game reachability unproven; native prevalidation implemented.
+
+The stored-crop sale branch checks the active item bit at `0x4c44c`, credits money at `0x4c476`, clears map/storage at `0x4c4b8`, then invokes generic removal at `0x4c4c6`. The harvested-goods removal branch (`0x3a168`–`0x3a1af`) returns without deactivating the item when its definition count is zero (`0x3a17a`). Such an inconsistent item can remain active after payment; repeated sale is possible if the UI exposes it again. This is analogous to seed count inconsistency SF-016 but payment creates a distinct consequence. No supplied save currently proves an active harvested item with zero matching count, and no exploit is established.
+
+The native port checks definition count and the building reference before credit or removal, rejecting inconsistent state without mutation; regressions verify unchanged cash, map, storage and inventory. Do not repair unknown source fields opportunistically. Revisit with inventory lifecycle and save/load validation.

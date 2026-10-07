@@ -196,3 +196,9 @@ Validation: TypeScript/production build and all eight Chromium checks pass, incl
 Stored-sale tracing exposed a native integration error: planting updated the market-price array but left the decoded trade definition unchanged, so the new harvest engine could credit a stale price while the UI displayed the reduced one. Planting now updates both representations of the same original price. This is a native defect, not an original-game bug.
 
 Validation: all 91 Bun tests, TypeScript/production build and eight Chromium checks pass. The all-farm planting integration now verifies synchronized prices and the original quarter-price reduction (rounding the remainder upward). Stored-sale executable tracing continues independently.
+
+## 2026-10-07 — stored-crop sale reconstruction
+
+Recovered the actual immediate inventory sale, including current trade-price valuation, cash and ledger posting, barn/outdoor image removal and goods-count/deactivation. Added SF-026 for original double crop-income bookkeeping (preserved) and SF-027 for payment before failed removal (fixed by native prevalidation). This increment is the standalone transaction; simulation commands and React sale buttons follow separately.
+
+Validation: 96 Bun tests and TypeScript/production build pass. New coverage sells all sixteen crop types through all six original farms with crop storage, checks exact value and removal, cash/ledger boundaries, zero-value disposal and malformed-state atomicity. Browser behavior was unchanged by this standalone addition; its preceding eight Chromium checks remain valid. Next expose sales and verify the player loop, then proceed to new-field creation.
