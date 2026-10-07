@@ -478,3 +478,13 @@ Committed bounded default as `45dd2ef`; both clean-source Chromium regressions p
 The preceding implementation turn made progress by adding monthly retry/countdown rules and eight tests; the intervening UI question required no code change. Revalidated the worktree and polled the existing test process (session 6990), which completed successfully: all 265 Bun tests pass (41 files, 57.3 seconds). Type checking/build passed with that implementation. Reviewed the source and documented balance-before-tax order, notices, seasonal-warning branch exclusion, explicit runtime balance inputs, and newly traced overdue-balance origination.
 
 Monthly retries now compose forced sales and stop on a pending unpaid default without mistaking a UI choice for payment (SF-069). They remain standalone: automatic charges, live financial/checkpoint state and React decisions are not connected yet. No flat upkeep or guessed interest is added. Annual report/reset is next, followed by lifecycle and live integration. Clean-source browser regressions follow this implementation commit. Original distribution remains untouched; commits remain local and the full goal remains incomplete.
+
+Monthly retry commit `036124d` passes both clean-source Chromium regressions (6.3 seconds): original land/new-field farming and running-speed/partial-tick save/load. Git is writable and no push was made.
+
+## 2026-10-07 — annual financial report and reset
+
+Implemented the executable's report sums and exact annual reset sequence, reusing existing farm/default accounts. Added decoding for the remaining saved annual accounts and totals; unexplained runtime accounts stay explicit and address-named. Preserved report omissions SF-041 and worker-reset omission SF-042, tax carry, dword arithmetic and report-total retention. Reset synchronizes both native precipitation counters. No live calendar charges or finance UI are claimed yet.
+
+Five targeted tests pass, including all source add/store instructions, all eight source farms, decoded boundaries, wrapped reports, omitted charges, reset retention and atomic validation. A manually calculated test expectation was corrected without changing the implementation. Type checking and production build pass; full-suite process and clean-source browser gates follow before final validation. Next resolve startup/load lifecycle and scheduled balance origination, then integrate financial/town/default state, decisions and native persistence. The full game remains incomplete and active.
+
+Annual-ledger pre-commit gate: all 270 Bun tests pass (42 files), TypeScript/build and diff checks pass. Both browser regressions will run from committed source.

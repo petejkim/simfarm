@@ -344,7 +344,7 @@ Native decoding now dispatches 239 and preserves 231 as unknown. Byte-level regr
 
 Debits post workers to `6190:3e88` at `0x1c9c7` and chemicals to `3ea0` at `0x1c9ab`. Report routine `0x1d460..0x1d51e` never includes those locations in its expense sum, though both are charged to cash. Its income-minus-expense result can therefore overstate profit after ordinary paid work. The summation is statically verified; complete report UI reachability is still being traced. Category-1000 payment ledger `3ea4` is also omitted, but whether excluding that principal is a defect remains uncertain.
 
-Native worker/chemical charges remain correct to the recovered debit paths. The original full report is not yet implemented, and no silent correction or security-vulnerability claim is made. Revisit when connecting the financial report; retain the source omission even if a corrected display is later offered.
+Native worker/chemical charges remain correct to the recovered debit paths. The native report primitive now preserves these omissions with tests; live report presentation remains pending. No silent correction or security-vulnerability claim is made. Revisit when connecting the financial report; retain the source omission even if a corrected display is later offered.
 
 ## SF-042 — annual ledger reset leaves worker expenses intact
 
@@ -352,7 +352,7 @@ Native worker/chemical charges remain correct to the recovered debit paths. The 
 
 Year-end calls reset `0x1d396` at `0xcdf9`. It clears dwords `3e60..3e84`, then skips `3e88` and resumes at `3e8c..3eac`. Worker debits post to skipped `3e88`, so that running ledger survives this annual reset. The loader separately fails to restore it (SF-014), and the aggregate report omits it (SF-041). The complete effects on player-visible financial views require their callers to be traced. This is an accounting defect, not evidence of a security vulnerability.
 
-Native annual reset is not connected yet. Preserve the evidence and revisit its treatment alongside ledger migration and reports; do not accidentally erase the quirk with a generic clear-all implementation.
+The native annual-reset primitive now deliberately preserves worker expenses, with tests across all eight farms and repeated resets. Live calendar integration and any correction remain deferred; retain this evidence alongside ledger migration and reports.
 
 ## SF-043 — annual sales tax interprets a wrapped sales accumulator as signed
 
