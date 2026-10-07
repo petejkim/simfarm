@@ -1,6 +1,7 @@
 import { Binary } from './binary';
+import { GoodsDefinition } from './inventory';
 
-/** Runtime 3d9f:6400. Only members needed by equipment collision are named so far. */
+/** Runtime 3d9f:6400. Members recovered for collision and sale; retain other bytes. */
 export class AnimalRecord {
   private readonly data: Binary;
   constructor(readonly slot: number, readonly bytes: Uint8Array) {
@@ -9,10 +10,22 @@ export class AnimalRecord {
   }
   get x(): number { return this.bytes[0]; }
   get y(): number { return this.bytes[1]; }
+  get type(): number { return this.data.u16(6); }
+  get conditionByte(): number { return this.bytes[8]; }
+  /** Word +10 contributes to valuation; its full lifecycle is not yet recovered. */
+  get valuationWord(): number { return this.data.u16(10); }
+  get buildingSlot(): number { return this.data.u16(16); }
   get flags(): number { return this.data.u16(2); }
   set flags(value: number) { this.data.view.setUint16(2, value, true); }
   get active(): boolean { return Boolean(this.flags & 0x20); }
   set deathTick(value: number) { this.data.view.setUint16(30, value, true); }
+}
+
+/** Loader 0x458e0..0x45909: five 18-byte records -> 6190:70e2.
+ * The fifth source definition repeats type 163; preserve it verbatim. */
+export function readAnimalDefinitions(bytes: Uint8Array): GoodsDefinition[] {
+  const data = new Binary(bytes);
+  return Array.from({ length: 5 }, (_, i) => new GoodsDefinition(Uint8Array.from(data.slice(0x20cbe + i * 18, 18))));
 }
 
 /** Loader 0x45536: count at SSM +1, 256 records at +3; slot zero is reserved. */

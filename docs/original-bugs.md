@@ -437,3 +437,43 @@ At `0x3b922..0x3b97a` every even template value 252–280 writes four words at o
 **Status:** verified template/range interaction; visual defect suspected, native behavior preserved.
 
 Type 3 in original `townly0.cmp` has tile 280 at local (5,2), with companions 281 at (6,2), 246 at (5,3), and 247 at (6,3). Early growth treats 280 as a randomized four-cell building anchor (`0x3b90b..0x3b97a`), but subsequent iterations skip only 252–280 or 292–320 (`0x3b83c..0x3b853`). The three companion words fall outside those ranges and are overwritten with their template values, leaving only one randomized tile. An initial test incorrectly assumed every randomized four-cell group survives; source/asset inspection corrected that expectation. Native behavior now has a regression. Full original runtime visual confirmation and intended appearance remain unproven; correction deferred, no security implication.
+
+## SF-055 — livestock/equipment sale sign-extends unsigned word quotes
+
+**Status:** verified arithmetic boundary behavior; native behavior preserved; ordinary-play reachability unproven.
+
+Equipment valuation `0x1192e` returns an unsigned shifted price word. Animal valuation `0x12958` computes a dword sum after a word-truncated bonus, shifts it, and returns AX to its caller. Both sale branches then use CWD (`0x4c502`, `0x4c5a5`) to sign-extend AX. Values >=32768 become negative proceeds: they can reduce cash or wrap it into the unsigned cash cap of 9,999,999, while income and sales ledgers wrap independently. Animal bonus multiplication itself also wraps at 16 bits (`0x129d3`, `0x129f7`, `0x12a0f`, `0x12a27`); that operation is preserved, not silently promoted to arbitrary precision.
+
+Native tests cover quotes 0/32767/32768/65535, every condition byte, bonus boundaries, negative cash addition and ledger wrapping. Supplied equipment prices are lower; whether animal word +10 can normally reach the dangerous range still requires its lifecycle. No exploit claim or gameplay correction is made.
+
+## SF-056 — livestock price lookup trusts a byte-wrapped, signed type index
+
+**Status:** confirmed malformed-record indexing hazard; native bounds guard implemented; ordinary-play reachability unproven.
+
+`0x12972..0x12984` reads the low byte of animal type, adds 96 with byte wrap, sign-extends it and uses an 18-byte stride from definition price base `6190:70e8`. Only five definitions are loaded at `0x458e0..0x45909`, but the caller does not bound the animal type before that lookup. Corrupt type bytes can address before or after the table; generic removal separately allows types through 167. Native quote/sale rejects types outside 160–164 and retains all five loaded records, including the fifth record's duplicate type 163. No malicious-file exploit or broader loader-validation claim is established.
+
+## SF-057 — generic equipment deletion does not repair attachment references
+
+**Status:** verified deletion limitation; normal eligibility invariants not fully traced; native consistency guard implemented.
+
+Generic sale only rejects inactive or flags 1/8 equipment (`0x4c4dc..0x4c4f0`). Removal `0x3a040..0x3a0a8` calls `0xf888`, which clears active bit and decrements the global count, without changing parent/attachment links. If a sellable machine is still referenced by another active machine, that reference becomes dangling. Normal reserved flags may prevent this in ordinary use; reachability beyond inconsistent state is unproven.
+
+Native sale prevalidates attachment references before payment. Truck word +44 is a storage-building reference in the recovered harvest path, so it is not mistaken for a machine parent. Unknown bytes of the removed record remain intact; no speculative chain breakup is imposed. Tests reject linked inconsistent fixtures atomically. Revisit with the full equipment shop and aircraft state machines.
+
+## SF-058 — generic sale allows rented equipment and preserves owned accounting
+
+**Status:** confirmed branch behavior; player-facing reachability unproven; native behavior preserved.
+
+Sale eligibility at `0x4c4e3..0x4c4ea` tests active and bits 1/8, not rented bit `0x40`. The generic sale therefore credits a rental's depreciated value. Removal at `0x3a07a..0x3a09e` skips owned-count and book-value deductions for rentals. Whether the original shop hides these entries remains untraced; this is not yet a proven player exploit. Forced-sale selection explicitly excludes rentals at `0x1d97d`, so that path must retain its own filter. Native generic sale preserves this distinction and tests it; live shop/default integration remains pending.
+
+## SF-059 — default scans can continue past record arrays after successful removals
+
+**Status:** confirmed count/scan mismatch; native forced-sale traversal not yet implemented; bounds fix required at integration.
+
+Crop default scan captures the original inventory count at `0x1d797..0x1d79f`. It separately compares sold count (`bp-2`) and encountered-active count (`bp-0x1c`) to that original total at `0x1d7a2..0x1d7b2`. After a sale clears active, the subsequent active test `0x1d88e` does not increment the encountered count for that item. With a mixture of sold crops and other active goods, neither counter need reach the total, so slot increments can continue beyond the 512 records while debt remains. Equipment uses the same separate-counter shape at `0x1d966` and `0x1da08`; failed busy sales also interact with its counters. Animal scans additionally trust a declared count without a slot bound.
+
+This establishes an unsafe scan path conditional on unpaid debt and those records, not a demonstrated DOS crash/exploit. Native saved-record readers already bound arrays; the forthcoming default traversal must iterate actual slots and maintain termination independently of source counts. Retain source order and ledger-category mismatch SF-046 without reproducing unsafe memory reads. Broader default behavior remains deferred.
+
+### SF-027 follow-up — animal/equipment sale validation
+
+The same ignored-removal-result pattern also occurs in animal/equipment branches of `0x4c41c`: credit precedes generic deletion `0x3a040`, which rejects zero definition count. Native sale primitives now validate counts, map/storage footprints, stored-animal references, and plane-home bounds before payment, extending the existing crop-sale correction. Source record/definition mismatch effects remain documented; do not remove SF-027 after these guarded implementations.
