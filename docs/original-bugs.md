@@ -738,3 +738,30 @@ The ghost-placement path sign-extends the price at `0x22451`, compares its high 
 **Status:** verified static ownership rule; preserved pending a deliberate enhancement decision.
 
 Terrain validation iterates the footprint at `0x1ce04..0x1cf0a`, but ownership at `0x1cf17` reads only `(x,y)`; the UI repeats only this origin check at `0x22473`. A clear eligible footprint may extend from owned origin land into unowned neighboring cells. Type70 also has an explicit origin-ownership exception. Native storage retains the origin rule and tests a partially unowned footprint; it still rejects out-of-map coordinates and occupied buildings. This is an apparent gameplay loophole, not a proven security vulnerability. A future full-footprint ownership requirement would be an intentional native correction, not recovered original behavior.
+
+
+## SF-086 — irrigation merge adds a packet again after saturation
+
+**Status:** verified arithmetic sequence; ordinary reachability and intended behavior unresolved; native fix deferred with irrigation reconstruction.
+
+In the zero-outgoing-neighbor branch of flow consumer `0x17b3e`, a second ring entry is popped at `0x17ca4`. `0x17cae..0x17cc5` sums the two unsigned byte strengths into a word and clamps at255. `0x17cc7..0x17cd0` stores its low byte, then adds the second strength again into that byte. Thus the resulting strength is `(min(a+b,255)+b)&255`, not a saturated sum: a=10,b=20 gives50; a=200,b=100 gives99. Coordinate reassignment and the topology needed to reach this branch still require tracing. Preserve this arithmetic evidence even if later gameplay analysis finds the branch unreachable. Native irrigation is pending; do not substitute an assumed merge rule without a documented decision.
+
+## SF-087 — irrigation source save/load uses stride two for stride-three records
+
+**Status:** verified original saver/loader mismatch with runtime layout; upper-capacity data loss conditional on source count; native import/persistence policy deferred.
+
+Runtime registry add/remove/iteration use three-byte entries at `2d9f:f954`, with capacity64. Saver `0x449d0..0x44a27` and loader `0x459de..0x45a35` instead transfer bytes at `base+2*i`, `+1`, `+2` for i=0..63, writing/reading192 file bytes with duplicated overlap. They cover only runtime bytes0..128, or43 complete entries; entries43..63 are omitted. A save/load with >43 active sources cannot restore the complete registry through this path. Tail bytes may retain earlier runtime state; initialization and other rebuild paths remain unresolved, so ordinary player-visible loss is not yet proven.
+
+SSM count0x210d2 and payload0x210d3..0x21192 must be decoded by the original overlapping writes, not interpreted as packed records. All supplied saves have counts1..9; applying the loader yields plausible source positions/strengths. Native original import must preserve the raw source and document cold/warm tail handling. Future native saves should persist the complete canonical registry independently. No native irrigation implementation is claimed yet.
+
+## SF-088 — a full irrigation flow ring becomes indistinguishable from empty
+
+**Status:** verified index arithmetic; maximum reachable occupancy unresolved; native handling deferred.
+
+Flow append `0x17a78..0x17ac5` writes a three-byte entry at the current write index, increments it and masks with127 without comparing the read index. Pop `0x17ac6..0x17b3c` reports empty whenever the indices match. If enough pending appends advance write onto read, an occupied ring appears empty, and later appends can overwrite pending work. Flow branching can append multiple entries, but topology/consumer scheduling must be analyzed before claiming ordinary reachability. Native irrigation must select and test a bounded capacity policy; preserve this original evidence when that choice is made.
+
+## SF-089 — irrigation source removal shifts one successor beyond the live list
+
+**Status:** verified loop bound; full-capacity out-of-array read conditional on count64; native correction deferred.
+
+Registry removal `0x17944..0x179d9` finds the coordinate, then copies entry i+1 into i while i<count (`0x17962..0x17998`) before decrementing count. It reads the inactive successor of the last live entry, and at count64 reads three bytes beyond the192-byte registry. Only the now-inactive trailing slot receives that copy, so active-list corruption is not established by this routine alone. This is a boundedness hazard, not a demonstrated exploit. Native removal should shift only remaining live entries and preserve/clear inactive bytes under an explicit policy when the registry is implemented.
