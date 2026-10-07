@@ -85,3 +85,17 @@ test('field water refresh counts original asymmetric borders and flood adjustmen
   assert.equal(new DataView(f.bytes.buffer).getUint16(24, true), 21);
   assert.equal(f.bytes[51], 1); assert.equal(f.bytes[52], 2);
 });
+
+test('map-edge fields count only real neighboring water tiles (SF-029)', () => {
+  const world = readScenario(source('SCEN0.SSM')), field = world.fields[1];
+  for (const tile of [98, 87]) {
+    for (const cell of world.cells) cell.terrain = tile;
+    for (const [x, y, expected] of [[0, 0, 17], [0, 88, 17], [88, 0, 16], [88, 88, 16]]) {
+      field.bytes[10] = x; field.bytes[11] = y;
+      updateFieldWater(field, world.cells, 8, 0);
+      assert.equal(field.bytes[51], tile === 98 ? expected : 0);
+      assert.equal(field.bytes[52], tile === 87 ? expected : 0);
+      assert.equal(field.bytes[24], 16);
+    }
+  }
+});

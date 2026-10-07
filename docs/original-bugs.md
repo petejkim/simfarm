@@ -237,3 +237,11 @@ The native port checks definition count and the building reference before credit
 Constructor `0x1ba84` scans slots 1–97 using a byte local. On the last occupied slot, `0x1bb02`–`0x1bb0e` loads AX=97 and tests activity. It increments the local to 98, reaches the signed limit check at `0x1baf9`, and jumps directly to the epilogue at `0x1bc30`, without setting AX to zero. Wrapper `0x1bfa0` sign-extends AL and returns it as a successful field index. A planting caller can therefore receive the last existing field when no new record was allocated. No DOS runtime exploit is claimed.
 
 Native placement detects the full bounded table before touching records or terrain and returns `no-field-slots`; a regression checks the entire world remains unchanged. The original constructor also leaves several previously used record words untouched (including pending equipment +44/+46 and water +24). These remain preserved in the standalone constructor; safe reuse and the original deletion/cancellation path need further tracing before native removal is exposed.
+
+## SF-029 — field-water border probes read outside the map
+
+**Status:** confirmed unchecked reads on permitted edge fields; native bounds fix implemented. No security exploit demonstrated.
+
+Water refresh `0x18d16..0x19001` probes `y-1`, `y+height`, `x-1` and `x+width` without bounds checks (`0x18da0..0x18dac`, `0x18e30..0x18e39`, `0x18ed4..0x18ee1`, `0x18f67..0x18f70`). Unlike placement's clamped spacing probes, it can alias another column or read data adjacent to the terrain array. The validator allows owned, unobstructed 8×8 fields at map edges: buying region (0,0) and enabling automatic clearing on SCEN0 satisfies it. Static caller/validator evidence supports reachability; the DOS program was not executed.
+
+Native integration first exposed this as an exception on the next weekly update. Off-map probes now contribute no water tolerance; valid probes retain the original asymmetric corner inclusion. Tests cover both water categories at all four map corners. This intentionally replaces accidental reads with bounded map semantics.

@@ -7,6 +7,8 @@ export function updateFieldWater(field: FieldRecord, cells: WorldCell[], soilMoi
   new Binary(field.bytes).view.setUint16(24, soilMoisture * 2 + (disasterFlags & 4 ? 5 : 0), true);
   field.bytes[51] = field.bytes[52] = 0;
   const count = (x: number, y: number) => {
+    // SF-029: map-edge fields have no neighboring tile outside the world.
+    if (x < 0 || x >= 96 || y < 0 || y >= 96) return;
     const tile = terrainTile(cells[worldIndex(x, y)]);
     // Original tile-base tables at 2be7:0906/0904 and lengths at :09f2/:09f1.
     if (tile >= 98 && tile < 109) field.bytes[51]++;
