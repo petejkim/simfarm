@@ -380,7 +380,7 @@ Annual collection tests the amount returned by debit with OR/JNE at `0x1d60d..0x
 
 Monthly tax retry calls forced-sale `0x1d766` with reason 36 (`0xcd28`); the other monthly balance uses reason 39 (`0xcc7a`). After selling a stored crop, reason 36 at `0x1d838..0x1d848` debits category 1000, while reason 39 at `0x1d85e..0x1d86e` debits category 2500. Regular monthly tax uses 2500 and the other balance uses 1000. Cash is debited for the same requested amount, but the crop-sale recovery records the wrong ledger. Later livestock, equipment and land retries use category zero, creating another accounting mismatch. These are static source findings; full default/UI reachability and broader effects remain unverified.
 
-Native forced sales are not yet implemented. Retain these mismatches when that path is ported and explicitly decide any correction; do not confuse an incorrect ledger category with duplicated cash debit or a proven security vulnerability.
+Native forced sales now preserve these mismatches with exact ledger tests; live calendar integration remains pending. Do not confuse an incorrect ledger category with duplicated cash debit or a proven security vulnerability. Category zero is identified as equipment expense in the implementation follow-up below.
 
 ## SF-047 — signed recreation count can write before saved coordinate arrays
 
@@ -468,11 +468,11 @@ Sale eligibility at `0x4c4e3..0x4c4ea` tests active and bits 1/8, not rented bit
 
 ## SF-059 — default scans can continue past record arrays after successful removals
 
-**Status:** confirmed count/scan mismatch; native forced-sale traversal not yet implemented; bounds fix required at integration.
+**Status:** confirmed count/scan mismatch; bounded native forced-sale traversal implemented and tested; live calendar integration pending.
 
 Crop default scan captures the original inventory count at `0x1d797..0x1d79f`. It separately compares sold count (`bp-2`) and encountered-active count (`bp-0x1c`) to that original total at `0x1d7a2..0x1d7b2`. After a sale clears active, the subsequent active test `0x1d88e` does not increment the encountered count for that item. With a mixture of sold crops and other active goods, neither counter need reach the total, so slot increments can continue beyond the 512 records while debt remains. Equipment uses the same separate-counter shape at `0x1d966` and `0x1da08`; failed busy sales also interact with its counters. Animal scans additionally trust a declared count without a slot bound.
 
-This establishes an unsafe scan path conditional on unpaid debt and those records, not a demonstrated DOS crash/exploit. Native saved-record readers already bound arrays; the forthcoming default traversal must iterate actual slots and maintain termination independently of source counts. Retain source order and ledger-category mismatch SF-046 without reproducing unsafe memory reads. Broader default behavior remains deferred.
+This establishes an unsafe scan path conditional on unpaid debt and those records, not a demonstrated DOS crash/exploit. Native saved-record readers bound arrays, and the implemented default traversal now iterates actual slots with termination independent of source counts. It retains source order and ledger-category mismatch SF-046 without reproducing unsafe memory reads. Broader live default integration remains deferred; see the implementation follow-up below.
 
 ### SF-027 follow-up — animal/equipment sale validation
 
