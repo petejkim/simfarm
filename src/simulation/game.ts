@@ -47,6 +47,7 @@ import { resolveTownChoice, type TownChoice, type TownConstructionResult } from 
 import { updateClearingEffects } from './clearing-effects';
 import { updateHomestead, type HomesteadChange } from './homestead';
 import type { GameEvent } from './events';
+import { purchaseBuilding, type BuildingPlacementResult } from './building-placement';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -79,6 +80,7 @@ export interface GameSnapshot {
   storedHarvestValues: (number | null)[];
   lastSaleResult: HarvestSaleResult | null;
   lastLandResult: LandPurchaseResult | null;
+  lastBuildingResult: BuildingPlacementResult | null;
   lastNewFieldResult: NewFieldResult | null;
   lastTreatmentResult: TreatmentResult | null;
   lastScheduleResult: ScheduleDispatchResult | null;
@@ -92,6 +94,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'set-speed'; speed: number }
   | { type: 'set-auto-clear'; enabled: boolean }
   | { type: 'buy-land'; regionX: number; regionY: number }
+  | { type: 'build'; buildingType: number; x: number; y: number }
   | { type: 'create-field'; x: number; y: number; cropSlot: number }
   | { type: 'treat-field'; fieldSlot: number; treatment: Treatment }
   | { type: 'plant-field'; fieldSlot: number; cropSlot: number }
@@ -143,6 +146,7 @@ export class GameSimulation {
   private lastHarvestResult: HarvestOrderResult | null = null;
   private lastSaleResult: HarvestSaleResult | null = null;
   private lastLandResult: LandPurchaseResult | null = null;
+  private lastBuildingResult: BuildingPlacementResult | null = null;
   private lastNewFieldResult: NewFieldResult | null = null;
   private lastTreatmentResult: TreatmentResult | null = null;
   private lastScheduleResult: ScheduleDispatchResult | null = null;
@@ -260,6 +264,8 @@ export class GameSimulation {
       this.scenario.farm.autoClear = command.enabled;
     } else if (command.type === 'buy-land') {
       this.lastLandResult = purchaseLand(this.scenario, command.regionX, command.regionY, this.weather.soilMoisture);
+    } else if (command.type === 'build') {
+      this.lastBuildingResult = purchaseBuilding(this.scenario, this.finances, command.buildingType, command.x, command.y, this.weather.soilMoisture);
     } else if (command.type === 'create-field') {
       this.lastPlantResult = null; this.lastHarvestResult = null;
       this.lastNewFieldResult = plantNewField(this.scenario, command.x, command.y, command.cropSlot, this.crops,
@@ -442,6 +448,7 @@ export class GameSimulation {
       lastHarvestResult: this.lastHarvestResult ? { ...this.lastHarvestResult } : null,
       lastSaleResult: this.lastSaleResult ? { ...this.lastSaleResult } : null,
       lastLandResult: this.lastLandResult ? { ...this.lastLandResult } : null,
+      lastBuildingResult: this.lastBuildingResult ? { ...this.lastBuildingResult } : null,
       lastNewFieldResult: this.lastNewFieldResult ? { ...this.lastNewFieldResult } : null,
       lastTreatmentResult: this.lastTreatmentResult ? { ...this.lastTreatmentResult } : null,
       lastScheduleResult: this.lastScheduleResult ? { ...this.lastScheduleResult } : null,
