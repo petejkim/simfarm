@@ -261,3 +261,27 @@ Native consumption checks the definition count, coordinates and storage cross-re
 Year-rollover schedule generation loads crop byte +56 and byte +66, computes `(byte56 + byte66 - 2) / byte66` with signed division at `0x48e99`, then uses that quotient as the unsigned divisor at `0x48ea3`. The second generation branch repeats this at `0x48ffb` / `0x49005`. No local zero-divisor guard precedes either pair. A positive duration with byte +66 zero, or duration one with positive byte +66, can cause an original division exception if such a definition reaches this loop. Validation elsewhere in the original loader/editor has not been established; no exploitable vulnerability is claimed.
 
 All 24 supplied CRP definitions have byte +66 equal to 7 and byte +56 between 12 and 47, yielding divisors 2–7. The supplied assets therefore do not demonstrate this failure. When reconstructing planner projection/year rollover, reject invalid divisors before modifying schedule bytes and add malformed-definition boundary tests. Preserve this entry after the native guard is implemented.
+
+## SF-032 — weekly completion bypasses unfinished supply and worker payment
+
+**Status:** confirmed deadline behavior in the executable; preserved. Static ordinary-game paths exist, but the DOS program has not been executed to demonstrate them.
+
+Weekly completion `0x2e93a` dispatches treatment states 6–9 regardless of substep. `0x2f4d4..0x2f62d` returns machinery and applies the full fertilizer/spray effect without consuming supplies, charging money or checking that treatment step zero succeeded. A scheduled treatment stuck at step zero for lack of stock/money can therefore receive its effect at the next non-January weekly dispatch. The same routine sends worker harvest step 10 (which normally waits for its fee) through the harvest/storage branch: `0x2e99b..0x2e9ae` accepts steps 10–15 without a fee check. It can complete work for which the normal FSM never obtained machinery or payment.
+
+Native forced completion preserves these paths explicitly and does not introduce a second supply/fee purchase. Tests include an unpaid step-zero fertilizer job that changes nutrients with zero cash/chemical expense. Whether this was intended as deadline assistance or is a game-design defect is unknown; no security vulnerability is claimed. Revisit only with a deliberate gameplay correction policy.
+
+## SF-033 — weekly harvest cleanup omits an unattached reserved header
+
+**Status:** confirmed missing cleanup; native fix implemented in the forced-completion routine.
+
+Machinery harvest stores its allocated header at field word +46 before attaching it (normal steps 2/3). Weekly cleanup `0x2ef60..0x2f196` returns field words +42 and +44 and the first machine's actual attachment, but never reads/releases +46. If the week changes before the header attaches, that active header can remain reserved with no subsequent job reference. Static phase ordering provides a reachable path; tests reproduce these actual pre-attachment phases on the supplied native farms.
+
+Native weekly cleanup also returns the unattached type-5 header referenced by +46 in machinery steps before 4, then clears that reference. It does not reinterpret the worker path's overloaded +46 member as a header. Tests complete actual harvest phases and verify no referenced owned/rented machine remains reserved or attached. The original omission is retained here for preservation.
+
+## SF-034 — weekly cleanup leaves worker-sale step 16 without a truck
+
+**Status:** confirmed omitted transition; native correction implemented in forced completion.
+
+At `0x2e993..0x2e9ae`, steps greater than 6 enter the main settlement path only for 10–15. The alternate branch at `0x2eef6` resets only step 7. Worker-sale step 16 therefore reaches equipment cleanup unchanged, then `0x2f18c..0x2f191` zeros its equipment references. The normal step-16 handler expects its truck, so a week boundary during travel to the town can strand the field or lead to slot-zero accesses; exact DOS consequences remain unobserved. Machinery step 7 was already paid, while worker step 16 is paid only upon arrival.
+
+Native weekly completion credits the pending worker sale once, resets annual/perennial field state, and returns its equipment. Already-paid machinery step 7 receives no second payment. Regression checks distinguish both paths and ensure a second completion cannot pay again. No exploit is claimed.
