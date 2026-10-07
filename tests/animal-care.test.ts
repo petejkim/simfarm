@@ -26,7 +26,7 @@ function setup(type = 160, id = 4) {
     v.setUint16(0, type, true); v.setUint16(2, quantity, true); item.bytes[8] = 11; item.bytes[9] = type - 289; item.bytes[10] |= 32;
     finances.accounts.otherDefinitions[type - 288].count = 1;
     const cell = world.cells[worldIndex(item.x, item.y)];
-    if (type === 299) cell.terrain = 175;
+    if (type === 299) cell.terrain = 176;
     else { cell.terrain |= 0x800; cell.overlay = 0x800 | 1020; }
     return item;
   };

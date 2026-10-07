@@ -34,14 +34,14 @@ export function consumeAnimalSupply(world: Scenario, finances: FinancialState, a
   for (let x = animal.x - 2; x <= animal.x + 2; x++) for (let y = animal.y - 2; y <= animal.y + 2; y++) {
     const px = Math.max(0, Math.min(95, x)), py = Math.max(0, Math.min(95, y)), cell = world.cells[worldIndex(px, py)];
     const image = kind === 'water' ? terrainTile(cell) : cell.overlay & 0x7ff;
-    if (kind === 'water' ? image !== 175 : image < 1020 || image > 1024) continue;
+    if (kind === 'water' ? image !== 176 : image < 1020 || image > 1024) continue;
     const item = world.inventory.find(i => i.slot > 0 && i.active && i.x === px && i.y === py);
     if (!item || item.type !== type || !item.quantity) continue;
     const quantity = Math.max(0, item.quantity - need), def = finances.accounts.otherDefinitions[type - 288];
     if (!def || def.type !== type || (kind === 'feed' && !quantity && !def.count)) throw new Error('Invalid animal supply definition');
     new Binary(item.bytes).view.setUint16(2, quantity, true);
     if (kind === 'water') {
-      if (!quantity) cell.terrain = (cell.terrain & 0xf800) | 174; // Empty trough remains allocated.
+      if (!quantity) cell.terrain = (cell.terrain & 0xf800) | 175; // Empty trough remains allocated.
     } else if (!quantity) {
       cell.terrain &= 0xf7ff;
       cell.overlay = ((cell.overlay & 0xf800) | (15 + soilMoisture + (cell.attribute >>> 2))) & 65535;

@@ -17,7 +17,7 @@ function setup() {
     const item = world.inventory[slot], v = new DataView(item.bytes.buffer, item.bytes.byteOffset, item.bytes.byteLength);
     v.setUint16(0, type, true); v.setUint16(2, quantity, true); item.bytes[8] = x; item.bytes[9] = y; item.bytes[10] |= 32;
     finances.accounts.otherDefinitions[type - 288].count++;
-    cell(x, y).terrain = type === 299 ? 175 : 0x80f; cell(x, y).overlay = 0x800 | (type === 299 ? 15 : 1020);
+    cell(x, y).terrain = type === 299 ? 176 : 0x80f; cell(x, y).overlay = 0x800 | (type === 299 ? 15 : 1020);
     return item;
   };
   return { world, finances, a, cell, supply };
@@ -25,6 +25,8 @@ function setup() {
 
 test('need increments pin source tables, odd-day call and signed temperature boundaries with bounded sparse traversal', () => {
   const e = source('SIMFARM.EXE');
+  assert.equal(e.readUInt16LE(0x4ec60 + 0x8fc), 175); // Empty trough base; consumer requires base+1.
+  assert.equal(e.subarray(0x12f71, 0x12f77).toString('hex'), '262b06fc0848');
   assert.equal(e.subarray(0xd28b, 0xd290).toString('hex'), '9a1e13870f');
   assert.deepEqual([...e.subarray(0x86988, 0x86990)], [8, 8, 4, 2, 2, 2, 1, 1]);
   for (const temperature of [-128, 31, 32, 95, 96, 127]) {
@@ -51,7 +53,7 @@ test('water consumption uses the first clamped5×5 supply, saturates quantity an
   cell(8, 12).terrain |= 0xf800;
   assert.equal(consumeAnimalSupply(world, finances, a, 'water', 0), true);
   assert.equal(first.quantity, 0); assert.equal(first.active, true); assert.equal(second.quantity, 100);
-  assert.equal(cell(8, 12).terrain, 0xf800 | 174); assert.equal(finances.accounts.otherDefinitions[11].count, count);
+  assert.equal(cell(8, 12).terrain, 0xf800 | 175); assert.equal(finances.accounts.otherDefinitions[11].count, count);
   assert.equal(a.bytes[14], 10); // Reset belongs to the caller.
   assert.equal(consumeAnimalSupply(world, finances, a, 'water', 0), true); assert.equal(second.quantity, 90);
   a.bytes[0] = a.bytes[1] = 0; const edge = supply(3, 299, 0, 0, 50);
@@ -74,10 +76,13 @@ test('feed depletion preserves source stage boundaries, flags and native definit
 
 test('missing, empty and mismatched supplies do not satisfy needs, and invalid cleanup rejects before changing quantity', () => {
   const { world, finances, a, cell, supply } = setup(); a.bytes[13] = a.bytes[14] = 10;
-  cell(10, 11).terrain = 175;
+  cell(10, 11).terrain = 176;
   assert.equal(consumeAnimalSupply(world, finances, a, 'water', 0), false); // SF-096 correction.
   const item = supply(1, 299, 10, 11, 0); assert.equal(consumeAnimalSupply(world, finances, a, 'water', 0), false);
-  item.bytes[0] = 44; item.bytes[1] = 1; item.bytes[2] = 10; // Type300 behind water175 is inconsistent.
+  item.bytes[2] = 10; cell(10, 11).terrain = 175;
+  assert.equal(consumeAnimalSupply(world, finances, a, 'water', 0), false); assert.equal(item.quantity, 10);
+  cell(10, 11).terrain = 176;
+  item.bytes[0] = 44; item.bytes[1] = 1; item.bytes[2] = 10; // Type300 behind water176 is inconsistent.
   assert.equal(consumeAnimalSupply(world, finances, a, 'water', 0), false);
   const feed = supply(2, 300, 11, 10, 8); finances.accounts.otherDefinitions[12].count = 0;
   const before = [...feed.bytes], terrain = { ...cell(11, 10) };
