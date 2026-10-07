@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type MouseEvent } from 'react';
 import { WORLD_SIZE, worldIndex, type Scenario } from '../formats/scenario';
 import type { FieldRecord } from '../formats/field';
-import { drawWorld } from '../render/world-renderer';
+import { drawWorld, type MapPreview } from '../render/world-renderer';
 
 export interface MapFocus { x: number; y: number }
 interface Props {
@@ -12,18 +12,19 @@ interface Props {
   focus: MapFocus;
   field?: FieldRecord;
   selection: number | null;
+  preview?: MapPreview;
   onSelect: (index: number) => void;
 }
 const directions: Record<string, [number, number]> = {
   ArrowLeft: [-64, 0], ArrowRight: [64, 0], ArrowUp: [0, -64], ArrowDown: [0, 64],
 };
 
-export function FarmMap({ scenario, tiles, maskedTiles, zoom, focus, field, selection, onSelect }: Props) {
+export function FarmMap({ scenario, tiles, maskedTiles, zoom, focus, field, selection, preview, onSelect }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null), viewportRef = useRef<HTMLDivElement>(null);
   const previousZoom = useRef(zoom), previousFocus = useRef<MapFocus | null>(null);
   useLayoutEffect(() => {
-    drawWorld(canvasRef.current!.getContext('2d')!, scenario, tiles, maskedTiles, field, selection);
-  }, [scenario, tiles, maskedTiles, field, selection]);
+    drawWorld(canvasRef.current!.getContext('2d')!, scenario, tiles, maskedTiles, field, selection, preview);
+  }, [scenario, tiles, maskedTiles, field, selection, preview]);
   useLayoutEffect(() => {
     const viewport = viewportRef.current!;
     if (focus !== previousFocus.current) {

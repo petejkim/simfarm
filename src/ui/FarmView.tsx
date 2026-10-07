@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
-import { terrainTile, worldPosition } from '../formats/scenario';
+import { terrainTile, worldPosition, worldIndex } from '../formats/scenario';
 import { CropGuide } from './CropGuide';
 import { FieldPanel } from './FieldPanel';
 import { FarmMap, type MapFocus } from './FarmMap';
 import { useResource } from './useResource';
-import { GameSimulation } from '../simulation/game';
+import { GameSimulation, type GameCommand } from '../simulation/game';
 import { TimeControls } from './TimeControls';
 import { HarvestInventory } from './HarvestInventory';
+import { LandPanel, type MapTool } from './LandPanel';
+import { checkFieldPlacement } from '../simulation/field-placement';
+import { quoteLand } from '../simulation/land';
 
 const subscribeEmpty = () => () => {};
 const emptySnapshot = () => null;
@@ -44,10 +47,30 @@ export function FarmView({ id, onScenarioChange, assets, zoom, onZoomChange, cro
   }, [simulation]);
   const [selection, setSelection] = useState<number | null>(null), [fieldSlot, setFieldSlot] = useState<number | null>(null);
   const [focus, setFocus] = useState<MapFocus>({ x: 48, y: 48 });
+  const [mapTool, setMapTool] = useState<MapTool>('inspect');
   const data = resource.status === 'ready' && snapshot ? { tiles: resource.value.tiles, scenario: snapshot.scenario } : null;
   const field = data?.scenario.fields.find(f => f.slot === fieldSlot && f.active);
   const cell = selection !== null ? data?.scenario.cells[selection] : undefined;
   const position = selection !== null ? worldPosition(selection) : null;
+  const preview = position && data && snapshot && mapTool !== 'inspect' ? {
+    x: mapTool === 'land' ? (position.x >> 3) * 8 : position.x,
+    y: mapTool === 'land' ? (position.y >> 3) * 8 : position.y, width: 8, height: 8,
+    valid: mapTool === 'land' ? quoteLand(data.scenario, position.x >> 3, position.y >> 3, snapshot.weather.soilMoisture)?.ownership === 0
+      : checkFieldPlacement(data.scenario, position.x, position.y).ok,
+  } : undefined;
+  function landCommand(command: GameCommand) {
+    if (!simulation) return;
+    simulation.dispatch(command);
+    const next = simulation.getSnapshot();
+    if (command.type === 'buy-land' && next.lastLandResult?.ok) {
+      setSelection(worldIndex(command.regionX * 8, command.regionY * 8)); setFieldSlot(null); setMapTool('field');
+    }
+    if (command.type === 'create-field' && next.lastNewFieldResult?.ok) {
+      setFieldSlot(next.lastNewFieldResult.slot); setSelection(null); setMapTool('inspect');
+      setFocus({ x: command.x + 4, y: command.y + 4 });
+      onCropChange(next.scenario.cropFiles[command.cropSlot].replace('.crp', ''));
+    }
+  }
   function selectField(slot: number | null, navigate: boolean) {
     const selected = data?.scenario.fields.find(f => f.slot === slot && f.active);
     setFieldSlot(selected?.slot ?? null);
@@ -63,7 +86,9 @@ export function FarmView({ id, onScenarioChange, assets, zoom, onZoomChange, cro
       </select></label>
         <span id="map-status" role="status">{resource.status === 'ready' ? `Scenario ${id + 1} · original terrain`
           : resource.status === 'error' ? resource.error : 'Loading map…'}</span></div>
-      <div><label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
+      <div><label>Map tool <select id="map-tool" value={mapTool} onChange={e => setMapTool(e.target.value as MapTool)}>
+        <option value="inspect">Inspect</option><option value="land">Buy land</option><option value="field">New field</option>
+      </select></label><label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
       </select></label><button id="center" disabled={!data} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
     </section>
@@ -71,16 +96,19 @@ export function FarmView({ id, onScenarioChange, assets, zoom, onZoomChange, cro
     {data && <main>
       <section className="map-panel">
         <FarmMap scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
-          field={field} selection={selection} onSelect={index => {
+          field={field} selection={selection} preview={preview} onSelect={index => {
             setSelection(index);
             const { x, y } = worldPosition(index);
             selectField(data.scenario.fields.find(f => f.contains(x, y))?.slot ?? null, false);
           }} />
-        <div className="map-footer"><span>Scroll to explore · click a tile to examine</span>
+        <div className="map-footer"><span>{mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
+          ? 'Click the top-left corner of a new field' : 'Scroll to explore · click a tile to examine'}</span>
           <span id="cell-status">{cell && position ? `Tile ${position.x}, ${position.y} · graphic ${terrainTile(cell)}` : '96 × 96 tiles'}</span>
         </div>
       </section>
       <aside>
+        {snapshot && mapTool !== 'inspect' && <LandPanel tool={mapTool} position={position} snapshot={snapshot}
+          crops={assets.catalog.crops} onCommand={landCommand} />}
         <FieldPanel scenario={data.scenario} crops={assets.catalog.crops} field={field}
           plantResult={snapshot?.lastPlantResult ?? null}
           harvestResult={snapshot?.lastHarvestResult ?? null}

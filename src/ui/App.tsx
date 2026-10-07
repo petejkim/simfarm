@@ -25,7 +25,7 @@ function Game({ assets }: { assets: GameAssets }) {
     <FarmView key={scenarioId} id={scenarioId} onScenarioChange={setScenarioId} assets={assets}
       zoom={zoom} onZoomChange={setZoom} cropId={cropId} onCropChange={setCropId} />
     <footer><strong>Reconstruction in progress</strong>
-      <span>Planting, growth, harvesting, storage and sales are running. New fields and other original systems remain in progress.</span>
+      <span>Land purchases, new fields and the farming cycle are running. Save/load and other original systems remain in progress.</span>
       <span id="audio-status" role="status">{music.message}</span>
     </footer>
   </>;

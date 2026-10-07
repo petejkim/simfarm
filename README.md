@@ -1,6 +1,6 @@
 # SimFarm native preservation
 
-Incremental reconstruction of the supplied 16-bit DOS SimFarm as a native TypeScript/React/Vite browser game, developed with Bun. No DOS runtime or x86 emulator is used. The current build supports planting, growing, harvesting, storage and crop sales on existing original fields, with machinery, weather, calendar progression and converted MIDI music. A positive-value corn farming cycle is verified in the browser. New-field creation, save/load and many other original systems remain unfinished.
+Incremental reconstruction of the supplied 16-bit DOS SimFarm as a native TypeScript/React/Vite browser game, developed with Bun. No DOS runtime or x86 emulator is used. The current build supports land purchase, new fields, planting, growing, harvesting, storage and crop sales, with machinery, weather, calendar progression and converted MIDI music. A positive-value corn farming cycle on an original field is verified in the browser. Crop treatments, save/load and many other original systems remain unfinished.
 
 ## Run locally
 
@@ -15,7 +15,9 @@ sh tools/setup-bun.sh
 
 Open the local URL printed by Vite. Choose one of eight scenarios, locate a field to see its crop and work status, scroll or use arrow keys to explore, zoom, click tiles, browse 24 crops, and start music. To import from another directory: `./tools/bun run import /path/to/simfarm-dos`.
 
-Farms start paused. Select a field, choose **Crop to plant**, and press **Plant crop**. Planting replaces the existing crop, consumes stored seed or purchases it with a delivery surcharge, and uses owned or automatically rented machinery according to the farm's saved settings. Use **Next day** to step or **Play** to run. The **Speed** slider adjusts pacing from **0.25× to 16×**; at the default **1×**, one real second advances one game day. **Pause** stops progression, and **Next day** always advances one day regardless of speed. Machinery completes two field passes and returns home; crops then age, change appearance and can expire. Work already underway must finish before another planting order. New-field placement and the original calendar-plan editor remain unfinished.
+Farms start paused. Select a field, choose **Crop to plant**, and press **Plant crop**. Planting replaces the existing crop, consumes stored seed or purchases it with a delivery surcharge, and uses owned or automatically rented machinery according to the farm's saved settings. Use **Next day** to step or **Play** to run. The **Speed** slider adjusts pacing from **0.25× to 16×**; at the default **1×**, one real second advances one game day. **Pause** stops progression, and **Next day** always advances one day regardless of speed. Machinery completes two field passes and returns home; crops then age, change appearance and can expire. Work already underway must finish before another planting order. The original calendar-plan editor remains unfinished.
+
+To expand, choose **Map tool → Buy land**, click a plot, check its price and soil fertility, and press **Buy plot**. The tool switches to **New field** at the plot's corner. Enable **Automatically clear trees and fences** when needed, choose a crop and press **Create and plant field**. You can also select **New field** directly and click an 8×8 field's top-left corner on owned land. The preview and status explain blocked placements; fields need a one-tile gap. New land retains its original soil conditions, often too poor for a valuable crop without fertilization. Fertilizer and other crop treatments are not implemented yet.
 
 Select **Harvest crop** to send machinery or workers to a growing crop. Maturity and estimated value help with timing; early or damaged crops can be worth $0. Harvests enter available storage, or sell automatically when storage is unavailable. Use **Sell for $…** under **Harvest in storage** to sell a stored lot and free its space. Worker fees and missing equipment rentals can reduce returns.
 
@@ -32,7 +34,7 @@ PLAYWRIGHT_BROWSERS_PATH=.tools/playwright ./tools/bun run playwright install ch
 ./tools/bun run test:browser
 ```
 
-Browser checks cover all maps, source-exact crop/overlay pixels, field inspection, crop selection, zoom, actual audio output, stopping playback, pending-load cancellation, missing-asset recovery, time and speed controls, planting commands, worker/machine harvesting, storage and a complete plant/grow/harvest/sell cycle. See `docs/progress.md` for the latest completed validation and any environment limitations. Tests read the original source distribution. `./tools/bun run preview` serves the production build.
+Browser checks cover all maps, source-exact crop/overlay pixels, field inspection, crop selection, zoom, actual audio output, stopping playback, pending-load cancellation, missing-asset recovery, time and speed controls, land purchases, new-field creation, planting commands, worker/machine harvesting, storage and a complete plant/grow/harvest/sell cycle. See `docs/progress.md` for the latest completed validation and any environment limitations. Tests read the original source distribution. `./tools/bun run preview` serves the production build.
 
 ## Static reconstruction tools
 

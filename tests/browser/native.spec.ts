@@ -297,3 +297,57 @@ test('speed slider adjusts running time, stays paused and keeps Next day to one 
   await expect(slider).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
+
+test('map tools buy original land and complete a new-field planting and harvest cycle', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await page.locator('#scenario').selectOption('4');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
+  await page.locator('#zoom').selectOption('0.5');
+  await page.locator('#map-tool').selectOption('field');
+  await page.locator('#viewport').evaluate(el => el.scrollTo(0, 0));
+  await page.locator('#viewport').click({ position: { x: 4, y: 132 } }); // Original tile (0,16).
+  await expect(page.locator('#cell-status')).toContainText('Tile 0, 16');
+  await expect(page.locator('#placement-status')).toContainText('Buy all the land');
+  await expect(page.locator('#create-field')).toBeDisabled();
+  await page.locator('#map-tool').selectOption('land');
+  await expect(page.locator('#land-quote')).toHaveText('Plot at 0, 16 · $18,060');
+  await expect(page.locator('#land-soil')).toHaveText('Soil fertility: 2 / 15');
+  await page.screenshot({ path: 'artifacts/browser-land-purchase.png', fullPage: true });
+  await page.locator('#buy-land').click();
+  await expect(page.locator('#farm-cash')).toHaveText('$21,940');
+  await expect(page.locator('#map-tool')).toHaveValue('field');
+  await expect(page.locator('#land-result')).toHaveText('Bought plot at 0, 16 for $18,060.');
+  await expect(page.locator('#auto-clear')).not.toBeChecked();
+  await expect(page.locator('#create-field')).toBeDisabled();
+  await page.locator('#auto-clear').check();
+  await expect(page.locator('#placement-status')).toHaveText('Ready to plant at 0, 16.');
+  await page.locator('#new-field-crop').selectOption('0');
+  await page.locator('#create-field').click();
+  await expect(page.locator('#field')).toHaveValue('9');
+  await expect(page.locator('#field option')).toHaveCount(10);
+  await expect(page.locator('#field-status')).toHaveText('Field 9 · Planting · 8 × 8 tiles at 0, 16');
+  await expect(page.locator('#farm-cash')).toHaveText('$21,888');
+  await expect(page.locator('#plant-result')).toContainText('Planting ordered');
+  for (let day = 0; day < 12; day++) await page.locator('#next-day').click();
+  await expect(page.locator('#field-status')).toContainText('Growing');
+  // Original unowned soil is poor; this checks new-field work and delivery, not a profitable crop.
+  await expect(page.locator('#harvest-estimate')).toContainText('value: $0,');
+  await page.screenshot({ path: 'artifacts/browser-new-field.png', fullPage: true });
+  await page.locator('#harvest-field').click();
+  for (let day = 0; day < 12; day++) await page.locator('#next-day').click();
+  await expect(page.locator('#harvest-stock')).toHaveText('1 stored harvest');
+  await page.locator('.sell-harvest').click();
+  await expect(page.locator('#harvest-stock')).toHaveText('No stored harvests.');
+  await expect(page.locator('#field-status')).toContainText('Waiting');
+  await expect(page.locator('#plant-field')).toBeEnabled();
+  await page.locator('#scenario').selectOption('0');
+  await expect(page.locator('#map-tool')).toHaveValue('inspect');
+  await expect(page.locator('#farm-cash')).toHaveText('$40,000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#map-tool').selectOption('field');
+  await expect(page.locator('#auto-clear')).not.toBeChecked();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(errors).toEqual([]);
+});

@@ -1,9 +1,11 @@
 import { maskedTile, terrainTile, worldPosition, type Scenario } from '../formats/scenario';
 import type { FieldRecord } from '../formats/field';
 
+export interface MapPreview { x: number; y: number; width: number; height: number; valid: boolean }
+
 /** Native render pass, independent of React and UI state management. */
 export function drawWorld(context: CanvasRenderingContext2D, scenario: Scenario, tiles: CanvasImageSource,
-  maskedTiles: CanvasImageSource, field?: FieldRecord, selection: number | null = null): void {
+  maskedTiles: CanvasImageSource, field?: FieldRecord, selection: number | null = null, preview?: MapPreview): void {
   context.imageSmoothingEnabled = false;
   for (let i = 0; i < scenario.cells.length; i++) {
     const cell = scenario.cells[i], tile = terrainTile(cell), { x, y } = worldPosition(i);
@@ -22,5 +24,12 @@ export function drawWorld(context: CanvasRenderingContext2D, scenario: Scenario,
     const { x, y } = worldPosition(selection);
     context.lineWidth = 1;
     context.strokeRect(x * 16 + 0.5, y * 16 + 0.5, 15, 15);
+  }
+  if (preview) {
+    context.fillStyle = preview.valid ? '#a4e98633' : '#f4898933';
+    context.strokeStyle = preview.valid ? '#b3f898' : '#ff9a9a';
+    context.lineWidth = 2;
+    context.fillRect(preview.x * 16, preview.y * 16, preview.width * 16, preview.height * 16);
+    context.strokeRect(preview.x * 16 + 1, preview.y * 16 + 1, preview.width * 16 - 2, preview.height * 16 - 2);
   }
 }
