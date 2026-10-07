@@ -210,3 +210,11 @@ Connected the sale transaction to GameSimulation and React, with live value quot
 Validation: all 97 Bun tests, TypeScript/production build and nine Chromium checks pass. Visually inspected `artifacts/browser-farming-cycle.png`. Increased only the existing eight-farm/year test's timeout to 15 seconds after concurrent browser execution exceeded its default five-second limit; its assertions are unchanged. Snapshot isolation and duplicate-sale rejection are covered.
 
 This verifies a core farming cycle, not a completed original game. New-field creation, crop treatments, complete economy/markets, save/load and other original systems remain. The user requested a simulation-speed slider after this increment and before the next task; implement and commit that first, then resume new-field reconstruction.
+
+## 2026-10-07 — requested simulation-speed slider
+
+After committing the farming cycle as `6838173`, implemented the user's requested speed slider before starting new-field work. React sends `set-speed` to GameSimulation, which owns 0.25×–16× pacing (default 1×). Speed changes preserve fractional logical ticks; pause still stops the simulation and Next day advances exactly one day. Changing scenarios resets to paused/1×. Original equipment/calendar timing ratios and simulation rules are unchanged; this is explicitly documented as a native enhancement.
+
+Validation: all 99 Bun tests and TypeScript/production build pass. Nine existing Chromium checks passed; the new speed check passed after fixing its accessible label and freezing the test clock between explicit advances (automatic real-time drift at 16× otherwise invalidated exact-day assertions). Keyboard Home/End, live speed changes, pause, single-day stepping, scenario reset and a 390px mobile viewport are covered. Visually inspected `artifacts/browser-speed.png`. The unit checks compare complete machinery/weather state at 16× against equivalent normal-speed time and verify fractional tick preservation and invalid-command rejection.
+
+Updated README with current harvest/sale controls and speed behavior. New-field placement is next; the full original-game objective remains active with save/load and other major systems still outstanding.

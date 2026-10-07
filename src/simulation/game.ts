@@ -21,6 +21,9 @@ import { orderHarvest, updateHarvestField, type HarvestOrderResult } from './fie
 import { cropMaturity, fieldHarvestValue } from './harvest-value';
 import { sellStoredHarvest, storedHarvestValue, type HarvestSaleResult } from './harvest-sale';
 
+/** Native wall-clock pacing choices; original equipment/calendar tick ratios stay unchanged. */
+export const SIMULATION_SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16] as const;
+
 export interface FieldHarvestEstimate {
   maturity: number;
   value: number;
@@ -33,6 +36,7 @@ export interface GameSnapshot {
   weather: WeatherState;
   daysAdvanced: number;
   paused: boolean;
+  speed: number;
   cropMarketPrices: number[];
   lastPlantResult: PlantResult | null;
   lastHarvestResult: HarvestOrderResult | null;
@@ -41,6 +45,7 @@ export interface GameSnapshot {
   lastSaleResult: HarvestSaleResult | null;
 }
 export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused: boolean }
+  | { type: 'set-speed'; speed: number }
   | { type: 'plant-field'; fieldSlot: number; cropSlot: number }
   | { type: 'harvest-field'; fieldSlot: number }
   | { type: 'sell-harvest'; inventorySlot: number };
@@ -74,6 +79,7 @@ export class GameSimulation {
   private snapshot!: GameSnapshot;
   private daysAdvanced = 0;
   private paused = true;
+  private speed = 1;
   private elapsed = 0;
   private disasterFlags = 0;
   private dayTicks = 0;
@@ -111,6 +117,10 @@ export class GameSimulation {
     if (command.type === 'set-paused') {
       if (this.paused === command.paused) return;
       this.paused = command.paused; this.elapsed = 0;
+    } else if (command.type === 'set-speed') {
+      if (!SIMULATION_SPEEDS.some(speed => speed === command.speed)) throw new Error('Invalid simulation speed');
+      if (this.speed === command.speed) return;
+      this.speed = command.speed;
     } else if (command.type === 'plant-field') {
       this.lastHarvestResult = null;
       this.lastPlantResult = plantField(this.scenario, command.fieldSlot, command.cropSlot, this.crops,
@@ -127,11 +137,11 @@ export class GameSimulation {
     this.publish();
   }
 
-  /** Browser pacing only: one game day per second while playing. Original DOS timer speed is not claimed. */
+  /** Browser pacing only: speed 1 is one game day per second. Original DOS timer speed is not claimed. */
   tick(milliseconds: number): void {
     if (!Number.isFinite(milliseconds) || milliseconds < 0) throw new Error('Invalid elapsed time');
     if (this.paused) return;
-    this.elapsed += milliseconds * Math.max(1, this.scenario.farm.dayDelayTicks) / 1000;
+    this.elapsed += milliseconds * this.speed * Math.max(1, this.scenario.farm.dayDelayTicks) / 1000;
     const ticks = Math.floor(this.elapsed + 1e-9);
     if (!ticks) return;
     this.elapsed = Math.max(0, this.elapsed - ticks);
@@ -199,7 +209,7 @@ export class GameSimulation {
   private publish(): void {
     this.snapshot = { revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
       weather: { ...this.weather, forecast: [...this.weather.forecast], nextForecast: [...this.weather.nextForecast] },
-      daysAdvanced: this.daysAdvanced, paused: this.paused, cropMarketPrices: [...this.cropMarketPrices],
+      daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, cropMarketPrices: [...this.cropMarketPrices],
       lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null,
       lastHarvestResult: this.lastHarvestResult ? { ...this.lastHarvestResult } : null,
       lastSaleResult: this.lastSaleResult ? { ...this.lastSaleResult } : null,

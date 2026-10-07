@@ -264,3 +264,36 @@ test('a planted original corn crop grows, is harvested and sold through browser 
   await expect(page.locator('#sale-result')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test('speed slider adjusts running time, stays paused and keeps Next day to one day', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  await page.goto('/');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
+  const slider = page.getByRole('slider', { name: 'Speed', exact: true });
+  await expect(page.locator('#simulation-speed-value')).toHaveText('1×');
+  await slider.focus(); await slider.press('End');
+  await expect(slider).toHaveAttribute('aria-valuetext', '16× simulation speed');
+  await page.clock.runFor(1000);
+  await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
+  await page.locator('#next-day').click();
+  await expect(page.locator('#time-status')).toHaveText('Paused · 1 days advanced');
+  await slider.focus(); await slider.press('Home');
+  await expect(page.locator('#simulation-speed-value')).toHaveText('0.25×');
+  await page.locator('#play-pause').click();
+  await page.clock.runFor(4100);
+  await expect(page.locator('#time-status')).toHaveText('Running · 2 days advanced');
+  await slider.focus(); await slider.press('End');
+  await page.clock.runFor(1000);
+  await expect(page.locator('#time-status')).toHaveText('Running · 18 days advanced');
+  await page.locator('#play-pause').click();
+  await page.clock.runFor(1000);
+  await expect(page.locator('#time-status')).toHaveText('Paused · 18 days advanced');
+  await page.screenshot({ path: 'artifacts/browser-speed.png', fullPage: true });
+  await page.locator('#scenario').selectOption('4');
+  await expect(page.locator('#simulation-speed-value')).toHaveText('1×');
+  await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(slider).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});

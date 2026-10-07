@@ -227,3 +227,39 @@ test('original corn completes a positive-value plant-grow-harvest-store-sell cyc
   game.dispatch({ type: 'plant-field', fieldSlot: 1, cropSlot: 0 });
   assert.equal(game.getSnapshot().lastPlantResult?.ok, true);
 });
+
+test('speed changes preserve fractional ticks, pause, and single-day manual advancement', () => {
+  const input = farm(), game = new GameSimulation(input.scenario, input.crops);
+  assert.equal(game.getSnapshot().speed, 1);
+  game.dispatch({ type: 'set-speed', speed: 16 }); game.tick(1000);
+  assert.equal(game.getSnapshot().daysAdvanced, 0);
+  game.dispatch({ type: 'advance-day' }); assert.equal(game.getSnapshot().daysAdvanced, 1);
+  game.dispatch({ type: 'set-speed', speed: 0.25 });
+  game.dispatch({ type: 'set-paused', paused: false });
+  game.tick(2001); // Half a day plus part of one logical tick.
+  assert.equal(game.getSnapshot().daysAdvanced, 1);
+  game.dispatch({ type: 'set-speed', speed: 4 }); game.tick(124.9375);
+  assert.equal(game.getSnapshot().daysAdvanced, 2);
+  game.dispatch({ type: 'set-paused', paused: true });
+  game.dispatch({ type: 'set-speed', speed: 0.5 });
+  const paused = game.getSnapshot(); game.tick(100000); assert.equal(game.getSnapshot(), paused);
+  for (const speed of [0, -1, 0.3, 17, NaN, Infinity]) {
+    assert.throws(() => game.dispatch({ type: 'set-speed', speed }), /Invalid simulation speed/);
+    assert.equal(game.getSnapshot(), paused);
+  }
+});
+
+test('speed scaling keeps machinery and weather identical to the same logical time at normal speed', () => {
+  const input = farm(0), normal = new GameSimulation(input.scenario, input.crops), fast = new GameSimulation(input.scenario, input.crops);
+  for (const game of [normal, fast]) {
+    game.dispatch({ type: 'harvest-field', fieldSlot: 1 });
+    game.dispatch({ type: 'set-paused', paused: false });
+  }
+  fast.dispatch({ type: 'set-speed', speed: 16 });
+  for (let frame = 0; frame < 60; frame++) fast.tick(1000 / 60);
+  normal.tick(16000);
+  assert.deepEqual(fast.getSnapshot().scenario, normal.getSnapshot().scenario);
+  assert.deepEqual(fast.getSnapshot().weather, normal.getSnapshot().weather);
+  assert.equal(fast.getSnapshot().daysAdvanced, 16);
+  assert.equal(fast.getSnapshot().scenario.fields[1].state, 4);
+});
