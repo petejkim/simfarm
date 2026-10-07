@@ -782,3 +782,10 @@ Consumer0x17b3e tests packet strength at0x17b71; zero jumps to0x17cd6, whose zer
 **Status:** verified unchecked accesses; native bounded reads and consistent outlet clamp implemented in primitive.
 
 Neighbor query0x17636 reads four map words at offsets−2,+2,−192,+192 from the source index before any coordinate clamping. Edge coordinates can alias another column or read outside the map. Enqueue0x17a78 calls clamping marker0x17560, but writes its original coordinate bytes into the ring; a wind source at y95 seeds y96. Subsequent neighbor reads interpret that unbounded coordinate. Native neighbor enumeration ignores cells outside0..95 and stores the clamped outlet coordinate as well as marking it. Edge/corner/word-tick-wrap tests pass. Original ordinary-edge source reachability remains to be assessed; no arbitrary-code execution claim is made.
+
+
+## SF-092 — special building purchase ignores a full irrigation registry
+
+**Status:** verified caller/capacity behavior; native preflight correction is live. Ordinary UI maximum-capacity reachability remains unproven.
+
+Registry append0x179da returns0 when count6190:240f>63 (`0x179e4..0x179ee`). Purchase types70/71 call it at0x1cc18, discard the arguments and immediately continue placement at0x1cc20 without testing its return. A paid building can therefore be allocated/painted without an irrigation source if the registry is full. Native construction checks capacity before payment, record allocation, clearing or painting and reports the source limit. Tests fill all64 entries, reject a further purchase without changing the complete save, and restore all64 sources from native v9. This is a conditional gameplay defect, not a security exploit.

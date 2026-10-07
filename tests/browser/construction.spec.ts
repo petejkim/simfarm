@@ -38,7 +38,7 @@ test('Build storage buys original roofs and usable records, persists accounts an
   await selectTile(page, x, y); await expect(page.locator('#building-placement-status')).toContainText('Ready');
   await page.locator('#build-building').click(); expected.dispatch({ type: 'build', buildingType: 65, x, y });
   const result = expected.getSnapshot().lastBuildingResult; expect(result?.ok).toBe(true);
-  await expect(page.locator('#building-result')).toContainText('Built storage');
+  await expect(page.locator('#building-result')).toContainText('Built for');
   await expect(page.locator('#build-building')).toBeDisabled(); await expect(page.locator('#building-placement-status')).toContainText('Another building');
   await expect(page.locator('#farm-cash')).toHaveText(`$${expected.getSnapshot().scenario.farm.cash.toLocaleString('en-US')}`);
   const text = await download(page, 'artifacts/browser-construction.simfarm.json');

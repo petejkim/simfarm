@@ -48,6 +48,8 @@ import { updateClearingEffects } from './clearing-effects';
 import { updateHomestead, type HomesteadChange } from './homestead';
 import type { GameEvent } from './events';
 import { purchaseBuilding, type BuildingPlacementResult } from './building-placement';
+import { copyIrrigation } from '../formats/irrigation';
+import { updateIrrigation } from './irrigation';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -102,7 +104,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'sell-harvest'; inventorySlot: number };
 
 function copyScenario(scenario: Scenario): Scenario {
-  return { ...scenario, schedule: new FieldSchedule(Uint8Array.from(scenario.schedule.bytes)), sourceBytes: Uint8Array.from(scenario.sourceBytes), cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
+  return { ...scenario, irrigation: copyIrrigation(scenario.irrigation), schedule: new FieldSchedule(Uint8Array.from(scenario.schedule.bytes)), sourceBytes: Uint8Array.from(scenario.sourceBytes), cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
     fields: scenario.fields.map(f => new FieldRecord(f.slot, Uint8Array.from(f.bytes))),
     equipment: scenario.equipment.map(e => new EquipmentRecord(e.slot, Uint8Array.from(e.bytes))),
     equipmentDefinitions: scenario.equipmentDefinitions.map(e => new EquipmentDefinition(e.slot, Uint8Array.from(e.bytes))),
@@ -321,6 +323,14 @@ export class GameSimulation {
       if (!updateTreatmentField(field, this.crops[field.cropSlot], s, this.equipmentRuntime, tick, this.weather.soilMoisture, allocate)) break;
     }
     if (++this.dayTicks >= Math.max(1, s.farm.dayDelayTicks)) { this.dayTicks = 0; this.advanceDay(); }
+    // 0xbd42 follows the calendar and equipment calls. Modal decisions suspend
+    // the remaining work; native Pause freezes the same logical animation clock.
+    if (!this.finances.defaultDecision && !this.pendingTown) updateIrrigation(s, s.irrigation, s.farm.animationTicks, this.weather.wind, status => {
+      for (const field of s.fields) if (field.active) {
+        updateFieldWater(field, s.cells, this.weather.soilMoisture, this.disasterFlags);
+        if (status) updateFieldStatus(field, this.crops[field.cropSlot], s.cells);
+      }
+    });
   }
 
   private advanceDay(): void {

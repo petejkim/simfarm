@@ -49,3 +49,8 @@ Irrigation driver `0x17310..0x174c2` uses elapsed animation ticks, alternates ph
 The source registry's SSM count is at `0x210d2` and the next192 bytes at `0x210d3..0x21192` are **not packed three-byte runtime records**. Saver `0x449c6..0x44a27` and loader `0x459d4..0x45a35` transfer three separate bytes at runtime offsets `2*i+0/1/2`, for64 iterations. The overlap is deliberate in both compiled loops, whether or not intentional in source; copying SSM triples as runtime triples is incorrect. Applying the loader writes in order gives source counts `[4,9,4,1,4,4,2,3]` for SCEN0–7. SCEN4 then yields `(35,54,64),(35,42,64),(31,42,64),(32,53,64)`, whereas naive triples produce spurious coordinates/strengths. Only runtime bytes0–128 are transferred; SF-087 records the loss above43 sources. Unknown trailing runtime state needs an explicit cold/warm policy before adding a canonical native state field.
 
 Retained defect evidence: SF-086 (flow merge adds one packet twice after saturation), SF-087 (source save stride), SF-088 (full flow ring aliases empty), SF-089 (registry removal reads a successor beyond the full table). These require tests and explicit native decisions when implementing irrigation; no fixes or reachability proof are claimed yet.
+
+
+## Irrigation buildings enabled
+
+Types70/71 now use the reconstructed live irrigation registry and flow driver; see [irrigation.md](irrigation.md). The Build menu exposes their original prices and normal/masked footprints, and native v9 preserves sources and in-progress waves. Capacity failure is atomic (SF-092). Type72 and animal-water behavior remain pending with livestock. Earlier sections record the dependency discovery; types70/71 are no longer blocked on that investigation.

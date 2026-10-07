@@ -8,6 +8,7 @@ import { readAnimals, type AnimalRecord } from './animal';
 import { readBuildings, readBuildingDefinitions, type BuildingRecord, type BuildingDefinition } from './building';
 import { readInventory, readGoodsDefinitions, type InventoryRecord, type GoodsDefinition } from './inventory';
 import { readChemicals, readChemicalDefinitions, type ChemicalRecord } from './chemical';
+import { readIrrigation, type IrrigationState } from './irrigation';
 export const WORLD_SIZE = 96;
 export const WORLD_OFFSET = 0x152c4;
 export const CROP_NAMES_OFFSET = 0x21193;
@@ -31,6 +32,7 @@ export interface Scenario {
   harvestDefinitions: GoodsDefinition[];
   chemicals: ChemicalRecord[];
   chemicalDefinitions: GoodsDefinition[];
+  irrigation: IrrigationState;
 }
 /** Recovered from overlay 22:283c (file 0x4543c), especially 0x45782–0x457fa. */
 export function readScenario(bytes: Uint8Array, nativeRuntime = false): Scenario {
@@ -50,7 +52,8 @@ export function readScenario(bytes: Uint8Array, nativeRuntime = false): Scenario
     equipment: readEquipment(bytes, nativeRuntime), equipmentDefinitions: readEquipmentDefinitions(bytes), animals: readAnimals(bytes),
     buildings: readBuildings(bytes), buildingDefinitions: readBuildingDefinitions(bytes), inventory: readInventory(bytes),
     seedDefinitions: readGoodsDefinitions(bytes, true), cropDefinitions: readGoodsDefinitions(bytes, false),
-    harvestDefinitions: readGoodsDefinitions(bytes, 'harvest'), chemicals: readChemicals(bytes), chemicalDefinitions: readChemicalDefinitions(bytes) };
+    harvestDefinitions: readGoodsDefinitions(bytes, 'harvest'), chemicals: readChemicals(bytes), chemicalDefinitions: readChemicalDefinitions(bytes),
+    irrigation: readIrrigation(bytes) };
 }
 /** The original masks AH with 7 after reading terrain; see file 0x9536–0x9556. */
 export function terrainTile(cell: WorldCell): number { return cell.terrain & 0x7ff; }

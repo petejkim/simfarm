@@ -44,8 +44,10 @@ test('all eight farms allocate original records, retain unknown byte, post accou
     assert.equal(finances.accounts.buildingBookValue, (0xfffffff0 + d.price) >>> 0);
     for (let x = 0; x < 96; x++) for (let y = 0; y < 96; y++) {
       const before = cells[worldIndex(x, y)], after = world.cells[worldIndex(x, y)];
+      const base = BUILDING_GRAPHICS[d.graphic], tile = base + y * d.width + x;
       assert.deepEqual(after, x < d.width && y < d.height
-        ? { ...before, terrain: 0xa000 | (BUILDING_GRAPHICS[d.graphic] + y * d.width + x) } : before);
+        ? base < 848 ? { ...before, terrain: 0xa000 | tile }
+          : { ...before, terrain: before.terrain | 0x800, overlay: (before.overlay & 0xf800) | tile } : before);
     }
     assert.deepEqual(world.sourceBytes, Uint8Array.from(source(`SCEN${id}.SSM`)));
   }
@@ -58,7 +60,7 @@ test('rejected construction is atomic at bounds, terrain, ownership, capacity an
     assert.deepEqual(purchaseBuilding(world, finances, type, x, y, 0), { ok: false, reason });
     assert.equal(JSON.stringify({ world, finances }), before);
   }
-  for (const type of [63, 70, 71, 72, 73, 65.5, NaN]) reject(type, 0, 0, 'unsupported-building');
+  for (const type of [63, 72, 73, 65.5, NaN]) reject(type, 0, 0, 'unsupported-building');
   for (const [x, y] of [[-1, 0], [95, 0], [0, 95], [0.5, 0], [0, NaN], [Infinity, 0]]) reject(65, x, y, 'outside-map');
   world.cells[0].overlay = 0; reject(65, 0, 0, 'not-owned'); world.cells[0].overlay = 0x800;
   for (const tile of [14, 31, 36, 149, 172, 440, 0x800 | 15, 534, 539]) {

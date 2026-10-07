@@ -10,6 +10,7 @@ import { readAnnualStatistics } from './annual-statistics';
 import { readHomestead } from './homestead';
 import { decodeFinancialState, encodeFinancialState } from './finance-save';
 import { TOWN_LAYOUT_BYTES } from './town';
+import { MAX_IRRIGATION_FLOW, validateIrrigation, type IrrigationState } from './irrigation';
 
 export const MAX_SAVE_BYTES = 1_000_000;
 const FORMAT = 'simfarm-native';
@@ -48,6 +49,7 @@ function encodeScenario(s: Scenario) {
   const world = new Uint8Array(96 * 96 * 5), view = new DataView(world.buffer);
   s.cells.forEach((c, i) => { view.setUint16(i * 5, c.terrain, true); view.setUint16(i * 5 + 2, c.overlay, true); world[i * 5 + 4] = c.attribute; });
   return { source: hex(s.sourceBytes), world: hex(world), schedule: hex(s.schedule.bytes), regions: hex(s.regionalConditions), farm: s.farm, climate: s.climate,
+    irrigation: { ...s.irrigation, sources: hex(s.irrigation.sources) },
     records: Object.fromEntries(Object.entries(tables).map(([key, [, count, stride]]) => {
       const records = s[key as keyof typeof tables], raw = new Uint8Array(count * stride);
       records.forEach((r, i) => raw.set(r.bytes, i * stride));
@@ -90,6 +92,7 @@ function decodeScenario(value: unknown, version: number): Scenario {
   for (let i = 0; i < 240; i++) image.set([wind[i] & 255, rain[i] & 255, temperature[i] & 255], 0x206c4 + i * 3);
   const result = readScenario(image, true);
   result.sourceBytes = source;
+  if (version >= 9) result.irrigation = decodeIrrigation(s.irrigation);
   result.farm = decodeFarm(s.farm); // Do not repeat DOS startup's lost/overwritten ledgers (SF-014).
   for (const f of result.fields.filter(f => f.active)) {
     if (f.state > 9 || f.step > 16) fail('field work state');
@@ -120,10 +123,22 @@ function decodeWeather(value: unknown): WeatherState {
   result.precipitationActive = boolean(w.precipitationActive, 'precipitationActive');
   return result;
 }
+function decodeIrrigation(value: unknown): IrrigationState {
+  const s = object(value, 'irrigation');
+  if (!Array.isArray(s.flow) || s.flow.length > MAX_IRRIGATION_FLOW) fail('irrigation flow');
+  const state: IrrigationState = {
+    sources: bytes(s.sources, 192, 'irrigation sources'), sourceCount: number(s.sourceCount, 0, 64, 'irrigation source count'),
+    phase: number(s.phase, 0, 1, 'irrigation phase') as 0 | 1, active: boolean(s.active, 'irrigation active'),
+    delay: number(s.delay, 0, 65535, 'irrigation delay'), lastTick: number(s.lastTick, 0, 65535, 'irrigation last tick'),
+    flow: s.flow.map(value => { const p = object(value, 'irrigation packet');
+      return { x: number(p.x, 0, 95, 'irrigation X'), y: number(p.y, 0, 95, 'irrigation Y'), strength: number(p.strength, 0, 255, 'irrigation strength') }; }),
+  };
+  validateIrrigation(state); return state;
+}
 export function writeNativeSave(state: SimulationState, scenarioId: number): string {
   number(scenarioId, 0, 7, 'scenario ID');
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 8, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 9, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -133,7 +148,7 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(save.version)) fail('unsupported format or version');
   const scenarioId = number(save.scenarioId, 0, 7, 'scenario ID'), s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const random = object(r.random, 'random');
   const rng = new FarmRandom({ visual: number(random.visual, 0, 65535, 'visual RNG'),

@@ -106,7 +106,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
           : resource.status === 'error' ? resource.error : 'Loading map…'}</span></div>
       <div><label>Map tool <select id="map-tool" value={mapTool} onChange={e => setMapTool(e.target.value as MapTool)}>
         <option value="inspect">Inspect</option><option value="land">Buy land</option><option value="field">New field</option>
-        <option value="build">Build storage</option>
+        <option value="build">Build</option>
       </select></label><label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
       </select></label><button id="center" disabled={!data} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
@@ -132,7 +132,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
             selectField(data.scenario.fields.find(f => f.contains(x, y))?.slot ?? null, false);
           }} />
         <div className="map-footer"><span>{mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
-          ? 'Click the top-left corner of a new field' : mapTool === 'build' ? 'Click the top-left corner of a storage building' : 'Scroll to explore · click a tile to examine'}</span>
+          ? 'Click the top-left corner of a new field' : mapTool === 'build' ? 'Click the top-left corner of a building' : 'Scroll to explore · click a tile to examine'}</span>
           <span id="cell-status">{cell && position ? `Tile ${position.x}, ${position.y} · graphic ${terrainTile(cell)}` : '96 × 96 tiles'}</span>
         </div>
       </section>

@@ -55,11 +55,11 @@ test('fertilizer makes a newly purchased original plot produce a valuable stored
   game.dispatch({ type: 'harvest-field', fieldSlot: result.slot });
   game.dispatch({ type: 'advance-day' }); // The next week completes harvest and replants four original corn fields.
   const stored = game.getSnapshot(), item = stored.scenario.inventory.find(i => i.active && i.type === 168 && !priorItems.has(i.slot))!;
-  assert.ok(item); assert.equal(stored.storedHarvestValues[item.slot], 395);
+  assert.ok(item); assert.equal(stored.storedHarvestValues[item.slot], 400);
   const cash = stored.scenario.farm.cash;
   game.dispatch({ type: 'sell-harvest', inventorySlot: item.slot });
-  assert.equal(game.getSnapshot().scenario.farm.cash, cash + 395);
-  assert.equal(game.getSnapshot().scenario.farm.cash, 21800);
+  assert.equal(game.getSnapshot().scenario.farm.cash, cash + 400);
+  assert.equal(game.getSnapshot().scenario.farm.cash, 21805);
   assert.equal(game.getSnapshot().scenario.fields[result.slot].state, 0);
 });
 
