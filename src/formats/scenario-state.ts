@@ -22,6 +22,7 @@ export interface SavedFarmState {
   contractLosses: number;
   salesAccumulator: number;
   workerExpenses: number;
+  landExpenses: number;
   townRegionX: number;
   townRegionY: number;
 }
@@ -38,6 +39,7 @@ export function readFarmState(bytes: Uint8Array): SavedFarmState {
     autoRent: Boolean(bytes[0x21731]), rentalExpenses: b.u32(0x216c4), townRegionX, townRegionY,
     cropIncome: b.u32(0x21690), contractGains: b.u32(0x2169c), contractLosses: b.u32(0x216b0),
     salesAccumulator: b.u32(0x21722), workerExpenses: 0, // SF-014: original loader never restores 6190:3e88.
+    landExpenses: b.u32(0x216b4), // SF-014: second 3e80 read overwrites the entry at 0x216ac.
     autoBuySeeds: Boolean(bytes[0x2173b]), autoClear: Boolean(bytes[0x21737]),
     seedExpenses: b.u32(0x216a4), paceEquipment: Boolean(bytes[0x21718]) };
 }

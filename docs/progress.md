@@ -226,3 +226,9 @@ The preceding turn made progress through committed harvest/sales integration and
 Validation: 105 Bun tests and TypeScript/production build pass. Six new tests cover original table bytes, all terrain boundaries, ownership and obstructions, map borders, constructor bytes, saturation and all-eight-scenario placement scans. The existing browser flow is unchanged; no new-field UI is claimed yet.
 
 The scan changed the next action: none of the supplied farms contains another eligible owned 8×8 plot, even with automatic clearing. Recover land purchase/clearing and then connect map placement to the planting command so the feature is usable on original farms. The requested speed slider remains complete; save/load and the other full-game requirements remain active.
+
+## 2026-10-07 — land purchase and original perimeter fences
+
+Recovered purchase valuation, ownership/cash/expense posting and the original fence connector. Kept unknown ownership codes unavailable and preserved source terrain flags, gate orientation and neighboring fence updates. Updated SF-014 with the now-implemented land and worker ledger behavior; its duplicate load remains preserved pending save/load reconstruction.
+
+Validation: all 111 Bun tests and TypeScript/production build pass. Six new tests cover exact EXE data, every fence connection mask, gates, corner regions, ownership adjacency, signed price inputs, cash/ledger boundaries and atomic rejection. All eight unmodified farms can afford a plot and create a field with automatic clearing; these are simulation checks, not yet browser commands. Next connect land purchase, clearing and new-field planting to GameSimulation and React.
