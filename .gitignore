@@ -13,3 +13,11 @@ Icon[]
 node_modules/
 __pycache__/
 *.pyc
+
+# Generated original-game resources and build output
+public/assets/*
+!public/assets/.gitkeep
+dist/
+artifacts/
+test-results/
+playwright-report/
