@@ -112,6 +112,8 @@ export function FarmView({ id, onScenarioChange, assets, zoom, onZoomChange, cro
         <FieldPanel scenario={data.scenario} crops={assets.catalog.crops} field={field}
           plantResult={snapshot?.lastPlantResult ?? null}
           harvestResult={snapshot?.lastHarvestResult ?? null}
+          treatmentResult={snapshot?.lastTreatmentResult ?? null}
+          onTreat={(fieldSlot, treatment) => simulation?.dispatch({ type: 'treat-field', fieldSlot, treatment })}
           harvestEstimate={field ? snapshot?.fieldHarvestEstimates[field.slot] : null}
           onHarvest={fieldSlot => simulation?.dispatch({ type: 'harvest-field', fieldSlot })}
           onPlant={(fieldSlot, cropSlot) => simulation?.dispatch({ type: 'plant-field', fieldSlot, cropSlot })}

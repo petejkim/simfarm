@@ -351,3 +351,72 @@ test('map tools buy original land and complete a new-field planting and harvest 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   expect(errors).toEqual([]);
 });
+
+test('fertilizing a new original plot produces a valuable corn harvest through browser controls', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await page.locator('#scenario').selectOption('4');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
+  await page.locator('#zoom').selectOption('0.5');
+  await page.locator('#map-tool').selectOption('land');
+  await page.locator('#viewport').evaluate(el => el.scrollTo(0, 0));
+  await page.locator('#viewport').click({ position: { x: 4, y: 132 } });
+  await page.locator('#buy-land').click();
+  await page.locator('#auto-clear').check();
+  await page.locator('#create-field').click();
+  for (let day = 0; day < 2; day++) await page.locator('#next-day').click();
+  await expect(page.locator('#field-status')).toContainText('Growing');
+  await expect(page.locator('#treatment-quote')).toContainText('Supply: $275');
+  await page.locator('#treat-field').click();
+  await expect(page.locator('#field-status')).toContainText('Fertilize');
+  await expect(page.locator('#treatment-result')).toContainText('Supply cost: $275');
+  await expect(page.locator('#farm-cash')).toHaveText('$21,613');
+  await expect(page.locator('#treat-field')).toBeDisabled();
+  await expect(page.locator('#plant-field')).toBeDisabled();
+  await expect(page.locator('#harvest-field')).toBeDisabled();
+  await page.locator('#next-day').click();
+  await expect(page.locator('#field-status')).toContainText('Growing');
+  await expect(page.locator('#field-growth')).toContainText('Fertility: 255 / 255');
+  await expect(page.locator('#treatment-progress')).toHaveCount(0);
+  await page.screenshot({ path: 'artifacts/browser-fertilizer.png', fullPage: true });
+  for (let day = 3; day < 84; day++) await page.locator('#next-day').click();
+  await expect(page.locator('#harvest-estimate')).toContainText('value: $1,451');
+  await page.locator('#harvest-field').click();
+  for (let day = 0; day < 12; day++) await page.locator('#next-day').click();
+  await expect(page.locator('.sell-harvest')).toHaveText('Sell for $1,451');
+  await page.locator('.sell-harvest').click();
+  await expect(page.locator('#farm-cash')).toHaveText('$23,064');
+  await expect(page.locator('#harvest-stock')).toHaveText('No stored harvests.');
+  await page.locator('#scenario').selectOption('0');
+  await page.locator('#field').selectOption('1');
+  await expect(page.locator('#treatment-result')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('all four field treatments use original stored supplies and restore crop work', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
+  await page.locator('#field').selectOption('1');
+  for (const [name, stock, status] of [['fertilizer', 18, 'Fertilize'], ['pesticide', 18, 'Pesticide'],
+    ['herbicide', 9, 'Herbicide'], ['fungicide', 18, 'Fungicide']] as const) {
+    await page.locator('#field-treatment').selectOption(name);
+    await expect(page.locator('#treatment-quote')).toContainText(`${stock} in stock`);
+    const cash = await page.locator('#farm-cash').textContent();
+    await page.locator('#treat-field').click();
+    await expect(page.locator('#field-status')).toContainText(status);
+    await expect(page.locator('#treatment-result')).toContainText('Used one supply in stock');
+    await expect(page.locator('#treatment-quote')).toContainText(`${stock - 1} in stock`);
+    await expect(page.locator('#farm-cash')).toHaveText(cash!);
+    for (let day = 0; day < 8; day++) await page.locator('#next-day').click();
+    await expect(page.locator('#field-status')).toContainText('Growing');
+    await expect(page.locator('#treat-field')).toBeEnabled();
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#field-treatment').scrollIntoViewIfNeeded();
+  await expect(page.locator('#field-treatment')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(errors).toEqual([]);
+});
