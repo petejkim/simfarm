@@ -5,6 +5,8 @@ import { validateCalendar } from '../simulation/calendar';
 import { FarmRandom } from '../simulation/random';
 import type { WeatherState } from '../simulation/weather';
 import { SIMULATION_SPEEDS, type SimulationState } from '../simulation/save-state';
+import { readFinancialState } from './finance';
+import { decodeFinancialState, encodeFinancialState } from './finance-save';
 
 export const MAX_SAVE_BYTES = 1_000_000;
 const FORMAT = 'simfarm-native';
@@ -117,8 +119,9 @@ function decodeWeather(value: unknown): WeatherState {
 }
 export function writeNativeSave(state: SimulationState, scenarioId: number): string {
   number(scenarioId, 0, 7, 'scenario ID');
-  const { scenario, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 2, scenarioId, scenario: encodeScenario(scenario), runtime });
+  const { scenario, finances, ...runtime } = state;
+  const text = JSON.stringify({ format: FORMAT, version: 3, scenarioId, scenario: encodeScenario(scenario),
+    runtime: { ...runtime, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
 }
@@ -127,7 +130,7 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || (save.version !== 1 && save.version !== 2)) fail('unsupported format or version');
+  if (save.format !== FORMAT || (save.version !== 1 && save.version !== 2 && save.version !== 3)) fail('unsupported format or version');
   const scenarioId = number(save.scenarioId, 0, 7, 'scenario ID'), s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const random = object(r.random, 'random');
   const rng = new FarmRandom({ visual: number(random.visual, 0, 65535, 'visual RNG'),
@@ -141,7 +144,8 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
     dayTicks: number(r.dayTicks, 0, Math.max(1, s.farm.dayDelayTicks) - 1, 'day ticks'),
     disasterFlags: number(r.disasterFlags, 0, 65535, 'disaster flags'), grassTravelCount: number(r.grassTravelCount, 0, 65535, 'grass wear'),
     equipmentAnimationTick: number(r.equipmentAnimationTick, 0, 65535, 'equipment animation tick'),
-    cropMarketPrices: numbers(r.cropMarketPrices, 16, 0, 65535, 'crop prices') };
+    cropMarketPrices: numbers(r.cropMarketPrices, 16, 0, 65535, 'crop prices'),
+    finances: save.version >= 3 ? decodeFinancialState(r.finances) : readFinancialState(s.sourceBytes) };
   if (state.elapsed >= 1) fail('fractional ticks');
   if (state.cropMarketPrices.some((price, i) => price !== s.cropDefinitions[i].price)) fail('inconsistent crop prices');
   return { scenarioId, state };

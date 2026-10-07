@@ -31,6 +31,7 @@ import { editFieldPlan, type FieldPlanEdit, type FieldPlanEditResult } from './f
 
 import { SIMULATION_SPEEDS, type SimulationState } from './save-state';
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
+import { copyFinancialState, readFinancialState, type FinancialState } from '../formats/finance';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -46,6 +47,7 @@ export interface GameSnapshot {
   daysAdvanced: number;
   paused: boolean;
   speed: number;
+  finances: FinancialState;
   cropMarketPrices: number[];
   lastPlantResult: PlantResult | null;
   lastHarvestResult: HarvestOrderResult | null;
@@ -96,6 +98,7 @@ export class GameSimulation {
   private readonly crops: readonly (readonly number[])[];
   private readonly random: FarmRandom;
   private readonly weather: WeatherState;
+  private readonly finances: FinancialState;
   private readonly listeners = new Set<() => void>();
   private snapshot!: GameSnapshot;
   private daysAdvanced = 0;
@@ -117,6 +120,7 @@ export class GameSimulation {
 
   constructor(scenario: Scenario, crops: readonly CropDefinition[], seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState) {
     this.scenario = copyScenario(scenario);
+    this.finances = restored ? copyFinancialState(restored.finances) : readFinancialState(scenario.sourceBytes);
     this.crops = scenario.cropFiles.map(file => {
       const crop = crops.find(c => `${c.id}.crp` === file);
       if (!crop) throw new Error(`Missing simulation crop ${file}`);
@@ -151,7 +155,8 @@ export class GameSimulation {
     return writeNativeSave({ scenario: this.scenario, crops: this.crops, random: this.random.snapshot(), weather: this.weather,
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
       disasterFlags: this.disasterFlags, grassTravelCount: this.equipmentRuntime.grassTravelCount,
-      equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices }, scenarioId);
+      equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices,
+      finances: this.finances }, scenarioId);
   }
 
   static load(text: string, crops: readonly CropDefinition[]): { scenarioId: number; simulation: GameSimulation } {
@@ -285,6 +290,7 @@ export class GameSimulation {
 
   private publish(): void {
     this.snapshot = { revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
+      finances: copyFinancialState(this.finances),
       weather: { ...this.weather, forecast: [...this.weather.forecast], nextForecast: [...this.weather.nextForecast] },
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, cropMarketPrices: [...this.cropMarketPrices],
       lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null,

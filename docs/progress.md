@@ -510,3 +510,15 @@ The preceding goal turn made progress through monthly retries, annual reports/re
 Four targeted tests pass, including an independent BigInt oracle, all eight farm valuations, source helper/thunk bytes and input/mutation boundaries. Full checks follow before commit. Next establish cold-start financial state and deterministic checkpoint ownership, then original borrow/repay actions and calendar/town/default integration. The full game remains incomplete; no push is requested.
 
 Loan-calculation gate: all 280 Bun tests pass (44 files), TypeScript/build and diff checks pass. Clean-source browser regressions follow the implementation commit.
+
+Loan-calculation commit `a29dc9c` passes both clean-source Chromium regressions (6.5 seconds).
+
+## 2026-10-07 — financial state ownership and native persistence
+
+Added canonical financial state to GameSimulation and detached snapshots: asset/default/annual accounts, loans/debts/rate, town funds/construction/development and clearing effects. Version 3 checkpoints now preserve all those values and raw definition/coordinate bytes. Legacy versions 1/2 migrate absent finances once without changing their existing farm ledgers or clocks. Invalid current-format finances reject before replacing the active game. No live financial events or borrowing panel are claimed yet; the user asked about loans and was told clearly that the UI is pending.
+
+Recovered sequential town-revenue load at SSM `2173c` and verified runtime initial values, including expansion funds 40,000 rather than an assumed zero. Fresh imports use the documented cold-import policy; original indirect/warm-load lifecycle remains limited evidence, especially building book value SF-065. Native restores never repeat those initializers.
+
+Four new targeted tests and the eleven existing save/schedule checks pass. Type checking and production build pass. Corrected an overstrict new animal-definition validator after source fixtures exposed the repeated type 163; corrected test comparisons to use saved values rather than JSON property order and the actual definition type offset. Full unit and full browser gates follow. Next borrow/repay actions, full calendar/default/town decisions and React financial controls. Original files remain untouched and the full goal stays active.
+
+Financial persistence pre-commit gate: all 284 Bun tests pass (45 files, 69.9 seconds), TypeScript/build and diff checks pass. The full browser suite will run from committed source because checkpoint format and GameSimulation ownership changed.

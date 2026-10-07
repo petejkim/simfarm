@@ -1,0 +1,45 @@
+import { Binary } from './binary';
+import { GoodsDefinition } from './inventory';
+import { readDefaultState, type DefaultState } from './default-state';
+import { readAnnualLedger, type AnnualLedgerState } from './annual-ledger';
+import { readMonthlyDebtState, type MonthlyDebtState } from './monthly-debt';
+import { readLoan, type LoanState } from './loan';
+import { readTownConstructionState } from './town';
+import type { TownDevelopmentState } from '../simulation/town-development';
+import { createClearingEffects, type ClearingEffects } from '../simulation/clearing-effects';
+
+/** Canonical financial state. Existing farm ledgers stay on Scenario.farm;
+ * account views for tax/loan operations must reference these same owners. */
+export interface FinancialState {
+  accounts: DefaultState;
+  annual: AnnualLedgerState;
+  debt: MonthlyDebtState;
+  loan: LoanState;
+  loanRate: number;
+  taxFailures: number;
+  town: TownDevelopmentState & { expansionFunds: number };
+  clearing: ClearingEffects;
+}
+
+/** Fresh source import, NOT a native restore. Untransferred runtime accounts
+ * use initialized EXE values; SF-065 retains the unresolved original building
+ * load lifecycle. Native saves preserve them explicitly and never reinitialize.
+ * Revenue: 17 one-byte reads after 0x2172a, then 0x46406 -> 6190:758a. */
+export function readFinancialState(bytes: Uint8Array): FinancialState {
+  const b = new Binary(bytes), activeSite = { regionX: b.slice(0x2170f, 1)[0], regionY: b.slice(0x21710, 1)[0] };
+  if (activeSite.regionX >= 12 || activeSite.regionY >= 12) throw new Error('Invalid active town site');
+  return { accounts: readDefaultState(bytes, 0),
+    annual: readAnnualLedger(bytes, { priorTaxExpenses: 0, ds3e70: 0, ds3e8c: 0, ds3e90: 0, ds3e94: 0, ds3e9c: 0 }),
+    debt: readMonthlyDebtState(bytes, 0, 0), loan: readLoan(bytes), loanRate: 15, taxFailures: 0,
+    town: { ...readTownConstructionState(bytes), activeSite, townRevenue: b.u32(0x2173c), expansionFunds: 40000, developmentSpent: 0 },
+    clearing: createClearingEffects() };
+}
+
+export function copyFinancialState(f: FinancialState): FinancialState {
+  return { ...f, accounts: { ...f.accounts, assets: { ...f.accounts.assets,
+    animalDefinitions: f.accounts.assets.animalDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))) },
+    otherDefinitions: f.accounts.otherDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))) },
+    annual: { ...f.annual }, debt: { ...f.debt }, loan: { ...f.loan },
+    town: { ...f.town, activeSite: { ...f.town.activeSite }, recreationCoordinates: Uint8Array.from(f.town.recreationCoordinates) },
+    clearing: { ...f.clearing, x: Uint8Array.from(f.clearing.x), y: Uint8Array.from(f.clearing.y) } };
+}
