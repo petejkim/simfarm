@@ -17,6 +17,14 @@ import { updatePlantingField } from './field-planting';
 import { updateEquipment } from './equipment-dispatch';
 import { reserveEquipment } from './equipment-rental';
 import type { EquipmentRuntime } from './equipment-world';
+import { orderHarvest, updateHarvestField, type HarvestOrderResult } from './field-harvest';
+import { cropMaturity, fieldHarvestValue } from './harvest-value';
+
+export interface FieldHarvestEstimate {
+  maturity: number;
+  value: number;
+  workerFee: number;
+}
 
 export interface GameSnapshot {
   revision: number;
@@ -26,9 +34,12 @@ export interface GameSnapshot {
   paused: boolean;
   cropMarketPrices: number[];
   lastPlantResult: PlantResult | null;
+  lastHarvestResult: HarvestOrderResult | null;
+  fieldHarvestEstimates: (FieldHarvestEstimate | null)[];
 }
 export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused: boolean }
-  | { type: 'plant-field'; fieldSlot: number; cropSlot: number };
+  | { type: 'plant-field'; fieldSlot: number; cropSlot: number }
+  | { type: 'harvest-field'; fieldSlot: number };
 
 function copyScenario(scenario: Scenario): Scenario {
   return { ...scenario, cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
@@ -48,7 +59,7 @@ function copyScenario(scenario: Scenario): Scenario {
 }
 
 /** Owns mutable game state. React receives detached snapshots and submits commands.
- * The scheduler covers calendar, climate, machinery, planting and growing fields; harvest and other systems remain.
+ * The scheduler covers calendar, climate, machinery, planting, growth and harvesting.
  */
 export class GameSimulation {
   private readonly scenario: Scenario;
@@ -65,6 +76,7 @@ export class GameSimulation {
   private readonly equipmentRuntime: EquipmentRuntime = { grassTravelCount: 0, animationTick: 0, notices: [] };
   private readonly cropMarketPrices: number[];
   private lastPlantResult: PlantResult | null = null;
+  private lastHarvestResult: HarvestOrderResult | null = null;
 
   constructor(scenario: Scenario, crops: readonly CropDefinition[], seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }) {
     this.scenario = copyScenario(scenario);
@@ -95,8 +107,12 @@ export class GameSimulation {
       if (this.paused === command.paused) return;
       this.paused = command.paused; this.elapsed = 0;
     } else if (command.type === 'plant-field') {
+      this.lastHarvestResult = null;
       this.lastPlantResult = plantField(this.scenario, command.fieldSlot, command.cropSlot, this.crops,
         this.cropMarketPrices, this.random, this.weather.soilMoisture);
+    } else if (command.type === 'harvest-field') {
+      this.lastPlantResult = null;
+      this.lastHarvestResult = orderHarvest(this.scenario, command.fieldSlot, this.crops);
     } else {
       const remaining = Math.max(1, this.scenario.farm.dayDelayTicks) - this.dayTicks;
       for (let i = 0; i < remaining; i++) this.advanceTick();
@@ -123,6 +139,7 @@ export class GameSimulation {
     updateEquipment(s, this.equipmentRuntime, tick, s.farm.paceEquipment, allocate);
     for (const field of s.fields) {
       if (!updatePlantingField(field, this.crops[field.cropSlot], s, this.equipmentRuntime, tick, allocate)) break;
+      updateHarvestField(field, this.crops[field.cropSlot], s, this.equipmentRuntime, tick, this.random, allocate);
     }
     if (++this.dayTicks >= Math.max(1, s.farm.dayDelayTicks)) { this.dayTicks = 0; this.advanceDay(); }
   }
@@ -176,7 +193,14 @@ export class GameSimulation {
     this.snapshot = { revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
       weather: { ...this.weather, forecast: [...this.weather.forecast], nextForecast: [...this.weather.nextForecast] },
       daysAdvanced: this.daysAdvanced, paused: this.paused, cropMarketPrices: [...this.cropMarketPrices],
-      lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null };
+      lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null,
+      lastHarvestResult: this.lastHarvestResult ? { ...this.lastHarvestResult } : null,
+      fieldHarvestEstimates: this.scenario.fields.map(f => {
+        if (!f.active) return null;
+        const crop = this.crops[f.cropSlot];
+        return { maturity: cropMaturity(f, crop), value: fieldHarvestValue(f, crop, this.cropMarketPrices[f.cropSlot]),
+          workerFee: crop[57] === 1 ? f.bytes[58] | f.bytes[59] << 8 : 0 };
+      }) };
     for (const listener of [...this.listeners]) listener();
   }
 }

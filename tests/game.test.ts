@@ -131,3 +131,66 @@ test('the fifth year-end retains the original temperature-table overread into wi
   assert.equal(snapshot.weather.temperatureYear, 0);
   assert.equal(snapshot.weather.temperature, 12);
 });
+
+test('player harvest commands complete on all original farms, publish inventory and permit the next planting', () => {
+  for (let id = 0; id < 8; id++) {
+    const input = farm(id), game = new GameSimulation(input.scenario, input.crops);
+    const field = input.scenario.fields.find(f => f.active)!, slot = field.slot;
+    const before = game.getSnapshot();
+    game.dispatch({ type: 'harvest-field', fieldSlot: slot });
+    assert.deepEqual(game.getSnapshot().lastHarvestResult, { ok: true });
+    const ordered = game.getSnapshot();
+    assert.equal(ordered.scenario.fields[slot].state, 5);
+    game.tick(10000); assert.equal(game.getSnapshot(), ordered);
+    game.dispatch({ type: 'harvest-field', fieldSlot: slot });
+    assert.deepEqual(game.getSnapshot().lastHarvestResult, { ok: false, reason: 'not-growing' });
+    assert.deepEqual(game.getSnapshot().scenario, ordered.scenario);
+    for (let day = 0; day < 12; day++) game.dispatch({ type: 'advance-day' });
+    const result = game.getSnapshot(), harvested = result.scenario.fields[slot];
+    assert.notEqual(harvested.state, 5, `farm ${id}`);
+    assert.equal(result.scenario.equipment.some(e => e.active && (e.flags & 11)), false);
+    const hasStorage = input.scenario.buildings.some(b => b.active && [64, 65].includes(b.type));
+    const items = result.scenario.inventory.filter(i => i.active && i.type === 168 + field.cropSlot);
+    assert.equal(items.length, Number(hasStorage));
+    assert.equal(before.scenario.fields[slot].state, 4);
+    assert.equal(input.scenario.inventory.filter(i => i.active && i.type === 168 + field.cropSlot).length, 0);
+    if (items.length) {
+      items[0].bytes.fill(255); result.scenario.harvestDefinitions[field.cropSlot].count = 999;
+    }
+    result.fieldHarvestEstimates[slot]!.value = -1;
+    game.dispatch({ type: 'plant-field', fieldSlot: slot, cropSlot: field.cropSlot });
+    assert.equal(game.getSnapshot().lastPlantResult?.ok, true);
+    assert.equal(game.getSnapshot().lastHarvestResult, null);
+    assert.notEqual(game.getSnapshot().fieldHarvestEstimates[slot]!.value, -1);
+    assert.notEqual(game.getSnapshot().scenario.harvestDefinitions[field.cropSlot].count, 999);
+  }
+});
+
+test('harvesting with growing weather and machinery is deterministic across frame partitions', () => {
+  for (const id of [0, 4, 6]) {
+    const input = farm(id), a = new GameSimulation(input.scenario, input.crops), b = new GameSimulation(input.scenario, input.crops);
+    for (const game of [a, b]) {
+      game.dispatch({ type: 'harvest-field', fieldSlot: 1 });
+      game.dispatch({ type: 'set-paused', paused: false });
+    }
+    a.tick(12000);
+    for (let frame = 0; frame < 720; frame++) b.tick(1000 / 60);
+    assert.deepEqual(a.getSnapshot().scenario, b.getSnapshot().scenario);
+    assert.deepEqual(a.getSnapshot().weather, b.getSnapshot().weather);
+    assert.deepEqual(a.getSnapshot().fieldHarvestEstimates, b.getSnapshot().fieldHarvestEstimates);
+  }
+});
+
+test('an invalid harvest order leaves cash, field work and inventory unchanged', () => {
+  const input = farm(4), game = new GameSimulation(input.scenario, input.crops), initial = game.getSnapshot();
+  for (const slot of [0, -1, 1.5, 98, NaN]) {
+    game.dispatch({ type: 'harvest-field', fieldSlot: slot });
+    assert.deepEqual(game.getSnapshot().lastHarvestResult, { ok: false, reason: 'invalid-field' });
+    assert.deepEqual(game.getSnapshot().scenario, initial.scenario);
+  }
+  game.dispatch({ type: 'plant-field', fieldSlot: 1, cropSlot: 0 });
+  const planting = game.getSnapshot();
+  game.dispatch({ type: 'harvest-field', fieldSlot: 1 });
+  assert.deepEqual(game.getSnapshot().lastHarvestResult, { ok: false, reason: 'not-growing' });
+  assert.deepEqual(game.getSnapshot().scenario, planting.scenario);
+});

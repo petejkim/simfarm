@@ -178,3 +178,9 @@ The preceding goal turn made progress through committed valuation/storage primit
 Validation: 88 Bun tests and TypeScript/production build pass. New integration tests exercise all eight farms and both harvest methods, exact quantity/loss storage, contracts, costs, sales, cash caps, ledger overflow, inventory exhaustion, concurrent reservations and return isolation. Browser harvest commands are not connected yet; the next increment connects them and adds browser checks. Stored-inventory sales still require their own recovered removal/valuation path.
 
 The user asked about planting a new field. Confirmed that current planting only supports existing scenario fields. New-field creation is the next gameplay priority after the complete harvest/storage/sale cycle; it remains required by the full objective.
+
+## 2026-10-07 — harvest commands in the game clock
+
+The preceding question-only turn was no implementation progress; revalidated clean commit `4828acc` and continued the available harvest integration. GameSimulation now owns harvest commands/results and value estimates, runs both harvest methods alongside machinery/weather, and publishes delivered inventory. Tests start from all eight unmodified original saves and verify completion, equipment return, replanting, invalid/duplicate commands, snapshot isolation and frame-partition determinism.
+
+Validation: 91 Bun tests and TypeScript/production build pass. Browser controls and their checks follow in the next increment; stored-goods sale is still outstanding. New-field creation remains the next priority after that farming cycle, and the full game objective remains active.
