@@ -579,3 +579,25 @@ Native `ForcedSaleResult.paid` remains false on exhaustion, independent of later
 ### SF-067 / SF-069 monthly caller follow-up
 
 The monthly retry primitive now preserves the zero-debt failure/countdown behavior and tests its path into bounded liquidation. For exhausted defaults it stops further financial phases and preserves debt while the explicit restart/exit decision is pending, correcting SF-069 at the monthly caller. Choosing exit never clears the debt. Live calendar suspension, UI and checkpoint persistence remain pending; ordinary-play zero-debt reachability is still unresolved.
+
+## SF-070 — final scheduled loan payment does not replenish available credit
+
+**Status:** confirmed store-order discrepancy; native preserved; complete credit lifecycle and correction deferred.
+
+Scheduled payment subtracts the installment from principal at `0xc5e2..0xc5fa`. On reaching zero, it clears installment `6190:b3b2` at `0xc657/0xc65b`, then reloads that now-zero amount at `0xc663` and adds it to available credit `b394` at `0xc670/0xc675`. Earlier installments add their full amount. Borrow-confirmation subtracts borrowed money from this credit at `0x46faf/0x46fb3`, and the selection limit uses it at `0x46ef4..0x46f0c`. The full credit recalculation lifecycle is still untraced, so persistence/duration of the lost replenishment is not proven. Native scheduled payment preserves this order and tests principal below/equal to the installment; no security claim is made.
+
+## SF-071 — monthly loan arrears payment omits normal balance and town updates
+
+**Status:** confirmed divergent accounting paths; native preserved; full lifecycle impact and correction deferred.
+
+On-time scheduled payment `0xc5b4..0xc675` reduces principal, allocates half/quarter of the installment to town funds and restores available credit. Failure copies the installment to overdue balance `2d9f:d5ba` and sets a countdown. Monthly successful retry `0xccba..0xcce6` only posts category 1000, clears overdue amount/countdown and emits notice 170. It does not perform the principal/credit/town updates; forced-sale success similarly clears the overdue state separately. Thus the local sequence accepts cash without applying the normal loan-account changes. Later credit/loan recomputation and UI consequences remain untraced, so no claim of irreversible player loss is made.
+
+Native scheduled and monthly primitives preserve the distinction. A composed regression establishes arrears then pays them, confirming that principal and town state do not change through the retry. Revisit at full loan integration, retaining this source evidence if corrected.
+
+## SF-072 — new scheduled failures overwrite arrears and restart the countdown
+
+**Status:** confirmed state replacement/timing interaction; native preserved; ordinary-play consequences and correction deferred.
+
+Failure always assigns countdown four at `0xc586` and replaces overdue amount at `0xc59d/0xc5a1`, without adding prior arrears or checking the old countdown. Caller due months are 0, 2, 6, 9 (`0xd005..0xd029`), with gaps of 2/4/3/3 months. Monthly retries run first. A further failure less than four months later can therefore postpone expiry and replace an existing demand rather than accumulate it. The four-month gap can reach forced default before the next scheduled attempt. This is an accounting/control-flow quirk, not a proven security vulnerability.
+
+Native failure retains replacement and the countdown value four, with tests starting from different existing arrears. Full calendar/borrowing integration will need to test player-visible consequences before deciding on a correction.

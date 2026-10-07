@@ -488,3 +488,15 @@ Implemented the executable's report sums and exact annual reset sequence, reusin
 Five targeted tests pass, including all source add/store instructions, all eight source farms, decoded boundaries, wrapped reports, omitted charges, reset retention and atomic validation. A manually calculated test expectation was corrected without changing the implementation. Type checking and production build pass; full-suite process and clean-source browser gates follow before final validation. Next resolve startup/load lifecycle and scheduled balance origination, then integrate financial/town/default state, decisions and native persistence. The full game remains incomplete and active.
 
 Annual-ledger pre-commit gate: all 270 Bun tests pass (42 files), TypeScript/build and diff checks pass. Both browser regressions will run from committed source.
+
+Committed annual reports/reset as `d139b65`; both clean-source Chromium regressions pass (6.3 seconds), alongside all 270 unit tests and type/build checks.
+
+## 2026-10-07 — scheduled loan payments and origination
+
+Recovered the full scheduled-payment routine and its month-boundary caller, normalized months 0/2/6/9 after retries and year-end processing. Borrow-confirmation and selection-bound code establish principal, available credit and installment roles; exact loader offsets now decode those accounts plus the preserved dialog selection. All eight supplied farms start them at zero, so additional sentinel tests guard offset mistakes.
+
+Implemented full debit, bounded principal reduction, unsigned town shares, credit posting, zero-amount success, overdue overwrite/countdown and notice 166. Added retained SF-070–072 evidence for the final-payment credit omission, late-payment accounting divergence and overdue replacement/timing. These behaviors are preserved pending full lifecycle/impact analysis. No guessed interest calculation, borrowing UI or live charges were added.
+
+All six new targeted tests pass, as do type checking and production build. Full-unit process and clean-source browser gates follow. Next financial startup/load lifecycle, original borrowing/credit calculations, then GameSimulation/React/checkpoint integration of finances/town/default. Original source is untouched; commits stay local and the complete game objective remains active.
+
+Scheduled-loan pre-commit gate: all 276 Bun tests pass (43 files, 58.2 seconds), TypeScript/build and diff checks pass. Source traces for installment calculation, annual rate changes and asset/credit valuation are recorded as next-step evidence, without guessing their unverified semantics.
