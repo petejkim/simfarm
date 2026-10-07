@@ -381,3 +381,27 @@ Annual collection tests the amount returned by debit with OR/JNE at `0x1d60d..0x
 Monthly tax retry calls forced-sale `0x1d766` with reason 36 (`0xcd28`); the other monthly balance uses reason 39 (`0xcc7a`). After selling a stored crop, reason 36 at `0x1d838..0x1d848` debits category 1000, while reason 39 at `0x1d85e..0x1d86e` debits category 2500. Regular monthly tax uses 2500 and the other balance uses 1000. Cash is debited for the same requested amount, but the crop-sale recovery records the wrong ledger. Later livestock, equipment and land retries use category zero, creating another accounting mismatch. These are static source findings; full default/UI reachability and broader effects remain unverified.
 
 Native forced sales are not yet implemented. Retain these mismatches when that path is ported and explicitly decide any correction; do not confuse an incorrect ledger category with duplicated cash debit or a proven security vulnerability.
+
+## SF-047 — signed recreation count can write before saved coordinate arrays
+
+**Status:** confirmed unchecked signed-index hazard on malformed state; native guard implemented; ordinary-play reachability unproven.
+
+Town constructor reads recreation count `6190:9cbc` as signed at `0x3abe3..0x3abe7`, compares it signed against seven at `0x3abf4`, then sign-extends it to index coordinate arrays `2d9f:f7aa/f7b2` at `0x3ac00..0x3ac1f`. Values 128–255 can pass these guards and index before the arrays when the town-region comparison permits construction. The SSM loader restores the byte at `0x21673` without validation in the inspected read sequence. Broader loader validation has not been established; no exploit or normal-play reachability is claimed.
+
+Native construction validates count 0–7 and both coordinate-array bounds before mutation; malformed counts are rejected atomically. Existing unused coordinate bytes remain preserved. Keep this evidence if later save validation is expanded.
+
+## SF-048 — town-choice timeout ignores a rejected recreational district
+
+**Status:** confirmed ignored result; native constructor failure is exposed; complete pending-choice integration remains deferred.
+
+At `0x3c385..0x3c3a3`, timeout chooses `below(14)+1`, calls constructor `0x3aba0`, then unconditionally clears the choice-pending local without checking AX. Random type 4 may fail its recreation quota/cap. The plot was already paid for and assigned town ownership by `0x3bff0..0x3c032`, so this path can leave a reserved plot without the new district. Interactive recreation checks the result and keeps the chooser open, demonstrating the difference. Full runtime reproduction is pending clock/choice integration; no security claim.
+
+Native `resolveTownChoice` returns this failure, including for timeout, preserving the reservation and map so the eventual UI can retain the pending choice. A bounded-RNG fixture produces type 4 at a blocked quota and verifies no construction mutation. Do not silently replace it with another random type or discard the paid plot.
+
+## SF-049 — invalid district type can use an uninitialized template offset
+
+**Status:** confirmed constructor input hazard; normal chooser does not supply it; native bounds guard implemented.
+
+Constructor `0x3ac28..0x3ac65` initializes local pattern offset only for signed type below 15. A positive type 15–127 falls through without assigning `[bp-0xe]`, which later participates in reads from `6190:952c` at `0x3ad5c..0x3ad68`. Negative signed types also form invalid offsets. The traced player choices and timeout generate only 1–14, so reachable harmful input beyond malformed/internal calls is not established. This is not a proven exploitable vulnerability.
+
+Native constructor rejects every non-integer or out-of-range type before mutation, and the layout accessor bounds-checks type and coordinates. Tests include negative, 15, 256 and NaN inputs while preserving unknown words in valid layout storage.
