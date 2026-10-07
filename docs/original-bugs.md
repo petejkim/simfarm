@@ -765,3 +765,20 @@ Flow append `0x17a78..0x17ac5` writes a three-byte entry at the current write in
 **Status:** verified loop bound; full-capacity out-of-array read conditional on count64; native correction deferred.
 
 Registry removal `0x17944..0x179d9` finds the coordinate, then copies entry i+1 into i while i<count (`0x17962..0x17998`) before decrementing count. It reads the inactive successor of the last live entry, and at count64 reads three bytes beyond the192-byte registry. Only the now-inactive trailing slot receives that copy, so active-list corruption is not established by this routine alone. This is a boundedness hazard, not a demonstrated exploit. Native removal should shift only remaining live entries and preserve/clear inactive bytes under an explicit policy when the registry is implemented.
+
+
+### SF-086–089 irrigation primitive update
+
+The reconstructed primitive preserves SF-086's exact merge arithmetic. Source import performs original overlapping writes (SF-087), rejects counts whose active tail was not transferred, and retains the source payload; native state can represent all64 entries without that lossy layout. SF-088 is corrected with an explicitly occupied FIFO bounded by the world plus source seeds. SF-089 shifts only live successors and retains inactive bytes. Tests cover these decisions. The original warm-tail lifecycle and ordinary maximum-occupancy/topology remain unresolved; live checkpoint/clock integration is still pending.
+
+## SF-090 — zero-strength irrigation packets re-enqueue indefinitely
+
+**Status:** verified control flow; native primitive consumes zero packets. Particular original-farm topology reachability remains unproven.
+
+Consumer0x17b3e tests packet strength at0x17b71; zero jumps to0x17cd6, whose zero branch falls through to enqueue0x17ce9. No strength or position changes, so a queue containing only zero packets never empties. Junction division0x17b95..0x17b9d can produce zero when strength is less than outgoing-neighbor count, and still enqueues those branches. This can keep the driver active indefinitely, preventing subsequent alternating phases. It is a simulation-liveness defect, not a claimed security exploit. Native marks/enqueues the same branch tiles, then consumes zero packets without propagation. A four-way junction with strength1 is covered through successful completion.
+
+## SF-091 — irrigation reads off-map neighbors and queues unclamped outlets
+
+**Status:** verified unchecked accesses; native bounded reads and consistent outlet clamp implemented in primitive.
+
+Neighbor query0x17636 reads four map words at offsets−2,+2,−192,+192 from the source index before any coordinate clamping. Edge coordinates can alias another column or read outside the map. Enqueue0x17a78 calls clamping marker0x17560, but writes its original coordinate bytes into the ring; a wind source at y95 seeds y96. Subsequent neighbor reads interpret that unbounded coordinate. Native neighbor enumeration ignores cells outside0..95 and stores the clamped outlet coordinate as well as marking it. Edge/corner/word-tick-wrap tests pass. Original ordinary-edge source reachability remains to be assessed; no arbitrary-code execution claim is made.
