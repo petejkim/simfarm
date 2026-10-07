@@ -157,3 +157,19 @@ Native handling accepts this original farm, derives active items from bounded re
 The existing-field planting branch resets age/accumulators and releases any crop contract before trying to consume/buy seed (`0x2f7de`–`0x2f83d`). If seed acquisition fails, it calls the abandon/expiry routine `0x1c2a8` (`0x2f97a`–`0x2f989`), clearing the crop. Thus insufficient cash or unavailable seed can destroy the existing crop and contract even though no replacement is planted. The new-field click path has different failure side effects and should be revisited when new-field placement is ported.
 
 Native handling obtains seed successfully before resetting field/contract state. A regression verifies that insufficient funds leave the existing scenario state unchanged. Retain this documented difference when implementing calendar-scheduled planting.
+
+## SF-019 — negative effective crop age becomes fully mature in valuation
+
+**Status:** confirmed arithmetic quirk; ordinary-play reachability unverified; preserved in native valuation.
+
+Maturity routine `0x1c1aa` sign-extends field age +34 and the low byte of the heat-delay quotient. At `0x1c216`–`0x1c222`, it forms a word difference, pushes that word as the high half of a 32-bit numerator, and calls unsigned division. An effective age of -1 becomes `0xffff0000`; the returned maturity saturates to 65535 instead of zero. Both age and delay also wrap at signed-byte boundaries. A zero nominal lifetime or wrapped zero heat divisor can instead cause an original division exception on malformed/custom definitions. Supplied crop lifetimes/divisors are valid.
+
+Native behavior preserves the signed/unsigned maturity arithmetic with boundary regressions and rejects invalid divisors explicitly. No gameplay correction is made; revisit reachability through long-lived perennials, cold conditions and field scheduling before deciding whether to correct the arithmetic. This is not a proven exploitable vulnerability.
+
+## SF-020 — crop valuation loses the high word of quantity times price
+
+**Status:** confirmed arithmetic truncation; preserved in native valuation; normal market/contract overflow reachability requires more reconstruction.
+
+`0x1c4bd`–`0x1c4c3` multiplies two unsigned words, then zeroes DX, discarding the product's high half before the loss adjustment. A quantity of 1000 at unit price 100 becomes 34464 before adjustment and yields 34463 at zero loss. The later unsigned high-word comparison against 65535 (`0x1c4d9`) cannot detect that earlier loss. The caller `0x1c092` divides the quoted crop/contract price by ten first; original supplied crop base values do not by themselves demonstrate an overflowing trade.
+
+Native behavior deliberately preserves low-word truncation, price division and the strict 51000 loss cutoff; regressions cover product overflow and both sides of that cutoff. No fix made. Revisit with recovered market fluctuations and contract pricing; do not classify this as a security vulnerability without a reachable adverse path.

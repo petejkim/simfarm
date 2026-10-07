@@ -152,3 +152,11 @@ React now exposes crop selection and planting commands, seed costs, status and b
 Split the previously combined local planting commit into seed inventory, simulation commands/scheduler and React controls, each with its corresponding evidence and checks. Earlier commits are preserved; nothing was pushed. The final implementation matches the previously validated combined increment.
 
 The full game goal remains active. Next reconstruct harvest machinery (`0x156be`), yield/value (`0x1c092`, `0x1c24e`, `0x1c4aa`), storage and sale. Original future calendar scheduling, new-field placement, save/load and the other original systems remain unfinished.
+
+## 2026-10-07 — harvest valuation arithmetic
+
+The preceding goal turn made progress: the pending planting work was split into independently checked local commits and the requested Git read-only pause policy was committed. Worktree was clean on resumption. Continued directly into harvest code, recovering shared maturity, loss and crop/contract value functions from the executable and Microsoft arithmetic helpers. Added pure TypeScript implementations and source-data/boundary coverage. Recorded signed maturity wrap and intermediate value truncation as SF-019/SF-020, with reachability qualifications and preserved native behavior.
+
+Harvest commands, workers, storage delivery and crop sales are still outstanding; this increment is their shared arithmetic, not a completed harvest loop. Next port inventory construction/storage and the machinery/worker harvest FSM, then expose the command through GameSimulation and React.
+
+Validation: 75 Bun tests, TypeScript checking and production build pass. No browser behavior changed in this arithmetic increment.
