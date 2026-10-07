@@ -117,3 +117,19 @@ Native handling rejects off-map candidates and limits search to 96 rings, suffic
 On completion of planting's second pass, the routine clears field +42 (`0x18391`), changes the field to Growing, then reloads field +42 to select the equipment whose timestamp it updates (`0x183ec`–`0x1840b`). This writes equipment slot zero instead of the tractor. Slot zero is reserved and the equipment dispatcher starts at slot one, so no harmful consequence is currently established. The tractor's movement-order routine already sets its timestamp during the same completion path.
 
 Native handling retains the slot-zero write explicitly. Revisit if later recovered code reads this reserved record; do not characterize this alone as a security vulnerability.
+
+## SF-014 — scenario loader reads two accounting entries into the same global
+
+**Status:** confirmed duplicate destination; accounting consequences require further reconstruction; fix deferred.
+
+The loader reads SSM `0x216ac` into `6190:3e80` at `0x45da6`, then reads SSM `0x216b4` into the same global at `0x45dd6`. The second read overwrites the first. The expense dispatcher separately updates `6190:3e88` for item categories 500..503 (`0x1c9b6`–`0x1c9cf`), suggesting a possible incorrect destination in the load sequence, but the intended serialized accounting layout and matching saver still need verification. Do not silently remap the second value based only on that inference.
+
+Native handling currently decodes only the cash and rental-expense entries needed for rentals, at separate verified offsets. The affected expense categories are not yet implemented. Revisit with complete finances and save/load; no exploit is demonstrated.
+
+## SF-015 — accumulated rental expenses wrap at 32 bits
+
+**Status:** confirmed arithmetic limit; reachable gameplay impact unverified; preserved.
+
+The cash debit checks affordability using unsigned 32-bit comparisons (`0x1c8d0`–`0x1c8f2`). Its rental-expense ledger branch then adds the payment using a 32-bit ADD/ADC pair with no overflow check (`0x1c9e6`–`0x1c9f8`). A total of `0xfffffff0` followed by a 100-unit rental becomes 84. Other expense branches use the same arithmetic. This does not itself permit overspending, and normal-play reachability depends on ledger resets, income and game duration, which remain to be reconstructed.
+
+Native handling preserves unsigned ledger wrapping, with a boundary regression. No correction made. Revisit when the full accounting/year-end path is ported.

@@ -122,3 +122,11 @@ Retained and updated SF-010 after correcting whole-chain detachment. Added SF-01
 Validation: 59 Bun tests and TypeScript/production build pass. New checks include all original stored-machine round trips, rotated first-fit storage, fully blocked parking termination, tick wrap/pacing, both return modes, tractor-assisted implement relocation and complete planting/return on SCEN3–6. No browser/UI behavior changed in this increment.
 
 The full game goal remains active. Next recover seed consumption/purchase and automatic rental, connect machinery/planting to GameSimulation and React commands, then implement harvest, inventory and sales. The browser remains limited to calendar/weather/growing fields until those command prerequisites are connected; save/load and other major systems also remain unfinished.
+
+## 2026-10-07 — automatic equipment rentals
+
+Continued after committing planting/return as `6df2b14`. Recovered and implemented original automatic ground-equipment rental: the saved setting, first-free-slot constructor, half-purchase-price debit, rental expense accounting, town-entry placement and removal after return. Missing funds and exhausted machine slots do not produce active rentals or unauthorized charges. Reused slots retain bytes the original constructor does not initialize. Plane rental/cleanup remains separate and unimplemented.
+
+Planting/return integration now also passes on the four farms without all required owned machines, using actual rentals and original prices. Combined coverage spans all eight supplied farms. Corrected swapped native property names for the saved equipment/calendar timer and animation timer; their previous values were not consumed by the browser scheduler.
+
+Documented the original accounting loader's duplicate destination as SF-014, deferred pending full ledger/saver reconstruction, and unsigned expense-total overflow as SF-015, preserved with a regression. Validation: 64 Bun tests, TypeScript/production build and all five Chromium checks pass. The complete playable game remains the objective; these tests still start after seed validation. Next implement seed inventory/automatic seed purchase and the planting command, then connect the simulation clock/UI and proceed to harvesting, storage and sale.
