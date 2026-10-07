@@ -23,6 +23,7 @@ export interface Scenario {
   inventory: InventoryRecord[];
   seedDefinitions: GoodsDefinition[];
   cropDefinitions: GoodsDefinition[];
+  harvestDefinitions: GoodsDefinition[];
 }
 /** Recovered from overlay 22:283c (file 0x4543c), especially 0x45782–0x457fa. */
 export function readScenario(bytes: Uint8Array): Scenario {
@@ -41,7 +42,8 @@ export function readScenario(bytes: Uint8Array): Scenario {
     regionalConditions: Uint8Array.from(b.slice(0x21273, 12 * 12 * 7)), climate: readClimateTables(bytes),
     equipment: readEquipment(bytes), equipmentDefinitions: readEquipmentDefinitions(bytes), animals: readAnimals(bytes),
     buildings: readBuildings(bytes), buildingDefinitions: readBuildingDefinitions(bytes), inventory: readInventory(bytes),
-    seedDefinitions: readGoodsDefinitions(bytes, true), cropDefinitions: readGoodsDefinitions(bytes, false) };
+    seedDefinitions: readGoodsDefinitions(bytes, true), cropDefinitions: readGoodsDefinitions(bytes, false),
+    harvestDefinitions: readGoodsDefinitions(bytes, 'harvest') };
 }
 /** The original masks AH with 7 after reading terrain; see file 0x9536–0x9556. */
 export function terrainTile(cell: WorldCell): number { return cell.terrain & 0x7ff; }

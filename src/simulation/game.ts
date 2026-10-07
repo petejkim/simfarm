@@ -41,6 +41,7 @@ function copyScenario(scenario: Scenario): Scenario {
     inventory: scenario.inventory.map(i => new InventoryRecord(i.slot, Uint8Array.from(i.bytes))),
     seedDefinitions: scenario.seedDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))),
     cropDefinitions: scenario.cropDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))),
+    harvestDefinitions: scenario.harvestDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))),
     farm: { ...scenario.farm, calendar: { ...scenario.farm.calendar } },
     regionalConditions: Uint8Array.from(scenario.regionalConditions),
     climate: { wind: [...scenario.climate.wind], precipitation: [...scenario.climate.precipitation], temperature: [...scenario.climate.temperature] } };

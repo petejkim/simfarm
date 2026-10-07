@@ -160,3 +160,11 @@ The preceding goal turn made progress: the pending planting work was split into 
 Harvest commands, workers, storage delivery and crop sales are still outstanding; this increment is their shared arithmetic, not a completed harvest loop. Next port inventory construction/storage and the machinery/worker harvest FSM, then expose the command through GameSimulation and React.
 
 Validation: 75 Bun tests, TypeScript checking and production build pass. No browser behavior changed in this arithmetic increment.
+
+## 2026-10-07 — harvest inventory and storage reservations
+
+After committing shared valuation as `132323d`, recovered harvested-goods definitions, the inventory constructor, nearest crop-storage reservation and truck delivery's reserved-cell completion. Added bounded native operations that preserve unnamed bytes and the original first-reserved-cell ordering. Decoding/snapshots now retain the additional sixteen goods definitions. Full storage tests span all eight farms (including the two without crop storage), exact executable graphics, inventory slot boundaries and source/snapshot isolation.
+
+Recorded SF-021 (512 inventory slots versus byte building references) with native prevalidation, and SF-022 (storage reservation leak on allocation failure) with a cleanup primitive; actual harvest failure-path integration is explicitly deferred. Machinery and worker harvest FSMs, commands and crop sales remain next.
+
+Validation: all 80 Bun tests, TypeScript checking, production build and six Chromium checks pass. Existing planting, calendar/weather and MIDI behavior remain verified with the expanded snapshot data.

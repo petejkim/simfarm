@@ -173,3 +173,19 @@ Native behavior preserves the signed/unsigned maturity arithmetic with boundary 
 `0x1c4bd`–`0x1c4c3` multiplies two unsigned words, then zeroes DX, discarding the product's high half before the loss adjustment. A quantity of 1000 at unit price 100 becomes 34464 before adjustment and yields 34463 at zero loss. The later unsigned high-word comparison against 65535 (`0x1c4d9`) cannot detect that earlier loss. The caller `0x1c092` divides the quoted crop/contract price by ten first; original supplied crop base values do not by themselves demonstrate an overflowing trade.
 
 Native behavior deliberately preserves low-word truncation, price division and the strict 51000 loss cutoff; regressions cover product overflow and both sides of that cutoff. No fix made. Revisit with recovered market fluctuations and contract pricing; do not classify this as a security vulnerability without a reachable adverse path.
+
+## SF-021 — building inventory references truncate item slots above 255
+
+**Status:** confirmed format/arithmetic mismatch; ordinary-game reachability beyond 255 items unverified; native stored delivery guarded.
+
+Inventory constructor `0x15234` scans and can allocate slots 1–511. Building content stores its inventory reference in a byte; harvest storage completion `0x1b2fe`–`0x1b301` copies only AL from the word item slot into that byte. Slot 256 is thus stored as zero, and 257 aliases one, while the item's own record remains active. Generic storage `0x1a69d` uses the same byte write. Exact downstream consequences depend on the interaction/removal caller; no security exploit is established.
+
+The native raw constructor retains the original full slot range, but harvested storage delivery rejects an unrepresentable first-free index before inventory, counts or building mutation. The forthcoming harvest caller can use its original sale fallback. Tests exercise slot 511 in the constructor, then slot 256 rejection at storage. Wider native storage references would need an explicit format migration; that enhancement is deferred.
+
+## SF-022 — failed harvest inventory allocation leaves a storage cell reserved
+
+**Status:** confirmed machinery-harvest failure path; native cleanup primitive added; integration fix deferred to harvest FSM.
+
+`0x1aff0` reserves a crop-storage cell by changing its type from -1 to -2 at `0x1b17d`. Truck delivery later creates an inventory record at `0x15fef`. If the 512-slot table is full, the constructor returns zero and `0x15ffc` branches to `0x16032`, which sells the harvest. The common return path clears the field's storage-building word at `0x16093`, but this path contains no release of the reserved -2 cell. Repeated allocation failures can consume storage capacity until another operation clears it. No reachable exploit or normal-game frequency is claimed.
+
+Native storage operations fail before mutation and provide `releaseHarvestReservation` to free a still-reserved cell. Tests verify exhaustion, unchanged storage on failed delivery and explicit release. The cleanup is not yet connected to a running harvest FSM; keep this entry open until that failure path is integrated and tested.

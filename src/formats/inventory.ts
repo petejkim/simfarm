@@ -8,6 +8,8 @@ export class InventoryRecord {
     this.data = new Binary(bytes);
   }
   get type(): number { return this.data.u16(0); }
+  get quantity(): number { return this.data.u16(2); }
+  get loss(): number { return this.data.u16(4); }
   get x(): number { return this.bytes[8]; }
   get y(): number { return this.bytes[9]; }
   get active(): boolean { return Boolean(this.bytes[10] & 0x20); }
@@ -21,6 +23,7 @@ export class GoodsDefinition {
     this.data = new Binary(bytes);
   }
   get type(): number { return this.data.u16(2); }
+  get graphic(): number { return this.data.u16(0); }
   get count(): number { return this.data.u16(4); }
   set count(n: number) { this.data.view.setUint16(4, n, true); }
   get price(): number { return this.data.u16(6); }
@@ -38,12 +41,14 @@ export function readInventory(bytes: Uint8Array): InventoryRecord[] {
   return items;
 }
 
-export function readGoodsDefinitions(bytes: Uint8Array, seeds: boolean): GoodsDefinition[] {
-  const data = new Binary(bytes), offset = seeds ? 0x20e38 : 0x20b0e, startType = seeds ? 192 : 128;
-  return Array.from({ length: seeds ? 16 : 24 }, (_, i) => {
+export function readGoodsDefinitions(bytes: Uint8Array, kind: boolean | 'harvest'): GoodsDefinition[] {
+  const data = new Binary(bytes), offset = kind === 'harvest' ? 0x20d18 : kind ? 0x20e38 : 0x20b0e;
+  const startType = kind === 'harvest' ? 168 : kind ? 192 : 128;
+  return Array.from({ length: kind ? 16 : 24 }, (_, i) => {
     const def = new GoodsDefinition(Uint8Array.from(data.slice(offset + i * 18, 18)));
     // Only sixteen of the twenty-four crop entries are populated.
-    if (i < 16 && (def.type !== startType + i || (seeds && (def.width !== 1 || def.height !== 1)))) throw new Error('Invalid goods definition');
+    if (i < 16 && (def.type !== startType + i || (kind && (def.width !== 1 || def.height !== 1)))) throw new Error('Invalid goods definition');
+    if (kind === 'harvest' && def.graphic !== 109 + i) throw new Error('Invalid harvested crop graphic');
     return def;
   });
 }
