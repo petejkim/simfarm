@@ -5,6 +5,7 @@ import { readScenario } from '../src/formats/scenario';
 import { readCrop } from '../src/formats/crop';
 import { GameSimulation } from '../src/simulation/game';
 import { quoteLand } from '../src/simulation/land';
+import { TREATMENTS } from '../src/simulation/field-treatment';
 
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
 function farm(id = 4) {
@@ -12,6 +13,54 @@ function farm(id = 4) {
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
   return { scenario, crops };
 }
+
+test('treatment commands own detached chemical stock and complete with deterministic machinery/weather timing', () => {
+  for (const treatment of TREATMENTS) {
+    const input = farm(0), a = new GameSimulation(input.scenario, input.crops), b = new GameSimulation(input.scenario, input.crops);
+    const stock = a.getSnapshot().scenario.chemicals.filter(c => c.active).length;
+    for (const game of [a, b]) {
+      game.dispatch({ type: 'treat-field', fieldSlot: 1, treatment });
+      assert.equal(game.getSnapshot().lastTreatmentResult?.ok, true);
+      assert.equal(game.getSnapshot().scenario.chemicals.filter(c => c.active).length, stock - 1);
+      game.dispatch({ type: 'set-paused', paused: false });
+    }
+    const view = a.getSnapshot(); view.scenario.chemicals[1].bytes.fill(255); view.scenario.chemicalDefinitions[0].count = 500;
+    a.tick(12000); for (let n = 0; n < 120; n++) b.tick(100);
+    assert.deepEqual(a.getSnapshot().scenario, b.getSnapshot().scenario);
+    assert.deepEqual(a.getSnapshot().weather, b.getSnapshot().weather);
+    assert.equal(a.getSnapshot().scenario.fields[1].state, 4);
+    assert.equal(input.scenario.chemicals.filter(c => c.active).length, stock);
+  }
+});
+
+test('fertilizer makes a newly purchased original plot produce a valuable stored corn harvest', () => {
+  const input = farm(), game = new GameSimulation(input.scenario, input.crops);
+  game.dispatch({ type: 'buy-land', regionX: 0, regionY: 2 });
+  game.dispatch({ type: 'set-auto-clear', enabled: true });
+  game.dispatch({ type: 'create-field', x: 0, y: 16, cropSlot: 0 });
+  const result = game.getSnapshot().lastNewFieldResult; assert.ok(result?.ok);
+  for (let day = 0; day < 2; day++) game.dispatch({ type: 'advance-day' });
+  assert.ok(game.getSnapshot().scenario.fields[result.slot].bytes[29] < 32);
+  game.dispatch({ type: 'treat-field', fieldSlot: result.slot, treatment: 'fertilizer' });
+  assert.deepEqual(game.getSnapshot().lastTreatmentResult,
+    { ok: true, source: 'purchased', cost: 275, fieldSlot: result.slot, treatment: 'fertilizer' });
+  const ordered = game.getSnapshot();
+  game.tick(3000); assert.equal(game.getSnapshot(), ordered); // Paused work stays paused.
+  for (let day = 2; day < 84; day++) game.dispatch({ type: 'advance-day' });
+  const grown = game.getSnapshot();
+  assert.equal(grown.scenario.fields[result.slot].state, 4);
+  assert.ok(grown.scenario.fields[result.slot].bytes[29] > 128);
+  assert.ok(grown.fieldHarvestEstimates[result.slot]!.value > 0);
+  game.dispatch({ type: 'harvest-field', fieldSlot: result.slot });
+  for (let day = 0; day < 12; day++) game.dispatch({ type: 'advance-day' });
+  const stored = game.getSnapshot(), item = stored.scenario.inventory.find(i => i.active && i.type === 168)!;
+  assert.ok(item); assert.equal(stored.storedHarvestValues[item.slot], 1451);
+  const cash = stored.scenario.farm.cash;
+  game.dispatch({ type: 'sell-harvest', inventorySlot: item.slot });
+  assert.equal(game.getSnapshot().scenario.farm.cash, cash + 1451);
+  assert.equal(game.getSnapshot().scenario.farm.cash, 23064);
+  assert.equal(game.getSnapshot().scenario.fields[result.slot].state, 0);
+});
 
 test('all original farms buy land, clear it, plant a new field and finish machinery work', () => {
   for (let id = 0; id < 8; id++) {

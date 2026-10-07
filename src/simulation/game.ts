@@ -22,6 +22,7 @@ import { orderHarvest, updateHarvestField, type HarvestOrderResult } from './fie
 import { cropMaturity, fieldHarvestValue } from './harvest-value';
 import { sellStoredHarvest, storedHarvestValue, type HarvestSaleResult } from './harvest-sale';
 import { purchaseLand, type LandPurchaseResult } from './land';
+import { orderTreatment, updateTreatmentField, type Treatment, type TreatmentResult } from './field-treatment';
 
 /** Native wall-clock pacing choices; original equipment/calendar tick ratios stay unchanged. */
 export const SIMULATION_SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16] as const;
@@ -47,12 +48,14 @@ export interface GameSnapshot {
   lastSaleResult: HarvestSaleResult | null;
   lastLandResult: LandPurchaseResult | null;
   lastNewFieldResult: NewFieldResult | null;
+  lastTreatmentResult: TreatmentResult | null;
 }
 export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused: boolean }
   | { type: 'set-speed'; speed: number }
   | { type: 'set-auto-clear'; enabled: boolean }
   | { type: 'buy-land'; regionX: number; regionY: number }
   | { type: 'create-field'; x: number; y: number; cropSlot: number }
+  | { type: 'treat-field'; fieldSlot: number; treatment: Treatment }
   | { type: 'plant-field'; fieldSlot: number; cropSlot: number }
   | { type: 'harvest-field'; fieldSlot: number }
   | { type: 'sell-harvest'; inventorySlot: number };
@@ -99,6 +102,7 @@ export class GameSimulation {
   private lastSaleResult: HarvestSaleResult | null = null;
   private lastLandResult: LandPurchaseResult | null = null;
   private lastNewFieldResult: NewFieldResult | null = null;
+  private lastTreatmentResult: TreatmentResult | null = null;
 
   constructor(scenario: Scenario, crops: readonly CropDefinition[], seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }) {
     this.scenario = copyScenario(scenario);
@@ -141,6 +145,8 @@ export class GameSimulation {
       this.lastNewFieldResult = plantNewField(this.scenario, command.x, command.y, command.cropSlot, this.crops,
         this.cropMarketPrices, this.random, this.weather.soilMoisture);
       if (this.lastNewFieldResult.ok) this.lastPlantResult = this.lastNewFieldResult;
+    } else if (command.type === 'treat-field') {
+      this.lastTreatmentResult = orderTreatment(this.scenario, command.fieldSlot, command.treatment, this.weather.soilMoisture);
     } else if (command.type === 'plant-field') {
       this.lastHarvestResult = null;
       this.lastPlantResult = plantField(this.scenario, command.fieldSlot, command.cropSlot, this.crops,
@@ -177,6 +183,7 @@ export class GameSimulation {
     for (const field of s.fields) {
       if (!updatePlantingField(field, this.crops[field.cropSlot], s, this.equipmentRuntime, tick, allocate)) break;
       updateHarvestField(field, this.crops[field.cropSlot], s, this.equipmentRuntime, tick, this.random, allocate);
+      if (!updateTreatmentField(field, this.crops[field.cropSlot], s, this.equipmentRuntime, tick, this.weather.soilMoisture, allocate)) break;
     }
     if (++this.dayTicks >= Math.max(1, s.farm.dayDelayTicks)) { this.dayTicks = 0; this.advanceDay(); }
   }
@@ -235,6 +242,7 @@ export class GameSimulation {
       lastSaleResult: this.lastSaleResult ? { ...this.lastSaleResult } : null,
       lastLandResult: this.lastLandResult ? { ...this.lastLandResult } : null,
       lastNewFieldResult: this.lastNewFieldResult ? { ...this.lastNewFieldResult } : null,
+      lastTreatmentResult: this.lastTreatmentResult ? { ...this.lastTreatmentResult } : null,
       storedHarvestValues: this.scenario.inventory.map(i => i.active && i.type >= 168 && i.type < 184
         ? storedHarvestValue(i, this.scenario) : null),
       fieldHarvestEstimates: this.scenario.fields.map(f => {
