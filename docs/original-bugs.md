@@ -545,3 +545,33 @@ Native land sale retains source order and this counter behavior. A regression co
 ### SF-064 follow-up — whole land-sale preparation
 
 Native land sales now validate demolition as one transaction before crediting cash or clearing ownership. Shared count reservations catch aggregate shortages across multiple buildings; surviving machinery may not reference any removed machine, while links wholly inside the destroyed set are retained in inactive records. Tests confirm failed preparation leaves all accounts, map, records and clearing state unchanged. This does not settle all future delivery/home/default dependencies.
+
+### SF-059 implementation follow-up — bounded forced sales
+
+Native `forceAssetSales` now scans actual decoded inventory, animal and equipment slots once, and the 12×12 land grid, independently of unsafe source counts. It retains eligibility/order, failed-sale payment retries and ledger mismatch SF-046. Tests cover all eight source farms under unpayable debt, unrelated active inventory and the final legal slot of all three record arrays. This completes the scan-bound correction for the primitive; monthly/default UI/checkpoint integration remains pending.
+
+### SF-046 implementation follow-up — category zero is equipment expenditure
+
+The later default retry category zero is not an unclassified debit: `0x1c912..0x1c925` routes it to equipment expense `6190:3e7c`. Native forced sales now preserve that posting along with the swapped crop-stage categories. Tests stop successfully at each of crop/animal/equipment/land stages and verify the exact ledger, full amount and dword wrapping. Ordinary financial presentation is still pending.
+
+## SF-067 — zero default amount still liquidates assets and reaches a terminal choice
+
+**Status:** verified arithmetic/control-flow behavior; native preserved; ordinary-play reachability unresolved.
+
+Debit returns the amount, so zero is tested as failure by forced-sale retries (`0x1d854`, `0x1d92f`, `0x1d9e8`, `0x1daeb`). Default does not guard a zero requested amount before selling. Both monthly callers test only their countdown before a normal debit (`0xcc40`, `0xccee`), and decrement toward default when that return is zero. Annual zero-assessment failure SF-044 can establish a zero tax debt/countdown in unusual states; full ordinary-game reachability is not yet demonstrated.
+
+Native forced-sale arithmetic retains this behavior with bounded scans, and a test verifies a zero-value demand still sells an available crop and requests a decision. Revisit a correction together with SF-044 during live monthly/annual integration; no security claim is made.
+
+## SF-068 — terminal default text claims the protected homestead was sold
+
+**Status:** confirmed text/control-flow mismatch; native world protection preserved; UI wording deferred.
+
+Terminal text at `6190:3efa` says the homestead was sold to pay debts. The preceding land scan explicitly skips the saved pair (`0x1db1a..0x1db2d`) and contains no final home sale before showing that text at `0x1db56`. Native exhaustion preserves the home plot on all eight farms and returns a pending decision. The future UI should describe inability to pay without inventing a home sale. Original text remains documented rather than silently used as simulation evidence.
+
+## SF-069 — declining restart can be mistaken for successful default payment
+
+**Status:** confirmed return-value/caller mismatch; native explicit outcomes separate payment and decision; live caller correction pending.
+
+The default terminal dialog's nonzero result is left in AX when `0x1db72..0x1db7e` writes exit flag 1 and returns. Monthly callers test AX as payment success (`0xcc92`, `0xcd40`) and can clear the respective unpaid balance and emit a success notice even though no full debit succeeded. Exit is already requested, so visible/persistent consequences beyond this sequence remain unverified. A zero dialog result requests restart and returns zero instead.
+
+Native `ForcedSaleResult.paid` remains false on exhaustion, independent of later restart/exit choice. The decision is single-use and does not itself mark debt paid. Monthly integration must retain this separation rather than translate a UI button result into payment success. No exploit or financial correctness claim beyond this code path is made.
