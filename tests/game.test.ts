@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { readScenario } from '../src/formats/scenario';
 import { readCrop } from '../src/formats/crop';
 import { GameSimulation } from '../src/simulation/game';
+import { quoteLand } from '../src/simulation/land';
 
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
 function farm(id = 4) {
@@ -11,6 +12,69 @@ function farm(id = 4) {
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
   return { scenario, crops };
 }
+
+test('all original farms buy land, clear it, plant a new field and finish machinery work', () => {
+  for (let id = 0; id < 8; id++) {
+    const input = farm(id), game = new GameSimulation(input.scenario, input.crops), ry = id === 4 ? 2 : 0;
+    const initial = game.getSnapshot(), count = initial.scenario.fields.filter(f => f.active).length;
+    const price = quoteLand(initial.scenario, 0, ry, initial.weather.soilMoisture)!.price;
+    game.dispatch({ type: 'buy-land', regionX: 0, regionY: ry });
+    const bought = game.getSnapshot();
+    assert.deepEqual(bought.lastLandResult, { ok: true, regionX: 0, regionY: ry, price });
+    assert.equal(bought.scenario.farm.cash, 40000 - price);
+    assert.equal(initial.scenario.farm.cash, 40000);
+    game.dispatch({ type: 'create-field', x: 0, y: ry * 8, cropSlot: 0 });
+    assert.deepEqual(game.getSnapshot().lastNewFieldResult, { ok: false, reason: 'blocked-terrain' });
+    game.dispatch({ type: 'set-auto-clear', enabled: true });
+    game.dispatch({ type: 'create-field', x: 0, y: ry * 8, cropSlot: 0 });
+    const planted = game.getSnapshot(), result = planted.lastNewFieldResult;
+    assert.ok(result?.ok); assert.equal(result.cost, planted.scenario.seedDefinitions[0].price + 20);
+    assert.equal(planted.scenario.farm.cash, 40000 - price - result.cost);
+    assert.equal(planted.scenario.fields.filter(f => f.active).length, count + 1);
+    const field = planted.scenario.fields[result.slot];
+    assert.equal(field.state, 3); assert.equal(field.x, 0); assert.equal(field.y, ry * 8);
+    assert.deepEqual(planted.scenario.regionalConditions, bought.scenario.regionalConditions); // No replant pest reductions.
+    const region = ((4 >> 3) * 12 + ((ry * 8 + 4) >> 3)) * 7;
+    assert.equal(field.bytes[20], planted.scenario.regionalConditions[region + 2]);
+    assert.equal(field.bytes[21], planted.scenario.regionalConditions[region + 4]);
+    assert.equal(field.bytes[22], planted.scenario.regionalConditions[region + 3]);
+    assert.equal(planted.scenario.cropDefinitions[0].price, planted.cropMarketPrices[0]);
+    game.dispatch({ type: 'create-field', x: 0, y: ry * 8, cropSlot: 0 });
+    assert.equal(game.getSnapshot().lastNewFieldResult?.ok, false);
+    assert.deepEqual(game.getSnapshot().scenario, planted.scenario);
+    for (let day = 0; day < 12; day++) game.dispatch({ type: 'advance-day' });
+    const grown = game.getSnapshot();
+    assert.equal(grown.scenario.fields[result.slot].state, 4, `farm ${id}`);
+    assert.equal(grown.scenario.equipment.some(e => e.active && (e.flags & 9)), false);
+    assert.equal(input.scenario.fields[result.slot].active, false);
+    assert.equal(input.scenario.farm.autoClear, false);
+  }
+});
+
+test('new-field failures preserve land, inventory, field slots, cash and random-dependent behavior', () => {
+  for (const failure of ['funds', 'seeds', 'crop', 'bounds', 'slots']) {
+    const input = farm();
+    if (failure === 'seeds') input.scenario.farm.autoBuySeeds = false;
+    if (failure === 'slots') for (const field of input.scenario.fields.slice(1)) field.bytes[7] |= 1;
+    const quote = quoteLand(input.scenario, 0, 2, 8)!;
+    if (failure === 'funds') input.scenario.farm.cash = quote.price;
+    const game = new GameSimulation(input.scenario, input.crops), control = new GameSimulation(input.scenario, input.crops);
+    for (const g of [game, control]) {
+      g.dispatch({ type: 'buy-land', regionX: 0, regionY: 2 });
+      g.dispatch({ type: 'set-auto-clear', enabled: true });
+    }
+    const before = game.getSnapshot();
+    game.dispatch({ type: 'create-field', x: failure === 'bounds' ? 89 : 0, y: 16, cropSlot: failure === 'crop' ? 16 : 0 });
+    assert.equal(game.getSnapshot().lastNewFieldResult?.ok, false, failure);
+    assert.deepEqual(game.getSnapshot().scenario, before.scenario);
+    assert.deepEqual(game.getSnapshot().cropMarketPrices, before.cropMarketPrices);
+    if (failure !== 'slots') { // Artificial active records are not valid simulation fields.
+      for (const g of [game, control]) g.dispatch({ type: 'advance-day' });
+      assert.deepEqual(game.getSnapshot().scenario, control.getSnapshot().scenario);
+      assert.deepEqual(game.getSnapshot().weather, control.getSnapshot().weather);
+    }
+  }
+});
 
 test('simulation owns game state, publishes stable detached snapshots, and pauses elapsed time', () => {
   const input = farm(), simulation = new GameSimulation(input.scenario, input.crops);

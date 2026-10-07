@@ -12,7 +12,7 @@ import { updateFieldStatus } from './field-status';
 import { updateFieldWater } from './field-water';
 import { FarmRandom, type RandomState } from './random';
 import { applyDailyWeather, advanceForecast, initializeWeather, updateWeeklyWind, type WeatherState } from './weather';
-import { plantField, type PlantResult } from './plant-order';
+import { plantField, plantNewField, type PlantResult, type NewFieldResult } from './plant-order';
 import { updatePlantingField } from './field-planting';
 import { updateEquipment } from './equipment-dispatch';
 import { reserveEquipment } from './equipment-rental';
@@ -20,6 +20,7 @@ import type { EquipmentRuntime } from './equipment-world';
 import { orderHarvest, updateHarvestField, type HarvestOrderResult } from './field-harvest';
 import { cropMaturity, fieldHarvestValue } from './harvest-value';
 import { sellStoredHarvest, storedHarvestValue, type HarvestSaleResult } from './harvest-sale';
+import { purchaseLand, type LandPurchaseResult } from './land';
 
 /** Native wall-clock pacing choices; original equipment/calendar tick ratios stay unchanged. */
 export const SIMULATION_SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16] as const;
@@ -43,9 +44,14 @@ export interface GameSnapshot {
   fieldHarvestEstimates: (FieldHarvestEstimate | null)[];
   storedHarvestValues: (number | null)[];
   lastSaleResult: HarvestSaleResult | null;
+  lastLandResult: LandPurchaseResult | null;
+  lastNewFieldResult: NewFieldResult | null;
 }
 export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused: boolean }
   | { type: 'set-speed'; speed: number }
+  | { type: 'set-auto-clear'; enabled: boolean }
+  | { type: 'buy-land'; regionX: number; regionY: number }
+  | { type: 'create-field'; x: number; y: number; cropSlot: number }
   | { type: 'plant-field'; fieldSlot: number; cropSlot: number }
   | { type: 'harvest-field'; fieldSlot: number }
   | { type: 'sell-harvest'; inventorySlot: number };
@@ -88,6 +94,8 @@ export class GameSimulation {
   private lastPlantResult: PlantResult | null = null;
   private lastHarvestResult: HarvestOrderResult | null = null;
   private lastSaleResult: HarvestSaleResult | null = null;
+  private lastLandResult: LandPurchaseResult | null = null;
+  private lastNewFieldResult: NewFieldResult | null = null;
 
   constructor(scenario: Scenario, crops: readonly CropDefinition[], seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }) {
     this.scenario = copyScenario(scenario);
@@ -121,6 +129,15 @@ export class GameSimulation {
       if (!SIMULATION_SPEEDS.some(speed => speed === command.speed)) throw new Error('Invalid simulation speed');
       if (this.speed === command.speed) return;
       this.speed = command.speed;
+    } else if (command.type === 'set-auto-clear') {
+      this.scenario.farm.autoClear = command.enabled;
+    } else if (command.type === 'buy-land') {
+      this.lastLandResult = purchaseLand(this.scenario, command.regionX, command.regionY, this.weather.soilMoisture);
+    } else if (command.type === 'create-field') {
+      this.lastPlantResult = null; this.lastHarvestResult = null;
+      this.lastNewFieldResult = plantNewField(this.scenario, command.x, command.y, command.cropSlot, this.crops,
+        this.cropMarketPrices, this.random, this.weather.soilMoisture);
+      if (this.lastNewFieldResult.ok) this.lastPlantResult = this.lastNewFieldResult;
     } else if (command.type === 'plant-field') {
       this.lastHarvestResult = null;
       this.lastPlantResult = plantField(this.scenario, command.fieldSlot, command.cropSlot, this.crops,
@@ -213,6 +230,8 @@ export class GameSimulation {
       lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null,
       lastHarvestResult: this.lastHarvestResult ? { ...this.lastHarvestResult } : null,
       lastSaleResult: this.lastSaleResult ? { ...this.lastSaleResult } : null,
+      lastLandResult: this.lastLandResult ? { ...this.lastLandResult } : null,
+      lastNewFieldResult: this.lastNewFieldResult ? { ...this.lastNewFieldResult } : null,
       storedHarvestValues: this.scenario.inventory.map(i => i.active && i.type >= 168 && i.type < 184
         ? storedHarvestValue(i, this.scenario) : null),
       fieldHarvestEstimates: this.scenario.fields.map(f => {

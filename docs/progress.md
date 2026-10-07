@@ -234,3 +234,9 @@ Recovered purchase valuation, ownership/cash/expense posting and the original fe
 Validation: all 111 Bun tests and TypeScript/production build pass. Six new tests cover exact EXE data, every fence connection mask, gates, corner regions, ownership adjacency, signed price inputs, cash/ledger boundaries and atomic rejection. All eight unmodified farms can afford a plot and create a field with automatic clearing; these are simulation checks, not yet browser commands. Next connect land purchase, clearing and new-field planting to GameSimulation and React.
 
 New-field integration exposed an edge-field failure in weekly water refresh. Recorded the original unchecked border reads as SF-029 and bounded native probes to real map neighbors; all four corners and both water categories have a regression. This fixes the native exception before exposing edge placement in the browser. Command/UI integration is still in progress.
+
+## 2026-10-07 — new-field planting commands
+
+GameSimulation now handles land purchase, the saved automatic-clearing setting and creating/planting fields. The recovered map-click path retains initial regional pest levels, unlike existing-field replanting. Extended SF-018 with the original new-field failure evidence and made insufficient seed/funds atomic before construction. All eight unmodified original farms now buy land, plant a new edge field and finish machinery work in command tests.
+
+Validation: all 114 Bun tests and TypeScript/production build pass, including field-water edge guards. Existing and new browser checks are running against the React integration for the following commit. The full game objective remains active; this command increment does not complete save/load or the other original systems.

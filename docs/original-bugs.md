@@ -154,9 +154,9 @@ Native handling accepts this original farm, derives active items from bounded re
 
 **Status:** confirmed failure-path side effects; fixed for native immediate planting commands.
 
-The existing-field planting branch resets age/accumulators and releases any crop contract before trying to consume/buy seed (`0x2f7de`–`0x2f83d`). If seed acquisition fails, it calls the abandon/expiry routine `0x1c2a8` (`0x2f97a`–`0x2f989`), clearing the crop. Thus insufficient cash or unavailable seed can destroy the existing crop and contract even though no replacement is planted. The new-field click path has different failure side effects and should be revisited when new-field placement is ported.
+The existing-field planting branch resets age/accumulators and releases any crop contract before trying to consume/buy seed (`0x2f7de`–`0x2f83d`). If seed acquisition fails, it calls the abandon/expiry routine `0x1c2a8` (`0x2f97a`–`0x2f989`), clearing the crop. Thus insufficient cash or unavailable seed can destroy the existing crop and contract even though no replacement is planted. The new-field click path constructs the field and clears its terrain at `0x23eae` before consuming seed at `0x23f85`; failure branches through `0x23f91` to `0x2416e` without undoing that construction.
 
-Native handling obtains seed successfully before resetting field/contract state. A regression verifies that insufficient funds leave the existing scenario state unchanged. Retain this documented difference when implementing calendar-scheduled planting.
+Native handling obtains seed successfully before resetting field/contract state or constructing a new field. Regressions verify that insufficient funds or unavailable seed leave the existing scenario state, new-field terrain, inventory and free slots unchanged. Retain this documented difference when implementing calendar-scheduled planting.
 
 ## SF-019 — negative effective crop age becomes fully mature in valuation
 
