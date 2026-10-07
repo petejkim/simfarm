@@ -533,3 +533,15 @@ Native demolition takes explicit runtime book value instead of guessing a saved 
 ### SF-055 building subtraction implementation
 
 Building demolition now preserves the sign-extended price subtraction described above. Tests cover definition prices 0, 32767, 32768 and 65535 against zero and maximum dword balances. The native implementation does not correct this verified arithmetic quirk; its ordinary-play consequences and building-ledger initialization remain under investigation.
+
+## SF-066 — land-sale repaint leaves clearing entries below the animation range
+
+**Status:** confirmed producer/consumer interaction; native behavior preserved with bounded scanning; correction deferred.
+
+Field cleanup and building demolition enqueue tile 664 through `0xa2f6`. Land sale subsequently rewrites non-tree terrain to grass at `0x3cb12..0x3cb4b`, including queued cells inside the plot. Clearing update `0xa490..0xa4f5` advances only its animation range or retires images whose incremented value is at least 672. Lower images fall through to the visited increment without clearing x or decrementing count. The queue can thus retain coordinates after their effects have been overwritten. The complete interaction is statically established; original runtime timing/visible consequences remain unverified.
+
+Native land sale retains source order and this counter behavior. A regression composes field removal, sale and animation update, confirming the sold grass stays unchanged while count remains positive. Native scanning remains bounded to 64 entries (SF-061), so this does not recreate the original unchecked-array scan. Consider retiring overwritten entries during live animation integration, with an explicit fidelity decision; no security exploit is claimed.
+
+### SF-064 follow-up — whole land-sale preparation
+
+Native land sales now validate demolition as one transaction before crediting cash or clearing ownership. Shared count reservations catch aggregate shortages across multiple buildings; surviving machinery may not reference any removed machine, while links wholly inside the destroyed set are retained in inactive records. Tests confirm failed preparation leaves all accounts, map, records and clearing state unchanged. This does not settle all future delivery/home/default dependencies.

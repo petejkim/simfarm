@@ -20,6 +20,32 @@ export function demolishBuilding(world: Scenario, state: BuildingDemolitionState
   effects: ClearingEffects, soilMoisture: number): boolean {
   const b = world.buildings[slot];
   if (!Number.isInteger(slot) || slot <= 0 || !b?.active) return false;
+  prepareBuildingDemolitions(world, state, [slot], effects, soilMoisture).get(slot)!();
+  return true;
+}
+
+interface Preparation {
+  removed: Set<object>;
+  removedMachines: Set<number>;
+  counts: Map<object, number>;
+}
+
+/** Plan a synchronous transaction before cash/ownership changes. The caller
+ * applies each callback once, in source map-scan order, without intervening commands. */
+export function prepareBuildingDemolitions(world: Scenario, state: BuildingDemolitionState, slots: readonly number[],
+  effects: ClearingEffects, soilMoisture: number): Map<number, () => void> {
+  const preparation: Preparation = { removed: new Set(), removedMachines: new Set(), counts: new Map() };
+  const result = new Map<number, () => void>();
+  for (const slot of new Set(slots)) result.set(slot, prepareBuilding(world, state, slot, effects, soilMoisture, preparation));
+  for (const e of world.equipment) if (e.active && !preparation.removedMachines.has(e.slot) &&
+    (preparation.removedMachines.has(e.attachment) || (e.type !== 7 && preparation.removedMachines.has(e.parent)))) throw new Error('Demolition would break equipment links');
+  return result;
+}
+
+function prepareBuilding(world: Scenario, state: BuildingDemolitionState, slot: number,
+  effects: ClearingEffects, soilMoisture: number, preparation: Preparation): () => void {
+  const b = world.buildings[slot];
+  if (!Number.isInteger(slot) || slot <= 0 || !b?.active) throw new Error('Invalid demolished building');
   validateClearingEffects(effects, soilMoisture);
   const def = world.buildingDefinitions[b.type - 64];
   if (!def || def.width < 1 || def.width > 4 || def.height < 1 || def.height > 3 ||
@@ -27,13 +53,14 @@ export function demolishBuilding(world: Scenario, state: BuildingDemolitionState
     ![state.buildingBookValue, state.assets.equipmentBookValue].every(n => Number.isInteger(n) && n >= 0 && n <= 0xffffffff)) {
     throw new Error('Invalid building demolition state');
   }
-  const actions: (() => void)[] = [], removed = new Set<object>(), removedMachines = new Set<number>();
-  const counts = new Map<object, number>();
+  const actions: (() => void)[] = [];
+  const { removed, removedMachines, counts } = preparation;
   const reserve = (definition: object, count: number, decrement = true) => {
     const available = count - (counts.get(definition) ?? 0);
     if (available <= 0) throw new Error('Demolition definition count mismatch');
     if (decrement) counts.set(definition, (counts.get(definition) ?? 0) + 1);
   };
+  reserve(def, def.count);
   const contains = (x: number, y: number) => x >= b.x && y >= b.y && x < b.x + def.width && y < b.y + def.height;
   for (let x = 0; x < def.width; x++) for (let y = 0; y < def.height; y++) {
     const item = b.content(x * 3 + y), type = item.type;
@@ -90,17 +117,14 @@ export function demolishBuilding(world: Scenario, state: BuildingDemolitionState
       reserve(d, d.count); actions.push(() => { d.count--; });
     } else throw new Error('Unsupported demolished content type');
   }
-  // Do not leave active external machinery pointing at a destroyed attachment.
-  // Internal links of now-inactive records remain original bytes (SF-057).
-  for (const e of world.equipment) if (e.active && !removedMachines.has(e.slot) &&
-    (removedMachines.has(e.attachment) || (e.type !== 7 && removedMachines.has(e.parent)))) throw new Error('Demolition would break equipment links');
-  for (const action of actions) action();
-  for (let x = b.x; x < b.x + def.width; x++) for (let y = b.y; y < b.y + def.height; y++) {
-    const cell = world.cells[worldIndex(x, y)];
-    cell.terrain = (((cell.terrain & 0xf800) | (15 + soilMoisture + (cell.attribute >>> 2))) & 0xf7ff);
-    queueClearingEffect(world, effects, x, y, soilMoisture);
-  }
-  def.count--; state.buildingBookValue = (state.buildingBookValue - (def.price << 16 >> 16)) >>> 0;
-  b.flags &= ~0x20;
-  return true;
+  return () => {
+    for (const action of actions) action();
+    for (let x = b.x; x < b.x + def.width; x++) for (let y = b.y; y < b.y + def.height; y++) {
+      const cell = world.cells[worldIndex(x, y)];
+      cell.terrain = (((cell.terrain & 0xf800) | (15 + soilMoisture + (cell.attribute >>> 2))) & 0xf7ff);
+      queueClearingEffect(world, effects, x, y, soilMoisture);
+    }
+    def.count--; state.buildingBookValue = (state.buildingBookValue - (def.price << 16 >> 16)) >>> 0;
+    b.flags &= ~0x20;
+  };
 }
