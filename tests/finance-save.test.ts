@@ -43,11 +43,12 @@ test('financial cold import pins original runtime initializers, sequential town 
 test('all original farms save and restore financial state independently of UI snapshots', () => {
   for (let id = 0; id < 8; id++) {
     const { game, crops } = setup(id), text = game.save(id), saved = JSON.parse(text);
-    assert.equal(saved.version, 6);
+    assert.equal(saved.version, 7);
     assert.deepEqual(saved.runtime.finances, encodeFinancialState(readFinancialState(source(`SCEN${id}.SSM`))));
     const view = game.getSnapshot().finances;
     view.accounts.assets.animalDefinitions[0].bytes.fill(255); view.accounts.otherDefinitions[0].bytes.fill(0);
     view.annual.ds3e70 = 123; view.loan.principal = 123; view.debt.unpaidTaxes = 123;
+    view.statistics.words.fill(65535); view.statistics.regions.fill(255); view.statistics.fieldPresence.fill(1);
     view.town.recreationCoordinates.fill(255); view.town.activeSite.regionX = 11; view.clearing.x.fill(0);
     assert.equal(game.save(id), text);
     const restored = GameSimulation.load(text, crops).simulation;
@@ -77,8 +78,42 @@ test('native financial restore retains changed ledgers, raw definitions, debts, 
   // First tick is already >=16 past 65535, then updates occur every sixteen ticks.
   after.clearing.lastTick = (saved.scenario.farm.animationTicks + 1 + 16 * Math.floor((saved.scenario.farm.dayDelayTicks - 1) / 16)) & 65535;
   Object.assign(after.debt, { balanceDue: 0, balanceCountdown: 0, unpaidTaxes: 0, taxCountdown: 0 });
+  // Original farm's eight active fields have pre-water flood and nutrient flags (0x82).
+  Object.assign(after.statistics, { fieldPresence: [0, 1, 0, 0, 0, 0, 0, 1], distinctFieldStatuses: 2, nutrientDeficientFields: 8 });
   assert.deepEqual(JSON.parse(restored.save(4)).runtime.finances, after);
   f.loan.principal = 0; assert.equal(restored.getSnapshot().finances.loan.principal, 100);
+});
+
+test('v7 statistics persist raw history and reject malformed members; v1–6 initialize absent history only once', () => {
+  const { game, crops } = setup(), text = game.save(4), base = JSON.parse(text), initial = base.runtime.finances.statistics;
+  for (const version of [1, 2, 3, 4, 5, 6]) {
+    const old = structuredClone(base); old.version = version; delete old.runtime.finances.statistics;
+    if (version < 3) delete old.runtime.finances;
+    if (version < 4 && old.runtime.finances) delete old.runtime.finances.defaultDecision;
+    const loaded = GameSimulation.load(JSON.stringify(old), crops).simulation;
+    assert.deepEqual(loaded.getSnapshot().finances.statistics, initial);
+    assert.equal(JSON.parse(loaded.save(4)).version, 7);
+    assert.deepEqual(JSON.parse(GameSimulation.load(loaded.save(4), crops).simulation.save(4)), JSON.parse(loaded.save(4)));
+  }
+  const changed = structuredClone(base), stats = changed.runtime.finances.statistics;
+  Object.assign(stats, { ds3e58: 0xffffffff, ds3e5c: 0x80000000, regions: [255, 254, 253, 252],
+    words: Array(14).fill(65535), fieldPresence: [1, 0, 1, 0, 1, 0, 1, 0], distinctFieldStatuses: 8,
+    nutrientDeficientFields: 65535, chemicallyStressedFields: 65534 });
+  const loaded = GameSimulation.load(JSON.stringify(changed), crops).simulation;
+  assert.deepEqual(loaded.getSnapshot().finances.statistics, stats); // Raw cached counts need not agree with current fields.
+  const mutations = [
+    (f: any) => { delete f.statistics; }, ...Object.keys(stats).map(k => (f: any) => { delete f.statistics[k]; }),
+    (f: any) => { f.statistics.ds3e58 = -1; }, (f: any) => { f.statistics.ds3e5c = 0x100000000; },
+    (f: any) => { f.statistics.regions[0] = 256; }, (f: any) => { f.statistics.regions.pop(); },
+    (f: any) => { f.statistics.words[13] = 65536; }, (f: any) => { f.statistics.words[0] = '1'; },
+    (f: any) => { f.statistics.words.pop(); }, (f: any) => { f.statistics.fieldPresence[0] = 2; },
+    (f: any) => { f.statistics.distinctFieldStatuses = 9; }, (f: any) => { f.statistics.nutrientDeficientFields = 65536; },
+    (f: any) => { f.statistics.chemicallyStressedFields = 0.5; },
+  ];
+  for (const mutate of mutations) {
+    const bad = structuredClone(base); mutate(bad.runtime.finances);
+    assert.throws(() => GameSimulation.load(JSON.stringify(bad), crops), /financial state/); assert.equal(game.save(4), text);
+  }
 });
 
 test('legacy versions migrate absent finances once while preserving existing farm ledgers and malformed current state is rejected', () => {

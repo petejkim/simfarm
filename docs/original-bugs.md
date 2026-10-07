@@ -636,7 +636,7 @@ Live monthly default now pauses before later financial/weather/crop phases and p
 
 ## SF-076 — annual region-count report sign-extends byte totals
 
-**Status:** verified arithmetic boundary; normal player reachability and displayed impact unproven; native report integration/fix deferred.
+**Status:** verified arithmetic boundary; normal player reachability and displayed impact unproven; native annual words preserve the boundary, correction deferred.
 
 Annual routine `0x1f4d2..0x1f573` counts ownership codes 1 and 2 across the 12×12 world in bytes `6190:7510/750f`. Report routine reads the player byte at `0x1f589`, uses opcode `98` (CBW in this 16-bit code) at `0x1f58d`, and stores AX at `0x1f58e` to `6190:4460`. The town byte follows at `0x1f59f`, CBW `0x1f5a3`, store `0x1f5a4` to `4464`. Thus totals 128–144 become signed words -128 through -112, although they fit the unsigned count byte. The routine uses these signed values in subsequent word differences (`0x1f5af`, `0x1f5bd`). Segment pointers for these counts resolve to `6190` in initialized DS.
 
@@ -658,7 +658,7 @@ SF-066's overwritten low-tile entries remain pending in the live queue by an exp
 
 ## SF-077 — annual field-status aggregation trusts a count without bounding slots
 
-**Status:** confirmed unchecked scan pattern under inconsistent count; ordinary reachability/impact unproven; native reconstruction and fix pending.
+**Status:** confirmed unchecked scan pattern under inconsistent count; ordinary reachability/impact unproven; bounded native scan implemented in weekly and annual paths.
 
 Routine `0x1f020` initializes slot to 1 (`0x1f047`) and encountered-active count to zero. It tests field active bit at `0x1f070`, reads +54 at `0x1f078`, and increments the encountered count only for active slots (`0x1f09f`). Every iteration increments slot (`0x1f0a2`). The loop compares the encountered count against signed `6190:3e3e` at `0x1f0ac/0x1f0b1`, with no check against the 98-record field table or last usable slot 97. An inconsistent positive declared count can therefore continue reading beyond field storage while searching for enough active records.
 
@@ -671,8 +671,15 @@ The live Farm report now uses `summarizeFieldStatus`, which visits real slots 1�
 
 ## SF-078 — annual asset rating returns an unclassified low word above its upper threshold
 
-**Status:** verified arithmetic/control-flow boundary; ordinary reachability and downstream display impact unproven; native annual rating integration/fix deferred.
+**Status:** verified arithmetic/control-flow boundary; ordinary reachability and downstream display impact unproven; native annual rating preserves the boundary, correction deferred.
 
 `0x3cc20` calls broader asset helper `0x3d980`, then classifies its signed nonnegative result into 0–7 for ranges ending just below 1,000,000. Final comparison at `0x3ccf8..0x3cd02` accepts only values below `000f:4240`; values at or above that bound jump to `0x3cd07` without assigning a rating to AX. AX still holds the original low value word. At exactly 1,000,000 the return is therefore `0x4240` (16,960), rather than a value 0–7. Annual report `0x1f5c8..0x1f5d1` subtracts its previous `4454` word from that AX and stores the result.
 
-The native clock does not yet execute this rating wrapper. Reachable asset totals, downstream presentation and intended behavior at the upper bound remain to be traced before deciding whether to preserve or cap it. This is not a proven ordinary-play defect or security exploit. Preserve this evidence and the distinct signed broader-asset calculation when adding the bounded native implementation; do not silently substitute the borrowing-credit formula.
+The native clock now executes this rating wrapper and preserves its raw return word (see follow-up below). Reachable asset totals, downstream presentation and intended behavior at the upper bound remain to be traced before deciding whether to preserve or cap it. This is not a proven ordinary-play defect or security exploit. Preserve this evidence and the distinct signed broader-asset calculation when adding the bounded native implementation; do not silently substitute the borrowing-credit formula.
+
+
+### SF-076 / SF-077 / SF-078 persisted annual statistics follow-up
+
+Version-7 statistics now preserve the original signed region-count words (SF-076) and asset-rating upper-range AX fallthrough (SF-078) in the live annual continuation. Tests include 127/128/144 regions, exact million-value threshold, repeated recurrences and raw checkpoint words. The native code never uses that unclassified word as a table index. No cap or unsigned reinterpretation is applied; original downstream presentation, normal-play reachability and intended upper-range behavior remain deferred.
+
+The bounded aggregate correction (SF-077) now runs weekly before water/status refresh and again in the annual wrapper. It scans valid slots 1–97 rather than trusting a changing declared count. Its original raw presence/count caches persist separately from the current UI report. Native save validation bounds all cached storage while allowing historical values to differ from current map/fields. The original unchecked pattern remains documented above; no exploitability is inferred.

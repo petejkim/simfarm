@@ -13,6 +13,8 @@ function yearEnd(cash = 40000) {
   Object.assign(scenario.farm, { cash, salesAccumulator: 1000 });
   const save = JSON.parse(new GameSimulation(scenario, crops).save(4));
   save.runtime.finances.town.townRevenue = 50000; save.runtime.finances.town.recreationCount = 7;
+  save.runtime.finances.statistics.words = Array.from({ length: 14 }, (_, i) => 100 + i);
+  save.runtime.finances.statistics.regions = [3, 4, 5, 6];
   return JSON.stringify(save);
 }
 const file = (text: string) => ({ name: 'annual.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(text) });
@@ -33,12 +35,18 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   const path = 'artifacts/browser-pending-town.simfarm.json'; await (await download).saveAs(path);
   const checkpoint = JSON.parse(readFileSync(path, 'utf8'));
   expect(checkpoint.runtime.pendingTown.phase).toBe('annual-reset'); expect(checkpoint.runtime.daysAdvanced).toBe(0);
+  expect(checkpoint.version).toBe(7);
+  expect(checkpoint.runtime.finances.statistics.words).toEqual(Array.from({ length: 14 }, (_, i) => 100 + i));
+  expect(checkpoint.runtime.finances.statistics.regions).toEqual([3, 4, 5, 6]);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await expect(page.locator('#town-choice')).toBeVisible();
   await expect(page.locator('#farm-cash')).toHaveText('$35,285');
   const bad = structuredClone(checkpoint); bad.runtime.pendingTown.phase = 'tax';
   await page.locator('#load-farm-file').setInputFiles(file(JSON.stringify(bad)));
   await expect(page.locator('#save-status')).toContainText('pending town phase'); await expect(page.locator('#town-choice')).toBeVisible();
+  const badStatistics = structuredClone(checkpoint); badStatistics.runtime.finances.statistics.words[13] = 65536;
+  await page.locator('#load-farm-file').setInputFiles(file(JSON.stringify(badStatistics)));
+  await expect(page.locator('#save-status')).toContainText('financial state'); await expect(page.locator('#town-choice')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#town-choice').scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: 'artifacts/browser-annual-choice.png', fullPage: true });
@@ -47,7 +55,20 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   await expect(page.locator('#time-status')).toContainText('Paused · 1 days advanced');
   await expect(page.locator('#farm-cash')).toHaveText('$35,285');
   await page.locator('#tax-panel summary').click(); await expect(page.locator('#tax-prior')).toHaveText('$4,715');
+  const completedDownload = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const completedPath = 'artifacts/browser-annual-statistics.simfarm.json'; await (await completedDownload).saveAs(completedPath);
+  const completed = JSON.parse(readFileSync(completedPath, 'utf8')), statistics = completed.runtime.finances.statistics;
+  const regions = Buffer.from(completed.scenario.regions, 'hex'), owners = Array.from({ length: 144 }, (_, i) => regions[i * 7 + 1]);
+  const town = owners.filter(o => o === 2).length, player = owners.filter(o => o === 1).length;
+  expect(statistics.regions).toEqual([5, 6, town, player]);
+  expect(statistics.words.slice(0, 4)).toEqual([(player - 100) & 65535, 100, (town - 102) & 65535, 102]);
+  expect(statistics.words.slice(10)).toEqual([player, 110, town, 112]);
+  await page.reload(); await page.locator('#load-farm-file').setInputFiles(completedPath);
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await expect(page.locator('#town-choice')).toHaveCount(0);
   await page.locator('#next-day').click(); await expect(page.locator('#farm-date')).toContainText('January 2, 1994');
+  const continuedDownload = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const continuedPath = 'artifacts/browser-annual-statistics-continued.simfarm.json'; await (await continuedDownload).saveAs(continuedPath);
+  expect(JSON.parse(readFileSync(continuedPath, 'utf8')).runtime.finances.statistics).toEqual(statistics);
   await expect(page.locator('#farm-cash')).toHaveText('$35,285'); expect(errors).toEqual([]);
 });
 

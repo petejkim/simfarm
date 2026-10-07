@@ -5,6 +5,7 @@ import { readScenario } from '../src/formats/scenario';
 import { readCrop } from '../src/formats/crop';
 import { GameSimulation } from './support/game';
 import { FarmRandom } from '../src/simulation/random';
+import { readNativeSave, writeNativeSave } from '../src/formats/native-save';
 
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
 function fixture(mutate: (save: any) => void = () => {}) {
@@ -28,6 +29,7 @@ test('annual tax and reservation precede a saved modal choice; choice resumes re
     Object.assign(s.runtime.finances.debt, { balanceDue: 60, balanceCountdown: 1, unpaidTaxes: 80, taxCountdown: 1 });
     Object.assign(s.runtime.finances.loan, { principal: 1000, scheduledPayment: 101 });
     s.runtime.finances.accounts.taxExpenses = 12;
+    Object.assign(s.runtime.finances.statistics, { regions: [3, 4, 5, 6], words: Array.from({ length: 14 }, (_, i) => 100 + i) });
   });
   const before = game.getSnapshot();
   game.dispatch({ type: 'advance-day' });
@@ -43,6 +45,8 @@ test('annual tax and reservation precede a saved modal choice; choice resumes re
   assert.deepEqual(pending.finances.town.activeSite, p.site);
   assert.equal(pending.scenario.regionalConditions[(p.site.regionX * 12 + p.site.regionY) * 7 + 1], 2);
   assert.deepEqual(pending.scenario.schedule.bytes, before.scenario.schedule.bytes);
+  assert.deepEqual(pending.finances.statistics.regions, before.finances.statistics.regions);
+  assert.deepEqual(pending.finances.statistics.words, before.finances.statistics.words);
   const text = game.save(4), saved = JSON.parse(text), restored = GameSimulation.load(text, crops).simulation;
   assert.deepEqual(JSON.parse(restored.save(4)), JSON.parse(text));
   const expected = new FarmRandom(saved.runtime.random), district = Math.min(3, (expected.nextSimulation() & 3) + 1), rate = (expected.nextSimulation() & 7) + 8;
@@ -60,6 +64,12 @@ test('annual tax and reservation precede a saved modal choice; choice resumes re
   assert.equal(after.finances.loanRate, rate); assert.equal(after.weather.temperatureYear, (before.weather.temperatureYear + 1) % 5);
   assert.ok(after.lastTownResult?.ok); assert.equal(after.lastTownResult.type, district);
   assert.equal(after.scenario.regionalConditions[(after.lastTownResult.site.regionX * 12 + after.lastTownResult.site.regionY) * 7], district);
+  const owners = Array.from({ length: 144 }, (_, i) => after.scenario.regionalConditions[i * 7 + 1]);
+  const player = owners.filter(o => o === 1).length, town = owners.filter(o => o === 2).length;
+  assert.deepEqual(after.finances.statistics.regions, [5, 6, town, player]);
+  assert.deepEqual(after.finances.statistics.words.slice(0, 4), [(player - 100) & 65535, 100, (town - 102) & 65535, 102]);
+  assert.deepEqual(after.finances.statistics.words.slice(10), [player, 110, town, 112]);
+  assert.equal(after.finances.statistics.words[7], 106); assert.equal(after.finances.statistics.words[9], 108);
   const done = game.save(4); game.dispatch({ type: 'choose-town', choice: 'airport' }); assert.equal(game.save(4), done);
 });
 
@@ -132,4 +142,25 @@ test('version-six town continuations reject missing or inconsistent phases, coor
     const bad = structuredClone(saved); mutate(bad);
     assert.throws(() => GameSimulation.load(JSON.stringify(bad), crops), /pending town/); assert.equal(game.save(4), text);
   }
+});
+
+test('weekly report records pre-water field flags and leaves annual history untouched across reload', () => {
+  const { game: original, crops } = fixture(), { state } = readNativeSave(original.save(4));
+  Object.assign(state.scenario.farm.calendar, { day: 6, week: 0, month: 0 });
+  state.dayTicks = state.scenario.farm.dayDelayTicks - 1;
+  state.weather.soilMoisture = 0;
+  state.finances.statistics.words.fill(123); state.finances.statistics.regions = [2, 3, 4, 5];
+  for (const f of state.scenario.fields.filter(f => f.active)) { f.bytes[24] = 255; f.bytes[25] = 255; }
+  const text = writeNativeSave(state, 4), game = GameSimulation.load(text, crops).simulation;
+  const copy = GameSimulation.load(game.save(4), crops).simulation;
+  for (const sim of [game, copy]) sim.dispatch({ type: 'advance-day' });
+  assert.deepEqual(JSON.parse(copy.save(4)), JSON.parse(game.save(4)));
+  const after = game.getSnapshot();
+  assert.equal(after.finances.statistics.fieldPresence[1], 1); // Flooded before water pass.
+  assert.equal(after.farmReport.fields.presence[1], 0); // Water refresh clears the flag before current report.
+  assert.deepEqual(after.finances.statistics.words, Array(14).fill(123));
+  assert.deepEqual(after.finances.statistics.regions, [2, 3, 4, 5]);
+  const restored = GameSimulation.load(game.save(4), crops).simulation;
+  assert.deepEqual(restored.getSnapshot().finances.statistics, after.finances.statistics);
+  restored.dispatch({ type: 'advance-day' }); assert.deepEqual(restored.getSnapshot().finances.statistics, after.finances.statistics);
 });

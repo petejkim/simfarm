@@ -14,6 +14,7 @@ import { updateFieldStatus } from './field-status';
 import { updateFieldWater } from './field-water';
 import { FarmRandom, type RandomState } from './random';
 import { applyDailyWeather, advanceForecast, initializeWeather, updateWeeklyWind, type WeatherState } from './weather';
+import { updateAnnualStatistics, updateReportedFieldStatus } from './annual-statistics';
 import { plantField, plantNewField, type PlantResult, type NewFieldResult } from './plant-order';
 import { updatePlantingField } from './field-planting';
 import { updateEquipment } from './equipment-dispatch';
@@ -322,6 +323,7 @@ export class GameSimulation {
       this.disasterFlags = wind.storm ? this.disasterFlags | 8 : this.disasterFlags & ~8;
       if (wind.hurricane) this.disasterFlags |= 1;
       else if (w.wind < 70) this.disasterFlags &= ~1;
+      updateReportedFieldStatus(s, this.finances.statistics); // 0xbe8b, before water/status dispatch 0xbea3.
       for (const field of s.fields.filter(f => f.active)) {
         updateFieldWater(field, s.cells, w.soilMoisture, this.disasterFlags);
         updateFieldStatus(field, this.crops[field.cropSlot], s.cells);
@@ -370,7 +372,9 @@ export class GameSimulation {
     const s = this.scenario, w = this.weather;
     resetAnnualLedgers(s.farm, this.finances.accounts, this.finances.annual, w); // 0xcdf9.
     projectFieldScheduleYear(s, this.crops); // 0xcdfe, after old row 48 and collection/choice.
-    // Annual region/report routines 0xce0e onward remain separately documented gaps.
+    updateAnnualStatistics(s, this.finances.statistics, this.finances.accounts.assets.equipmentBookValue,
+      this.finances.accounts.buildingBookValue, this.finances.loan.principal, w.soilMoisture); // 0xce0e/0xce13.
+    // Homestead changes and automatic MIDI delivery remain separately documented gaps.
     this.finances.loanRate = (this.random.nextSimulation() & 7) + 8; // 0xcfa6..0xcfbc.
     w.temperatureYear = (w.temperatureYear + 1) % 5;
     w.precipitationYear = (w.precipitationYear + 1) % 5;
