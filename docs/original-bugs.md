@@ -789,3 +789,12 @@ Neighbor query0x17636 reads four map words at offsets−2,+2,−192,+192 from th
 **Status:** verified caller/capacity behavior; native preflight correction is live. Ordinary UI maximum-capacity reachability remains unproven.
 
 Registry append0x179da returns0 when count6190:240f>63 (`0x179e4..0x179ee`). Purchase types70/71 call it at0x1cc18, discard the arguments and immediately continue placement at0x1cc20 without testing its return. A paid building can therefore be allocated/painted without an irrigation source if the registry is full. Native construction checks capacity before payment, record allocation, clearing or painting and reports the source limit. Tests fill all64 entries, reject a further purchase without changing the complete save, and restore all64 sources from native v9. This is a conditional gameplay defect, not a security exploit.
+
+
+## SF-093 — land-sale demolition leaves a special building's irrigation source behind
+
+**Status:** verified static omission in the traced land-sale call chain; native cleanup corrected. Wider original deletion callers still need review.
+
+Manual special-building cleanup explicitly calls registry removal0x17944 at0x25a93/0x25ab9; bulldoze also calls it at0x26657. Land sale instead calls content/map cleanup0x19f6a at0x3caa1 and generic deletion0x3a040 at0x3cab9. The latter's building branch0x3a0aa..0x3a0fa updates count/book value and calls0x19f4c, which only clears the active bit and decrements the building count. None of these traced routines removes the irrigation registry entry. A leftover strength48 source can still seed its old outlet when wind permits because the driver checks that strength independently of a live building; a leftover pump entry can also consume source capacity even when it no longer seeds.
+
+Native building demolition prevalidates registry state for types70/71 and removes their first matching source on successful cleanup. Existing packets finish the current pass, matching manual removal's lack of queue cancellation. Tests purchase both types, reject malformed registry state before any sale mutation, then sell the plot and verify no source/wave restarts. Original omission evidence is retained; exact ordinary-game incidence and other disaster/manual deletion paths remain to be assessed.

@@ -4,6 +4,7 @@ import { worldIndex, type Scenario } from '../formats/scenario';
 import { clearAircraftHome, validAircraftHome } from './aircraft-home';
 import { toggleBuildingInterior } from './building-storage';
 import { queueClearingEffect, validateClearingEffects, type ClearingEffects } from './clearing-effects';
+import { removeIrrigationSource, validateIrrigation } from '../formats/irrigation';
 
 /** Explicit runtime ledger: its original startup/load lifecycle is still under
  * investigation. Do not manufacture a saved offset or a reconstructed total. */
@@ -47,6 +48,7 @@ function prepareBuilding(world: Scenario, state: BuildingDemolitionState, slot: 
   const b = world.buildings[slot];
   if (!Number.isInteger(slot) || slot <= 0 || !b?.active) throw new Error('Invalid demolished building');
   validateClearingEffects(effects, soilMoisture);
+  if (b.type === 70 || b.type === 71) validateIrrigation(world.irrigation);
   const def = world.buildingDefinitions[b.type - 64];
   if (!def || def.width < 1 || def.width > 4 || def.height < 1 || def.height > 3 ||
     b.x + def.width > 96 || b.y + def.height > 96 || !def.count ||
@@ -119,6 +121,9 @@ function prepareBuilding(world: Scenario, state: BuildingDemolitionState, slot: 
   }
   return () => {
     for (const action of actions) action();
+    // SF-093: generic land-sale cleanup omitted the source removal performed
+    // by the original manual bulldozer. Do not retain a destroyed wind source.
+    if (b.type === 70 || b.type === 71) removeIrrigationSource(world.irrigation, b.x, b.y);
     for (let x = b.x; x < b.x + def.width; x++) for (let y = b.y; y < b.y + def.height; y++) {
       const cell = world.cells[worldIndex(x, y)];
       cell.terrain = (((cell.terrain & 0xf800) | (15 + soilMoisture + (cell.attribute >>> 2))) & 0xf7ff);

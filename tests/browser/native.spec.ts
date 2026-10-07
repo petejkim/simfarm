@@ -519,10 +519,13 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
   await page.locator('#load-farm-file').setInputFiles(file);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   expect(JSON.parse(await saved())).toEqual(expected);
-  const legacy = JSON.parse(text); legacy.version = 1; delete legacy.scenario.schedule;
+  const legacy = JSON.parse(text); legacy.version = 1; delete legacy.scenario.schedule; delete legacy.scenario.irrigation;
   await page.locator('#load-farm-file').setInputFiles({ name: 'old-farm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(legacy)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  expect(JSON.parse(await saved())).toEqual(expected);
+  // Pre-v9 saves did not contain a water wave. Migration starts the original
+  // sources with cold phase/clock once, while retaining every other saved value.
+  expect(JSON.parse(await saved())).toEqual({ ...expected, scenario: { ...expected.scenario,
+    irrigation: { ...expected.scenario.irrigation, phase: 0, lastTick: 0, active: false, flow: [] } } });
   await page.clock.runFor(1100);
   await expect(page.locator('#time-status')).toContainText('Running · 6 days advanced');
 });

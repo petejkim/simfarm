@@ -4,6 +4,9 @@ import { readFileSync } from 'node:fs';
 import { readScenario, worldIndex } from '../src/formats/scenario';
 import { readIrrigation, copyIrrigation, validateIrrigation, addIrrigationSource, removeIrrigationSource } from '../src/formats/irrigation';
 import { updateIrrigation } from '../src/simulation/irrigation';
+import { readFinancialState } from '../src/formats/finance';
+import { purchaseBuilding } from '../src/simulation/building-placement';
+import { sellLand } from '../src/simulation/land-sale';
 
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
 function setup() {
@@ -138,4 +141,21 @@ test('edge sources and branches stay inside world bounds, and clocks preserve wo
   updateIrrigation(world, state, 1, 9, () => {});
   assert.equal(cell(95, 95).terrain, 0x8000 | 98); assert.equal(cell(94, 95).terrain, 0x8000 | 98);
   assert.equal(state.lastTick, 1); validateIrrigation(state);
+});
+
+test('land-sale demolition removes irrigation sources before the next pass and preflights corrupted registry state', () => {
+  for (const type of [70, 71]) {
+    const { world, state, cell } = setup(), finances = readFinancialState(world.sourceBytes);
+    world.irrigation = state; world.regionalConditions[1] = 1; world.farm.cash = 10000;
+    cell(0, 0).overlay = 0x800;
+    assert.ok(purchaseBuilding(world, finances, type, 0, 0, 0).ok); assert.equal(state.sourceCount, 1);
+    const before = JSON.stringify({ world, finances });
+    state.sourceCount = 65;
+    assert.throws(() => sellLand(world, finances.accounts, 0, 0, finances.clearing, 0, true), /irrigation/);
+    state.sourceCount = 1; assert.equal(JSON.stringify({ world, finances }), before);
+    assert.ok(sellLand(world, finances.accounts, 0, 0, finances.clearing, 0, true).ok);
+    assert.equal(state.sourceCount, 0);
+    updateIrrigation(world, state, 3, 127, () => {});
+    assert.equal(state.active, false); assert.equal(state.flow.length, 0); assert.equal(cell(0, 1).terrain & 0x8000, 0);
+  }
 });
