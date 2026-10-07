@@ -229,3 +229,11 @@ The native sale port preserves this accounting quirk with a regression; a correc
 The stored-crop sale branch checks the active item bit at `0x4c44c`, credits money at `0x4c476`, clears map/storage at `0x4c4b8`, then invokes generic removal at `0x4c4c6`. The harvested-goods removal branch (`0x3a168`–`0x3a1af`) returns without deactivating the item when its definition count is zero (`0x3a17a`). Such an inconsistent item can remain active after payment; repeated sale is possible if the UI exposes it again. This is analogous to seed count inconsistency SF-016 but payment creates a distinct consequence. No supplied save currently proves an active harvested item with zero matching count, and no exploit is established.
 
 The native port checks definition count and the building reference before credit or removal, rejecting inconsistent state without mutation; regressions verify unchanged cash, map, storage and inventory. Do not repair unknown source fields opportunistically. Revisit with inventory lifecycle and save/load validation.
+
+## SF-028 — field-table exhaustion returns an existing field slot
+
+**Status:** confirmed constructor failure-path defect; ordinary-game frequency unverified; native creation rejects exhaustion.
+
+Constructor `0x1ba84` scans slots 1–97 using a byte local. On the last occupied slot, `0x1bb02`–`0x1bb0e` loads AX=97 and tests activity. It increments the local to 98, reaches the signed limit check at `0x1baf9`, and jumps directly to the epilogue at `0x1bc30`, without setting AX to zero. Wrapper `0x1bfa0` sign-extends AL and returns it as a successful field index. A planting caller can therefore receive the last existing field when no new record was allocated. No DOS runtime exploit is claimed.
+
+Native placement detects the full bounded table before touching records or terrain and returns `no-field-slots`; a regression checks the entire world remains unchanged. The original constructor also leaves several previously used record words untouched (including pending equipment +44/+46 and water +24). These remain preserved in the standalone constructor; safe reuse and the original deletion/cancellation path need further tracing before native removal is exposed.

@@ -218,3 +218,11 @@ After committing the farming cycle as `6838173`, implemented the user's requeste
 Validation: all 99 Bun tests and TypeScript/production build pass. Nine existing Chromium checks passed; the new speed check passed after fixing its accessible label and freezing the test clock between explicit advances (automatic real-time drift at 16× otherwise invalidated exact-day assertions). Keyboard Home/End, live speed changes, pause, single-day stepping, scenario reset and a 390px mobile viewport are covered. Visually inspected `artifacts/browser-speed.png`. The unit checks compare complete machinery/weather state at 16× against equivalent normal-speed time and verify fractional tick preservation and invalid-command rejection.
 
 Updated README with current harvest/sale controls and speed behavior. New-field placement is next; the full original-game objective remains active with save/load and other major systems still outstanding.
+
+## 2026-10-07 — new-field placement rules and initialization
+
+The preceding turn made progress through committed harvest/sales integration and the requested speed slider (`1c24375`). Revalidated the clean worktree and recovered the original 8×8 field validator and constructor. Added owned-land/terrain/spacing checks, the saved automatic-clearing flag, region-derived initialization and exact map/record updates. SF-028 documents the original full-table return defect; native exhaustion is rejected before mutation. Source bytes remain untouched and unknown record fields remain preserved.
+
+Validation: 105 Bun tests and TypeScript/production build pass. Six new tests cover original table bytes, all terrain boundaries, ownership and obstructions, map borders, constructor bytes, saturation and all-eight-scenario placement scans. The existing browser flow is unchanged; no new-field UI is claimed yet.
+
+The scan changed the next action: none of the supplied farms contains another eligible owned 8×8 plot, even with automatic clearing. Recover land purchase/clearing and then connect map placement to the planting command so the feature is usable on original farms. The requested speed slider remains complete; save/load and the other full-game requirements remain active.
