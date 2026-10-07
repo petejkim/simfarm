@@ -52,3 +52,14 @@ export function readGoodsDefinitions(bytes: Uint8Array, kind: boolean | 'harvest
     return def;
   });
 }
+
+/** Loader 0x4598c..0x459b5: 17 records -> 6190:73c4. Types 299/300
+ * have inventory records; retain the other types without naming their uses. */
+export function readOtherGoodsDefinitions(bytes: Uint8Array): GoodsDefinition[] {
+  const data = new Binary(bytes);
+  return Array.from({ length: 17 }, (_, i) => {
+    const d = new GoodsDefinition(Uint8Array.from(data.slice(0x20fa0 + i * 18, 18)));
+    if (d.type !== 288 + i) throw new Error('Invalid additional goods definition');
+    return d;
+  });
+}

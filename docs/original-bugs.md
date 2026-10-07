@@ -513,3 +513,23 @@ Native `removeField` validates both chains before mutation, runs both original r
 ### SF-055 follow-up — building book-value subtraction
 
 Generic building deletion obtains a definition price word via `0x1d280`, sign-extends it at `0x3a0e3`, then subtracts the dword from `6190:3e54`. A price >=32768 therefore increases the ledger modulo 2^32. The adjacent equipment branch zero-extends its price (`0x3a08e`), demonstrating the arithmetic difference. This is verified boundary behavior, not a proven normal-game defect or vulnerability. Native building deletion and ledger initialization remain pending; preserve this distinction when implementing them and test both signed boundaries. No original behavior has yet been changed for buildings.
+
+## SF-064 — building demolition trusts content references and ignores deletion failures
+
+**Status:** confirmed unchecked-reference/count behavior; malformed-state effects guarded natively; ordinary-game reachability partly unresolved.
+
+Cleanup `0x19fe2..0x1a00a` reads each nonempty content type/byte slot and calls generic deletion without checking the result. Generic branches index the selected record and definition directly, test their count/active bits, but do not establish that the record belongs to this building or matches the content type. An inconsistent content record can delete a different asset or debit the wrong definition; a zero count can leave an active asset after its containing building is removed. This is related to ignored sale-removal results SF-027, but demolition gives no proceeds. The source's unsigned slot byte versus larger inventory array remains separate evidence; no exploit or normal-play corruption is asserted here.
+
+Native demolition prevalidates types, positions, active unique-record counts, aircraft home, stored-animal footprints and external machinery references before any mutation. Duplicate cells referencing the same valid machine consume one count. Unsupported type categories reject without guessed semantics; inactive record bytes and supported -2 sentinels are retained. Tests cover zero/insufficient aggregate counts, out-of-bounds building/queue state, wrong types/slots and links that would dangle. Broader building/delivery/default integration remains pending.
+
+## SF-065 — building book-value persistence is not evident in the inspected loader/saver
+
+**Status:** suspected lifecycle omission; not a confirmed original save defect; investigation and any fix deferred.
+
+The runtime ledger changed by building add/delete is `6190:3e54` (`0x3a36d`, `0x3a0e8`), and asset reporting reads it. Its initialized dword is zero. The inspected save/load sequences directly transfer the separate `3e4c` (`0x44c79`, `0x45c9b`) and adjacent other ledgers, with no direct `3e54` transfer. A byte-reference scan found only add/delete/report references to the latter. This does not rule out bulk/indirect initialization or recalculation, so original runtime loss of building value has not been proven.
+
+Native demolition takes explicit runtime book value instead of guessing a saved offset or reconstructing a total without evidence. Live finance/checkpoint integration must resolve its startup/load lifecycle. Retain this entry and update its confidence when those callers are traced.
+
+### SF-055 building subtraction implementation
+
+Building demolition now preserves the sign-extended price subtraction described above. Tests cover definition prices 0, 32767, 32768 and 65535 against zero and maximum dword balances. The native implementation does not correct this verified arithmetic quirk; its ordinary-play consequences and building-ledger initialization remain under investigation.

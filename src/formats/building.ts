@@ -40,6 +40,9 @@ export class BuildingDefinition {
   }
   get graphic(): number { return this.data.u16(0); }
   get type(): number { return this.data.u16(2); }
+  get count(): number { return this.data.u16(4); }
+  set count(value: number) { this.data.view.setUint16(4, value, true); }
+  get price(): number { return this.data.u16(6); }
   get width(): number { return this.bytes[8]; }
   get height(): number { return this.bytes[9]; }
 }
