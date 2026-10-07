@@ -4,6 +4,7 @@ import { EquipmentRecord, EquipmentDefinition } from '../formats/equipment';
 import { AnimalRecord } from '../formats/animal';
 import { BuildingRecord, BuildingDefinition } from '../formats/building';
 import { InventoryRecord, GoodsDefinition } from '../formats/inventory';
+import { ChemicalRecord } from '../formats/chemical';
 import type { Scenario } from '../formats/scenario';
 import { advanceCalendarDay } from './calendar';
 import { changeFieldCondition } from './field-conditions';
@@ -65,6 +66,8 @@ function copyScenario(scenario: Scenario): Scenario {
     buildings: scenario.buildings.map(b => new BuildingRecord(b.slot, Uint8Array.from(b.bytes))),
     buildingDefinitions: scenario.buildingDefinitions.map(b => new BuildingDefinition(Uint8Array.from(b.bytes))),
     inventory: scenario.inventory.map(i => new InventoryRecord(i.slot, Uint8Array.from(i.bytes))),
+    chemicals: scenario.chemicals.map(i => new ChemicalRecord(i.slot, Uint8Array.from(i.bytes))),
+    chemicalDefinitions: scenario.chemicalDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))),
     seedDefinitions: scenario.seedDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))),
     cropDefinitions: scenario.cropDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))),
     harvestDefinitions: scenario.harvestDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))),

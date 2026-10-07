@@ -245,3 +245,11 @@ Native placement detects the full bounded table before touching records or terra
 Water refresh `0x18d16..0x19001` probes `y-1`, `y+height`, `x-1` and `x+width` without bounds checks (`0x18da0..0x18dac`, `0x18e30..0x18e39`, `0x18ed4..0x18ee1`, `0x18f67..0x18f70`). Unlike placement's clamped spacing probes, it can alias another column or read data adjacent to the terrain array. The validator allows owned, unobstructed 8×8 fields at map edges: buying region (0,0) and enabling automatic clearing on SCEN0 satisfies it. Static caller/validator evidence supports reachability; the DOS program was not executed.
 
 Native integration first exposed this as an exception on the next weekly update. Off-map probes now contribute no water tolerance; valid probes retain the original asymmetric corner inclusion. Tests cover both water categories at all four map corners. This intentionally replaces accidental reads with bounded map semantics.
+
+## SF-030 — chemical consumption reports success even if stock removal fails
+
+**Status:** confirmed inconsistent-stock failure path; native prevalidation implemented. Normal-play reachability remains unproven.
+
+Consumption `0x146e0..0x147ab` finds an active chemical, clears its stored/world image, calls generic removal `0x3a040`, and returns 1 at `0x14778` regardless of removal's return. The chemical removal branch `0x3a25a..0x3a299` refuses to decrement/deactivate when the definition count is zero. An inconsistent active record can therefore remain consumable repeatedly. This parallels SF-016 but uses a separate twenty-byte chemical table. No exploit is demonstrated on the supplied saves.
+
+Native consumption checks the definition count, coordinates and storage cross-reference before any mutation and returns `inconsistent-stock` on failure. Tests cover all three failures and verify the complete world remains unchanged. Valid stock retains the original first-match ordering, removal and automatic-purchase behavior.
