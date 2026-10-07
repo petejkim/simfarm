@@ -3,6 +3,7 @@ import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
 import { terrainTile, worldPosition, worldIndex } from '../formats/scenario';
 import { CropGuide } from './CropGuide';
 import { FieldPanel } from './FieldPanel';
+import { FieldPlanner } from './FieldPlanner';
 import { FarmMap, type MapFocus } from './FarmMap';
 import { useResource } from './useResource';
 import { GameSimulation, type GameCommand } from '../simulation/game';
@@ -123,6 +124,9 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
           onHarvest={fieldSlot => simulation?.dispatch({ type: 'harvest-field', fieldSlot })}
           onPlant={(fieldSlot, cropSlot) => simulation?.dispatch({ type: 'plant-field', fieldSlot, cropSlot })}
           onSelect={slot => { setSelection(null); selectField(slot, true); }} />
+        {field && snapshot && <FieldPlanner key={`${field.slot}-${data.scenario.farm.calendar.year}`}
+          scenario={data.scenario} crops={assets.catalog.crops} field={field} result={snapshot.lastPlanEditResult}
+          onEdit={(fieldSlot, week, action) => simulation?.dispatch({ type: 'edit-field-plan', fieldSlot, week, action })} />}
         <HarvestInventory scenario={data.scenario} crops={assets.catalog.crops} values={snapshot?.storedHarvestValues ?? []}
           result={snapshot?.lastSaleResult ?? null} onSell={inventorySlot => simulation?.dispatch({ type: 'sell-harvest', inventorySlot })} />
         <CropGuide crops={assets.catalog.crops} cropId={cropId} onChange={onCropChange} />

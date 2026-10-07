@@ -115,3 +115,38 @@ test('an unmodified original plan automatically harvests, stores and replants wi
   game.dispatch({ type: 'sell-harvest', inventorySlot: item.slot });
   assert.equal(game.getSnapshot().scenario.farm.cash, cash + value);
 });
+
+test('edited crop and treatment plans survive checkpoints and execute only at the selected boundaries', () => {
+  const { scenario, crops } = setup(), game = new GameSimulation(scenario, crops), initial = game.getSnapshot();
+  game.dispatch({ type: 'edit-field-plan', fieldSlot: 1, week: 16, action: { kind: 'plant', cropSlot: 15 } });
+  game.dispatch({ type: 'edit-field-plan', fieldSlot: 1, week: 17, action: { kind: 'fertilizer' } });
+  const edited = game.getSnapshot();
+  assert.deepEqual(edited.scenario.fields[1].bytes, initial.scenario.fields[1].bytes);
+  assert.equal(edited.scenario.farm.cash, initial.scenario.farm.cash);
+  assert.equal(edited.scenario.schedule.get(16, 0), 847); assert.equal(edited.scenario.schedule.get(17, 0), 915);
+  const restored = GameSimulation.load(game.save(4), crops).simulation;
+  for (const sim of [game, restored]) sim.dispatch({ type: 'advance-day' });
+  assert.equal(game.getSnapshot().scenario.fields[1].state, 3);
+  assert.equal(game.getSnapshot().scenario.fields[1].cropSlot, 15);
+  for (let i = 0; i < 7; i++) for (const sim of [game, restored]) sim.dispatch({ type: 'advance-day' });
+  assert.equal(game.getSnapshot().scenario.fields[1].state, 6);
+  assert.equal(game.getSnapshot().scenario.fields[1].step, 0);
+  assert.deepEqual(JSON.parse(game.save(4)), JSON.parse(restored.save(4)));
+});
+
+test('clear-plan commands suppress future work and invalid edits leave serialized simulation state intact', () => {
+  const { scenario, crops } = setup(), game = new GameSimulation(scenario, crops);
+  const before = game.save(4);
+  game.dispatch({ type: 'edit-field-plan', fieldSlot: 1, week: 15, action: { kind: 'plant', cropSlot: 0 } });
+  assert.equal(game.save(4), before);
+  assert.deepEqual(game.getSnapshot().lastPlanEditResult, { ok: false, fieldSlot: 1, week: 15, reason: 'future-week-required' });
+  game.dispatch({ type: 'edit-field-plan', fieldSlot: 1, week: 16, action: { kind: 'clear' } });
+  const detached = game.getSnapshot();
+  assert.ok(detached.scenario.schedule.column(0).slice(16).every(word => word === 209));
+  detached.scenario.schedule.bytes.fill(255);
+  if (detached.lastPlanEditResult) detached.lastPlanEditResult.week = 100;
+  game.dispatch({ type: 'advance-day' });
+  assert.equal(game.getSnapshot().scenario.fields[1].state, 0);
+  assert.equal(game.getSnapshot().scenario.schedule.get(16, 0), 209);
+  assert.equal(game.getSnapshot().lastPlanEditResult?.week, 16);
+});

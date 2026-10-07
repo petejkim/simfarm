@@ -27,6 +27,7 @@ import { orderTreatment, updateTreatmentField, type Treatment, type TreatmentRes
 import { recordFieldPlanOrder } from './field-plan-order';
 import { dispatchFieldSchedule, type ScheduleDispatchResult } from './field-calendar';
 import { projectFieldScheduleYear } from './field-projection';
+import { editFieldPlan, type FieldPlanEdit, type FieldPlanEditResult } from './field-plan-edit';
 
 import { SIMULATION_SPEEDS, type SimulationState } from './save-state';
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
@@ -55,8 +56,10 @@ export interface GameSnapshot {
   lastNewFieldResult: NewFieldResult | null;
   lastTreatmentResult: TreatmentResult | null;
   lastScheduleResult: ScheduleDispatchResult | null;
+  lastPlanEditResult: (FieldPlanEditResult & { fieldSlot: number; week: number }) | null;
 }
 export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused: boolean }
+  | { type: 'edit-field-plan'; fieldSlot: number; week: number; action: FieldPlanEdit }
   | { type: 'set-speed'; speed: number }
   | { type: 'set-auto-clear'; enabled: boolean }
   | { type: 'buy-land'; regionX: number; regionY: number }
@@ -110,6 +113,7 @@ export class GameSimulation {
   private lastNewFieldResult: NewFieldResult | null = null;
   private lastTreatmentResult: TreatmentResult | null = null;
   private lastScheduleResult: ScheduleDispatchResult | null = null;
+  private lastPlanEditResult: GameSnapshot['lastPlanEditResult'] = null;
 
   constructor(scenario: Scenario, crops: readonly CropDefinition[], seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState) {
     this.scenario = copyScenario(scenario);
@@ -169,6 +173,9 @@ export class GameSimulation {
       if (!SIMULATION_SPEEDS.some(speed => speed === command.speed)) throw new Error('Invalid simulation speed');
       if (this.speed === command.speed) return;
       this.speed = command.speed;
+    } else if (command.type === 'edit-field-plan') {
+      this.lastPlanEditResult = { ...editFieldPlan(this.scenario, this.crops, command.fieldSlot, command.week, command.action),
+        fieldSlot: command.fieldSlot, week: command.week };
     } else if (command.type === 'set-auto-clear') {
       this.scenario.farm.autoClear = command.enabled;
     } else if (command.type === 'buy-land') {
@@ -287,6 +294,7 @@ export class GameSimulation {
       lastNewFieldResult: this.lastNewFieldResult ? { ...this.lastNewFieldResult } : null,
       lastTreatmentResult: this.lastTreatmentResult ? { ...this.lastTreatmentResult } : null,
       lastScheduleResult: this.lastScheduleResult ? { ...this.lastScheduleResult } : null,
+      lastPlanEditResult: this.lastPlanEditResult ? { ...this.lastPlanEditResult } : null,
       storedHarvestValues: this.scenario.inventory.map(i => i.active && i.type >= 168 && i.type < 184
         ? storedHarvestValue(i, this.scenario) : null),
       fieldHarvestEstimates: this.scenario.fields.map(f => {

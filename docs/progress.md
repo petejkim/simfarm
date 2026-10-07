@@ -358,3 +358,11 @@ Cross-checking the editor's 239 write against the dispatcher exposed a native tr
 The 19 affected schedule/editor tests and TypeScript/build pass; the complete 177-test gate is rerunning before commit. Planner UI integration follows this correction.
 
 Correction gate: all 177 Bun tests pass. The correction is committed separately from the pending planner controls so the evidence repair remains reviewable.
+
+## 2026-10-07 — editable browser crop planner
+
+Finished the pending GameSimulation/React integration before proceeding to another system. Selecting a field now exposes an expandable five-year crop planner below its immediate field controls. Players can schedule planting and four treatments, move eligible harvests, clear the remaining plan and lock a current growing crop’s price. Simulation commands enforce the recovered rules, preserve protected/unknown entries and report rejected edits. Native saves retain plans; UI selections and result messages remain transient. README now explains where to open the controls.
+
+Validation: all 179 Bun tests, all 21 Chromium checks, TypeScript checking and production build pass. New integration/browser cases cover edited-order execution, save/reload, rejection without mutation, snapshot isolation, year-five boundary, contracts, fixed harvest restrictions and clearing. Inspected `artifacts/browser-field-planner.png` at a 390px viewport. The requested speed slider was already committed as `1c24375`; this full browser run reverified 0.25×–16× pacing, paused changes, one-day stepping and scenario reset. No duplicate slider implementation is needed.
+
+This completes the verified core planner controls, not the full original game or every original editor action. Alternate action labeling, raw 856/868 and helper `0x2e80e` remain documented gaps. Next trace original monthly finances and recurring expenses. Original distribution files remain untouched, commits stay local, and the full preservation goal remains active.
