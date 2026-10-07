@@ -719,7 +719,7 @@ test('Loans panel borrows, quotes installments, saves balances and pays off thro
   const download = await pending, path = 'artifacts/browser-loan.simfarm.json'; await download.saveAs(path);
   expect(JSON.parse(readFileSync(path, 'utf8')).runtime.finances.loan.principal).toBe(1000);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);
-  await expect(page.locator('#save-status')).toContainText('Loaded');
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await page.locator('#loan-panel summary').click(); await expect(page.locator('#loan-balance')).toHaveText('$1,000');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#loan-panel').scrollIntoViewIfNeeded();
@@ -739,7 +739,7 @@ test('loaded loans collect the March installment at the month boundary', async (
   const save = JSON.parse(game.save(4));
   Object.assign(save.scenario.farm.calendar, { day: 6, week: 3, month: 1 }); save.scenario.farm.cash = 4000;
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'loan.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(save)) });
-  await expect(page.locator('#save-status')).toContainText('Loaded'); await page.locator('#loan-panel summary').click();
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await page.locator('#loan-panel summary').click();
   await page.locator('#next-day').click();
   await expect(page.locator('#farm-date')).toContainText('March 1');
   await expect(page.locator('#loan-balance')).toHaveText('$943'); await expect(page.locator('#farm-cash')).toHaveText('$3,943');
