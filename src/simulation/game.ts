@@ -42,6 +42,7 @@ import { assessAnnualTax, settleAnnualTax, type TaxAssessment, type TaxSettlemen
 import { resetAnnualLedgers } from './annual-ledger';
 import { beginTownExpansion } from './town';
 import { resolveTownChoice, type TownChoice, type TownConstructionResult } from './town-construction';
+import { updateClearingEffects } from './clearing-effects';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -287,6 +288,9 @@ export class GameSimulation {
     if (this.finances.defaultDecision || this.pendingTown) return;
     const s = this.scenario, tick = s.farm.timerTicks = (s.farm.timerTicks + 1) & 0xffff;
     this.equipmentRuntime.animationTick = s.farm.animationTicks = (s.farm.animationTicks + 1) & 0xffff;
+    // Dispatcher 0xbcc8 precedes machinery/calendar. The native Pause control
+    // freezes logical animation ticks as well as simulation time.
+    updateClearingEffects(s, this.finances.clearing, this.weather.soilMoisture, s.farm.animationTicks);
     const allocate = (world: Scenario, type: number, x: number, y: number) => reserveEquipment(world, type, x, y, tick);
     updateEquipment(s, this.equipmentRuntime, tick, s.farm.paceEquipment, allocate);
     for (const field of s.fields) {

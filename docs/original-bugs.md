@@ -648,3 +648,10 @@ No claim is made that ordinary land purchases can achieve every such total, that
 Live annual reset preserves worker expenses (SF-042), after collection and any district choice. The native chooser keeps the reserved plot pending when random selection hits an unavailable recreation type, correcting the original unchecked timeout return (SF-048); the bounded RNG draw still persists. The button invokes that original random branch explicitly, without claiming a recovered real-time timeout.
 
 Pending-choice tests exposed a distinction for SF-049: an original unowned plot can retain low nibble 15 when ownership is reserved before construction. Native v6 preserves that raw byte and permits it only under a validated, frozen pending continuation. The constructor replaces it before normal weekly development resumes. Rejecting it as an already-built district would prevent loading a valid mid-choice save; the active built-district guard remains in place after construction.
+
+
+### SF-060 / SF-061 / SF-066 live clearing follow-up
+
+The live clock now advances the persisted clearing queue, retaining the corrected empty sentinel and bounded 64-slot traversal (SF-060/061). Original changing-count retirement remains observable: a full 64-entry field retires 33 entries on its first finishing update, then 16, 8, 4, 2 and 1. Word-wrap and mid-animation save/load tests exercise the actual GameSimulation clock.
+
+SF-066's overwritten low-tile entries remain pending in the live queue by an explicit fidelity decision; no cleanup is inferred merely from a non-animation tile. Native scanning is bounded, so malformed counter/slot combinations cannot recreate an unchecked scan. A future enhancement may retire overwritten entries, but source behavior and this evidence must remain documented.

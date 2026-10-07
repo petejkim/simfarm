@@ -72,8 +72,10 @@ test('native financial restore retains changed ledgers, raw definitions, debts, 
   const restored = GameSimulation.load(JSON.stringify(saved), crops).simulation;
   assert.deepEqual(JSON.parse(restored.save(4)).runtime.finances, f);
   restored.dispatch({ type: 'advance-day' });
-  // This source farm crosses a month boundary: retry both debts without resetting unrelated state.
+  // This source farm crosses a month boundary: retry debts and advance the saved clearing queue.
   const after = structuredClone(f); after.accounts.balancePayments += 98; after.accounts.taxExpenses += 99;
+  // First tick is already >=16 past 65535, then updates occur every sixteen ticks.
+  after.clearing.lastTick = (saved.scenario.farm.animationTicks + 1 + 16 * Math.floor((saved.scenario.farm.dayDelayTicks - 1) / 16)) & 65535;
   Object.assign(after.debt, { balanceDue: 0, balanceCountdown: 0, unpaidTaxes: 0, taxCountdown: 0 });
   assert.deepEqual(JSON.parse(restored.save(4)).runtime.finances, after);
   f.loan.principal = 0; assert.equal(restored.getSnapshot().finances.loan.principal, 100);
