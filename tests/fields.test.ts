@@ -22,7 +22,7 @@ test('all original active fields have exact bounds, crop slots and serialized st
       assert.ok(!field.contains(field.x, field.y + 8));
       const cropTiles = scenario.cells.filter((_, index) => field.contains(Math.floor(index / 96), index % 96));
       assert.ok(cropTiles.some(cell => terrainTile(cell) >= 688 + field.cropSlot * 8 && terrainTile(cell) < 696 + field.cropSlot * 8));
-      assert.deepEqual(field.bytes, bytes.subarray(0x45bd + field.slot * 68, 0x45bd + (field.slot + 1) * 68));
+      assert.deepEqual(field.bytes, Uint8Array.from(bytes.subarray(0x45bd + field.slot * 68, 0x45bd + (field.slot + 1) * 68)));
     }
   }
   const first = readScenario(source('SCEN0.SSM'));

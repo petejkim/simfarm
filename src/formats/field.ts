@@ -28,7 +28,7 @@ export class FieldRecord {
 }
 export function readFields(bytes: Uint8Array): FieldRecord[] {
   const data = new Binary(bytes), count = data.u16(FIELD_RECORDS_OFFSET - 2);
-  const fields = Array.from({ length: FIELD_SLOT_COUNT }, (_, slot) => new FieldRecord(slot, data.slice(FIELD_RECORDS_OFFSET + slot * FIELD_RECORD_SIZE, FIELD_RECORD_SIZE).slice()));
+  const fields = Array.from({ length: FIELD_SLOT_COUNT }, (_, slot) => new FieldRecord(slot, Uint8Array.from(data.slice(FIELD_RECORDS_OFFSET + slot * FIELD_RECORD_SIZE, FIELD_RECORD_SIZE))));
   if (fields[0].active || fields.filter(f => f.active).length !== count) throw new Error('Invalid field count');
   for (const f of fields.filter(f => f.active)) {
     if (!f.width || !f.height || f.x + f.width > 96 || f.y + f.height > 96 || f.cropSlot >= 16) throw new Error('Invalid field bounds or crop slot');

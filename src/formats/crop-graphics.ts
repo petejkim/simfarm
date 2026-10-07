@@ -11,7 +11,7 @@ export function cropTilePatches(slot: number): { sourceOffset: number; tile: num
 /** Apply original runtime uploads to a copy, preserving the reusable unmodified atlas. */
 export function patchCropGraphics(base: Uint8Array, crops: readonly Uint8Array[]): Uint8Array {
   if (base.length !== 880 * 128 || crops.length !== 16) throw new Error('Expected original atlas and sixteen crop slots');
-  const result = base.slice();
+  const result = Uint8Array.from(base);
   crops.forEach((crop, slot) => {
     if (crop.length !== 5890) throw new Error('Invalid crop graphic source');
     for (const patch of cropTilePatches(slot)) result.set(crop.subarray(patch.sourceOffset, patch.sourceOffset + 128), patch.tile * 128);
