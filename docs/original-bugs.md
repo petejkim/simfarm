@@ -256,11 +256,11 @@ Native consumption checks the definition count, coordinates and storage cross-re
 
 ## SF-031 — schedule projection divides by unchecked crop-definition values
 
-**Status:** confirmed arithmetic hazard for malformed/custom definitions; ordinary-play reachability unproven. Native projection is not yet implemented; validation/fix deferred to that port.
+**Status:** confirmed arithmetic hazard for malformed/custom definitions; ordinary-play reachability unproven. Native year projection now rejects invalid divisors before committing any schedule changes.
 
 Year-rollover schedule generation loads crop byte +56 and byte +66, computes `(byte56 + byte66 - 2) / byte66` with signed division at `0x48e99`, then uses that quotient as the unsigned divisor at `0x48ea3`. The second generation branch repeats this at `0x48ffb` / `0x49005`. No local zero-divisor guard precedes either pair. A positive duration with byte +66 zero, or duration one with positive byte +66, can cause an original division exception if such a definition reaches this loop. Validation elsewhere in the original loader/editor has not been established; no exploitable vulnerability is claimed.
 
-All 24 supplied CRP definitions have byte +66 equal to 7 and byte +56 between 12 and 47, yielding divisors 2–7. The supplied assets therefore do not demonstrate this failure. When reconstructing planner projection/year rollover, reject invalid divisors before modifying schedule bytes and add malformed-definition boundary tests. Preserve this entry after the native guard is implemented.
+All 24 supplied CRP definitions have byte +66 equal to 7 and byte +56 between 12 and 47, yielding divisors 2–7. The supplied assets therefore do not demonstrate this failure. Native projection validates the divisors transactionally; tests exercise zero stage count and duration one after earlier valid fields. Duration zero performs no original stage division and remains supported. Revisit any separate planner-editing generators when porting them.
 
 ## SF-032 — weekly completion bypasses unfinished supply and worker payment
 
@@ -293,3 +293,27 @@ Native weekly completion credits the pending worker sale once, resets annual/per
 Calendar code 852 sets field state 2/step 0 at `0x2f718..0x2f72c`. The main work jump table at `0x18c98` maps states 0, 1 and 2 to the same no-op exit `0x18cb2`; weekly completion's jump table handles only states 3–9. Thus a dispatched 852 order does not perform a plowing pass through either recovered work loop. None of the supplied schedules contains this code. The plan-editing paths still need tracing to determine ordinary UI reachability.
 
 Native schedule dispatch preserves state 2/step 0 and does not invent an equipment FSM. Static-byte tests verify both the state write and all three no-op table targets. Revisit the intended UI semantics while reconstructing the editor; any added plowing operation should be documented as an enhancement if no other original handler is found.
+
+## SF-036 — year projection scans before its column when no matching marker exists
+
+**Status:** confirmed unchecked backward read; normal original UI reachability remains unproven. Native bounded fallback implemented.
+
+`0x48e6f` starts the search at week 239. `0x490c9..0x490d3` decrements the index and checks only a pending flag; neither the annual planting search at `0x48f6a` nor perennial harvest search at `0x490e9` bounds the index. Without a matching marker it reads before the stack column, potentially interpreting other local data as a crop order or wrapping the index. All eight supplied farms have the needed markers, but an all-fallow/missing-marker column does not. Original editor validation still needs tracing, so this is not a proven ordinary-play hang or security exploit.
+
+Native projection searches only the retained 192 weeks (the other 48 are initialized to fallow), preserves those words if no marker exists, leaves the new tail fallow (209), and reports the field slot to its caller. Tests cover both branches and unrelated marker/unknown words. It does not invent a planting cycle. Revisit original new-field/editor initialization when connecting automatic schedules.
+
+## SF-037 — long projected crop patterns overlap live stack locals
+
+**Status:** confirmed stack layout hazard for malformed/custom durations; supplied 47-week perennials alias a scratch word without a demonstrated bad result. Native duration guard implemented.
+
+Pattern initialization `0x48d25..0x48d30` clears 48 words starting at `bp-0x6e`. Stage writes start at pattern index 1 (`0x48eb4` / `0x49016`), followed by harvest at index `duration+1` (`0x48ec9` / `0x4902b`). A supplied duration of 47 writes index 48 at `bp-0xe`, also used for the schedule-copy index. That scratch word is not needed until copying the completed plan, so native code preserves the resulting 49-word pattern using a separately allocated array. This alias alone is not claimed as a reachable gameplay defect.
+
+Duration 48 writes its final harvest over the live reverse-scan index at `bp-0xc`; longer durations overlap selected crop and other generation locals. No local duration bound protects these stores. Supplied definitions range 12–47; original custom-definition validation remains untraced. Native projection rejects durations above 47 before committing, with a regression at 48. No exploit or original source-language array declaration is inferred from the disassembly.
+
+## SF-038 — perennial projection uses an unchecked signed restart index
+
+**Status:** confirmed out-of-pattern read hazard for malformed/custom definitions; supplied definitions avoid it. Native index guard implemented.
+
+At `0x48efa..0x48f14` and `0x4905c..0x49076`, crop byte +18 is sign-extended, incremented, then used to read the pattern without a bounds check. Values outside `0..duration+1` after that conversion can read unrelated stack locals. The check against cycle length occurs before choosing the restart, not after. Supplied perennial restart bytes are 0 or 1; ordinary-play failure is unproven.
+
+Native projection validates the resulting index against the allocated pattern before any schedule commit. Tests cover positive overflow, negative indices, and byte 255 (signed -1 plus one), which validly restarts at index zero. Other uses of crop +18 retain their own recovered arithmetic. Revisit validation if editable crop definitions become supported.
