@@ -1,6 +1,6 @@
 # Binary evidence
 
-All executable addresses below are **file offsets**, not runtime addresses. Run `npm run analyze -- --start 0x4543c --size 0x1000` to reproduce the scenario-loader disassembly. The analyzer pins the exact executable SHA-256; the importer records every input and archive member in generated `public/assets/manifest.json`.
+All executable addresses below are **file offsets**, not runtime addresses. Run `./tools/bun run analyze --start 0x4543c --size 0x1000` to reproduce the scenario-loader disassembly. The analyzer pins the exact executable SHA-256; the importer records every input and archive member in generated `public/assets/manifest.json`.
 
 ## Executable and overlays — recovered
 

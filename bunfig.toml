@@ -1,0 +1,9 @@
+[install.cache]
+dir = ".cache/bun"
+
+[run]
+bun = true
+
+[test]
+root = "./tests"
+pathIgnorePatterns = ["**/browser/**"]

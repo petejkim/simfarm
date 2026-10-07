@@ -52,6 +52,11 @@ export class MidiPlayer {
     this.voices.clear();
     this.sequence = undefined;
   }
+  dispose(): void {
+    this.stop();
+    if (this.context) void this.context.close();
+    this.context = undefined; this.master = undefined; this.noise = undefined; this.channels = [];
+  }
   private resetChannels(): void {
     for (const c of this.channels) {
       c.program = 0;

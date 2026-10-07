@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+export BUN_INSTALL="$repo_dir/.tools/bun"
+export BUN_INSTALL_CACHE_DIR="$repo_dir/.cache/bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+if [ ! -x "$BUN_INSTALL/bin/bun" ]; then
+  echo 'Local Bun is missing. Run sh tools/setup-bun.sh first.' >&2
+  exit 1
+fi
+cd "$repo_dir"
+exec "$BUN_INSTALL/bin/bun" "$@"

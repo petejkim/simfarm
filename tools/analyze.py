@@ -1,5 +1,5 @@
 """Static analysis only: index Microsoft overlays and disassemble chosen file ranges.
-Usage: npm run analyze -- [--start 0x4543c --size 0x810]
+Usage: ./tools/bun run analyze [--start 0x4543c --size 0x810]
 No DOS program execution. Tools live in this repository's .venv.
 """
 import argparse

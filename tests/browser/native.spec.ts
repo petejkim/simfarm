@@ -66,7 +66,7 @@ test('original scenario maps, crop selection, navigation and audible MIDI', asyn
   await page.locator('#crop').selectOption('corn');
   await expect(page.locator('#crop-name')).toHaveText('Corn');
   await expect(page.locator('#crop-description')).toContainText('Removes a lot of nutrients');
-  expect(await page.locator('#crop-card').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 112)).toBeTruthy();
+  await expect.poll(() => page.locator('#crop-card').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 112)).toBeTruthy();
   for (let i = 1; i < 8; i++) {
     await page.locator('#scenario').selectOption(String(i));
     await expect(page.locator('#map-status')).toHaveText(`Scenario ${i + 1} · original terrain`);
@@ -98,5 +98,29 @@ test('missing assets give a useful startup error', async ({ page }) => {
   await page.route('**/assets/catalog.json', route => route.fulfill({ status: 404, body: '' }));
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'SimFarm assets unavailable' })).toBeVisible();
-  await expect(page.locator('#app')).toContainText('npm run import');
+  await expect(page.locator('#app')).toContainText('./tools/bun run import');
+});
+
+test('scenario changes cancel pending loads and recover after missing farm assets', async ({ page }) => {
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/assets/raw/SCEN0.SSM', async route => {
+    await pending;
+    await route.fulfill({ body: readFileSync(new URL('../../../simfarm-dos/SCEN0.SSM', import.meta.url)) });
+  });
+  await page.route('**/assets/scenario2.tiles.png', route => route.fulfill({ status: 404, body: '' }));
+  await page.goto('/');
+  await expect(page.locator('#map-status')).toHaveText('Loading map…');
+  await page.locator('#scenario').selectOption('1');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 2 · original terrain');
+  release();
+  await expect(page.locator('#field option')).toHaveCount(10);
+  await page.locator('#zoom').selectOption('2');
+  await page.locator('#scenario').selectOption('2');
+  await expect(page.locator('#map-status')).toContainText('Cannot load scenario2.tiles.png');
+  await expect(page.locator('canvas')).toHaveCount(0);
+  await page.locator('#scenario').selectOption('3');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 4 · original terrain');
+  await expect(page.locator('#field option')).toHaveCount(4);
+  await expect(page.locator('canvas')).toHaveCSS('width', '3072px');
 });
