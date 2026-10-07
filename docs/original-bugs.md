@@ -601,3 +601,15 @@ Native scheduled and monthly primitives preserve the distinction. A composed reg
 Failure always assigns countdown four at `0xc586` and replaces overdue amount at `0xc59d/0xc5a1`, without adding prior arrears or checking the old countdown. Caller due months are 0, 2, 6, 9 (`0xd005..0xd029`), with gaps of 2/4/3/3 months. Monthly retries run first. A further failure less than four months later can therefore postpone expiry and replace an existing demand rather than accumulate it. The four-month gap can reach forced default before the next scheduled attempt. This is an accounting/control-flow quirk, not a proven security vulnerability.
 
 Native failure retains replacement and the countdown value four, with tests starting from different existing arrears. Full calendar/borrowing integration will need to test player-visible consequences before deciding on a correction.
+
+### SF-070 credit recalculation follow-up
+
+Loan dialog `0x47028..0x47030` recomputes available credit through thunk `12c6` → `0x3da08` before displaying it. The native borrowing-limit calculator now follows that unsigned land/building valuation. This confines the proven final-payment omission to cached available credit; it does not prove permanent credit loss after the dialog recalculates. Preserve the scheduled-payment ordering and revisit other consumers.
+
+## SF-073 — installment calculation wraps before signed division and can divide by a wrapped-zero term
+
+**Status:** verified arithmetic boundary behavior; normal borrowing inputs do not establish a reachable failure; native wrap preserved, zero divisor guarded.
+
+Calculator `0x476e2..0x47754` retains only 32 product bits, interprets them as signed for division by 100, adds principal with wrapping, then divides by a sign-extended 16-bit `term<<2`. Large/rate-mutated inputs can therefore yield negative raw installments. A nonzero principal with term 0 or a multiple of 16384 divides by zero. Known borrowing callers pass term five; source rate initialization is 15 and annual rates are 8–15, with the ordinary cash cap restricting borrowed amounts. Neither boundary is demonstrated reachable through that normal UI.
+
+Native calculation preserves overflow/sign behavior with independent integer-oracle tests, but rejects the zero-divisor term before evaluating it. Zero principal still returns zero first. Do not label the helper's unusual arithmetic as a proven exploitable vulnerability. Full caller/input recovery remains pending.

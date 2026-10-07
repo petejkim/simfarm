@@ -502,3 +502,11 @@ All six new targeted tests pass, as do type checking and production build. Full-
 Scheduled-loan pre-commit gate: all 276 Bun tests pass (43 files, 58.2 seconds), TypeScript/build and diff checks pass. Source traces for installment calculation, annual rate changes and asset/credit valuation are recorded as next-step evidence, without guessing their unverified semantics.
 
 Committed scheduled loans as `8fe98d3`; both clean-source Chromium regressions pass (6.3 seconds): land/new-field farming and running-speed/partial-tick native save/load. This closes the monthly retry, annual ledger and scheduled-loan increments with all 276 unit tests and type/build checks green. Git remains writable, the existing app server remains running and no push was made. Next trace loan installment/credit and runtime financial initialization, then connect finance/town/default decisions and persistence to the live calendar. The full preservation objective remains active and incomplete.
+
+## 2026-10-07 — original loan calculations
+
+The preceding goal turn made progress through monthly retries, annual reports/reset and scheduled-loan commits. Revalidated the clean worktree and traced the installment helper and the exact borrowing-limit caller. Implemented wrapped/signed installment arithmetic and the distinct unsigned land/building credit limit, without substituting the adjacent broader asset valuation. Initial rate is source word 15. SF-073 retains arithmetic/divide boundary evidence; SF-070 now records dialog credit recomputation, limiting the previously unresolved omission's impact.
+
+Four targeted tests pass, including an independent BigInt oracle, all eight farm valuations, source helper/thunk bytes and input/mutation boundaries. Full checks follow before commit. Next establish cold-start financial state and deterministic checkpoint ownership, then original borrow/repay actions and calendar/town/default integration. The full game remains incomplete; no push is requested.
+
+Loan-calculation gate: all 280 Bun tests pass (44 files), TypeScript/build and diff checks pass. Clean-source browser regressions follow the implementation commit.
