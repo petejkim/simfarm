@@ -18,9 +18,9 @@ Land value comes through manager `24e6:10c8`, thunk file `0x28128`, to overlay 1
 
 `src/simulation/tax.ts` ports valuation and assessment. Arrears are explicit input until payment state is integrated. This primitive neither resets sales nor charges cash. Tests pin source instructions, both thresholds, signed/unsigned boundaries, separate truncation, ownership codes, map corners, all supplied farms and non-mutation. SF-043 records signed-sales overflow without claiming ordinary-play reachability.
 
-## Calendar and payment dependencies — traced, not integrated
+## Calendar and payment dependencies — traced, not integrated into live clock
 
-Monthly `0xcc40..0xccee` retries a balance at `2d9f:d5ba` while countdown `4d9f:fed6` is nonzero, through debit category 1000. Tax retries `0xccee..0xcd9a` use countdown `fed7`, debt `6190:7518` and category 2500. Failed attempts decrement the countdown and eventually call forced-sale routine `1a66:0f06` / `0x1d766` with reason 39 or 36. The full default/forced-sale behavior and first balance's origination remain to be recovered; no flat monthly upkeep or interest rate is established.
+Monthly `0xcc40..0xccee` retries a balance at `2d9f:d5ba` while countdown `4d9f:fed6` is nonzero, through debit category 1000. Tax retries `0xccee..0xcd9a` use countdown `fed7`, debt `6190:7518` and category 2500. Failed attempts decrement the countdown and eventually call forced-sale routine `1a66:0f06` / `0x1d766` with reason 39 or 36. Bounded default and monthly retry primitives are now implemented (details below); no flat monthly upkeep or interest rate is established.
 
 Months 6 and 9 (zero-based, after increment) warn when assessment exceeds cash with no active tax countdown (`0xcd9a..0xcddd`). At year-end, after old-plan row 48 executes and month resets, `0xcdf4` calls annual collection `0x1d5c4`, `0xcdf9` calls ledger reset `0x1d396`, then `0xcdfe` projects crop plans. The native clock currently implements only those schedule operations.
 
@@ -167,3 +167,17 @@ If bounded assets are exhausted, the native result requests a pending restart/ex
 Sixteen tests pin source calls/categories/terminal codes and loader offsets, all eight decoded accounts and unpayable full-farm liquidations, home protection, ordered stage transitions, immediate successful return, ledger wrapping and crop-income double posting, taxable-sale exclusion for land, busy/rented/seed filtering, sparse final slots, zero debt, negative equipment proceeds through the cash cap, single-use decisions and invalid-input atomicity. A final-slot fixture initially supplied an out-of-map machine coordinate; its sale guard rejected correctly and the fixture was corrected without weakening the guard.
 
 Next port monthly retry/countdown and annual report/reset ordering, resolve runtime ledger startup, then integrate finance/town/default state and pending decisions into GameSimulation/checkpoints/React. The complete game goal remains active; a standalone forced-sale primitive is not live financial integration.
+
+## Monthly debt retries — implemented primitive
+
+`retryMonthlyDebts` ports `0xcc40..0xcdde`. It takes the incremented month **1–12, before year normalization**, and first retries balance `2d9f:d5ba` when byte `4d9f:fed6` is nonzero, then tax debt `6190:7518` under `fed7`. Normal full payment posts category 1000/2500 respectively, clears only that debt/countdown and emits notice 170/163. No partial payment occurs. A zero debit result decrements the countdown; a remaining count emits 169/162. Expiry invokes bounded forced sales with reason 39/36. Paid results clear the matching debt and emit 168/165, retaining default's source ledger mismatch SF-046.
+
+Unpaid exhaustion returns a pending decision and stops before further monthly stages. Debt remains unpaid regardless of later restart/exit choice (SF-069). Live calendar/checkpoint integration must retain the pending result and suspend advancement. Zero debt under a positive countdown still takes the failure/default path (SF-067); no invented payment success is inserted.
+
+Only the **initially inactive tax countdown** branch reaches the seasonal warning: incremented months 6/9, unsigned assessment strictly greater than cash, notice 161. Active-tax warning/success branches jump directly to `0xcdd6` and skip this check, even when success has just cleared the countdown. Tests pin that branch and all twelve month inputs.
+
+`readMonthlyDebtState` restores tax debt/countdown from SSM `0x21726/0x2172a` using loader `0x4622e..0x4625b`. The other runtime balance/countdown are explicit caller inputs: no direct SSM transfer has been found, and indirect/bulk transfers remain unexcluded. New-game initialization clears balance at `0x407e8/0x407ec` and countdown at `0x408d6`; that alone does not establish load-game policy.
+
+Origination trace: routine starting `0xc54a` attempts scheduled amount `6190:b3b2` through category 1000. Failure sets countdown four (`0xc586`), copies the amount to `2d9f:d5ba` (`0xc59d/0xc5a1`) and emits notice 166. Its on-time success path reduces `6190:b3ae`, credits unsigned half the payment to town expansion funds (`0xc5fc..0xc61a`) and a quarter to town revenue (`0xc61f..0xc630`). If the first balance reaches zero it clears `b3b2` before a later addition to `b394`. Caller timing, complete loan semantics and the remaining routine are not yet recovered. Monthly arrears success does not repeat those operations; preserve that distinction pending lifecycle analysis rather than invent interest or principal handling.
+
+Eight new tests cover exact source bytes, all eight saved tax records, normal ordering, unsigned/wrapped accounts, countdown bounds, both expiry reasons, pending decisions, zero debt, all warning months and atomic input rejection. Annual settlement/reset, debt origination, notices and live state integration remain separate work.

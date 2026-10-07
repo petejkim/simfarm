@@ -20,18 +20,23 @@ export interface ForcedSaleResult {
   decision: DefaultDecision | null;
 }
 
+export function validateDefaultAccounts(world: Scenario, state: DefaultState): void {
+  for (const n of [world.farm.cash, world.farm.salesAccumulator, state.landIncome, state.buildingBookValue,
+    state.assets.equipmentBookValue, state.assets.equipmentIncome, state.assets.livestockIncome,
+    state.equipmentExpenses, state.balancePayments, state.taxExpenses]) {
+    if (!Number.isInteger(n) || n < 0 || n > 0xffffffff) throw new Error('Invalid default account');
+  }
+  if (![state.homeRegionX, state.homeRegionY].every(n => Number.isInteger(n) && n >= 0 && n < 12)) throw new Error('Invalid protected home region');
+}
+
 /** 0x1d766..0x1db7e: invoked AFTER the caller's failed normal debit.
  * Slot-bounded scans correct SF-059; asset order and debit categories preserve
  * the original, including SF-046's ledger mismatch and failed-sale retries. */
 export function forceAssetSales(world: Scenario, state: DefaultState, amount: number, reason: DefaultReason,
   effects: ClearingEffects, soilMoisture: number): ForcedSaleResult {
   if (reason !== 36 && reason !== 39) throw new Error('Invalid default reason');
-  for (const n of [amount, world.farm.cash, world.farm.salesAccumulator, state.landIncome, state.buildingBookValue,
-    state.assets.equipmentBookValue, state.assets.equipmentIncome, state.assets.livestockIncome,
-    state.equipmentExpenses, state.balancePayments, state.taxExpenses]) {
-    if (!Number.isInteger(n) || n < 0 || n > 0xffffffff) throw new Error('Invalid default account');
-  }
-  if (![state.homeRegionX, state.homeRegionY].every(n => Number.isInteger(n) && n >= 0 && n < 12)) throw new Error('Invalid protected home region');
+  if (!Number.isInteger(amount) || amount < 0 || amount > 0xffffffff) throw new Error('Invalid default amount');
+  validateDefaultAccounts(world, state);
   validateClearingEffects(effects, soilMoisture);
   const result: ForcedSaleResult = { paid: false, amount, reason, paymentCategory: null, attempts: [], removedFields: [], decision: null };
   const pay = (category: 0 | 1000 | 2500): boolean => {

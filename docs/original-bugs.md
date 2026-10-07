@@ -575,3 +575,7 @@ Terminal text at `6190:3efa` says the homestead was sold to pay debts. The prece
 The default terminal dialog's nonzero result is left in AX when `0x1db72..0x1db7e` writes exit flag 1 and returns. Monthly callers test AX as payment success (`0xcc92`, `0xcd40`) and can clear the respective unpaid balance and emit a success notice even though no full debit succeeded. Exit is already requested, so visible/persistent consequences beyond this sequence remain unverified. A zero dialog result requests restart and returns zero instead.
 
 Native `ForcedSaleResult.paid` remains false on exhaustion, independent of later restart/exit choice. The decision is single-use and does not itself mark debt paid. Monthly integration must retain this separation rather than translate a UI button result into payment success. No exploit or financial correctness claim beyond this code path is made.
+
+### SF-067 / SF-069 monthly caller follow-up
+
+The monthly retry primitive now preserves the zero-debt failure/countdown behavior and tests its path into bounded liquidation. For exhausted defaults it stops further financial phases and preserves debt while the explicit restart/exit decision is pending, correcting SF-069 at the monthly caller. Choosing exit never clears the debt. Live calendar suspension, UI and checkpoint persistence remain pending; ordinary-play zero-debt reachability is still unresolved.
