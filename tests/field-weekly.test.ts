@@ -42,7 +42,9 @@ test('weekly completion matches the original state jump table and equipment flag
 
 test('weekly planting completion handles every actual planting phase on all eight original farms', () => {
   for (let id = 0; id < 8; id++) {
-    const { scenario, definitions, crops } = setup(id), game = new GameSimulation(scenario, definitions), phases = new Set<number>();
+    const { scenario, definitions, crops } = setup(id);
+    scenario.farm.calendar.day = 0; // Allow actual work phases before automatic week-end completion.
+    const game = new GameSimulation(scenario, definitions), phases = new Set<number>();
     game.dispatch({ type: 'plant-field', fieldSlot: 1, cropSlot: 0 });
     game.dispatch({ type: 'set-paused', paused: false });
     for (let tick = 0; tick < 4096; tick++) {
@@ -99,7 +101,9 @@ test('weekly treatments restore prior state, release actual machinery and apply 
 
 test('weekly harvest completion settles actual machinery and worker phases across every original farm', () => {
   for (let id = 0; id < 8; id++) {
-    const { scenario, definitions, crops } = setup(id), game = new GameSimulation(scenario, definitions), phases = new Set<number>();
+    const { scenario, definitions, crops } = setup(id);
+    scenario.farm.calendar.day = 0; // Allow actual work phases before automatic week-end completion.
+    const game = new GameSimulation(scenario, definitions), phases = new Set<number>();
     game.dispatch({ type: 'harvest-field', fieldSlot: 1 }); game.dispatch({ type: 'set-paused', paused: false });
     for (let tick = 0; tick < 4096; tick++) {
       const world = game.getSnapshot().scenario, f = world.fields[1];

@@ -25,6 +25,8 @@ import { sellStoredHarvest, storedHarvestValue, type HarvestSaleResult } from '.
 import { purchaseLand, type LandPurchaseResult } from './land';
 import { orderTreatment, updateTreatmentField, type Treatment, type TreatmentResult } from './field-treatment';
 import { recordFieldPlanOrder } from './field-plan-order';
+import { dispatchFieldSchedule, type ScheduleDispatchResult } from './field-calendar';
+import { projectFieldScheduleYear } from './field-projection';
 
 import { SIMULATION_SPEEDS, type SimulationState } from './save-state';
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
@@ -52,6 +54,7 @@ export interface GameSnapshot {
   lastLandResult: LandPurchaseResult | null;
   lastNewFieldResult: NewFieldResult | null;
   lastTreatmentResult: TreatmentResult | null;
+  lastScheduleResult: ScheduleDispatchResult | null;
 }
 export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused: boolean }
   | { type: 'set-speed'; speed: number }
@@ -106,6 +109,7 @@ export class GameSimulation {
   private lastLandResult: LandPurchaseResult | null = null;
   private lastNewFieldResult: NewFieldResult | null = null;
   private lastTreatmentResult: TreatmentResult | null = null;
+  private lastScheduleResult: ScheduleDispatchResult | null = null;
 
   constructor(scenario: Scenario, crops: readonly CropDefinition[], seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState) {
     this.scenario = copyScenario(scenario);
@@ -245,11 +249,16 @@ export class GameSimulation {
         updateFieldWater(field, s.cells, w.soilMoisture, this.disasterFlags);
         updateFieldStatus(field, this.crops[field.cropSlot], s.cells);
       }
+      // 0xc920 increments week; 0xcbbd dispatches before 0xcc10 normalizes month/week.
+      // At year-end this executes old plan row 48 and completes the final week's work.
+      s.farm.calendar = { ...before, day: 0, week: before.week + 1, season: next.calendar.season };
+      this.lastScheduleResult = dispatchFieldSchedule(s, this.crops, this.cropMarketPrices, this.random, this.equipmentRuntime, w.soilMoisture);
       // 0xcbc6 indexes temperature before month/year rollover. Index 240 aliases DS:4368 (wind).
       const index = w.temperatureYear * 48 + before.month * 4 + before.week + 1;
       w.temperature = index === 240 ? w.wind : s.climate.temperature[index];
       if (next.monthEnded) this.random.mixMonth(before.month + 1);
       if (next.yearEnded) {
+        projectFieldScheduleYear(s, this.crops); // 0xcdfe, after dispatch and before weather-year changes.
         w.temperatureYear = (w.temperatureYear + 1) % 5;
         w.precipitationYear = (w.precipitationYear + 1) % 5;
         w.windYear = (w.windYear + 1) % 5;
@@ -277,6 +286,7 @@ export class GameSimulation {
       lastLandResult: this.lastLandResult ? { ...this.lastLandResult } : null,
       lastNewFieldResult: this.lastNewFieldResult ? { ...this.lastNewFieldResult } : null,
       lastTreatmentResult: this.lastTreatmentResult ? { ...this.lastTreatmentResult } : null,
+      lastScheduleResult: this.lastScheduleResult ? { ...this.lastScheduleResult } : null,
       storedHarvestValues: this.scenario.inventory.map(i => i.active && i.type >= 168 && i.type < 184
         ? storedHarvestValue(i, this.scenario) : null),
       fieldHarvestEstimates: this.scenario.fields.map(f => {

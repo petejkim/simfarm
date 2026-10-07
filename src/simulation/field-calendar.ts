@@ -11,12 +11,15 @@ import type { FarmRandom } from './random';
 export type ScheduleDispatchResult = { ok: true }
   | { ok: false; fieldSlot: number; reason: Extract<PlantResult, { ok: false }>['reason'] };
 
-/** Original weekly order dispatcher 0x2f66a..0x2fb12, called after calendar rollover.
- * January week zero skips forced completion. A failed seed order exits the whole scan.
+/** Original weekly order dispatcher 0x2f66a..0x2fb12, called after week increment but BEFORE
+ * month/year normalization (0xcbbd). Accept temporary week 4, including absolute week 48.
+ * An explicit January week-zero call skips completion; actual year-end calls do not.
+ * A failed seed order exits the whole scan.
  * Calendar advancement and year-plan projection remain separate caller responsibilities. */
 export function dispatchFieldSchedule(world: Scenario, crops: readonly (readonly number[])[], marketPrices: number[],
   random: FarmRandom, runtime: EquipmentRuntime, soilMoisture: number): ScheduleDispatchResult {
-  validateCalendar(world.farm.calendar);
+  const calendar = world.farm.calendar;
+  validateCalendar(calendar.week === 4 ? { ...calendar, week: 0 } : calendar);
   const week = world.farm.calendar.month * 4 + world.farm.calendar.week;
   if (week >= 1) finishWeeklyFieldWork(world, crops, runtime);
   for (const field of world.fields) {
