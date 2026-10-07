@@ -1,0 +1,15 @@
+.DS_Store
+.localized
+__MACOSX/
+.AppleDouble
+.LSOverride
+Icon[]
+._*
+
+# Repository-local development tools and caches
+.venv/
+.tools/
+.cache/
+node_modules/
+__pycache__/
+*.pyc
