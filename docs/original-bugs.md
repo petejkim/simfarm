@@ -617,3 +617,15 @@ Native calculation preserves overflow/sign behavior with independent integer-ora
 ### SF-065 / SF-060 financial checkpoint follow-up
 
 Native fresh imports now explicitly start building book value from the executable's initialized zero, without guessing a saved field or summing building prices. The original indirect/warm-load lifecycle remains unresolved; this cold-import policy is not proof that the original always loses the ledger. Native checkpoint version 3 independently persists the live ledger and does not reset it on restore. The same checkpoint now preserves the bounded clearing queue and its explicit empty-sentinel initialization (SF-060), including all inactive/unused coordinate bytes. Actual clearing animation remains unconnected to the live clock.
+
+## SF-074 — full loan payoff leaves the overdue installment active
+
+**Status:** confirmed independent state paths; native preserved; ordinary UI sequence impact awaits integration tests.
+
+Full payoff `0x47623..0x4768a` debits principal and clears `6190:b3ae/b3b2`. It never clears overdue amount `2d9f:d5ba` or countdown `4d9f:fed6`, set by a failed scheduled installment. Monthly retries still consume that separate amount. Paying the main balance while an installment is overdue can therefore leave another payment due. Native payoff preserves those fields; the loan UI should show the separate overdue balance instead of implying that all debt disappears. Revisit any correction together with SF-071; no security claim is made.
+
+## SF-075 — borrowed cash-cap arithmetic can wrap in malformed/extreme states
+
+**Status:** arithmetic boundary confirmed; normal UI reachability unproven; native command guards capacity.
+
+Selection `0x46f21..0x46f43` wraps cash plus proposed loan before comparing with 9,999,999, and can subtract already-excessive cash from the cap. Ordinary source cash/credit constraints do not establish reachability of these extremes. Native submission computes nonnegative remaining capacity before clamping a request, rejecting already-full/over-cap cash without mutation. Tests inject maximum dwords to ensure this boundary cannot mint cash. Normal original borrowing and rounding remain unchanged.

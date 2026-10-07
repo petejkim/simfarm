@@ -6,6 +6,51 @@ import { ownedLandValue } from './tax';
 
 export interface LoanPaymentAccounts { balancePayments: number; townRevenue: number; expansionFunds: number }
 export interface LoanPaymentResult { paid: boolean; amount: number; notice: 166 | null }
+export type BorrowResult = { ok: true; amount: number; installment: number }
+  | { ok: false; reason: 'invalid-amount' | 'no-credit' | 'cash-limit' };
+export type RepayResult = { ok: true; amount: number } | { ok: false; reason: 'no-loan' | 'insufficient-cash' };
+
+/** Original dialog refresh 0x47028, selection bounds 0x46ef4..0x46f43,
+ * and confirmation 0x46f92..0x46fca / 0x47533..0x4756b.
+ * Native command rechecks collateral at submission to avoid a stale UI quote. */
+export function borrowLoan(world: Scenario, loan: LoanState, buildingBookValue: number, rate: number,
+  requested: number, soilMoisture: number): BorrowResult {
+  validateLoan(loan);
+  if (!Number.isInteger(world.farm.cash) || world.farm.cash < 0 || world.farm.cash > 0xffffffff) throw new Error('Invalid cash');
+  if (!Number.isInteger(requested) || requested < 1 || requested > 0xffffffff) return { ok: false, reason: 'invalid-amount' };
+  const credit = loanCreditLimit(world, buildingBookValue, loan.principal, soilMoisture);
+  if (!credit) return { ok: false, reason: 'no-credit' };
+  const capacity = Math.max(0, 9999999 - world.farm.cash);
+  if (!capacity) return { ok: false, reason: 'cash-limit' };
+  const amount = Math.min(requested, credit, capacity), installment = loanInstallment(amount, rate);
+  world.farm.cash += amount;
+  loan.principal = (loan.principal + amount) >>> 0;
+  loan.availableCredit = credit - amount;
+  loan.scheduledPayment = (loan.scheduledPayment + installment) >>> 0;
+  loan.selectedAmount = 0; // Dialog clears the submitted selection at 0x4701e / 0x475be.
+  return { ok: true, amount, installment };
+}
+
+/** Full payoff 0x47623..0x4768a. Source does not clear separate overdue debt
+ * or replenish cached available credit. Both are documented, not inferred. */
+export function repayLoanInFull(farm: Pick<SavedFarmState, 'cash'>, loan: LoanState, accounts: LoanPaymentAccounts): RepayResult {
+  validateLoan(loan); validatePaymentAccounts(farm, accounts);
+  const amount = loan.principal;
+  if (!amount) return { ok: false, reason: 'no-loan' };
+  if (farm.cash < amount) return { ok: false, reason: 'insufficient-cash' };
+  farm.cash -= amount;
+  accounts.balancePayments = (accounts.balancePayments + amount) >>> 0;
+  accounts.expansionFunds = (accounts.expansionFunds + (amount >>> 1)) >>> 0;
+  accounts.townRevenue = (accounts.townRevenue + (amount >>> 2)) >>> 0;
+  loan.principal = loan.scheduledPayment = 0;
+  return { ok: true, amount };
+}
+
+function validatePaymentAccounts(farm: Pick<SavedFarmState, 'cash'>, accounts: LoanPaymentAccounts): void {
+  for (const n of [farm.cash, accounts.balancePayments, accounts.townRevenue, accounts.expansionFunds]) {
+    if (!Number.isInteger(n) || n < 0 || n > 0xffffffff) throw new Error('Invalid loan payment account');
+  }
+}
 
 /** 0x476e2..0x47754: low-dword multiplication, signed division, then
  * signed division by the sign-extended low word of term*4. Borrow callers
@@ -48,9 +93,7 @@ export function isLoanPaymentMonth(month: number): boolean {
 export function payScheduledLoan(farm: Pick<SavedFarmState, 'cash'>, loan: LoanState, debt: MonthlyDebtState,
   accounts: LoanPaymentAccounts): LoanPaymentResult {
   validateLoan(loan); validateMonthlyDebt(debt);
-  for (const n of [farm.cash, accounts.balancePayments, accounts.townRevenue, accounts.expansionFunds]) {
-    if (!Number.isInteger(n) || n < 0 || n > 0xffffffff) throw new Error('Invalid loan payment account');
-  }
+  validatePaymentAccounts(farm, accounts);
   const amount = loan.scheduledPayment;
   if (farm.cash < amount) {
     debt.balanceCountdown = 4;

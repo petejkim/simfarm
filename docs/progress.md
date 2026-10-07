@@ -524,3 +524,9 @@ Four new targeted tests and the eleven existing save/schedule checks pass. Type 
 Financial persistence pre-commit gate: all 284 Bun tests pass (45 files, 69.9 seconds), TypeScript/build and diff checks pass. The full browser suite will run from committed source because checkpoint format and GameSimulation ownership changed.
 
 Financial-state commit `e2af311` passes the complete 21-case Chromium suite, including original assets/MIDI, all farming controls, speed, saved field/truck work, malformed-load protection, automatic schedules and planner persistence. All 284 unit tests and TypeScript/build checks remain green. Git is writable, the existing server was retained and nothing was pushed. The borrowing panel and live financial/calendar/default decisions remain pending; the full goal is active.
+
+## 2026-10-07 — borrowing and full repayment
+
+The preceding turn made progress through original loan calculations and canonical financial checkpoint commits. Revalidated clean state and recovered the borrow-confirmation and full-payoff mutations. Implemented both actions with refreshed credit, bounded cash capacity, source per-loan rounding, town shares and canonical account views. Added SF-074/075 for retained overdue debt after payoff and extreme cash-cap wrap behavior. Five targeted tests and type/build checks pass; the full suite is running. Next connect loan commands, scheduled payments/retries and terminal default handling to React/GameSimulation, while remaining annual/town systems stay explicitly incomplete.
+
+Borrow/payoff gate: all 289 Bun tests pass (46 files, 67.3 seconds), TypeScript/build and diff checks pass. Browser regressions follow from committed source before UI integration.
