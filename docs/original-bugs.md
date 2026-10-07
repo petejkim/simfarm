@@ -798,3 +798,15 @@ Registry append0x179da returns0 when count6190:240f>63 (`0x179e4..0x179ee`). Pur
 Manual special-building cleanup explicitly calls registry removal0x17944 at0x25a93/0x25ab9; bulldoze also calls it at0x26657. Land sale instead calls content/map cleanup0x19f6a at0x3caa1 and generic deletion0x3a040 at0x3cab9. The latter's building branch0x3a0aa..0x3a0fa updates count/book value and calls0x19f4c, which only clears the active bit and decrements the building count. None of these traced routines removes the irrigation registry entry. A leftover strength48 source can still seed its old outlet when wind permits because the driver checks that strength independently of a live building; a leftover pump entry can also consume source capacity even when it no longer seeds.
 
 Native building demolition prevalidates registry state for types70/71 and removes their first matching source on successful cleanup. Existing packets finish the current pass, matching manual removal's lack of queue cancellation. Tests purchase both types, reject malformed registry state before any sale mutation, then sell the plot and verify no source/wave restarts. Original omission evidence is retained; exact ordinary-game incidence and other disaster/manual deletion paths remain to be assessed.
+
+## SF-094 — irrigation image connectivity ignores its fifth pump entry
+
+**Status:** verified table/loop mismatch; visible intent uncertain; native preserves source behavior.
+
+DS6190:56ae has five category entries:83/11,84/11,128/0x22,129/0x24,61/0x22 (dry, wet, bridge, valve, pump). Both neighbor helpers0x24b54 and0x24cf4 stop at index4;0x24cd1 explicitly compares the byte index with4. Pump120..121 therefore does not contribute a connection bit although the subsequent table entry describes it. Water propagation independently accepts those tiles at0x17636. This is an image/connection quirk, not proof of broken water delivery or a security vulnerability. Native placement retains the four-entry limit; a pump-only adjacent cell does not turn the new ditch image. Revisit original visual expectations before choosing an enhancement.
+
+## SF-095 — automatic map-tool clearing precedes placement rejection
+
+**Status:** verified mutation order; native irrigation placement rejects atomically.
+
+Click path0x24210..0x24229 invokes auto-clear0x26faa before town/terrain guards0x24266..0x242a9 and the later price debit. The helper can remove trees and spend25, then the selected tool can fail its placement or affordability checks. With105 required for a paid tree plus an80 ditch but only104 cash, the source can clear and charge25 without creating the ditch. Native preparation checks the final terrain, clearing affordability and full purchase first, preserving all state on rejection. Both source tree categories still require25 available before clearing, and only535..538 debit it on successful placement. Tests cover104/105, free trees, flags and no mutation on rejection. This is a gameplay transaction defect, not a security claim. Other map tools retain their separately documented status; broader auto-clear entry points remain to be audited.
