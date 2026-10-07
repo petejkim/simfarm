@@ -198,3 +198,38 @@ test('planting from React buys seed, rents machinery and renders a newly planted
   await expect(page.locator('#plant-result')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+for (const id of [0, 4]) test(`harvest controls complete ${id === 0 ? 'worker' : 'machinery'} harvest and show stored crops`, async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${name}`, import.meta.url));
+  const scenario = readScenario(source(`SCEN${id}.SSM`)), field = scenario.fields[1];
+  const file = scenario.cropFiles[field.cropSlot], crop = readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`));
+  const quantity = crop.rawDefinition[32] | crop.rawDefinition[33] << 8;
+  await page.clock.install();
+  await page.goto('/');
+  if (id) await page.locator('#scenario').selectOption(String(id));
+  await expect(page.locator('#map-status')).toHaveText(`Scenario ${id + 1} · original terrain`);
+  await page.locator('#field').selectOption('1');
+  await expect(page.locator('#harvest-estimate')).toContainText('Estimated crop value: $0');
+  await expect(page.locator('#harvest-stock')).toHaveText('No stored harvests.');
+  await page.locator('#harvest-field').click();
+  await expect(page.locator('#field-status')).toContainText('Harvest');
+  await expect(page.locator('#harvest-result')).toContainText('Harvest ordered');
+  await expect(page.locator('#harvest-field')).toBeDisabled();
+  await expect(page.locator('#plant-field')).toBeDisabled();
+  await page.clock.runFor(1000);
+  await expect(page.locator('#field-status')).toContainText('Harvest');
+  for (let day = 0; day < 12; day++) await page.locator('#next-day').click();
+  await expect(page.locator('#field-status')).toContainText(crop.rawDefinition[62] & 1 ? 'Growing' : 'Waiting');
+  await expect(page.locator('#harvest-stock')).toHaveText('1 stored harvest');
+  await expect(page.locator('#harvest-items')).toContainText(`${crop.name} · Quantity ${quantity} · Loss 100%`);
+  await expect(page.locator('#harvest-progress')).toHaveCount(0);
+  await expect(page.locator('#plant-field')).toBeEnabled();
+  if (!(crop.rawDefinition[62] & 1)) await expect(page.locator('#harvest-field')).toBeDisabled();
+  await page.screenshot({ path: `artifacts/browser-harvest-${id}.png`, fullPage: true });
+  await page.locator('#scenario').selectOption('1');
+  await expect(page.locator('#harvest-stock')).toHaveText('No stored harvests.');
+  await expect(page.locator('#harvest-result')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

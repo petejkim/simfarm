@@ -184,3 +184,9 @@ The user asked about planting a new field. Confirmed that current planting only 
 The preceding question-only turn was no implementation progress; revalidated clean commit `4828acc` and continued the available harvest integration. GameSimulation now owns harvest commands/results and value estimates, runs both harvest methods alongside machinery/weather, and publishes delivered inventory. Tests start from all eight unmodified original saves and verify completion, equipment return, replanting, invalid/duplicate commands, snapshot isolation and frame-partition determinism.
 
 Validation: 91 Bun tests and TypeScript/production build pass. Browser controls and their checks follow in the next increment; stored-goods sale is still outstanding. New-field creation remains the next priority after that farming cycle, and the full game objective remains active.
+
+## 2026-10-07 — browser harvesting and stored crop display
+
+Committed the command/scheduler integration as `6ae956b`, then added React harvest controls, source-derived maturity/value estimates, worker fees, work progress and an inventory list. The controls reject busy or empty fields and keep simulation state in GameSimulation. Harvesting an immature crop remains allowed and displays its zero estimate; no invented maturity rule was added.
+
+Validation: TypeScript/production build and all eight Chromium checks pass, including both original harvest methods, pause/manual advancement, delivered quantities/losses, annual/perennial completion and scenario reset. Visually inspected `artifacts/browser-harvest-4.png`. The preceding simulation gate passed all 91 Bun tests. Browser tests use unmodified scenarios with immature crops and do not claim a profitable farming cycle. Stored-crop sale recovery is next, followed by new-field creation. Other original systems/save-load remain required.
