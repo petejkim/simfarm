@@ -4,6 +4,7 @@ Reconstruct the supplied `../simfarm-dos/SIMFARM.EXE` incrementally as a native 
 
 - Inspect current files and `docs/progress.md` before continuing. Treat `../simfarm2` as incomplete research, not an implementation to copy wholesale.
 - Ground recovered formats and rules in source bytes and executable addresses. Document offsets, hashes, hypotheses, and confidence in `docs`. Distinguish verified behavior from provisional scaffolding; do not declare a farming lookalike a completed port.
+- Record original-game defects, overflow hazards and suspected vulnerabilities in `docs/original-bugs.md`, even after fixing them. Include evidence, confidence, original/native behavior and whether the fix is deferred. Distinguish arithmetic quirks from proven reachable bugs or security vulnerabilities.
 - Prioritize a playable original game loop while continuing reconstruction of its actual rules. Preserve unknown fields rather than inventing semantics.
 - Never modify the supplied DOS distribution. Generated original assets stay ignored; import them locally with reproducible scripts.
 - Use React state and components for UI controls and text. Keep imperative canvas drawing in `src/render`, with refs for canvas/viewport integration. Global game state belongs to the plain TypeScript simulation, independent of React; UI subscribes to snapshots and sends commands. Do not move simulation rules/state ownership into hooks or a UI store.
