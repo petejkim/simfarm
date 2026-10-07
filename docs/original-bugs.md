@@ -655,3 +655,11 @@ Pending-choice tests exposed a distinction for SF-049: an original unowned plot 
 The live clock now advances the persisted clearing queue, retaining the corrected empty sentinel and bounded 64-slot traversal (SF-060/061). Original changing-count retirement remains observable: a full 64-entry field retires 33 entries on its first finishing update, then 16, 8, 4, 2 and 1. Word-wrap and mid-animation save/load tests exercise the actual GameSimulation clock.
 
 SF-066's overwritten low-tile entries remain pending in the live queue by an explicit fidelity decision; no cleanup is inferred merely from a non-animation tile. Native scanning is bounded, so malformed counter/slot combinations cannot recreate an unchecked scan. A future enhancement may retire overwritten entries, but source behavior and this evidence must remain documented.
+
+## SF-077 — annual field-status aggregation trusts a count without bounding slots
+
+**Status:** confirmed unchecked scan pattern under inconsistent count; ordinary reachability/impact unproven; native reconstruction and fix pending.
+
+Routine `0x1f020` initializes slot to 1 (`0x1f047`) and encountered-active count to zero. It tests field active bit at `0x1f070`, reads +54 at `0x1f078`, and increments the encountered count only for active slots (`0x1f09f`). Every iteration increments slot (`0x1f0a2`). The loop compares the encountered count against signed `6190:3e3e` at `0x1f0ac/0x1f0b1`, with no check against the 98-record field table or last usable slot 97. An inconsistent positive declared count can therefore continue reading beyond field storage while searching for enough active records.
+
+This is static evidence of an input/state-boundary hazard, not proof that ordinary play produces the mismatch or that it is exploitable. The live native clock does not yet run this aggregate/advice routine. Its reconstruction must traverse decoded field slots 1–97 once and derive active counts, preserving valid-record order/status arithmetic without reproducing the unchecked access. Revisit original count producers/loader and the downstream report/helper before assigning broader impact; retain this entry after the bounded implementation is added.
