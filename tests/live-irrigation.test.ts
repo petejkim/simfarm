@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { readScenario, worldIndex } from '../src/formats/scenario';
 import { readCrop } from '../src/formats/crop';
+import { readNativeSave } from '../src/formats/native-save';
 import { readIrrigation, addIrrigationSource } from '../src/formats/irrigation';
 import { GameSimulation } from './support/game';
 
@@ -87,5 +88,52 @@ test('v9 irrigation continuation is strict, while legacy1–8 migrate missing wa
     const bad = structuredClone(save); mutate(bad.scenario);
     assert.throws(() => GameSimulation.load(JSON.stringify(bad), crops), /[Ii]rrigation/);
     assert.equal(game.save(4), JSON.stringify(save));
+  }
+});
+
+test('player-dug ditches, road crossings and valves supply a field and preserve exact saved continuation', () => {
+  const { scenario, crops } = fixture();
+  for (let x = 11; x <= 19; x++) scenario.cells[worldIndex(x, 10)].terrain = x === 17 ? 161 : 15;
+  const game = new GameSimulation(scenario, crops), before = game.getSnapshot();
+  game.dispatch({ type: 'build', buildingType: 70, x: 10, y: 10 });
+  for (let x = 11; x <= 19; x++) {
+    game.dispatch({ type: 'irrigation', tool: 'ditch', x, y: 10 }); assert.ok(game.getSnapshot().lastIrrigationResult?.ok);
+  }
+  game.dispatch({ type: 'irrigation', tool: 'valve', x: 15, y: 10 }); assert.ok(game.getSnapshot().lastIrrigationResult?.ok);
+  game.dispatch({ type: 'irrigation', tool: 'close-valve', x: 15, y: 10 });
+  let s = game.getSnapshot(); assert.equal(s.scenario.cells[worldIndex(15, 10)].terrain & 0x7ff, 123);
+  assert.equal(s.scenario.farm.cash, before.scenario.farm.cash - 1000 - 8 * 80 - 40 - 35);
+  assert.equal(s.finances.annual.otherExpenses, before.finances.annual.otherExpenses + 715);
+  game.dispatch({ type: 'set-paused', paused: false }); game.tick(3);
+  const saved = game.save(4), restored = GameSimulation.load(saved, crops).simulation;
+  assert.equal(restored.getSnapshot().lastIrrigationResult, null); // Presentation feedback is not game state.
+  for (const sim of [game, restored]) sim.tick(6);
+  assert.deepEqual(JSON.parse(game.save(4)), JSON.parse(restored.save(4)));
+  s = game.getSnapshot(); assert.equal(s.scenario.cells[worldIndex(16, 10)].terrain & 0x7ff, 88);
+  assert.equal(s.scenario.fields[1].bytes[51], 4);
+  for (const sim of [game, restored]) {
+    sim.dispatch({ type: 'irrigation', tool: 'open-valve', x: 15, y: 10 });
+    sim.tick(36);
+  }
+  assert.deepEqual(JSON.parse(game.save(4)), JSON.parse(restored.save(4)));
+  assert.ok(game.getSnapshot().scenario.fields[1].bytes[51] > 4);
+  const snapshot = game.getSnapshot(), unchanged = game.save(4);
+  snapshot.scenario.cells[worldIndex(15, 10)].terrain = 15;
+  snapshot.finances.accounts.otherDefinitions[1].price = 9999;
+  assert.equal(game.save(4), unchanged);
+});
+
+test('irrigation commands reject without state changes and suspend during original financial choices', () => {
+  const { scenario, crops } = fixture(), game = new GameSimulation(scenario, crops);
+  const before = game.save(4); game.dispatch({ type: 'irrigation', tool: 'ditch', x: 12, y: 10 });
+  assert.deepEqual(game.getSnapshot().lastIrrigationResult, { ok: false, reason: 'blocked-terrain' });
+  assert.equal(game.save(4), before);
+  for (const kind of ['town', 'default']) {
+    const { state } = readNativeSave(before);
+    if (kind === 'town') state.pendingTown = { phase: 'annual-reset', site: { ...state.finances.town.activeSite }, resumeRunning: false };
+    else state.finances.defaultDecision = { status: 'pending', originalExitCode: 0 };
+    const sim = new GameSimulation(state.scenario, crops, state.random, state), frozen = sim.save(4);
+    sim.dispatch({ type: 'irrigation', tool: 'ditch', x: 20, y: 10 });
+    assert.equal(sim.getSnapshot().lastIrrigationResult, null); assert.equal(sim.save(4), frozen);
   }
 });

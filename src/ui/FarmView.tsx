@@ -20,6 +20,8 @@ import { TownChoicePanel } from './TownChoicePanel';
 import type { GameEvent } from '../simulation/events';
 import { BuildingPanel } from './BuildingPanel';
 import { checkBuildingPlacement } from '../simulation/building-placement';
+import { IrrigationPanel } from './IrrigationPanel';
+import { checkIrrigationPlacement, type IrrigationTool } from '../simulation/irrigation-placement';
 
 const subscribeEmpty = () => () => {};
 const emptySnapshot = () => null;
@@ -63,6 +65,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   const [focus, setFocus] = useState<MapFocus>({ x: 48, y: 48 });
   const [mapTool, setMapTool] = useState<MapTool>('inspect');
   const [buildingType, setBuildingType] = useState(64);
+  const [irrigationTool, setIrrigationTool] = useState<IrrigationTool>('ditch');
   const data = resource.status === 'ready' && snapshot ? { tiles: resource.value.tiles, scenario: snapshot.scenario } : null;
   const field = data?.scenario.fields.find(f => f.slot === fieldSlot && f.active);
   const cell = selection !== null ? data?.scenario.cells[selection] : undefined;
@@ -70,10 +73,11 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   const preview = position && data && snapshot && mapTool !== 'inspect' ? {
     x: mapTool === 'land' ? (position.x >> 3) * 8 : position.x,
     y: mapTool === 'land' ? (position.y >> 3) * 8 : position.y,
-    width: mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].width : 8,
-    height: mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].height : 8,
+    width: mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].width : mapTool === 'irrigation' ? 1 : 8,
+    height: mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].height : mapTool === 'irrigation' ? 1 : 8,
     valid: mapTool === 'land' ? quoteLand(data.scenario, position.x >> 3, position.y >> 3, snapshot.weather.soilMoisture)?.ownership === 0
       : mapTool === 'build' ? checkBuildingPlacement(data.scenario, buildingType, position.x, position.y, snapshot.weather.soilMoisture).ok
+      : mapTool === 'irrigation' ? checkIrrigationPlacement(data.scenario, snapshot.finances, irrigationTool, position.x, position.y, snapshot.weather.soilMoisture).ok
       : checkFieldPlacement(data.scenario, position.x, position.y).ok,
   } : undefined;
   function landCommand(command: GameCommand) {
@@ -107,6 +111,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
       <div><label>Map tool <select id="map-tool" value={mapTool} onChange={e => setMapTool(e.target.value as MapTool)}>
         <option value="inspect">Inspect</option><option value="land">Buy land</option><option value="field">New field</option>
         <option value="build">Build</option>
+        <option value="irrigation">Irrigation</option>
       </select></label><label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
       </select></label><button id="center" disabled={!data} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
@@ -132,7 +137,8 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
             selectField(data.scenario.fields.find(f => f.contains(x, y))?.slot ?? null, false);
           }} />
         <div className="map-footer"><span>{mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
-          ? 'Click the top-left corner of a new field' : mapTool === 'build' ? 'Click the top-left corner of a building' : 'Scroll to explore · click a tile to examine'}</span>
+          ? 'Click the top-left corner of a new field' : mapTool === 'build' ? 'Click the top-left corner of a building'
+          : mapTool === 'irrigation' ? 'Click a tile to dig a ditch or control a valve' : 'Scroll to explore · click a tile to examine'}</span>
           <span id="cell-status">{cell && position ? `Tile ${position.x}, ${position.y} · graphic ${terrainTile(cell)}` : '96 × 96 tiles'}</span>
         </div>
       </section>
@@ -140,6 +146,8 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
         <fieldset className="farm-actions" aria-label="Farm actions" disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision)}>
         {snapshot && mapTool === 'build' && <BuildingPanel snapshot={snapshot} position={position} buildingType={buildingType}
           onTypeChange={setBuildingType} onCommand={command => simulation?.dispatch(command)} />}
+        {snapshot && mapTool === 'irrigation' && <IrrigationPanel snapshot={snapshot} position={position} tool={irrigationTool}
+          onToolChange={setIrrigationTool} onCommand={command => simulation?.dispatch(command)} />}
         {snapshot && (mapTool === 'land' || mapTool === 'field') && <LandPanel tool={mapTool} position={position} snapshot={snapshot}
           crops={assets.catalog.crops} onCommand={landCommand} />}
         <FieldPanel scenario={data.scenario} crops={assets.catalog.crops} field={field}

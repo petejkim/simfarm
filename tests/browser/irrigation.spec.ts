@@ -6,11 +6,11 @@ import { readCrop } from '../../src/formats/crop';
 import { GameSimulation } from '../support/game';
 
 const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
-function fixture(wind = 10) {
+function fixture(wind = 10, dig = false) {
   const scenario = readScenario(source('SCEN4.SSM'));
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
   for (let x = 8; x < 25; x++) for (let y = 8; y < 25; y++) scenario.cells[worldIndex(x, y)] = { terrain: 15, overlay: 0x800, attribute: 0 };
-  for (let x = 11; x < 20; x++) scenario.cells[worldIndex(x, 10)].terrain = 87;
+  for (let x = 11; x < 20; x++) scenario.cells[worldIndex(x, 10)].terrain = dig ? (x === 17 ? 161 : 15) : 87;
   scenario.cells[worldIndex(9, 10)].terrain = 0x200f;
   scenario.irrigation.sourceCount = 0; scenario.irrigation.sources.fill(0);
   Object.assign(scenario.farm, { animationTicks: 0, timerTicks: 0, dayDelayTicks: 3 });
@@ -81,4 +81,63 @@ test('wind-powered building saves original masked footprint and respects low win
   for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) {
     const c = cells[worldIndex(20 + x, 20 + y)]; expect(c.overlay & 0x7ff).toBe(1010 + y * 2 + x); expect(c.terrain & 0x800).toBe(0x800);
   }
+});
+
+test('Irrigation controls dig a connected supply, install and operate a valve, and persist rendered waterworks', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  const { game } = fixture(10, true); await page.goto('/');
+  await page.locator('#load-farm-file').setInputFiles({ name: 'dig.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+  await page.locator('#map-tool').selectOption('build'); await page.locator('#building-type').selectOption('70'); await select(page, 10, 10);
+  await page.locator('#build-building').click(); game.dispatch({ type: 'build', buildingType: 70, x: 10, y: 10 });
+  await page.locator('#map-tool').selectOption('irrigation');
+  for (let x = 11; x <= 19; x++) {
+    await select(page, x, 10); await expect(page.locator('#irrigation-placement-status')).toContainText(x === 17 ? '$40' : '$80');
+    await page.locator('#apply-irrigation').click(); game.dispatch({ type: 'irrigation', tool: 'ditch', x, y: 10 });
+  }
+  await page.locator('#irrigation-tool').selectOption('valve'); await select(page, 15, 10);
+  await page.locator('#apply-irrigation').click(); game.dispatch({ type: 'irrigation', tool: 'valve', x: 15, y: 10 });
+  await expect(page.locator('#valve-state')).toContainText('is open');
+  await page.locator('#irrigation-tool').selectOption('close-valve'); await page.locator('#apply-irrigation').click();
+  game.dispatch({ type: 'irrigation', tool: 'close-valve', x: 15, y: 10 });
+  await expect(page.locator('#valve-state')).toContainText('is closed');
+  await expect(page.locator('#irrigation-result')).toHaveText('Waterworks updated for $0.');
+  // Remove the translucent placement preview; compare interior pixels against the original atlas.
+  await page.locator('#map-tool').selectOption('inspect');
+  const pixels = await page.locator('#world').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(15 * 16 + 2, 10 * 16 + 2, 12, 12).data));
+  const atlas = PNG.sync.read(readFileSync('public/assets/scenario4.tiles.png')), expected: number[] = [];
+  for (let y = 2; y < 14; y++) for (let x = 2; x < 14; x++) {
+    const offset = ((3 * 16 + y) * atlas.width + 27 * 16 + x) * 4; // Closed valve123.
+    expected.push(...atlas.data.subarray(offset, offset + 4));
+  }
+  expect(pixels).toEqual(expected);
+  for (let i = 0; i < 3; i++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  expect(game.getSnapshot().scenario.fields[1].bytes[51]).toBe(4);
+  const path = 'artifacts/browser-ditches.simfarm.json'; expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
+  await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+  await page.locator('#map-tool').selectOption('irrigation'); await select(page, 15, 10);
+  await page.locator('#irrigation-tool').selectOption('open-valve'); await page.locator('#apply-irrigation').click();
+  game.dispatch({ type: 'irrigation', tool: 'open-valve', x: 15, y: 10 }); await expect(page.locator('#valve-state')).toContainText('is open');
+  for (let i = 0; i < 8; i++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  expect(game.getSnapshot().scenario.fields[1].bytes[51]).toBeGreaterThan(4);
+  expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
+  await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#irrigation-tool').scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'artifacts/browser-ditch-controls.png', fullPage: true }); expect(errors).toEqual([]);
+});
+
+test('Irrigation placement shows blocked terrain and insufficient cash without charging or clearing', async ({ page }) => {
+  const { game, crops } = fixture(10, true), save = JSON.parse(game.save(4));
+  save.scenario.farm.cash = 104; save.scenario.farm.autoClear = true;
+  const world = Buffer.from(save.scenario.world, 'hex'); world.writeUInt16LE(535, worldIndex(20, 20) * 5);
+  save.scenario.world = world.toString('hex'); save.runtime.weather.soilMoisture = 0;
+  const sim = GameSimulation.load(JSON.stringify(save), crops).simulation, before = JSON.parse(sim.save(4));
+  await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'low-cash.json', mimeType: 'application/json', buffer: Buffer.from(sim.save(4)) });
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await page.locator('#map-tool').selectOption('irrigation');
+  await select(page, 20, 20); await expect(page.locator('#irrigation-placement-status')).toContainText('not enough cash');
+  await expect(page.locator('#apply-irrigation')).toBeDisabled();
+  await page.locator('#irrigation-tool').selectOption('valve');
+  await expect(page.locator('#irrigation-placement-status')).toContainText('straight ditch');
+  await expect(page.locator('#apply-irrigation')).toBeDisabled();
+  expect(await download(page, 'artifacts/browser-ditch-rejected.simfarm.json')).toEqual(before);
 });
