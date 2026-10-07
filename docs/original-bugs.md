@@ -824,3 +824,15 @@ Supply scan0x12ea0 finds terrain base08fc+1 (175), looks up an inventory record 
 ### SF-059 follow-up — animal needs traversal
 
 Odd-day needs routine `0x12d8e` increments its slot index until the number of active records reaches DS230c (`0x12e4d..0x12e5b`), without an independent256-slot limit. A count exceeding available active records permits an out-of-table scan; ordinary-game reachability of that inconsistent state is unproven. Native need updates use the bounded decoded animal array and prevalidate ordinary types before writes. Sparse slots252–255 and unsupported-type atomic rejection are tested. This is separate from the proven changing-count problem in default sales; no security exploit is claimed.
+
+## SF-097 — herd-centre accumulation overlaps count bytes and shifts species
+
+**Status:** verified initialized segment pointers and address arithmetic; full visible movement consequences unmeasured; native movement policy/fix deferred.
+
+Frame wrapper `0xdf48` clears four count bytes at DS22f8–22fb and four coordinate pairs at DS22fc–230b (`0xdf83..0xdfaf`). Its accumulation instead uses count address `0x2257 + animal.type` and word sums `0x2078 + 4*animal.type` / `+2` (`0xdfd3..0xe000`). For supported type160 these are count22f7 and sums22f8/22fa, so its coordinate writes overlap the count array and its own count is outside the cleared bytes. Types161/162/163 accumulate pairs22fc/2300/2304; the fourth pair2308 receives no ordinary species. The pointer words at DS:c6f4 and c6f6 both initialize to6190, so this is actual same-segment overlap, not two similarly named arrays in different segments.
+
+The averaging loop reads counts as signed bytes and skips values<=0 (`0xe025..0xe033`), divides the cleared-array pairs by those counts, then adds two visual-RNG values&3. Type160 can therefore alter another species' divisor; counts>=128 also skip averaging. Movement's switch `0x12080..0x12143` reads22fc for161,2300 for162,2304 for160 and2308 for163, adding a separate producer/consumer mismatch for160/163. Purchases create ordinary types160–163, so the address collision requires no invented fifth species. The exact downstream visible effect and any additional writers require further tracing. This is demonstrated state overlap/arithmetic inconsistency, not a demonstrated security vulnerability. Retain source evidence even if native movement separates and corrects these arrays; that implementation decision remains pending.
+
+### SF-059 follow-up — animal frame loop shortens when care deletes records
+
+The frame pass increments its processed counter even after health deletes an animal (`0xe248..0xe250`), then compares it against the now-smaller active count (`0xe256..0xe264`). With two initially active animals, death of the first makes processed=1 and active=1, ending the pass before the second. This is an ordinary conditional skipped-update behavior, distinct from the out-of-bounds default scan. Native frame traversal is not implemented yet; use bounded records and explicitly choose/document whether to preserve the skipped update when integrating movement/care.
