@@ -7,6 +7,8 @@ import type { FinancialState } from '../formats/finance';
 export interface SimulationState {
   scenario: Scenario;
   crops: readonly (readonly number[])[];
+  /** Null only when migrating a checkpoint predating live town development. */
+  townLayoutBytes: readonly number[] | null;
   random: RandomState;
   weather: WeatherState;
   daysAdvanced: number;

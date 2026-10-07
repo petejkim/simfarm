@@ -37,6 +37,7 @@ import { loanPaymentAccounts } from './finance-accounts';
 import { retryMonthlyDebts } from './monthly-finance';
 import { resolveDefaultDecision } from './default';
 import { TownLayouts } from '../formats/town';
+import { developTown } from './town-development';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -142,6 +143,9 @@ export class GameSimulation {
       return [...crop.rawDefinition];
     });
     if (restored) {
+      if (restored.townLayoutBytes && this.townLayouts.bytes.some((byte, i) => byte !== restored.townLayoutBytes![i])) {
+        throw new Error('Save uses different town layouts; restore the matching original assets.');
+      }
       if (this.crops.some((crop, i) => crop.some((byte, j) => byte !== restored.crops[i][j]))) {
         throw new Error('Save uses different crop definitions; restore the matching original assets.');
       }
@@ -171,7 +175,7 @@ export class GameSimulation {
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
       disasterFlags: this.disasterFlags, grassTravelCount: this.equipmentRuntime.grassTravelCount,
       equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices,
-      finances: this.finances }, scenarioId);
+      finances: this.finances, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
   }
 
   static load(text: string, crops: readonly CropDefinition[], townLayouts: TownLayouts): { scenarioId: number; simulation: GameSimulation } {
@@ -291,6 +295,7 @@ export class GameSimulation {
       // 0xc920 increments week; 0xcbbd dispatches before 0xcc10 normalizes month/week.
       // At year-end this executes old plan row 48 and completes the final week's work.
       s.farm.calendar = { ...before, day: 0, week: before.week + 1, season: next.calendar.season };
+      developTown(s, this.finances.town, this.townLayouts, w.soilMoisture, this.random); // 0xcbb3, before field orders.
       this.lastScheduleResult = dispatchFieldSchedule(s, this.crops, this.cropMarketPrices, this.random, this.equipmentRuntime, w.soilMoisture);
       // 0xcbc6 indexes temperature before month/year rollover. Index 240 aliases DS:4368 (wind).
       const index = w.temperatureYear * 48 + before.month * 4 + before.week + 1;

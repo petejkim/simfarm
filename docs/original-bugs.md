@@ -404,7 +404,7 @@ Native `resolveTownChoice` returns this failure, including for timeout, preservi
 
 Constructor `0x3ac28..0x3ac65` initializes local pattern offset only for signed type below 15. A positive type 15–127 falls through without assigning `[bp-0xe]`, which later participates in reads from `6190:952c` at `0x3ad5c..0x3ad68`. Negative signed types also form invalid offsets. The traced player choices and timeout generate only 1–14, so reachable harmful input beyond malformed/internal calls is not established. This is not a proven exploitable vulnerability.
 
-Native constructor rejects every non-integer or out-of-range type before mutation, and the layout accessor bounds-checks type and coordinates. Tests include negative, 15, 256 and NaN inputs while preserving unknown words in valid layout storage.
+Native constructor rejects every non-integer or out-of-range type before mutation, and the layout accessor bounds-checks type and coordinates. Tests include negative, 15, 256 and NaN inputs while preserving unknown words in valid layout storage. With weekly development now live, native checkpoint loading also rejects type nibble 15 at the active town-owned site before replacing the current farm.
 
 ## SF-050 — airport development guard compares the complete level/type byte
 

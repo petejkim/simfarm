@@ -141,8 +141,8 @@ export function changeTownLevel(world: Scenario, state: TownDevelopmentState, la
   return true;
 }
 
-/** 0x3b162..0x3b218, called through 24e6:0ff6 at 0xcbb3. Clock hookup
- * waits for complete finance state/checkpoint integration. */
+/** 0x3b162..0x3b218, called weekly through 24e6:0ff6 at 0xcbb3,
+ * before field orders and monthly/annual financial receipts. */
 export function developTown(world: Scenario, state: TownDevelopmentState, layouts: TownLayouts,
   soilMoisture: number, random: FarmRandom): void {
   validateState(state, state.activeSite, soilMoisture);
