@@ -48,13 +48,13 @@ export class EquipmentDefinition {
 }
 
 /** Loader 0x455bf–0x45600, definitions 0x45864–0x45888. */
-export function readEquipment(bytes: Uint8Array): EquipmentRecord[] {
+export function readEquipment(bytes: Uint8Array, nativeRuntime = false): EquipmentRecord[] {
   const data = new Binary(bytes);
   const records = Array.from({ length: EQUIPMENT_SLOT_COUNT }, (_, slot) => new EquipmentRecord(slot,
     Uint8Array.from(data.slice(EQUIPMENT_RECORDS_OFFSET + slot * EQUIPMENT_RECORD_SIZE, EQUIPMENT_RECORD_SIZE))));
   if (records[0].active || records.filter(e => e.active).length !== data.u16(EQUIPMENT_RECORDS_OFFSET - 2)) throw new Error('Invalid equipment count');
   for (const e of records.filter(e => e.active)) {
-    if (e.type >= 9 || [e.x, e.y, e.targetX, e.targetY].some(v => v >= 96) || e.fieldSlot >= 98) throw new Error('Invalid equipment type, coordinates or field');
+    if (e.type >= 9 || (!nativeRuntime && [e.x, e.y, e.targetX, e.targetY].some(v => v >= 96)) || e.fieldSlot >= 98) throw new Error('Invalid equipment type, coordinates or field');
     for (const link of [e.parent, e.attachment]) {
       if (link && (link >= records.length || link === e.slot || !records[link].active)) throw new Error('Invalid equipment attachment');
     }

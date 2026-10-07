@@ -24,8 +24,9 @@ import { sellStoredHarvest, storedHarvestValue, type HarvestSaleResult } from '.
 import { purchaseLand, type LandPurchaseResult } from './land';
 import { orderTreatment, updateTreatmentField, type Treatment, type TreatmentResult } from './field-treatment';
 
-/** Native wall-clock pacing choices; original equipment/calendar tick ratios stay unchanged. */
-export const SIMULATION_SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16] as const;
+import { SIMULATION_SPEEDS, type SimulationState } from './save-state';
+import { readNativeSave, writeNativeSave } from '../formats/native-save';
+export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
   maturity: number;
@@ -61,7 +62,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'sell-harvest'; inventorySlot: number };
 
 function copyScenario(scenario: Scenario): Scenario {
-  return { ...scenario, cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
+  return { ...scenario, sourceBytes: Uint8Array.from(scenario.sourceBytes), cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
     fields: scenario.fields.map(f => new FieldRecord(f.slot, Uint8Array.from(f.bytes))),
     equipment: scenario.equipment.map(e => new EquipmentRecord(e.slot, Uint8Array.from(e.bytes))),
     equipmentDefinitions: scenario.equipmentDefinitions.map(e => new EquipmentDefinition(e.slot, Uint8Array.from(e.bytes))),
@@ -104,22 +105,48 @@ export class GameSimulation {
   private lastNewFieldResult: NewFieldResult | null = null;
   private lastTreatmentResult: TreatmentResult | null = null;
 
-  constructor(scenario: Scenario, crops: readonly CropDefinition[], seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }) {
+  constructor(scenario: Scenario, crops: readonly CropDefinition[], seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState) {
     this.scenario = copyScenario(scenario);
     this.crops = scenario.cropFiles.map(file => {
       const crop = crops.find(c => `${c.id}.crp` === file);
       if (!crop) throw new Error(`Missing simulation crop ${file}`);
       return [...crop.rawDefinition];
     });
-    this.random = new FarmRandom(seeds);
-    // Crop loading 0x466d0..0x46728 overrides saved crop/seed prices from the loaded definitions.
-    this.cropMarketPrices = this.crops.map(c => c[34] | c[35] << 8);
-    this.crops.forEach((c, slot) => {
-      this.scenario.cropDefinitions[slot].price = this.cropMarketPrices[slot];
-      this.scenario.seedDefinitions[slot].price = Math.max(5, (c[38] | c[39] << 8) >>> 2);
-    });
-    this.weather = initializeWeather(this.scenario.climate, this.scenario.farm.calendar, this.scenario.farm.precipitationDays, this.random, this.scenario.cells);
+    if (restored) {
+      if (this.crops.some((crop, i) => crop.some((byte, j) => byte !== restored.crops[i][j]))) {
+        throw new Error('Save uses different crop definitions; restore the matching original assets.');
+      }
+      this.random = new FarmRandom(restored.random);
+      this.cropMarketPrices = [...restored.cropMarketPrices];
+      this.weather = { ...restored.weather, forecast: [...restored.weather.forecast], nextForecast: [...restored.weather.nextForecast] };
+      this.daysAdvanced = restored.daysAdvanced; this.paused = restored.paused; this.speed = restored.speed;
+      this.elapsed = restored.elapsed; this.dayTicks = restored.dayTicks; this.disasterFlags = restored.disasterFlags;
+      this.equipmentRuntime.grassTravelCount = restored.grassTravelCount;
+      this.equipmentRuntime.animationTick = restored.equipmentAnimationTick;
+    } else {
+      this.random = new FarmRandom(seeds);
+      // Crop loading 0x466d0..0x46728 overrides saved crop/seed prices from the loaded definitions.
+      this.cropMarketPrices = this.crops.map(c => c[34] | c[35] << 8);
+      this.crops.forEach((c, slot) => {
+        this.scenario.cropDefinitions[slot].price = this.cropMarketPrices[slot];
+        this.scenario.seedDefinitions[slot].price = Math.max(5, (c[38] | c[39] << 8) >>> 2);
+      });
+      this.weather = initializeWeather(this.scenario.climate, this.scenario.farm.calendar, this.scenario.farm.precipitationDays, this.random, this.scenario.cells);
+    }
     this.publish();
+  }
+
+  /** Exact native checkpoint, including partial ticks. Does not mutate or advance the farm. */
+  save(scenarioId: number): string {
+    return writeNativeSave({ scenario: this.scenario, crops: this.crops, random: this.random.snapshot(), weather: this.weather,
+      daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
+      disasterFlags: this.disasterFlags, grassTravelCount: this.equipmentRuntime.grassTravelCount,
+      equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices }, scenarioId);
+  }
+
+  static load(text: string, crops: readonly CropDefinition[]): { scenarioId: number; simulation: GameSimulation } {
+    const { scenarioId, state } = readNativeSave(text);
+    return { scenarioId, simulation: new GameSimulation(state.scenario, crops, state.random, state) };
   }
 
   getSnapshot = (): GameSnapshot => this.snapshot;

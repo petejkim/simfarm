@@ -124,7 +124,7 @@ Native handling retains the slot-zero write explicitly. Revisit if later recover
 
 The loader reads SSM `0x216ac` into `6190:3e80` at `0x45da6`, then reads SSM `0x216b4` into the same global at `0x45dd6`. The second read overwrites the first. The expense dispatcher separately updates `6190:3e88` for item categories 500..503 (`0x1c9b6`–`0x1c9cf`), suggesting a possible incorrect destination in the load sequence, but the intended serialized accounting layout and matching saver still need verification. Do not silently remap the second value based only on that inference.
 
-Native handling now implements both affected expense categories: worker fees accumulate from zero because `3e88` is not restored, and land expenses initialize from the final overwritten value at SSM `0x216b4`. A regression patches distinct values into both serialized entries and verifies this ordering. The erroneous load remains preserved; revisit with complete finances and the matching saver before correcting it. No exploit is demonstrated.
+Native handling now implements both affected expense categories: worker fees accumulate from zero because `3e88` is not restored, and land expenses initialize from the final overwritten value at SSM `0x216b4`. A regression patches distinct values into both serialized entries and verifies this ordering. The erroneous load remains preserved; revisit with complete finances and the matching saver before correcting it. Native version-1 checkpoints now persist both live ledgers explicitly and bypass this DOS load path; original SSM import still preserves the observed overwrite. DOS-compatible save/load correction remains deferred until the saver is traced. No exploit is demonstrated.
 
 ## SF-015 — accumulated rental expenses wrap at 32 bits
 
