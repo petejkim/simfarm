@@ -156,7 +156,7 @@ Native handling accepts this original farm, derives active items from bounded re
 
 The existing-field planting branch resets age/accumulators and releases any crop contract before trying to consume/buy seed (`0x2f7de`–`0x2f83d`). If seed acquisition fails, it calls the abandon/expiry routine `0x1c2a8` (`0x2f97a`–`0x2f989`), clearing the crop. Thus insufficient cash or unavailable seed can destroy the existing crop and contract even though no replacement is planted. The new-field click path constructs the field and clears its terrain at `0x23eae` before consuming seed at `0x23f85`; failure branches through `0x23f91` to `0x2416e` without undoing that construction.
 
-Native handling obtains seed successfully before resetting field/contract state or constructing a new field. Regressions verify that insufficient funds or unavailable seed leave the existing scenario state, new-field terrain, inventory and free slots unchanged. Retain this documented difference when implementing calendar-scheduled planting.
+Native handling obtains seed successfully before resetting field/contract state or constructing a new field. Regressions verify that insufficient funds or unavailable seed leave the existing scenario state, new-field terrain, inventory and free slots unchanged. Calendar-scheduled planting now uses the same native preflight correction while preserving the original stop-on-failed-seed scan order.
 
 ## SF-019 — negative effective crop age becomes fully mature in valuation
 
@@ -285,3 +285,11 @@ Native weekly cleanup also returns the unattached type-5 header referenced by +4
 At `0x2e993..0x2e9ae`, steps greater than 6 enter the main settlement path only for 10–15. The alternate branch at `0x2eef6` resets only step 7. Worker-sale step 16 therefore reaches equipment cleanup unchanged, then `0x2f18c..0x2f191` zeros its equipment references. The normal step-16 handler expects its truck, so a week boundary during travel to the town can strand the field or lead to slot-zero accesses; exact DOS consequences remain unobserved. Machinery step 7 was already paid, while worker step 16 is paid only upon arrival.
 
 Native weekly completion credits the pending worker sale once, resets annual/perennial field state, and returns its equipment. Already-paid machinery step 7 receives no second payment. Regression checks distinguish both paths and ensure a second completion cannot pay again. No exploit is claimed.
+
+## SF-035 — scheduled plowing enters an inert work state
+
+**Status:** confirmed dispatcher behavior; whether the original editor exposes this order is not yet established. Preserved as an original incomplete/no-op path, not a demonstrated gameplay exploit.
+
+Calendar code 852 sets field state 2/step 0 at `0x2f718..0x2f72c`. The main work jump table at `0x18c98` maps states 0, 1 and 2 to the same no-op exit `0x18cb2`; weekly completion's jump table handles only states 3–9. Thus a dispatched 852 order does not perform a plowing pass through either recovered work loop. None of the supplied schedules contains this code. The plan-editing paths still need tracing to determine ordinary UI reachability.
+
+Native schedule dispatch preserves state 2/step 0 and does not invent an equipment FSM. Static-byte tests verify both the state write and all three no-op table targets. Revisit the intended UI semantics while reconstructing the editor; any added plowing operation should be documented as an enhancement if no other original handler is found.

@@ -29,14 +29,14 @@ export function plantNewField(world: Scenario, x: number, y: number, cropSlot: n
 }
 
 /** Existing-field planting branch 0x2f7de..0x2fa54. The native UI issues an immediate order;
- * the original calendar-plan editor and future scheduled orders remain separate work. */
+ * scheduled calls follow weekly cleanup and permit the original state replacement. */
 export function plantField(world: Scenario, slot: number, cropSlot: number, crops: readonly (readonly number[])[],
-  marketPrices: number[], random: FarmRandom, soilMoisture: number): PlantResult {
+  marketPrices: number[], random: FarmRandom, soilMoisture: number, scheduled = false): PlantResult {
   const field = world.fields[slot];
   if (!Number.isInteger(slot) || !slot || !field?.active) return { ok: false, reason: 'invalid-field' };
   if (!Number.isInteger(cropSlot) || cropSlot < 0 || cropSlot >= 16 || crops[cropSlot]?.length !== 128) return { ok: false, reason: 'invalid-crop' };
   // Cancellation/return of an in-flight field job is not yet ported; don't strand its machines.
-  if (![0, 2, 4].includes(field.state) || field.equipment || field.pendingEquipment) return { ok: false, reason: 'field-busy' };
+  if ((!scheduled && ![0, 2, 4].includes(field.state)) || field.equipment || field.pendingEquipment) return { ok: false, reason: 'field-busy' };
   const seed = consumeSeed(world, cropSlot, soilMoisture);
   if (!seed.ok) return seed; // SF-018: preserve existing crop and contract when seed acquisition fails.
   resetPlantingField(world, field);
