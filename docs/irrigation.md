@@ -35,3 +35,8 @@ All348 Bun tests pass (59 files,71.92s); type checking and production build pass
 
 
 The deletion audit confirms a source omission in original land-sale demolition (SF-093). Native generic building cleanup now removes the first matching type70/71 source after prevalidation. This covers forced land sales too; existing queued packets complete normally. All47 affected irrigation, live-water, demolition, land-sale and default tests pass (17s), including a new atomic-rejection/no-ghost-source test. This is an intentional correction of the original call chain.
+
+
+## Next placement evidence
+
+Source SCEN4 other-goods definitions at0x20fa0 contain several candidate ditch entries: type289/graphic2/base87/price80, type294/graphic2/base87/price40, and type296/graphic83/base87/price25. Type304 uses graphic129/base122/price35, while type290 uses graphic61/base120/price180. These are verified definition/table values, not verified tool meanings or final player prices. Trace the map-tool handlers, existing-tile checks, connectivity redraw and debit categories before exposing new ditch/valve placement; do not choose a definition solely by matching its graphic.
