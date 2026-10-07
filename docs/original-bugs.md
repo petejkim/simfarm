@@ -836,3 +836,29 @@ The averaging loop reads counts as signed bytes and skips values<=0 (`0xe025..0x
 ### SF-059 follow-up — animal frame loop shortens when care deletes records
 
 The frame pass increments its processed counter even after health deletes an animal (`0xe248..0xe250`), then compares it against the now-smaller active count (`0xe256..0xe264`). With two initially active animals, death of the first makes processed=1 and active=1, ending the pass before the second. This is an ordinary conditional skipped-update behavior, distinct from the out-of-bounds default scan. Native frame traversal is not implemented yet; use bounded records and explicitly choose/document whether to preserve the skipped update when integrating movement/care.
+
+### SF-097 implementation follow-up — explicit retained herd cache
+
+`animal-world.ts` now keeps exactly21 bytes for DS22f7–230b and reproduces the verified overlap, signed-divisor test, uncleared first counter, word wrapping, visual RNG draws and consumer mapping. This is ordinary native data processing, not CPU/DOS execution. Tests pin the executable operands and demonstrate a type160 animal writing the other count bytes, the resulting RNG consumption,128-count averaging skip and tick rollover. The mismatch is deliberately preserved for this reconstruction; correction remains deferred. Frame state still needs its live/checkpoint hook.
+
+## SF-098 — animal masked-ground predicate accepts only image962
+
+**Status:** verified table/operand mismatch; native preserves it; gameplay correction deferred.
+
+Walkability `0x13396..0x133b3` requires masked overlay>=table08a2 (graphic34/base962), but its upper bound is table08a8 (graphic37/base946) plus frame count09c3 (16). The inclusive interval is therefore962..962. Ordinary animals have base frames946/962/978/994; the predicate allows stepping onto that one masked image and rejects the other animal frames on otherwise eligible ground. The source does not validate the overlay's owning record here. Visible overwrite/overlap consequences require broader movement/collision analysis; no security vulnerability is asserted. Native tests cover all2048 terrain images with multiple masked overlays and pin the source tables/instructions. A broader animal-blocking correction remains deferred.
+
+## SF-099 — failed storage entry can hide an outside animal
+
+**Status:** verified mutation order; native corrects failed-entry occupancy loss.
+
+Movement detects roof/interior terrain, finds a type68/69 building, clears the animal's old terrain0800 at `0x12346`, then calls generic storage `0x1a596` at `0x1236c`. The storage space search can return false at `0x1a751..0x1a753`; movement immediately returns without restoring old occupancy. The still-active animal can disappear until a later repaint. Native movement checks usable first-fit space before clearing the origin or updating the record. Full-store tests retain animal bytes, building content and the origin tile. Other generic storage callers retain their separate status; this is a gameplay defect, not a security claim.
+
+## SF-100 — coincident pointer direction reads the movement timestamp as a direction
+
+**Status:** verified helper/table boundary; conditional ordinary pointer coincidence; native corrects to bounded direction0.
+
+Direction helper `0x128b8` compares origin−target signs with eight nonzero direction pairs at DS2274. For identical coordinates there is no match; it returns8 (`0x12943..0x12953`). The toward table DS22e0 is followed by the away table, so its index8 happens to read0. The away caller at `0x12111..0x1211e` instead indexes DS22e8+8 = DS22f0, the low movement timestamp. That byte need not be0..7. The pointer can coincide with an animal's tile; exact GUI timing incidence is not measured. Native equal-coordinate direction is explicitly0 for both callers, preventing an out-of-table direction/image on later movement. Tests cover equality and all eight surrounding directions. This is an out-of-table read into a known adjacent global, not proof of a security exploit.
+
+### SF-059 animal-frame implementation follow-up
+
+Native `advanceAnimalFrame` visits the bounded initial active slots once. Death of an early slot no longer suppresses later slots in the same frame. A two-animal regression verifies both care/deletion calls and exact definition-count cleanup. This intentionally corrects the skipped-tail behavior while retaining the original16-tick gate,320-tick herd refresh and movement-before-care order.
