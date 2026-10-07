@@ -80,7 +80,9 @@ The score routine at `0xfe6e` returns zero before inspecting terrain whenever a 
 
 If all three candidates score above 1882, `0xfcc3`–`0xfcea` directly copies the destination into the equipment position. Separately, `0x10202`–`0x102a1` forces arrival after 64 updates without reaching the destination and applies wear to types other than six. These are explicit recovery paths, not reasons to replace the algorithm with a modern shortest-path implementation. Terrain-category upper limits in scoring are inclusive (15–31, 150–172, 188–192), although other callers use exclusive limits.
 
-Native handling: the route planner preserves scoring, near-target bypass, tie order and the all-blocked destination fallback. It treats out-of-map candidates as blocked before any terrain read or near-target test. Tests cover category boundaries, route history, destination bypass, fallback and map edges. The 64-update recovery/wear branch is not yet integrated; full movement, occupancy and arrival dispatch remain outstanding. No security exploit is demonstrated.
+Native handling: the route planner preserves scoring, near-target bypass, tie order and the all-blocked destination fallback. It treats out-of-map candidates as blocked before any terrain read or near-target test. Tests cover category boundaries, route history, destination bypass, fallback and map edges. The movement primitive now includes the 64-update recovery/wear branch; a regression demonstrates forced arrival even while a machine is making progress toward a distant destination. This is a fixed travel-update limit, not a counter that resets on every successful step. Arrival/storage dispatch is still separate. No security exploit is demonstrated.
+
+The same boundary hazard applies to attachment coordinates and field-pass border positions. Attachment arithmetic writes byte coordinates (`0x110ab`, `0x1124a`), so an attachment west of X=0 becomes X=255. Drawing/erasing (`0x10300`, `0x1050c`), occupancy (`0x1070a`) and field painting (`0x108ce`) form unchecked world offsets. The native code retains coordinate-byte arithmetic but clips drawing/erasing, treats off-map footprints as obstructed, and skips off-map field paint. A field touching the left map edge completes its pass without an out-of-bounds native access. Normal UI placement restrictions have not yet been fully reconstructed, so original-game reachability remains uncertain.
 
 ## SF-010 — detach routine only clears the first two members of an equipment chain
 
@@ -89,3 +91,13 @@ Native handling: the route planner preserves scoring, near-target bypass, tie or
 `0x112a0`–`0x112f1` traverses attachments but reloads the successor from the original head (`[bp+6]` at `0x112ca`) instead of the current member (`[bp-4]`). After clearing the head's links on the first iteration, the second iteration sees a zero successor and stops. A chain with two or more attachments can retain a disconnected member's parent link. In contrast, positioning at `0x1113e` advances its current-member argument and walks the whole chain.
 
 The original attachment primitive accepts equipment indices, but which user actions can construct a longer chain is not established. Native handling: positioning walks and validates the whole chain; the detach routine is not yet ported. Saved out-of-range, inactive, self-referencing and cyclic attachment links are rejected by the decoder. This does not establish an exploitable vulnerability in the original.
+
+Related limitation: drawn-flag helpers `0x119b6` and `0x119e4` update only the head and first attachment, while drawing and erasing walk the chain. The native refresh operation preserves this difference; consequences for longer chains remain deferred with the reachability investigation.
+
+## SF-011 — storage removal trusts a saved equipment index without checking the record boundary
+
+**Status:** confirmed missing validation in the recovered removal path; malformed-save hazard, not a demonstrated exploit.
+
+Storage removal `0x1aeb0` reads a signed item type at building +34 and an eight-bit slot at +58, using the selected storage cell. For item types 0..63 it passes that slot directly to equipment footprint lookup `0x10d9c`. The latter indexes the 127-slot equipment table without checking the index or active flag. A corrupted storage slot such as 255 can therefore read unrelated data as an equipment record and then use its type as a definition index. Further consequences and original loader validation outside this path have not been established.
+
+Native handling: equipment withdrawal resolves an existing decoded machine, requires the storage cell to identify that same slot, validates its footprint against the building, and fails before changing state on mismatch. Tests exercise all stored machines from all eight distributed farms; original bytes remain unchanged. The original generic removal path for non-equipment inventory has not yet been ported or audited.

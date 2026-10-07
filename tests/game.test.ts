@@ -23,12 +23,19 @@ test('simulation owns game state, publishes stable detached snapshots, and pause
   const equipmentFlags = initial.scenario.equipment[1].flags;
   input.scenario.equipment[1].flags = 0; initial.scenario.equipment[1].flags = 0;
   input.scenario.equipmentDefinitions[0].bytes[6] = 0; initial.scenario.equipmentDefinitions[0].bytes[6] = 0;
+  const buildingFlags = initial.scenario.buildings[1].flags;
+  input.scenario.buildings[1].flags = 0; initial.scenario.buildings[1].flags = 0;
+  input.scenario.buildingDefinitions[0].bytes[8] = 0; initial.scenario.buildingDefinitions[0].bytes[8] = 0;
+  input.scenario.animals[1].flags = 0x20; initial.scenario.animals[1].flags = 0x20;
   simulation.tick(5000); assert.equal(notifications, 0);
   simulation.dispatch({ type: 'set-paused', paused: false });
   assert.equal(simulation.getSnapshot().scenario.farm.cash, cash);
   assert.equal(simulation.getSnapshot().scenario.fields[1].bytes[34], 0);
   assert.equal(simulation.getSnapshot().scenario.equipment[1].flags, equipmentFlags);
   assert.equal(simulation.getSnapshot().scenario.equipmentDefinitions[0].price, 400);
+  assert.equal(simulation.getSnapshot().scenario.buildings[1].flags, buildingFlags);
+  assert.equal(simulation.getSnapshot().scenario.buildingDefinitions[0].width, 1);
+  assert.equal(simulation.getSnapshot().scenario.animals[1].active, false);
   simulation.tick(900); assert.equal(simulation.getSnapshot().daysAdvanced, 0);
   simulation.tick(100); assert.equal(simulation.getSnapshot().daysAdvanced, 1);
   assert.equal(simulation.getSnapshot().scenario.fields[1].bytes[34], 1); // Sunday-to-Monday month boundary.

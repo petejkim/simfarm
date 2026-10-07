@@ -3,6 +3,8 @@ import { readFields, type FieldRecord } from './field';
 import { readFarmState, type SavedFarmState } from './scenario-state';
 import { readClimateTables, type ClimateTables } from './weather';
 import { readEquipment, readEquipmentDefinitions, type EquipmentRecord, type EquipmentDefinition } from './equipment';
+import { readAnimals, type AnimalRecord } from './animal';
+import { readBuildings, readBuildingDefinitions, type BuildingRecord, type BuildingDefinition } from './building';
 export const WORLD_SIZE = 96;
 export const WORLD_OFFSET = 0x152c4;
 export const CROP_NAMES_OFFSET = 0x21193;
@@ -14,6 +16,9 @@ export interface Scenario {
   climate: ClimateTables;
   equipment: EquipmentRecord[];
   equipmentDefinitions: EquipmentDefinition[];
+  animals: AnimalRecord[];
+  buildings: BuildingRecord[];
+  buildingDefinitions: BuildingDefinition[];
 }
 /** Recovered from overlay 22:283c (file 0x4543c), especially 0x45782–0x457fa. */
 export function readScenario(bytes: Uint8Array): Scenario {
@@ -30,7 +35,8 @@ export function readScenario(bytes: Uint8Array): Scenario {
   });
   return { version: bytes[0], cells, cropFiles, fields: readFields(bytes), farm: readFarmState(bytes),
     regionalConditions: Uint8Array.from(b.slice(0x21273, 12 * 12 * 7)), climate: readClimateTables(bytes),
-    equipment: readEquipment(bytes), equipmentDefinitions: readEquipmentDefinitions(bytes) };
+    equipment: readEquipment(bytes), equipmentDefinitions: readEquipmentDefinitions(bytes), animals: readAnimals(bytes),
+    buildings: readBuildings(bytes), buildingDefinitions: readBuildingDefinitions(bytes) };
 }
 /** The original masks AH with 7 after reading terrain; see file 0x9536–0x9556. */
 export function terrainTile(cell: WorldCell): number { return cell.terrain & 0x7ff; }
