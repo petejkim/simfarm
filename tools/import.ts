@@ -2,6 +2,8 @@ import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { PNG } from 'pngjs';
+import { patchCropGraphics } from '../src/formats/crop-graphics';
+import { readScenario } from '../src/formats/scenario';
 import { readArchive } from '../src/formats/archive';
 import { readPalette, readBitmap, tileAtlas, decodePlanar, type Raster } from '../src/formats/graphics';
 import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
@@ -28,8 +30,10 @@ for (const e of entries) {
   if (e.name.endsWith('.bmp')) await png(`${e.name}.png`, readBitmap(e.bytes, palette));
 }
 await png('tiles.png', tileAtlas(asset('ega16til.til'), palette));
+await png('masked-tiles.png', tileAtlas(asset('mskdtile.til'), palette, 32, 7));
 for (const name of ['sftitle', 'scenario', 'prsnt480']) await png(`${name}.png`, decodePlanar(asset(`${name}.int`), 640, 480, readPalette(asset(`${name}.pal`))));
 const crops: CropDefinition[] = [];
+const cropBytes = new Map<string, Uint8Array>();
 const inputs = [
   { name: 'SIMFARM.EXE', size: exe.length, sha256: sha256(exe) },
   { name: 'MEGADATA.IDX', size: index.length, sha256: sha256(index) },
@@ -38,6 +42,7 @@ const inputs = [
 for (const name of (await readdir(join(source, 'CROPS'))).filter(n => /\.crp$/i.test(n)).sort()) {
   const bytes = await read(`CROPS/${name}`), id = name.toLowerCase().replace('.crp', '');
   crops.push(readCrop(id, bytes));
+  cropBytes.set(name.toLowerCase(), bytes);
   inputs.push({ name: `CROPS/${name}`, size: bytes.length, sha256: sha256(bytes) });
   await png(`${id}.png`, tileAtlas(bytes.subarray(0, 0x400), palette, 8));
   await png(`${id}.card.png`, decodePlanar(bytes.subarray(0x400, 0x1200), 112, 64, palette));
@@ -46,6 +51,11 @@ for (let i = 0; i < 8; i++) {
   const name = `SCEN${i}.SSM`, bytes = await read(name);
   inputs.push({ name, size: bytes.length, sha256: sha256(bytes) });
   await writeFile(join(output, 'raw', name), bytes);
+  const scenario = readScenario(bytes);
+  const loadedCrops = scenario.cropFiles.map(file => {
+    const crop = cropBytes.get(file); if (!crop) throw new Error(`Missing scenario crop ${file}`); return crop;
+  });
+  await png(`scenario${i}.tiles.png`, tileAtlas(patchCropGraphics(asset('ega16til.til'), loadedCrops), palette));
 }
 const music = [];
 for (const entry of entries.filter(e => e.name.endsWith('.xmi'))) {

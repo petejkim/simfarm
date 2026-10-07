@@ -1,5 +1,5 @@
 import './style.css';
-import { readScenario, terrainTile, WORLD_SIZE, type Scenario } from './formats/scenario';
+import { readScenario, terrainTile, maskedTile, worldIndex, worldPosition, WORLD_SIZE, type Scenario } from './formats/scenario';
 import type { CropDefinition } from './formats/crop';
 import type { MidiSequence } from './formats/xmidi';
 import { MidiPlayer } from './audio/midi-player';
@@ -19,7 +19,7 @@ function image(path: string): Promise<HTMLImageElement> {
   });
 }
 async function main(): Promise<void> {
-  const [catalog, tiles] = await Promise.all([response('catalog.json').then(r => r.json()) as Promise<Catalog>, image('tiles.png')]);
+  const [catalog, tiles, maskedTiles] = await Promise.all([response('catalog.json').then(r => r.json()) as Promise<Catalog>, image('tiles.png'), image('masked-tiles.png')]);
   app.innerHTML = `
     <header><div><span class="eyebrow">NATIVE PRESERVATION PROJECT</span><h1>SimFarm<span>1993</span></h1></div>
       <div class="music-controls"><label>Music <select id="music"></select></label><button id="play">Play music</button><label class="volume">Volume <input id="volume" type="range" min="0" max="100" value="25"></label></div></header>
@@ -27,14 +27,15 @@ async function main(): Promise<void> {
       <div><label>Zoom <select id="zoom"><option value="0.5">50%</option><option value="1" selected>100%</option><option value="2">200%</option></select></label><button id="center">Center map</button></div></section>
     <main><section class="map-panel"><div id="viewport" tabindex="0" aria-label="Farm map. Scroll or use arrow keys to explore."><canvas id="world" width="1536" height="1536" aria-label="Original scenario terrain"></canvas></div>
       <div class="map-footer"><span>Scroll to explore · click a tile to examine</span><span id="cell-status">96 × 96 tiles</span></div></section>
-      <aside><div class="panel-heading"><span class="eyebrow">FARM REFERENCE</span><h2>Crop guide</h2></div><label class="crop-label">Choose a crop <select id="crop"></select></label><img id="crop-card" alt=""><h3 id="crop-name"></h3><p id="crop-description"></p><details><summary>Tile details</summary><pre id="tile-details">Select a tile on the map.</pre></details></aside></main>
+      <aside><section class="field-panel"><span class="eyebrow">YOUR FIELDS</span><label class="crop-label">Locate a field <select id="field"><option value="">Choose a field…</option></select></label><p id="field-status">Click a field to see its crop and work status.</p></section><div class="panel-heading"><span class="eyebrow">FARM REFERENCE</span><h2>Crop guide</h2></div><label class="crop-label">Choose a crop <select id="crop"></select></label><img id="crop-card" alt=""><h3 id="crop-name"></h3><p id="crop-description"></p><details><summary>Tile details</summary><pre id="tile-details">Select a tile on the map.</pre></details></aside></main>
     <footer><strong>Reconstruction in progress</strong><span>Original terrain and crop guide are available. Farming actions and simulation are still being recovered.</span><span id="audio-status" role="status">Music off</span></footer>`;
   const select = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
   const scenarioSelect = select<HTMLSelectElement>('#scenario'), cropSelect = select<HTMLSelectElement>('#crop');
+  const fieldSelect = select<HTMLSelectElement>('#field');
   const musicSelect = select<HTMLSelectElement>('#music'), playButton = select<HTMLButtonElement>('#play');
   const canvas = select<HTMLCanvasElement>('#world'), viewport = select<HTMLDivElement>('#viewport');
   const context = canvas.getContext('2d')!;
-  let scenario: Scenario, selection = -1, zoom = 1, loading = 0, musicGeneration = 0;
+  let scenario: Scenario, scenarioTiles: CanvasImageSource = tiles, selection = -1, zoom = 1, loading = 0, musicGeneration = 0;
   for (let i = 0; i < 8; i++) scenarioSelect.add(new Option(`Scenario ${i + 1}`, String(i)));
   for (const crop of catalog.crops) cropSelect.add(new Option(crop.name, crop.id));
   for (const track of catalog.music) musicSelect.add(new Option(track.id, track.id));
@@ -42,12 +43,20 @@ async function main(): Promise<void> {
   function draw(): void {
     context.imageSmoothingEnabled = false;
     for (let i = 0; i < scenario.cells.length; i++) {
-      const tile = terrainTile(scenario.cells[i]);
-      context.drawImage(tiles, tile % 32 * 16, Math.floor(tile / 32) * 16, 16, 16, i % WORLD_SIZE * 16, Math.floor(i / WORLD_SIZE) * 16, 16, 16);
+      const cell = scenario.cells[i], tile = terrainTile(cell), { x, y } = worldPosition(i);
+      context.drawImage(scenarioTiles, tile % 32 * 16, Math.floor(tile / 32) * 16, 16, 16, x * 16, y * 16, 16, 16);
+      const overlay = maskedTile(cell);
+      if (overlay !== null && overlay >= 0 && overlay < 200) context.drawImage(maskedTiles, overlay % 32 * 16, Math.floor(overlay / 32) * 16, 16, 16, x * 16, y * 16, 16, 16);
+    }
+    const field = scenario.fields.find(f => f.slot === Number(fieldSelect.value) && f.active);
+    if (field) {
+      context.strokeStyle = '#fff6a2'; context.lineWidth = 2;
+      context.strokeRect(field.x * 16 + 1, field.y * 16 + 1, field.width * 16 - 2, field.height * 16 - 2);
     }
     if (selection >= 0) {
+      const { x, y } = worldPosition(selection);
       context.strokeStyle = '#fff6a2'; context.lineWidth = 1;
-      context.strokeRect(selection % WORLD_SIZE * 16 + 0.5, Math.floor(selection / WORLD_SIZE) * 16 + 0.5, 15, 15);
+      context.strokeRect(x * 16 + 0.5, y * 16 + 0.5, 15, 15);
     }
   }
   function center(): void { viewport.scrollTo((canvas.clientWidth - viewport.clientWidth) / 2, (canvas.clientHeight - viewport.clientHeight) / 2); }
@@ -55,14 +64,37 @@ async function main(): Promise<void> {
     const generation = ++loading, id = Number(scenarioSelect.value);
     select('#map-status').textContent = 'Loading map…';
     try {
-      const bytes = new Uint8Array(await (await response(`raw/SCEN${id}.SSM`)).arrayBuffer());
+      const [buffer, atlas] = await Promise.all([
+        response(`raw/SCEN${id}.SSM`).then(r => r.arrayBuffer()), image(`scenario${id}.tiles.png`),
+      ]);
+      const bytes = new Uint8Array(buffer);
       if (generation !== loading) return;
-      scenario = readScenario(bytes); selection = -1; draw(); center();
+      scenario = readScenario(bytes); scenarioTiles = atlas; selection = -1;
+      fieldSelect.replaceChildren(new Option('Choose a field…', ''));
+      for (const field of scenario.fields.filter(f => f.active)) {
+        const crop = catalog.crops.find(c => `${c.id}.crp` === scenario.cropFiles[field.cropSlot]);
+        fieldSelect.add(new Option(`Field ${field.number} · ${crop?.name ?? scenario.cropFiles[field.cropSlot]}`, String(field.slot)));
+      }
+      select('#field-status').textContent = `${scenario.fields.filter(f => f.active).length} fields in this farm. Select a field to inspect it.`;
+      draw(); center();
       select('#map-status').textContent = `Scenario ${id + 1} · original terrain`;
       select('#tile-details').textContent = 'Select a tile on the map.';
       select('#cell-status').textContent = '96 × 96 tiles';
     } catch (error) { if (generation === loading) select('#map-status').textContent = String(error); }
   }
+  function inspectField(slot: number | null, navigate = false): void {
+    const field = scenario.fields.find(f => f.slot === slot && f.active);
+    fieldSelect.value = field ? String(field.slot) : '';
+    if (field) {
+      cropSelect.value = scenario.cropFiles[field.cropSlot].replace('.crp', ''); showCrop();
+      select('#field-status').textContent = `Field ${field.number} · ${field.status} · ${field.width} × ${field.height} tiles at ${field.x}, ${field.y}`;
+      if (navigate) viewport.scrollTo((field.x + field.width / 2) * 16 * zoom - viewport.clientWidth / 2, (field.y + field.height / 2) * 16 * zoom - viewport.clientHeight / 2);
+    } else select('#field-status').textContent = 'No field selected.';
+  }
+  fieldSelect.onchange = () => {
+    if (!scenario) return;
+    selection = -1; inspectField(fieldSelect.value ? Number(fieldSelect.value) : null, true); draw();
+  };
   function showCrop(): void {
     const crop = catalog.crops.find(c => c.id === cropSelect.value)!;
     select<HTMLImageElement>('#crop-card').src = `${import.meta.env.BASE_URL}assets/${crop.id}.card.png`;
@@ -102,8 +134,9 @@ async function main(): Promise<void> {
     if (!scenario) return;
     const rect = canvas.getBoundingClientRect(), x = Math.floor((event.clientX - rect.left) / (16 * zoom)), y = Math.floor((event.clientY - rect.top) / (16 * zoom));
     if (x < 0 || y < 0 || x >= WORLD_SIZE || y >= WORLD_SIZE) return;
-    selection = y * WORLD_SIZE + x;
+    selection = worldIndex(x, y);
     const cell = scenario.cells[selection];
+    inspectField(scenario.fields.find(f => f.contains(x, y))?.slot ?? null);
     select('#cell-status').textContent = `Tile ${x}, ${y} · graphic ${terrainTile(cell)}`;
     select('#tile-details').textContent = `Position: ${x}, ${y}\nTerrain: 0x${cell.terrain.toString(16).padStart(4, '0')}\nSecond word: 0x${cell.overlay.toString(16).padStart(4, '0')}\nAttribute: ${cell.attribute}`;
     draw();

@@ -26,7 +26,7 @@ Validation: five decoder/music tests pass, TypeScript and production build pass,
 
 This turn made authoritative progress from the empty baseline: docs, independently implemented extraction, executable overlay analysis, code-backed world layout, native browser rendering, MIDI conversion/playback, and reproducible checks. The full goal remains active. There is no blocker requiring user input.
 
-### Next concrete work
+### Next concrete work at the first browser slice
 
 1. Trace crop-graphics loading at file `0x46524`–`0x46ca6` to replace static placeholder atlas tiles with the original scenario's selected crops. The scenario stores sixteen crop filename slots near `0x21185`; the loader immediately after `0x45a37` reads them. Verify exact start and mappings rather than relying on this approximate location.
 2. Recover scenario record meanings and remaining header state from loader `0x4543c` and its corresponding saver. Identify fields, ownership, cash, calendar, and selected crop slots.
@@ -34,3 +34,13 @@ This turn made authoritative progress from the empty baseline: docs, independent
 4. Implement a complete original plant/grow/harvest/store/sell loop, then expand the remaining systems in `plan.md`. Replace temporary MIDI timbres and reproduce the original loop behavior.
 
 No playable farming loop, save/load, finances, equipment, livestock, weather simulation, disasters, town simulation, or enhancement framework is claimed complete.
+
+## 2026-10-07 — original crop layers and field records
+
+Recovered the sixteen crop filenames at exact scenario offset `0x21193`, fourteen graphic substitutions per crop slot, and masked-tile compositing with color 7 transparency. Corrected the initial world orientation: original renderer code proves column-major indexing (`x * 96 + y`). Every scenario now receives its own patched atlas. The first map was transposed and used static placeholders; those errors are fixed.
+
+Identified the 68-byte field records, active flag, actual display numbers, bounds, crop slots and ten work states. Added field selection, map outlines, centering and crop/status inspection while preserving all unknown bytes. Located original work-order, equipment FSM, growth and marker routines for the next simulation work; detailed addresses are in `reverse-engineering.md`.
+
+Validation: eleven binary/music tests, import, type check and production build passed; three Chromium tests passed, including full-tile comparisons against original crop and masked assets, field centering/clicking, all eight farms and audible MIDI. Inspected the rendered screenshot. The farm remains an inspection build, with no playable farming loop yet.
+
+The user requested React and Bun to replace the growing imperative DOM UI and npm workflow. Migrate those next without moving rendering/format/audio code into UI components, then prioritize recovered action scheduling and the plant/grow/harvest/store/sell loop.

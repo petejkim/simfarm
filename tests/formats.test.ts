@@ -45,3 +45,20 @@ test('eight scenarios match the executable-backed 96×96 record layout', () => {
   const bad = Buffer.from(original('SCEN0.SSM')); bad[0] = 0;
   assert.throws(() => readScenario(bad));
 });
+
+test('crop slots follow saved filenames, including substituted crops and case', () => {
+  const first = readScenario(original('SCEN0.SSM'));
+  assert.deepEqual(first.cropFiles.slice(0, 3), ['almonds.crp', 'grapes.crp', 'barley.crp']);
+  assert.equal(readScenario(original('SCEN1.SSM')).cropFiles[15], 'gladiolu.crp');
+  assert.equal(readScenario(original('SCEN2.SSM')).cropFiles[3], 'apples.crp');
+  assert.equal(readScenario(original('SCEN7.SSM')).cropFiles[0], 'tobacco.crp');
+  const bad = Buffer.from(original('SCEN0.SSM')); bad.write('../bad.crp\0', 0x21193);
+  assert.throws(() => readScenario(bad));
+});
+
+test('transparent tile color 7 preserves underlying pixels, including opaque black', () => {
+  const raster = decodePlanar(Uint8Array.of(0x80, 0x80, 0x80, 0x20), 8, 1, palette, 7);
+  assert.equal(raster.rgba[3], 0); // 0111 is transparent.
+  assert.deepEqual(Array.from(raster.rgba.subarray(4, 8)), [0, 0, 0, 255]);
+  assert.deepEqual(Array.from(raster.rgba.subarray(8, 12)), [8, 8, 8, 255]);
+});

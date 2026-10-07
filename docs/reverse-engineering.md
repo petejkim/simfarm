@@ -47,7 +47,9 @@ The loader at `0x4543c` calls the file-read routine `0084:074a`. The serialized 
 | `0x152c4` | 96×96 cells, five bytes each | `0x45782`–`0x457fa` |
 | `0x206c4` | Further serialized state, still being mapped | `0x457fc` onward |
 
-Each cell is two little-endian uint16 values plus one byte. The loader stores these at `2d9f:0424`, `2d9f:4c24` and `2d9f:9fe4`, using `row * 96 + column`. The terrain reader at `0x9536`–`0x9556` masks AH with 7, recovering an 11-bit tile index. Every such index across all eight scenarios is below 880. High bits, second-word semantics, and the byte's meaning are not fully identified; preserve them. The browser's initial map should render the terrain layer only until compositing rules are recovered.
+Each cell is two little-endian uint16 values plus one byte. The loader stores these at `2d9f:0424`, `2d9f:4c24` and `2d9f:9fe4`. The index is **column-major: `x * 96 + y`**. This corrects the initial row-major assumption, which transposed the first browser maps. The renderer at `0x1fa22`–`0x1fc9a` proves the order: outer X advances at `0x1fc52`, inner Y at `0x1fb3e`, and `0x1fb73` multiplies the outer index by 96. The terrain reader at `0x9536`–`0x9556` masks AH with 7, recovering an 11-bit tile index. Every such index across all eight scenarios is below 880. Unidentified flags and attributes remain intact.
+
+Sixteen 14-byte crop filenames begin at `0x21193`, verified by summing the intervening loader reads and the loop at `0x45a37`–`0x45a7f`. They select runtime crop slots; the slot is not a fixed crop identity. For example, scenario 0 loads almonds/grapes into slots 0/1, while scenario 7 loads tobacco into slot 0.
 
 ## Development references
 
@@ -61,8 +63,45 @@ Observed ordinary channel messages require note on/off, program changes and volu
 
 The browser schedules MIDI events into native Web Audio oscillators and noise percussion (no FM/AdLib). It responds to program families and channel volume, but is not a General MIDI instrument implementation. Replace it with a sampled GM engine and verify exact track loop behavior before claiming music fidelity. Browser tests measure nonzero waveform samples during playback and silence after Stop. An initial percussion stop-before-start error was caught by that test and fixed.
 
-## Native rendering — first layer, incomplete compositing
+## Native rendering — crop substitution and masked tiles
 
-The browser renders the first scenario word masked with `0x07ff` using the original 880-tile atlas. It supports all eight scenarios, scrolling/arrow navigation, zoom and tile inspection. A rendered Chromium screenshot is generated at `artifacts/native-browser.png`.
+The upload routine at `0x468c2`–`0x46a13` substitutes fourteen tiles per crop slot `s`. The importer now builds a separate atlas for each scenario using these exact mappings:
 
-Some farm cells currently show repeated placeholder graphics from the static atlas: the original game loads crop-specific graphics and composites additional state. The screenshot is evidence that native drawing works, not proof of full rendering fidelity. Trace crop loader file `0x46524` onward (especially `0x46654`, which reads the `0x1500` graphical prefix) to recover atlas substitutions. Rendering flags in the first word, second-word overlays, fences, sprites and seasonal palette effects remain to be mapped.
+| Crop byte range | Destination tile(s) | Evidence |
+|---|---|---|
+| `0x0000`–`0x03ff` | `688 + s * 8` through `695 + s * 8` | Table at overlay-29 data offset `0x882` |
+| `0x1200`–`0x13ff` | `539 + s * 4` through `542 + s * 4` | Immediate `0x21b` and slot multiplication |
+| `0x1400`–`0x147f` | `816 + s` | Table at data offset `0x938` |
+| `0x1480`–`0x14ff` | `832 + s` | Table at data offset `0x90c` |
+
+The data tables are relative to file `0x4ec60`. Tests compare the mappings directly with the executable tables and original crop bytes for all eight farms (224 replacements each).
+
+Renderer `0x1fbe2` masks the first word with `0x07ff`. At `0x1fbef`, first-word bit `0x0800` requests a second, masked layer. Its index is `(secondWord & 0x07ff) - 848`, indexing `mskdtile.til` (200 four-plane tiles, 25,600 bytes). Loader `0x4959f` copies 848 base tiles before the masked range. Graphics routine `0416:103f`, file `0x739f`, derives its mask from `(~plane3) & plane2 & plane1 & plane0`: **color 7 is transparent**, including no other color. Black remains opaque. The importer makes this transparency explicit in PNG alpha; browser canvas composites it over the base tile.
+
+Browser tests compare full 16×16 RGBA regions with independently decoded source tiles: scenario 0 grapes at `(41,31)` and masked tile 0 over base tile 170 at `(59,85)`. The screenshot at `artifacts/native-browser.png` is also inspected. Native drawing includes recovered crop and masked layers, but moving machinery/livestock, seasonal palette changes, and remaining render passes are outstanding.
+
+## Fields — records and inspection recovered
+
+The `0x45bb` count precedes 98 records of 68 bytes at `0x45bd`. Runtime base is `6190:2432`; slot zero is reserved. Active counts across scenarios 0–7 are `13,9,9,3,8,5,7,7`. All supplied active fields start in state 4 (Growing) and span 8×8 tiles. Field number is distinct from record slot.
+
+| Record offset | Recovered meaning |
+|---|---|
+| +0 uint16 | Displayed field number |
+| +2 byte | Work state |
+| +3 byte | Work-state substep |
+| +7 bit 0 | Active record |
+| +10, +11 bytes | X, Y origin |
+| +12, +13 bytes | Width, height |
+| +14 byte | Scenario crop slot |
+
+Point query `0x1b928`–`0x1b994` tests inclusive origins and exclusive far edges. Field creation `0x1ba84`–`0x1bc32` initializes these members and sets the active bit. Ten 16-byte status strings at file `0x8a598` identify Waiting, Clearing, Plowing, Planting, Growing, Harvest, Fertilize, Pesticide, Herbicide and Fungicide. Original plow and plant handlers independently confirm state IDs 2 and 3. The native parser preserves all 68 bytes, validates active counts/bounds, and exposes only supported meanings. The browser locates and outlines fields and shows their source crop and status; it does not yet execute work orders.
+
+### Action and simulation reconstruction targets
+
+- Plow handler at `0x26c64` finds the field through `1957:01b8`, requires Waiting, then sets state 2 and substep 0 at `0x26ccf`. It schedules work; it does not instantly replace terrain.
+- Plant handler around `0x23fc7` sets state 3, substep 0 and crop slot +14 after seed/equipment/contract checks. Its marker update calls `15b3:1988` (file `0x196b8`). Reconstruct prerequisites before exposing planting.
+- Field update loop `0x17d3c`–`0x18ccb` dispatches work state and substep. Equipment work FSM `0x156be`–`0x16abc` selects machines through `0d5f:1de6` (file `0x115d6`) and maintains field offsets +42/+44/+46. Machinery records have 56-byte stride at scenario `0x29f3` / runtime `3d9f:a6ba`.
+- Growth code around `0x1930f`–`0x195be` increments field age and computes graphic stages from crop definitions. Environmental mutation helper `0x19846`–`0x19c61` dispatches eighteen modes; exact units, ordering, random source and clock integration remain to be recovered.
+- Field status/marker routines `0x19002` and `0x196b8`–`0x19845` update badge tiles. Initial saved badges are rendered, but their dynamic updates are not implemented.
+
+These are static-code leads, not implemented simulation claims. Recover the scheduler, equipment prerequisites, growth arithmetic, cash/calendar state and random generator before claiming an original farming loop.
