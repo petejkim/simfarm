@@ -504,6 +504,10 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
   await page.locator('#load-farm-file').setInputFiles(file);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   expect(JSON.parse(await saved())).toEqual(expected);
+  const legacy = JSON.parse(text); legacy.version = 1; delete legacy.scenario.schedule;
+  await page.locator('#load-farm-file').setInputFiles({ name: 'old-farm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(legacy)) });
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+  expect(JSON.parse(await saved())).toEqual(expected);
   await page.clock.runFor(1100);
   await expect(page.locator('#time-status')).toContainText('Running · 6 days advanced');
 });

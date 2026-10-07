@@ -1,4 +1,5 @@
 import { readScenario, WORLD_OFFSET, type Scenario } from './scenario';
+import { FIELD_SCHEDULE_OFFSET, FIELD_SCHEDULE_SIZE } from './field-schedule';
 import type { SavedFarmState } from './scenario-state';
 import { validateCalendar } from '../simulation/calendar';
 import { FarmRandom } from '../simulation/random';
@@ -41,7 +42,7 @@ function bytes(value: unknown, length: number, label: string): Uint8Array {
 function encodeScenario(s: Scenario) {
   const world = new Uint8Array(96 * 96 * 5), view = new DataView(world.buffer);
   s.cells.forEach((c, i) => { view.setUint16(i * 5, c.terrain, true); view.setUint16(i * 5 + 2, c.overlay, true); world[i * 5 + 4] = c.attribute; });
-  return { source: hex(s.sourceBytes), world: hex(world), regions: hex(s.regionalConditions), farm: s.farm, climate: s.climate,
+  return { source: hex(s.sourceBytes), world: hex(world), schedule: hex(s.schedule.bytes), regions: hex(s.regionalConditions), farm: s.farm, climate: s.climate,
     records: Object.fromEntries(Object.entries(tables).map(([key, [, count, stride]]) => {
       const records = s[key as keyof typeof tables], raw = new Uint8Array(count * stride);
       records.forEach((r, i) => raw.set(r.bytes, i * stride));
@@ -61,11 +62,12 @@ function decodeFarm(value: unknown): SavedFarmState {
   validateCalendar(result.calendar);
   return result;
 }
-function decodeScenario(value: unknown): Scenario {
+function decodeScenario(value: unknown, version: number): Scenario {
   const s = object(value, 'scenario'), records = object(s.records, 'records');
   const source = bytes(s.source, 139072, 'source template');
   readScenario(source); // Preserve a valid original template independently of the mutable native state.
   const image = Uint8Array.from(source), view = new DataView(image.buffer);
+  if (version >= 2) image.set(bytes(s.schedule, FIELD_SCHEDULE_SIZE, 'field schedule'), FIELD_SCHEDULE_OFFSET);
   image.set(bytes(s.world, 96 * 96 * 5, 'world'), WORLD_OFFSET);
   image.set(bytes(s.regions, 12 * 12 * 7, 'regions'), 0x21273);
   for (const [key, [offset, count, stride]] of Object.entries(tables)) image.set(bytes(records[key], count * stride, key), offset);
@@ -96,7 +98,8 @@ function decodeScenario(value: unknown): Scenario {
   for (const e of result.equipment.filter(e => e.active)) {
     if (e.type === 7 && e.parent && !result.buildings[e.parent]?.active) fail('harvest truck storage reference');
     if (e.direction > 7 || e.targetX >= 96 || e.targetY >= 96) fail('equipment direction or destination');
-    if (!e.parent && !(e.flags & 8) && (e.x >= 96 || e.y >= 96)) fail('equipment position');
+    const attached = e.type !== 7 && e.parent !== 0;
+    if (!attached && !(e.flags & 8) && (e.x >= 96 || e.y >= 96)) fail('equipment position');
     if (e.fieldSlot && !result.fields[e.fieldSlot]?.active) fail('equipment field reference');
   }
   return result;
@@ -115,7 +118,7 @@ function decodeWeather(value: unknown): WeatherState {
 export function writeNativeSave(state: SimulationState, scenarioId: number): string {
   number(scenarioId, 0, 7, 'scenario ID');
   const { scenario, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 1, scenarioId, scenario: encodeScenario(scenario), runtime });
+  const text = JSON.stringify({ format: FORMAT, version: 2, scenarioId, scenario: encodeScenario(scenario), runtime });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
 }
@@ -124,8 +127,8 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || save.version !== 1) fail('unsupported format or version');
-  const scenarioId = number(save.scenarioId, 0, 7, 'scenario ID'), s = decodeScenario(save.scenario), r = object(save.runtime, 'runtime');
+  if (save.format !== FORMAT || (save.version !== 1 && save.version !== 2)) fail('unsupported format or version');
+  const scenarioId = number(save.scenarioId, 0, 7, 'scenario ID'), s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const random = object(r.random, 'random');
   const rng = new FarmRandom({ visual: number(random.visual, 0, 65535, 'visual RNG'),
     simulation: number(random.simulation, 0, 65535, 'simulation RNG'), bounded: number(random.bounded, 0, 65535, 'bounded RNG') });

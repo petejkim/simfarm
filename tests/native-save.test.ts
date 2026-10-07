@@ -98,7 +98,7 @@ test('native save validation rejects malformed boundaries and incompatible asset
   const { scenario, crops } = farm(), game = new GameSimulation(scenario, crops), text = game.save(4);
   const mutate = (fn: (s: any) => void) => { const s = JSON.parse(text); fn(s); return JSON.stringify(s); };
   for (const bad of ['', '{}', 'null', '[]', 'x'.repeat(MAX_SAVE_BYTES + 1),
-    mutate(s => s.version = 2), mutate(s => s.scenarioId = 8), mutate(s => s.scenario.source = '00'),
+    mutate(s => s.version = 99), mutate(s => s.scenarioId = 8), mutate(s => s.scenario.source = '00'),
     mutate(s => s.scenario.world = s.scenario.world.slice(2)), mutate(s => s.scenario.records.fields += '00'),
     mutate(s => s.scenario.farm.cash = -1), mutate(s => s.scenario.farm.workerExpenses = 0x100000000),
     mutate(s => s.scenario.farm.calendar.day = 7), mutate(s => s.runtime.random.visual = 65536),
@@ -176,4 +176,7 @@ test('harvest truck storage indices survive checkpoints during delivery and the 
   const raw: string = corrupt.scenario.records.equipment, pos = (truck.slot * 56 + 44) * 2;
   corrupt.scenario.records.equipment = raw.slice(0, pos) + 'ff00' + raw.slice(pos + 4);
   assert.throws(() => GameSimulation.load(JSON.stringify(corrupt), crops), /storage reference/);
+  const outside = JSON.parse(game.save(1)), x = (truck.slot * 56 + 5) * 2;
+  outside.scenario.records.equipment = raw.slice(0, x) + 'ff' + raw.slice(x + 2);
+  assert.throws(() => GameSimulation.load(JSON.stringify(outside), crops), /equipment position/);
 });

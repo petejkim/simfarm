@@ -253,3 +253,11 @@ Native integration first exposed this as an exception on the next weekly update.
 Consumption `0x146e0..0x147ab` finds an active chemical, clears its stored/world image, calls generic removal `0x3a040`, and returns 1 at `0x14778` regardless of removal's return. The chemical removal branch `0x3a25a..0x3a299` refuses to decrement/deactivate when the definition count is zero. An inconsistent active record can therefore remain consumable repeatedly. This parallels SF-016 but uses a separate twenty-byte chemical table. No exploit is demonstrated on the supplied saves.
 
 Native consumption checks the definition count, coordinates and storage cross-reference before any mutation and returns `inconsistent-stock` on failure. Tests cover all three failures and verify the complete world remains unchanged. Valid stock retains the original first-match ordering, removal and automatic-purchase behavior.
+
+## SF-031 — schedule projection divides by unchecked crop-definition values
+
+**Status:** confirmed arithmetic hazard for malformed/custom definitions; ordinary-play reachability unproven. Native projection is not yet implemented; validation/fix deferred to that port.
+
+Year-rollover schedule generation loads crop byte +56 and byte +66, computes `(byte56 + byte66 - 2) / byte66` with signed division at `0x48e99`, then uses that quotient as the unsigned divisor at `0x48ea3`. The second generation branch repeats this at `0x48ffb` / `0x49005`. No local zero-divisor guard precedes either pair. A positive duration with byte +66 zero, or duration one with positive byte +66, can cause an original division exception if such a definition reaches this loop. Validation elsewhere in the original loader/editor has not been established; no exploitable vulnerability is claimed.
+
+All 24 supplied CRP definitions have byte +66 equal to 7 and byte +56 between 12 and 47, yielding divisors 2–7. The supplied assets therefore do not demonstrate this failure. When reconstructing planner projection/year rollover, reject invalid divisors before modifying schedule bytes and add malformed-definition boundary tests. Preserve this entry after the native guard is implemented.

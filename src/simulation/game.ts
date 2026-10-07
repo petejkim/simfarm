@@ -1,5 +1,6 @@
 import type { CropDefinition } from '../formats/crop';
 import { FieldRecord } from '../formats/field';
+import { FieldSchedule } from '../formats/field-schedule';
 import { EquipmentRecord, EquipmentDefinition } from '../formats/equipment';
 import { AnimalRecord } from '../formats/animal';
 import { BuildingRecord, BuildingDefinition } from '../formats/building';
@@ -62,7 +63,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'sell-harvest'; inventorySlot: number };
 
 function copyScenario(scenario: Scenario): Scenario {
-  return { ...scenario, sourceBytes: Uint8Array.from(scenario.sourceBytes), cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
+  return { ...scenario, schedule: new FieldSchedule(Uint8Array.from(scenario.schedule.bytes)), sourceBytes: Uint8Array.from(scenario.sourceBytes), cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
     fields: scenario.fields.map(f => new FieldRecord(f.slot, Uint8Array.from(f.bytes))),
     equipment: scenario.equipment.map(e => new EquipmentRecord(e.slot, Uint8Array.from(e.bytes))),
     equipmentDefinitions: scenario.equipmentDefinitions.map(e => new EquipmentDefinition(e.slot, Uint8Array.from(e.bytes))),

@@ -1,4 +1,5 @@
 import { Binary } from './binary';
+import { readFieldSchedule, type FieldSchedule } from './field-schedule';
 import { readFields, type FieldRecord } from './field';
 import { readFarmState, type SavedFarmState } from './scenario-state';
 import { readClimateTables, type ClimateTables } from './weather';
@@ -14,6 +15,7 @@ export interface WorldCell { terrain: number; overlay: number; attribute: number
 export interface Scenario {
   /** Original SSM template, including bytes whose meaning is still unknown. Never mutated. */
   sourceBytes: Uint8Array;
+  schedule: FieldSchedule;
   version: number; cells: WorldCell[]; cropFiles: string[]; fields: FieldRecord[]; farm: SavedFarmState;
   /** Seven interleaved condition bytes per 12×12 region, also column-major. */
   regionalConditions: Uint8Array;
@@ -43,7 +45,7 @@ export function readScenario(bytes: Uint8Array, nativeRuntime = false): Scenario
     if (!/^[a-z0-9_]{1,8}\.crp$/.test(name)) throw new Error('Invalid scenario crop filename');
     return name;
   });
-  return { sourceBytes: Uint8Array.from(bytes), version: bytes[0], cells, cropFiles, fields: readFields(bytes), farm: readFarmState(bytes),
+  return { sourceBytes: Uint8Array.from(bytes), schedule: readFieldSchedule(bytes), version: bytes[0], cells, cropFiles, fields: readFields(bytes), farm: readFarmState(bytes),
     regionalConditions: Uint8Array.from(b.slice(0x21273, 12 * 12 * 7)), climate: readClimateTables(bytes),
     equipment: readEquipment(bytes, nativeRuntime), equipmentDefinitions: readEquipmentDefinitions(bytes), animals: readAnimals(bytes),
     buildings: readBuildings(bytes), buildingDefinitions: readBuildingDefinitions(bytes), inventory: readInventory(bytes),
