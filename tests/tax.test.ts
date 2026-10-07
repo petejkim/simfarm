@@ -2,7 +2,7 @@ import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { readScenario, worldIndex } from '../src/formats/scenario';
-import { ownedLandValue, assessAnnualTax } from '../src/simulation/tax';
+import { ownedLandValue, assessAnnualTax, settleAnnualTax, type TaxAccount } from '../src/simulation/tax';
 
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
 const farm = (id = 4) => readScenario(source(`SCEN${id}.SSM`));
@@ -21,6 +21,70 @@ test('tax assessment is grounded in the original cash brackets, signed division 
   exact(0x3c83b, '2bd2'); // individual quote is an unsigned word
   exact(0x5e40, '8b46080bc07d11'); exact(0x5ec4, 'f7daf7d883da00'); // signed long divide
   exact(0xcdf4, '9a640d661a9a360b661a'); // annual collection, then ledger reset
+  exact(0x1d5d9, '2bc0a3463ea3443e'); // sales reset before debit
+  exact(0x1d5e5, '68c409'); exact(0x1d5fe, '2669061275c800'); // taxes, low-word level*200
+  exact(0x1d622, 'd1ead1d8d1ead1d8'); // unsigned old-debt quarter
+  exact(0x1d630, 'd1fbd1d9d1fbd1d9'); // signed assessment quarter
+  exact(0x1d679, '26c606d7fe03'); exact(0x1d75c, '9ad210e624');
+});
+
+function settlementFarm(level = 1) {
+  const s = farm(); s.regionalConditions.fill(0);
+  s.regionalConditions[0] = level << 4; s.regionalConditions[1] = 2;
+  s.farm.cash = 40000; s.farm.salesAccumulator = 1000; // Tax 100, maintenance 200 per level.
+  const account: TaxAccount = { unpaidTaxes: 0, taxExpenses: 0, taxFailures: 0, taxCountdown: 0, townRevenue: 0, expansionFunds: 0 };
+  return { s, account };
+}
+
+test('annual payment allocates town revenue, draws reserves and requests expansion at the source threshold', () => {
+  for (const [revenue, reserves, nextRevenue, nextReserves, offer] of [
+    [0, 0, -100, 0, false], [0, 99, -1, 0, false], [0, 100, 0, 0, false],
+    [0, 150, 0, 50, false], [99, 0, -1, 0, false], [100, 0, -25, 25, true],
+    [500, 300, 375, 325, true],
+  ] as const) {
+    const { s, account } = settlementFarm();
+    account.townRevenue = revenue; account.expansionFunds = reserves; account.taxExpenses = 0xfffffff0;
+    const result = settleAnnualTax(s, 8, account);
+    assert.equal(result.paid, true); assert.equal(result.offerExpansion, offer); assert.equal(result.maintenance, 200);
+    assert.equal(s.farm.cash, 39900); assert.equal(s.farm.salesAccumulator, 0);
+    assert.equal(account.taxExpenses, 84); assert.equal(account.townRevenue, nextRevenue >>> 0); assert.equal(account.expansionFunds, nextReserves);
+  }
+});
+
+test('failed taxes clear sales, preserve cash and compound source debt with signed and unsigned quarters', () => {
+  const { s, account } = settlementFarm();
+  account.unpaidTaxes = 80; account.taxFailures = 255; account.expansionFunds = 777;
+  s.farm.cash = 179;
+  const result = settleAnnualTax(s, 8, account);
+  assert.equal(result.assessment.total, 180); assert.equal(result.paid, false); assert.equal(result.offerExpansion, false);
+  assert.equal(s.farm.cash, 179); assert.equal(s.farm.salesAccumulator, 0);
+  assert.deepEqual(account, { unpaidTaxes: 325, taxExpenses: 0, taxFailures: 0, taxCountdown: 3, townRevenue: (-180) >>> 0, expansionFunds: 777 });
+  // A zero debit returns zero and follows failure in the original.
+  account.unpaidTaxes = 0;
+  assert.equal(settleAnnualTax(s, 8, account).paid, false);
+  assert.equal(account.taxFailures, 1); assert.equal(account.taxCountdown, 3);
+});
+
+test('annual success retains existing debt/countdown; funding uses word maintenance and signed dword comparisons', () => {
+  const { s, account } = settlementFarm();
+  account.unpaidTaxes = 80; account.taxCountdown = 2; account.taxFailures = 4;
+  account.townRevenue = 0xfffffff0; account.expansionFunds = 100;
+  assert.equal(settleAnnualTax(s, 8, account).offerExpansion, false);
+  assert.equal(account.unpaidTaxes, 80); assert.equal(account.taxCountdown, 2); assert.equal(account.taxFailures, 4);
+  assert.equal(account.townRevenue, 0); assert.equal(account.expansionFunds, 64);
+  for (let r = 0; r < 144; r++) { s.regionalConditions[r * 7] = 255; s.regionalConditions[r * 7 + 1] = 2; }
+  s.farm.salesAccumulator = 1000; account.unpaidTaxes = 0;
+  assert.equal(settleAnnualTax(s, 8, account).maintenance, 38784); // 2160 * 200, low word.
+});
+
+test('invalid annual tax state is rejected before clearing sales or spending cash', () => {
+  for (const key of ['unpaidTaxes', 'taxExpenses', 'townRevenue', 'expansionFunds', 'taxFailures', 'taxCountdown'] as const) {
+    const { s, account } = settlementFarm();
+    account[key] = key === 'taxFailures' || key === 'taxCountdown' ? 256 : 0x100000000;
+    const before = JSON.stringify([s, account]);
+    assert.throws(() => settleAnnualTax(s, 8, account));
+    assert.equal(JSON.stringify([s, account]), before);
+  }
 });
 
 test('owned land valuation includes only player plots but all ownership codes affect plot prices', () => {

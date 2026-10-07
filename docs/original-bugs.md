@@ -361,3 +361,23 @@ Native annual reset is not connected yet. Preserve the evidence and revisit its 
 Tax assessment reads sales accumulator `6190:3e44` at `0x1d57f` and calls signed long division `0084:33f8` / `0x5e38`. Sales postings use unsigned ADD/ADC. At `0x80000000`, signed conversion makes the sales component negative; final additions still wrap as a dword. With cash at least 500,000, no land and no arrears, assessment becomes `3579139414`, not an unsigned division result. Values `0xffffffff` truncate to zero after signed division. The actual year's reachable sales volume has not been established; this is not a proven reachable exploit.
 
 `assessAnnualTax` preserves signed division, truncation and final uint32 wrap, with boundary regressions. It normalizes JavaScript negative zero to integer zero to match machine arithmetic. No gameplay correction is applied; review reachability when annual collection/reset and all sales sources are connected.
+
+## SF-044 — zero annual tax enters the failed-payment branch
+
+**Status:** confirmed branch behavior; preserved natively; ordinary-play reachability unproven.
+
+Annual collection tests the amount returned by debit with OR/JNE at `0x1d60d..0x1d613`. A zero assessment returns zero even with sufficient cash, so the routine increments failed-tax byte `3eed`, sets `fed7` to three and takes the unpaid-tax notification path. A zero-land/zero-sales/zero-debt fixture demonstrates the arithmetic; whether ordinary play reaches that state before game termination remains unproven. Native settlement preserves the branch and its countdown rather than treating zero as a successful payment. Revisit with bankruptcy/end-state behavior; no exploit claim.
+
+## SF-045 — town maintenance truncates residential-level multiplication to a word
+
+**Status:** verified arithmetic truncation; reachable world-state bound, normal progression unproven; preserved natively.
+
+`0x1d5fe` computes `IMUL AX,[7512],200`; `0x1d608` sets the result's high word to zero. Total residential level comes from the high nibble of each town-owned regional byte (`0x3b21a`, `0x3c5c8`), up to 2160 across 144 regions. The multiplication wraps above 327 levels: maximum representable levels produce maintenance 38,784 instead of 432,000. Whether the game's district limits and growth can actually attain these totals still needs tracing. The native settlement keeps the low-word result with a regression. No correction or security claim; revisit with full town growth.
+
+## SF-046 — default crop-sale retries post payment to the opposite debt category
+
+**Status:** confirmed caller/callee mismatch; forced-sale integration and correction deferred.
+
+Monthly tax retry calls forced-sale `0x1d766` with reason 36 (`0xcd28`); the other monthly balance uses reason 39 (`0xcc7a`). After selling a stored crop, reason 36 at `0x1d838..0x1d848` debits category 1000, while reason 39 at `0x1d85e..0x1d86e` debits category 2500. Regular monthly tax uses 2500 and the other balance uses 1000. Cash is debited for the same requested amount, but the crop-sale recovery records the wrong ledger. Later livestock, equipment and land retries use category zero, creating another accounting mismatch. These are static source findings; full default/UI reachability and broader effects remain unverified.
+
+Native forced sales are not yet implemented. Retain these mismatches when that path is ported and explicitly decide any correction; do not confuse an incorrect ledger category with duplicated cash debit or a proven security vulnerability.
