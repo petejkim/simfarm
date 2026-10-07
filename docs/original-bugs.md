@@ -683,3 +683,17 @@ The native clock now executes this rating wrapper and preserves its raw return w
 Version-7 statistics now preserve the original signed region-count words (SF-076) and asset-rating upper-range AX fallthrough (SF-078) in the live annual continuation. Tests include 127/128/144 regions, exact million-value threshold, repeated recurrences and raw checkpoint words. The native code never uses that unclassified word as a table index. No cap or unsigned reinterpretation is applied; original downstream presentation, normal-play reachability and intended upper-range behavior remain deferred.
 
 The bounded aggregate correction (SF-077) now runs weekly before water/status refresh and again in the annual wrapper. It scans valid slots 1–97 rather than trusting a changing declared count. Its original raw presence/count caches persist separately from the current UI report. Native save validation bounds all cached storage while allowing historical values to differ from current map/fields. The original unchecked pattern remains documented above; no exploitability is inferred.
+
+## SF-079 — annual homestead update skips cash at or above 999999
+
+**Status:** verified unsigned caller boundary; preserved natively; intended behavior and ordinary-play display impact unresolved, correction deferred.
+
+The final band at `0xceff..0xcf10` compares high word against 15 and low word against `0x423f` (999999), branching past the update for greater-or-equal. The highest house rank is therefore selected only for 750000–999998. Higher balances retain the previous remembered rank and terrain; there is no highest-rank clamp. Native cash capacity exceeds this boundary, but that does not establish original intent. This is a visible arithmetic/control-flow edge, not a security vulnerability. `homesteadRank` preserves the skipped update and tests exact boundaries.
+
+## SF-080 — homestead repaint trusts saved coordinates and a rank-dependent local
+
+**Status:** unchecked addressing/control-flow pattern confirmed; malformed-input reachability and original impact unresolved; native bounds checks implemented.
+
+`0x1f313..0x1f33c` calculates terrain addresses from saved origin words `2d9f:000c/000e` without checking the 96×96 map. Loader `0x4604e..0x4607b` restores those words. Offsets reach origin+(3,3). The switch at `0x1f478..0x1f492` also permits invalid rank >5 to bypass assignment of local `[bp-2]` before painting. Known annual/startup callers supply only 0–5, so an invalid rank is not established as normally reachable. No exploitability claim is made.
+
+Native import/update restrict origins to 0–92 and remembered rank to 0–5 or first-call sentinel 255; cash classification never calls the painter with an invalid rank. Bad inputs reject before terrain/state mutation. Tests include the last safe footprint, the first unsafe origin and invalid rank values. Retain this evidence if later input compatibility work changes the bounds policy.
