@@ -663,3 +663,16 @@ SF-066's overwritten low-tile entries remain pending in the live queue by an exp
 Routine `0x1f020` initializes slot to 1 (`0x1f047`) and encountered-active count to zero. It tests field active bit at `0x1f070`, reads +54 at `0x1f078`, and increments the encountered count only for active slots (`0x1f09f`). Every iteration increments slot (`0x1f0a2`). The loop compares the encountered count against signed `6190:3e3e` at `0x1f0ac/0x1f0b1`, with no check against the 98-record field table or last usable slot 97. An inconsistent positive declared count can therefore continue reading beyond field storage while searching for enough active records.
 
 This is static evidence of an input/state-boundary hazard, not proof that ordinary play produces the mismatch or that it is exploitable. The live native clock does not yet run this aggregate/advice routine. Its reconstruction must traverse decoded field slots 1–97 once and derive active counts, preserving valid-record order/status arithmetic without reproducing the unchecked access. Revisit original count producers/loader and the downstream report/helper before assigning broader impact; retain this entry after the bounded implementation is added.
+
+
+### SF-077 bounded report implementation
+
+The live Farm report now uses `summarizeFieldStatus`, which visits real slots 1–97 once and never reads a declared source count. Tests include the last legal slot, all 97 active records, an active sentinel record excluded from aggregation, inactive high-bit records and malformed table shape. This implements the scan-bound fix for current reporting; the annual wrapper/cache and automatic music integration remain pending. Original valid status masks, separate bit counts and unsigned cash thresholds are preserved.
+
+## SF-078 — annual asset rating returns an unclassified low word above its upper threshold
+
+**Status:** verified arithmetic/control-flow boundary; ordinary reachability and downstream display impact unproven; native annual rating integration/fix deferred.
+
+`0x3cc20` calls broader asset helper `0x3d980`, then classifies its signed nonnegative result into 0–7 for ranges ending just below 1,000,000. Final comparison at `0x3ccf8..0x3cd02` accepts only values below `000f:4240`; values at or above that bound jump to `0x3cd07` without assigning a rating to AX. AX still holds the original low value word. At exactly 1,000,000 the return is therefore `0x4240` (16,960), rather than a value 0–7. Annual report `0x1f5c8..0x1f5d1` subtracts its previous `4454` word from that AX and stores the result.
+
+The native clock does not yet execute this rating wrapper. Reachable asset totals, downstream presentation and intended behavior at the upper bound remain to be traced before deciding whether to preserve or cap it. This is not a proven ordinary-play defect or security exploit. Preserve this evidence and the distinct signed broader-asset calculation when adding the bounded native implementation; do not silently substitute the borrowing-credit formula.

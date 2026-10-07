@@ -39,7 +39,8 @@ import { resolveDefaultDecision } from './default';
 import { TownLayouts } from '../formats/town';
 import { developTown } from './town-development';
 import { assessAnnualTax, settleAnnualTax, type TaxAssessment, type TaxSettlement } from './tax';
-import { resetAnnualLedgers } from './annual-ledger';
+import { resetAnnualLedgers, updateAnnualReport } from './annual-ledger';
+import { summarizeFieldStatus, type FieldReport } from './field-report';
 import { beginTownExpansion } from './town';
 import { resolveTownChoice, type TownChoice, type TownConstructionResult } from './town-construction';
 import { updateClearingEffects } from './clearing-effects';
@@ -52,6 +53,7 @@ export interface FieldHarvestEstimate {
 }
 
 export interface GameSnapshot {
+  farmReport: { income: number; expenses: number; net: number; fields: FieldReport };
   revision: number;
   scenario: Scenario;
   weather: WeatherState;
@@ -398,7 +400,13 @@ export class GameSimulation {
   }
 
   private publish(): void {
+    // Read-only current view: keep the saved original report cache separate
+    // until all of its annual consumers and lifecycle are reconstructed.
+    const report = { ...this.finances.annual };
+    updateAnnualReport(this.scenario.farm, this.finances.accounts, report);
     this.snapshot = { revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
+      farmReport: { income: report.reportIncome, expenses: report.reportExpenses, net: report.reportNet,
+        fields: summarizeFieldStatus(this.scenario.fields, this.scenario.farm.cash) },
       finances: copyFinancialState(this.finances),
       pendingTown: this.pendingTown ? { ...this.pendingTown, site: { ...this.pendingTown.site } } : null,
       lastTownResult: this.lastTownResult ? this.lastTownResult.ok

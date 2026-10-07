@@ -28,3 +28,6 @@ A successful choice clears the continuation and runs only its remaining phases. 
 
 
 Clearing effects now consume the saved animation tick in the live scheduler. Loading a pending queue does not advance it; running/manual time resumes at its preserved sixteen-tick boundary, including word wrap. Native Pause and modal/terminal decisions freeze this queue with other simulation work. Existing v6 fields suffice. Older checkpoints resume under the current live updater, including source-retained overwritten entries (SF-066).
+
+
+The current Farm report is derived from canonical ledgers and decoded field flags when GameSimulation publishes a snapshot. It is not stored redundantly in checkpoints and does not overwrite the original retained `reportIncome/reportExpenses/reportNet` caches. Reopening/reloading the native report recomputes its display without changing RNG, accounts or field bytes. Original annual report-history/cache lifecycle remains unfinished.

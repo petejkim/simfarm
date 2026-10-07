@@ -15,6 +15,7 @@ import { checkFieldPlacement } from '../simulation/field-placement';
 import { quoteLand } from '../simulation/land';
 import { LoanPanel } from './LoanPanel';
 import { TaxPanel } from './TaxPanel';
+import { FarmReport } from './FarmReport';
 import { TownChoicePanel } from './TownChoicePanel';
 
 const subscribeEmpty = () => () => {};
@@ -106,6 +107,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
       onRestart={() => onScenarioChange(id)} />}
     {snapshot && <TaxPanel snapshot={snapshot} />}
+    {snapshot && <FarmReport snapshot={snapshot} />}
     {data && <main>
       <section className="map-panel">
         <FarmMap scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
