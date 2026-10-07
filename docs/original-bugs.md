@@ -321,3 +321,19 @@ At `0x48efa..0x48f14` and `0x4905c..0x49076`, crop byte +18 is sign-extended, in
 Native projection validates the resulting index against the allocated pattern before any schedule commit. Tests cover positive overflow, negative indices, and byte 255 (signed -1 plus one), which validly restarts at index zero. Other uses of crop +18 retain their own recovered arithmetic. Revisit validation if editable crop definitions become supported.
 
 Manual plan recording repeats this unchecked restart at `0x2fede..0x2fef8`; its native port validates the index too. Fixed-harvest crops overwrite the resulting graphic each week, but the original still performs that intermediate pattern read. Supplied restart values remain in range.
+
+## SF-039 — moving an annual harvest can erase the last crop-slot planting
+
+**Status:** confirmed editor comparison error; native correction implemented.
+
+The calendar editor places a harvest at `0x2e4e0` and clears subsequent annual-plan words until a planting marker. At `0x2e525..0x2e539` it requires `word >= table[090c]` (832) and `word < table[092a]` (847). Plant slot 15 uses 847, so that valid next planting is erased with the intervening growth stages and later orders until another slot's planting or the end of the plan. The editor exposes all sixteen crops, providing a reachable edit path; no security exploit is claimed.
+
+Native harvest editing stops at all sixteen planting words, including 847, preserving that crop and everything after it. A regression tests each crop slot separately and compares the entire retained suffix. Keep the original strict-branch bytes in the test and this record rather than silently redefining the executable behavior.
+
+## SF-040 — calendar editor action 16 writes an undispatched marker
+
+**Status:** confirmed editor/dispatcher mismatch; intended meaning unproven. Native fix deferred.
+
+Editor jump-table entry 16 at `0x2e7b8` routes to `0x2e58a`, which writes 239 (`0x2e59b`). The weekly dispatcher recognizes alternate-harvest word 231 instead, and otherwise ignores 239. The erase helper also explicitly recognizes 239. The intended action label and whether a missing handler or wrong constant caused this discrepancy remain unestablished; do not infer crop-disposal semantics merely from the nearby harvest branch.
+
+Native schedules preserve unknown 239 and the dispatcher continues to ignore it. The browser planner does not offer this unexplained action, nor silently translate it to 231. Revisit original icon/help evidence before exposing or correcting it. This is an incomplete original path, not a proven security vulnerability.
