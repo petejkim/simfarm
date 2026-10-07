@@ -713,3 +713,28 @@ Native player construction is not live yet. Its implementation must return a cle
 Rectangle query `0x1a17e..0x1a243` begins at slot 1 with visited count zero. It reads each record's type and definition dimensions, compares its coordinates with the requested rectangle, then increments both slot and visited count (`0x1a22e/0x1a231`). The only loop limit compares visited count to global building count `6190:2430` (`0x1a234..0x1a23d`); there is no active-flag test or independent slot bound in this routine. Under a sparse table, it can consider retained inactive coordinates or omit active records beyond that prefix. An inconsistent large count could also exceed record storage.
 
 The source instructions establish those conditional outcomes, not that all relevant callers encounter sparse or inconsistent state. Revisit compaction and caller guards while tracing construction. Native placement should scan bounded active records and validate their definitions before mutation; no construction implementation is claimed yet. Keep this evidence even if later caller tracing shows the original path maintains a dense prefix.
+
+
+### SF-081/082 native construction update
+
+Storage purchase now preflights a free slot before debit/allocation and uses the existing bounded active-only `findBuilding` query over all127 records. Tests include inactive retained coordinates, a high active slot beyond a sparse prefix, and a full table. Rejection leaves records, cash, counts, terrain and accounts unchanged. The static original conditions above remain verified; whether all original UI callers avoid them is still unresolved. Construction UI integration is the next increment.
+
+## SF-083 — rejected purchase can leave clearing costs/terrain and mismatched refunds
+
+**Status:** verified static ordering and conditional accounting mismatch; corrected by native atomic preflight. Ordinary reachability of every refund branch remains unresolved.
+
+Purchase `0x1cb42` debits first, then invokes automatic clearing for every footprint tile before allocation and terrain validation. A tree can be cleared and charged ($25 through category500 at `0x26aaa`) before a later footprint tile rejects placement. Painting failure deletes the added object and refunds the building price with its original category at `0x1cc49/0x1cc5b`; it does not restore cleared trees or their worker charges. In the separate zero-allocation branch `0x1cca0..0x1ccae`, the price refund uses category0, so a successful prior building debit to `3e90` would not be reversed. SF-081 means full building capacity is not itself proof of reaching that zero-return branch.
+
+Native storage purchase validates the whole transaction before mutation, including ordered post-price tree affordability, map eligibility and free record capacity. Failed placement changes no terrain, record, definition count or account. Tests explicitly retain the pre-failure complete state. No security exploit is asserted; revisit non-building generic purchase callers and original UI preflight paths.
+
+## SF-084 — multi-cell building UI rejects cash exactly equal to its price
+
+**Status:** verified original comparison/path distinction; preserved as an arithmetic/UI quirk.
+
+The ghost-placement path sign-extends the price at `0x22451`, compares its high cash word, then branches on unsigned price-low >= cash-low at `0x2245f/0x22464`. Equality is rejected even though debit `0x1c88e` accepts an equal amount. The one-cell click path calls purchase directly (`0x24af6`). Native storage requires extra cash for a multi-cell footprint, preserves equality for the 1×1 building, and explains insufficient cash in the UI. Tests cover price−1/price/price+1 where relevant. No overflow exploit or security vulnerability is claimed.
+
+## SF-085 — building ownership validation checks only the origin
+
+**Status:** verified static ownership rule; preserved pending a deliberate enhancement decision.
+
+Terrain validation iterates the footprint at `0x1ce04..0x1cf0a`, but ownership at `0x1cf17` reads only `(x,y)`; the UI repeats only this origin check at `0x22473`. A clear eligible footprint may extend from owned origin land into unowned neighboring cells. Type70 also has an explicit origin-ownership exception. Native storage retains the origin rule and tests a partially unowned footprint; it still rejects out-of-map coordinates and occupied buildings. This is an apparent gameplay loophole, not a proven security vulnerability. A future full-footprint ownership requirement would be an intentional native correction, not recovered original behavior.

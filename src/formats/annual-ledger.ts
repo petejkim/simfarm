@@ -6,7 +6,7 @@ export interface RuntimeAnnualLedger {
   priorTaxExpenses: number; // 6190:3e40
   ds3e70: number;
   ds3e8c: number;
-  ds3e90: number;
+  ds3e90: number; // Building purchase expenses, debit 0x1c93b. Keep checkpoint key.
   ds3e94: number;
   ds3e9c: number;
 }

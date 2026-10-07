@@ -6,7 +6,7 @@ import { equipmentFootprint, equipmentImage } from './equipment-world';
 
 type BuildingWorld = Pick<Scenario, 'buildings' | 'buildingDefinitions' | 'cells'>;
 // Initialized tile table selected by definition +0; roof tile order is row-major.
-const graphics: Readonly<Record<number, number>> = { 6: 440, 7: 441, 8: 445, 9: 451, 10: 460, 11: 469, 61: 120, 104: 1010, 103: 481 };
+export const BUILDING_GRAPHICS: Readonly<Record<number, number>> = { 6: 440, 7: 441, 8: 445, 9: 451, 10: 460, 11: 469, 61: 120, 104: 1010, 103: 481 };
 
 /** 0x1a17e: first active building overlapping any cell of the requested rectangle. */
 export function findBuilding(world: BuildingWorld, x: number, y: number, width = 1, height = 1): BuildingRecord | undefined {
@@ -21,7 +21,7 @@ export function findBuilding(world: BuildingWorld, x: number, y: number, width =
 /** 0x1a2f8–0x1a591. Changes actual world cells; no DOM or DOS viewport dependency. */
 export function toggleBuildingInterior(b: BuildingRecord, world: BuildingWorld): void {
   if (!b.active || b.type === 70 || b.type === 71) return;
-  const def = world.buildingDefinitions[b.type - 64], base = graphics[def.graphic];
+  const def = world.buildingDefinitions[b.type - 64], base = BUILDING_GRAPHICS[def.graphic];
   if (base === undefined) throw new Error('Unsupported building graphic');
   b.flags ^= 1;
   if (b.flags & 1) {
