@@ -10,8 +10,11 @@ export interface SavedFarmState {
   animationTicks: number;
   dayDelayTicks: number;
   speed: number;
+  paceEquipment: boolean;
   precipitationDays: number;
   autoRent: boolean;
+  autoBuySeeds: boolean;
+  seedExpenses: number;
   rentalExpenses: number;
   townRegionX: number;
   townRegionY: number;
@@ -26,5 +29,6 @@ export function readFarmState(bytes: Uint8Array): SavedFarmState {
   if (townRegionX >= 12 || townRegionY >= 12) throw new Error('Invalid town region');
   return { cash: b.u32(CASH_OFFSET), calendar, timerTicks: b.u16(0x216f9), animationTicks: b.u16(0x216f7),
     dayDelayTicks: b.u16(0x2171a), speed: b.u16(0x2171c), precipitationDays: b.u16(0x216e8),
-    autoRent: Boolean(bytes[0x21731]), rentalExpenses: b.u32(0x216c4), townRegionX, townRegionY };
+    autoRent: Boolean(bytes[0x21731]), rentalExpenses: b.u32(0x216c4), townRegionX, townRegionY,
+    autoBuySeeds: Boolean(bytes[0x2173b]), seedExpenses: b.u32(0x216a4), paceEquipment: Boolean(bytes[0x21718]) };
 }

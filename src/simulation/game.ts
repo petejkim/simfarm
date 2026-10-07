@@ -3,6 +3,7 @@ import { FieldRecord } from '../formats/field';
 import { EquipmentRecord, EquipmentDefinition } from '../formats/equipment';
 import { AnimalRecord } from '../formats/animal';
 import { BuildingRecord, BuildingDefinition } from '../formats/building';
+import { InventoryRecord, GoodsDefinition } from '../formats/inventory';
 import type { Scenario } from '../formats/scenario';
 import { advanceCalendarDay } from './calendar';
 import { changeFieldCondition } from './field-conditions';
@@ -29,6 +30,9 @@ function copyScenario(scenario: Scenario): Scenario {
     animals: scenario.animals.map(a => new AnimalRecord(a.slot, Uint8Array.from(a.bytes))),
     buildings: scenario.buildings.map(b => new BuildingRecord(b.slot, Uint8Array.from(b.bytes))),
     buildingDefinitions: scenario.buildingDefinitions.map(b => new BuildingDefinition(Uint8Array.from(b.bytes))),
+    inventory: scenario.inventory.map(i => new InventoryRecord(i.slot, Uint8Array.from(i.bytes))),
+    seedDefinitions: scenario.seedDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))),
+    cropDefinitions: scenario.cropDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))),
     farm: { ...scenario.farm, calendar: { ...scenario.farm.calendar } },
     regionalConditions: Uint8Array.from(scenario.regionalConditions),
     climate: { wind: [...scenario.climate.wind], precipitation: [...scenario.climate.precipitation], temperature: [...scenario.climate.temperature] } };

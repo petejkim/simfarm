@@ -130,3 +130,11 @@ Continued after committing planting/return as `6df2b14`. Recovered and implement
 Planting/return integration now also passes on the four farms without all required owned machines, using actual rentals and original prices. Combined coverage spans all eight supplied farms. Corrected swapped native property names for the saved equipment/calendar timer and animation timer; their previous values were not consumed by the browser scheduler.
 
 Documented the original accounting loader's duplicate destination as SF-014, deferred pending full ledger/saver reconstruction, and unsigned expense-total overflow as SF-015, preserved with a regression. Validation: 64 Bun tests, TypeScript/production build and all five Chromium checks pass. The complete playable game remains the objective; these tests still start after seed validation. Next implement seed inventory/automatic seed purchase and the planting command, then connect the simulation clock/UI and proceed to harvesting, storage and sale.
+
+## 2026-10-07 — seed inventory and acquisition
+
+Decoded saved inventory and goods definitions and implemented stored-seed removal, automatic seed buying and expense accounting, with independent copies in simulation snapshots. Documented inconsistent original inventory counts and seed removal as SF-016/SF-017. Tests cover all original inventories, all 36 stored SCEN6 seeds, storage cleanup, affordability and unchanged state on malformed storage.
+
+This is the first part of the previously pending planting increment, split into smaller commits at the user's request. Browser planting controls and running machinery will follow in their own commits.
+
+Validation at this commit boundary: 68 Bun tests, TypeScript checking and production build pass. The existing browser controls are unchanged.

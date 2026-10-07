@@ -133,3 +133,19 @@ Native handling currently decodes only the cash and rental-expense entries neede
 The cash debit checks affordability using unsigned 32-bit comparisons (`0x1c8d0`–`0x1c8f2`). Its rental-expense ledger branch then adds the payment using a 32-bit ADD/ADC pair with no overflow check (`0x1c9e6`–`0x1c9f8`). A total of `0xfffffff0` followed by a 100-unit rental becomes 84. Other expense branches use the same arithmetic. This does not itself permit overspending, and normal-play reachability depends on ledger resets, income and game duration, which remain to be reconstructed.
 
 Native handling preserves unsigned ledger wrapping, with a boundary regression. No correction made. Revisit when the full accounting/year-end path is ported.
+
+## SF-016 — seed consumption can erase a seed without removing its active inventory record
+
+**Status:** confirmed inconsistent-state path; ordinary-play origin of that inconsistency unverified; native validation added.
+
+Seed consumption `0x152d6` locates an active matching inventory item, removes its storage/world graphic, and calls the generic goods removal routine. The seed branch `0x3a1b2` checks the definition's count before removing the item; if the count is zero, it returns without clearing the active flag. The caller ignores that return value and reports success (`0x15360`–`0x15376`). A mismatched zero definition count and active seed can therefore leave an erased but reusable seed record. Further consequences for storage removal on repeated use remain unverified.
+
+Native handling rejects a zero seed count or a mismatched storage cross-reference before any mutation. Regression cases verify unchanged map/inventory. The supplied SCEN6 seed counts agree with its 36 active seed records; this issue is distinct from its total inventory-count discrepancy below.
+
+## SF-017 — supplied SCEN6 inventory count exceeds its active records
+
+**Status:** confirmed source-data discrepancy and unchecked scan bound; original runtime consequences require verification; native scans are bounded.
+
+The distributed `SCEN6.SSM` stores count 65 at `0x8281`, but its 512 records at `0x8283` contain only 64 active flags (record +10 bit 0x20); reserved slot zero is inactive. The loader copies the count and records directly (`0x45688`–`0x456d2`). Seed search `0x152d6` stops only after visiting the declared number of active records and has no independent 512-slot bound. A missing seed type can therefore advance beyond the table if no intervening initialization corrects the count. The saved bytes and scan structure are confirmed; DOS startup repair and observable memory consequences have not been established.
+
+Native handling accepts this original farm, derives active items from bounded records and never uses the inconsistent count as a search limit. Tests decode all farms, consume all 36 original SCEN6 seed items and successfully fall back to purchasing after exhaustion. No security exploit is claimed.
