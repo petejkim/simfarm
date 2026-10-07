@@ -1,10 +1,15 @@
 import { Binary } from './binary';
 import { readFields, type FieldRecord } from './field';
+import { readFarmState, type SavedFarmState } from './scenario-state';
 export const WORLD_SIZE = 96;
 export const WORLD_OFFSET = 0x152c4;
 export const CROP_NAMES_OFFSET = 0x21193;
 export interface WorldCell { terrain: number; overlay: number; attribute: number }
-export interface Scenario { version: number; cells: WorldCell[]; cropFiles: string[]; fields: FieldRecord[] }
+export interface Scenario {
+  version: number; cells: WorldCell[]; cropFiles: string[]; fields: FieldRecord[]; farm: SavedFarmState;
+  /** Seven interleaved condition bytes per 12×12 region, also column-major. */
+  regionalConditions: Uint8Array;
+}
 /** Recovered from overlay 22:283c (file 0x4543c), especially 0x45782–0x457fa. */
 export function readScenario(bytes: Uint8Array): Scenario {
   if (bytes.length !== 139072 || bytes[0] !== 0x18) throw new Error('Unsupported scenario version or size');
@@ -18,7 +23,8 @@ export function readScenario(bytes: Uint8Array): Scenario {
     if (!/^[a-z0-9_]{1,8}\.crp$/.test(name)) throw new Error('Invalid scenario crop filename');
     return name;
   });
-  return { version: bytes[0], cells, cropFiles, fields: readFields(bytes) };
+  return { version: bytes[0], cells, cropFiles, fields: readFields(bytes), farm: readFarmState(bytes),
+    regionalConditions: Uint8Array.from(b.slice(0x21273, 12 * 12 * 7)) };
 }
 /** The original masks AH with 7 after reading terrain; see file 0x9536–0x9556. */
 export function terrainTile(cell: WorldCell): number { return cell.terrain & 0x7ff; }

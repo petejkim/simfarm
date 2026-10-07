@@ -105,3 +105,44 @@ Point query `0x1b928`–`0x1b994` tests inclusive origins and exclusive far edge
 - Field status/marker routines `0x19002` and `0x196b8`–`0x19845` update badge tiles. Initial saved badges are rendered, but their dynamic updates are not implemented.
 
 These are static-code leads, not implemented simulation claims. Recover the scheduler, equipment prerequisites, growth arithmetic, cash/calendar state and random generator before claiming an original farming loop.
+
+## Calendar, saved global state and random streams — native primitives
+
+The crop table ends at `0x21273`. The loop at `0x45a81`–`0x45b86` reads seven bytes per 12×12 region (column-major), ending at `0x21663`; the following eight pairs of bytes end at `0x21673`. Summing subsequent explicit read sizes proves these save offsets:
+
+| Save offset | Runtime variable | Meaning / loader call |
+|---|---|---|
+| `0x216e4` uint32 | `6190:3e48` | Cash; read at `0x45f0e`; all farms start with 40,000 |
+| `0x216ed` uint16 | `6190:124e` | Day within week (0–6) |
+| `0x216ef` uint16 | `6190:1250` | Season (0–3) |
+| `0x216f1` uint16 | `6190:1252` | Week within month (0–3) |
+| `0x216f3` uint16 | `6190:1254` | Year; all farms start in 1993 |
+| `0x216f5` uint16 | `6190:1256` | Month (0–11) |
+| `0x216f7`, `0x216f9` uint16 | `6190:13a0`, `6190:139e` | Tick counters, not dates |
+| `0x2171a`, `0x2171c` uint16 | `6190:1f8c`, `6190:1f90` | Day delay and speed setting; saved values 256 / 1 |
+
+`6190:1ed4`/`:1ed6`, previously mentioned as calendar candidates, are animation state instead. The interrupt at `0x6254` increments both tick counters and forwards every fourth interrupt. Main update `0xbcb8` calls calendar/weather `0xc88e` before field work `0x17d3c`; pauses are checked before this sequence. Calendar advancement requires unsigned `(ticks - lastDayTick) > delay` at `0xc8a9`–`0xc8b5`.
+
+Calendar arithmetic uses seven-day weeks, four-week months and twelve-month years (336 days), with weekly subsystem calls **before** incrementing the week. Season assignment at `0xc94d`–`0xc9a9` uses the incremented week index before month rollover: 45–47 and 0–9 → 0; 10–21 → 1; 23–33 → 2; 34–44 → 3. Week 22 has no assignment and retains its prior season. Month rollover is `0xcc05`–`0xcc1b`; year reset/increment is `0xcded`/`0xcfa1`. `advanceCalendarDay` implements only this arithmetic; weather, finances and scheduling callbacks are not claimed ported by it.
+
+`FarmRandom` reproduces three independent generators:
+
+- `05fd:007d`, file `0x824d`: eight shifts, feeding XOR of bits 1/2 into bit 15; state `6190:1b79`.
+- `05fd:00d0`, file `0x82a0`: right shift, XOR `0x3500` if the old low bit was set; state `6190:1b96`.
+- `05fd:00a3`, file `0x8273`: right shift with conditional XOR `0xb8`; subsequent rejection shifts until at most the bound, equality returns zero. Only the **first** shift is stored in `6190:1b98`.
+
+Monthly seed perturbation `0xcc20` adds four times the incremented month and resets values above `0x1fff` to 1234 (signed comparison). Initialized executable seeds are 27, 9029 and 51, but startup mutates state; these are not claimed to reproduce a complete DOS session from its save. Call ordering and startup integration still need reconstruction. Tests use explicit seeds and fixed sequences.
+
+## Growing fields — arithmetic ported, scheduler integration outstanding
+
+`growField` ports Growing-state arithmetic from `0x1843c`–`0x1859a`, growth routine `0x192e2`–`0x195ce`, and water-stress helper `0x195d0`–`0x196b7`. It runs only when field byte +33 equals the calendar week, then increments that byte modulo four. Temperature contributes `max(0, temperature - crop[67]) * 7` toward the field's uint16 deficit at +38 against crop uint16 +30. Crop uint16 +28 enables a cold counter (+40) below 45. Field age (+34) advances once per eligible call.
+
+The crop definition's bytes +50/+51/+52 control depletion of field bytes +29/+30/+31. Field +60/+61/+62 drive condition growth; nonzero crop resistance bytes +58/+59/+60 quarter the corresponding increment. `changeFieldCondition` implements the eighteen-mode jump table at `0x19c3c`, including coupled 12×12 regional updates. Some original regional reductions have a reversed comparison: they zero values above the amount and wrap values below it. This is present at `0x1c5a5`, `0x1c63b`, `0x1c723`, `0x1c767`, `0x1c7fd`; preserve it rather than silently correcting it. Fields +30/+31 also remain unchanged when depletion exceeds their value.
+
+Water-stress bounds are crop uint16 +40/+42 with field tolerance bytes +51/+52. Out-of-range water (+24) consumes one simulation random value and produces a byte-wrapped penalty. Combined stress drives a saturating uint16 accumulator at field +18 through `0x1b7c6`; its later yield interpretation remains to be followed through harvest code.
+
+Graphics stage uses rounded age divided by `ceil(crop[56] / crop[66])`, with a temperature-deficit delay. Only existing crop tiles 688–815 are replaced, retaining terrain flags and field badges. Crop byte +76 controls the expiry result after the age limit; the caller still needs original cleanup/replant behavior. The optional crop flag +63 bit `0x20` invokes a bust/fine event at `0xa7de`; none of the 24 distributed crops sets it. The native routine explicitly rejects that unported branch.
+
+These pure TypeScript routines are tested independently. They are **not yet wired to a browser simulation clock**: weather, status badges, expiry cleanup, equipment actions and harvesting remain necessary for a faithful playable loop. No elapsed-time control is exposed for a partial simulation.
+
+Mutable field and region records explicitly copy input bytes with `Uint8Array.from`. The same fix applies to crop atlas patches: `Buffer.slice()` aliases memory, unlike `Uint8Array.slice()`, and the importer receives Buffers. Tests now assert unchanged original inputs with independent copies, not aliased snapshots.

@@ -39,4 +39,6 @@ Capstone and its dependencies are installed only in `.venv`. The analyzer writes
 
 React components in `src/ui` own menus, selections and lifecycle. `src/render` draws the native canvas, `src/formats` decodes original data, `src/assets` loads resources, and `src/audio` plays MIDI. Recovered simulation belongs outside React so game rules can be tested independently and future graphics/UI changes can reuse them.
 
+`src/simulation` contains recovered calendar arithmetic, deterministic random generators, field conditions and weekly crop growth. These are tested against original data and executable-derived cases; browser clock integration and the complete farming loop are still outstanding. Global game state will be owned by this simulation layer, with React subscribing to snapshots and sending commands.
+
 See [the plan](docs/plan.md), [progress](docs/progress.md), and [binary evidence](docs/reverse-engineering.md). The world decoder, crop graphics substitution, masked tile layer and field inspection come from original executable evidence. Moving objects, remaining render passes and game rules require more reconstruction. Music uses original MIDI notes/program changes with a temporary Web Audio synthesizer; instrument fidelity and XMIDI looping are unfinished.
