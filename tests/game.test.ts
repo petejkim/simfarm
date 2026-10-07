@@ -120,7 +120,7 @@ test('all eight original farms advance a year without invalid terrain or missing
     assert.ok(snapshot.scenario.cells.every(c => Number.isInteger(c.terrain) && c.terrain >= 0 && c.terrain <= 65535));
     assert.ok(Number.isFinite(snapshot.weather.temperature));
   }
-});
+}, 15000);
 
 test('the fifth year-end retains the original temperature-table overread into wind (SF-007)', () => {
   const input = farm();
@@ -195,4 +195,35 @@ test('an invalid harvest order leaves cash, field work and inventory unchanged',
   game.dispatch({ type: 'harvest-field', fieldSlot: 1 });
   assert.deepEqual(game.getSnapshot().lastHarvestResult, { ok: false, reason: 'not-growing' });
   assert.deepEqual(game.getSnapshot().scenario, planting.scenario);
+});
+
+test('original corn completes a positive-value plant-grow-harvest-store-sell cycle and releases its storage', () => {
+  const input = farm(4), game = new GameSimulation(input.scenario, input.crops);
+  game.dispatch({ type: 'plant-field', fieldSlot: 1, cropSlot: 0 });
+  for (let day = 0; day < 85; day++) game.dispatch({ type: 'advance-day' });
+  const grown = game.getSnapshot();
+  assert.equal(grown.scenario.fields[1].state, 4); assert.ok(grown.fieldHarvestEstimates[1]!.value > 0);
+  game.dispatch({ type: 'harvest-field', fieldSlot: 1 });
+  for (let day = 0; day < 12; day++) game.dispatch({ type: 'advance-day' });
+  const harvested = game.getSnapshot(), item = harvested.scenario.inventory.find(i => i.active && i.type === 168)!;
+  const value = harvested.storedHarvestValues[item.slot]!;
+  assert.ok(value > 0);
+  game.dispatch({ type: 'sell-harvest', inventorySlot: item.slot });
+  const sold = game.getSnapshot();
+  assert.deepEqual(sold.lastSaleResult, { ok: true, slot: item.slot, value });
+  assert.equal(sold.scenario.farm.cash, harvested.scenario.farm.cash + value);
+  assert.equal(sold.scenario.farm.cropIncome, harvested.scenario.farm.cropIncome + value * 2); // SF-026.
+  assert.equal(sold.storedHarvestValues[item.slot], null);
+  assert.equal(sold.scenario.inventory[item.slot].active, false);
+  assert.equal(sold.scenario.harvestDefinitions[0].count, 0);
+  assert.equal(harvested.scenario.inventory[item.slot].active, true);
+  sold.lastSaleResult!.value = -1; sold.storedHarvestValues[item.slot] = 100000;
+  game.dispatch({ type: 'advance-day' });
+  assert.deepEqual(game.getSnapshot().lastSaleResult, { ok: true, slot: item.slot, value });
+  game.dispatch({ type: 'sell-harvest', inventorySlot: item.slot });
+  assert.deepEqual(game.getSnapshot().lastSaleResult, { ok: false, reason: 'invalid-item' });
+  assert.equal(game.getSnapshot().scenario.farm.cash, harvested.scenario.farm.cash + value);
+  assert.equal(game.getSnapshot().storedHarvestValues[item.slot], null);
+  game.dispatch({ type: 'plant-field', fieldSlot: 1, cropSlot: 0 });
+  assert.equal(game.getSnapshot().lastPlantResult?.ok, true);
 });

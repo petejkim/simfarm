@@ -19,6 +19,7 @@ import { reserveEquipment } from './equipment-rental';
 import type { EquipmentRuntime } from './equipment-world';
 import { orderHarvest, updateHarvestField, type HarvestOrderResult } from './field-harvest';
 import { cropMaturity, fieldHarvestValue } from './harvest-value';
+import { sellStoredHarvest, storedHarvestValue, type HarvestSaleResult } from './harvest-sale';
 
 export interface FieldHarvestEstimate {
   maturity: number;
@@ -36,10 +37,13 @@ export interface GameSnapshot {
   lastPlantResult: PlantResult | null;
   lastHarvestResult: HarvestOrderResult | null;
   fieldHarvestEstimates: (FieldHarvestEstimate | null)[];
+  storedHarvestValues: (number | null)[];
+  lastSaleResult: HarvestSaleResult | null;
 }
 export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused: boolean }
   | { type: 'plant-field'; fieldSlot: number; cropSlot: number }
-  | { type: 'harvest-field'; fieldSlot: number };
+  | { type: 'harvest-field'; fieldSlot: number }
+  | { type: 'sell-harvest'; inventorySlot: number };
 
 function copyScenario(scenario: Scenario): Scenario {
   return { ...scenario, cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
@@ -77,6 +81,7 @@ export class GameSimulation {
   private readonly cropMarketPrices: number[];
   private lastPlantResult: PlantResult | null = null;
   private lastHarvestResult: HarvestOrderResult | null = null;
+  private lastSaleResult: HarvestSaleResult | null = null;
 
   constructor(scenario: Scenario, crops: readonly CropDefinition[], seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }) {
     this.scenario = copyScenario(scenario);
@@ -113,6 +118,8 @@ export class GameSimulation {
     } else if (command.type === 'harvest-field') {
       this.lastPlantResult = null;
       this.lastHarvestResult = orderHarvest(this.scenario, command.fieldSlot, this.crops);
+    } else if (command.type === 'sell-harvest') {
+      this.lastSaleResult = sellStoredHarvest(this.scenario, command.inventorySlot, this.weather.soilMoisture);
     } else {
       const remaining = Math.max(1, this.scenario.farm.dayDelayTicks) - this.dayTicks;
       for (let i = 0; i < remaining; i++) this.advanceTick();
@@ -195,6 +202,9 @@ export class GameSimulation {
       daysAdvanced: this.daysAdvanced, paused: this.paused, cropMarketPrices: [...this.cropMarketPrices],
       lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null,
       lastHarvestResult: this.lastHarvestResult ? { ...this.lastHarvestResult } : null,
+      lastSaleResult: this.lastSaleResult ? { ...this.lastSaleResult } : null,
+      storedHarvestValues: this.scenario.inventory.map(i => i.active && i.type >= 168 && i.type < 184
+        ? storedHarvestValue(i, this.scenario) : null),
       fieldHarvestEstimates: this.scenario.fields.map(f => {
         if (!f.active) return null;
         const crop = this.crops[f.cropSlot];

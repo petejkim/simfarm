@@ -202,3 +202,11 @@ Validation: all 91 Bun tests, TypeScript/production build and eight Chromium che
 Recovered the actual immediate inventory sale, including current trade-price valuation, cash and ledger posting, barn/outdoor image removal and goods-count/deactivation. Added SF-026 for original double crop-income bookkeeping (preserved) and SF-027 for payment before failed removal (fixed by native prevalidation). This increment is the standalone transaction; simulation commands and React sale buttons follow separately.
 
 Validation: 96 Bun tests and TypeScript/production build pass. New coverage sells all sixteen crop types through all six original farms with crop storage, checks exact value and removal, cash/ledger boundaries, zero-value disposal and malformed-state atomicity. Browser behavior was unchanged by this standalone addition; its preceding eight Chromium checks remain valid. Next expose sales and verify the player loop, then proceed to new-field creation.
+
+## 2026-10-07 — player farming cycle reaches stored-crop sales
+
+Connected the sale transaction to GameSimulation and React, with live value quotes, immediate sale buttons, cash/result feedback and removal from storage. Added a complete player-command and Chromium cycle using unmodified SCEN4: plant corn, advance 85 days of actual growth/weather, harvest with machinery, store, sell for a positive value, and permit replanting. The observed browser cycle ended at $41,864 from $40,000 after its seed purchase; no mature/healthy fixture or invented crop value is used in this check.
+
+Validation: all 97 Bun tests, TypeScript/production build and nine Chromium checks pass. Visually inspected `artifacts/browser-farming-cycle.png`. Increased only the existing eight-farm/year test's timeout to 15 seconds after concurrent browser execution exceeded its default five-second limit; its assertions are unchanged. Snapshot isolation and duplicate-sale rejection are covered.
+
+This verifies a core farming cycle, not a completed original game. New-field creation, crop treatments, complete economy/markets, save/load and other original systems remain. The user requested a simulation-speed slider after this increment and before the next task; implement and commit that first, then resume new-field reconstruction.

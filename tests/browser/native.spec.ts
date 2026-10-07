@@ -233,3 +233,34 @@ for (const id of [0, 4]) test(`harvest controls complete ${id === 0 ? 'worker' :
   await expect(page.locator('#harvest-result')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test('a planted original corn crop grows, is harvested and sold through browser controls', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.clock.install();
+  await page.goto('/');
+  await page.locator('#scenario').selectOption('4');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
+  await page.locator('#field').selectOption('1');
+  await page.locator('#plant-field').click();
+  for (let day = 0; day < 85; day++) await page.locator('#next-day').click();
+  await expect(page.locator('#field-status')).toContainText('Growing');
+  await expect(page.locator('#harvest-estimate')).not.toContainText('value: $0,');
+  await page.locator('#harvest-field').click();
+  for (let day = 0; day < 12; day++) await page.locator('#next-day').click();
+  await expect(page.locator('#harvest-stock')).toHaveText('1 stored harvest');
+  const sell = page.locator('.sell-harvest');
+  const amount = Number((await sell.textContent())!.replace(/[^0-9]/g, ''));
+  const cash = Number((await page.locator('#farm-cash').textContent())!.replace(/[^0-9]/g, ''));
+  expect(amount).toBeGreaterThan(0);
+  await sell.click();
+  await expect(page.locator('#farm-cash')).toHaveText(`$${(cash + amount).toLocaleString('en-US')}`);
+  await expect(page.locator('#sale-result')).toHaveText(`Harvest sold for $${amount.toLocaleString('en-US')}.`);
+  await expect(page.locator('#harvest-stock')).toHaveText('No stored harvests.');
+  await expect(sell).toHaveCount(0);
+  await expect(page.locator('#plant-field')).toBeEnabled();
+  await page.screenshot({ path: 'artifacts/browser-farming-cycle.png', fullPage: true });
+  await page.locator('#scenario').selectOption('0');
+  await expect(page.locator('#sale-result')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

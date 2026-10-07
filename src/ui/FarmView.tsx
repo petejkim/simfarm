@@ -88,7 +88,8 @@ export function FarmView({ id, onScenarioChange, assets, zoom, onZoomChange, cro
           onHarvest={fieldSlot => simulation?.dispatch({ type: 'harvest-field', fieldSlot })}
           onPlant={(fieldSlot, cropSlot) => simulation?.dispatch({ type: 'plant-field', fieldSlot, cropSlot })}
           onSelect={slot => { setSelection(null); selectField(slot, true); }} />
-        <HarvestInventory scenario={data.scenario} crops={assets.catalog.crops} />
+        <HarvestInventory scenario={data.scenario} crops={assets.catalog.crops} values={snapshot?.storedHarvestValues ?? []}
+          result={snapshot?.lastSaleResult ?? null} onSell={inventorySlot => simulation?.dispatch({ type: 'sell-harvest', inventorySlot })} />
         <CropGuide crops={assets.catalog.crops} cropId={cropId} onChange={onCropChange} />
         <details><summary>Tile details</summary><pre id="tile-details">{cell && position
           ? `Position: ${position.x}, ${position.y}\nTerrain: 0x${cell.terrain.toString(16).padStart(4, '0')}\nSecond word: 0x${cell.overlay.toString(16).padStart(4, '0')}\nAttribute: ${cell.attribute}`

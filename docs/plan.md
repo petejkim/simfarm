@@ -10,3 +10,5 @@ The end state is the original SimFarm running as native browser code, with MIDI 
 6. Verify the full game against recovered code/data and original documented behavior, then expose enhancement interfaces. Do not mark the goal complete while major systems remain provisional.
 
 Only local tools and original files are needed at runtime/build time; the delivered browser bundle must contain no DOS execution environment.
+
+Current next actions: finish the requested native simulation-speed slider, then reconstruct new-field placement. The existing-field plant/grow/harvest/store/sell cycle is now verified through browser controls on original corn; this does not complete the broader game or save/load requirements.
