@@ -477,3 +477,35 @@ This establishes an unsafe scan path conditional on unpaid debt and those record
 ### SF-027 follow-up — animal/equipment sale validation
 
 The same ignored-removal-result pattern also occurs in animal/equipment branches of `0x4c41c`: credit precedes generic deletion `0x3a040`, which rejects zero definition count. Native sale primitives now validate counts, map/storage footprints, stored-animal references, and plane-home bounds before payment, extending the existing crop-sale correction. Source record/definition mismatch effects remain documented; do not remove SF-027 after these guarded implementations.
+
+## SF-060 — clearing queue's initialized coordinates differ from its free sentinel
+
+**Status:** confirmed initialized-byte mismatch; startup reachability uncertain; native empty queue guarded.
+
+The 64-entry x/y arrays at `2d9f:d53a/d57a` (EXE `0x5dd1a..0x5dd99`) contain zeros. Enqueue increments its cursor, then at `0xa32c` treats any prior x other than 255 as a live coordinate and restores that tile, irrespective of prior count. Without another startup reset, early enqueues would restore (0,0). Direct references found so far are confined to enqueue/update; broader startup initialization has not been fully traced, so a normal-game origin-tile defect is not proven.
+
+Native `createClearingEffects` fills x with the source free sentinel 255, retains zero y/cursor/count/tick, and tests that enqueue does not change the origin. Revisit startup initialization before claiming original runtime reachability. No security implication is established.
+
+## SF-061 — clearing animation scans beyond its 64 coordinate slots
+
+**Status:** confirmed unchecked scan and counter mismatch; native bound implemented; original runtime consequences unverified.
+
+Update `0xa5a0..0xa5ab` increments a byte index without a 64-slot bound and loops while visited <= count. Free slots skip the visited increment. With a full 64-entry queue still animating, visited reaches 64 and the comparison permits reading slot 64 outside the x table; inconsistent sparse counters also exceed the table. On retirement, count decreases within the loop, producing a smaller work budget (33 retirements from a full queue). This is an invalid-read/map-write hazard, not a demonstrated exploit or DOS crash.
+
+Native update bounds index to 0–63 while preserving the original changing-count comparison and unsigned timer wrap. Tests cover full queues, retirement and sparse inconsistent counters with finite execution. The bound is complete for this primitive; live clock/checkpoint integration remains pending.
+
+## SF-062 — field rectangle query uses exclusive corners and hardcoded field size
+
+**Status:** verified selection defect; native overlap corrected; complete forced-sale integration deferred.
+
+Query `0x1b868` tests query corners including x+width/y+height against fixed 8×8 field bounds. A field starting at that far edge can be selected despite zero shared area; conversely a field fully enclosed by a larger query can be missed because no query corner lies inside it. Saved field dimensions are ignored. Default uses this query before deleting fields associated with land sales, so erroneous adjacent selection is relevant to that path; full original runtime reproduction remains pending.
+
+Native query returns the first active nonreserved slot with strict positive-area rectangle overlap, using actual saved field dimensions. Tests cover adjacent, enclosing, crossing and nonstandard-size rectangles. This is an intentional geometry correction, not claimed source equivalence.
+
+## SF-063 — field cleanup releases machinery without detaching deleted rentals
+
+**Status:** confirmed missing link repair for attached rentals; native cleanup corrected; ordinary default reachability not fully reproduced.
+
+Field cleanup `0x1b996..0x1b9f3` calls equipment erase then release for both assignment words. Release `0xfa66` clears flags/field association and deactivates rentals but does not clear parent/attachment words; field deactivation does not repair them either. An owned tractor can therefore remain linked to its now-inactive rented attachment. This is separate from generic-sale eligibility SF-057 and the earlier detach-helper issue SF-010.
+
+Native `removeField` validates both chains before mutation, runs both original release sequences, then clears the released chains' known attachment/parent links. Truck word +44 remains intact because it is a storage reference. Waiting fields retain the original skip-release behavior and all inactive field assignment bytes are preserved. Tests cover owned/rented chains and both assignments across five field states. Revisit other release callers and live default integration; no security claim is made.

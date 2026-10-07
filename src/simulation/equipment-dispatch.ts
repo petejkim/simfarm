@@ -3,19 +3,23 @@ import type { Scenario } from '../formats/scenario';
 import { findBuilding, reserveOwnedEquipment, storeEquipment, toggleBuildingInterior } from './building-storage';
 import { attachEquipment, setEquipmentDestination } from './equipment';
 import { drawEquipment, equipmentChain, equipmentObstructed, eraseEquipment, moveEquipment, type EquipmentRuntime } from './equipment-world';
+import { clearAircraftHome, validAircraftHome } from './aircraft-home';
 
 export type EquipmentAllocator = (world: Scenario, type: number, x: number, y: number) => EquipmentRecord | undefined;
 
-/** 0xfa66. The native active count is derived from records; rented planes need their separate overlay cleanup. */
+/** 0xfa66. The native active count is derived from records. */
 export function releaseEquipment(e: EquipmentRecord, world: Scenario): void {
   if (!e.active) return;
   const members = equipmentChain(e, world);
-  if (members.some(m => m.type === 8 && (m.flags & F.rented))) throw new Error('Rented plane cleanup is not yet implemented');
+  if (members.some(m => m.type === 8 && (m.flags & F.rented) && !validAircraftHome(m))) throw new Error('Invalid aircraft home');
   for (const member of members) {
     const def = world.equipmentDefinitions[member.type];
     member.flags &= ~(F.reserved | F.fieldWork);
     member.bytes[53] = def.width; member.bytes[54] = def.height; member.bytes[48] = 0;
-    if (member.flags & F.rented) member.flags &= ~F.active;
+    if (member.flags & F.rented) {
+      if (member.type === 8) clearAircraftHome(world, member);
+      member.flags &= ~F.active;
+    }
   }
 }
 

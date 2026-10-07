@@ -416,3 +416,13 @@ Next finish land sale and field teardown, bounded forced-sale traversal and term
 ### Sale follow-up validation
 
 Committed the implementation as `9bbeb77`, then reran both targeted Chromium checks from the clean source tree: land purchase/new-field planting–harvest–sale and running-speed/partial-tick save/load both pass (6.4 seconds). The HMR-induced reset disappears with the edited imported modules committed; no product or test behavior was changed to obtain the pass. The original app server was left running; the separate diagnostic server is being stopped. All 211 unit tests and the type/build checks remain green. Full finances/default and the overall preservation goal are still incomplete.
+
+## 2026-10-07 — original field teardown and clearing effects
+
+The preceding goal work made progress through livestock/equipment sales; the intervening user questions clarified existing land controls. Revalidated pending source edits and the prior test process, then completed field cleanup/deactivation, its 64-slot clearing animation and rented-aircraft release cleanup. These are the field-removal prerequisites for financial default; building/content demolition and neighboring fence repair still block complete land sale. No calendar/default behavior has been enabled prematurely.
+
+Documented executable addresses, queue state, exact terrain masks, timing and preserved field/plan bytes in `docs/finances.md`. SF-060–063 retain the initialized-coordinate uncertainty, unbounded animation scan, corner-only field-selection defect and rental-chain link cleanup omission. Native code uses an empty-slot sentinel, bounded scan, strict rectangle overlap and repaired released links, with those deviations explicit. Original distribution and source bytes remain untouched.
+
+Validation: all 219 Bun tests pass, including eight new source/boundary/all-eight-farm tests; TypeScript checking and production build pass. The pending prior test process also completed successfully (15 field/sale checks plus build). Chromium regression verification will run after this implementation commit from a clean source tree, following the previously observed Vite HMR resets during uncommitted-source checks. The full 21-case planner suite remains the UI baseline; no new controls are introduced here.
+
+Next finish land-sale dependencies, bounded forced-sale traversal and terminal choice, then integrate finance/town state, pending decisions and clearing effects into live clock/checkpoints. The overall native-game goal remains active and incomplete. Commits remain local, with no push.

@@ -5,6 +5,7 @@ import type { GoodsDefinition } from '../formats/inventory';
 import { worldIndex, type Scenario } from '../formats/scenario';
 import { findBuilding, toggleBuildingInterior } from './building-storage';
 import { equipmentFootprint } from './equipment-world';
+import { clearAircraftHome, validAircraftHome } from './aircraft-home';
 
 export interface AssetQuote { value: number; conditionBand: number }
 export type AssetSaleResult = { ok: true; slot: number; value: number }
@@ -97,8 +98,7 @@ export function sellEquipment(world: Scenario, state: AssetSaleState, slot: numb
   if (e.attachment || world.equipment.some(other => other.active && other.slot !== slot &&
     (other.attachment === slot || (other.type !== 7 && other.parent === slot)))) return { ok: false, reason: 'inconsistent-asset' };
   const { width, height } = e.type === 8 ? definition : equipmentFootprint(e, world);
-  const homeX = e.bytes[50], homeY = e.bytes[51];
-  if (e.type === 8 && (!inMap(homeX) || !inMap(homeY) || homeX >= 95 || homeY >= 95)) return { ok: false, reason: 'inconsistent-asset' };
+  if (e.type === 8 && !validAircraftHome(e)) return { ok: false, reason: 'inconsistent-asset' };
   const remove = prepareRemoval(world, e.x, e.y, width, height, e.type, slot, e.type !== 8, soilMoisture);
   if (!remove) return { ok: false, reason: 'inconsistent-asset' };
   const value = credit(world, state, equipmentSaleQuote(e, world.equipmentDefinitions).value, 'equipmentIncome');
@@ -107,15 +107,7 @@ export function sellEquipment(world: Scenario, state: AssetSaleState, slot: numb
     definition.ownedCount--;
     state.equipmentBookValue = (state.equipmentBookValue - definition.price) >>> 0;
   }
-  if (e.type === 8) {
-    for (let dx = 0; dx < 2; dx++) for (let dy = 0; dy < 2; dy++) {
-      const cell = world.cells[worldIndex(homeX + dx, homeY + dy)];
-      cell.terrain = (cell.terrain & 0xf800) | 23;
-    }
-    const index = ((homeX >>> 3) * 12 + (homeY >>> 3)) * 7;
-    if ((homeX & 7) === 3) world.regionalConditions[index] &= ~0x20;
-    else if ((homeX & 7) === 5) world.regionalConditions[index] &= ~0x40;
-  }
+  if (e.type === 8) clearAircraftHome(world, e);
   e.flags &= ~0x20;
   return { ok: true, slot, value };
 }
