@@ -633,3 +633,11 @@ Selection `0x46f21..0x46f43` wraps cash plus proposed loan before comparing with
 ### SF-069 / SF-074 live loan follow-up
 
 Live monthly default now pauses before later financial/weather/crop phases and persists an unpaid terminal decision in checkpoint v4. End-session choice never turns into successful payment; restart reconstructs a fresh source farm. Integration tests preserve the home and debt through actual unpayable sales, same-frame suspension, save/load and both single-use choices. The Loans panel separately displays arrears and explains that main-loan payoff does not clear them (SF-074); the source accounting behavior remains preserved pending any explicit correction.
+
+## SF-076 — annual region-count report sign-extends byte totals
+
+**Status:** verified arithmetic boundary; normal player reachability and displayed impact unproven; native report integration/fix deferred.
+
+Annual routine `0x1f4d2..0x1f573` counts ownership codes 1 and 2 across the 12×12 world in bytes `6190:7510/750f`. Report routine reads the player byte at `0x1f589`, uses opcode `98` (CBW in this 16-bit code) at `0x1f58d`, and stores AX at `0x1f58e` to `6190:4460`. The town byte follows at `0x1f59f`, CBW `0x1f5a3`, store `0x1f5a4` to `4464`. Thus totals 128–144 become signed words -128 through -112, although they fit the unsigned count byte. The routine uses these signed values in subsequent word differences (`0x1f5af`, `0x1f5bd`). Segment pointers for these counts resolve to `6190` in initialized DS.
+
+No claim is made that ordinary land purchases can achieve every such total, that a negative number is necessarily displayed, or that this is a security vulnerability. Live native town development does not use these report words. Annual report field ownership, original persistence, downstream rendering and reachability remain to be traced before deciding whether to preserve or correct this boundary; keep the evidence even after a future fix.
