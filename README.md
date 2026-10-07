@@ -23,7 +23,7 @@ Select a field and use **Field care → Fertilizer → Apply fertilizer** to res
 
 Select **Harvest crop** to send machinery or workers to a growing crop. Maturity and estimated value help with timing; early or damaged crops can be worth $0. Harvests enter available storage, or sell automatically when storage is unavailable. Use **Sell for $…** under **Harvest in storage** to sell a stored lot and free its space. Worker fees and missing equipment rentals can reduce returns.
 
-Switching scenarios starts a fresh paused simulation at 1× speed. There is no native save/load yet. Clock pacing is a browser convenience, not the recovered DOS interrupt rate. Seed/rental charges run, but full finances, disasters and other unfinished systems do not.
+Use **Save farm** to download a `.simfarm.json` checkpoint and **Load farm** to resume it, including after closing or reloading the page. Saves retain work in progress, weather, random state, prices, pause and speed. Load requires the same imported original assets; invalid files leave the current farm intact. These are native saves, not DOS-compatible SSM files. Switching scenarios starts a fresh paused simulation at 1× speed, so save first to keep your work. Clock pacing is a browser convenience, not the recovered DOS interrupt rate. Seed/rental charges run, but full finances, disasters and other unfinished systems do not.
 
 Original files are never modified. Extracted resources are generated in ignored `public/assets`; they are not committed. Import precedes building so the browser bundle can run independently of the DOS distribution directory. Missing resources produce startup instructions.
 

@@ -420,3 +420,119 @@ test('all four field treatments use original stored supplies and restore crop wo
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   expect(errors).toEqual([]);
 });
+
+test('saved new-field work survives a page reload and finishes the valuable farming cycle', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await page.locator('#scenario').selectOption('4');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
+  await page.locator('#zoom').selectOption('0.5');
+  await page.locator('#map-tool').selectOption('land');
+  await page.locator('#viewport').evaluate(el => el.scrollTo(0, 0));
+  await page.locator('#viewport').click({ position: { x: 4, y: 132 } });
+  await page.locator('#buy-land').click();
+  await page.locator('#auto-clear').check();
+  await page.locator('#create-field').click();
+  for (let day = 0; day < 2; day++) await page.locator('#next-day').click();
+  await page.locator('#treat-field').click();
+  await expect(page.locator('#field-status')).toContainText('Fertilize');
+  const date = await page.locator('#farm-date').textContent();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Save farm', exact: true }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/\.simfarm\.json$/);
+  const path = 'artifacts/browser-farm.simfarm.json'; await download.saveAs(path);
+  await page.reload();
+  await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
+  const chooserPromise = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Load farm', exact: true }).click();
+  await (await chooserPromise).setFiles(path);
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+  await expect(page.locator('#scenario')).toHaveValue('4');
+  await expect(page.locator('#farm-date')).toHaveText(date!);
+  await expect(page.locator('#time-status')).toHaveText('Paused · 2 days advanced');
+  await expect(page.locator('#farm-cash')).toHaveText('$21,613');
+  await expect(page.locator('#field')).toHaveValue('');
+  await page.locator('#field').selectOption('9');
+  await expect(page.locator('#field-status')).toContainText('Fertilize');
+  await page.screenshot({ path: 'artifacts/browser-load.png', fullPage: true });
+  for (let day = 2; day < 84; day++) await page.locator('#next-day').click();
+  await expect(page.locator('#harvest-estimate')).toContainText('value: $1,451');
+  await page.locator('#harvest-field').click();
+  for (let day = 0; day < 12; day++) await page.locator('#next-day').click();
+  await page.locator('.sell-harvest').click();
+  await expect(page.locator('#farm-cash')).toHaveText('$23,064');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#save-farm').scrollIntoViewIfNeeded();
+  await expect(page.locator('#save-farm')).toBeVisible();
+  await expect(page.locator('#load-farm')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(errors).toEqual([]);
+});
+
+test('loading preserves running speed and partial ticks; corrupt files leave the current farm intact', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  await page.goto('/');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
+  await page.getByRole('slider', { name: 'Speed', exact: true }).fill('4'); // 4×
+  await page.locator('#play-pause').click(); await page.clock.runFor(437);
+  async function saved() {
+    const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+    const file = await pending; return readFileSync((await file.path())!, 'utf8');
+  }
+  const text = await saved(), expected = JSON.parse(text);
+  expect(expected.runtime.paused).toBe(false); expect(expected.runtime.speed).toBe(4);
+  expect(expected.runtime.dayTicks).toBeGreaterThan(0);
+  for (const text of ['{}', 'x'.repeat(1_000_001), JSON.stringify({ ...expected, version: 99 })]) {
+    await page.locator('#load-farm-file').setInputFiles({ name: 'broken.json', mimeType: 'application/json', buffer: Buffer.from(text) });
+    await expect(page.locator('#save-status')).toContainText('Could not load farm:');
+    expect(JSON.parse(await saved())).toEqual(expected);
+  }
+  await page.locator('#scenario').selectOption('4');
+  await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
+  const file = { name: 'farm.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(text) };
+  await page.locator('#load-farm-file').setInputFiles(file);
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+  expect(JSON.parse(await saved())).toEqual(expected);
+  await expect(page.locator('#play-pause')).toHaveText('Pause');
+  await expect(page.locator('#simulation-speed-value')).toHaveText('4×');
+  await expect(page.locator('#next-day')).toBeDisabled();
+  // Reopening the same file triggers a fresh load; the input clears after each selection.
+  await page.locator('#load-farm-file').setInputFiles(file);
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+  expect(JSON.parse(await saved())).toEqual(expected);
+  await page.clock.runFor(1100);
+  await expect(page.locator('#time-status')).toContainText('Running · 6 days advanced');
+});
+
+test('failed or cancelled asset loading cannot replace a current farm', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
+  const pendingDownload = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const file = { name: 'farm.json', mimeType: 'application/json', buffer: readFileSync((await (await pendingDownload).path())!) };
+  await page.locator('#scenario').selectOption('4');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
+  await page.locator('#next-day').click();
+  await page.route('**/scenario0.tiles.png', route => route.abort());
+  await page.locator('#load-farm-file').setInputFiles(file);
+  await expect(page.locator('#save-status')).toContainText('Could not load farm:');
+  await expect(page.locator('#time-status')).toHaveText('Paused · 1 days advanced');
+  await expect(page.locator('#scenario')).toHaveValue('4');
+  await page.unroute('**/scenario0.tiles.png');
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  let requested!: () => void;
+  const requestSeen = new Promise<void>(resolve => { requested = resolve; });
+  await page.route('**/scenario0.tiles.png', async route => { requested(); await held; await route.abort(); });
+  await page.locator('#load-farm-file').setInputFiles(file); await requestSeen;
+  await page.locator('#scenario').selectOption('2');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 3 · original terrain');
+  release();
+  await page.locator('#next-day').click();
+  await expect(page.locator('#scenario')).toHaveValue('2');
+  await expect(page.locator('#time-status')).toHaveText('Paused · 1 days advanced');
+  expect(errors).toEqual([]);
+});

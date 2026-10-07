@@ -7,6 +7,7 @@ import { FarmMap, type MapFocus } from './FarmMap';
 import { useResource } from './useResource';
 import { GameSimulation, type GameCommand } from '../simulation/game';
 import { TimeControls } from './TimeControls';
+import { SaveControls, type LoadedFarm } from './SaveControls';
 import { HarvestInventory } from './HarvestInventory';
 import { LandPanel, type MapTool } from './LandPanel';
 import { checkFieldPlacement } from '../simulation/field-placement';
@@ -17,6 +18,8 @@ const emptySnapshot = () => null;
 
 interface Props {
   id: number;
+  loaded?: LoadedFarm;
+  onLoad: (farm: LoadedFarm) => void;
   onScenarioChange: (id: number) => void;
   assets: GameAssets;
   zoom: number;
@@ -24,12 +27,13 @@ interface Props {
   cropId: string;
   onCropChange: (id: string) => void;
 }
-/** Mounted with the scenario ID as its key, so farm-specific selection cannot leak between saves. */
-export function FarmView({ id, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange }: Props) {
+/** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
+export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange }: Props) {
   const load = useCallback(async (signal: AbortSignal) => {
+    if (loaded) return loaded;
     const data = await loadScenarioAssets(id, signal);
     return { tiles: data.tiles, simulation: new GameSimulation(data.scenario, assets.catalog.crops) };
-  }, [id, assets.catalog.crops]);
+  }, [id, loaded, assets.catalog.crops]);
   const resource = useResource(load);
   const simulation = resource.status === 'ready' ? resource.value.simulation : null;
   const snapshot = useSyncExternalStore(simulation?.subscribe ?? subscribeEmpty, simulation?.getSnapshot ?? emptySnapshot);
@@ -91,6 +95,7 @@ export function FarmView({ id, onScenarioChange, assets, zoom, onZoomChange, cro
       </select></label><label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
       </select></label><button id="center" disabled={!data} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
+      {simulation && <SaveControls simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} />}
     </section>
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     {data && <main>
