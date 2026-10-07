@@ -67,6 +67,8 @@ test('player planting commands charge seed, run machinery and grow the crop on a
     assert.equal(ordered.scenario.fields[slot].state, 3);
     assert.equal(ordered.scenario.farm.cash, 40000 - seedPrice);
     assert.equal(ordered.lastPlantResult?.ok, true);
+    assert.equal(ordered.scenario.cropDefinitions[0].price, ordered.cropMarketPrices[0]);
+    assert.equal(ordered.cropMarketPrices[0], Math.ceil((input.crops[0].rawDefinition[34] | input.crops[0].rawDefinition[35] << 8) * 0.75));
     game.tick(10000); assert.equal(game.getSnapshot(), ordered); // Paused machinery stays paused too.
     for (let n = 0; n < 12; n++) game.dispatch({ type: 'advance-day' });
     const result = game.getSnapshot();

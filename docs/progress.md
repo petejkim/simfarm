@@ -190,3 +190,9 @@ Validation: 91 Bun tests and TypeScript/production build pass. Browser controls 
 Committed the command/scheduler integration as `6ae956b`, then added React harvest controls, source-derived maturity/value estimates, worker fees, work progress and an inventory list. The controls reject busy or empty fields and keep simulation state in GameSimulation. Harvesting an immature crop remains allowed and displays its zero estimate; no invented maturity rule was added.
 
 Validation: TypeScript/production build and all eight Chromium checks pass, including both original harvest methods, pause/manual advancement, delivered quantities/losses, annual/perennial completion and scenario reset. Visually inspected `artifacts/browser-harvest-4.png`. The preceding simulation gate passed all 91 Bun tests. Browser tests use unmodified scenarios with immature crops and do not claim a profitable farming cycle. Stored-crop sale recovery is next, followed by new-field creation. Other original systems/save-load remain required.
+
+## 2026-10-07 — synchronize planting and harvest prices
+
+Stored-sale tracing exposed a native integration error: planting updated the market-price array but left the decoded trade definition unchanged, so the new harvest engine could credit a stale price while the UI displayed the reduced one. Planting now updates both representations of the same original price. This is a native defect, not an original-game bug.
+
+Validation: all 91 Bun tests, TypeScript/production build and eight Chromium checks pass. The all-farm planting integration now verifies synchronized prices and the original quarter-price reduction (rounding the remainder upward). Stored-sale executable tracing continues independently.

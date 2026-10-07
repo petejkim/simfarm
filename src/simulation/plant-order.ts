@@ -26,6 +26,7 @@ export function plantField(world: Scenario, slot: number, cropSlot: number, crop
   // 0x4b066 reduces this crop's current market price by one quarter (signed shift in source).
   const price = marketPrices[cropSlot];
   marketPrices[cropSlot] = (price - ((price << 16 >> 16) >> 2)) & 0xffff;
+  world.cropDefinitions[cropSlot].price = marketPrices[cropSlot];
   const shift = field.cropSlot === cropSlot ? 2 : 0;
   for (const [offset, mode] of [[20, 8], [22, 6], [21, 10]]) changeFieldCondition(field, oldCrop, world.regionalConditions, mode, b[offset] >> shift);
   b[14] = cropSlot; writeFieldBadge(field, world.cells, 0, cropSlot);
