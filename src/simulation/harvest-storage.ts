@@ -34,6 +34,13 @@ export function releaseHarvestReservation(world: Scenario, reservation: HarvestR
   if (storageCells(world, reservation.buildingSlot).includes(index) && b.content(index).type === -2) b.clearContent(index);
 }
 
+/** Match delivery's first-reserved-cell ordering even when two trucks arrive out of order. */
+export function releaseFirstHarvestReservation(world: Scenario, buildingSlot: number): void {
+  const b = world.buildings[buildingSlot];
+  const index = storageCells(world, buildingSlot).find(i => b.content(i).type === -2);
+  if (index !== undefined) b.clearContent(index);
+}
+
 /** Inventory constructor 0x15234. Counts/definition updates are caller responsibilities.
  * Unknown byte +11 survives reuse, as in the original. */
 export function createInventoryItem(world: Scenario, type: number, quantity: number, loss: number, x: number, y: number): InventoryRecord | undefined {

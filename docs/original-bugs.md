@@ -184,16 +184,32 @@ The native raw constructor retains the original full slot range, but harvested s
 
 ## SF-022 — failed harvest inventory allocation leaves a storage cell reserved
 
-**Status:** confirmed machinery-harvest failure path; native cleanup primitive added; integration fix deferred to harvest FSM.
+**Status:** confirmed machinery-harvest failure path; fixed in native machinery and worker harvest delivery.
 
 `0x1aff0` reserves a crop-storage cell by changing its type from -1 to -2 at `0x1b17d`. Truck delivery later creates an inventory record at `0x15fef`. If the 512-slot table is full, the constructor returns zero and `0x15ffc` branches to `0x16032`, which sells the harvest. The common return path clears the field's storage-building word at `0x16093`, but this path contains no release of the reserved -2 cell. Repeated allocation failures can consume storage capacity until another operation clears it. No reachable exploit or normal-game frequency is claimed.
 
-Native storage operations fail before mutation and provide `releaseHarvestReservation` to free a still-reserved cell. Tests verify exhaustion, unchanged storage on failed delivery and explicit release. The cleanup is not yet connected to a running harvest FSM; keep this entry open until that failure path is integrated and tested.
+Native storage operations fail before mutation and provide `releaseHarvestReservation` to free a still-reserved cell. Tests verify exhaustion, unchanged storage on failed delivery and explicit release. The running harvest FSM now releases the first still-reserved cell on failure, matching delivery order. Regression coverage includes failed concurrent deliveries whose original reservation coordinates have already been filled by another truck. Integration fix complete; retain the original evidence.
 
 ## SF-023 — harvest truck-return step uses an uninitialized equipment index
 
-**Status:** confirmed local-variable dataflow defect; exact runtime target and ordinary-game consequences unverified; native fix deferred to harvest FSM.
+**Status:** confirmed local-variable dataflow defect; exact runtime target and ordinary-game consequences unverified; fixed in native harvest FSM.
 
 Harvest dispatcher `0x156be` allocates locals and jumps directly from the current step byte to its jump-table branch. Step 7 enters at `0x16170`. After checking that the truck has arrived, `0x16192` executes `IMUL BX,[BP-8],0x38`, followed by a zero write to equipment byte +42 at `0x16196`. The local `[BP-8]` holds the attached header index in other branches, but step 7 has no dominating assignment to that local on this call. Stack reuse might retain a useful old value, but the code does not guarantee it. The routine does not bound the resulting equipment address. This is distinct from valid field/truck indices loaded elsewhere in the same branch.
 
-No native harvest FSM is wired yet, so the fix is deferred. On implementation, do not translate this as an arbitrary equipment write: the header's animation is already cleared before return in step 5 (`0x15e14`–`0x15e18`), and native code should omit the stale redundant write or use an explicitly retained valid index. Add regression coverage for truck return after unrelated equipment allocation. Memory corruption potential follows from the unchecked index, but exploitability and actual affected DOS memory remain unverified.
+The native harvest FSM omits this redundant arbitrary equipment write: the header's animation is already cleared before return in step 5 (`0x15e14`–`0x15e18`), and native code should omit the stale redundant write or use an explicitly retained valid index. A regression verifies that truck return leaves unrelated equipment bytes unchanged. Memory corruption potential follows from the unchecked index, but exploitability and actual affected DOS memory remain unverified.
+
+## SF-024 — worker harvest finishes early across a week boundary
+
+**Status:** confirmed arithmetic quirk; preserved with regression.
+
+Worker step 12 stores the calendar day-of-week byte in field +50 (`0x1630e`–`0x16316`). Step 13 compares `(currentDay-startDay)&65535` against 3 (`0x163dd`–`0x163f2`) without correcting for seven-day wrap. Starting on day 6 and advancing to day 0 therefore satisfies the three-day wait after only one day. This is reachable through ordinary scheduling around the end of a week.
+
+Native behavior preserves this original arithmetic, tested at the week boundary. Correcting it to elapsed calendar days is deferred to an explicitly tracked enhancement. It is not a security vulnerability.
+
+## SF-025 — worker cleanup hides every overlay in its field rectangle
+
+**Status:** confirmed unqualified map mutation; observed impact on unrelated entities unverified; preserved pending broader rendering reconstruction.
+
+Worker placement skips cells that already have terrain bit 0x0800 set (`0x16367`). Completion nevertheless clears that bit across the entire fixed 8×8 rectangle (`0x16433`) without checking whether the overlay is a worker. Any pre-existing vehicle/animal overlay in that rectangle can be hidden until another renderer or simulation update restores it. For annual crops the cleanup also overwrites every terrain cell with the original tile-36 masking operation.
+
+Native behavior currently reproduces this broad cleanup and guards map boundaries. A regression seeds an unrelated overlay, verifies placement leaves it alone, then confirms cleanup clears its visibility bit. Do not mistake this retained defect for entity deletion; live records are unchanged. Revisit ownership-aware cleanup when moving-entity animation/render passes are completed. No security exploit is claimed.

@@ -170,3 +170,11 @@ Recorded SF-021 (512 inventory slots versus byte building references) with nativ
 Validation: all 80 Bun tests, TypeScript checking, production build and six Chromium checks pass. Existing planting, calendar/weather and MIDI behavior remain verified with the expanded snapshot data.
 
 Additional static harvest tracing identified crop byte +57 as the machinery/worker selector and the original truck-return uninitialized-index defect (SF-023, native fix deferred until that FSM is implemented). Concrete order/credit/return entry points are recorded in `reverse-engineering.md` for the next increment. Full playable harvest/store/sell remains unfinished, and the goal remains active.
+
+## 2026-10-07 — complete harvest sequences in simulation
+
+The preceding goal turn made progress through committed valuation/storage primitives and defect evidence. Revalidated a clean worktree, then implemented the original machinery and worker harvest sequences, cash/contract posting, storage delivery, no-storage sale and equipment return. Both methods now complete on original farms in simulation tests. SF-022 reservation leaks and SF-023 stale header writes are fixed and retained in the defect log; SF-024/SF-025 document preserved worker duration/cleanup quirks.
+
+Validation: 88 Bun tests and TypeScript/production build pass. New integration tests exercise all eight farms and both harvest methods, exact quantity/loss storage, contracts, costs, sales, cash caps, ledger overflow, inventory exhaustion, concurrent reservations and return isolation. Browser harvest commands are not connected yet; the next increment connects them and adds browser checks. Stored-inventory sales still require their own recovered removal/valuation path.
+
+The user asked about planting a new field. Confirmed that current planting only supports existing scenario fields. New-field creation is the next gameplay priority after the complete harvest/storage/sale cycle; it remains required by the full objective.
