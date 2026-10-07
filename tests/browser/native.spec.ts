@@ -124,3 +124,36 @@ test('scenario changes cancel pending loads and recover after missing farm asset
   await expect(page.locator('#field option')).toHaveCount(4);
   await expect(page.locator('canvas')).toHaveCSS('width', '3072px');
 });
+
+test('time controls advance the simulation, render crop changes, pause, and reset on scenario changes', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.clock.install();
+  await page.goto('/');
+  await page.locator('#scenario').selectOption('4');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
+  await page.locator('#field').selectOption('1');
+  await expect(page.locator('#farm-date')).toHaveText('April 28, 1993');
+  await expect(page.locator('#field-growth')).toContainText('Crop age: 0 weeks');
+  const before = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
+  await page.locator('#next-day').click();
+  await expect(page.locator('#farm-date')).toHaveText('May 1, 1993');
+  await expect(page.locator('#field-growth')).toContainText('Crop age: 1 weeks');
+  const after = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
+  expect(after).not.toBe(before);
+  await page.locator('#play-pause').click();
+  await expect(page.locator('#next-day')).toBeDisabled();
+  await page.clock.runFor(3100);
+  await expect(page.locator('#time-status')).toHaveText('Running · 4 days advanced');
+  await page.locator('#play-pause').click();
+  await page.clock.runFor(3100);
+  await expect(page.locator('#time-status')).toHaveText('Paused · 4 days advanced');
+  await expect(page.locator('#next-day')).toBeEnabled();
+  await page.locator('#play-pause').click();
+  await page.locator('#scenario').selectOption('0');
+  await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
+  await page.clock.runFor(2100);
+  await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
+  await expect(page.locator('#farm-date')).toHaveText('August 12, 1993');
+  expect(errors).toEqual([]);
+});

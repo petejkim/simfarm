@@ -135,7 +135,7 @@ Calendar arithmetic uses seven-day weeks, four-week months and twelve-month year
 
 Monthly seed perturbation `0xcc20` adds four times the incremented month and resets values above `0x1fff` to 1234 (signed comparison). Initialized executable seeds are 27, 9029 and 51, but startup mutates state; these are not claimed to reproduce a complete DOS session from its save. Call ordering and startup integration still need reconstruction. Tests use explicit seeds and fixed sequences.
 
-## Growing fields — arithmetic ported, scheduler integration outstanding
+## Growing fields — arithmetic and Growing dispatcher ported
 
 `growField` ports Growing-state arithmetic from `0x1843c`–`0x1859a`, growth routine `0x192e2`–`0x195ce`, and water-stress helper `0x195d0`–`0x196b7`. It runs only when field byte +33 equals the calendar week, then increments that byte modulo four. Temperature contributes `max(0, temperature - crop[67]) * 7` toward the field's uint16 deficit at +38 against crop uint16 +30. Crop uint16 +28 enables a cold counter (+40) below 45. Field age (+34) advances once per eligible call.
 
@@ -143,12 +143,13 @@ The crop definition's bytes +50/+51/+52 control depletion of field bytes +29/+30
 
 Water-stress bounds are crop uint16 +40/+42 with field tolerance bytes +51/+52. Out-of-range water (+24) consumes one simulation random value and produces a byte-wrapped penalty. Combined stress drives a saturating uint16 accumulator at field +18 through `0x1b7c6`; its later yield interpretation remains to be followed through harvest code.
 
-Graphics stage uses rounded age divided by `ceil(crop[56] / crop[66])`, with a temperature-deficit delay. Only existing crop tiles 688–815 are replaced, retaining terrain flags and field badges. Crop byte +76 controls the expiry result after the age limit; the caller still needs original cleanup/replant behavior. The optional crop flag +63 bit `0x20` invokes a bust/fine event at `0xa7de`; none of the 24 distributed crops sets it. The native routine explicitly rejects that unported branch.
+Graphics stage uses rounded age divided by `ceil(crop[56] / crop[66])`, with a temperature-deficit delay. Only existing crop tiles 688–815 are replaced, retaining terrain flags and field badges. Crop byte +76 controls the expiry result after the age limit; cleanup is now ported below, while replanting/harvesting remain outstanding. The optional crop flag +63 bit `0x20` invokes a bust/fine event at `0xa7de`; none of the 24 distributed crops sets it. The native routine explicitly rejects that unported branch.
 
-These pure TypeScript routines are tested independently. They are **not yet wired to a browser simulation clock**: weather, status badges, expiry cleanup, equipment actions and harvesting remain necessary for a faithful playable loop. No elapsed-time control is exposed for a partial simulation.
+These TypeScript routines are tested independently and now run from the partial browser scheduler described below. The complete playable farming loop still requires equipment actions, harvesting, inventory and sales.
 
 Mutable field and region records explicitly copy input bytes with `Uint8Array.from`. The same fix applies to crop atlas patches: `Buffer.slice()` aliases memory, unlike `Uint8Array.slice()`, and the importer receives Buffers. Tests now assert unchanged original inputs with independent copies, not aliased snapshots.
-# Field status and expiry integration
+
+## Field status and expiry integration
 
 `src/simulation/field-status.ts` ports `0x19002`–`0x192e1` and the badge writer `0x196b8`–`0x19845`. A badge occupies two columns and rows at `(field.x + position*2, field.y)`, with tile quadrants `539 + badge*4 + [0,1;2,3]`. Erasure copies low eleven terrain bits from the two rows below, retaining destination flags. The crop identity badge at position zero is not erased by a status refresh.
 
@@ -157,3 +158,19 @@ The status routine is stateful: `0x1c50a` copies field byte +29 to +28, which th
 `src/simulation/field-lifecycle.ts` connects this status refresh to the Growing dispatcher branch before growth, then invokes expiry cleanup (`0x1c2a8`–`0x1c3f0`). Cleanup returns 70 nutrient units for Growing fields, resets state/step/accumulator, removes warning badges and turns only crop tiles 688–815 into tile 34. Already-waiting fields instead receive 10 nutrient units. Sound/camera side effects are not implemented by these simulation routines.
 
 This establishes the complete Growing branch, not the other equipment-driven work states or a complete game scheduler. Tests advance an original saved corn field through expiry and check actual terrain/state transitions, plus badge layout, rotation, nutrient sampling and equipment-occupied early return.
+
+## Climate, field water and native state owner
+
+The loader at `0x45801`–`0x4585d` reads 240 interleaved signed byte triples starting at SSM `0x206c4`: wind, precipitation count, temperature. They populate `6190:4094`, `:4186`, `:4278`, respectively, five years of 48 weeks. The precipitation-day counter is a saved word at SSM `0x216e8` (loader `0x45f26`, runtime `6190:2412`).
+
+`weather.ts` ports daily evaporation/precipitation (`0x1e580`–`0x1e63b`), weekly moisture and forecast generation (`0x1e63c`–`0x1e910`), sky selection (`0x1e912`–`0x1e98d`), and wind arithmetic (`0x1e1ae`). Seven-day precipitation patterns are recovered from constant stores at `0x1e648`–`0x1e7a0`. Temperature above 32 gives rain, otherwise snow. Dry days consume one visual RNG call. Forecast indexing uses precipitation's year selector for both precipitation and temperature, and wraps at 240.
+
+Daily clear/partly-cloudy/cloudy weather subtracts 6/3/2 from the moisture accumulator at wind >=15, otherwise 2/1/1. Rain/snow adds eight and increments the precipitation-day word. Weekly accumulation beyond ±7 changes global soil moisture (`6190:0164`) with original signed-byte limits; negative division uses arithmetic shift. Both grass update helpers (`0x16bd4`, `0x16c78`) replace tiles 15–30 with `15 + moisture + (cell.attribute >> 2)`, retaining upper flags.
+
+Field-water refresh (`0x18d16`–`0x19001`) sets water to twice global moisture, plus five for disaster flag bit four. It counts adjacent tiles 98–108 and 87–97 into tolerance bytes +51/+52. The horizontal scan includes x+width, while the vertical scan excludes y+height; the native routine preserves that asymmetric border. Weekly dispatcher `0xbdbe` calls wind before field water/status (`0xbe74`, `0xbea3`), **before** the calendar rolls and moisture/forecast update runs. Fields therefore see the previous moisture level at this refresh.
+
+`GameSimulation` owns copied scenario records, crops, climate, RNG and runtime weather; React reads detached cached snapshots and submits commands through `useSyncExternalStore`. Daily ordering follows `0xc88e`: increment day; odd-day nutrient/toxicity/status work (`0xd1ae`, including temporary day seven); old-week wind/water/status work; calendar/temperature rollover; forecast/soil update; daily weather; Growing dispatcher. The fifth year-end temperature overread is explicitly preserved (SF-007). Unsafe imported precipitation counts are rejected (SF-008).
+
+Initialization uses executable fresh-process defaults (soil moisture eight, wind five, weather-year selectors zero) and the forecast/temperature operations at `0x24ef`–`0x2532`. The startup temperature uses table entry zero, even when the loaded calendar is later in the year. **SSM does not serialize these runtime weather globals or RNG streams; an arbitrary DOS session's weather/random state cannot be inferred from this decoder alone.** Complete startup call ordering and all frame-dependent RNG consumers remain to be reconstructed. Explicit native seeds give reproducible native runs, not complete DOS replay parity.
+
+The exposed clock runs one day per browser second, pauses in background tabs, and resets on scenario changes. It does not claim original DOS timer pacing. The scheduler currently omits machinery/work orders, economy, buildings/pumps, livestock, disaster damage and town behavior. Wind alert bits are tracked for the weather arithmetic, but destructive disaster handlers are not implemented. Cash remains unchanged. These are known gameplay gaps, not completed systems.

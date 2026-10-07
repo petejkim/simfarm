@@ -21,5 +21,7 @@ export function FieldPanel({ scenario, crops, field, onSelect }: Props) {
     <p id="field-status">{field
       ? `Field ${field.number} · ${field.status} · ${field.width} × ${field.height} tiles at ${field.x}, ${field.y}`
       : `${fields.length} fields in this farm. Select a field to inspect it.`}</p>
+    {field && <p id="field-growth">{field.state === 4 ? `Crop age: ${field.bytes[34]} weeks · ` : ''}
+      Water: {field.bytes[24] | field.bytes[25] << 8} · Fertility: {field.bytes[29]} / 255</p>}
   </section>;
 }

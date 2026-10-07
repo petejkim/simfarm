@@ -10,6 +10,7 @@ export interface SavedFarmState {
   animationTicks: number;
   dayDelayTicks: number;
   speed: number;
+  precipitationDays: number;
 }
 /** Loader file 0x45f0e..0x45ffe and 0x461c6..0x461de. */
 export function readFarmState(bytes: Uint8Array): SavedFarmState {
@@ -18,5 +19,5 @@ export function readFarmState(bytes: Uint8Array): SavedFarmState {
     year: b.u16(CALENDAR_OFFSET + 6), month: b.u16(CALENDAR_OFFSET + 8) };
   validateCalendar(calendar);
   return { cash: b.u32(CASH_OFFSET), calendar, timerTicks: b.u16(0x216f7), animationTicks: b.u16(0x216f9),
-    dayDelayTicks: b.u16(0x2171a), speed: b.u16(0x2171c) };
+    dayDelayTicks: b.u16(0x2171a), speed: b.u16(0x2171c), precipitationDays: b.u16(0x216e8) };
 }

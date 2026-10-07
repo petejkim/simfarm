@@ -1,6 +1,6 @@
 # SimFarm native preservation
 
-Incremental reconstruction of the supplied 16-bit DOS SimFarm as a native TypeScript/React/Vite browser game, developed with Bun. No DOS runtime or x86 emulator is used. **This is not yet a playable port:** the current build explores the original farms, inspects fields and crops, and plays converted MIDI music.
+Incremental reconstruction of the supplied 16-bit DOS SimFarm as a native TypeScript/React/Vite browser game, developed with Bun. No DOS runtime or x86 emulator is used. The current build runs crop growth, weather and calendar progression on the original farms and plays converted MIDI music. **The complete farming loop is still unfinished:** planting, machinery, harvesting and sales are not available yet.
 
 ## Run locally
 
@@ -15,6 +15,8 @@ sh tools/setup-bun.sh
 
 Open the local URL printed by Vite. Choose one of eight scenarios, locate a field to see its crop and work status, scroll or use arrow keys to explore, zoom, click tiles, browse 24 crops, and start music. To import from another directory: `./tools/bun run import /path/to/simfarm-dos`.
 
+Farms start paused. Use **Next day** to step or **Play** to run at one game day per second; **Pause** stops progression. Crops age, change appearance and can expire. Switching scenarios starts a fresh simulation. There is no native save/load yet. Clock pacing is a browser convenience, not the recovered DOS interrupt rate; finances, equipment, disasters and other unfinished systems do not run.
+
 Original files are never modified. Extracted resources are generated in ignored `public/assets`; they are not committed. Import precedes building so the browser bundle can run independently of the DOS distribution directory. Missing resources produce startup instructions.
 
 ## Validate
@@ -26,7 +28,7 @@ PLAYWRIGHT_BROWSERS_PATH=.tools/playwright ./tools/bun run playwright install ch
 ./tools/bun run test:browser
 ```
 
-Browser checks exercise all maps, source-exact crop/overlay pixels, field inspection, crop selection, zoom, actual audio output, stopping playback, pending-load cancellation and missing-asset recovery. Tests read the original source distribution. `./tools/bun run preview` serves the production build.
+Browser checks exercise all maps, source-exact crop/overlay pixels, field inspection, crop selection, zoom, actual audio output, stopping playback, pending-load cancellation, missing-asset recovery, time controls and rendered crop changes. Tests read the original source distribution. `./tools/bun run preview` serves the production build.
 
 ## Static reconstruction tools
 
@@ -39,6 +41,6 @@ Capstone and its dependencies are installed only in `.venv`. The analyzer writes
 
 React components in `src/ui` own menus, selections and lifecycle. `src/render` draws the native canvas, `src/formats` decodes original data, `src/assets` loads resources, and `src/audio` plays MIDI. Recovered simulation belongs outside React so game rules can be tested independently and future graphics/UI changes can reuse them.
 
-`src/simulation` contains recovered calendar arithmetic, deterministic random generators, field conditions and weekly crop growth. These are tested against original data and executable-derived cases; browser clock integration and the complete farming loop are still outstanding. Global game state will be owned by this simulation layer, with React subscribing to snapshots and sending commands.
+`src/simulation/GameSimulation` (implemented in `game.ts`) owns global game state, provides detached snapshots through `getSnapshot`/`subscribe`, and accepts commands. React uses `useSyncExternalStore`; hooks do not own simulation state. Recovered calendar, weather, field conditions, growth and expiry routines are tested against original data and executable-derived cases. Random streams are deterministic with explicit seeds; complete DOS startup/frame random consumption is not reproduced yet.
 
 See [the plan](docs/plan.md), [progress](docs/progress.md), and [binary evidence](docs/reverse-engineering.md). The world decoder, crop graphics substitution, masked tile layer and field inspection come from original executable evidence. Moving objects, remaining render passes and game rules require more reconstruction. Music uses original MIDI notes/program changes with a temporary Web Audio synthesizer; instrument fidelity and XMIDI looping are unfinished.

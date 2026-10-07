@@ -66,8 +66,19 @@ Validation: eighteen Bun tests, full asset import, TypeScript/production build a
 The user confirmed the architecture: the simulation owns global game state, independently of React; React subscribes to snapshots and sends commands. This is recorded in AGENTS.md. Current simulation primitives remain separate from UI. A central simulation state owner and clock integration are still to be connected as the scheduler is ported.
 
 The full game remains incomplete. The newly ported growth subsystem does not yet run from a browser clock. Next concrete work: port daily weather/condition updates (`0xc88e`, `0xd1ae`, `0xc364`, `1b98:0a00`), status badges (`0x19002`), expiry cleanup (`0x1c2a8`), and equipment work dispatch. Then connect the central simulation state to React and finish planting/harvest/inventory/sale. Detailed arithmetic and remaining branches are in `reverse-engineering.md`.
-# 2026-10-07 — field lifecycle integration
+
+## 2026-10-07 — field lifecycle integration
 
 The previous goal turn made progress by committing the requested original-defect policy and log. Continued the gameplay reconstruction by porting status badges, their simulation side effects and the Growing branch's expiry cleanup. A saved corn field now advances through its full unharvested lifetime in a simulation test, returns nutrients and becomes fallow. Preserved and documented the original water-warning/stress threshold discrepancy as SF-006.
 
 Validation: 21 Bun tests and TypeScript/production build pass. No browser behavior changed. These are simulation components; the browser clock, weather integration, machinery, harvesting and sale remain outstanding. Next: connect weather and field water refresh to the calendar and central simulation owner, then expose time controls as the work-order system is reconstructed.
+
+## 2026-10-07 — running native crop and weather simulation
+
+Mapped all five years of saved climate tables and ported original forecast patterns, daily precipitation/evaporation, soil moisture and grass updates, wind arithmetic and field-water border scanning. Added a plain TypeScript `GameSimulation` that owns copied game state, deterministic random streams and the partial scheduler. React subscribes to detached snapshots and sends commands; Play/Pause/Next day now advance date, weather, crop growth, status badges and expiry on the map. Farm selection resets to a paused simulation.
+
+This is a deliberately incomplete game scheduler. It preserves recovered daily/weekly ordering, but machinery, planting, harvest, inventory, sales, finances, livestock, pumps, disaster damage and town simulation remain unimplemented. Browser pacing is one day per second, not the original interrupt rate; exact DOS startup/random consumption is not claimed. The end goal remains the complete playable game, with the farming cycle the next priority.
+
+Validation: 29 Bun tests and the TypeScript/production build pass. Tests cover all eight farms advancing one 336-day year, manual versus timed determinism, state ownership, pause/subscription behavior, all forecast patterns, RNG consumption, wind drying, rain accumulation, signed moisture shifts, water border corners, crop expiry and the fifth year-end temperature alias. Browser checks exposed and fixed a new RAF integration bug: a first animation-frame timestamp can precede `performance.now()`, so elapsed time now starts with the first frame's timestamp. Five Chromium tests pass, including time controls, map changes, scenario reset, original pixel checks, asset failure recovery and audible MIDI. Inspected the updated browser screenshot. SF-007 and SF-008 document newly recovered original temperature and precipitation indexing hazards.
+
+Next concrete step: recover equipment records and the work-order dispatcher (`0x17d3c`) starting with plowing (`0x26c64`) and planting (`0x23fc7`), then connect harvesting/yield storage and crop sales. Keep building on the central state owner; do not replace the original machinery/economy with invented instant operations.

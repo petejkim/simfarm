@@ -1,0 +1,15 @@
+import type { GameCommand, GameSnapshot } from '../simulation/game';
+
+const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const skies = ['Clear', 'Partly cloudy', 'Cloudy', 'Rain', 'Snow'];
+export function TimeControls({ snapshot, onCommand }: { snapshot: GameSnapshot; onCommand: (command: GameCommand) => void }) {
+  const { scenario, weather, paused } = snapshot, date = scenario.farm.calendar;
+  return <section className="toolbar time-controls" aria-label="Farm time">
+    <div><strong id="farm-date">{months[date.month]} {date.week * 7 + date.day + 1}, {date.year}</strong>
+      <span id="farm-weather">{skies[weather.current]} · {weather.displayTemperature}°F · wind {weather.wind} mph</span>
+      <span id="farm-cash">${scenario.farm.cash.toLocaleString('en-US')}</span></div>
+    <div><span role="status" id="time-status">{paused ? 'Paused' : 'Running'} · {snapshot.daysAdvanced} days advanced</span>
+      <button id="play-pause" onClick={() => onCommand({ type: 'set-paused', paused: !paused })}>{paused ? 'Play' : 'Pause'}</button>
+      <button id="next-day" disabled={!paused} onClick={() => onCommand({ type: 'advance-day' })}>Next day</button></div>
+  </section>;
+}
