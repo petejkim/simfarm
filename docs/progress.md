@@ -144,3 +144,11 @@ Validation at this commit boundary: 68 Bun tests, TypeScript checking and produc
 Connected seed acquisition, recovered existing-field planting orders, crop-loader prices and equipment substeps to the independent GameSimulation. Commands run planting through both passes and return, followed by crop growth. SF-018 records the original destructive failure path; native failed seed acquisition preserves the crop and contract. Added all-eight-farm integration, duplicate-order, failure atomicity, snapshot ownership and frame-partition determinism coverage. UI controls are the next commit boundary.
 
 Validation at this commit boundary: all 71 Bun tests, TypeScript checking and production build pass. The final browser controls are validated in the following increment.
+
+## 2026-10-07 — browser planting controls and restored verification
+
+React now exposes crop selection and planting commands, seed costs, status and busy-field controls. All six Chromium checks pass, including seed buying, rentals, planting completion, exact original crop pixels and scenario reset. Visually inspected `artifacts/browser-planting.png`. TypeScript and production build also pass. The earlier unverified browser result was caused by local server connectivity; access is restored and the completed run now verifies this increment.
+
+Split the previously combined local planting commit into seed inventory, simulation commands/scheduler and React controls, each with its corresponding evidence and checks. Earlier commits are preserved; nothing was pushed. The final implementation matches the previously validated combined increment.
+
+The full game goal remains active. Next reconstruct harvest machinery (`0x156be`), yield/value (`0x1c092`, `0x1c24e`, `0x1c4aa`), storage and sale. Original future calendar scheduling, new-field placement, save/load and the other original systems remain unfinished.

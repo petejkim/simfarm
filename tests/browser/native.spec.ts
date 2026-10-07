@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readArchive } from '../../src/formats/archive';
 import { decodePlanar, readPalette } from '../../src/formats/graphics';
+import { readScenario } from '../../src/formats/scenario';
+import { readCrop } from '../../src/formats/crop';
 
 test('crop and masked pixels match source assets at original world coordinates; fields can be inspected', async ({ page }) => {
   const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${name}`, import.meta.url));
@@ -155,5 +157,44 @@ test('time controls advance the simulation, render crop changes, pause, and rese
   await page.clock.runFor(2100);
   await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
   await expect(page.locator('#farm-date')).toHaveText('August 12, 1993');
+  expect(errors).toEqual([]);
+});
+
+test('planting from React buys seed, rents machinery and renders a newly planted field', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${name}`, import.meta.url));
+  const scenario = readScenario(source('SCEN1.SSM')), field = scenario.fields[1], cropFile = scenario.cropFiles[2];
+  const cropBytes = source(`CROPS/${cropFile.toUpperCase()}`), crop = readCrop(cropFile.replace('.crp', ''), cropBytes);
+  const cost = Math.max(5, (crop.rawDefinition[38] | crop.rawDefinition[39] << 8) >>> 2) + 20;
+  const archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
+  const palette = readPalette(archive.find(e => e.name === 'simfarm.pal')!.bytes);
+  const expected = decodePlanar(cropBytes.subarray(0, 128), 16, 16, palette).rgba;
+  await page.clock.install();
+  await page.goto('/');
+  await page.locator('#scenario').selectOption('1');
+  await expect(page.locator('#map-status')).toHaveText('Scenario 2 · original terrain');
+  await page.locator('#field').selectOption('1');
+  await page.locator('#plant-crop').selectOption('2');
+  await page.locator('#plant-field').click();
+  await expect(page.locator('#field-status')).toContainText('Planting');
+  await expect(page.locator('#plant-result')).toContainText(`Seed cost: $${cost}`);
+  await expect(page.locator('#farm-cash')).toHaveText(`$${(40000 - cost).toLocaleString('en-US')}`);
+  await expect(page.locator('#plant-field')).toBeDisabled();
+  await page.clock.runFor(1200);
+  await expect(page.locator('#plant-progress')).toHaveText('Preparing machinery…');
+  await page.locator('#play-pause').click();
+  await page.clock.runFor(4000);
+  await page.locator('#play-pause').click();
+  await expect(page.locator('#field-status')).toContainText('Growing');
+  await expect(page.locator('#farm-cash')).toHaveText(`$${(40000 - cost - 400).toLocaleString('en-US')}`);
+  await expect(page.locator('#plant-field')).toBeEnabled();
+  const actual = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement, point) =>
+    Array.from(canvas.getContext('2d')!.getImageData(point.x * 16, point.y * 16, 16, 16).data), { x: field.x + 3, y: field.y + 4 });
+  expect(actual).toEqual(Array.from(expected));
+  await page.screenshot({ path: 'artifacts/browser-planting.png', fullPage: true });
+  await page.locator('#scenario').selectOption('0');
+  await expect(page.locator('#farm-cash')).toHaveText('$40,000');
+  await expect(page.locator('#plant-result')).toHaveCount(0);
   expect(errors).toEqual([]);
 });

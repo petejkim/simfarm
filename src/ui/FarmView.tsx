@@ -81,6 +81,8 @@ export function FarmView({ id, onScenarioChange, assets, zoom, onZoomChange, cro
       </section>
       <aside>
         <FieldPanel scenario={data.scenario} crops={assets.catalog.crops} field={field}
+          plantResult={snapshot?.lastPlantResult ?? null}
+          onPlant={(fieldSlot, cropSlot) => simulation?.dispatch({ type: 'plant-field', fieldSlot, cropSlot })}
           onSelect={slot => { setSelection(null); selectField(slot, true); }} />
         <CropGuide crops={assets.catalog.crops} cropId={cropId} onChange={onCropChange} />
         <details><summary>Tile details</summary><pre id="tile-details">{cell && position
