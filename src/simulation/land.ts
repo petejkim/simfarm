@@ -69,6 +69,25 @@ function fencePurchasedLand(world: Scenario, regionX: number, regionY: number): 
   }
 }
 
+/** 0x3d694..0x3d97e: after a sale, fence the bordering owned plots.
+ * Only grass qualifies. The north/west extensions depend on the adjacent
+ * ownership flags; the source does not extend the exclusive south/east ends. */
+export function fenceLandSaleNeighbors(world: Scenario, regionX: number, regionY: number): void {
+  if (!validRegion(regionX, regionY)) throw new Error('Invalid land region');
+  const owned = (x: number, y: number) => validRegion(x, y) && ownership(world, x, y) === 1;
+  const north = owned(regionX, regionY - 1), south = owned(regionX, regionY + 1);
+  const west = owned(regionX - 1, regionY), east = owned(regionX + 1, regionY);
+  const x = regionX * 8, y = regionY * 8;
+  const paint = (px: number, py: number) => {
+    const tile = terrainTile(world.cells[worldIndex(px, py)]);
+    if (tile >= 15 && tile < 31) connectFence(world, px, py);
+  };
+  if (north) for (let px = x - Number(west); px < x + 8; px++) paint(px, y - 1);
+  if (south) for (let px = x - Number(west); px < x + 8; px++) paint(px, y + 8);
+  if (west) for (let py = y - Number(north); py < y + 8; py++) paint(x - 1, py);
+  if (east) for (let py = y - Number(north); py < y + 8; py++) paint(x + 8, py);
+}
+
 /** Original buy command 0x35698 -> overlay 15:1d1a/file 0x3c8ba, fence flag 1.
  * Cash debit category 2000 posts to 6190:3e80 (0x1c88e); ownership lives in region channel 1. */
 export function purchaseLand(world: Scenario, regionX: number, regionY: number, soilMoisture: number): LandPurchaseResult {

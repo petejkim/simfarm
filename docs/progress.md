@@ -426,3 +426,13 @@ Documented executable addresses, queue state, exact terrain masks, timing and pr
 Validation: all 219 Bun tests pass, including eight new source/boundary/all-eight-farm tests; TypeScript checking and production build pass. The pending prior test process also completed successfully (15 field/sale checks plus build). Chromium regression verification will run after this implementation commit from a clean source tree, following the previously observed Vite HMR resets during uncommitted-source checks. The full 21-case planner suite remains the UI baseline; no new controls are introduced here.
 
 Next finish land-sale dependencies, bounded forced-sale traversal and terminal choice, then integrate finance/town state, pending decisions and clearing effects into live clock/checkpoints. The overall native-game goal remains active and incomplete. Commits remain local, with no push.
+
+### Field-removal browser verification and neighboring fence recovery
+
+Committed field teardown as `7a7df9d`, then verified both targeted Chromium flows from clean source: land purchase/new-field planting–harvest–sale and running-speed/partial-tick save/load pass (6.3 seconds). The full goal remains active.
+
+Continued the land-sale trace through all four bordering fence scans and implemented the original ownership bounds, scan order, asymmetric corner extensions and grass-only eligibility, reusing the verified fence connector. Added three tests covering source instructions/constants, all ownership masks and boundary positions, every candidate tile graphic and metadata preservation. Corrected an initial test's category-length address using its actual initialized ES segment; the implementation's grass range was already correct.
+
+Further building-demolition research established that content deletion differs from sale removal, and that the building ledger cannot be assigned a guessed sequential save offset. Exact addresses and unresolved initialization/special inventory definitions are recorded in `docs/finances.md`. TypeScript checking and production build pass. Full unit and clean-source browser gates for the fence increment follow before final validation. Building/content demolition, full default and finance/checkpoint integration remain the next work; no complete-port claim is made.
+
+Fence increment gate: all 222 Bun tests pass (37 files, 41.6 seconds), including all three new cases. Type checking/build and diff checks pass. Clean-source Chromium checks remain the post-commit gate. SF-055 now retains the additional signed building-price subtraction evidence for the upcoming demolition implementation.
