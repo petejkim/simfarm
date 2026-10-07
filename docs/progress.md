@@ -66,3 +66,8 @@ Validation: eighteen Bun tests, full asset import, TypeScript/production build a
 The user confirmed the architecture: the simulation owns global game state, independently of React; React subscribes to snapshots and sends commands. This is recorded in AGENTS.md. Current simulation primitives remain separate from UI. A central simulation state owner and clock integration are still to be connected as the scheduler is ported.
 
 The full game remains incomplete. The newly ported growth subsystem does not yet run from a browser clock. Next concrete work: port daily weather/condition updates (`0xc88e`, `0xd1ae`, `0xc364`, `1b98:0a00`), status badges (`0x19002`), expiry cleanup (`0x1c2a8`), and equipment work dispatch. Then connect the central simulation state to React and finish planting/harvest/inventory/sale. Detailed arithmetic and remaining branches are in `reverse-engineering.md`.
+# 2026-10-07 — field lifecycle integration
+
+The previous goal turn made progress by committing the requested original-defect policy and log. Continued the gameplay reconstruction by porting status badges, their simulation side effects and the Growing branch's expiry cleanup. A saved corn field now advances through its full unharvested lifetime in a simulation test, returns nutrients and becomes fallow. Preserved and documented the original water-warning/stress threshold discrepancy as SF-006.
+
+Validation: 21 Bun tests and TypeScript/production build pass. No browser behavior changed. These are simulation components; the browser clock, weather integration, machinery, harvesting and sale remain outstanding. Next: connect weather and field water refresh to the calendar and central simulation owner, then expose time controls as the work-order system is reconstructed.

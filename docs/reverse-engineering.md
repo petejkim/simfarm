@@ -148,3 +148,12 @@ Graphics stage uses rounded age divided by `ceil(crop[56] / crop[66])`, with a t
 These pure TypeScript routines are tested independently. They are **not yet wired to a browser simulation clock**: weather, status badges, expiry cleanup, equipment actions and harvesting remain necessary for a faithful playable loop. No elapsed-time control is exposed for a partial simulation.
 
 Mutable field and region records explicitly copy input bytes with `Uint8Array.from`. The same fix applies to crop atlas patches: `Buffer.slice()` aliases memory, unlike `Uint8Array.slice()`, and the importer receives Buffers. Tests now assert unchanged original inputs with independent copies, not aliased snapshots.
+# Field status and expiry integration
+
+`src/simulation/field-status.ts` ports `0x19002`–`0x192e1` and the badge writer `0x196b8`–`0x19845`. A badge occupies two columns and rows at `(field.x + position*2, field.y)`, with tile quadrants `539 + badge*4 + [0,1;2,3]`. Erasure copies low eleven terrain bits from the two rows below, retaining destination flags. The crop identity badge at position zero is not erased by a status refresh.
+
+The status routine is stateful: `0x1c50a` copies field byte +29 to +28, which the growth formula subsequently consumes. It is not an average of three nutrients. Water warnings use signed byte thresholds, fertility warns below 128, and toxicity above the initialized constant 128 (`6190:016b`, file `0x8485b`). Pest warnings above 52 rotate using field byte +56 and can overwrite the toxicity badge while retaining its bit. See SF-006 for the water-warning discrepancy.
+
+`src/simulation/field-lifecycle.ts` connects this status refresh to the Growing dispatcher branch before growth, then invokes expiry cleanup (`0x1c2a8`–`0x1c3f0`). Cleanup returns 70 nutrient units for Growing fields, resets state/step/accumulator, removes warning badges and turns only crop tiles 688–815 into tile 34. Already-waiting fields instead receive 10 nutrient units. Sound/camera side effects are not implemented by these simulation routines.
+
+This establishes the complete Growing branch, not the other equipment-driven work states or a complete game scheduler. Tests advance an original saved corn field through expiry and check actual terrain/state transitions, plus badge layout, rotation, nutrient sampling and equipment-occupied early return.

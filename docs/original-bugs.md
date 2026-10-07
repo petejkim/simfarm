@@ -47,3 +47,11 @@ Native handling: `FarmRandom.below` preserves it and tests stored state separate
 Out-of-range water produces `(cropMultiplier * (random & 31) + 128) & 255`. The multiplication's high byte is discarded and adding 128 can wrap the low byte (`0x196ab`–`0x196af`). Larger multipliers can therefore produce smaller penalties. Establish which distributed crops and tolerance states reach those combinations before changing behavior.
 
 Native handling: `waterStress` retains the byte wrap. No correction made.
+
+## SF-006 — water warnings disagree with growth stress
+
+**Status:** confirmed comparison discrepancy; preserved; broader effects of byte thresholds remain unverified.
+
+The status routine uses `water > upper` (`0x190f6`–`0x19103`) to display a wet warning, while growth applies water stress at `water >= upper` (`0x195d0`–`0x196b7`). A grape field with water 28 and unmodified tolerances therefore incurs stress without a wet badge. The regression test demonstrates this using the distributed grape definition.
+
+Status also computes tolerances with signed byte arithmetic (`0x19087`–`0x190c2`), whereas growth uses word arithmetic. Large modifiers can wrap the displayed thresholds differently; reachable effects need investigation. Native handling preserves both routines. No correction made.

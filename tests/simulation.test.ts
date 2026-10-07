@@ -8,6 +8,8 @@ import { advanceCalendarDay, type FarmCalendar } from '../src/simulation/calenda
 import { FarmRandom } from '../src/simulation/random';
 import { changeFieldCondition } from '../src/simulation/field-conditions';
 import { growField, waterStress } from '../src/simulation/field-growth';
+import { updateFieldStatus, writeFieldBadge } from '../src/simulation/field-status';
+import { clearFieldCrop, updateGrowingField } from '../src/simulation/field-lifecycle';
 
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
 const definition = (name: string) => readCrop(name, source(`CROPS/${name.toUpperCase()}.CRP`)).rawDefinition;
@@ -125,4 +127,69 @@ test('water stress uses original tolerance modifiers, random consumption and byt
   assert.equal(waterStress(field, crop, rng), 130); // 9378 & 31 = 2; crop dry multiplier 1.
   data.setUint16(24, 28, true);
   assert.equal(waterStress(field, crop, rng), 145); // Upper bound is exclusive; next random low bits = 17.
+});
+
+test('field badges preserve flags, use original quadrant ordering and erase from the following rows', () => {
+  const scenario = readScenario(source('SCEN0.SSM')), field = scenario.fields[1];
+  const x = field.x + 2, y = field.y;
+  for (let dy = 0; dy < 4; dy++) for (let dx = 0; dx < 2; dx++) {
+    scenario.cells[worldIndex(x + dx, y + dy)].terrain = 0xa800 | (696 + dy * 2 + dx);
+  }
+  writeFieldBadge(field, scenario.cells, 1, 19);
+  assert.deepEqual([0, 1].flatMap(dy => [0, 1].map(dx => scenario.cells[worldIndex(x + dx, y + dy)].terrain)),
+    [615, 616, 617, 618].map(t => 0xa800 | t));
+  writeFieldBadge(field, scenario.cells, 1, -1);
+  assert.deepEqual([0, 1].flatMap(dy => [0, 1].map(dx => scenario.cells[worldIndex(x + dx, y + dy)].terrain)),
+    [700, 701, 702, 703].map(t => 0xa800 | t));
+});
+
+test('status refresh samples fertility, cycles pest warnings and retains overwritten toxicity flags', () => {
+  const scenario = readScenario(source('SCEN0.SSM')), field = scenario.fields[1], crop = definition('grapes');
+  const f = new DataView(field.bytes.buffer), b = field.bytes;
+  f.setUint16(24, 0, true); b[29] = 90; b[32] = 129; b[20] = b[21] = b[22] = 53;
+  b[56] = 0;
+  for (const badge of [21, 16, 20, 21]) {
+    assert.equal(updateFieldStatus(field, crop, scenario.cells), 0xbd);
+    assert.equal(b[28], 90);
+    assert.equal(scenario.cells[worldIndex(field.x + 6, field.y)].terrain & 2047, 539 + badge * 4);
+  }
+  // Status says normal at the exact upper limit; growth already applies water stress there (SF-006).
+  f.setUint16(24, 28, true);
+  assert.equal(updateFieldStatus(field, crop, scenario.cells) & 10, 0);
+  assert.notEqual(waterStress(field, crop, random()), 0);
+  f.setUint16(24, 29, true);
+  assert.equal(updateFieldStatus(field, crop, scenario.cells) & 10, 2);
+  const before = field.bytes.slice(), terrain = scenario.cells.map(c => c.terrain);
+  f.setUint16(42, 1, true); before[42] = 1;
+  assert.equal(updateFieldStatus(field, crop, scenario.cells), 0);
+  assert.deepEqual(field.bytes, before); assert.deepEqual(scenario.cells.map(c => c.terrain), terrain);
+});
+
+test('an original corn field grows through expiry, returns fertility and clears crop tiles and warnings', () => {
+  const scenario = readScenario(source('SCEN4.SSM')), field = scenario.fields[1], crop = definition('corn');
+  const context = { week: 0, temperature: 75, regions: scenario.regionalConditions, cells: scenario.cells, random: random() };
+  const view = new DataView(field.bytes.buffer);
+  const cropBadge = scenario.cells[worldIndex(field.x, field.y)].terrain;
+  field.bytes[29] = 200;
+  updateGrowingField(field, crop, context);
+  assert.equal(field.bytes[28], 200); // Sampled before this week's depletion.
+  for (let week = 1; week <= crop[56]; week++) {
+    context.week = week % 4;
+    const result = updateGrowingField(field, crop, context);
+    assert.equal(result.expired, week === crop[56]);
+    if (!result.expired) assert.equal(field.state, 4);
+  }
+  assert.equal(field.state, 0); assert.equal(field.step, 0);
+  assert.equal(view.getUint16(18, true), 0); assert.equal(view.getUint16(54, true), 0);
+  assert.equal(scenario.cells[worldIndex(field.x, field.y)].terrain, cropBadge);
+  for (let x = field.x; x < field.x + field.width; x++) for (let y = field.y; y < field.y + field.height; y++) {
+    const tile = scenario.cells[worldIndex(x, y)].terrain & 2047;
+    assert.ok(tile < 688 || tile > 815);
+  }
+  assert.equal(scenario.cells[worldIndex(field.x + 2, field.y)].terrain & 2047, 34);
+  assert.ok(field.bytes[29] >= 70);
+  const nutrient = field.bytes[29];
+  clearFieldCrop(field, crop, scenario.regionalConditions, scenario.cells);
+  assert.equal(field.bytes[29], Math.min(255, nutrient + 10));
+  assert.deepEqual(updateGrowingField(field, crop, context), { updated: false, expired: false });
 });
