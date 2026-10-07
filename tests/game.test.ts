@@ -228,7 +228,10 @@ test('failed seed purchase leaves the current crop, contract and cash intact (SF
 test('all eight original farms advance a year without invalid terrain or missing crop state', () => {
   for (let i = 0; i < 8; i++) {
     const input = farm(i), game = new GameSimulation(input.scenario, input.crops);
-    game.dispatch({ type: 'set-paused', paused: false }); game.tick(336000);
+    for (let day = 0; day < 336; day++) {
+      game.dispatch({ type: 'advance-day' });
+      if (game.getSnapshot().pendingTown) game.dispatch({ type: 'choose-town', choice: 'residential' });
+    }
     const snapshot = game.getSnapshot();
     assert.deepEqual(snapshot.scenario.farm.calendar, { ...input.scenario.farm.calendar, year: 1994 });
     assert.equal(snapshot.daysAdvanced, 336);
@@ -239,10 +242,13 @@ test('all eight original farms advance a year without invalid terrain or missing
 
 test('the fifth year-end retains the original temperature-table overread into wind (SF-007)', () => {
   const input = farm();
-  input.scenario.farm.calendar = { day: 6, week: 3, month: 11, year: 1993, season: 0 };
+  input.scenario.farm.calendar = { day: 6, week: 3, month: 11, year: 1997, season: 0 };
   input.scenario.climate.temperature.fill(70); input.scenario.climate.wind.fill(12);
-  const game = new GameSimulation(input.scenario, input.crops);
-  game.dispatch({ type: 'set-paused', paused: false }); game.tick((336 * 4 + 1) * 1000);
+  const checkpoint = JSON.parse(new GameSimulation(input.scenario, input.crops).save(4));
+  Object.assign(checkpoint.runtime.weather, { temperatureYear: 4, precipitationYear: 4, windYear: 4 });
+  const game = GameSimulation.load(JSON.stringify(checkpoint), input.crops).simulation;
+  game.dispatch({ type: 'advance-day' });
+  if (game.getSnapshot().pendingTown) game.dispatch({ type: 'choose-town', choice: 'residential' });
   const snapshot = game.getSnapshot();
   assert.equal(snapshot.scenario.farm.calendar.year, 1998);
   assert.equal(snapshot.weather.temperatureYear, 0);

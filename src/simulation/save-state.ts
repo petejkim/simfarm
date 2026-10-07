@@ -2,6 +2,15 @@ import type { Scenario } from '../formats/scenario';
 import type { RandomState } from './random';
 import type { WeatherState } from './weather';
 import type { FinancialState } from '../formats/finance';
+import type { TownSite } from './town';
+
+/** Tax and reservation have completed; resume at 0xcdf9 after the choice.
+ * The public calendar is normalized to January 1 while this phase is pending. */
+export interface PendingTownExpansion {
+  phase: 'annual-reset';
+  site: TownSite;
+  resumeRunning: boolean;
+}
 
 /** Native checkpoint, not the original DOS SSM format. UI feedback is deliberately transient. */
 export interface SimulationState {
@@ -21,5 +30,6 @@ export interface SimulationState {
   equipmentAnimationTick: number;
   cropMarketPrices: number[];
   finances: FinancialState;
+  pendingTown: PendingTownExpansion | null;
 }
 export const SIMULATION_SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16] as const;

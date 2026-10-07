@@ -14,6 +14,8 @@ import { LandPanel, type MapTool } from './LandPanel';
 import { checkFieldPlacement } from '../simulation/field-placement';
 import { quoteLand } from '../simulation/land';
 import { LoanPanel } from './LoanPanel';
+import { TaxPanel } from './TaxPanel';
+import { TownChoicePanel } from './TownChoicePanel';
 
 const subscribeEmpty = () => () => {};
 const emptySnapshot = () => null;
@@ -100,8 +102,10 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
       {simulation && <SaveControls simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} />}
     </section>
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
+    {simulation && snapshot && <TownChoicePanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
       onRestart={() => onScenarioChange(id)} />}
+    {snapshot && <TaxPanel snapshot={snapshot} />}
     {data && <main>
       <section className="map-panel">
         <FarmMap scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
@@ -116,6 +120,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
         </div>
       </section>
       <aside>
+        <fieldset className="farm-actions" aria-label="Farm actions" disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision)}>
         {snapshot && mapTool !== 'inspect' && <LandPanel tool={mapTool} position={position} snapshot={snapshot}
           crops={assets.catalog.crops} onCommand={landCommand} />}
         <FieldPanel scenario={data.scenario} crops={assets.catalog.crops} field={field}
@@ -132,6 +137,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
           onEdit={(fieldSlot, week, action) => simulation?.dispatch({ type: 'edit-field-plan', fieldSlot, week, action })} />}
         <HarvestInventory scenario={data.scenario} crops={assets.catalog.crops} values={snapshot?.storedHarvestValues ?? []}
           result={snapshot?.lastSaleResult ?? null} onSell={inventorySlot => simulation?.dispatch({ type: 'sell-harvest', inventorySlot })} />
+        </fieldset>
         <CropGuide crops={assets.catalog.crops} cropId={cropId} onChange={onCropChange} />
         <details><summary>Tile details</summary><pre id="tile-details">{cell && position
           ? `Position: ${position.x}, ${position.y}\nTerrain: 0x${cell.terrain.toString(16).padStart(4, '0')}\nSecond word: 0x${cell.overlay.toString(16).padStart(4, '0')}\nAttribute: ${cell.attribute}`

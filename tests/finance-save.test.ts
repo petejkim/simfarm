@@ -43,7 +43,7 @@ test('financial cold import pins original runtime initializers, sequential town 
 test('all original farms save and restore financial state independently of UI snapshots', () => {
   for (let id = 0; id < 8; id++) {
     const { game, crops } = setup(id), text = game.save(id), saved = JSON.parse(text);
-    assert.equal(saved.version, 5);
+    assert.equal(saved.version, 6);
     assert.deepEqual(saved.runtime.finances, encodeFinancialState(readFinancialState(source(`SCEN${id}.SSM`))));
     const view = game.getSnapshot().finances;
     view.accounts.assets.animalDefinitions[0].bytes.fill(255); view.accounts.otherDefinitions[0].bytes.fill(0);

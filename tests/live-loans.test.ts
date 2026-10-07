@@ -48,7 +48,13 @@ test('live calendar charges only the four recovered loan months and restores ide
     assert.equal(state.finances.loan.principal, paid ? 899 : 1000);
     assert.equal(state.scenario.farm.cash, paid ? 9899 : 10000);
     assert.equal(state.finances.loan.scheduledPayment, 101);
-    if (month === 11) assert.ok(state.finances.loanRate >= 8 && state.finances.loanRate <= 15);
+    if (month === 11) {
+      assert.ok(state.finances.loanRate >= 8 && state.finances.loanRate <= 15);
+      // This fixture cannot afford its original sales tax: no tax debit, but
+      // annual penalties/countdown are now live before the January installment.
+      assert.equal(state.lastTaxSettlement?.paid, false);
+      assert.equal(state.finances.debt.taxCountdown, 3); assert.ok(state.finances.debt.unpaidTaxes > 0);
+    }
     assert.deepEqual(JSON.parse(game.save(4)), JSON.parse(copy.save(4)));
   }
 });

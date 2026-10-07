@@ -7,7 +7,7 @@ import { BuildingRecord, BuildingDefinition } from '../formats/building';
 import { InventoryRecord, GoodsDefinition } from '../formats/inventory';
 import { ChemicalRecord } from '../formats/chemical';
 import type { Scenario } from '../formats/scenario';
-import { advanceCalendarDay } from './calendar';
+import { advanceCalendarDay, type FarmCalendar } from './calendar';
 import { changeFieldCondition } from './field-conditions';
 import { updateGrowingField } from './field-lifecycle';
 import { updateFieldStatus } from './field-status';
@@ -29,15 +29,19 @@ import { dispatchFieldSchedule, type ScheduleDispatchResult } from './field-cale
 import { projectFieldScheduleYear } from './field-projection';
 import { editFieldPlan, type FieldPlanEdit, type FieldPlanEditResult } from './field-plan-edit';
 
-import { SIMULATION_SPEEDS, type SimulationState } from './save-state';
+import { SIMULATION_SPEEDS, type SimulationState, type PendingTownExpansion } from './save-state';
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
 import { copyFinancialState, readFinancialState, type FinancialState } from '../formats/finance';
 import { borrowLoan, repayLoanInFull, loanCreditLimit, payScheduledLoan, isLoanPaymentMonth, type BorrowResult, type RepayResult } from './loan';
-import { loanPaymentAccounts } from './finance-accounts';
+import { loanPaymentAccounts, taxAccounts } from './finance-accounts';
 import { retryMonthlyDebts } from './monthly-finance';
 import { resolveDefaultDecision } from './default';
 import { TownLayouts } from '../formats/town';
 import { developTown } from './town-development';
+import { assessAnnualTax, settleAnnualTax, type TaxAssessment, type TaxSettlement } from './tax';
+import { resetAnnualLedgers } from './annual-ledger';
+import { beginTownExpansion } from './town';
+import { resolveTownChoice, type TownChoice, type TownConstructionResult } from './town-construction';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -54,6 +58,10 @@ export interface GameSnapshot {
   paused: boolean;
   speed: number;
   finances: FinancialState;
+  pendingTown: PendingTownExpansion | null;
+  lastTownResult: TownConstructionResult | null;
+  taxAssessment: TaxAssessment;
+  lastTaxSettlement: TaxSettlement | null;
   availableLoan: number;
   lastLoanResult: ({ kind: 'borrow' } & BorrowResult) | ({ kind: 'repay' } & RepayResult) | null;
   financeNotices: number[];
@@ -72,6 +80,7 @@ export interface GameSnapshot {
 export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused: boolean }
   | { type: 'borrow'; amount: number } | { type: 'repay-loan' }
   | { type: 'resolve-default'; choice: 'restart' | 'exit' }
+  | { type: 'choose-town'; choice: TownChoice }
   | { type: 'edit-field-plan'; fieldSlot: number; week: number; action: FieldPlanEdit }
   | { type: 'set-speed'; speed: number }
   | { type: 'set-auto-clear'; enabled: boolean }
@@ -131,6 +140,9 @@ export class GameSimulation {
   private lastPlanEditResult: GameSnapshot['lastPlanEditResult'] = null;
   private lastLoanResult: GameSnapshot['lastLoanResult'] = null;
   private financeNotices: number[] = [];
+  private pendingTown: PendingTownExpansion | null = null;
+  private lastTownResult: TownConstructionResult | null = null;
+  private lastTaxSettlement: TaxSettlement | null = null;
 
   constructor(scenario: Scenario, crops: readonly CropDefinition[], townLayouts: TownLayouts,
     seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState) {
@@ -153,6 +165,7 @@ export class GameSimulation {
       this.cropMarketPrices = [...restored.cropMarketPrices];
       this.weather = { ...restored.weather, forecast: [...restored.weather.forecast], nextForecast: [...restored.weather.nextForecast] };
       this.daysAdvanced = restored.daysAdvanced; this.paused = restored.paused; this.speed = restored.speed;
+      this.pendingTown = restored.pendingTown ? { ...restored.pendingTown, site: { ...restored.pendingTown.site } } : null;
       this.elapsed = restored.elapsed; this.dayTicks = restored.dayTicks; this.disasterFlags = restored.disasterFlags;
       this.equipmentRuntime.grassTravelCount = restored.grassTravelCount;
       this.equipmentRuntime.animationTick = restored.equipmentAnimationTick;
@@ -175,7 +188,7 @@ export class GameSimulation {
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
       disasterFlags: this.disasterFlags, grassTravelCount: this.equipmentRuntime.grassTravelCount,
       equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices,
-      finances: this.finances, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
+      finances: this.finances, pendingTown: this.pendingTown, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
   }
 
   static load(text: string, crops: readonly CropDefinition[], townLayouts: TownLayouts): { scenarioId: number; simulation: GameSimulation } {
@@ -190,6 +203,21 @@ export class GameSimulation {
   };
 
   dispatch(command: GameCommand): void {
+    if (command.type === 'choose-town') {
+      const pending = this.pendingTown;
+      if (!pending) return;
+      this.lastTownResult = resolveTownChoice(this.scenario, this.finances.town, this.townLayouts,
+        pending.site, command.choice, this.random);
+      if (this.lastTownResult.ok) {
+        this.pendingTown = null;
+        this.finishYear();
+        this.finishWeek(this.scenario.farm.calendar, true);
+        this.finishDay(this.scenario.farm.calendar);
+        this.paused = !pending.resumeRunning; this.elapsed = 0;
+      }
+      this.publish(); return;
+    }
+    if (this.pendingTown) return; // Modal choice suspends all other farm commands.
     if (command.type === 'resolve-default') {
       if (this.finances.defaultDecision?.status !== 'pending') return;
       resolveDefaultDecision(this.finances.defaultDecision, command.choice);
@@ -256,7 +284,7 @@ export class GameSimulation {
   }
 
   private advanceTick(): void {
-    if (this.finances.defaultDecision) return;
+    if (this.finances.defaultDecision || this.pendingTown) return;
     const s = this.scenario, tick = s.farm.timerTicks = (s.farm.timerTicks + 1) & 0xffff;
     this.equipmentRuntime.animationTick = s.farm.animationTicks = (s.farm.animationTicks + 1) & 0xffff;
     const allocate = (world: Scenario, type: number, x: number, y: number) => reserveEquipment(world, type, x, y, tick);
@@ -314,25 +342,53 @@ export class GameSimulation {
         }
       }
       if (next.yearEnded) {
-        projectFieldScheduleYear(s, this.crops); // 0xcdfe, after dispatch and before weather-year changes.
-        this.finances.loanRate = (this.random.nextSimulation() & 7) + 8; // 0xcfa6..0xcfbc.
-        w.temperatureYear = (w.temperatureYear + 1) % 5;
-        w.precipitationYear = (w.precipitationYear + 1) % 5;
-        w.windYear = (w.windYear + 1) % 5;
+        this.lastTaxSettlement = settleAnnualTax(s, w.soilMoisture, taxAccounts(this.finances)); // 0xcdf4.
+        if (!this.lastTaxSettlement.paid) this.financeNotices.push(159);
+        const site = this.lastTaxSettlement.offerExpansion ? beginTownExpansion(s, this.finances.town) : null;
+        if (site) {
+          this.finances.town.activeSite = { ...site }; // 0x3c03f/0x3c04a, before chooser.
+          this.pendingTown = { phase: 'annual-reset', site, resumeRunning: !this.paused };
+          this.lastTownResult = null;
+          this.paused = true; this.elapsed = 0;
+          s.farm.calendar = next.calendar;
+          return; // Remaining day/annual phases resume exactly once after construction.
+        }
+        this.finishYear();
       }
-      if (next.monthEnded && isLoanPaymentMonth(next.calendar.month)) {
-        const payment = payScheduledLoan(s.farm, this.finances.loan, this.finances.debt, loanPaymentAccounts(this.finances));
-        if (payment.notice) this.financeNotices.push(payment.notice);
-      }
-      w.windAnomaly = Math.max(0, w.windAnomaly - 2);
-      advanceForecast(w, s.climate, next.calendar, this.random, s.cells);
+      this.finishWeek(next.calendar, next.monthEnded);
     }
-    s.farm.calendar = next.calendar;
+    this.finishDay(next.calendar);
+  }
+
+  private finishYear(): void {
+    const s = this.scenario, w = this.weather;
+    resetAnnualLedgers(s.farm, this.finances.accounts, this.finances.annual, w); // 0xcdf9.
+    projectFieldScheduleYear(s, this.crops); // 0xcdfe, after old row 48 and collection/choice.
+    // Annual region/report routines 0xce0e onward remain separately documented gaps.
+    this.finances.loanRate = (this.random.nextSimulation() & 7) + 8; // 0xcfa6..0xcfbc.
+    w.temperatureYear = (w.temperatureYear + 1) % 5;
+    w.precipitationYear = (w.precipitationYear + 1) % 5;
+    w.windYear = (w.windYear + 1) % 5;
+  }
+
+  private finishWeek(calendar: FarmCalendar, monthEnded: boolean): void {
+    const s = this.scenario, w = this.weather;
+    if (monthEnded && isLoanPaymentMonth(calendar.month)) {
+      const payment = payScheduledLoan(s.farm, this.finances.loan, this.finances.debt, loanPaymentAccounts(this.finances));
+      if (payment.notice) this.financeNotices.push(payment.notice);
+    }
+    w.windAnomaly = Math.max(0, w.windAnomaly - 2);
+    advanceForecast(w, s.climate, calendar, this.random, s.cells);
+  }
+
+  private finishDay(calendar: FarmCalendar): void {
+    const s = this.scenario, w = this.weather;
+    s.farm.calendar = calendar;
     w.displayTemperature = (w.temperature + this.random.below(5)) << 24 >> 24;
-    applyDailyWeather(w, next.calendar.day);
+    applyDailyWeather(w, calendar.day);
     s.farm.precipitationDays = w.precipitationDays;
     for (const field of s.fields.filter(f => f.active)) updateGrowingField(field, this.crops[field.cropSlot], {
-      week: next.calendar.week, temperature: w.temperature << 16 >> 16, regions: s.regionalConditions, cells: s.cells, random: this.random,
+      week: calendar.week, temperature: w.temperature << 16 >> 16, regions: s.regionalConditions, cells: s.cells, random: this.random,
     });
     this.daysAdvanced++;
   }
@@ -340,6 +396,11 @@ export class GameSimulation {
   private publish(): void {
     this.snapshot = { revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
       finances: copyFinancialState(this.finances),
+      pendingTown: this.pendingTown ? { ...this.pendingTown, site: { ...this.pendingTown.site } } : null,
+      lastTownResult: this.lastTownResult ? this.lastTownResult.ok
+        ? { ...this.lastTownResult, site: { ...this.lastTownResult.site } } : { ...this.lastTownResult } : null,
+      taxAssessment: assessAnnualTax(this.scenario, this.weather.soilMoisture, this.finances.debt.unpaidTaxes),
+      lastTaxSettlement: this.lastTaxSettlement ? { ...this.lastTaxSettlement, assessment: { ...this.lastTaxSettlement.assessment } } : null,
       availableLoan: Math.min(Math.max(0, 9999999 - this.scenario.farm.cash),
         loanCreditLimit(this.scenario, this.finances.accounts.buildingBookValue, this.finances.loan.principal, this.weather.soilMoisture)),
       lastLoanResult: this.lastLoanResult ? { ...this.lastLoanResult } : null, financeNotices: [...this.financeNotices],

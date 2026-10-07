@@ -55,10 +55,14 @@ test('year-end dispatches row 48 once, completes pending work, and projects usin
   const f = scenario.fields[2]; f.bytes[2] = 6; f.bytes[3] = 0; f.bytes[4] = 4; f.bytes[29] = 0;
   const game = new GameSimulation(scenario, crops), before = game.getSnapshot();
   game.dispatch({ type: 'advance-day' });
+  const pending = game.getSnapshot(); assert.ok(pending.pendingTown);
+  assert.equal(pending.scenario.farm.seedExpenses, before.scenario.farm.seedExpenses + before.scenario.seedDefinitions[1].price + 20);
+  assert.equal(pending.scenario.fields[2].bytes[29], 255); // Completion precedes the chooser and daily growth.
+  game.dispatch({ type: 'choose-town', choice: 'residential' });
   const after = game.getSnapshot();
   assert.equal(after.scenario.farm.calendar.year, 1994);
   assert.equal(after.scenario.fields[1].state, 3); assert.equal(after.scenario.fields[1].cropSlot, 1);
-  assert.equal(after.scenario.farm.seedExpenses, before.scenario.farm.seedExpenses + before.scenario.seedDefinitions[1].price + 20);
+  assert.equal(after.scenario.farm.seedExpenses, 0); // Annual reset follows the chooser.
   assert.equal(after.scenario.fields[2].state, 4); assert.equal(after.scenario.fields[2].bytes[29], 245); // Full effect, then weekly growth.
   assert.equal(after.scenario.schedule.get(0, 0), 833); assert.equal(after.scenario.schedule.get(1, 0), 696);
   assert.equal(after.scenario.schedule.get(239, 97), 54321);
@@ -94,6 +98,8 @@ test('year projection sees a perennial-to-annual crop change from the week-48 or
   Object.assign(scenario.farm.calendar, { month: 11, week: 3, day: 6 });
   const game = new GameSimulation(scenario, crops);
   game.dispatch({ type: 'advance-day' });
+  assert.ok(game.getSnapshot().pendingTown);
+  game.dispatch({ type: 'choose-town', choice: 'residential' });
   const after = game.getSnapshot();
   assert.equal(after.scenario.fields[1].cropSlot, 2);
   assert.deepEqual([0, 1, 35, 36, 200, 239].map(week => after.scenario.schedule.get(week, 0)), [834, 704, 440, 834, 707, 708]);

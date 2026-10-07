@@ -89,6 +89,9 @@ test('all four treatments, tick rollover and fifth-year weather retain exact con
   const a = GameSimulation.load(JSON.stringify(save), crops).simulation;
   const b = GameSimulation.load(a.save(4), crops).simulation;
   a.tick(8000.125); b.tick(8000.125); same(a, b, 4);
+  assert.ok(a.getSnapshot().pendingTown);
+  for (const sim of [a, b]) sim.dispatch({ type: 'choose-town', choice: 'residential' });
+  same(a, b, 4);
   assert.equal(b.getSnapshot().weather.temperatureYear, 0);
   assert.equal(b.getSnapshot().scenario.farm.calendar.year, 1998);
 }, 15000);

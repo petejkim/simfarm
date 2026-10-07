@@ -2,8 +2,8 @@ import type { Scenario } from '../formats/scenario';
 import { quoteLand } from './land';
 import { townStatistics, type TownFunds } from './town';
 
-/** Live account fields, not a guessed DOS-save layout. Persisted integration follows
- * recovery of the district chooser and default path. All dwords store raw bits. */
+/** Write-through view of canonical financial accounts. All dwords store raw bits;
+ * these runtime fields do not imply a guessed DOS-save layout. */
 export interface TaxAccount extends TownFunds {
   unpaidTaxes: number;
   taxExpenses: number;
@@ -41,7 +41,7 @@ export function ownedLandValue(world: Scenario, soilMoisture: number): number {
 /** Resident 1a66:0cc0 / file 0x1d520..0x1d5c2.
  * The bracket depends on cash, not sales or profit. Runtime 0084:33f8
  * divides signed dwords, truncating toward zero; additions retain 32 bits.
- * Arrears are an explicit input until the payment/town state is integrated.
+ * Arrears are supplied from the canonical debt account.
  * This quotation neither debits cash nor resets the sales accumulator. */
 export function assessAnnualTax(world: Scenario, soilMoisture: number, arrears: number): TaxAssessment {
   for (const value of [world.farm.cash, world.farm.salesAccumulator, arrears]) {

@@ -641,3 +641,10 @@ Live monthly default now pauses before later financial/weather/crop phases and p
 Annual routine `0x1f4d2..0x1f573` counts ownership codes 1 and 2 across the 12×12 world in bytes `6190:7510/750f`. Report routine reads the player byte at `0x1f589`, uses opcode `98` (CBW in this 16-bit code) at `0x1f58d`, and stores AX at `0x1f58e` to `6190:4460`. The town byte follows at `0x1f59f`, CBW `0x1f5a3`, store `0x1f5a4` to `4464`. Thus totals 128–144 become signed words -128 through -112, although they fit the unsigned count byte. The routine uses these signed values in subsequent word differences (`0x1f5af`, `0x1f5bd`). Segment pointers for these counts resolve to `6190` in initialized DS.
 
 No claim is made that ordinary land purchases can achieve every such total, that a negative number is necessarily displayed, or that this is a security vulnerability. Live native town development does not use these report words. Annual report field ownership, original persistence, downstream rendering and reachability remain to be traced before deciding whether to preserve or correct this boundary; keep the evidence even after a future fix.
+
+
+### SF-042 / SF-048 / SF-049 annual integration follow-up
+
+Live annual reset preserves worker expenses (SF-042), after collection and any district choice. The native chooser keeps the reserved plot pending when random selection hits an unavailable recreation type, correcting the original unchecked timeout return (SF-048); the bounded RNG draw still persists. The button invokes that original random branch explicitly, without claiming a recovered real-time timeout.
+
+Pending-choice tests exposed a distinction for SF-049: an original unowned plot can retain low nibble 15 when ownership is reserved before construction. Native v6 preserves that raw byte and permits it only under a validated, frozen pending continuation. The constructor replaces it before normal weekly development resumes. Rejecting it as an already-built district would prevent loading a valid mid-choice save; the active built-district guard remains in place after construction.

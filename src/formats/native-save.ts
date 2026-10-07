@@ -4,7 +4,7 @@ import type { SavedFarmState } from './scenario-state';
 import { validateCalendar } from '../simulation/calendar';
 import { FarmRandom } from '../simulation/random';
 import type { WeatherState } from '../simulation/weather';
-import { SIMULATION_SPEEDS, type SimulationState } from '../simulation/save-state';
+import { SIMULATION_SPEEDS, type SimulationState, type PendingTownExpansion } from '../simulation/save-state';
 import { readFinancialState } from './finance';
 import { decodeFinancialState, encodeFinancialState } from './finance-save';
 import { TOWN_LAYOUT_BYTES } from './town';
@@ -121,7 +121,7 @@ function decodeWeather(value: unknown): WeatherState {
 export function writeNativeSave(state: SimulationState, scenarioId: number): string {
   number(scenarioId, 0, 7, 'scenario ID');
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 5, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 6, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -131,7 +131,7 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6].includes(save.version)) fail('unsupported format or version');
   const scenarioId = number(save.scenarioId, 0, 7, 'scenario ID'), s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const random = object(r.random, 'random');
   const rng = new FarmRandom({ visual: number(random.visual, 0, 65535, 'visual RNG'),
@@ -141,6 +141,7 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
   if (!SIMULATION_SPEEDS.some(n => n === speed)) fail('speed');
   const state: SimulationState = { scenario: s, crops: r.crops.map(c => numbers(c, 128, 0, 255, 'crop bytes')),
     townLayoutBytes: save.version >= 5 ? numbers(r.townLayoutBytes, TOWN_LAYOUT_BYTES, 0, 255, 'town layout bytes') : null,
+    pendingTown: save.version >= 6 ? decodePendingTown(r.pendingTown) : null,
     random: rng.snapshot(), weather: decodeWeather(r.weather), daysAdvanced: number(r.daysAdvanced, 0, Number.MAX_SAFE_INTEGER, 'days advanced'),
     paused: boolean(r.paused, 'paused'), speed, elapsed: number(r.elapsed, 0, 1, 'fractional ticks', false),
     dayTicks: number(r.dayTicks, 0, Math.max(1, s.farm.dayDelayTicks) - 1, 'day ticks'),
@@ -151,8 +152,24 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
       ? { ...object(r.finances, 'financial state'), defaultDecision: null } : r.finances) : readFinancialState(s.sourceBytes) };
   if (state.finances.defaultDecision && !state.paused) fail('unpaused terminal default');
   const town = state.finances.town.activeSite, townIndex = (town.regionX * 12 + town.regionY) * 7;
-  if (s.regionalConditions[townIndex + 1] === 2 && (s.regionalConditions[townIndex] & 15) === 15) fail('active town district type');
+  // A reserved, unbuilt plot still contains its original regional byte. The
+  // chooser replaces it before weekly development can use it as a district.
+  if (!state.pendingTown && s.regionalConditions[townIndex + 1] === 2 && (s.regionalConditions[townIndex] & 15) === 15) fail('active town district type');
+  if (state.pendingTown) {
+    const { site } = state.pendingTown, c = s.farm.calendar;
+    if (!state.paused || state.finances.defaultDecision || state.elapsed !== 0 || state.dayTicks !== 0 ||
+      c.day !== 0 || c.week !== 0 || c.month !== 0 || s.farm.salesAccumulator !== 0 ||
+      site.regionX !== town.regionX || site.regionY !== town.regionY || s.regionalConditions[townIndex + 1] !== 2) fail('pending town continuation');
+  }
   if (state.elapsed >= 1) fail('fractional ticks');
   if (state.cropMarketPrices.some((price, i) => price !== s.cropDefinitions[i].price)) fail('inconsistent crop prices');
   return { scenarioId, state };
+}
+
+function decodePendingTown(value: unknown): PendingTownExpansion | null {
+  if (value === null) return null;
+  const p = object(value, 'pending town'), site = object(p.site, 'pending town site');
+  if (p.phase !== 'annual-reset') fail('pending town phase');
+  return { phase: 'annual-reset', resumeRunning: boolean(p.resumeRunning, 'pending town run state'),
+    site: { regionX: number(site.regionX, 0, 11, 'pending town X'), regionY: number(site.regionY, 0, 11, 'pending town Y') } };
 }

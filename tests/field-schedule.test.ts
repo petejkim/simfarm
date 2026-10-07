@@ -72,7 +72,7 @@ test('mutable schedules survive native checkpoints, detach from snapshots and mi
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
   scenario.schedule.set(239, 97, 54321); scenario.schedule.set(16, 0, 915);
   const game = new GameSimulation(scenario, crops), text = game.save(4), data = JSON.parse(text);
-  assert.equal(data.version, 5);
+  assert.equal(data.version, 6);
   scenario.schedule.bytes.fill(0); game.getSnapshot().scenario.schedule.bytes.fill(0);
   const loaded = GameSimulation.load(text, crops).simulation;
   assert.equal(loaded.getSnapshot().scenario.schedule.get(239, 97), 54321);
