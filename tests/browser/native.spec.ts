@@ -444,6 +444,11 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.simfarm\.json$/);
   const path = 'artifacts/browser-farm.simfarm.json'; await download.saveAs(path);
+  const saved = JSON.parse(readFileSync(path, 'utf8'));
+  const schedule = Buffer.from(saved.scenario.schedule, 'hex');
+  const newFieldPlan = (week: number) => schedule.readUInt16LE((week * 98 + 8) * 2);
+  // SCEN4 starts at week 15/day 6: planting records week 15, fertilizer two days later records week 16.
+  expect([newFieldPlan(0), newFieldPlan(15), newFieldPlan(16), newFieldPlan(28)]).toEqual([209, 832, 915, 440]);
   await page.reload();
   await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
   const chooserPromise = page.waitForEvent('filechooser');
@@ -457,6 +462,11 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await expect(page.locator('#field')).toHaveValue('');
   await page.locator('#field').selectOption('9');
   await expect(page.locator('#field-status')).toContainText('Fertilize');
+  const restoredDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Save farm', exact: true }).click();
+  const restoredPath = 'artifacts/browser-restored-plan.simfarm.json';
+  await (await restoredDownload).saveAs(restoredPath);
+  expect(JSON.parse(readFileSync(restoredPath, 'utf8')).scenario.schedule).toBe(saved.scenario.schedule);
   await page.screenshot({ path: 'artifacts/browser-load.png', fullPage: true });
   for (let day = 2; day < 84; day++) await page.locator('#next-day').click();
   await expect(page.locator('#harvest-estimate')).toContainText('value: $1,451');

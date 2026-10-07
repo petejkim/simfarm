@@ -260,7 +260,7 @@ Native consumption checks the definition count, coordinates and storage cross-re
 
 Year-rollover schedule generation loads crop byte +56 and byte +66, computes `(byte56 + byte66 - 2) / byte66` with signed division at `0x48e99`, then uses that quotient as the unsigned divisor at `0x48ea3`. The second generation branch repeats this at `0x48ffb` / `0x49005`. No local zero-divisor guard precedes either pair. A positive duration with byte +66 zero, or duration one with positive byte +66, can cause an original division exception if such a definition reaches this loop. Validation elsewhere in the original loader/editor has not been established; no exploitable vulnerability is claimed.
 
-All 24 supplied CRP definitions have byte +66 equal to 7 and byte +56 between 12 and 47, yielding divisors 2–7. The supplied assets therefore do not demonstrate this failure. Native projection validates the divisors transactionally; tests exercise zero stage count and duration one after earlier valid fields. Duration zero performs no original stage division and remains supported. Revisit any separate planner-editing generators when porting them.
+All 24 supplied CRP definitions have byte +66 equal to 7 and byte +56 between 12 and 47, yielding divisors 2–7. The supplied assets therefore do not demonstrate this failure. Native projection validates the divisors transactionally; tests exercise zero stage count and duration one after earlier valid fields. Duration zero performs no original stage division and remains supported. The manual planting-plan generator repeats the unchecked divisions at `0x2fdf9` / `0x2fe02`; its native port applies the same guard. Revisit any further calendar-editor generators when porting them.
 
 ## SF-032 — weekly completion bypasses unfinished supply and worker payment
 
@@ -288,11 +288,11 @@ Native weekly completion credits the pending worker sale once, resets annual/per
 
 ## SF-035 — scheduled plowing enters an inert work state
 
-**Status:** confirmed dispatcher behavior; whether the original editor exposes this order is not yet established. Preserved as an original incomplete/no-op path, not a demonstrated gameplay exploit.
+**Status:** confirmed dispatcher behavior and reachable original toolbar order. Preserved as an original incomplete/no-op path, not a demonstrated gameplay exploit.
 
-Calendar code 852 sets field state 2/step 0 at `0x2f718..0x2f72c`. The main work jump table at `0x18c98` maps states 0, 1 and 2 to the same no-op exit `0x18cb2`; weekly completion's jump table handles only states 3–9. Thus a dispatched 852 order does not perform a plowing pass through either recovered work loop. None of the supplied schedules contains this code. The plan-editing paths still need tracing to determine ordinary UI reachability.
+Calendar code 852 sets field state 2/step 0 at `0x2f718..0x2f72c`. The main work jump table at `0x18c98` maps states 0, 1 and 2 to the same no-op exit `0x18cb2`; weekly completion's jump table handles only states 3–9. Thus a dispatched 852 order does not perform a plowing pass through either recovered work loop. None of the supplied schedules contains this code. Subsequent toolbar tracing establishes UI reachability: `0x26cb0..0x26ce7` accepts a Waiting field, immediately sets state 2/step 0, and calls the plan recorder with order 1; `0x2fd8e` writes 852 into the current week without an occupied-word guard.
 
-Native schedule dispatch preserves state 2/step 0 and does not invent an equipment FSM. Static-byte tests verify both the state write and all three no-op table targets. Revisit the intended UI semantics while reconstructing the editor; any added plowing operation should be documented as an enhancement if no other original handler is found.
+Native schedule dispatch preserves state 2/step 0 and does not invent an equipment FSM. Static-byte tests verify both the state write and all three no-op table targets; recorder tests verify the order mapping and unconditional plan write. No native plow button has been added. Revisit the intended UI semantics while reconstructing the calendar editor; any added plowing operation should be documented as an enhancement if no other original handler is found.
 
 ## SF-036 — year projection scans before its column when no matching marker exists
 
@@ -310,6 +310,8 @@ Pattern initialization `0x48d25..0x48d30` clears 48 words starting at `bp-0x6e`.
 
 Duration 48 writes its final harvest over the live reverse-scan index at `bp-0xc`; longer durations overlap selected crop and other generation locals. No local duration bound protects these stores. Supplied definitions range 12–47; original custom-definition validation remains untraced. Native projection rejects durations above 47 before committing, with a regression at 48. No exploit or original source-language array declaration is inferred from the disassembly.
 
+The manual recorder has a similar layout: its 48 initialized pattern words begin at `bp-0x74` (`0x2fb21..0x2fb30`). Duration 47's terminal entry aliases the unused linear-index word at `bp-0x14`; duration 48 reaches the live duration byte at `bp-0x12`. Its native port also accepts supplied durations through 47 with a separately allocated pattern and rejects longer ones before writing a plan.
+
 ## SF-038 — perennial projection uses an unchecked signed restart index
 
 **Status:** confirmed out-of-pattern read hazard for malformed/custom definitions; supplied definitions avoid it. Native index guard implemented.
@@ -317,3 +319,5 @@ Duration 48 writes its final harvest over the live reverse-scan index at `bp-0xc
 At `0x48efa..0x48f14` and `0x4905c..0x49076`, crop byte +18 is sign-extended, incremented, then used to read the pattern without a bounds check. Values outside `0..duration+1` after that conversion can read unrelated stack locals. The check against cycle length occurs before choosing the restart, not after. Supplied perennial restart bytes are 0 or 1; ordinary-play failure is unproven.
 
 Native projection validates the resulting index against the allocated pattern before any schedule commit. Tests cover positive overflow, negative indices, and byte 255 (signed -1 plus one), which validly restarts at index zero. Other uses of crop +18 retain their own recovered arithmetic. Revisit validation if editable crop definitions become supported.
+
+Manual plan recording repeats this unchecked restart at `0x2fede..0x2fef8`; its native port validates the index too. Fixed-harvest crops overwrite the resulting graphic each week, but the original still performs that intermediate pattern read. Supplied restart values remain in range.

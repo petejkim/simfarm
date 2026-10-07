@@ -24,6 +24,7 @@ import { cropMaturity, fieldHarvestValue } from './harvest-value';
 import { sellStoredHarvest, storedHarvestValue, type HarvestSaleResult } from './harvest-sale';
 import { purchaseLand, type LandPurchaseResult } from './land';
 import { orderTreatment, updateTreatmentField, type Treatment, type TreatmentResult } from './field-treatment';
+import { recordFieldPlanOrder } from './field-plan-order';
 
 import { SIMULATION_SPEEDS, type SimulationState } from './save-state';
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
@@ -172,13 +173,18 @@ export class GameSimulation {
       this.lastPlantResult = null; this.lastHarvestResult = null;
       this.lastNewFieldResult = plantNewField(this.scenario, command.x, command.y, command.cropSlot, this.crops,
         this.cropMarketPrices, this.random, this.weather.soilMoisture);
-      if (this.lastNewFieldResult.ok) this.lastPlantResult = this.lastNewFieldResult;
+      if (this.lastNewFieldResult.ok) {
+        this.lastPlantResult = this.lastNewFieldResult;
+        recordFieldPlanOrder(this.scenario, this.crops, this.lastNewFieldResult.slot, { kind: 'plant', cropSlot: command.cropSlot });
+      }
     } else if (command.type === 'treat-field') {
       this.lastTreatmentResult = orderTreatment(this.scenario, command.fieldSlot, command.treatment, this.weather.soilMoisture);
+      if (this.lastTreatmentResult.ok) recordFieldPlanOrder(this.scenario, this.crops, command.fieldSlot, { kind: command.treatment });
     } else if (command.type === 'plant-field') {
       this.lastHarvestResult = null;
       this.lastPlantResult = plantField(this.scenario, command.fieldSlot, command.cropSlot, this.crops,
         this.cropMarketPrices, this.random, this.weather.soilMoisture);
+      if (this.lastPlantResult.ok) recordFieldPlanOrder(this.scenario, this.crops, command.fieldSlot, { kind: 'plant', cropSlot: command.cropSlot });
     } else if (command.type === 'harvest-field') {
       this.lastPlantResult = null;
       this.lastHarvestResult = orderHarvest(this.scenario, command.fieldSlot, this.crops);
