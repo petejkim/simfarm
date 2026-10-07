@@ -144,3 +144,36 @@ test('native loader rejects broken record references, attachment cycles and malf
     assert.throws(() => GameSimulation.load(bad, crops));
   }
 });
+
+
+test('harvest truck storage indices survive checkpoints during delivery and the return journey', () => {
+  const { scenario, crops } = farm(1), game = new GameSimulation(scenario, crops);
+  game.dispatch({ type: 'harvest-field', fieldSlot: 1 });
+  game.dispatch({ type: 'set-paused', paused: false });
+  let delivering = false;
+  for (let tick = 0; tick < 2048; tick++) {
+    game.tick(1000 / scenario.farm.dayDelayTicks);
+    const field = game.getSnapshot().scenario.fields[1];
+    if (field.state === 5 && field.step === 15) { delivering = true; break; }
+  }
+  assert.ok(delivering);
+  const view = game.getSnapshot(), truck = view.scenario.equipment[view.scenario.fields[1].pendingEquipment];
+  assert.equal(truck.parent, 12); assert.equal(view.scenario.equipment[12].active, false);
+  const restored = GameSimulation.load(game.save(1), crops).simulation;
+  same(game, restored, 1);
+  let returned = false;
+  for (let tick = 0; tick < 2048; tick++) {
+    game.tick(1000 / scenario.farm.dayDelayTicks); restored.tick(1000 / scenario.farm.dayDelayTicks);
+    const next = restored.getSnapshot().scenario.equipment[truck.slot];
+    if (next.flags & 0x200) {
+      same(game, restored, 1);
+      const returning = GameSimulation.load(restored.save(1), crops).simulation;
+      restored.tick(8000); returning.tick(8000); same(restored, returning, 1); returned = true; break;
+    }
+  }
+  assert.ok(returned);
+  const corrupt = JSON.parse(game.save(1));
+  const raw: string = corrupt.scenario.records.equipment, pos = (truck.slot * 56 + 44) * 2;
+  corrupt.scenario.records.equipment = raw.slice(0, pos) + 'ff00' + raw.slice(pos + 4);
+  assert.throws(() => GameSimulation.load(JSON.stringify(corrupt), crops), /storage reference/);
+});

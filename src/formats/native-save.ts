@@ -94,6 +94,7 @@ function decodeScenario(value: unknown): Scenario {
   }
   // Field passes and attached implements can occupy byte-wrapped border coordinates. Moving heads cannot.
   for (const e of result.equipment.filter(e => e.active)) {
+    if (e.type === 7 && e.parent && !result.buildings[e.parent]?.active) fail('harvest truck storage reference');
     if (e.direction > 7 || e.targetX >= 96 || e.targetY >= 96) fail('equipment direction or destination');
     if (!e.parent && !(e.flags & 8) && (e.x >= 96 || e.y >= 96)) fail('equipment position');
     if (e.fieldSlot && !result.fields[e.fieldSlot]?.active) fail('equipment field reference');

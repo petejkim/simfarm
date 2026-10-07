@@ -55,7 +55,10 @@ export function readEquipment(bytes: Uint8Array, nativeRuntime = false): Equipme
   if (records[0].active || records.filter(e => e.active).length !== data.u16(EQUIPMENT_RECORDS_OFFSET - 2)) throw new Error('Invalid equipment count');
   for (const e of records.filter(e => e.active)) {
     if (e.type >= 9 || (!nativeRuntime && [e.x, e.y, e.targetX, e.targetY].some(v => v >= 96)) || e.fieldSlot >= 98) throw new Error('Invalid equipment type, coordinates or field');
-    for (const link of [e.parent, e.attachment]) {
+    // Native harvest trucks overload +44 with a storage-building index (0x15f9a..0x1602f).
+    // Validate that reference against buildings after the complete scenario is decoded.
+    const links = nativeRuntime && e.type === 7 ? [e.attachment] : [e.parent, e.attachment];
+    for (const link of links) {
       if (link && (link >= records.length || link === e.slot || !records[link].active)) throw new Error('Invalid equipment attachment');
     }
     const visited = new Set<number>([e.slot]);

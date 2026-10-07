@@ -4,6 +4,7 @@ import { readArchive } from '../../src/formats/archive';
 import { decodePlanar, readPalette } from '../../src/formats/graphics';
 import { readScenario } from '../../src/formats/scenario';
 import { readCrop } from '../../src/formats/crop';
+import { GameSimulation } from '../../src/simulation/game';
 
 test('crop and masked pixels match source assets at original world coordinates; fields can be inspected', async ({ page }) => {
   const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${name}`, import.meta.url));
@@ -535,4 +536,24 @@ test('failed or cancelled asset loading cannot replace a current farm', async ({
   await expect(page.locator('#scenario')).toHaveValue('2');
   await expect(page.locator('#time-status')).toHaveText('Paused · 1 days advanced');
   expect(errors).toEqual([]);
+});
+
+
+test('a farm saved while a harvest truck drives to storage loads and completes delivery', async ({ page }) => {
+  const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${name}`, import.meta.url));
+  const scenario = readScenario(source('SCEN1.SSM'));
+  const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
+  const game = new GameSimulation(scenario, crops);
+  game.dispatch({ type: 'harvest-field', fieldSlot: 1 }); game.dispatch({ type: 'set-paused', paused: false });
+  for (let tick = 0; tick < 2048 && game.getSnapshot().scenario.fields[1].step !== 15; tick++) game.tick(1000 / scenario.farm.dayDelayTicks);
+  expect(game.getSnapshot().scenario.fields[1].step).toBe(15);
+  game.dispatch({ type: 'set-paused', paused: true });
+  await page.goto('/'); await expect(page.locator('#save-farm')).toBeEnabled();
+  await page.locator('#load-farm-file').setInputFiles({ name: 'truck.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(game.save(1)) });
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+  await page.locator('#field').selectOption('1');
+  await expect(page.locator('#field-status')).toContainText('Harvest');
+  for (let day = 0; day < 8; day++) await page.locator('#next-day').click();
+  await expect(page.locator('#harvest-stock')).toHaveText('1 stored harvest');
+  await expect(page.locator('#field-status')).toContainText('Waiting');
 });
