@@ -168,3 +168,5 @@ After committing shared valuation as `132323d`, recovered harvested-goods defini
 Recorded SF-021 (512 inventory slots versus byte building references) with native prevalidation, and SF-022 (storage reservation leak on allocation failure) with a cleanup primitive; actual harvest failure-path integration is explicitly deferred. Machinery and worker harvest FSMs, commands and crop sales remain next.
 
 Validation: all 80 Bun tests, TypeScript checking, production build and six Chromium checks pass. Existing planting, calendar/weather and MIDI behavior remain verified with the expanded snapshot data.
+
+Additional static harvest tracing identified crop byte +57 as the machinery/worker selector and the original truck-return uninitialized-index defect (SF-023, native fix deferred until that FSM is implemented). Concrete order/credit/return entry points are recorded in `reverse-engineering.md` for the next increment. Full playable harvest/store/sell remains unfinished, and the goal remains active.
