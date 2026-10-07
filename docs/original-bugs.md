@@ -405,3 +405,35 @@ Native `resolveTownChoice` returns this failure, including for timeout, preservi
 Constructor `0x3ac28..0x3ac65` initializes local pattern offset only for signed type below 15. A positive type 15–127 falls through without assigning `[bp-0xe]`, which later participates in reads from `6190:952c` at `0x3ad5c..0x3ad68`. Negative signed types also form invalid offsets. The traced player choices and timeout generate only 1–14, so reachable harmful input beyond malformed/internal calls is not established. This is not a proven exploitable vulnerability.
 
 Native constructor rejects every non-integer or out-of-range type before mutation, and the layout accessor bounds-checks type and coordinates. Tests include negative, 15, 256 and NaN inputs while preserving unknown words in valid layout storage.
+
+## SF-050 — airport development guard compares the complete level/type byte
+
+**Status:** verified branch mismatch; native behavior preserved; complete clock reproduction pending.
+
+`0x3b3cb` compares the full district byte to 5, whereas the airport constructor writes `0xa5`. Thus a constructed airport can grow from level 10 to 13 or decline, rather than taking this apparent protection branch. Conversely a raw byte 5 returns success without any change (`0x3b3d2`), allowing weekly development to charge 25 repeatedly, or reduce negative revenue by 25, while its level stays zero. Whether airport growth was intended is uncertain; the exact mismatch and arithmetic effects are verified. Native tests preserve both cases. Revisit after live finance/town integration; no security claim.
+
+## SF-051 — town demolition leaves recreation coordinates and airport count unchanged
+
+**Status:** confirmed incomplete bookkeeping; native behavior preserved; correction deferred.
+
+`0x3be63..0x3be6a` decrements recreation count only for raw byte 4. The remainder of demolition neither removes/compacts the saved coordinate pairs nor decrements airport count. Removing an earlier recreational district can therefore leave a stale entry and make subsequent construction overwrite a different live site's last coordinate slot. Count zero underflows to 255 on a malformed recreation record; native construction subsequently rejects that count (SF-047). Native demolition retains source byte arithmetic, coordinates and airport count. Effects on consumers of these tables still require tracing before a safe correction; no proven exploit claim.
+
+## SF-052 — next-town-site scan admits coordinate 12 and excludes the whole origin cross
+
+**Status:** confirmed boundary and selection quirks; native bounds corrected, selection quirks retained.
+
+`0x3c53d..0x3c547` skips coordinates only when greater than 12, but regional arrays have valid coordinates 0–11. A search near the map edge can read a neighboring logical record (Y=12) or beyond the ownership array (X=12), and can return an invalid site if that byte happens to be 2. Native search rejects both out-of-bounds coordinates before lookup. This is an invalid-read/index hazard, not a demonstrated exploitable vulnerability.
+
+Separately, `0x3c566..0x3c575` rejects either X equal to origin X or Y equal to origin Y. It excludes a whole row and column rather than just the protected origin pair. Search radii are 1–6 with exclusive positive edges. Those choices are preserved as verified behavior; whether the axis exclusion was intended remains uncertain. Tests exercise edge searches, first-candidate order, axis exclusions and fallback. Revisit their gameplay effects after integration.
+
+## SF-053 — town building repaint assumes every template anchor has four in-district cells
+
+**Status:** unchecked asset boundary assumption; supplied layouts safe; native guard implemented.
+
+At `0x3b922..0x3b97a` every even template value 252–280 writes four words at offsets 0, 0xc0, 2 and 0xc2 without district/map-edge checks. A modified layout placing an anchor on the last row or column can alter the next district or access beyond map storage at an outer edge. Every anchor in the supplied `townly0.cmp` is bounded, so this is not a demonstrated ordinary-game bug or exploit. Native repaint validates these anchors before changing terrain or consuming RNG. Tests inject a malformed last-column anchor and verify atomic rejection, including rollback of the proposed level.
+
+## SF-054 — commercial template anchor 280 is only partially retained during early growth
+
+**Status:** verified template/range interaction; visual defect suspected, native behavior preserved.
+
+Type 3 in original `townly0.cmp` has tile 280 at local (5,2), with companions 281 at (6,2), 246 at (5,3), and 247 at (6,3). Early growth treats 280 as a randomized four-cell building anchor (`0x3b90b..0x3b97a`), but subsequent iterations skip only 252–280 or 292–320 (`0x3b83c..0x3b853`). The three companion words fall outside those ranges and are overwritten with their template values, leaving only one randomized tile. An initial test incorrectly assumed every randomized four-cell group survives; source/asset inspection corrected that expectation. Native behavior now has a regression. Full original runtime visual confirmation and intended appearance remain unproven; correction deferred, no security implication.

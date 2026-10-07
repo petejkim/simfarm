@@ -14,13 +14,13 @@ The native constructor accepts bounded region coordinates and district types 0�
 
 The 8×8 loop visits X first, then Y. Existing terrain tile IDs **71, 72, 111, 112** skip template painting and retain their complete terrain words. Other cells clear terrain flags `0x3000`. Airport type 5 writes the template word directly, retaining remaining terrain upper bits; it does not call the road connector. Other types connect template values 161–172 through the town-road specialization, or replace the whole terrain word with grass `15 + (attribute & 15)`. This uses the attribute's low nibble, not the global moisture value. Every cell, including skipped cells, ORs overlay flag `0x4000`; attributes and other overlay bits remain intact.
 
-After painting, region ownership becomes 2 and channel 0 stores the district type. Types 0 and 5 also set level nibble `0xa0`; all other types begin at level zero. Most templates' buildings therefore do **not** appear during this constructor. Their later growth/decline routine (`0x3b3ac` and callers) must be reconstructed rather than stamping fully developed template buildings immediately.
+After painting, region ownership becomes 2 and channel 0 stores the district type. Types 0 and 5 also set level nibble `0xa0`; all other types begin at level zero. Most templates' buildings therefore do **not** appear during this constructor. The separately reconstructed growth/decline routine (`0x3b3ac` and callers), documented below, paints their later stages.
 
 ## Road connections
 
 Town constructor passes table `6190:5696` to connector `21c2:1578` / `0x25398`. Entries are category 4/count 11 (tiles 150–160), category 128/flags `0x22` (bridge tiles 172–173, connect but retain their image), category 5/count 11 (tiles 161–171), then -1. Category base words reside in segment `2be7`, not initialized DS `6190`. Shape offsets at `6190:59c4` are `[0,0,1,2,0,0,3,4,1,5,1,6,7,8,9,10]` for N/E/S/W mask bits 1/2/4/8.
 
-`connectTownRoad` captures neighboring categories, paints the center with base 161 and its mask shape, then reshapes N/E/S/W using each neighbor's original road base. Bridge images are untouched. All upper terrain bits remain; bounds follow the source neighbor guards. This is a town-road specialization, not a claim to support all unrelated original terrain-connection tables.
+`connectTownRoad` captures neighboring categories, paints the center with its requested base (161 by default for construction, 150 for paving) and mask shape, then reshapes N/E/S/W using each neighbor's original road base. Bridge images are untouched. All upper terrain bits remain; bounds follow the source neighbor guards. This is a town-road specialization, not a claim to support all unrelated original terrain-connection tables.
 
 ## Choice resolution
 
@@ -32,4 +32,39 @@ Original `twnchoic.bmp` visibly labels Residential, Commercial, Airport and Recr
 
 Six tests cover exact EXE constants/loader calls and archive hash, every layout word, binary boundaries, all-eight-farm counters, detached unknown bytes, all sixteen road masks/mixed road bases/bridges/map edges, all 120 farm/layout combinations, skipped terrain, metadata and record preservation, recreation limits, counter wrapping, RNG streams and timeout rejection. Generated `artifacts/town-construction.png` shows the fifteen initial layouts using the imported tile atlas, with `artifacts/render-town-construction.ts` reproducing that inspection. It confirms initial construction output, not a completed town renderer or later building growth.
 
-Next reconstruct district growth/decline, preserve pending choice and new town/finance state in native saves, and expose the chooser through React as part of annual collection integration. Full forced-sale/default behavior also remains required; see finances documentation. No farm cash debit or live annual event is advertised by this standalone constructor increment.
+Next preserve pending choice and new town/finance state in native saves, and expose the chooser through React as part of annual collection integration. Full forced-sale/default behavior also remains required; see finances documentation. No live annual event is advertised by these standalone primitives.
+
+## Growth, repainting and decline — implemented primitives
+
+`town-development.ts` reconstructs `0x3b162..0x3bf79` without adding a live clock hook. Runtime input explicitly supplies the current town site (`4d9f:fedb/fedc`, SSM `0x2170f/0x21710`), revenue (`6190:758a`) and wrapping development-spending word (`6190:7514`), alongside construction counters. Their native checkpoint integration remains pending. The source call at `0xcbb3` uses manager `24e6:0ff6`, thunk file `0x28056`, overlay 15:05c2. This is in the **weekly** branch of calendar routine `0xc88e`: non-seventh days branch from `0xc900` to `0xd0b5`, bypassing it. The call precedes monthly rollover and annual collection, so new annual receipts first affect a subsequent weekly development call.
+
+`developTown` first requires ownership 2 at the current site. Signed revenue >=25 requests one growth step; a successful return subtracts 25 and adds 25 to spending modulo 65536. Negative revenue requests one decline step; a successful return adds 25 and clamps a positive result to zero. Revenue 0–24 does nothing. The return value is not simply “the map changed”: demolition returns false, while raw district byte 5 returns true without any painting or level change.
+
+`changeTownLevel` ports `0x3b3ac`. The initialized maximum-level table `6190:9cac` has sixteen bytes of 13. Growth at or above that level fails. Decline at level zero calls demolition and returns false regardless of demolition result. Other accepted changes update the high nibble and repaint. Direction zero only repaints. The source airport guard compares the entire regional byte to 5, not the low type nibble (SF-050); this behavior remains explicit and tested. Invalid native coordinates/type 15 are rejected before mutation (SF-049).
+
+### Repaint stages
+
+Dispatch tables at file `0x3be08` (sixteen type targets) and `0x3bdde` (fourteen level targets) define these branches. Every loop is X outer/Y inner; template lookup remains `y*40+x`, while map storage is column-major. No repaint branch changes overlays or attributes. Road connection may reshape immediately adjacent road tiles outside the district.
+
+| Type / level | Source action |
+| --- | --- |
+| Type 0, any level | Write all template non-roads and connect dirt roads, then run a second complete road pass with paved base 150. No skipped-terrain guard. |
+| Types 4 and 5, any level | Preserve current tile IDs 71, 72, 111, 112; write template non-roads and connect paved roads elsewhere. |
+| Other types, level 0 | Replace every cell with whole-word `15+(attribute&15)`, including roads. |
+| Other types, levels 1–7 | At even template IDs 252–280, consume one **visual** RNG value (`5fd:007d` / `0x824d`), set `v=2*((value&3)+(level>>1))`, and write `(252+v,253+v,292+v,293+v)` at `(x,y),(x+1,y),(x,y+1),(x+1,y+1)`. Skip other template words in 252–280 or 292–320; connect dirt roads; write remaining template words. |
+| Other types, level 8 | Write all non-road template words and reconnect dirt roads. |
+| Other types, level 9 | Pave template roads with x<4 and y<4. |
+| Other types, level 10 | Pave template roads with y<4. |
+| Other types, level 11 | First pave y<4, then x<4/y>=4. |
+| Other types, level 12 | Pave all template roads. |
+| Other types, levels 13–15 | No painting. |
+
+All road template tests include 161 through **172**. Each connection clears terrain `0x3000` before calling the shared connector, whose new base parameter defaults to dirt for construction. Non-road template writes replace the entire terrain word. The original asset's building anchors all fit inside an 8×8 district; malformed templates that would extend a four-cell building outside it are rejected before writes/RNG consumption (SF-053). Template type 3 contains anchor 280 with companions 281/246/247; those companions are subsequently overwritten because they lie outside the skip ranges (SF-054). The native port retains that verified quirk.
+
+### Demolition and retargeting
+
+`demolishTownDistrict` ports `0x3be2c`. The exact saved town-origin pair cannot be demolished. Raw regional byte 4 decrements the recreation count modulo 256; there is no coordinate compaction or airport decrement (SF-051). Ownership becomes zero, but the old district byte and other regional channels remain. All plot cells clear overlay bits `0x4800`; terrain tile IDs 39–68 remain, and other terrain becomes `(terrain&0xf800) | (15+signedMoisture+(attribute>>2))`, truncated to a word. This differs deliberately from level-zero repainting.
+
+The retarget search `0x3c4f8` scans radii 1–6 around the prior active site, with lower edges included and upper edges excluded, X before Y. It selects ownership 2 only when **both** X differs from town-origin X and Y differs from origin Y, otherwise falls back to the origin. Native bounds reject coordinate 12; the original erroneously permits it (SF-052). The asymmetric scan and entire-origin-axis exclusion are retained pending broader behavior analysis.
+
+Six additional tests cover the exact dispatch tables/constants/caller, every type and level nibble, all ordinary early-stage RNG draws and four-cell orientation, painting/flags, source-record preservation, revenue thresholds/signed bits/wrapping, demolition/retargeting, airport quirks, malformed-input atomicity and all-eight-farm map corners. A generated stage sheet (`artifacts/town-development.png`) renders levels 0–13 for each district type through the imported atlas; its script and output remain ignored. Live town UI, annual finance integration, native checkpoint fields and full default handling remain required.

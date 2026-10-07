@@ -20,10 +20,10 @@ function roadMask(world: Scenario, x: number, y: number): number {
 }
 /** Town specialization of 0x25398. Capture neighbor categories before drawing;
  * then reshape N/E/S/W in source order, retaining each road's own base/flags. */
-export function connectTownRoad(world: Scenario, x: number, y: number): void {
+export function connectTownRoad(world: Scenario, x: number, y: number, centerBase: 150 | 161 = 161): void {
   const cell = world.cells[worldIndex(x, y)];
   const neighbors = directions.map(([dx, dy]) => roadBase(world, x + dx, y + dy));
-  cell.terrain = (cell.terrain & 0xf800) | (161 + shapes[roadMask(world, x, y)]);
+  cell.terrain = (cell.terrain & 0xf800) | (centerBase + shapes[roadMask(world, x, y)]);
   neighbors.forEach((base, i) => {
     if (base === null || base === 172) return;
     const [dx, dy] = directions[i], nx = x + dx, ny = y + dy;
