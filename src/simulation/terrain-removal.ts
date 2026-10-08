@@ -34,6 +34,12 @@ function repairNeighbors(world: Scenario, x: number, y: number, table: readonly 
   });
 }
 
+/** Shared source neighbor repair0x25398, independently selected by each caller.
+ * Disaster damage does not use the manual bulldozer's crossing/shore policy. */
+export function repairTerrainNeighbors(world: Scenario, x: number, y: number, kind: 'road' | 'fence' | 'irrigation'): void {
+  repairNeighbors(world, x, y, kind === 'road' ? roads : kind === 'fence' ? fences : irrigation);
+}
+
 /** Water-neighbor mask0x16b3e: N/E/S/W use8/4/2/1; map edges count as water. */
 function shoreMask(world: Scenario, x: number, y: number): number {
   return directions.reduce((bits, [dx, dy], i) => !inMap(x + dx, y + dy) || (world.cells[worldIndex(x + dx, y + dy)].terrain & 0x2000)

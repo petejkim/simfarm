@@ -1047,3 +1047,27 @@ Disaster dispatcher0x3709e, bit8 branch0x37112..0x37169, initializes record slot
 Status: conditional uninitialized-local read, native disaster integration pending. Confidence high on the missing assignment; reachability of a missing map window while the effect is active remains unresolved.
 
 Dispatcher0x370ae..0x370b7 tests global far pointer13ae/13b0. Only the nonzero branch initializes stack locals[bp−0x10]/[bp−0xe] at0x370c2/0x370c5. The bit20 effect later passes those locals to redraw call0x37215, and tests their combined value0x372c3..0x372c9 before window dereferences. A zero global does not initialize the locals to zero. Native should represent an absent viewport explicitly and keep simulation effects independent of drawing. No null-window DOS configuration or exploitable memory consequence has been established; do not label this a demonstrated security vulnerability.
+
+## SF-122 — disaster trough/feed destruction leaves definition counts unchanged
+
+Status: verified accounting asymmetry retained in the native damage primitive; aggregate consequences remain to be traced. Confidence high on the direct calls. No exploit is established.
+
+Disaster helper0x26598 calls raw inventory deletion0x152b0 at0x2672e and0x26791, rather than generic deletion. That helper clears inventory byte10 active32 and reduces total DS23d8, but does not decrement the matching goods definition count. Later clearing calls do not repair it. Native derives active totals from records and deliberately retains definition counts here, unlike manual bulldozing and building-content destruction. Tests buy both supplies, destroy them and check exact counts, retained bytes and saved continuation. Revisit downstream definition-count consumers before deciding whether to correct this asymmetry.
+
+## SF-123 — disaster clearing of terrain535..538 requires cash and posts worker expenses
+
+Status: verified cash-dependent damage quirk retained; intended design is unknown. Confidence high; no security implication.
+
+At0x26aaa..0x26ab1 the damage helper pushes amount25 and debit category500 into0x1c88e. Failure returns without clearing the tile; equality25 succeeds. Debit category500..503 posts to DS3e88/3e8a at0x1c9c4 (worker expenses), with32-bit wrapping. Other accepted terrain families have no debit. Native retains the charge, low-cash immunity of these four tiles and expense wrap, all covered by tests. The source insufficient-cash notice42 is deferred to live disaster integration. Do not generalize this into a fee on all disaster damage.
+
+## SF-124 — disaster network cleanup omits gate/valve/crossing repair and retains water flags
+
+Status: verified differences from manual removal retained; intended visual/flow semantics remain unresolved. Confidence high on branches; no security implication.
+
+The post-clear repair chain0x26b30..0x26c58 handles road150..171, fence177..187 and ditch87..108 only. Accepted gates188..191, valves122..125 and crossings172..173 never enter those calls. Unlike manual crossing cleanup, terrain2000 is not cleared; unlike manual shoreline cleanup, there is no shore reconstruction or visual RNG. Native follows the disaster-specific chain and tests unchanged neighbor images/high flags. SF-113's shared isolated-neighbor behavior also remains. Revisit as an explicit enhancement only after original disaster presentation/flow has been reconstructed.
+
+## SF-125 — destructive cell helper reads terrain without local coordinate bounds checks
+
+Status: native primitive rejects out-of-map/noninteger coordinates before access; original caller reachability still unproven. Confidence high on direct indexing, conditional on unsafe coordinates being supplied. No demonstrated security vulnerability.
+
+Entry0x265a8..0x265b1 calculates16-bit `x*96+y`, doubles it and reads the map without a local bounds check. Individual disaster callers may constrain their coordinates; those constraints still require complete tracing. Native accepts only integer coordinates0..95 and leaves state unchanged on rejection. Tests include negative,96,NaN and fractional inputs. Retain this entry and revisit each dispatcher caller rather than inferring a reachable overflow from the helper alone.
