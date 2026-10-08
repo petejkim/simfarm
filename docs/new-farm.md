@@ -1,5 +1,7 @@
 # Original new-farm setup
 
+The eight preset markers, initial selected grid cell and corrected INT region-screen layout are now recovered in [scenario-selection.md](scenario-selection.md). The traced selector matches marked locations to supplied SSM farms; no mission objective is inferred from a preset number. Interactive geographic selection remains the next UI increment.
+
 Custom farm creation is now connected to canonical GameSimulation, React controls and native v17 save/load. Market histories and road traffic now have shared runtime owners, weekly updates and exact continuation; legacy generated state migrates without regeneration (see market.md and traffic.md). It composes the recovered terrain/property/town/crop/market/planner/weather/traffic initialization from the original EXE and resources without an SSM template. Historical foundation entries below record the evidence as it was recovered; the final section describes live integration and remaining geographic chooser and warm-restart gaps.
 
 All executable addresses below are file offsets in SHA-256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`. Source files are read only. The independent annotated grids inside the original resource and saved climate triples provide cross-checks beyond the disassembly.

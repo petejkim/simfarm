@@ -23,6 +23,18 @@ export function readBitmap(bytes: Uint8Array, palette: Palette): Raster {
   if (b.u16(4) !== 4 || b.u16(6) !== 1) throw new Error('Unsupported SimFarm bitmap header');
   return decodePlanar(bytes.subarray(8), b.u16(0) * 8, b.u16(2), palette);
 }
+
+/** Headerless640×480 INT screens: four80-byte planes per scanline.
+ * 0416:002c (file0x638c) uploads ten rows from each3200-byte read. */
+export function readInterleavedScreen(bytes: Uint8Array, palette: Palette): Raster {
+  if (bytes.length !== 153600) throw new Error('Invalid interleaved screen size');
+  const planar = new Uint8Array(bytes.length);
+  for (let y = 0; y < 480; y++) for (let plane = 0; plane < 4; plane++) {
+    const start = y * 320 + plane * 80;
+    planar.set(bytes.subarray(start, start + 80), plane * 38400 + y * 80);
+  }
+  return decodePlanar(planar, 640, 480, palette);
+}
 export function tileAtlas(bytes: Uint8Array, palette: Palette, columns = 32, transparentIndex?: number): Raster {
   if (!bytes.length || bytes.length % 128 || !Number.isInteger(columns) || columns <= 0) throw new Error('Invalid tile atlas');
   const count = bytes.length / 128, width = columns * 16, height = Math.ceil(count / columns) * 16;

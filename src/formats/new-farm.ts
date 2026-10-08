@@ -5,6 +5,21 @@ export interface ClimateSelection { precipitation: number; temperature: number; 
 export interface SetupLocation extends ClimateSelection { x: number; y: number; selectable: boolean }
 export interface SetupMap { locations: SetupLocation[]; trailingBytes: Uint8Array }
 export interface ClimatePresets { precipitation: number[][]; temperature: number[][]; wind: number[][] }
+export interface ScenarioChooser {
+  farms: { id: number; x: number; y: number }[];
+  initialLocation: { x: number; y: number };
+}
+
+/** DS66ae/66b6: eight X/Y marker bytes, selected in0x32342..0x32380.
+ * DS66c0/66c2: initial grid selection. No mission/objective identifier. */
+export function readScenarioChooser(executable: Uint8Array): ScenarioChooser {
+  const b = new Binary(executable), ds = 0x846f0;
+  if (executable.length !== 0x917b9 || b.u16(0) !== 0x5a4d) throw new Error('Unsupported chooser executable');
+  const valid = (n: number) => { if (n < 0 || n >= 18) throw new Error('Invalid chooser coordinate'); return n; };
+  const xs = b.slice(ds + 0x66ae, 8), ys = b.slice(ds + 0x66b6, 8);
+  return { farms: Array.from({ length: 8 }, (_, id) => ({ id, x: valid(xs[id]), y: valid(ys[id]) })),
+    initialLocation: { x: valid(b.u16(ds + 0x66c0)), y: valid(b.u16(ds + 0x66c2)) } };
+}
 
 /** Four 324-byte planes with CRLF separators; chooser 0x31e7f..0x31f3d. */
 export function readSetupMap(bytes: Uint8Array): SetupMap {

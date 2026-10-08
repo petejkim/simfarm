@@ -6,11 +6,11 @@ import { patchCropGraphics } from '../src/formats/crop-graphics';
 import { spriteAtlas } from '../src/formats/sprite';
 import { readScenario } from '../src/formats/scenario';
 import { readArchive } from '../src/formats/archive';
-import { readClimatePresets, readSetupMap } from '../src/formats/new-farm';
+import { readClimatePresets, readSetupMap, readScenarioChooser } from '../src/formats/new-farm';
 import { readNewFarmRecordDefaults } from '../src/formats/new-farm-records';
 import { readNewFarmRuntimeDefaults } from '../src/formats/new-farm-runtime';
 import { readTrafficDefaults } from '../src/formats/traffic';
-import { readPalette, readBitmap, tileAtlas, decodePlanar, type Raster } from '../src/formats/graphics';
+import { readPalette, readBitmap, tileAtlas, decodePlanar, readInterleavedScreen, type Raster } from '../src/formats/graphics';
 import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
 import { readCrop, type CropDefinition } from '../src/formats/crop';
 
@@ -31,7 +31,7 @@ const assets = new Map(entries.map(e => [e.name, e.bytes]));
 function asset(name: string) { const bytes = assets.get(name); if (!bytes) throw new Error(`Missing ${name}`); return bytes; }
 const palette = readPalette(asset('simfarm.pal'));
 const setupMap = readSetupMap(asset('scenario.odt'));
-await json('new-farm-setup.json', { ...setupMap, trailingBytes: Array.from(setupMap.trailingBytes), climate: readClimatePresets(asset) });
+await json('new-farm-setup.json', { ...setupMap, ...readScenarioChooser(exe), trailingBytes: Array.from(setupMap.trailingBytes), climate: readClimatePresets(asset) });
 await json('new-farm-records.json', readNewFarmRecordDefaults(exe));
 await json('new-farm-runtime.json', readNewFarmRuntimeDefaults(exe));
 await json('traffic-defaults.json', readTrafficDefaults(exe));
@@ -42,7 +42,7 @@ for (const e of entries) {
 await png('tiles.png', tileAtlas(asset('ega16til.til'), palette));
 for (const name of ['airplane', 'apshadow', 'cropdust', 'tornado', 'swarm']) await png(`${name}.sprites.png`, spriteAtlas(asset(`${name}.spr`), palette));
 await png('masked-tiles.png', tileAtlas(asset('mskdtile.til'), palette, 32, 7));
-for (const name of ['sftitle', 'scenario', 'prsnt480']) await png(`${name}.png`, decodePlanar(asset(`${name}.int`), 640, 480, readPalette(asset(`${name}.pal`))));
+for (const name of ['sftitle', 'scenario', 'prsnt480']) await png(`${name}.png`, readInterleavedScreen(asset(`${name}.int`), readPalette(asset(`${name}.pal`))));
 const crops: CropDefinition[] = [];
 const cropBytes = new Map<string, Uint8Array>();
 const inputs = [
