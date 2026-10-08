@@ -13,6 +13,22 @@ export interface TerrainPreviewState {
   raw: { ds1521: number; ds23db: number };
 }
 
+/** Acceptance is a detached phase boundary, never another site/RNG draw. */
+export function copyLocatedTerrainPreview(previous: TerrainPreviewState): TerrainPreviewState & { locations: StartingLocations } {
+  const byte = (n: number) => Number.isInteger(n) && n >= 0 && n <= 255;
+  const word = (n: number) => Number.isInteger(n) && n >= 0 && n <= 65535;
+  if (previous.world.cells.length !== 9216 || previous.world.regionalConditions.length !== 1008 ||
+    previous.world.cells.some(c => !word(c.terrain) || !word(c.overlay) || !byte(c.attribute)) ||
+    !Number.isInteger(previous.terrain.soilMoisture) || previous.terrain.soilMoisture < -128 || previous.terrain.soilMoisture > 127 ||
+    typeof previous.terrain.river !== 'boolean' || typeof previous.terrain.lake !== 'boolean' ||
+    !byte(previous.raw.ds1521) || !byte(previous.raw.ds23db)) throw new Error('Invalid accepted terrain preview');
+  const random = new FarmRandom(previous.random); new TerrainRandom(random, previous.terrainHistory);
+  const locations = previous.locations;
+  if (!locations || ![locations.player.regionX, locations.player.regionY].every(n => Number.isInteger(n) && n >= 0 && n <= 9) ||
+    ![locations.town.regionX, locations.town.regionY].every(n => Number.isInteger(n) && n >= 0 && n < 12)) throw new Error('Invalid preview locations');
+  return structuredClone({ ...previous, locations });
+}
+
 /** Source setup3f854 ->4027e ->3fe1a. The chooser has not selected locations.
  * Cold67b4 is1; restart408e6 clears it. Soil is retained, not selected rain*4.
  * This detached setup phase does not reset records/accounts or finalize a farm. */

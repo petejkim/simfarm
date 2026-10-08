@@ -1,3 +1,4 @@
+import { copyLocatedTerrainPreview, type TerrainPreviewState } from './terrain-preview';
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
 import { climateForSetup, type ClimateSelection } from '../formats/new-farm';
 import type { SetupRecords } from '../formats/new-farm-records';
@@ -48,18 +49,19 @@ function prepareRestart(previous: SimulationState, assets: NewFarmAssets) {
 }
 
 /** Generated chooser outcome of restart402a8 ->4060c ->3f854 -> main2343.
- * One selected landscape generation; DOS preview/menu rerolls and elapsed
- * interrupts remain outside the native setup UI model. No reseeding. */
-export function restartGeneratedFarm(previous: SimulationState, options: RestartFarmOptions, assets: NewFarmAssets): SimulationState {
+ * Accept a located preview when supplied, otherwise generate one selected map.
+ * Elapsed DOS interrupts remain outside the native setup model. No reseeding. */
+export function restartGeneratedFarm(previous: SimulationState, options: RestartFarmOptions, assets: NewFarmAssets, accepted?: TerrainPreviewState): SimulationState {
+  const preview = accepted ? copyLocatedTerrainPreview(accepted) : null;
   const { prior, activity, records, runtime, regions } = prepareRestart(previous, assets);
   if (!prior.setup.terrainHistory) throw new Error('This older save has no retained terrain history. Start a fresh farm instead.');
   const calendar = createStartupCalendar(options.date), climate = climateForSetup(assets.climate, options.climate);
   if (typeof options.river !== 'boolean' || typeof options.lake !== 'boolean') throw new Error('Invalid terrain water option');
   const sourceArchive = prior.scenario.sourceBytes ?? prior.setup.sourceArchive;
-  const random = new FarmRandom(prior.random), terrainRandom = new TerrainRandom(random, prior.setup.terrainHistory);
-  const soilMoisture = options.climate.precipitation * 4;
-  const world = generateFarmTerrain(regions, { soilMoisture, river: options.river, lake: options.lake }, random, terrainRandom);
-  const locations = selectStartingLocations(world, random);
+  const random = new FarmRandom(preview?.random ?? prior.random), terrainRandom = new TerrainRandom(random, preview?.terrainHistory ?? prior.setup.terrainHistory);
+  const soilMoisture = preview?.terrain.soilMoisture ?? options.climate.precipitation * 4;
+  const world = preview?.world ?? generateFarmTerrain(regions, { soilMoisture, river: options.river, lake: options.lake }, random, terrainRandom);
+  const locations = preview ? { ok: true as const, locations: preview.locations } : selectStartingLocations(world, random);
   if (!locations.ok) throw new Error('No starting property fits this terrain. Change the water settings or start a fresh farm.');
   const { player, town } = locations.locations, property = initializeStartingProperty(world, player);
   runtime.farm.cash = property.cash; runtime.finances.homestead = property.homestead;
@@ -77,7 +79,7 @@ export function restartGeneratedFarm(previous: SimulationState, options: Restart
   return { ...prior,
     scenario: { ...prior.scenario, ...world, origin: 'generated', sourceBytes: null, version: null, climate,
       cropFiles: [...assets.records.cropFiles], schedule: createSetupSchedule(records.plannerBuffer), irrigation: activity.irrigation },
-    setup: { terrainHistory, sourceArchive: sourceArchive ? Uint8Array.from(sourceArchive) : null },
+    setup: { terrainHistory, previewRaw: preview ? { ...preview.raw } : prior.setup.previewRaw, sourceArchive: sourceArchive ? Uint8Array.from(sourceArchive) : null },
     newFarm: { provenance: { kind: 'restart', version: 1, options: { ...structuredClone(options), seeds: { ...prior.random } } },
       terrainHistory: [...terrainHistory], raw: runtime.raw, plannerBuffer: [...records.plannerBuffer] },
     retainedSetup: null, crops, cropMarketPrices,

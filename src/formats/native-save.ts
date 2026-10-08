@@ -161,7 +161,7 @@ export function writeNativeSave(state: SimulationState, scenarioId: number | nul
     if (state.scenario.origin !== 'original' || !state.scenario.sourceBytes || state.newFarm !== null) fail('original provenance');
   }
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 19, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 20, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, setup: { ...state.setup, sourceArchive: state.setup.sourceArchive ? hex(state.setup.sourceArchive) : null }, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -171,7 +171,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].includes(save.version)) fail('unsupported format or version');
   const s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const scenarioId = s.origin === 'generated' || (save.version >= 18 && save.scenarioId === null) ? null : number(save.scenarioId, 0, 7, 'scenario ID');
   if (s.origin === 'generated' && save.scenarioId !== null) fail('generated scenario ID');
@@ -196,7 +196,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
     : { history: cropMarketPrices.map(price => [...Array(29).fill(null), price]), mood: 0, rawBC72: 0 };
   const retainedSetup = save.version >= 18 ? decodeNewFarm(r.retainedSetup, save.version) : null;
   if (s.origin === 'generated' && retainedSetup !== null) fail('duplicate setup state');
-  const setup = save.version >= 19 ? decodeSessionSetup(r.setup) : { terrainHistory: (newFarm ?? retainedSetup)?.terrainHistory ? [...(newFarm ?? retainedSetup)!.terrainHistory] as SessionSetup['terrainHistory'] : null, sourceArchive: null };
+  const setup = save.version >= 19 ? decodeSessionSetup(r.setup, save.version) : { terrainHistory: (newFarm ?? retainedSetup)?.terrainHistory ? [...(newFarm ?? retainedSetup)!.terrainHistory] as SessionSetup['terrainHistory'] : null, sourceArchive: null, previewRaw: null };
   if (s.origin === 'generated' && setup.terrainHistory === null) fail('missing generated terrain history');
   const state: SimulationState = { scenario: s, setup, newFarm, retainedSetup, crops: r.crops.map(c => numbers(c, 128, 0, 255, 'crop bytes')),
     townLayoutBytes: save.version >= 5 ? numbers(r.townLayoutBytes, TOWN_LAYOUT_BYTES, 0, 255, 'town layout bytes') : null,
@@ -320,9 +320,11 @@ function decodeMarket(value: unknown): MarketState {
 }
 
 
-function decodeSessionSetup(value: unknown): SessionSetup {
+function decodeSessionSetup(value: unknown, version: number): SessionSetup {
   const s = object(value, 'session setup');
   const sourceArchive = s.sourceArchive === null ? null : bytes(s.sourceArchive, 139072, 'archived source');
   if (sourceArchive && sourceArchive[0] !== 0x18) fail('archived source version');
-  return { terrainHistory: s.terrainHistory === null ? null : numbers(s.terrainHistory, 5, 0, 65535, 'session terrain history') as SessionSetup['terrainHistory'], sourceArchive };
+  const raw = version >= 20 && s.previewRaw !== null ? object(s.previewRaw, 'preview raw') : null;
+  const previewRaw = raw ? { ds1521: number(raw.ds1521, 0, 255, 'preview DS1521'), ds23db: number(raw.ds23db, 0, 255, 'preview DS23db') } : null;
+  return { previewRaw, terrainHistory: s.terrainHistory === null ? null : numbers(s.terrainHistory, 5, 0, 65535, 'session terrain history') as SessionSetup['terrainHistory'], sourceArchive };
 }

@@ -6,6 +6,8 @@ import { readCrop } from '../../src/formats/crop';
 import { newFarmAssets, newFarmOptions } from '../support/new-farm';
 import { readArchive } from '../../src/formats/archive';
 import { readSetupMap } from '../../src/formats/new-farm';
+import { CustomFarmSetup } from '../../src/simulation/custom-farm-setup';
+import { readNativeSave, writeNativeSave } from '../../src/formats/native-save';
 
 const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
 const crops = readdirSync(new URL('../../../simfarm-dos/CROPS', import.meta.url)).filter(n => /\.crp$/i.test(n))
@@ -23,6 +25,34 @@ async function save(page: Page, name: string) {
   await download.saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
 }
 
+test('accepted custom preview survives browser import and retains exact continuation and wrapper bytes', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  const old = new GameSimulation(readScenario(source('SCEN4.SSM')), crops, assets.townLayouts);
+  const draft = CustomFarmSetup.restart(readNativeSave(old.save(null)).state, options, assets);
+  draft.generateWorld(); draft.generateWorld();
+  draft.setSettings({ ...options, climate: { precipitation: 0, temperature: 3, wind: 0 }, river: false, lake: true });
+  const preview = draft.getSnapshot().preview;
+  const game = GameSimulation.load(writeNativeSave(draft.accept(), null), crops, assets.townLayouts).simulation;
+  await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  await load(page, game.save(null));
+  await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
+  await expect(page.locator('#farm-cash')).toHaveText('$40,000');
+  const initial = await save(page, 'preview-accepted');
+  expect(initial).toEqual(JSON.parse(game.save(null)));
+  expect(initial.runtime.setup.previewRaw).toEqual({ ds1521: 201, ds23db: 201 });
+  expect(initial.runtime.setup.terrainHistory).toEqual(preview.terrainHistory);
+  expect(initial.runtime.weather.soilMoisture).toBe(preview.terrain.soilMoisture);
+  for (let day = 0; day < 7; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  const advanced = await save(page, 'preview-advanced'); expect(advanced).toEqual(JSON.parse(game.save(null)));
+  await load(page, JSON.stringify(advanced)); expect(await save(page, 'preview-restored')).toEqual(advanced);
+  const imported = game.importOriginal(source('SCEN4.SSM'), crops).simulation;
+  await page.locator('#load-farm-file').setInputFiles({ name: 'SCEN4.SSM', mimeType: 'application/octet-stream', buffer: source('SCEN4.SSM') });
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+  expect(await save(page, 'preview-original-import')).toEqual(JSON.parse(imported.save(null)));
+  expect(imported.getSnapshot().setup.previewRaw).toEqual({ ds1521: 201, ds23db: 201 });
+  expect(errors).toEqual([]);
+});
+
 test('a generated restart checkpoint preserves its original archive and continues exactly through browser save/load', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const original = new GameSimulation(readScenario(source('SCEN4.SSM')), crops, assets.townLayouts);
@@ -35,7 +65,7 @@ test('a generated restart checkpoint preserves its original archive and continue
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   await expect(page.locator('#farm-cash')).toHaveText('$40,000');
   const initial = await save(page, 'initial');
-  expect(initial.version).toBe(19); expect(initial.runtime.newFarm.provenance.kind).toBe('restart');
+  expect(initial.version).toBe(20); expect(initial.runtime.newFarm.provenance.kind).toBe('restart');
   expect(initial.runtime.setup.sourceArchive).toBe(source('SCEN4.SSM').toString('hex'));
   expect(initial).toEqual(JSON.parse(game.save(null)));
   for (let day = 0; day < 7; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
@@ -116,7 +146,7 @@ test('invalid setup state leaves the browser farm intact and legacy original sav
   const expected = GameSimulation.load(JSON.stringify(legacy), crops, assets.townLayouts).simulation;
   await load(page, JSON.stringify(legacy));
   const migrated = await save(page, 'legacy');
-  expect(migrated.runtime.setup).toEqual({ terrainHistory: null, sourceArchive: null });
+  expect(migrated.runtime.setup).toEqual({ terrainHistory: null, sourceArchive: null, previewRaw: null });
   expect(migrated).toEqual(JSON.parse(expected.save(0)));
   await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
   const advanced = await save(page, 'legacy-advanced'); expect(advanced).toEqual(JSON.parse(expected.save(0)));
