@@ -56,14 +56,14 @@ export function connectTerrain(world: Scenario, x: number, y: number, base: 150 
 }
 
 /** Water-neighbor mask0x16b3e: N/E/S/W use8/4/2/1; map edges count as water. */
-function shoreMask(world: Scenario, x: number, y: number): number {
+function shoreMask(world: Pick<Scenario, 'cells'>, x: number, y: number): number {
   return directions.reduce((bits, [dx, dy], i) => !inMap(x + dx, y + dy) || (world.cells[worldIndex(x + dx, y + dy)].terrain & 0x2000)
     ? bits : bits | (8 >>> i), 0);
 }
 
 /** Shore repair0x16d1c. Only mask15 expands to a3×3 scan; it necessarily
  * starts away from map edges. Recompute each mask after previous writes. */
-function restoreShore(world: Scenario, x: number, y: number, random: FarmRandom): void {
+function restoreShore(world: Pick<Scenario, 'cells'>, x: number, y: number, random: FarmRandom): void {
   const paint = (x: number, y: number, mask: number) => {
     const c = world.cells[worldIndex(x, y)], t = terrainTile(c);
     const protectedTile = between(t, 120, 121) || between(t, 172, 173) || Boolean(c.overlay & 0x4000);
@@ -82,7 +82,7 @@ function restoreShore(world: Scenario, x: number, y: number, random: FarmRandom)
 /** Whole-map water redraw0x16ff8..0x17301: x-major, evolving neighbor masks,
  * identical protected tiles/3x3 isolated-water expansion to0x16d1c. Its source
  * inner loop clamps copies; mask15 already excludes all four map edges. */
-export function refreshShorelines(world: Scenario, random: FarmRandom): void {
+export function refreshShorelines(world: Pick<Scenario, 'cells'>, random: FarmRandom): void {
   for (let x = 0; x < 96; x++) for (let y = 0; y < 96; y++) {
     if (world.cells[worldIndex(x, y)].terrain & 0x2000) restoreShore(world, x, y, random);
   }

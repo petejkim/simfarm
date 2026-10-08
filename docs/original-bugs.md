@@ -1173,3 +1173,27 @@ Live follow-up for SF-136/137: these source behaviors now run through canonical 
 Climate setup0x4a398..0x4a55d scans four decimal words per iteration. Calls at0x4a407/0x4a494/0x4a521 are followed by stack cleanup and low-byte local reads, without checking conversion counts. The word locals at bp−22/−24/−26/−2a are not initialized before the first scan; later scans reuse them. Missing/malformed values can therefore leave prior or uninitialized local values in the climate tables. Valid parsed words are truncated to a byte; for example256 becomes0 and255 becomes−1 when subsequently interpreted as signed. The twelve distributed files contain complete valid data; no malformed shipped resource or exploitable execution path is established. Archive-open failure propagation and the C library's overflowing decimal-conversion behavior remain untraced.
 
 Native decoding requires60 complete four-value groups, signed16-bit input words and no extra non-whitespace suffix, retains signed low-byte truncation, and rejects precipitation>7 after truncation to protect the existing eight-pattern forecast boundary. Tests cover missing fields, malformed separators/text, out-of-word-range numbers, surplus groups and negative/wrapped precipitation. This corrects invalid-resource handling rather than changing valid source climates. Further original failure-path research is deferred; retain this entry if setup is later connected to gameplay. See docs/new-farm.md for source offsets, member hashes and initialization limits.
+
+## SF-139 — terrain interpolation retains coordinate96 aliases
+
+**Status:** verified boundary arithmetic and adjacent-array reads; preserved through explicit native lookup. Gameplay intent uncertain; correction deferred.
+
+Height accessor0x39c48..0x39ca2 changes negative coordinates to96−coordinate, then subtracts96 only when the result is strictly greater than96. Negative inputs therefore reflect (−16→16), values>96 wrap once, and exactly96 remains outside the96×96 coordinate range. The linear read uses x*96+y at terrain base0424. A y96 read aliases the next column; an x96 read enters the immediately adjacent overlay array at4c24. The five interpolation passes can request these boundaries. Generator0x39e1e clears overlays first, making those adjacent overlay reads defined zero within this chain; raw zero decodes to height1 after subtracting15 and masking15. No arbitrary native memory access or security vulnerability is implied.
+
+Native height lookup explicitly selects the corresponding known terrain/overlay word, retaining source results rather than silently wrapping96 to0. Tests distinguish negative reflection, >96 wrapping, y96 column alias, x96 overlay reads and the(96,96) corner. Changing this to conventional wrapping would change generated maps; that enhancement is deferred.
+
+## SF-140 — river width writes are not covered by the origin bounds check
+
+**Status:** verified unchecked three-cell brush; native map-boundary correction implemented. Complete DOS corruption consequences remain untraced.
+
+River branches0x3fee5..0x3ff6f and0x3ffbb..0x40045 call bounds helper0x40252 for the origin, then write that cell plus two transverse cells without further checks. A random walk can move the transverse origin to94/95 after starting below94. In the x-oriented brush, writes beyond the last map column reach adjacent overlay words; in the y-oriented brush, writes beyond a column can alias the next column or pass the map end. Attribute writes are similarly unchecked. No guard clips these subsequent writes in the traced branch. Tests force source-valid starts/draws reaching95; they do not claim observation of an actual DOS crash or a security exploit.
+
+Native checks each brush cell and discards out-of-map writes, while preserving accepted positions, final-step RNG consumption and both source orientations. This fixes memory/column spill rather than widening/shortening valid strokes. Existing unknown bytes and overlays stay untouched. Lake code also checks centerY instead of current rowY, but its verified center≤70/radius≤11 keep rows≤91; no ordinary lake out-of-range write is established. Further downstream original corruption analysis is deferred.
+
+## SF-141 — regional terrain seeding samples only the map's first12×12 cells
+
+**Status:** verified sampling arithmetic; intended distribution uncertain; preserved, correction deferred.
+
+After in-place attribute smoothing,0x40d31..0x40d50 uses region coordinates directly as x*96+y to fetch one map attribute and writes attribute<<4/<<2 to region channels6/5. Region coordinates are0..11, so all144 regions derive these two values from the top-left12×12 cells, despite each region representing8×8 map cells. The code does not multiply coordinates by8 or average a region. Three other region channels independently receive visual RNG values0..60. This may be intentional distribution seeding or a coordinate-scale defect; no stronger intent or vulnerability claim is supported.
+
+Native preserves this sampling and unrelated region bytes. Tests deliberately distinguish map(3,0) from map(24,0), verify all144 outputs and source RNG order, and retain the in-place smoothing dependency. Any change to use regional averages belongs to a later explicit enhancement.
