@@ -3,6 +3,7 @@ import type { RandomState } from './random';
 import type { WeatherState } from './weather';
 import type { FinancialState } from '../formats/finance';
 import type { TownSite } from './town';
+import type { AircraftServiceState } from './aircraft';
 import type { AnimalFrameState } from './animal-world';
 
 /** Tax and reservation have completed; resume at 0xcdf9 after the choice.
@@ -30,6 +31,7 @@ export interface SimulationState {
   grassTravelCount: number;
   equipmentAnimationTick: number;
   animalFrame: AnimalFrameState;
+  aircraftService: AircraftServiceState;
   cropMarketPrices: number[];
   finances: FinancialState;
   pendingTown: PendingTownExpansion | null;

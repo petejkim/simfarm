@@ -19,6 +19,7 @@ import { FarmReport } from './FarmReport';
 import { LivestockPanel } from './LivestockPanel';
 import { EquipmentShop } from './EquipmentShop';
 import { checkEquipmentPurchase } from '../simulation/equipment-purchase';
+import { AircraftPanel } from './AircraftPanel';
 import { MachineryPanel } from './MachineryPanel';
 import { TownChoicePanel } from './TownChoicePanel';
 import type { GameEvent } from '../simulation/events';
@@ -142,6 +143,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     {snapshot && <TaxPanel snapshot={snapshot} />}
     {snapshot && <FarmReport snapshot={snapshot} />}
     {snapshot && <LivestockPanel snapshot={snapshot} onShop={() => setMapTool('livestock')} />}
+    {snapshot && simulation && <AircraftPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     {snapshot && <MachineryPanel snapshot={snapshot} onShop={() => setMapTool('equipment')} />}
     {data && <main>
       <section className="map-panel">

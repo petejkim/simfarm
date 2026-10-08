@@ -61,6 +61,8 @@ import { ageAnimals, beginAnimalPregnancies, advanceAnimalGestation, type Animal
 import { ageEquipment, type EquipmentAgingNotice } from './weekly-equipment';
 import { ageChemicals } from './weekly-chemicals';
 import { purchaseEquipment, type EquipmentPurchaseResult } from './equipment-purchase';
+import { createAircraftServiceState, purchaseAircraft, serviceAircraft, type AircraftServiceAction,
+  type AircraftServiceState, type AircraftPurchaseResult, type AircraftServiceResult } from './aircraft';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -90,6 +92,9 @@ export interface GameSnapshot {
   animalLifecycleNotices: AnimalLifecycleNotice[];
   equipmentAgingNotices: EquipmentAgingNotice[];
   animalFrame: AnimalFrameState;
+  aircraftService: AircraftServiceState;
+  lastAircraftPurchaseResult: AircraftPurchaseResult | null;
+  lastAircraftServiceResult: AircraftServiceResult | null;
   cropMarketPrices: number[];
   lastPlantResult: PlantResult | null;
   lastHarvestResult: HarvestOrderResult | null;
@@ -117,6 +122,8 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'buy-land'; regionX: number; regionY: number }
   | { type: 'build'; buildingType: number; x: number; y: number }
   | { type: 'irrigation'; tool: IrrigationTool; x: number; y: number }
+  | { type: 'buy-aircraft' }
+  | { type: 'service-aircraft'; slot: number; action: AircraftServiceAction }
   | { type: 'buy-equipment'; equipmentType: number; x: number; y: number }
   | { type: 'buy-livestock'; productType: number; x: number; y: number }
   | { type: 'create-field'; x: number; y: number; cropSlot: number }
@@ -167,6 +174,9 @@ export class GameSimulation {
   private dayTicks = 0;
   private readonly equipmentRuntime: EquipmentRuntime = { grassTravelCount: 0, animationTick: 0, notices: [] };
   private animalFrame = createAnimalFrameState();
+  private aircraftService = createAircraftServiceState();
+  private lastAircraftPurchaseResult: AircraftPurchaseResult | null = null;
+  private lastAircraftServiceResult: AircraftServiceResult | null = null;
   private animalNotices: GameSnapshot['animalNotices'] = [];
   private animalLifecycleNotices: AnimalLifecycleNotice[] = [];
   private equipmentAgingNotices: EquipmentAgingNotice[] = [];
@@ -215,6 +225,7 @@ export class GameSimulation {
       this.elapsed = restored.elapsed; this.dayTicks = restored.dayTicks; this.disasterFlags = restored.disasterFlags;
       this.equipmentRuntime.grassTravelCount = restored.grassTravelCount;
       this.equipmentRuntime.animationTick = restored.equipmentAnimationTick;
+      this.aircraftService = { ...restored.aircraftService };
       this.animalFrame = { ...restored.animalFrame, herd: Uint8Array.from(restored.animalFrame.herd) };
     } else {
       this.random = new FarmRandom(seeds);
@@ -235,7 +246,7 @@ export class GameSimulation {
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
       disasterFlags: this.disasterFlags, grassTravelCount: this.equipmentRuntime.grassTravelCount,
       equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices,
-      animalFrame: this.animalFrame,
+      animalFrame: this.animalFrame, aircraftService: this.aircraftService,
       finances: this.finances, pendingTown: this.pendingTown, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
   }
 
@@ -315,6 +326,10 @@ export class GameSimulation {
       this.lastBuildingResult = purchaseBuilding(this.scenario, this.finances, command.buildingType, command.x, command.y, this.weather.soilMoisture);
     } else if (command.type === 'irrigation') {
       this.lastIrrigationResult = placeIrrigation(this.scenario, this.finances, command.tool, command.x, command.y, this.weather.soilMoisture);
+    } else if (command.type === 'buy-aircraft') {
+      this.lastAircraftPurchaseResult = purchaseAircraft(this.scenario, this.finances);
+    } else if (command.type === 'service-aircraft') {
+      this.lastAircraftServiceResult = serviceAircraft(this.scenario, this.finances, this.aircraftService, command.slot, command.action);
     } else if (command.type === 'buy-equipment') {
       this.lastEquipmentPurchaseResult = { equipmentType: command.equipmentType,
         ...purchaseEquipment(this.scenario, this.finances, command.equipmentType, command.x, command.y, this.weather.soilMoisture) };
@@ -530,6 +545,9 @@ export class GameSimulation {
       availableLoan: Math.min(Math.max(0, 9999999 - this.scenario.farm.cash),
         loanCreditLimit(this.scenario, this.finances.accounts.buildingBookValue, this.finances.loan.principal, this.weather.soilMoisture)),
       lastLoanResult: this.lastLoanResult ? { ...this.lastLoanResult } : null, financeNotices: [...this.financeNotices],
+      aircraftService: { ...this.aircraftService },
+      lastAircraftPurchaseResult: this.lastAircraftPurchaseResult ? { ...this.lastAircraftPurchaseResult } : null,
+      lastAircraftServiceResult: this.lastAircraftServiceResult ? { ...this.lastAircraftServiceResult } : null,
       animalFrame: { ...this.animalFrame, herd: Uint8Array.from(this.animalFrame.herd) },
       animalNotices: this.animalNotices.map(n => ({ ...n })),
       animalLifecycleNotices: this.animalLifecycleNotices.map(n => ({ ...n })),
