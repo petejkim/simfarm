@@ -58,6 +58,8 @@ import { purchaseLivestock, type LivestockPurchaseResult } from './livestock-pur
 import { ageBuildings, fillWaterStorage } from './water-storage';
 import { ageInventoryAndRefillTroughs } from './weekly-inventory';
 import { ageAnimals, beginAnimalPregnancies, advanceAnimalGestation, type AnimalLifecycleNotice } from './animal-lifecycle';
+import { ageEquipment, type EquipmentAgingNotice } from './weekly-equipment';
+import { ageChemicals } from './weekly-chemicals';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -85,6 +87,7 @@ export interface GameSnapshot {
   financeNotices: number[];
   animalNotices: { slot: number; id: number; animalType: number }[];
   animalLifecycleNotices: AnimalLifecycleNotice[];
+  equipmentAgingNotices: EquipmentAgingNotice[];
   animalFrame: AnimalFrameState;
   cropMarketPrices: number[];
   lastPlantResult: PlantResult | null;
@@ -163,6 +166,7 @@ export class GameSimulation {
   private animalFrame = createAnimalFrameState();
   private animalNotices: GameSnapshot['animalNotices'] = [];
   private animalLifecycleNotices: AnimalLifecycleNotice[] = [];
+  private equipmentAgingNotices: EquipmentAgingNotice[] = [];
   private readonly cropMarketPrices: number[];
   private lastPlantResult: PlantResult | null = null;
   private lastHarvestResult: HarvestOrderResult | null = null;
@@ -401,9 +405,13 @@ export class GameSimulation {
       fillWaterStorage(s); // 0xd296, before the day-seven weekly phase and next irrigation frame.
     }
     if (next.weekEnded) {
-      // Weekly0xbe4d ages buildings before inventory refills; both precede wind0xbe74.
-      // Equipment/chemical aging still need their separate source phases.
+      // Weekly0xbe4d: equipment, buildings, chemicals, animals, inventory;
+      // every aging phase precedes wind0xbe74 and breeding0xbe81.
+      const equipment = ageEquipment(s, this.finances, w.soilMoisture);
+      this.equipmentAgingNotices = [...this.equipmentAgingNotices, ...equipment].slice(-20);
+      for (const result of equipment) if (result.kind === 'sold') this.events.push({ type: 'sound', sound: 'explode' });
       ageBuildings(s, this.random);
+      ageChemicals(s);
       const aging = ageAnimals(s, this.finances, this.random);
       this.requestAnimalVocals(aging.sounds);
       this.animalLifecycleNotices = [...this.animalLifecycleNotices, ...aging.notices].slice(-20);
@@ -518,6 +526,7 @@ export class GameSimulation {
       animalFrame: { ...this.animalFrame, herd: Uint8Array.from(this.animalFrame.herd) },
       animalNotices: this.animalNotices.map(n => ({ ...n })),
       animalLifecycleNotices: this.animalLifecycleNotices.map(n => ({ ...n })),
+      equipmentAgingNotices: this.equipmentAgingNotices.map(n => ({ ...n })),
       weather: { ...this.weather, forecast: [...this.weather.forecast], nextForecast: [...this.weather.nextForecast] },
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, cropMarketPrices: [...this.cropMarketPrices],
       lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null,

@@ -1,7 +1,7 @@
 import { Binary } from './binary';
 export interface PcmSound { sampleRate: number; samples: Float32Array<ArrayBuffer> }
 
-/** The supplied homestead and livestock resources contain one type-1 uncompressed mono
+/** The supplied homestead, livestock and explosion resources contain one type-1 uncompressed mono
  * U8 block, then a terminator. Other VOC encodings are explicitly unsupported. */
 export function decodeVoc(bytes: Uint8Array): PcmSound {
   const b = new Binary(bytes);

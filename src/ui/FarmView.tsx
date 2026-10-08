@@ -17,6 +17,7 @@ import { LoanPanel } from './LoanPanel';
 import { TaxPanel } from './TaxPanel';
 import { FarmReport } from './FarmReport';
 import { LivestockPanel } from './LivestockPanel';
+import { MachineryPanel } from './MachineryPanel';
 import { TownChoicePanel } from './TownChoicePanel';
 import type { GameEvent } from '../simulation/events';
 import { BuildingPanel } from './BuildingPanel';
@@ -136,6 +137,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     {snapshot && <TaxPanel snapshot={snapshot} />}
     {snapshot && <FarmReport snapshot={snapshot} />}
     {snapshot && <LivestockPanel snapshot={snapshot} onShop={() => setMapTool('livestock')} />}
+    {snapshot && <MachineryPanel snapshot={snapshot} />}
     {data && <main>
       <section className="map-panel">
         <FarmMap scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}

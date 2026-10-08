@@ -48,3 +48,12 @@ test('VOC rejects truncated headers, sample blocks, missing terminators, unsuppo
   for (const [offset, value] of edits) { const bad = Uint8Array.from(bytes); bad[offset] = value; assert.throws(() => decodeVoc(bad)); }
   const extra = new Uint8Array(bytes.length + 1); extra.set(bytes); assert.throws(() => decodeVoc(extra), /block sequence/);
 });
+
+test('original equipment-removal explosion decodes every fingerprinted PCM sample', () => {
+  const e = entries.find(e => e.name === 'explode.voc')!, sound = decodeVoc(e.bytes);
+  assert.equal(e.offset, 2157593); assert.equal(e.bytes.length, 12769);
+  assert.equal(createHash('sha256').update(e.bytes).digest('hex'), '1156a56ebd0d8bc2cd598d2ad91b6fb9d9f00b5c82db0a8c9f5bc065dd29c59f');
+  assert.equal(sound.sampleRate, 1000000 / 181); assert.equal(sound.samples.length, 12736);
+  for (let i = 0; i < sound.samples.length; i++) assert.equal(sound.samples[i], (e.bytes[i + 32] - 128) / 128);
+  for (const end of [26, 31, e.bytes.length - 1]) assert.throws(() => decodeVoc(e.bytes.subarray(0, end)));
+});
