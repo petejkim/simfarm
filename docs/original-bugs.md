@@ -803,7 +803,7 @@ Native building demolition prevalidates registry state for types70/71 and remove
 
 **Status:** verified table/loop mismatch; visible intent uncertain; native preserves source behavior.
 
-DS6190:56ae has five category entries:83/11,84/11,128/0x22,129/0x24,61/0x22 (dry, wet, bridge, valve, pump). Both neighbor helpers0x24b54 and0x24cf4 stop at index4;0x24cd1 explicitly compares the byte index with4. Pump120..121 therefore does not contribute a connection bit although the subsequent table entry describes it. Water propagation independently accepts those tiles at0x17636. This is an image/connection quirk, not proof of broken water delivery or a security vulnerability. Native placement retains the four-entry limit; a pump-only adjacent cell does not turn the new ditch image. Revisit original visual expectations before choosing an enhancement.
+DS6190:56ae has five category entries:83/11,84/11,128/0x22,129/0x24,61/0x22 (dry, wet, bridge, valve, pump). Boolean-mask helper0x24b54 stops at index4 (comparison0x24cd1). Category helper0x24cf4 instead stops at index6 (comparison0x24e7b), correcting the earlier claim that both stop at4. The parent repair loop only visits neighbors admitted by the boolean mask, so the additional category entries cannot add a connection. Pump120..121 therefore does not contribute a connection bit although the subsequent table entry describes it. Water propagation independently accepts those tiles at0x17636. This is an image/connection quirk, not proof of broken water delivery or a security vulnerability. Native placement retains the four-entry limit; a pump-only adjacent cell does not turn the new ditch image. Revisit original visual expectations before choosing an enhancement.
 
 ## SF-095 — automatic map-tool clearing precedes placement rejection
 
@@ -1143,3 +1143,10 @@ These products share generic purchase0x1cb42, including debit before allocation/
 
 
 Live manual-supply follow-up: SF-134 and SF-021/083/095 guards now run through the canonical purchase command and browser shop. Successful purchased records survive v14 checkpoints and supply real planting/treatment orders; default/town/flight rejection precedes sound or mutation. This integration does not resolve SF-134's original entry-helper AX/reachability uncertainty or change the retained signed-price arithmetic.
+
+
+## SF-135 — road crossings include the first image beyond both terrain families
+
+**Status:** verified inclusive comparison arithmetic; preserved; ordinary visual consequences and intended limits uncertain; correction deferred.
+
+Road placement0x24588..0x245bb accepts dry-ditch base87 through87+22=109 inclusive, and water base39 through39+count30=69 inclusive. The dry/wet ditch families occupy87..108; water occupies39..68. The first image beyond each combined family is therefore also accepted and replaced by crossing172 for the current type301 price. These are literal low11-bit tile checks, independent of terrain water flags. Native preserves the endpoints, retained high flags and road-only neighbor repair. Tests enumerate all2048 tile IDs for both road tools and pin the source instructions. This is an arithmetic/category-boundary quirk, not a demonstrated security vulnerability; revisit the actual meaning/reachability of tiles69/109 before changing compatibility behavior. The shared grass upper bound15+16=31 is likewise retained in construction eligibility.

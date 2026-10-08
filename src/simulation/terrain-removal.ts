@@ -5,7 +5,8 @@ const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]] as const;
 const shapes = [0, 0, 1, 2, 0, 0, 3, 4, 1, 5, 1, 6, 7, 8, 9, 10]; // DS59c4
 const shores = [55, 51, 47, 49, 43, 57, 45, 65, 39, 53, 59, 67, 41, 61, 63, -1]; // DS23dc
 type Connection = readonly [base: number, count: number, fixed: boolean];
-// First four entries only, matching helpers0x24b54/0x24cf4 (SF-094).
+// Boolean mask0x24b54 scans four entries. Category helper0x24cf4 scans six,
+// but repair only visits neighbors admitted by the boolean mask (SF-094).
 const roads: readonly Connection[] = [[150, 11, false], [172, 2, true], [161, 11, false]];
 const irrigation: readonly Connection[] = [[87, 11, false], [98, 11, false], [172, 2, true], [122, 4, true]];
 const fences: readonly Connection[] = [[177, 11, false], [188, 4, true]];
@@ -38,6 +39,20 @@ function repairNeighbors(world: Scenario, x: number, y: number, table: readonly 
  * Disaster damage does not use the manual bulldozer's crossing/shore policy. */
 export function repairTerrainNeighbors(world: Scenario, x: number, y: number, kind: 'road' | 'fence' | 'irrigation'): void {
   repairNeighbors(world, x, y, kind === 'road' ? roads : kind === 'fence' ? fences : irrigation);
+}
+
+/** Center placement0x24e9e, followed by the same neighbor repair. Center
+ * writes cannot change the snapshotted categories of its four neighbors. */
+export function connectTerrain(world: Scenario, x: number, y: number, base: 150 | 161 | 177): void {
+  const table = base === 177 ? fences : roads;
+  const mask = directions.reduce((bits, [dx, dy], i) => {
+    if (!inMap(x + dx, y + dy)) return bits;
+    const tile = terrainTile(world.cells[worldIndex(x + dx, y + dy)]);
+    return table.some(([first, count]) => tile >= first && tile < first + count) ? bits | (1 << i) : bits;
+  }, 0);
+  const cell = world.cells[worldIndex(x, y)];
+  cell.terrain = (cell.terrain & 0xf800) | (base + shapes[mask]);
+  repairNeighbors(world, x, y, table);
 }
 
 /** Water-neighbor mask0x16b3e: N/E/S/W use8/4/2/1; map edges count as water. */
