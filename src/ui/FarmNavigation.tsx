@@ -1,6 +1,6 @@
 import type { MapTool } from './LandPanel';
 
-export type FarmDestination = 'crop-supplies' | 'planner' | 'land' | 'field' | 'loans' | 'map';
+export type FarmDestination = 'network' | 'crop-supplies' | 'planner' | 'land' | 'field' | 'loans' | 'map';
 
 export function FarmNavigation({ tool, blocked, onNavigate }: {
   tool: MapTool; blocked: boolean; onNavigate: (destination: FarmDestination) => void;
@@ -11,6 +11,7 @@ export function FarmNavigation({ tool, blocked, onNavigate }: {
     <button onClick={() => onNavigate('land')} aria-pressed={tool === 'land'} disabled={blocked}>Buy land</button>
     <button onClick={() => onNavigate('field')} aria-pressed={tool === 'field'} disabled={blocked}>New field</button>
     <button onClick={() => onNavigate('crop-supplies')} aria-controls="crop-supply-shop" aria-pressed={tool === 'crop-supplies'} disabled={blocked}>Seeds &amp; chemicals</button>
+    <button onClick={() => onNavigate('network')} aria-controls="network-panel" aria-pressed={tool === 'network'} disabled={blocked}>Roads &amp; fences</button>
     <button onClick={() => onNavigate('loans')} aria-controls="loan-panel">Loans</button>
   </nav>;
 }

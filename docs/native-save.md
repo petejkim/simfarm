@@ -70,3 +70,5 @@ Active checkpoints resume destruction, shoreline visual RNG, weekly counter/stop
 
 
 Manual seed and chemical purchasing uses the existing v14 inventory/chemical records, definition counts, building contents, terrain and expense ledgers. No additional runtime field is introduced. Purchase results, shop selections and sound requests are transient. Live tests verify all20 products through checkpoints and35-day continuation plus actual stored-seed/treatment consumption; browser downloads match canonical state before/after purchases and reload never repeats an effect.
+
+Road/fence/gate construction uses the existing v14 terrain and financial fields. Mixed road shapes, crossing flags, both gate orientations/open states, clearing charges and annual other expenses survive checkpoints without adding a schema field. UI action selection and last construction feedback are transient. Loading never purchases, consumes RNG or replays placement PCM. Live tests cover35-day paired continuation; browser tests compare exact downloaded saves before/after reload and further commands.

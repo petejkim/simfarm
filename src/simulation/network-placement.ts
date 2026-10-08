@@ -3,17 +3,24 @@ import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
 import { connectTerrain, repairTerrainNeighbors } from './terrain-removal';
 
 export type NetworkTool = 'road-161' | 'road-150' | 'fence' | 'gate';
+export type NetworkAction = NetworkTool | 'open-gate' | 'close-gate';
 export type NetworkPlacementResult = { ok: true; price: number; clearingCost: number; tile: number }
   | { ok: false; reason: 'outside-map' | 'town-land' | 'blocked-terrain' | 'not-owned'
-    | 'straight-fence-required' | 'insufficient-cash' };
+    | 'straight-fence-required' | 'gate-required' | 'insufficient-cash' };
 const inMap = (x: number, y: number) => [x, y].every(n => Number.isInteger(n) && n >= 0 && n < 96);
 
 /** Shop branches0x244e8..0x249a7. Only fences require ownership. Native
  * preflight keeps automatic clearing/payment atomic (SF-095). */
-export function checkNetworkPlacement(world: Scenario, finances: FinancialState, tool: NetworkTool,
+export function checkNetworkPlacement(world: Scenario, finances: FinancialState, tool: NetworkAction,
   x: number, y: number, soilMoisture: number): NetworkPlacementResult {
   if (!inMap(x, y)) return { ok: false, reason: 'outside-map' };
   const cell = world.cells[worldIndex(x, y)];
+  if (tool === 'open-gate' || tool === 'close-gate') {
+    const tile = terrainTile(cell);
+    return tile >= 188 && tile <= 191
+      ? { ok: true, price: 0, clearingCost: 0, tile: (tile & ~1) | Number(tool === 'open-gate') }
+      : { ok: false, reason: 'gate-required' };
+  }
   if (cell.overlay & 0x4000) return { ok: false, reason: 'town-land' };
   if (cell.terrain & 0x800) return { ok: false, reason: 'blocked-terrain' };
   if (![world.farm.cash, world.farm.workerExpenses, finances.annual.otherExpenses]
@@ -48,10 +55,14 @@ export function checkNetworkPlacement(world: Scenario, finances: FinancialState,
   return { ok: true, price, clearingCost, tile };
 }
 
-export function placeNetwork(world: Scenario, finances: FinancialState, tool: NetworkTool,
+export function placeNetwork(world: Scenario, finances: FinancialState, tool: NetworkAction,
   x: number, y: number, soilMoisture: number): NetworkPlacementResult {
   const result = checkNetworkPlacement(world, finances, tool, x, y, soilMoisture);
   if (!result.ok) return result;
+  if (tool === 'open-gate' || tool === 'close-gate') {
+    setGateOpen(world, x, y, tool === 'open-gate');
+    return result;
+  }
   world.farm.cash -= result.price + result.clearingCost;
   world.farm.workerExpenses = (world.farm.workerExpenses + result.clearingCost) >>> 0;
   finances.annual.otherExpenses = (finances.annual.otherExpenses + result.price) >>> 0;

@@ -1,3 +1,5 @@
+import { NetworkPanel } from './NetworkPanel';
+import { checkNetworkPlacement, type NetworkAction } from '../simulation/network-placement';
 import { CropSupplyShop } from './CropSupplyShop';
 import { checkCropSupplyPurchase } from '../simulation/crop-supply-purchase';
 import { DisasterPanel } from './DisasterPanel';
@@ -89,22 +91,24 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   const [plannerOpen, setPlannerOpen] = useState(false), [loansOpen, setLoansOpen] = useState(false);
   const [navigation, setNavigation] = useState<{ target: FarmDestination } | null>(null);
   const plannerRef = useRef<HTMLElement>(null), loansRef = useRef<HTMLElement>(null);
+  const networkRef = useRef<HTMLHeadingElement>(null);
   const supplyRef = useRef<HTMLHeadingElement>(null);
   const landRef = useRef<HTMLHeadingElement>(null), viewportRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     if (!navigation) return;
     const target = navigation.target === 'planner' ? plannerRef.current : navigation.target === 'loans' ? loansRef.current
-      : navigation.target === 'crop-supplies' ? supplyRef.current : navigation.target === 'map' ? viewportRef.current : landRef.current;
+      : navigation.target === 'network' ? networkRef.current : navigation.target === 'crop-supplies' ? supplyRef.current : navigation.target === 'map' ? viewportRef.current : landRef.current;
     target?.scrollIntoView({ block: 'start', inline: 'nearest' });
     target?.focus({ preventScroll: true });
   }, [navigation]);
   function navigate(target: FarmDestination) {
     if (target === 'planner') { setPlannerOpen(true); setMapTool('inspect'); }
     if (target === 'loans') setLoansOpen(true);
-    if (target === 'land' || target === 'field' || target === 'crop-supplies') setMapTool(target);
+    if (target === 'land' || target === 'field' || target === 'crop-supplies' || target === 'network') setMapTool(target);
     setNavigation({ target });
   }
   const [buildingType, setBuildingType] = useState(64);
+  const [networkTool, setNetworkTool] = useState<NetworkAction>('road-161');
   const [irrigationTool, setIrrigationTool] = useState<IrrigationTool>('ditch');
   const [equipmentType, setEquipmentType] = useState(0);
   const [cropSupplyType, setCropSupplyType] = useState(192);
@@ -119,10 +123,11 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     : position && data && snapshot && mapTool !== 'inspect' ? {
     x: mapTool === 'land' ? (position.x >> 3) * 8 : position.x,
     y: mapTool === 'land' ? (position.y >> 3) * 8 : position.y,
-    width: mapTool === 'equipment' ? data.scenario.equipmentDefinitions[equipmentType].width : mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].width : mapTool === 'irrigation' || mapTool === 'livestock' || mapTool === 'crop-supplies' ? 1 : 8,
-    height: mapTool === 'equipment' ? data.scenario.equipmentDefinitions[equipmentType].height : mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].height : mapTool === 'irrigation' || mapTool === 'livestock' || mapTool === 'crop-supplies' ? 1 : 8,
+    width: mapTool === 'equipment' ? data.scenario.equipmentDefinitions[equipmentType].width : mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].width : mapTool === 'network' || mapTool === 'irrigation' || mapTool === 'livestock' || mapTool === 'crop-supplies' ? 1 : 8,
+    height: mapTool === 'equipment' ? data.scenario.equipmentDefinitions[equipmentType].height : mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].height : mapTool === 'network' || mapTool === 'irrigation' || mapTool === 'livestock' || mapTool === 'crop-supplies' ? 1 : 8,
     valid: mapTool === 'land' ? quoteLand(data.scenario, position.x >> 3, position.y >> 3, snapshot.weather.soilMoisture)?.ownership === 0
       : mapTool === 'build' ? checkBuildingPlacement(data.scenario, buildingType, position.x, position.y, snapshot.weather.soilMoisture).ok
+      : mapTool === 'network' ? checkNetworkPlacement(data.scenario, snapshot.finances, networkTool, position.x, position.y, snapshot.weather.soilMoisture).ok
       : mapTool === 'irrigation' ? checkIrrigationPlacement(data.scenario, snapshot.finances, irrigationTool, position.x, position.y, snapshot.weather.soilMoisture).ok
       : mapTool === 'equipment' ? checkEquipmentPurchase(data.scenario, equipmentType, position.x, position.y, snapshot.weather.soilMoisture).ok
       : mapTool === 'crop-supplies' ? checkCropSupplyPurchase(data.scenario, cropSupplyType, position.x, position.y, snapshot.weather.soilMoisture).ok
@@ -161,6 +166,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
         <option value="inspect">Inspect</option><option value="land">Buy land</option><option value="field">New field</option>
         <option value="build">Build</option>
         <option value="remove">Bulldoze</option>
+        <option value="network">Roads &amp; fences</option>
         <option value="irrigation">Irrigation</option>
         <option value="equipment">Buy machinery</option><option value="move">Move machinery</option><option value="supply-move">Move supplies</option>
         <option value="crop-supplies">Buy seeds &amp; chemicals</option>
@@ -202,13 +208,14 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
           : mapTool === 'supply-move' ? 'Select a supply, then choose its destination in the movement panel'
           : mapTool === 'move' ? 'Select a machine, then choose its destination in the movement panel'
           : mapTool === 'remove' ? 'Click an object or terrain to review its removal'
+          : mapTool === 'network' ? 'Choose a tile, then review road, fence or gate work'
           : mapTool === 'irrigation' ? 'Click a tile to dig a ditch or control a valve'
           : mapTool === 'equipment' ? 'Click clear ground or an equipment storage building'
           : mapTool === 'crop-supplies' ? 'Click a storage building, then review your purchase'
           : mapTool === 'livestock' ? 'Click a tile for your animal or supply' : 'Scroll to explore · click a tile to examine'}</span>
           <span id="cell-status">{cell && position ? `Tile ${position.x}, ${position.y} · graphic ${terrainTile(cell)}` : '96 × 96 tiles'}</span>
-          {(mapTool === 'land' || mapTool === 'field' || mapTool === 'crop-supplies') && <button disabled={!position || Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)}
-            onClick={() => navigate(mapTool)}>{mapTool === 'land' ? 'Review plot' : mapTool === 'crop-supplies' ? 'Review supplies' : 'Review field'}</button>}
+          {(mapTool === 'land' || mapTool === 'field' || mapTool === 'crop-supplies' || mapTool === 'network') && <button disabled={!position || Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)}
+            onClick={() => navigate(mapTool)}>{mapTool === 'network' ? 'Review construction' : mapTool === 'land' ? 'Review plot' : mapTool === 'crop-supplies' ? 'Review supplies' : 'Review field'}</button>}
         </div>
       </section>
       <aside>
@@ -223,6 +230,8 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
           onCommand={command => simulation?.dispatch(command)} onCancel={() => { setSelection(null); setFieldSlot(null); }} />}
         {snapshot && mapTool === 'build' && <BuildingPanel snapshot={snapshot} position={position} buildingType={buildingType}
           onTypeChange={setBuildingType} onCommand={command => simulation?.dispatch(command)} />}
+        {snapshot && mapTool === 'network' && <NetworkPanel snapshot={snapshot} position={position} tool={networkTool}
+          onToolChange={setNetworkTool} onCommand={command => simulation?.dispatch(command)} headingRef={networkRef} onChooseMap={() => navigate('map')} />}
         {snapshot && mapTool === 'irrigation' && <IrrigationPanel snapshot={snapshot} position={position} tool={irrigationTool}
           onToolChange={setIrrigationTool} onCommand={command => simulation?.dispatch(command)} />}
         {snapshot && mapTool === 'crop-supplies' && <CropSupplyShop snapshot={snapshot} crops={assets.catalog.crops} position={position} productType={cropSupplyType}
