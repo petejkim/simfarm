@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type Ref } from 'react';
 import type { CropDefinition } from '../formats/crop';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
 import { quoteLand } from '../simulation/land';
@@ -11,6 +11,8 @@ interface Props {
   snapshot: GameSnapshot;
   crops: CropDefinition[];
   onCommand: (command: GameCommand) => void;
+  headingRef: Ref<HTMLHeadingElement>;
+  onChooseLocation: () => void;
 }
 const messages = {
   'outside-map': 'The entire field must fit inside the map.', 'not-owned': 'Buy all the land under this field first.',
@@ -20,7 +22,7 @@ const messages = {
   'invalid-crop': 'Select a crop available on this farm.', 'invalid-field': 'Select an available field.', 'field-busy': 'The field is already being worked.',
 };
 
-export function LandPanel({ tool, position, snapshot, crops, onCommand }: Props) {
+export function LandPanel({ tool, position, snapshot, crops, onCommand, headingRef, onChooseLocation }: Props) {
   const [cropSlot, setCropSlot] = useState(0);
   const world = snapshot.scenario;
   const regionX = position ? position.x >> 3 : 0, regionY = position ? position.y >> 3 : 0;
@@ -29,8 +31,10 @@ export function LandPanel({ tool, position, snapshot, crops, onCommand }: Props)
   const storedSeed = world.inventory.some(i => i.active && i.type === 192 + cropSlot);
   const seedCost = storedSeed ? 0 : (world.seedDefinitions[cropSlot].price + 20) & 0xffff;
   const result = snapshot.lastNewFieldResult, landResult = snapshot.lastLandResult;
-  return <section className="land-panel">
+  return <section id="land-panel" className="land-panel" aria-labelledby="land-heading">
     <span className="eyebrow">{tool === 'land' ? 'EXPAND YOUR FARM' : 'PLANT A NEW FIELD'}</span>
+    <h2 id="land-heading" ref={headingRef} tabIndex={-1}>{tool === 'land' ? 'Buy land' : 'New field'}</h2>
+    <button onClick={onChooseLocation}>Choose on map</button>
     {tool === 'land' ? <>
       <p>Click the map to select an 8 × 8 plot. Buying land includes its perimeter fences.</p>
       <p id="land-quote">{quote ? `Plot at ${regionX * 8}, ${regionY * 8} · ${quote.ownership === 1 ? 'Owned by you'

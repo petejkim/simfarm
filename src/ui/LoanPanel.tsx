@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type Ref } from 'react';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
 import { loanInstallment } from '../simulation/loan';
 
@@ -8,8 +8,9 @@ const failures = { 'invalid-amount': 'Enter a positive whole-dollar amount.', 'n
 const notices: Record<number, string> = { 166: 'The scheduled installment is overdue.', 168: 'Assets were sold to pay the overdue installment.',
   169: 'The overdue installment is still unpaid.', 170: 'The overdue installment has been paid.' };
 
-export function LoanPanel({ snapshot, onCommand, onRestart }: {
+export function LoanPanel({ snapshot, onCommand, onRestart, open, onOpenChange, summaryRef }: {
   snapshot: GameSnapshot; onCommand: (command: GameCommand) => void; onRestart: () => void;
+  open: boolean; onOpenChange: (open: boolean) => void; summaryRef: Ref<HTMLElement>;
 }) {
   const [amount, setAmount] = useState('1000');
   const { finances: f, availableLoan, lastLoanResult: result } = snapshot, decision = f.defaultDecision;
@@ -25,8 +26,8 @@ export function LoanPanel({ snapshot, onCommand, onRestart }: {
       </div> : <button onClick={onRestart}>Start this farm again</button>}
       <p>You can also load a saved farm or choose another scenario above.</p>
     </section>}
-    <details id="loan-panel" className="loan-panel">
-      <summary>Loans</summary>
+    <details id="loan-panel" className="loan-panel" open={open} onToggle={e => onOpenChange(e.currentTarget.open)}>
+      <summary ref={summaryRef}>Loans</summary>
       <dl>
         <div><dt>Loan balance</dt><dd id="loan-balance">{money(f.loan.principal)}</dd></div>
         <div><dt>Scheduled installment</dt><dd id="loan-installment">{money(f.loan.scheduledPayment)}</dd></div>

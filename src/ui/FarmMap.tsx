@@ -3,13 +3,14 @@ import type { MovingDisasterState } from '../simulation/moving-disasters';
 import { drawAircraft, flightPixelPosition, type FlightSprites } from '../render/aircraft-renderer';
 import type { AircraftFlight, FlightControl } from '../simulation/aircraft-flight';
 import { flightKey } from './FlightControls';
-import { useCallback, useEffect, useLayoutEffect, useRef, type MouseEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, type MouseEvent, type RefObject } from 'react';
 import { WORLD_SIZE, worldIndex, type Scenario } from '../formats/scenario';
 import type { FieldRecord } from '../formats/field';
 import { drawWorld, type MapPreview } from '../render/world-renderer';
 
 export interface MapFocus { x: number; y: number }
 interface Props {
+  viewportRef: RefObject<HTMLDivElement | null>;
   scenario: Scenario;
   flight: AircraftFlight | null;
   flightSprites: FlightSprites;
@@ -35,8 +36,8 @@ const directions: Record<string, [number, number]> = {
   ArrowLeft: [-64, 0], ArrowRight: [64, 0], ArrowUp: [0, -64], ArrowDown: [0, 64],
 };
 
-export function FarmMap({ scenario, tiles, maskedTiles, zoom, focus, field, selection, preview, onSelect, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null), viewportRef = useRef<HTMLDivElement>(null);
+export function FarmMap({ viewportRef, scenario, tiles, maskedTiles, zoom, focus, field, selection, preview, onSelect, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const flightRef = useRef(flight);
   useLayoutEffect(() => { flightRef.current = flight; }, [flight]);
   const pointerRef = useRef<{ clientX: number; clientY: number } | null>(null);

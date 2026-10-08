@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type Ref } from 'react';
 import type { CropDefinition } from '../formats/crop';
 import type { FieldRecord } from '../formats/field';
 import type { Scenario } from '../formats/scenario';
@@ -16,11 +16,33 @@ const failures = { 'invalid-field': 'This field is unavailable.', 'invalid-week'
   'protected-order': 'That week already has planting, harvest or a contract. Choose another week.',
   'fixed-harvest-week': 'This crop has a fixed annual harvest week.' };
 
-export function FieldPlanner({ scenario, crops, field, result, onEdit }: {
+interface EditorProps {
   scenario: Scenario; crops: CropDefinition[]; field: FieldRecord;
   result: (FieldPlanEditResult & { fieldSlot: number; week: number }) | null;
   onEdit: (fieldSlot: number, week: number, action: FieldPlanEdit) => void;
+}
+
+export function FieldPlanner({ scenario, crops, field, result, onEdit, open, onOpenChange, summaryRef, onSelect, onNewField }: Omit<EditorProps, 'field'> & {
+  field?: FieldRecord; open: boolean; onOpenChange: (open: boolean) => void; summaryRef: Ref<HTMLElement>;
+  onSelect: (slot: number | null) => void; onNewField: () => void;
 }) {
+  const fields = scenario.fields.filter(f => f.active);
+  return <details id="field-planner" className="field-planner" open={open} onToggle={e => onOpenChange(e.currentTarget.open)}>
+    <summary ref={summaryRef}>Crop plan{field ? ` · Field ${field.number}` : ''}</summary>
+    <p>Plans run at the start of each week. Choose a field, then select a week to inspect or change it.</p>
+    {fields.length ? <label className="crop-label">Plan for field <select id="planner-field" value={field?.slot ?? ''}
+      onChange={e => onSelect(e.target.value ? Number(e.target.value) : null)}>
+      <option value="">Choose a field…</option>
+      {fields.map(f => <option key={f.slot} value={f.slot}>Field {f.number} · {crops.find(c => `${c.id}.crp` === scenario.cropFiles[f.cropSlot])?.name ?? 'Unknown crop'}</option>)}
+    </select></label> : <>
+      <p>This farm has no fields yet. Create and plant a field to start planning.</p>
+      <button onClick={onNewField}>Create a field</button>
+    </>}
+    {field && <PlannerEditor key={`${field.slot}-${scenario.farm.calendar.year}`} scenario={scenario} crops={crops} field={field} result={result} onEdit={onEdit} />}
+  </details>;
+}
+
+function PlannerEditor({ scenario, crops, field, result, onEdit }: EditorProps) {
   const now = scenario.farm.calendar.month * 4 + scenario.farm.calendar.week;
   const [week, setWeek] = useState(now + 1), [kind, setKind] = useState<typeof actions[number]>('plant'), [cropSlot, setCropSlot] = useState(field.cropSlot);
   const yearOffset = Math.floor(week / 48), year = (scenario.farm.calendar.year + yearOffset) & 65535;
@@ -45,9 +67,7 @@ export function FieldPlanner({ scenario, crops, field, result, onEdit }: {
   const blocked = kind === 'contract' ? week !== now || field.state !== 4 || Boolean(contracted)
     : week <= now || kind === 'harvest' && fixedHarvest;
   const feedback = result?.fieldSlot === field.slot ? result : null;
-  return <details className="field-planner">
-    <summary>Crop plan · Field {field.number}</summary>
-    <p>Plans run at the start of each week. Select a week to inspect or change it.</p>
+  return <>
     <label className="crop-label">Plan year <select id="plan-year" value={yearOffset} onChange={e => setWeek(Number(e.target.value) * 48 + week % 48)}>
       {Array.from({ length: 5 }, (_, i) => <option key={i} value={i}>{(scenario.farm.calendar.year + i) & 65535}</option>)}
     </select></label>
@@ -74,5 +94,5 @@ export function FieldPlanner({ scenario, crops, field, result, onEdit }: {
     {kind !== 'contract' && week <= now && <p>Choose a future week to change its plan.</p>}
     <button id="apply-plan" disabled={blocked} onClick={() => onEdit(field.slot, week, kind === 'plant' ? { kind, cropSlot } : { kind })}>Apply plan change</button>
     {feedback && <p id="plan-result" role="status">{feedback.ok ? `Plan updated for ${date(feedback.week)}.` : failures[feedback.reason]}</p>}
-  </details>;
+  </>;
 }

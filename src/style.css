@@ -24,3 +24,9 @@ header { flex-wrap: wrap; }
 .disaster-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .disasters-panel summary { cursor: pointer; font-weight: bold; }
 .disasters-panel p { margin: 0.6rem 0; }
+
+.farm-navigation{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 28px;border-top:1px solid #44503b;background:#202b22}
+.farm-navigation .eyebrow{margin-right:8px}.farm-navigation button{font-size:13px}.farm-navigation button[aria-pressed=true]{border-color:#ead6a1;background:#53613e}
+.map-footer{align-items:center;flex-wrap:wrap}.map-footer button{font-size:12px}
+summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offset:3px}
+@media(max-width:800px){.farm-navigation{padding:12px 16px}.farm-navigation .eyebrow{width:100%}}

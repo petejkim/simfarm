@@ -1,0 +1,20 @@
+# Native control navigation
+
+The browser navigation is a native usability enhancement, not a reconstruction of the DOS menu/window layout. It changes no game rules or persistent simulation state. Source-backed land, field-plan and loan operations still run through the existing canonical commands; see [land and field reconstruction](reverse-engineering.md), [field calendar](field-calendar.md), [finances](finances.md) and their tests. No new original-game defect is claimed by this UI work.
+
+## Routes
+
+**Farm controls**, directly below the time controls, exposes four shortcuts:
+
+- **Crop planner** opens the planner and focuses its summary. **Plan for field** selects the same field used by map inspection and Locate a field. The planner remains discoverable before any field is selected. An empty farm offers **Create a field**. Switching fields/year resets the editor as before; closing and reopening a panel preserves its current choices.
+- **Buy land** selects the original land tool and focuses its quote panel. **Choose on map** scrolls to and focuses the viewport; after selecting a tile, **Review plot** returns to the quote. Buying is still a separate explicit command.
+- **New field** selects field placement and focuses its panel. The same map round trip uses **Review field**. Existing land selection and crop-selection behavior are preserved; the shortcut itself cannot buy, clear or plant.
+- **Loans** opens and focuses the existing loan panel. Borrowing and repayment still require their own buttons and original eligibility checks.
+
+Existing map-tool and disclosure routes remain usable. During town/default/flight restrictions, placement/planner shortcuts are disabled; Loans remains available for inspection with its mutation controls disabled. Loading or replacing a farm resets all navigation state.
+
+## Ownership and verification
+
+FarmView owns disclosure/navigation state in React. A post-render layout effect scrolls/focuses element refs; it neither dispatches simulation commands nor draws game content. FieldPlanner splits its chooser/disclosure from the existing per-field editor. The map viewport ref is shared with FarmView solely for navigation; rendering remains in src/render and simulation ownership remains in GameSimulation. No native-save version change is required.
+
+Browser tests use actual buttons and keyboard input to verify that shortcuts open, focus and bring their targets into view, synchronize field selection, reopen manually closed disclosures, and reset on load/scenario changes. Full checkpoint equality before/after navigation confirms no canonical mutation. The390px flow buys original plot0,16 for18060, creates/plants field9, edits its plan and borrows1000 through the shortcut routes. The empty-farm case offers creation rather than an absent planner. Desktop/mobile screenshots are generated under ignored artifacts. Existing planner/land/loan, modal and flight regressions remain part of the full browser gate.

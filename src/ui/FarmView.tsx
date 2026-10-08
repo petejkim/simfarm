@@ -1,8 +1,9 @@
 import { DisasterPanel } from './DisasterPanel';
+import { FarmNavigation, type FarmDestination } from './FarmNavigation';
 import { SupplyMovePanel } from './SupplyMovePanel';
 import { EquipmentMovePanel, BuildingInteriorControls } from './EquipmentMovePanel';
 import { FlightControls } from './FlightControls';
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
 import { terrainTile, worldPosition, worldIndex } from '../formats/scenario';
 import { CropGuide } from './CropGuide';
@@ -83,6 +84,23 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   const [selection, setSelection] = useState<number | null>(null), [fieldSlot, setFieldSlot] = useState<number | null>(null);
   const [focus, setFocus] = useState<MapFocus>({ x: 48, y: 48 });
   const [mapTool, setMapTool] = useState<MapTool>('inspect');
+  const [plannerOpen, setPlannerOpen] = useState(false), [loansOpen, setLoansOpen] = useState(false);
+  const [navigation, setNavigation] = useState<{ target: FarmDestination } | null>(null);
+  const plannerRef = useRef<HTMLElement>(null), loansRef = useRef<HTMLElement>(null);
+  const landRef = useRef<HTMLHeadingElement>(null), viewportRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (!navigation) return;
+    const target = navigation.target === 'planner' ? plannerRef.current : navigation.target === 'loans' ? loansRef.current
+      : navigation.target === 'map' ? viewportRef.current : landRef.current;
+    target?.scrollIntoView({ block: 'start', inline: 'nearest' });
+    target?.focus({ preventScroll: true });
+  }, [navigation]);
+  function navigate(target: FarmDestination) {
+    if (target === 'planner') { setPlannerOpen(true); setMapTool('inspect'); }
+    if (target === 'loans') setLoansOpen(true);
+    if (target === 'land' || target === 'field') setMapTool(target);
+    setNavigation({ target });
+  }
   const [buildingType, setBuildingType] = useState(64);
   const [irrigationTool, setIrrigationTool] = useState<IrrigationTool>('ditch');
   const [equipmentType, setEquipmentType] = useState(0);
@@ -147,6 +165,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
       {simulation && <SaveControls simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} />}
     </section>
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
+    {data && snapshot && <FarmNavigation tool={mapTool} blocked={Boolean(snapshot.pendingTown || snapshot.finances.defaultDecision || snapshot.aircraftFlight)} onNavigate={navigate} />}
     {snapshot?.lastHomesteadChange?.notice && <div id="homestead-notice" className="homestead-notice" role="status">
       <span>{snapshot.lastHomesteadChange.notice === 'improved'
         ? 'Your home has been improved after a rise in cash.' : 'Your home has been downgraded after a fall in cash.'}</span>
@@ -154,7 +173,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     </div>}
     {simulation && snapshot && <TownChoicePanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
-      onRestart={() => onScenarioChange(id)} />}
+      onRestart={() => onScenarioChange(id)} open={loansOpen} onOpenChange={setLoansOpen} summaryRef={loansRef} />}
     {snapshot && <TaxPanel snapshot={snapshot} />}
     {snapshot && <FarmReport snapshot={snapshot} />}
     {snapshot && <LivestockPanel snapshot={snapshot} onMoveSupplies={() => { setMapTool('supply-move'); setSelection(null); }} onShop={() => setMapTool('livestock')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
@@ -165,7 +184,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     {data && <main>
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
-        <FarmMap disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
+        <FarmMap viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           field={field} selection={selection} preview={preview} onPointer={onMapPointer} onSelect={index => {
             setSelection(index);
@@ -181,6 +200,8 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
           : mapTool === 'equipment' ? 'Click clear ground or an equipment storage building'
           : mapTool === 'livestock' ? 'Click a tile for your animal or supply' : 'Scroll to explore · click a tile to examine'}</span>
           <span id="cell-status">{cell && position ? `Tile ${position.x}, ${position.y} · graphic ${terrainTile(cell)}` : '96 × 96 tiles'}</span>
+          {(mapTool === 'land' || mapTool === 'field') && <button disabled={!position || Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)}
+            onClick={() => navigate(mapTool)}>{mapTool === 'land' ? 'Review plot' : 'Review field'}</button>}
         </div>
       </section>
       <aside>
@@ -202,7 +223,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
         {snapshot && mapTool === 'livestock' && <LivestockShop snapshot={snapshot} position={position} productType={livestockType}
           onTypeChange={setLivestockType} onCommand={command => simulation?.dispatch(command)} />}
         {snapshot && (mapTool === 'land' || mapTool === 'field') && <LandPanel tool={mapTool} position={position} snapshot={snapshot}
-          crops={assets.catalog.crops} onCommand={landCommand} />}
+          crops={assets.catalog.crops} onCommand={landCommand} headingRef={landRef} onChooseLocation={() => navigate('map')} />}
         <FieldPanel scenario={data.scenario} crops={assets.catalog.crops} field={field}
           plantResult={snapshot?.lastPlantResult ?? null}
           harvestResult={snapshot?.lastHarvestResult ?? null}
@@ -212,7 +233,8 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
           onHarvest={fieldSlot => simulation?.dispatch({ type: 'harvest-field', fieldSlot })}
           onPlant={(fieldSlot, cropSlot) => simulation?.dispatch({ type: 'plant-field', fieldSlot, cropSlot })}
           onSelect={slot => { setSelection(null); selectField(slot, true); }} />
-        {field && snapshot && <FieldPlanner key={`${field.slot}-${data.scenario.farm.calendar.year}`}
+        {snapshot && <FieldPlanner open={plannerOpen} onOpenChange={setPlannerOpen} summaryRef={plannerRef}
+          onSelect={slot => { setSelection(null); selectField(slot, true); }} onNewField={() => navigate('field')}
           scenario={data.scenario} crops={assets.catalog.crops} field={field} result={snapshot.lastPlanEditResult}
           onEdit={(fieldSlot, week, action) => simulation?.dispatch({ type: 'edit-field-plan', fieldSlot, week, action })} />}
         <HarvestInventory scenario={data.scenario} crops={assets.catalog.crops} values={snapshot?.storedHarvestValues ?? []}
