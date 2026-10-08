@@ -972,3 +972,12 @@ Flight wear0x31131 increments byte17 before checking>250. A preexisting255 wraps
 ### SF-058 manual-shop reachability resolved
 
 The manual sale list does hide rentals: builder0x4baee selects equipment at0x4c0a6, and0x4bd7a tests flag0x40 before active0x20. All three visible-row buttons0x4c2d0/0x4c346/0x4c38a consume those filtered entries. Confidence is high on this direct list-to-handler path. Generic sale's rental credit/accounting quirk remains, but it is not reachable through this normal shop list. Other callers would need separate evidence before asserting an exploit. Native manual commands use the source filter; generic sale/default/weekly consumers retain their separate policies. Tests pin both the filter and preserved generic distinction. Original evidence remains recorded rather than deleting the entry.
+
+
+## SF-112 — cancelling object demolition falls through to terrain removal
+
+Status: verified control-flow fallthrough; player-visible incidence remains a hypothesis requiring original interior/terrain combinations to be traced. Native cancellation submits no removal command. No security vulnerability is asserted.
+
+Building confirmation0x25a6e..0x25a72 and field confirmation0x25b74..0x25b78 jump to0x25f40 when the dialog returns nonzero. This skips whole-object cleanup and its25 debit but does not return from the tool. The subsequent terrain-range chain can independently reach the second25 debit0x26222 and terrain replacement0x2628c. Ordinary closed building roofs/field images do not necessarily match these ranges. An exposed matching tile (for example175/176 supply graphics in an open storage view) could therefore be changed after the user cancels without deleting its record; exact reachable content/view combinations and visible consequences are deferred.
+
+Native field/building removal requires an explicit confirmation command against the selected object; deselection/cancellation leaves cash, records and terrain untouched. The original branch evidence remains documented. Revisit this when reconstructing building interiors and the remaining terrain-removal branches, rather than treating the potential desynchronization as a proven ordinary-game exploit.
