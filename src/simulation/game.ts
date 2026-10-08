@@ -1,3 +1,4 @@
+import { sellManualAsset, type AssetSaleKind, type ManualAssetSaleResult } from './manual-asset-sale';
 import { advanceFlight, beginFlight, FLIGHT_CONTROLS, MAX_FLIGHT_INPUTS, type AircraftFlight, type FlightControl, type FlightEnd, type FlightStartResult } from './aircraft-flight';
 import type { CropDefinition } from '../formats/crop';
 import { FieldRecord } from '../formats/field';
@@ -105,6 +106,7 @@ export interface GameSnapshot {
   fieldHarvestEstimates: (FieldHarvestEstimate | null)[];
   storedHarvestValues: (number | null)[];
   lastSaleResult: HarvestSaleResult | null;
+  lastAssetSaleResult: (ManualAssetSaleResult & { kind: AssetSaleKind }) | null;
   lastLandResult: LandPurchaseResult | null;
   lastBuildingResult: BuildingPlacementResult | null;
   lastEquipmentPurchaseResult: (EquipmentPurchaseResult & { equipmentType: number }) | null;
@@ -137,6 +139,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'treat-field'; fieldSlot: number; treatment: Treatment }
   | { type: 'plant-field'; fieldSlot: number; cropSlot: number }
   | { type: 'harvest-field'; fieldSlot: number }
+  | { type: 'sell-asset'; kind: AssetSaleKind; slot: number }
   | { type: 'sell-harvest'; inventorySlot: number };
 
 function copyScenario(scenario: Scenario): Scenario {
@@ -194,6 +197,7 @@ export class GameSimulation {
   private lastPlantResult: PlantResult | null = null;
   private lastHarvestResult: HarvestOrderResult | null = null;
   private lastSaleResult: HarvestSaleResult | null = null;
+  private lastAssetSaleResult: GameSnapshot['lastAssetSaleResult'] = null;
   private lastLandResult: LandPurchaseResult | null = null;
   private lastEquipmentPurchaseResult: GameSnapshot['lastEquipmentPurchaseResult'] = null;
   private lastBuildingResult: BuildingPlacementResult | null = null;
@@ -380,6 +384,8 @@ export class GameSimulation {
     } else if (command.type === 'harvest-field') {
       this.lastPlantResult = null;
       this.lastHarvestResult = orderHarvest(this.scenario, command.fieldSlot, this.crops);
+    } else if (command.type === 'sell-asset') {
+      this.lastAssetSaleResult = { kind: command.kind, ...sellManualAsset(this.scenario, this.finances, command.kind, command.slot, this.weather.soilMoisture) };
     } else if (command.type === 'sell-harvest') {
       this.lastSaleResult = sellStoredHarvest(this.scenario, command.inventorySlot, this.weather.soilMoisture);
     } else {
@@ -596,6 +602,7 @@ export class GameSimulation {
       lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null,
       lastHarvestResult: this.lastHarvestResult ? { ...this.lastHarvestResult } : null,
       lastSaleResult: this.lastSaleResult ? { ...this.lastSaleResult } : null,
+      lastAssetSaleResult: this.lastAssetSaleResult ? { ...this.lastAssetSaleResult } : null,
       lastLandResult: this.lastLandResult ? { ...this.lastLandResult } : null,
       lastEquipmentPurchaseResult: this.lastEquipmentPurchaseResult ? { ...this.lastEquipmentPurchaseResult } : null,
       lastBuildingResult: this.lastBuildingResult ? { ...this.lastBuildingResult } : null,

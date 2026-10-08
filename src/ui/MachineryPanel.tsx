@@ -1,8 +1,9 @@
-import type { GameSnapshot } from '../simulation/game';
+import { AssetSaleControls } from './AssetSaleControls';
+import type { GameCommand, GameSnapshot } from '../simulation/game';
 
 const money = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
-export function MachineryPanel({ snapshot, onShop }: { snapshot: GameSnapshot; onShop: () => void }) {
+export function MachineryPanel({ snapshot, onShop, onCommand, onLocate }: { snapshot: GameSnapshot; onShop: () => void; onCommand: (command: GameCommand) => void; onLocate: (x: number, y: number) => void }) {
   const machines = snapshot.scenario.equipment.filter(e => e.active);
   return <details id="machinery-panel" className="loan-panel">
     <summary>Machinery · {machines.length}</summary>
@@ -18,5 +19,6 @@ export function MachineryPanel({ snapshot, onShop }: { snapshot: GameSnapshot; o
         ? `Worn-out machine ${n.slot} was sold for ${money(n.value)}.`
         : `Machine ${n.slot} is worn out and could not be sold${n.reason === 'asset-busy' ? ' while in use' : ''}.`}</li>)}
     </ul></div>}
+    <AssetSaleControls kind="equipment" snapshot={snapshot} onCommand={onCommand} onLocate={onLocate} />
   </details>;
 }

@@ -1,6 +1,6 @@
 # Manual livestock and equipment sales
 
-Source SIMFARM.EXE SHA256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`. Addresses are file offsets. List/caller/valuation evidence is high confidence. Native controls and live commands are pending this first increment.
+Source SIMFARM.EXE SHA256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`. Addresses are file offsets. List/caller/valuation evidence is high confidence. Native controls and canonical commands are now connected; original shop presentation remains a fidelity gap.
 
 ## Original player-facing gates
 
@@ -22,4 +22,13 @@ The raw fifth animal definition duplicates a source type; native retains it and 
 
 Three new tests pin the original list gates, all three sale callers and widget dispatch. They check read-only quotes and actual displayed signed receipts for every original farm animal/owned machine, reject repeat sales and verify rental/busy/inconsistent/native-boundary rejection without mutation. The existing seven generic tests retain full arithmetic, counts, map/storage, aircraft and link coverage. The initial all-farm test redundantly serialized complete source snapshots per record and exceeded its deadline; batching the no-mutation comparison across the read-only quote pass retains all records and completes in1.21seconds. No product behavior was changed to accommodate that test.
 
-Next connect canonical commands/transient feedback, sale/locate controls in Livestock and Machinery, exact native continuation and real browser checks. Current native v12 already stores the affected records/accounts; no new persistent sale state is needed.
+GameSimulation now owns the sell-asset command and detached transient result. Current native v12 already stores the affected records/accounts; no new persistent sale state or version change is needed.
+
+
+## Live controls and continuation
+
+**Livestock → Sell livestock** selects an animal and shows its current source receipt, Sell animal and Show on map. **Machinery → Sell machinery** does the same for owned machines, including parked aircraft. Rental entries are excluded; busy machines remain listed with a disabled sale button and explanatory text, matching the original list/handler split. Stored animals/machines are selectable. Signed negative receipts, if present in unusual native data, are displayed as deductions rather than an unsigned promise of income. Normal original definitions/conditions yield the tested positive amounts.
+
+Commands recompute current eligibility/value and use the existing prevalidated sale path. They obey pending town/default decisions and flight suspension. Closing/opening panels or quoting/locating an asset does not mutate simulation state. Only the simulation owns records, accounts and removals; React owns selection and submits commands. Receipts remain visible after the last item is sold, but are transient and clear on load. A deleted slot's unknown bytes are preserved, with only the source removal members changed. There is no extra confirmation or speculative sale tax, sound or demolition animation.
+
+Three live tests connect an actual gestation completion to newborn sale income, sell the stored parent and release its stall, resume35days exactly, sell ground/stored/aircraft equipment with book-value and parking cleanup, and reject rentals/busy or modal actions without changing checkpoints. Two Chromium flows perform those actions through selectors/buttons, compare every saved state with native commands, verify original ground/pad pixels after removal, check cash/feedback and reload, and inspect390px layout. The sale panel screenshot is artifacts/browser-manual-sales.png. Full original dialog styling, category navigation and asset movement/removal commands remain separate work; these usable sales do not complete the preservation goal.

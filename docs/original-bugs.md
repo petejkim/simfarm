@@ -462,9 +462,9 @@ Native sale prevalidates attachment references before payment. Truck word +44 is
 
 ## SF-058 — generic sale allows rented equipment and preserves owned accounting
 
-**Status:** confirmed branch behavior; player-facing reachability unproven; native behavior preserved.
+**Status:** confirmed generic branch behavior retained; normal manual shop excludes rentals; other caller reachability remains unproven.
 
-Sale eligibility at `0x4c4e3..0x4c4ea` tests active and bits 1/8, not rented bit `0x40`. The generic sale therefore credits a rental's depreciated value. Removal at `0x3a07a..0x3a09e` skips owned-count and book-value deductions for rentals. Whether the original shop hides these entries remains untraced; this is not yet a proven player exploit. Forced-sale selection explicitly excludes rentals at `0x1d97d`, so that path must retain its own filter. Native generic sale preserves this distinction and tests it; live shop/default integration remains pending.
+Sale eligibility at `0x4c4e3..0x4c4ea` tests active and bits 1/8, not rented bit `0x40`. The generic sale therefore credits a rental's depreciated value. Removal at `0x3a07a..0x3a09e` skips owned-count and book-value deductions for rentals. The original shop filter was initially untraced; the manual-shop follow-up below now confirms it hides these entries, so this is not a proven player exploit. Forced-sale selection explicitly excludes rentals at `0x1d97d`, so that path must retain its own filter. Native generic sale preserves this distinction and tests it; live manual sales and forced-sale selection each enforce their own source rental exclusion.
 
 ## SF-059 — default scans can continue past record arrays after successful removals
 

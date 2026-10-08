@@ -148,10 +148,10 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
       onRestart={() => onScenarioChange(id)} />}
     {snapshot && <TaxPanel snapshot={snapshot} />}
     {snapshot && <FarmReport snapshot={snapshot} />}
-    {snapshot && <LivestockPanel snapshot={snapshot} onShop={() => setMapTool('livestock')} />}
+    {snapshot && <LivestockPanel snapshot={snapshot} onShop={() => setMapTool('livestock')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     {snapshot && simulation && <AircraftPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
       onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
-    {snapshot && <MachineryPanel snapshot={snapshot} onShop={() => setMapTool('equipment')} />}
+    {snapshot && <MachineryPanel snapshot={snapshot} onShop={() => setMapTool('equipment')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     {data && <main>
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
