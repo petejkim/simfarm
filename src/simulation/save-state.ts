@@ -1,3 +1,4 @@
+import type { SessionSetup } from './session-setup';
 import type { MarketState } from './market';
 import type { TrafficDefaults } from '../formats/traffic';
 import type { NewFarmState } from './new-farm-state';
@@ -23,6 +24,7 @@ export interface PendingTownExpansion {
 /** Native checkpoint, not the original DOS SSM format. UI feedback is deliberately transient. */
 export interface SimulationState {
   scenario: Scenario;
+  setup: SessionSetup;
   /** Generated setup provenance; null for original imports. */
   newFarm: NewFarmState | null;
   /** Last generated setup retained when importing an original farm. */

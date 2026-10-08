@@ -21,7 +21,7 @@ test('live locusts damage a real field, checkpoint every clock/RNG phase, pause,
   game.dispatch({ type: 'set-paused', paused: false }); game.tick(320.125);
   assert.ok(loss(game.getSnapshot().scenario.fields[1].bytes) >= 1024);
   const checkpoint = game.save(4), restored = GameSimulation.load(checkpoint, f.crops).simulation;
-  assert.equal(saved(game).version, 18); const restoredEvents: GameEvent[] = []; restored.subscribeEvents(e => restoredEvents.push(e));
+  assert.equal(saved(game).version, 19); const restoredEvents: GameEvent[] = []; restored.subscribeEvents(e => restoredEvents.push(e));
   game.getSnapshot().disasters.swarm.x = 90; game.getSnapshot().disasterNotices.push('changed'); assert.equal(game.save(4), checkpoint);
   game.tick(300.25); restored.tick(100); restored.tick(200.25); assert.deepEqual(saved(game), saved(restored));
   for (const g of [game, restored]) {

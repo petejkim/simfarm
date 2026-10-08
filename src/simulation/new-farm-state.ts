@@ -13,7 +13,7 @@ export interface NewFarmOptions {
 /** Recovered setup state. Preserve
  * it independently of live prices and never reconstruct it by replaying setup. */
 export interface NewFarmState {
-  provenance: { kind: 'cold-start'; version: 1; options: NewFarmOptions };
+  provenance: { kind: 'cold-start' | 'restart'; version: 1; options: NewFarmOptions };
   raw: NewFarmRuntimeDefaults['raw'];
   terrainHistory: TerrainRandomHistory;
   plannerBuffer: number[];

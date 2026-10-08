@@ -528,7 +528,7 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   expect(JSON.parse(await saved())).toEqual(expected);
   const legacy = JSON.parse(text); legacy.version = 1; delete legacy.scenario.schedule; delete legacy.scenario.irrigation;
-  delete legacy.runtime.animalFrame; delete legacy.runtime.market; delete legacy.runtime.traffic;
+  delete legacy.runtime.animalFrame; delete legacy.runtime.market; delete legacy.runtime.traffic; delete legacy.runtime.setup;
   const crops = expected.scenario.cropFiles.map((file: string) => readCrop(file.replace('.crp', ''),
     readFileSync(new URL('../../../simfarm-dos/CROPS/' + file.toUpperCase(), import.meta.url))));
   // V1 also lacked finance state, including species counts changed by live births.
@@ -537,8 +537,10 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   // Pre-v9 saves lacked water waves; pre-v10 saves lacked animal frame state.
   // Clocks/cache migrate once; missing traffic stays empty without RNG replay.
+  // V1 never recorded terrain history, so the migration keeps it unknown.
   expect(JSON.parse(await saved())).toEqual({ ...expected,
-    runtime: { ...expected.runtime, finances: originalFinance, animalFrame: { lastCentreTick: 0, lastMoveTick: 0, herd: '00'.repeat(21) },
+    runtime: { ...expected.runtime, setup: { terrainHistory: null, sourceArchive: null },
+      finances: originalFinance, animalFrame: { lastCentreTick: 0, lastMoveTick: 0, herd: '00'.repeat(21) },
       traffic: { records: Array.from({ length: 16 }, () => Array(8).fill(0)), activeCount: 0, delay: 16, lastTick: 0 },
       market: { history: expected.runtime.cropMarketPrices.map((price: number) => [...Array(29).fill(null), price]), mood: 0, rawBC72: 0 } },
     scenario: { ...expected.scenario,

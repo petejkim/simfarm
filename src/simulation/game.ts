@@ -1,3 +1,5 @@
+import { restartGeneratedFarm, type RestartFarmOptions } from './restart-farm';
+import { createSessionSetup, type SessionSetup } from './session-setup';
 import { transferOriginalFarm } from './original-load';
 import type { ClimateTables } from '../formats/weather';
 import { finalizeRegionFarm } from './starting-environment';
@@ -95,6 +97,7 @@ export interface FieldHarvestEstimate {
 }
 
 export interface GameSnapshot {
+  setup: SessionSetup;
   newFarm: NewFarmState | null;
   retainedSetup: NewFarmState | null;
   traffic: TrafficDefaults;
@@ -208,6 +211,7 @@ function copyScenario(scenario: Scenario): Scenario {
  * The scheduler covers calendar, climate, machinery, crops, irrigation and livestock.
  */
 export class GameSimulation {
+  private readonly setup: SessionSetup;
   private readonly scenario: Scenario;
   private readonly newFarm: NewFarmState | null;
   private readonly retainedSetup: NewFarmState | null;
@@ -274,6 +278,7 @@ export class GameSimulation {
     seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState, regionClimate?: ClimateTables) {
     if (!restored && scenario.origin !== 'original') throw new Error('Generated farms require initialized state');
     this.scenario = copyScenario(scenario);
+    this.setup = restored ? structuredClone(restored.setup) : createSessionSetup(seeds.simulation);
     this.newFarm = restored?.newFarm ? structuredClone(restored.newFarm) : null;
     this.retainedSetup = restored?.retainedSetup ? structuredClone(restored.retainedSetup) : null;
     this.townLayouts = new TownLayouts(townLayouts.bytes);
@@ -328,7 +333,7 @@ export class GameSimulation {
 
   /** Exact native checkpoint, including partial ticks. Does not mutate or advance the farm. */
   save(scenarioId: number | null): string {
-    return writeNativeSave({ scenario: this.scenario, newFarm: this.newFarm, retainedSetup: this.retainedSetup, crops: this.crops, random: this.random.snapshot(), weather: this.weather,
+    return writeNativeSave({ scenario: this.scenario, setup: this.setup, newFarm: this.newFarm, retainedSetup: this.retainedSetup, crops: this.crops, random: this.random.snapshot(), weather: this.weather,
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
       disasters: this.disasters, waterDisasters: this.waterDisasters, grassTravelCount: this.equipmentRuntime.grassTravelCount,
       equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices, market: this.market, traffic: snapshotTraffic(this.traffic),
@@ -339,6 +344,12 @@ export class GameSimulation {
   static load(text: string, crops: readonly CropDefinition[], townLayouts: TownLayouts): { scenarioId: number | null; simulation: GameSimulation } {
     const { scenarioId, state } = readNativeSave(text);
     return { scenarioId, simulation: new GameSimulation(state.scenario, crops, townLayouts, state.random, state) };
+  }
+
+  /** Generate a new farm through the retained restart phases, without reseeding. */
+  restartGenerated(options: RestartFarmOptions, assets: NewFarmAssets): GameSimulation {
+    const state = restartGeneratedFarm(readNativeSave(this.save(null)).state, options, assets);
+    return GameSimulation.load(writeNativeSave(state, null), assets.crops, assets.townLayouts).simulation;
   }
 
   /** Import an original SSM into the retained native session, atomically. */
@@ -782,7 +793,7 @@ export class GameSimulation {
     // until all of its annual consumers and lifecycle are reconstructed.
     const report = { ...this.finances.annual };
     updateAnnualReport(this.scenario.farm, this.finances.accounts, report);
-    this.snapshot = { retainedSetup: this.retainedSetup ? structuredClone(this.retainedSetup) : null, newFarm: this.newFarm ? structuredClone(this.newFarm) : null, traffic: snapshotTraffic(this.traffic), disasters: structuredClone(this.disasters), waterDisasters: { ...this.waterDisasters }, lastDisasterResult: this.lastDisasterResult ? structuredClone(this.lastDisasterResult) : null,
+    this.snapshot = { setup: structuredClone(this.setup), retainedSetup: this.retainedSetup ? structuredClone(this.retainedSetup) : null, newFarm: this.newFarm ? structuredClone(this.newFarm) : null, traffic: snapshotTraffic(this.traffic), disasters: structuredClone(this.disasters), waterDisasters: { ...this.waterDisasters }, lastDisasterResult: this.lastDisasterResult ? structuredClone(this.lastDisasterResult) : null,
       disasterNotices: [...this.disasterNotices], revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
       farmReport: { income: report.reportIncome, expenses: report.reportExpenses, net: report.reportNet,
         fields: summarizeFieldStatus(this.scenario.fields, this.scenario.farm.cash) },
