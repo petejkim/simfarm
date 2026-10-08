@@ -105,7 +105,7 @@ test('native save validation rejects malformed boundaries and incompatible asset
     mutate(s => s.scenario.world = s.scenario.world.slice(2)), mutate(s => s.scenario.records.fields += '00'),
     mutate(s => s.scenario.farm.cash = -1), mutate(s => s.scenario.farm.workerExpenses = 0x100000000),
     mutate(s => s.scenario.farm.calendar.day = 7), mutate(s => s.runtime.random.visual = 65536),
-    mutate(s => s.runtime.elapsed = 1), mutate(s => s.runtime.dayTicks = scenario.farm.dayDelayTicks),
+    mutate(s => s.runtime.elapsed = 1), mutate(s => s.runtime.dayTicks = 65536),
     mutate(s => s.runtime.weather.forecast[0] = 5), mutate(s => s.runtime.weather.windYear = 5),
     mutate(s => s.scenario.climate.precipitation[0] = 8), mutate(s => s.runtime.cropMarketPrices[0]++),
     mutate(s => s.runtime.speed = 3), mutate(s => s.runtime.paused = 'false'),

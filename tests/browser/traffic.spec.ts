@@ -26,7 +26,7 @@ test('traffic paints original vehicle pixels and continues through weekly spawni
   const vehicle = decodePlanar(asset('mskdtile.til').subarray(image * 128, (image + 1) * 128), 16, 16, palette, 7).rgba;
   for (let p = 0; p < ground.length; p += 4) if (vehicle[p + 3]) ground.set(vehicle.subarray(p, p + 4), p);
   expect(await page.locator('#world').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(21 * 16, 20 * 16, 16, 16).data))).toEqual(Array.from(ground));
-  const checkpoint = await save(page, 'painted'); expect(checkpoint.version).toBe(17); expect(checkpoint).toEqual(JSON.parse(game.save(4)));
+  const checkpoint = await save(page, 'painted'); expect(checkpoint.version).toBe(18); expect(checkpoint).toEqual(JSON.parse(game.save(4)));
   await page.locator('#viewport').evaluate(e => e.scrollTo(160, 160));
   await page.screenshot({ path: 'artifacts/browser-traffic.png', fullPage: true });
   await load(page, JSON.stringify(checkpoint)); expect(await save(page, 'restored')).toEqual(checkpoint);

@@ -25,6 +25,8 @@ export interface SimulationState {
   scenario: Scenario;
   /** Generated setup provenance; null for original imports. */
   newFarm: NewFarmState | null;
+  /** Last generated setup retained when importing an original farm. */
+  retainedSetup: NewFarmState | null;
   crops: readonly (readonly number[])[];
   /** Null only when migrating a checkpoint predating live town development. */
   townLayoutBytes: readonly number[] | null;

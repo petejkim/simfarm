@@ -72,7 +72,7 @@ test('special building purchases preserve source capacity, pump ownership except
 
 test('v9 irrigation continuation is strict, while legacy1–8 migrate missing water state once', () => {
   const { scenario, crops } = fixture(), game = new GameSimulation(scenario, crops), save = JSON.parse(game.save(4));
-  assert.equal(save.version, 17);
+  assert.equal(save.version, 18);
   for (const version of [1, 2, 3, 4, 5, 6, 7, 8]) {
     const old = structuredClone(save); old.version = version; delete old.scenario.irrigation;
     const loaded = GameSimulation.load(JSON.stringify(old), crops).simulation;

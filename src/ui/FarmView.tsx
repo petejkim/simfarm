@@ -163,10 +163,10 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, onNewFarm, asse
   return <>
     <section className="toolbar">
       <div><label>Original farm <select id="scenario" value={id ?? 'generated'} onChange={e => onScenarioChange(Number(e.target.value))}>
-        {id === null && <option value="generated" disabled>Generated farm</option>}
+        {id === null && <option value="generated" disabled>{snapshot?.scenario.origin === 'original' ? 'Imported farm' : 'Generated farm'}</option>}
         {Array.from({ length: 8 }, (_, i) => <option key={i} value={i}>Scenario {i + 1}</option>)}
       </select></label>
-        <span id="map-status" role="status">{resource.status === 'ready' ? (id === null ? 'Generated farm · original terrain' : `Scenario ${id + 1} · original terrain`)
+        <span id="map-status" role="status">{resource.status === 'ready' ? (id === null ? `${snapshot?.scenario.origin === 'original' ? 'Imported' : 'Generated'} farm · original terrain` : `Scenario ${id + 1} · original terrain`)
           : resource.status === 'error' ? resource.error : 'Loading map…'}</span></div>
       <div><label>Map tool <select id="map-tool" disabled={Boolean(snapshot?.aircraftFlight)} value={mapTool} onChange={e => setMapTool(e.target.value as MapTool)}>
         <option value="inspect">Inspect</option><option value="land">Buy land</option><option value="field">New field</option>
@@ -191,7 +191,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, onNewFarm, asse
     </div>}
     {simulation && snapshot && <TownChoicePanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
-      onRestart={() => id === null ? onNewFarm() : onScenarioChange(id)} open={loansOpen} onOpenChange={setLoansOpen} summaryRef={loansRef} />}
+      restartCreatesFarm={id === null} onRestart={() => id === null ? onNewFarm() : onScenarioChange(id)} open={loansOpen} onOpenChange={setLoansOpen} summaryRef={loansRef} />}
     {snapshot && <TaxPanel snapshot={snapshot} />}
     {snapshot && <FarmReport snapshot={snapshot} />}
     {snapshot && <LivestockPanel snapshot={snapshot} onMoveSupplies={() => { setMapTool('supply-move'); setSelection(null); }} onShop={() => setMapTool('livestock')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}

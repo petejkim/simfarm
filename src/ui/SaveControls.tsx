@@ -17,7 +17,7 @@ export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad }:
       const text = simulation.save(scenarioId), date = simulation.getSnapshot().scenario.farm.calendar;
       const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
       const link = document.createElement('a');
-      link.href = url; link.download = `simfarm-${scenarioId === null ? 'new-farm' : scenarioId + 1}-${date.year}-${date.month + 1}-${date.week * 7 + date.day + 1}.simfarm.json`;
+      link.href = url; link.download = `simfarm-${scenarioId === null ? simulation.getSnapshot().scenario.origin === 'generated' ? 'new-farm' : 'imported-farm' : scenarioId + 1}-${date.year}-${date.month + 1}-${date.week * 7 + date.day + 1}.simfarm.json`;
       document.body.append(link); link.click(); link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       setMessage('Farm saved to file.');
@@ -29,9 +29,11 @@ export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad }:
     setBusy(true); setMessage('Loading farm…');
     try {
       if (file.size > MAX_SAVE_BYTES) throw new Error('The file is too large.');
-      const text = await file.text();
+      const buffer = new Uint8Array(await file.arrayBuffer());
       if (controller.signal.aborted) return;
-      const restored = GameSimulation.load(text, assets.catalog.crops, assets.townLayouts);
+      const originalFile = /\.ssm$/i.test(file.name) || buffer[0] === 0x18;
+      const restored = originalFile ? simulation.importOriginal(buffer, assets.catalog.crops)
+        : GameSimulation.load(new TextDecoder().decode(buffer), assets.catalog.crops, assets.townLayouts);
       const world = restored.simulation.getSnapshot().scenario;
       let tiles: HTMLImageElement;
       if (restored.scenarioId === null) tiles = await loadGeneratedTiles(world.cropFiles, controller.signal);
@@ -52,7 +54,7 @@ export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad }:
   return <div className="save-controls">
     <div><button id="save-farm" disabled={busy} onClick={save}>Save farm</button>
       <button id="load-farm" disabled={busy} onClick={() => input.current?.click()}>Load farm</button>
-      <input ref={input} id="load-farm-file" type="file" accept=".simfarm.json,.json,application/json" hidden
+      <input ref={input} id="load-farm-file" type="file" accept=".ssm,.SSM,.simfarm.json,.json,application/json" hidden
         aria-label="Load farm file" onChange={event => {
           const file = event.currentTarget.files?.[0]; event.currentTarget.value = '';
           if (file) void load(file);

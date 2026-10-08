@@ -1,6 +1,6 @@
 # Original load and restart lifecycle
 
-Source `SIMFARM.EXE`: size0x917b9, SHA256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`. Addresses are file offsets in that image. No DOS code was executed. Confidence is high for the direct branches/stores described below; the in-game load entry and selected retained transfers are now traced; complete canonical warm loading and restart remain incomplete.
+Source `SIMFARM.EXE`: size0x917b9, SHA256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`. Addresses are file offsets in that image. No DOS code was executed. Confidence is high for the direct branches/stores described below; the in-game load entry and selected retained transfers are now traced; canonical import of represented session state is now connected; exact menu timing, remaining scratch ownership and warm restart remain incomplete.
 
 ## Chooser return is not the final state
 
@@ -22,6 +22,7 @@ SCEN0..7 already have40000 cash. SCEN6/7 have rainfall tables that differ from t
 | --- | --- |
 | New farm → Use region map → numbered square | Source-backed climate/cash/town finalization, then cold original-farm weather/traffic initialization; saved date retained |
 | Original farm dropdown / initial browser farm | Direct supplied-file cold import; keeps SSM climate and town, then existing weather/traffic initialization |
+| Load farm → original .SSM | Retained session transfer without chooser setup; starts paused; see the v18 policies below |
 | Native Save farm / Load farm | Exact native runtime continuation; never replays chooser setup |
 | Generated custom or unmarked region | Existing recovered cold creation pipeline |
 | Financial-default restart | Existing native fresh import or generated creation screen; exact DOS warm restart is not claimed |
@@ -34,7 +35,7 @@ This corrects the known geographic setup writes; it does not reproduce DOS elaps
 
 Main269e checks exit/restart byte0194 for2, calls stub0f60/file402a8, clears its local setup result and jumps to2343. That routine partially resets records/maps/accounts, invokes4060c and setup3f854, then returns through the startup branches above. It does not simply reload the currently selected SSM. The fixed calendar written inside4060c is an intermediate state: non-loaded return passes main's host-date conversion again. Earlier descriptions of a fixed restart calendar apply only to the partial reset helper.
 
-Known reset primitives already preserve omitted worker/building ledgers, report totals and unknown records. Remaining work is to trace the separate in-game SSM-load caller, inventory all retained runtime fields (disasters, irrigation, animals, market, RNG and scratch), and then compose an explicit warm lifecycle with native save coverage. Region setup must not be copied onto the checkpoint restore path.
+Known reset primitives already preserve omitted worker/building ledgers, report totals and unknown records. The separate in-game caller and represented runtime transfers are now connected below. Remaining work includes exact nested-menu timing, unmodeled scratch ownership and warm restart composition. Region setup must not be copied onto the checkpoint restore path.
 
 ## Verification
 
@@ -45,11 +46,11 @@ Four new tests pin the executable hash, branch and overlay bytes, compare all ei
 
 Overlay22 handler4314e routes the load action to43200. It appends the file suffix, then uses a same-overlay call at43258 to4543c. On success43272 clears chooser flag66be and window flag0188, calls resume stub1334 at43284, removes/restores windows, sets redraw flag019e=1 at432c7 and returns through431fb. Keyboard Enter has a separate call4308b to the same loader followed by filename/redraw handling. Neither direct caller jumps to main2343 or calls geographic finalizer3f854. Initial chooser file selection32bd5 uses the common loader too, but returns through the chooser setup caller described above; it must not be conflated with the in-game window.
 
-Stub1334 resolves to overlay18:1138/file3f4e8. It does nothing if pause-depth byte0187 is0, otherwise decrements it; only transition1→0 executes its pacing writes. Those are disaster delay69b2=4, day delay1f8c=256, saved speed1f90=1, traffic delay2286=16 and irrigation delay2402=2, plus menu/check state. This occurs after the SSM decoder reads saved day/speed/traffic/irrigation delays at461c6/461de/461f6/4620e. The decoder alone must therefore retain the saved values, while a future complete menu load applies its conditional return callback separately. Cancellation43193 invokes the same callback. Exact nested-pause ownership remains to be integrated; the browser speed slider remains its explicitly native multiplier.
+Stub1334 resolves to overlay18:1138/file3f4e8. It does nothing if pause-depth byte0187 is0, otherwise decrements it; only transition1→0 executes its pacing writes. Those are disaster delay69b2=4, day delay1f8c=256, saved speed1f90=1, traffic delay2286=16 and irrigation delay2402=2, plus menu/check state. This occurs after the SSM decoder reads saved day/speed/traffic/irrigation delays at461c6/461de/461f6/4620e. The decoder alone must therefore retain the saved values, while the native import factory applies its conditional return callback separately under the native pause mapping described below. Cancellation43193 invokes the same callback. Exact nested-pause ownership remains to be integrated; the browser speed slider remains its explicitly native multiplier.
 
 ## Retained transfer primitives
 
-These APIs are decoder phases, not a complete warm-load factory and not a native checkpoint migration. No browser path calls them with retained state yet.
+These APIs remain separate decoder phases. The v18 factory described below now calls them with retained state for browser SSM imports.
 
 | Decoder | Replaced by SSM | Retained from validated input |
 | --- | --- | --- |
@@ -63,4 +64,24 @@ Irrigation loader459b7..45a35 reads64 triples but writes at `2*i+0/1/2`, touchin
 
 Six new tests cover the actual loader/resume branch bytes and overlay target, all eight source farms' financial replacements and omissions, all worker dword boundary values, all129 registry writes and63 retained bytes, active queues, full64-source warm tails, detached ownership and atomic malformed/truncated rejection. Existing finance-save and irrigation tests protect unchanged cold behavior. Browser regression checks exercise existing geographic selection, annual finances and irrigation; they do not claim a live original-file import.
 
-Next compose the remaining loaded/retained weather, market, traffic, animal, disaster and pacing state around these transfer phases. In particular, loading changes saved clocks while many subsystem timestamps are retained, and the original file payload does not contain a complete session snapshot. Keep address-named unknown SSM fields (for example2410/2424) distinct from the verified weather moisture accumulator23fe/precipitation-active23da; adjacent saved bytes do not establish equivalent semantics. Whole warm loading and restart remain unfinished.
+The composition below now carries represented weather, market, traffic, animal, disaster and pacing state around these transfer phases. In particular, loading changes saved clocks while many subsystem timestamps are retained, and the original file payload does not contain a complete session snapshot. Keep address-named unknown SSM fields (for example2410/2424) distinct from the verified weather moisture accumulator23fe/precipitation-active23da; adjacent saved bytes do not establish equivalent semantics. Full original menu/scratch lifecycle and warm restart remain unfinished.
+
+
+## Canonical import and native v18
+
+`transferOriginalFarm` composes the established SSM4543c..4644c transfers, crop-load repricing, retained financial/irrigation phases and conditional43284 resume callback. GameSimulation validates/detaches the result before replacement. React's Load farm accepts .SSM and labels the result Imported farm. No geographic finalizer, startup weather, initial car allocation or random market-history generation is replayed. Native checkpoints preserve the resulting state directly.
+
+| State | Import behavior |
+| --- | --- |
+| Map, records, calendar, timer words, climate, planner, saved financial members | Replaced through existing verified SSM decoders; unknown source bytes retained verbatim |
+| Worker ledger, omitted financial members, irrigation tail/wave | Retained through the decoder phases above |
+| Market | First29 history samples, mode and rawBC72 retained; crop loading resets sample29 and crop/seed quotes from CRPs; saved harvest definitions remain loaded |
+| Weather | Existing forecast/moisture/wind/anomaly state retained; saved precipitation-day counter replaced |
+| Traffic | Records/count/last tick retained; delay loaded from2171e, then optionally overwritten by resume |
+| Animals, disasters, grass/equipment clocks, water effects, RNG | Represented unsaved session members retained; no startup/reset events |
+| Generated setup | Archived as retainedSetup; does not claim to be a complete current DOS memory image |
+| Native modal continuations | Explicit replacement clears pending town/default/flight actions, starts paused and drops fractional elapsed time; no stale callback runs on the new map |
+
+The calendar adapter preserves the prior last-day timestamp algebraically when the saved timer changes. Its unsigned phase can now be overdue or wrap; native v18 stores the whole word. Existing native day-boundary pacing remains an adapter, not DOS strict-greater timing equivalence. Running imports model the ordinary dialog's resume1→0 stores; paused imports model a remaining outer pause and keep saved delays. The file chooser does not reconstruct DOS nested windows, cancellation timing or menu clock advancement. Asset loading is asynchronous and atomic, with prior running play continuing until successful replacement.
+
+Five live simulation tests and three browser flows cover these transfers,64-source irrigation, malformed input, retained setup, clock wrap, no startup RNG replay and exact native continuation. The previous decoder-only browser limitation above is historical; these new checks exercise actual file import. Full warm restart remains next. Its partial reset/setup/main chain must be composed from recovered writes, not replaced with a fresh cold farm.

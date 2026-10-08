@@ -76,7 +76,8 @@ function decodeScenario(value: unknown, version: number): Scenario {
   if (origin !== 'original' && origin !== 'generated') fail('farm origin');
   if (origin === 'generated' && s.source !== null) fail('generated source template');
   const source = origin === 'original' ? bytes(s.source, 139072, 'source template') : null;
-  const original = source ? readScenario(source) : null;
+  const irrigation = version >= 9 ? decodeIrrigation(s.irrigation) : undefined;
+  const original = source ? readScenario(source, false, version >= 18 && irrigation ? { workerExpenses: 0, irrigation } : undefined) : null;
   let cropFiles = original?.cropFiles;
   if (version >= 15) {
     if (!Array.isArray(s.cropFiles) || s.cropFiles.length !== 16 || s.cropFiles.some(n => typeof n !== 'string' || !/^[a-z0-9_]{1,8}\.crp$/.test(n))) fail('crop filenames');
@@ -95,7 +96,7 @@ function decodeScenario(value: unknown, version: number): Scenario {
     climate: { wind: numbers(climate.wind, 240, -128, 127, 'wind table'),
       precipitation: numbers(climate.precipitation, 240, -128, 7, 'precipitation table'),
       temperature: numbers(climate.temperature, 240, -128, 127, 'temperature table') },
-    irrigation: version >= 9 ? decodeIrrigation(s.irrigation) : original!.irrigation,
+    irrigation: irrigation ?? original!.irrigation,
     farm: decodeFarm(s.farm) }; // No repeat of DOS startup's lost/overwritten ledgers (SF-014).
 }
 
@@ -153,13 +154,13 @@ function decodeWaterDisasters(value: unknown): WaterDisasterState {
 }
 export function writeNativeSave(state: SimulationState, scenarioId: number | null): string {
   if (state.scenario.origin === 'generated') {
-    if (scenarioId !== null || state.scenario.sourceBytes !== null || state.scenario.version !== null || !state.newFarm) fail('generated provenance');
+    if (scenarioId !== null || state.scenario.sourceBytes !== null || state.scenario.version !== null || !state.newFarm || state.retainedSetup !== null) fail('generated provenance');
   } else {
-    number(scenarioId, 0, 7, 'scenario ID');
+    if (scenarioId !== null) number(scenarioId, 0, 7, 'scenario ID');
     if (state.scenario.origin !== 'original' || !state.scenario.sourceBytes || state.newFarm !== null) fail('original provenance');
   }
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 17, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 18, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -169,9 +170,9 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].includes(save.version)) fail('unsupported format or version');
   const s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
-  const scenarioId = s.origin === 'generated' ? null : number(save.scenarioId, 0, 7, 'scenario ID');
+  const scenarioId = s.origin === 'generated' || (save.version >= 18 && save.scenarioId === null) ? null : number(save.scenarioId, 0, 7, 'scenario ID');
   if (s.origin === 'generated' && save.scenarioId !== null) fail('generated scenario ID');
   const newFarm = save.version >= 15 ? decodeNewFarm(r.newFarm) : null;
   if ((s.origin === 'generated') !== (newFarm !== null)) fail('farm startup provenance');
@@ -192,12 +193,14 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   const market = save.version >= 16 ? decodeMarket(r.market) : save.version === 15 && newFarm
     ? decodeLegacyGeneratedMarket(r.newFarm)
     : { history: cropMarketPrices.map(price => [...Array(29).fill(null), price]), mood: 0, rawBC72: 0 };
-  const state: SimulationState = { scenario: s, newFarm, crops: r.crops.map(c => numbers(c, 128, 0, 255, 'crop bytes')),
+  const retainedSetup = save.version >= 18 ? decodeNewFarm(r.retainedSetup) : null;
+  if (s.origin === 'generated' && retainedSetup !== null) fail('duplicate setup state');
+  const state: SimulationState = { scenario: s, newFarm, retainedSetup, crops: r.crops.map(c => numbers(c, 128, 0, 255, 'crop bytes')),
     townLayoutBytes: save.version >= 5 ? numbers(r.townLayoutBytes, TOWN_LAYOUT_BYTES, 0, 255, 'town layout bytes') : null,
     pendingTown: save.version >= 6 ? decodePendingTown(r.pendingTown) : null,
     random: rng.snapshot(), weather: decodeWeather(r.weather), daysAdvanced: number(r.daysAdvanced, 0, Number.MAX_SAFE_INTEGER, 'days advanced'),
     paused: boolean(r.paused, 'paused'), speed, elapsed: number(r.elapsed, 0, 1, 'fractional ticks', false),
-    dayTicks: number(r.dayTicks, 0, Math.max(1, s.farm.dayDelayTicks) - 1, 'day ticks'),
+    dayTicks: number(r.dayTicks, 0, save.version >= 18 ? 65535 : Math.max(1, s.farm.dayDelayTicks) - 1, 'day ticks'),
     disasters: decodeDisasters(r, save.version), grassTravelCount: number(r.grassTravelCount, 0, 65535, 'grass wear'),
     waterDisasters: save.version >= 14 ? decodeWaterDisasters(r.waterDisasters) : createWaterDisasters(),
     equipmentAnimationTick: number(r.equipmentAnimationTick, 0, 65535, 'equipment animation tick'),

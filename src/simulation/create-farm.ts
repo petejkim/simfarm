@@ -67,7 +67,7 @@ export function createNewFarmState(options: NewFarmOptions, assets: NewFarmAsset
     equipmentDefinitions: records.equipmentDefinitions, buildingDefinitions: records.buildingDefinitions,
     seedDefinitions: records.seedDefinitions, cropDefinitions: records.cropDefinitions,
     harvestDefinitions: records.harvestDefinitions, chemicalDefinitions: records.chemicalDefinitions, irrigation };
-  return { scenario, crops, townLayoutBytes: [...assets.townLayouts.bytes], random: random.snapshot(), weather,
+  return { scenario, crops, retainedSetup: null, townLayoutBytes: [...assets.townLayouts.bytes], random: random.snapshot(), weather,
     newFarm: { provenance: { kind: 'cold-start', version: 1, options: structuredClone(options) }, raw: runtime.raw,
       terrainHistory: terrainRandom.snapshot(), plannerBuffer: [...records.plannerBuffer] },
     traffic: snapshotTraffic(traffic),
