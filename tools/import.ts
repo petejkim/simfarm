@@ -6,6 +6,7 @@ import { patchCropGraphics } from '../src/formats/crop-graphics';
 import { spriteAtlas } from '../src/formats/sprite';
 import { readScenario } from '../src/formats/scenario';
 import { readArchive } from '../src/formats/archive';
+import { readClimatePresets, readSetupMap } from '../src/formats/new-farm';
 import { readPalette, readBitmap, tileAtlas, decodePlanar, type Raster } from '../src/formats/graphics';
 import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
 import { readCrop, type CropDefinition } from '../src/formats/crop';
@@ -26,6 +27,8 @@ const entries = readArchive(index, data);
 const assets = new Map(entries.map(e => [e.name, e.bytes]));
 function asset(name: string) { const bytes = assets.get(name); if (!bytes) throw new Error(`Missing ${name}`); return bytes; }
 const palette = readPalette(asset('simfarm.pal'));
+const setupMap = readSetupMap(asset('scenario.odt'));
+await json('new-farm-setup.json', { ...setupMap, trailingBytes: Array.from(setupMap.trailingBytes), climate: readClimatePresets(asset) });
 for (const e of entries) {
   await writeFile(join(output, 'raw', e.name), e.bytes);
   if (e.name.endsWith('.bmp')) await png(`${e.name}.png`, readBitmap(e.bytes, palette));
