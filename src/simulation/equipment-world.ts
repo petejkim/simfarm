@@ -70,7 +70,8 @@ export function drawEquipment(head: EquipmentRecord, world: EquipmentWorld): voi
 }
 
 /** 0x133c0–0x13599: collision aftermath selected by the animal's current overlay image. */
-function hitAnimal(x: number, y: number, world: EquipmentWorld, runtime: EquipmentRuntime): void {
+export function hitAnimal(x: number, y: number, world: Pick<EquipmentWorld, 'cells' | 'animals'>,
+  runtime: Pick<EquipmentRuntime, 'animationTick' | 'notices'>): void {
   const animal = world.animals.find(a => a.slot && a.active && a.x === x && a.y === y);
   if (!animal || (animal.flags & 8)) return;
   const cell = world.cells[worldIndex(x, y)], image = cell.overlay & 0x7ff;
@@ -79,9 +80,9 @@ function hitAnimal(x: number, y: number, world: EquipmentWorld, runtime: Equipme
   else if (image >= 978 && image < 994) aftermath = 1040;
   else if (image >= 994 && image < 1010) aftermath = 1041;
   cell.overlay = (cell.overlay & 0xf800) | aftermath;
-  animal.flags = (animal.flags | 8) & ~2;
+  animal.flags |= 8; // 0x13572 preserves breeding eligibility bit2.
   animal.deathTick = runtime.animationTick;
-  // Original sound calls are represented as an event until non-MIDI effects playback is ported.
+  // The collision's two original sound calls remain an event pending their audio mapping.
   runtime.notices.push({ type: 'animal-hit', slot: animal.slot });
 }
 

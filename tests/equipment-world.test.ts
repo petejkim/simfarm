@@ -108,7 +108,7 @@ test('occupancy can hide a moving machine and applies original livestock collisi
   const animal = world.animals[1]; animal.bytes[0] = 20; animal.bytes[1] = 20; animal.flags = 0x22;
   const cell = world.cells[worldIndex(20, 20)]; cell.terrain |= 0x800; cell.overlay = 0x1000 | 980;
   refreshEquipment(e, world, r);
-  assert.equal(e.flags & 0x80, 0); assert.equal(animal.flags, 0x28);
+  assert.equal(e.flags & 0x80, 0); assert.equal(animal.flags, 0x2a); // Collision retains breeding eligibility.
   assert.equal(cell.overlay, 0x1000 | 1040);
   assert.deepEqual([...animal.bytes.subarray(30, 32)], [210, 4]);
   assert.equal(equipmentObstructed(e, world, r), true);
