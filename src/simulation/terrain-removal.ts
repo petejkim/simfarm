@@ -58,7 +58,7 @@ function restoreShore(world: Scenario, x: number, y: number, random: FarmRandom)
   for (let nx = x - 1; nx <= x + 1; nx++) for (let ny = y - 1; ny <= y + 1; ny++) paint(nx, ny, shoreMask(world, nx, ny));
 }
 
-/** Called after validated manual payment. No clearing queue for terrain.
+/** Manual cleanup after affordability checks. No clearing queue for terrain.
  * Retains high bits, source shore RNG, bridge flags, and gate asymmetry. */
 export function clearManualTerrain(world: Scenario, x: number, y: number, soilMoisture: number, random?: FarmRandom): void {
   const cell = world.cells[worldIndex(x, y)], tile = terrainTile(cell);

@@ -133,7 +133,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
       <div><label>Map tool <select id="map-tool" disabled={Boolean(snapshot?.aircraftFlight)} value={mapTool} onChange={e => setMapTool(e.target.value as MapTool)}>
         <option value="inspect">Inspect</option><option value="land">Buy land</option><option value="field">New field</option>
         <option value="build">Build</option>
-        <option value="remove">Remove field / building</option>
+        <option value="remove">Bulldoze</option>
         <option value="irrigation">Irrigation</option>
         <option value="equipment">Buy machinery</option>
         <option value="livestock">Animals &amp; supplies</option>
@@ -169,7 +169,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
           }} />
         <div className="map-footer"><span>{snapshot?.aircraftFlight ? 'Following aircraft · farm calendar suspended' : mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
           ? 'Click the top-left corner of a new field' : mapTool === 'build' ? 'Click the top-left corner of a building'
-          : mapTool === 'remove' ? 'Click a field or building to review its removal'
+          : mapTool === 'remove' ? 'Click an object or terrain to review its removal'
           : mapTool === 'irrigation' ? 'Click a tile to dig a ditch or control a valve'
           : mapTool === 'equipment' ? 'Click clear ground or an equipment storage building'
           : mapTool === 'livestock' ? 'Click a tile for your animal or supply' : 'Scroll to explore · click a tile to examine'}</span>

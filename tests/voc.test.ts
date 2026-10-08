@@ -8,6 +8,15 @@ const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}
 const entries = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
 const sample = (name: string) => Uint8Array.from(entries.find(e => e.name === name)!.bytes);
 
+test('manual terrain removal uses the fingerprinted original bulldozer PCM, preserving every sample', () => {
+  const e = entries.find(e => e.name === 'bulldoze.voc')!, sound = decodeVoc(e.bytes);
+  assert.equal(e.offset, 2152105); assert.equal(e.bytes.length, 2788);
+  assert.equal(createHash('sha256').update(e.bytes).digest('hex'), '0d0e0e24731a5506e7644d60f5eef427caa3621a056a93e647bc1f50fd2b31e3');
+  assert.equal(sound.sampleRate, 1000000 / 90); assert.equal(sound.samples.length, 2755);
+  for (let i = 0; i < sound.samples.length; i++) assert.equal(sound.samples[i], (e.bytes[i + 32] - 128) / 128);
+  const exe = source('SIMFARM.EXE'); assert.equal(exe.subarray(0x846f0 + 0x59ed, 0x846f0 + 0x59fa).toString(), 'bulldoze.voc\0');
+});
+
 test('all six original animal voices decode exact source PCM with species-specific sample rates', () => {
   const expected = [
     ['cow1', 7868, 75, '3cb705ffd984e36a03ae6e3702af7e2942abe18cd9b71872a008e433b3b20e95'],

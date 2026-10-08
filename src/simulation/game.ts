@@ -129,7 +129,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'set-auto-clear'; enabled: boolean }
   | { type: 'buy-land'; regionX: number; regionY: number }
   | { type: 'build'; buildingType: number; x: number; y: number }
-  | { type: 'remove-object'; x: number; y: number; kind: RemovalTarget['kind']; slot: number }
+  | { type: 'remove-object'; x: number; y: number; kind: RemovalTarget['kind']; slot: number; tile?: number }
   | { type: 'irrigation'; tool: IrrigationTool; x: number; y: number }
   | { type: 'start-flight'; slot: number; columns: number; rows: number }
   | { type: 'flight-control'; control: FlightControl }
@@ -358,8 +358,8 @@ export class GameSimulation {
     } else if (command.type === 'build') {
       this.lastBuildingResult = purchaseBuilding(this.scenario, this.finances, command.buildingType, command.x, command.y, this.weather.soilMoisture);
     } else if (command.type === 'remove-object') {
-      this.lastRemovalResult = removeManualTarget(this.scenario, this.finances, command.x, command.y, command, this.weather.soilMoisture);
-      if (this.lastRemovalResult.ok) this.events.push({ type: 'sound', sound: 'explode' });
+      this.lastRemovalResult = removeManualTarget(this.scenario, this.finances, command.x, command.y, command, this.weather.soilMoisture, this.random);
+      if (this.lastRemovalResult.ok) this.events.push({ type: 'sound', sound: this.lastRemovalResult.kind === 'terrain' ? 'bulldoze' : 'explode' });
     } else if (command.type === 'irrigation') {
       this.lastIrrigationResult = placeIrrigation(this.scenario, this.finances, command.tool, command.x, command.y, this.weather.soilMoisture);
     } else if (command.type === 'buy-aircraft') {
