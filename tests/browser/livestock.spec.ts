@@ -15,7 +15,7 @@ test('live livestock moves with original pixels, drinks and preserves frame stat
   const f = livestockFixture(16), game = f.load();
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'animals.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await page.locator('#livestock-panel summary').click(); await expect(page.locator('#livestock-panel summary')).toContainText('1 animal');
+  await page.locator('#livestock-panel > summary').click(); await expect(page.locator('#livestock-panel > summary')).toContainText('1 animal');
   await expect(page.getByRole('table', { name: 'Livestock counts' }).getByRole('row', { name: 'Cow 1', exact: true })).toBeVisible();
   await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   const a = game.getSnapshot().scenario.animals[1]; expect([a.x, a.y]).toEqual([11, 10]);
@@ -41,7 +41,7 @@ test('livestock loss is shown in React, malformed frame saves preserve the curre
   const game = f.load(); await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'thirst.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
-  await page.locator('#livestock-panel summary').click(); await expect(page.locator('#livestock-panel summary')).toContainText('0 animals');
+  await page.locator('#livestock-panel > summary').click(); await expect(page.locator('#livestock-panel > summary')).toContainText('0 animals');
   await expect(page.locator('#livestock-notices')).toContainText('Cow 1 died from lack of water.');
   const bad = JSON.parse(game.save(4)); bad.runtime.animalFrame.herd = '00';
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
@@ -51,5 +51,5 @@ test('livestock loss is shown in React, malformed frame saves preserve the curre
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'artifacts/browser-livestock.png' });
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await expect(page.locator('#livestock-panel summary')).toContainText('0 animals'); await expect(page.locator('#livestock-notices')).toHaveCount(0);
+  await expect(page.locator('#livestock-panel > summary')).toContainText('0 animals'); await expect(page.locator('#livestock-notices')).toHaveCount(0);
 });

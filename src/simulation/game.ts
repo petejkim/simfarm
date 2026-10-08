@@ -57,6 +57,7 @@ import { increaseAnimalNeeds } from './animal-needs';
 import { purchaseLivestock, type LivestockPurchaseResult } from './livestock-purchase';
 import { ageBuildings, fillWaterStorage } from './water-storage';
 import { ageInventoryAndRefillTroughs } from './weekly-inventory';
+import { ageAnimals, beginAnimalPregnancies, advanceAnimalGestation, type AnimalLifecycleNotice } from './animal-lifecycle';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -82,7 +83,8 @@ export interface GameSnapshot {
   availableLoan: number;
   lastLoanResult: ({ kind: 'borrow' } & BorrowResult) | ({ kind: 'repay' } & RepayResult) | null;
   financeNotices: number[];
-  animalNotices: { slot: number; id: number }[];
+  animalNotices: { slot: number; id: number; animalType: number }[];
+  animalLifecycleNotices: AnimalLifecycleNotice[];
   animalFrame: AnimalFrameState;
   cropMarketPrices: number[];
   lastPlantResult: PlantResult | null;
@@ -157,7 +159,8 @@ export class GameSimulation {
   private dayTicks = 0;
   private readonly equipmentRuntime: EquipmentRuntime = { grassTravelCount: 0, animationTick: 0, notices: [] };
   private animalFrame = createAnimalFrameState();
-  private animalNotices: { slot: number; id: number }[] = [];
+  private animalNotices: GameSnapshot['animalNotices'] = [];
+  private animalLifecycleNotices: AnimalLifecycleNotice[] = [];
   private readonly cropMarketPrices: number[];
   private lastPlantResult: PlantResult | null = null;
   private lastHarvestResult: HarvestOrderResult | null = null;
@@ -358,7 +361,8 @@ export class GameSimulation {
     if (!this.finances.defaultDecision && !this.pendingTown) {
       const animals = advanceAnimalFrame(s, this.finances, { tick: s.farm.animationTicks, frame: this.animalFrame,
         random: this.random, crops: this.crops, pointer: null }, this.weather.soilMoisture);
-      const notices = animals.flatMap(a => [...(a.movement?.notices ?? []), ...(a.care?.notices ?? [])].map(id => ({ slot: a.slot, id })));
+      const notices = animals.flatMap(a => [...(a.movement?.notices ?? []), ...(a.care?.notices ?? [])]
+        .map(id => ({ slot: a.slot, id, animalType: s.animals[a.slot].type })));
       if (notices.length) this.animalNotices = notices.slice(-20);
     }
   }
@@ -382,14 +386,17 @@ export class GameSimulation {
     }
     if (next.weekEnded) {
       // Weekly0xbe4d ages buildings before inventory refills; both precede wind0xbe74.
-      // Equipment, chemicals and animal aging between these phases remain separate reconstruction work.
+      // Equipment/chemical aging still need their separate source phases.
       ageBuildings(s, this.random);
+      const aging = ageAnimals(s, this.finances, this.random);
+      this.animalLifecycleNotices = [...this.animalLifecycleNotices, ...aging.notices].slice(-20);
       ageInventoryAndRefillTroughs(s);
       // Weekly dispatcher0xbdbe updates old week's wind and field water before the calendar rolls.
       const wind = updateWeeklyWind(w, s.climate, before);
       this.disasterFlags = wind.storm ? this.disasterFlags | 8 : this.disasterFlags & ~8;
       if (wind.hurricane) this.disasterFlags |= 1;
       else if (w.wind < 70) this.disasterFlags &= ~1;
+      this.animalLifecycleNotices = [...this.animalLifecycleNotices, ...advanceAnimalGestation(s, this.finances, this.random)].slice(-20); // 0xbe81.
       this.requestMusic(updateReportedFieldStatus(s, this.finances.statistics)); // 0xbe8b, before water/status dispatch 0xbea3.
       for (const field of s.fields.filter(f => f.active)) {
         updateFieldWater(field, s.cells, w.soilMoisture, this.disasterFlags);
@@ -456,6 +463,7 @@ export class GameSimulation {
       const payment = payScheduledLoan(s.farm, this.finances.loan, this.finances.debt, loanPaymentAccounts(this.finances));
       if (payment.notice) this.financeNotices.push(payment.notice);
     }
+    if (monthEnded) beginAnimalPregnancies(s); // 0xd032, skipped by non-month-ending weeks.
     w.windAnomaly = Math.max(0, w.windAnomaly - 2);
     advanceForecast(w, s.climate, calendar, this.random, s.cells);
   }
@@ -492,6 +500,7 @@ export class GameSimulation {
       lastLoanResult: this.lastLoanResult ? { ...this.lastLoanResult } : null, financeNotices: [...this.financeNotices],
       animalFrame: { ...this.animalFrame, herd: Uint8Array.from(this.animalFrame.herd) },
       animalNotices: this.animalNotices.map(n => ({ ...n })),
+      animalLifecycleNotices: this.animalLifecycleNotices.map(n => ({ ...n })),
       weather: { ...this.weather, forecast: [...this.weather.forecast], nextForecast: [...this.weather.nextForecast] },
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, cropMarketPrices: [...this.cropMarketPrices],
       lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null,

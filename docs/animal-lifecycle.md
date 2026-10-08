@@ -31,6 +31,16 @@ A full255-animal table makes allocation return0 with no RNG/count/account change
 
 ## Native implementation and checks
 
-`animal-allocation.ts` shares exact initialization and vocal selection. `animal-lifecycle.ts` implements age, monthly eligibility and queued births independently of React/canvas. These primitives are not yet connected to the live calendar in this commit. Source sound requests are returned separately; actual animal-vocal playback remains pending.
+`animal-allocation.ts` shares exact initialization and vocal selection. `animal-lifecycle.ts` implements age, monthly eligibility and queued births independently of React/canvas. Source sound requests are returned separately; actual animal-vocal playback remains pending.
 
-Six primitive tests pin executable instructions/tables, all eight source farms, exact newborn bytes/RNG/accounts, every byte-valued condition around maturity, strict gestation/lifespan boundaries, wrap behavior, high-slot parents/free low slots, full capacity, stored death cleanup and rejection of invalid state before mutation. Existing purchase/movement/care tests remain unchanged and pass after sharing allocation/removal/vocal helpers. Native month/week integration, checkpoint continuation and browser feedback are the next increment.
+Six primitive tests pin executable instructions/tables, all eight source farms, exact newborn bytes/RNG/accounts, every byte-valued condition around maturity, strict gestation/lifespan boundaries, wrap behavior, high-slot parents/free low slots, full capacity, stored death cleanup and rejection of invalid state before mutation. Existing purchase/movement/care tests remain unchanged and pass after sharing allocation/removal/vocal helpers.
+
+## Live integration and presentation
+
+GameSimulation runs animal age after building age and before inventory/refills, then gestation after weekly wind and before reported field status. Monthly eligibility follows scheduled loan collection and also runs once when a pending annual town choice resumes. Canonical age/image/flag/counter bytes, count/asset changes and RNG already persist in nativev10; no schema change or new save-owned UI state is needed.
+
+The Livestock panel shows adults/expecting totals and expandable per-animal ages/gestation counters, plus transient birth, old-age and capacity messages. Native lifecycle notices include the species at the time of the event so an old horse's message remains a horse after a calf reuses that slot. Care notices also capture species instead of looking it up later from a reusable record. Notices are detached snapshots and are deliberately cleared by loading a save; they are native presentation, not invented original string IDs.
+
+Two live tests run a stored cow through maturation/monthly eligibility and the full41-week gestation, preserve saved continuation into birth, verify death frees a slot before that week's birth pass, retain event identity across cross-species slot reuse, and freeze pending default. Browser checks compare the adult cow against original masked tile119, show monthly/weekly counters, save/reload births, report old-age death and full-table failure, and verify390px layout. The new nested details element required browser selectors to target the outer Livestock summary directly.
+
+Animal pointer delivery and actual vocal/death audio remain pending. Source byte18's age transition is now live; no further animation phase is asserted merely because there are two sprite images per direction. Equipment/chemical weekly aging and other original systems remain separately unfinished.

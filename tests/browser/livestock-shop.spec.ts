@@ -22,7 +22,7 @@ test('the livestock panel opens the shop, buys a cow and usable supplies and sav
   const f = shopFixture(), game = f.load(); await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'shop.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await page.locator('#livestock-panel summary').click(); await page.locator('#open-livestock-shop').click();
+  await page.locator('#livestock-panel > summary').click(); await page.locator('#open-livestock-shop').click();
   await expect(page.locator('#map-tool')).toHaveValue('livestock'); await expect(page.locator('#buy-livestock')).toBeDisabled();
   for (const [productType, x, y, name] of [[161, 10, 10, 'Cow'], [299, 12, 10, 'Water trough'], [300, 12, 11, 'Feed']] as const) {
     await page.locator('#livestock-product').selectOption(String(productType)); await selectTile(page, x, y);
@@ -31,7 +31,7 @@ test('the livestock panel opens the shop, buys a cow and usable supplies and sav
     await expect(page.locator('#livestock-purchase-result')).toContainText(`${name} purchased`);
     await expect(page.locator('#buy-livestock')).toBeDisabled();
   }
-  await expect(page.locator('#livestock-panel summary')).toContainText('1 animal');
+  await expect(page.locator('#livestock-panel > summary')).toContainText('1 animal');
   await expect(page.locator('#livestock-supplies')).toHaveText('Water remaining: 256 units · Feed remaining: 512 units');
   await expect(page.locator('#farm-cash')).toHaveText('$99,405');
   const path = 'artifacts/browser-livestock-shop.simfarm.json';

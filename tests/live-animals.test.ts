@@ -70,6 +70,6 @@ test('all original farms preserve live animal motion and generators across saved
   f.state.scenario.cells[worldIndex(12, 10)].terrain = 15; f.state.scenario.animals[1].bytes[14] = 255;
   const game = f.load(); game.dispatch({ type: 'set-paused', paused: false }); game.tick(16);
   assert.equal(game.getSnapshot().scenario.animals[1].active, false);
-  assert.deepEqual(game.getSnapshot().animalNotices, [{ slot: 1, id: 58 }]);
+  assert.deepEqual(game.getSnapshot().animalNotices, [{ slot: 1, id: 58, animalType: 161 }]);
   assert.deepEqual(GameSimulation.load(game.save(4), f.crops).simulation.getSnapshot().animalNotices, []);
 });

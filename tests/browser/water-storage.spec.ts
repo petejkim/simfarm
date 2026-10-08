@@ -42,7 +42,7 @@ test('Build water storage collects from live irrigation, refills distant troughs
     pixels.push(...atlas.data.subarray(offset, offset + 4));
   }
   expect(actual).toEqual(pixels);
-  await page.locator('#livestock-panel summary').click();
+  await page.locator('#livestock-panel > summary').click();
   await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   await expect(page.locator('#livestock-stored-water')).toContainText('255 units');
   for (let day = 1; day < 7; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
@@ -68,7 +68,7 @@ test('water storage wear is visible and removes its supply before weekly refills
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'worn-water-store.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
-  await page.locator('#livestock-panel summary').click();
+  await page.locator('#livestock-panel > summary').click();
   await expect(page.locator('#water-storage-worn')).toContainText('Water storage worn out at 13, 11');
   await expect(page.locator('#livestock-stored-water')).toContainText('0 units');
   await page.locator('#map-tool').selectOption('build'); await page.locator('#building-type').selectOption('72');
