@@ -43,6 +43,13 @@ export function validateMovingDisasters(state: MovingDisasterState): void {
 export type MovingDisasterStart = { ok: true; kind: MovingDisasterKind; cancelledSwarm: boolean }
   | { ok: false; reason: 'disabled' | 'already-active' | 'tornado-active' | 'no-fields' };
 
+/** Field selector0x1b802, shared by swarm and crop-circle starts. Zero becomes
+ * ordinal1; the final field is never selected when count>1 (SF-126). */
+export function selectDisasterField(world: Scenario, random: FarmRandom) {
+  const fields = world.fields.filter(f => f.slot > 0 && f.active);
+  return fields.length ? fields[Math.max(1, random.below(fields.length)) - 1] : undefined;
+}
+
 /** Start branches0x36874/0x36bac, called by the general disaster entry0x36574.
  * The caller owns the general price callback (no-op for modes1/4), notifications/audio and other modes.
  * Source retains frames and the tornado's last frame clock across restarts. */
@@ -55,11 +62,8 @@ export function beginMovingDisaster(world: Scenario, state: MovingDisasterState,
   if (kind === 'swarm' && (state.flags & 1)) return { ok: false, reason: 'tornado-active' };
   const e = state[kind], cancelledSwarm = kind === 'tornado' && Boolean(state.flags & 32);
   if (kind === 'swarm') {
-    const fields = world.fields.filter(f => f.slot > 0 && f.active);
-    if (!fields.length) return { ok: false, reason: 'no-fields' };
-    // 0x1b802: zero becomes ordinal1; the final field is never selected when
-    // count>1. Preserve the original bias (SF-126), with bounded traversal.
-    const field = fields[Math.max(1, random.below(fields.length)) - 1];
+    const field = selectDisasterField(world, random);
+    if (!field) return { ok: false, reason: 'no-fields' };
     state.swarm.fieldSlot = field.slot; e.x = field.x; e.y = field.y; e.lastTick = tick;
   } else {
     state.flags &= ~32;
