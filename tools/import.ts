@@ -7,6 +7,7 @@ import { spriteAtlas } from '../src/formats/sprite';
 import { readScenario } from '../src/formats/scenario';
 import { readArchive } from '../src/formats/archive';
 import { readClimatePresets, readSetupMap } from '../src/formats/new-farm';
+import { readNewFarmRecordDefaults } from '../src/formats/new-farm-records';
 import { readPalette, readBitmap, tileAtlas, decodePlanar, type Raster } from '../src/formats/graphics';
 import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
 import { readCrop, type CropDefinition } from '../src/formats/crop';
@@ -29,6 +30,7 @@ function asset(name: string) { const bytes = assets.get(name); if (!bytes) throw
 const palette = readPalette(asset('simfarm.pal'));
 const setupMap = readSetupMap(asset('scenario.odt'));
 await json('new-farm-setup.json', { ...setupMap, trailingBytes: Array.from(setupMap.trailingBytes), climate: readClimatePresets(asset) });
+await json('new-farm-records.json', readNewFarmRecordDefaults(exe));
 for (const e of entries) {
   await writeFile(join(output, 'raw', e.name), e.bytes);
   if (e.name.endsWith('.bmp')) await png(`${e.name}.png`, readBitmap(e.bytes, palette));

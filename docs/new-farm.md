@@ -1,6 +1,6 @@
 # Original new-farm setup
 
-Setup resources, climate selection and the terrain-generation chain are recovered, but complete farm creation is not yet connected. `src/formats/new-farm.ts` decodes resources; `./tools/bun run import` produces ignored `public/assets/new-farm-setup.json` alongside the original raw members. `src/simulation/terrain-generation.ts` creates original terrain with a separate setup random history. Existing SSM loading and canonical simulation initialization are unchanged. Starting-location selection and initial player ownership/homestead are also recovered below. Reset/default records, crop selection, initial town construction and the setup UI still need reconstruction before a new farm can be offered as original behavior.
+Setup resources, climate selection and the terrain-generation chain are recovered, but complete farm creation is not yet connected. `src/formats/new-farm.ts` decodes resources; `./tools/bun run import` produces ignored `public/assets/new-farm-setup.json` alongside the original raw members. `src/simulation/terrain-generation.ts` creates original terrain with a separate setup random history. Existing SSM loading and canonical simulation initialization are unchanged. Starting-location selection and initial player ownership/homestead are also recovered below. Cold record/definition decoding and default crop loading are also implemented. Runtime/account reset, price-history RNG, initial town construction, calendar/weather ordering and the setup UI remain before a complete new farm can be offered.
 
 All executable addresses below are file offsets in SHA-256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`. Source files are read only. The independent annotated grids inside the original resource and saved climate triples provide cross-checks beyond the disassembly.
 
@@ -122,3 +122,36 @@ Seven new tests cover source instructions, each tile of edge/interior eligibilit
 Remaining initialization work: reset0x402a8/0x4060c and callback0x3f854, original crop/default record construction and price loading, starting town creation, financial accounts and weather ordering. The finalizer's climate call and selector tables are implemented separately; complete creation must combine these phases without retaining an existing farm's fields/equipment/loans. The current SSM loader remains authoritative for existing farms and must not become a substitute new-farm template with unexplained leftovers.
 
 Additional reset call-chain evidence:0x3f854 clears regional type bytes to255 and ownership to0 after calling asset loader24e6:1384 (file0x49426), calls terrain wrapper0x4027e, then setup/finalizer24e6:137a (file0x40d6c). Its24e6:1212 call resolves to palette loader0x491ec with simfarm.pal. These callbacks separate graphics/palette reload from gameplay reset; do not treat every call as a new-state constructor.
+
+## Cold record image, partial record reset and default crops
+
+`src/formats/new-farm-records.ts` extracts original data tables from overlay29. Its initialized image starts at file4ec60, load segment2be7, so a segment:offset maps to `4ec60 + (segment−2be7)*16 + offset`. This is static data decoding, not a DOS memory/execution environment. Import writes ignored `public/assets/new-farm-records.json`; no SSM farm supplies this data. Native record views are detached copies. Existing SSM loading and GameSimulation initialization are unchanged.
+
+| Records | Original address | File offset | Count × stride |
+| --- | --- | --- | --- |
+| Animals | 3d9f:6400 | 66be0 | 256 × 32 |
+| Chemicals | 2d9f:edbe | 5f59e | 127 × 20 |
+| Equipment | 3d9f:a6ba | 6ae9a | 127 × 56 |
+| Fields | 6190:2432 | 86b22 | 98 × 68 |
+| Buildings | 3d9f:8400 | 68be0 | 127 × 70 |
+| Inventory | 2d9f:d5be | 5dd9e | 512 × 12 |
+
+Every byte in these six shipped cold record tables is zero. The decoder nevertheless copies the complete source bytes rather than constructing zero-filled records or assigning meanings to unused fields. It also preserves every18-byte definition: DS6db8 equipment(12),6e90 buildings(9),6f32 crops(24),70e2 animals(5),713c harvest(16),725c seeds(16),737c chemicals(4),73c4 other goods(17). This retains dimensions, graphics, prices, extra definitions and unknown/pointer words. DS base remains file846f0. `createSetupRecords` validates table lengths and byte ranges before constructing native record classes.
+
+`src/simulation/new-farm-records.ts` contains state-changing setup phases. `resetSetupRecords` follows0x403c6..0x40582: clear animal/chemical/equipment/building word+2, field word+6 and inventory **byte+10 only**. Clear definition word+4 in each table. All other record/definition bytes remain, including reserved slot0 and inactive records. This is a partial reset for a retained record image, not a claim that restarting the original clears all memory. Global activity counts are represented by active native records; associated account resets remain separate. No new original defect is inferred merely from retaining unused bytes.
+
+### Planner image
+
+Initialized2c8b:0000 maps to file4f6a0; the3072-byte scratch buffer is initially zero. Reset0x4092c..0x4094a writes1536 words209 to this buffer. File initializer0x48c9e..0x48d07 writes **1176 words**, twenty times, from its start. The resulting47040 bytes are the240×98 schedule: the first twelve-week block is repeated twenty times. `createSetupSchedule` performs that copy, including unknown codes; it does not replace a caller's buffer with guessed fallow entries. Tests deliberately use1176 distinct words and a different unused tail, then verify every schedule word. Full startup ordering still needs to establish any intervening buffer writes before choosing the cold-versus-reset input in canonical creation.
+
+### Original default crop list and loading
+
+Main0x23a2..0x249f calls crop loader0x46520 for these sixteen slots, from filename literals at DS0080..0128:
+
+`corn, wheat, barley, potatoes, oats, rice, sorghum, soybeans, cotton, onions, tomatoes, lettuce, carrots, strawber, sugar, peanuts` (all `.crp`).
+
+These are cold-start defaults, not an instruction to overwrite a restored farm's crop choices. Native `loadStartingCrops` resolves all sixteen catalog entries before mutation. Source0x466a4..0x4672f stores definition pointer2d9f:(c5ac+slot*128) at words+14/+16 in crop, harvest and seed definitions, assigns crop price from CRP word+34 and seed price=`max(5,CRP word+38>>2)`. Harvest price and other fields are retained. The pointer words are raw preservation data, never browser addresses. Returned128-byte crop definitions are independent copies, and unused crop entries16–23 remain unchanged. The live game already implements crop/seed pricing for SSM imports; this new phase supplies original references and prices for future native farm creation.
+
+The subsequent0x24a2..0x24b9 calls0x4adfc for each crop to initialize thirty price-history words and consume the simulation RNG. That history phase must be connected before claiming source-exact new-farm RNG continuation. Do not assume that copying base prices consumes no subsequent startup randomness.
+
+Six tests pin the full executable hash/instructions, all record and definition bytes, exact crop slot order, unsafe/truncated input rejection, detached ownership, partial-reset byte boundaries, twenty planner blocks, loaded crop pointers/prices, minimum seed price and atomic missing-crop rejection. Import/build and existing browser-loading checks protect the asset path; these are not browser new-farm flows. Remaining work includes reset financial/runtime values, market-history initialization, town creation, weather/calendar order and the canonical constructor/UI. SourceByte template representation for new farms also needs explicit design; no existing farm's records or loans are being reused to make creation appear complete.
