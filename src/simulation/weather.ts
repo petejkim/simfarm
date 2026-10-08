@@ -71,10 +71,10 @@ export function applyDailyWeather(weather: WeatherState, day: number): void {
 }
 
 /** Wind update at 0x1e1ae; returns event transitions for the future disaster dispatcher. */
-export function updateWeeklyWind(weather: WeatherState, tables: ClimateTables, calendar: FarmCalendar): { storm: boolean; hurricane: boolean } {
+export function updateWeeklyWind(weather: WeatherState, tables: ClimateTables, calendar: FarmCalendar): { storm: boolean; tornado: boolean } {
   weather.wind = signedByte(tables.wind[weather.windYear * 48 + calendar.month * 4 + calendar.week] + weather.windAnomaly);
   if (weather.windAnomaly > 0) weather.windAnomaly--;
-  return { storm: weather.wind >= 35, hurricane: weather.wind > 70 };
+  return { storm: weather.wind >= 35, tornado: weather.wind > 70 };
 }
 
 /** Fresh-process defaults plus startup 0x24ef..0x2532. SSM files do not save these runtime globals. */

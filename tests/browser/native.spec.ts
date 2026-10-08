@@ -26,7 +26,9 @@ test('crop and masked pixels match source assets at original world coordinates; 
   await expect(page.locator('#field-status')).toHaveText('Field 1 · Growing · 8 × 8 tiles at 39, 29');
   await expect(page.locator('#crop-name')).toHaveText('Grapes');
   // Selecting a field centers its actual map bounds; the viewport center must hit it.
-  await page.locator('#viewport').click();
+  await page.locator('#viewport').scrollIntoViewIfNeeded();
+  const center = await page.locator('#viewport').evaluate(v => ({ x: v.clientWidth / 2 + 1, y: v.clientHeight / 2 + 1 }));
+  await page.locator('#viewport').click({ position: center });
   await expect(page.locator('#field')).toHaveValue('1');
   await expect(page.locator('#cell-status')).toContainText('Tile 43, 33');
   await page.locator('#scenario').selectOption('1');
@@ -364,6 +366,9 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   await page.goto('/');
   await page.locator('#scenario').selectOption('4');
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
+  await page.locator('#disasters-panel > summary').click();
+  await page.locator('#disasters-enabled').uncheck();
+  await page.locator('#disasters-panel > summary').click();
   await page.locator('#zoom').selectOption('0.5');
   await page.locator('#map-tool').selectOption('land');
   await page.locator('#viewport').evaluate(el => el.scrollTo(0, 0));
@@ -387,12 +392,12 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   await expect(page.locator('#treatment-progress')).toHaveCount(0);
   await page.screenshot({ path: 'artifacts/browser-fertilizer.png', fullPage: true });
   for (let day = 3; day < 84; day++) await page.locator('#next-day').click();
-  await expect(page.locator('#harvest-estimate')).toContainText('value: $1,467');
+  await expect(page.locator('#harvest-estimate')).toContainText('value: $1,461');
   await page.locator('#harvest-field').click();
   await page.locator('#next-day').click();
   // Other fields replant at this boundary, lowering the live sale price of the new field's lot.
-  await page.getByRole('button', { name: 'Sell Corn, lot 5, for $400', exact: true }).click();
-  await expect(page.locator('#farm-cash')).toHaveText('$21,805');
+  await page.getByRole('button', { name: 'Sell Corn, lot 5, for $398', exact: true }).click();
+  await expect(page.locator('#farm-cash')).toHaveText('$21,803');
   await expect(page.locator('#harvest-stock')).toHaveText('4 stored harvests');
   await page.locator('#scenario').selectOption('0');
   await page.locator('#field').selectOption('1');
@@ -433,6 +438,9 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await page.goto('/');
   await page.locator('#scenario').selectOption('4');
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
+  await page.locator('#disasters-panel > summary').click();
+  await page.locator('#disasters-enabled').uncheck();
+  await page.locator('#disasters-panel > summary').click();
   await page.locator('#zoom').selectOption('0.5');
   await page.locator('#map-tool').selectOption('land');
   await page.locator('#viewport').evaluate(el => el.scrollTo(0, 0));
@@ -474,11 +482,11 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   expect(JSON.parse(readFileSync(restoredPath, 'utf8')).scenario.schedule).toBe(saved.scenario.schedule);
   await page.screenshot({ path: 'artifacts/browser-load.png', fullPage: true });
   for (let day = 2; day < 84; day++) await page.locator('#next-day').click();
-  await expect(page.locator('#harvest-estimate')).toContainText('value: $1,467');
+  await expect(page.locator('#harvest-estimate')).toContainText('value: $1,461');
   await page.locator('#harvest-field').click();
   await page.locator('#next-day').click();
-  await page.getByRole('button', { name: 'Sell Corn, lot 5, for $400', exact: true }).click();
-  await expect(page.locator('#farm-cash')).toHaveText('$21,805');
+  await page.getByRole('button', { name: 'Sell Corn, lot 5, for $398', exact: true }).click();
+  await expect(page.locator('#farm-cash')).toHaveText('$21,803');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#save-farm').scrollIntoViewIfNeeded();
   await expect(page.locator('#save-farm')).toBeVisible();

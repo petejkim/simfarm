@@ -1,3 +1,4 @@
+import { createMovingDisasters, validateMovingDisasters, type MovingDisasterState } from '../simulation/moving-disasters';
 import { readScenario, WORLD_OFFSET, type Scenario } from './scenario';
 import { FIELD_SCHEDULE_OFFSET, FIELD_SCHEDULE_SIZE } from './field-schedule';
 import type { SavedFarmState } from './scenario-state';
@@ -126,6 +127,28 @@ function decodeWeather(value: unknown): WeatherState {
   result.precipitationActive = boolean(w.precipitationActive, 'precipitationActive');
   return result;
 }
+function decodeDisasters(runtime: Record<string, unknown>, version: number): MovingDisasterState {
+  const flags = number(runtime.disasterFlags, 0, 65535, 'disaster flags');
+  if (version < 13) {
+    // Legacy flags had no moving effect/clocks. Do not invent an active disaster.
+    return { ...createMovingDisasters(), flags: flags & ~33 };
+  }
+  const r = object(runtime.disasters, 'disasters');
+  const effect = (value: unknown) => {
+    const e = object(value, 'disaster effect');
+    return { frame: number(e.frame, 0, 3, 'disaster frame'), x: number(e.x, 0, 100, 'disaster X'),
+      y: number(e.y, 0, 100, 'disaster Y'), dx: number(e.dx, -1, 1, 'disaster direction X'),
+      dy: number(e.dy, -1, 1, 'disaster direction Y'), lastTick: number(e.lastTick, 0, 65535, 'disaster last tick'),
+      startedTick: number(e.startedTick, 0, 65535, 'disaster start tick') };
+  };
+  const d: MovingDisasterState = { enabled: boolean(r.enabled, 'disasters enabled'),
+    flags: number(r.flags, 0, 65535, 'disaster flags'), frameDelay: number(r.frameDelay, 0, 65535, 'disaster delay'),
+    lastStartTick: number(r.lastStartTick, 0, 65535, 'last disaster start'),
+    windReferenceTick: number(r.windReferenceTick, 0, 65535, 'wind reference tick'),
+    tornado: effect(r.tornado), swarm: { ...effect(r.swarm), fieldSlot: number(object(r.swarm, 'swarm').fieldSlot, 0, 97, 'swarm field') } };
+  if (d.flags !== flags) fail('inconsistent disaster flags');
+  validateMovingDisasters(d); return d;
+}
 function decodeIrrigation(value: unknown): IrrigationState {
   const s = object(value, 'irrigation');
   if (!Array.isArray(s.flow) || s.flow.length > MAX_IRRIGATION_FLOW) fail('irrigation flow');
@@ -141,8 +164,8 @@ function decodeIrrigation(value: unknown): IrrigationState {
 export function writeNativeSave(state: SimulationState, scenarioId: number): string {
   number(scenarioId, 0, 7, 'scenario ID');
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 12, scenarioId, scenario: encodeScenario(scenario),
-    runtime: { ...runtime, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
+  const text = JSON.stringify({ format: FORMAT, version: 13, scenarioId, scenario: encodeScenario(scenario),
+    runtime: { ...runtime, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
 }
@@ -151,7 +174,7 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(save.version)) fail('unsupported format or version');
   const scenarioId = number(save.scenarioId, 0, 7, 'scenario ID'), s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const random = object(r.random, 'random');
   const rng = new FarmRandom({ visual: number(random.visual, 0, 65535, 'visual RNG'),
@@ -172,7 +195,7 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
     random: rng.snapshot(), weather: decodeWeather(r.weather), daysAdvanced: number(r.daysAdvanced, 0, Number.MAX_SAFE_INTEGER, 'days advanced'),
     paused: boolean(r.paused, 'paused'), speed, elapsed: number(r.elapsed, 0, 1, 'fractional ticks', false),
     dayTicks: number(r.dayTicks, 0, Math.max(1, s.farm.dayDelayTicks) - 1, 'day ticks'),
-    disasterFlags: number(r.disasterFlags, 0, 65535, 'disaster flags'), grassTravelCount: number(r.grassTravelCount, 0, 65535, 'grass wear'),
+    disasters: decodeDisasters(r, save.version), grassTravelCount: number(r.grassTravelCount, 0, 65535, 'grass wear'),
     equipmentAnimationTick: number(r.equipmentAnimationTick, 0, 65535, 'equipment animation tick'),
     animalFrame,
     aircraftService: save.version >= 11 ? { selectedChemical: number(object(r.aircraftService, 'aircraft service').selectedChemical, 221, 223, 'aircraft chemical') }

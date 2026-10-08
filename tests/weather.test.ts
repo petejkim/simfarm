@@ -68,7 +68,7 @@ test('wind controls daily drying; rain accumulates, changes grass and saturates 
   advanceForecast(w, s.climate, s.farm.calendar, random, s.cells);
   assert.equal(w.soilMoisture, 0);
   w.windAnomaly = 60; s.climate.wind.fill(12);
-  assert.deepEqual(updateWeeklyWind(w, s.climate, s.farm.calendar), { storm: true, hurricane: true });
+  assert.deepEqual(updateWeeklyWind(w, s.climate, s.farm.calendar), { storm: true, tornado: true });
   assert.equal(w.wind, 72); assert.equal(w.windAnomaly, 59);
 });
 

@@ -1,3 +1,4 @@
+import type { DisasterSprites } from '../render/disaster-renderer';
 import type { FlightSprites } from '../render/aircraft-renderer';
 import type { CropDefinition } from '../formats/crop';
 import { readScenario } from '../formats/scenario';
@@ -11,7 +12,7 @@ export interface Catalog {
   music: { id: string; duration: number }[];
   tileCount: number;
 }
-export interface GameAssets { catalog: Catalog; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites }
+export interface GameAssets { catalog: Catalog; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
 export const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}assets/${path}`;
 
 async function response(path: string, signal?: AbortSignal): Promise<Response> {
@@ -34,12 +35,12 @@ function image(path: string, signal: AbortSignal): Promise<HTMLImageElement> {
   });
 }
 export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
-  const [catalog, maskedTiles, townLayouts, airplane, shadow, dust] = await Promise.all([
+  const [catalog, maskedTiles, townLayouts, airplane, shadow, dust, tornado, swarm] = await Promise.all([
     response('catalog.json', signal).then(r => r.json()) as Promise<Catalog>, image('masked-tiles.png', signal),
     response('raw/townly0.cmp', signal).then(r => r.arrayBuffer()).then(b => new TownLayouts(new Uint8Array(b))),
-    image('airplane.sprites.png', signal), image('apshadow.sprites.png', signal), image('cropdust.sprites.png', signal),
+    image('airplane.sprites.png', signal), image('apshadow.sprites.png', signal), image('cropdust.sprites.png', signal), image('tornado.sprites.png', signal), image('swarm.sprites.png', signal),
   ]);
-  return { catalog, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust } };
+  return { catalog, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
 }
 export async function loadScenarioAssets(id: number, signal: AbortSignal) {
   const [buffer, tiles] = await Promise.all([

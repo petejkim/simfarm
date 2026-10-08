@@ -1038,15 +1038,15 @@ Native trough/feed transfer preflights a matching active record and source conte
 
 ## SF-120 — disaster field traversal repeats an inactive slot and skips the active tail
 
-Status: verified loop-control defect on sparse field tables; correction deferred to disaster reconstruction. Confidence high on source branches, with original visible incidence not measured.
+Status: verified loop-control defect on sparse field tables; corrected in live native high-wind traversal. Confidence high on source branches, with original visible incidence not measured.
 
-Disaster dispatcher0x3709e, bit8 branch0x37112..0x37169, initializes record slot1 and processed count0. Inactive test0x37126 jumps directly to0x3715a. Slot increment0x37157 is reached only for active records, while0x3715a increments processed count unconditionally and0x37164 compares it to the active-field count. An inactive slot therefore repeats until the processed count reaches the bound; active records after that hole are skipped. Field removal can leave sparse records, but exact original storm timing after removal is not yet traced. Native disaster reconstruction should use bounded active-record traversal and test holes at the beginning/middle, retaining this evidence. No security vulnerability is asserted.
+Disaster dispatcher0x3709e, bit8 branch0x37112..0x37169, initializes record slot1 and processed count0. Inactive test0x37126 jumps directly to0x3715a. Slot increment0x37157 is reached only for active records, while0x3715a increments processed count unconditionally and0x37164 compares it to the active-field count. An inactive slot therefore repeats until the processed count reaches the bound; active records after that hole are skipped. Field removal can leave sparse records, but exact original storm timing after removal is not yet traced. Native uses bounded active-record traversal; tests prove damage reaches active slot5 after inactive intervening records. The source evidence remains retained. No security vulnerability is asserted.
 
 ## SF-121 — disaster rendering can read an uninitialized map-window local
 
-Status: conditional uninitialized-local read, native disaster integration pending. Confidence high on the missing assignment; reachability of a missing map window while the effect is active remains unresolved.
+Status: conditional original uninitialized-local read; native simulation is viewport-independent and the renderer uses an explicit canvas ref. Confidence high on the missing assignment; reachability of a missing map window while the effect is active remains unresolved.
 
-Dispatcher0x370ae..0x370b7 tests global far pointer13ae/13b0. Only the nonzero branch initializes stack locals[bp−0x10]/[bp−0xe] at0x370c2/0x370c5. The bit20 effect later passes those locals to redraw call0x37215, and tests their combined value0x372c3..0x372c9 before window dereferences. A zero global does not initialize the locals to zero. Native should represent an absent viewport explicitly and keep simulation effects independent of drawing. No null-window DOS configuration or exploitable memory consequence has been established; do not label this a demonstrated security vulnerability.
+Dispatcher0x370ae..0x370b7 tests global far pointer13ae/13b0. Only the nonzero branch initializes stack locals[bp−0x10]/[bp−0xe] at0x370c2/0x370c5. The bit20 effect later passes those locals to redraw call0x37215, and tests their combined value0x372c3..0x372c9 before window dereferences. A zero global does not initialize the locals to zero. Native keeps simulation effects independent of drawing; offscreen and absent viewport updates do not use DOS window locals. No null-window DOS configuration or exploitable memory consequence has been established; do not label this a demonstrated security vulnerability.
 
 ## SF-122 — disaster trough/feed destruction leaves definition counts unchanged
 
@@ -1058,7 +1058,7 @@ Disaster helper0x26598 calls raw inventory deletion0x152b0 at0x2672e and0x26791,
 
 Status: verified cash-dependent damage quirk retained; intended design is unknown. Confidence high; no security implication.
 
-At0x26aaa..0x26ab1 the damage helper pushes amount25 and debit category500 into0x1c88e. Failure returns without clearing the tile; equality25 succeeds. Debit category500..503 posts to DS3e88/3e8a at0x1c9c4 (worker expenses), with32-bit wrapping. Other accepted terrain families have no debit. Native retains the charge, low-cash immunity of these four tiles and expense wrap, all covered by tests. The source insufficient-cash notice42 is deferred to live disaster integration. Do not generalize this into a fee on all disaster damage.
+At0x26aaa..0x26ab1 the damage helper pushes amount25 and debit category500 into0x1c88e. Failure returns without clearing the tile; equality25 succeeds. Debit category500..503 posts to DS3e88/3e8a at0x1c9c4 (worker expenses), with32-bit wrapping. Other accepted terrain families have no debit. Native retains the charge, low-cash immunity of these four tiles and expense wrap, all covered by tests. The live native caller reports insufficient cash with bounded transient notices; it does not recreate the exact source notice42 dialog. Do not generalize this into a fee on all disaster damage.
 
 ## SF-124 — disaster network cleanup omits gate/valve/crossing repair and retains water flags
 
@@ -1085,3 +1085,24 @@ Field selector0x1b802 calls bounded RNG0x8273 with the active count, then replac
 Status: verified retained-state behavior, preserved natively; whether intentional continuity or a defect is unresolved. Confidence high on complete start/stop branch writes; no security implication.
 
 Tornado start0x36874..0x369bb sets position, directions and start tick69a2 but does not write frame6998 or last-frame tick699a. Swarm start0x36bac..0x36ce7 writes position, field and both clocks69a8/69b0 but leaves frame69a6 and direction bytes unchanged. Stop branches clear flags/menu checks without resetting these fields. A restarted effect can therefore damage sooner than four fresh frame iterations, and a tornado may advance immediately when its old frame clock is sufficiently distant. Native retains those fields and tests restart phase/clock behavior instead of resetting them for convenience.
+
+
+## SF-128 — disaster building deletion does not clean affected machinery jobs
+
+Status: native correction implemented for live destruction; original cleanup omission verified, exact user-visible incidence conditional. Confidence high on direct deletion calls; no demonstrated security vulnerability.
+
+Building cleanup0x19fe2..0x1a00a invokes generic asset deletion for stored contents; disaster helper0x26662/0x2667a invokes building cleanup/deletion without checking field or external machinery references. These paths do not cancel jobs referring to destroyed equipment/storage. Normal reservation can select a stored machine before collection, so an active field job can retain the now-inactive slot. The full original recovery behavior after such a hit remains unmeasured.
+
+Native `prepareDisasterBuilding` preflights actual contents, closes over affected field jobs and linked machines, releases harvest destination reservations, cancels affected work to Growing for an existing crop or Waiting otherwise, and clears surviving job/movement links before destruction. Crop/plans/loss/terrain/ledgers are retained; no completed harvest or refund is invented. Lost records retain their source inactive bytes. Default manual demolition still uses the SF-064 conflict guard. Tests destroy a building with reserved machinery through both direct damage and a live moving effect, verify accounting/references, and continue a checkpoint35 days. This interruption policy is a deliberate native correction, not recovered original cancellation behavior.
+
+## SF-129 — wind damage does not advance its reference clock
+
+Status: verified branch behavior retained; a possible indirect clock writer remains unresolved. Confidence high for the dispatcher, limited for whole-program absence of indirect writes. No security implication.
+
+Wind branch0x370ff..0x3710b subtractsDS6aa8 and compares unsigned elapsed against day-delayDS1f8c. The branch through0x37169 does not writeDS6aa8; initialized data at0x8b198 is zero, and the current whole-code index identifies the read without another direct write. Consecutive eligible animation calls can therefore each remove one nutrient unit from unprotected fields rather than waiting another day. Native persists the reference word and retains that behavior, with equality/wrap/repeated-call tests. Revisit indirect writes and original timer initialization before declaring an unconditional original gameplay defect or replacing it with a cooldown.
+
+## SF-130 — disaster crop-price adjustment wraps before its cap
+
+Status: verified arithmetic semantics retained; overflow reachability through ordinary source crop prices is unproven. Confidence high on instructions; not a demonstrated exploit.
+
+General start callback0x4b090 selects wind mode6 at0x4b1be. It adds the shifted unsigned current price in a16-bit word, then compares against a16-bit four-times-base cap. Either addition or cap multiplication can wrap before the clamp; a nominal increase can become a decrease for sufficiently large values. The callback runs before mode eligibility, so an enabled wind start request can reprice even when existing flags prevent activation. Native preserves both ordering and width. Tests distinguish disabled starts, failed activation, ordinary cap behavior and a constructed65530/base30000 boundary yielding32759. That constructed boundary does not establish a reachable original save/game exploit. Further producer/range tracing is deferred.

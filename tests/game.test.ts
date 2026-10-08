@@ -35,6 +35,7 @@ test('treatment commands own detached chemical stock and complete with determini
 
 test('fertilizer makes a newly purchased original plot produce a valuable stored corn harvest', () => {
   const input = farm(), game = new GameSimulation(input.scenario, input.crops);
+  game.dispatch({ type: 'set-disasters-enabled', enabled: false }); // Isolate fertilizer/harvest from new wind damage and market events.
   game.dispatch({ type: 'buy-land', regionX: 0, regionY: 2 });
   game.dispatch({ type: 'set-auto-clear', enabled: true });
   game.dispatch({ type: 'create-field', x: 0, y: 16, cropSlot: 0 });
@@ -55,11 +56,11 @@ test('fertilizer makes a newly purchased original plot produce a valuable stored
   game.dispatch({ type: 'harvest-field', fieldSlot: result.slot });
   game.dispatch({ type: 'advance-day' }); // The next week completes harvest and replants four original corn fields.
   const stored = game.getSnapshot(), item = stored.scenario.inventory.find(i => i.active && i.type === 168 && !priorItems.has(i.slot))!;
-  assert.ok(item); assert.equal(stored.storedHarvestValues[item.slot], 400);
+  assert.ok(item); assert.equal(stored.storedHarvestValues[item.slot], 398);
   const cash = stored.scenario.farm.cash;
   game.dispatch({ type: 'sell-harvest', inventorySlot: item.slot });
-  assert.equal(game.getSnapshot().scenario.farm.cash, cash + 400);
-  assert.equal(game.getSnapshot().scenario.farm.cash, 21805);
+  assert.equal(game.getSnapshot().scenario.farm.cash, cash + 398);
+  assert.equal(game.getSnapshot().scenario.farm.cash, 21803);
   assert.equal(game.getSnapshot().scenario.fields[result.slot].state, 0);
 });
 

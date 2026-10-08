@@ -1,7 +1,7 @@
 import type { FinancialState } from '../formats/finance';
 import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
 import { findBuilding } from './building-storage';
-import { prepareBuildingDemolitions } from './building-demolition';
+import { prepareDisasterBuilding } from './disaster-building';
 import { queueClearingEffect, validateClearingEffects } from './clearing-effects';
 import { repairTerrainNeighbors } from './terrain-removal';
 
@@ -34,7 +34,7 @@ export function damageDisasterCell(world: Scenario, finances: FinancialState, x:
   if (building) {
     // Original0x26657 removes a recognized pump/windmill source before cleanup.
     // Existing demolition also handles this by record type (SF-093).
-    applyObject = prepareBuildingDemolitions(world, finances.accounts, [building.slot], finances.clearing, soilMoisture).get(building.slot)!;
+    applyObject = prepareDisasterBuilding(world, finances, building.slot, soilMoisture);
     result.buildingSlot = building.slot;
   } else {
     const field = world.fields.find(f => f.slot > 0 && f.contains(x, y));

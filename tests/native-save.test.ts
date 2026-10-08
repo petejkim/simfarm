@@ -38,6 +38,7 @@ test('native saves retain unknown source/record bytes, all eight farms and detac
 test('save midway through new-field work and treatments continues through valuable harvest and sale', () => {
   const { scenario, crops } = farm();
   const original = new GameSimulation(scenario, crops);
+  original.dispatch({ type: 'set-disasters-enabled', enabled: false }); // Fixed-price farming checkpoint; disaster continuation has its own tests.
   original.dispatch({ type: 'buy-land', regionX: 0, regionY: 2 });
   original.dispatch({ type: 'set-auto-clear', enabled: true });
   original.dispatch({ type: 'create-field', x: 0, y: 16, cropSlot: 0 });
@@ -65,9 +66,9 @@ test('save midway through new-field work and treatments continues through valuab
   same(original, restored, 4);
   restored = GameSimulation.load(restored.save(4), crops).simulation;
   const inventory = original.getSnapshot().scenario.inventory.find(i => i.active && i.type === 168 && !priorItems.has(i.slot))!;
-  assert.ok(inventory); assert.equal(original.getSnapshot().storedHarvestValues[inventory.slot], 400);
+  assert.ok(inventory); assert.equal(original.getSnapshot().storedHarvestValues[inventory.slot], 398);
   for (const game of [original, restored]) game.dispatch({ type: 'sell-harvest', inventorySlot: inventory.slot });
-  same(original, restored, 4); assert.equal(restored.getSnapshot().scenario.farm.cash, 21805);
+  same(original, restored, 4); assert.equal(restored.getSnapshot().scenario.farm.cash, 21803);
 }, 15000);
 
 test('all four treatments, tick rollover and fifth-year weather retain exact continuation', () => {

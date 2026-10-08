@@ -1,3 +1,4 @@
+import { DisasterPanel } from './DisasterPanel';
 import { SupplyMovePanel } from './SupplyMovePanel';
 import { EquipmentMovePanel, BuildingInteriorControls } from './EquipmentMovePanel';
 import { FlightControls } from './FlightControls';
@@ -160,10 +161,11 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     {snapshot && simulation && <AircraftPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
       onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
     {snapshot && <MachineryPanel snapshot={snapshot} onMove={() => { setMapTool('move'); setSelection(null); }} onShop={() => setMapTool('equipment')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
+    {snapshot && <DisasterPanel snapshot={snapshot} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     {data && <main>
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
-        <FarmMap flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
+        <FarmMap disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           field={field} selection={selection} preview={preview} onPointer={onMapPointer} onSelect={index => {
             setSelection(index);

@@ -34,11 +34,11 @@ interface Preparation {
 /** Plan a synchronous transaction before cash/ownership changes. The caller
  * applies each callback once, in source map-scan order, without intervening commands. */
 export function prepareBuildingDemolitions(world: Scenario, state: BuildingDemolitionState, slots: readonly number[],
-  effects: ClearingEffects, soilMoisture: number): Map<number, () => void> {
+  effects: ClearingEffects, soilMoisture: number, allowJobInterruption = false): Map<number, () => void> {
   const preparation: Preparation = { removed: new Set(), removedMachines: new Set(), counts: new Map() };
   const result = new Map<number, () => void>();
   for (const slot of new Set(slots)) result.set(slot, prepareBuilding(world, state, slot, effects, soilMoisture, preparation));
-  for (const e of world.equipment) if (e.active && !preparation.removedMachines.has(e.slot) &&
+  for (const e of world.equipment) if (!allowJobInterruption && e.active && !preparation.removedMachines.has(e.slot) &&
     (preparation.removedMachines.has(e.attachment) || (e.type !== 7 && preparation.removedMachines.has(e.parent)))) throw new Error('Demolition would break equipment links');
   return result;
 }

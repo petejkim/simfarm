@@ -1,3 +1,4 @@
+import type { MovingDisasterState } from './moving-disasters';
 import type { Scenario } from '../formats/scenario';
 import type { RandomState } from './random';
 import type { WeatherState } from './weather';
@@ -28,7 +29,7 @@ export interface SimulationState {
   speed: number;
   elapsed: number;
   dayTicks: number;
-  disasterFlags: number;
+  disasters: MovingDisasterState;
   grassTravelCount: number;
   equipmentAnimationTick: number;
   animalFrame: AnimalFrameState;

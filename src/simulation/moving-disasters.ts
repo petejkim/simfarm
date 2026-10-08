@@ -11,7 +11,7 @@ export interface MovingDisaster {
 /** Known DS6994..69b4 globals only. Other disaster branches are not implemented
  * here. Flags remain shared with those branches; no renderer/window is required. */
 export interface MovingDisasterState {
-  enabled: boolean; flags: number; frameDelay: number; lastStartTick: number;
+  enabled: boolean; flags: number; frameDelay: number; lastStartTick: number; windReferenceTick: number;
   tornado: MovingDisaster;
   swarm: MovingDisaster & { fieldSlot: number };
 }
@@ -23,13 +23,13 @@ const between = (n: number, low: number, high: number) => Number.isInteger(n) &&
 /** Fresh-process initialized bytes, file0x8b084..0x8b0a4. Not an SSM offset. */
 export function createMovingDisasters(): MovingDisasterState {
   const effect = (): MovingDisaster => ({ frame: 0, lastTick: 0, x: 0, y: 0, dx: 1, dy: 1, startedTick: 0 });
-  return { enabled: true, flags: 0, frameDelay: 4, lastStartTick: 0,
+  return { enabled: true, flags: 0, frameDelay: 4, lastStartTick: 0, windReferenceTick: 0,
     tornado: effect(), swarm: { ...effect(), fieldSlot: 0 } };
 }
 
 export function validateMovingDisasters(state: MovingDisasterState): void {
-  if (typeof state.enabled !== 'boolean' || !between(state.flags, 0, 255) || (state.flags & 33) === 33 ||
-    !word(state.frameDelay) || !word(state.lastStartTick)) throw new Error('Invalid moving disaster state');
+  if (typeof state.enabled !== 'boolean' || !between(state.flags, 0, 65535) || (state.flags & 33) === 33 ||
+    !word(state.frameDelay) || !word(state.windReferenceTick) || !word(state.lastStartTick)) throw new Error('Invalid moving disaster state');
   for (const kind of ['tornado', 'swarm'] as const) {
     const e = state[kind], limit = kind === 'swarm' ? 100 : 95; // Retained origin95+5 for narrow edge fields.
     if (!between(e.frame, 0, 3) || !word(e.lastTick) || !word(e.startedTick) ||
@@ -44,7 +44,7 @@ export type MovingDisasterStart = { ok: true; kind: MovingDisasterKind; cancelle
   | { ok: false; reason: 'disabled' | 'already-active' | 'tornado-active' | 'no-fields' };
 
 /** Start branches0x36874/0x36bac, called by the general disaster entry0x36574.
- * The caller still owns its attempt statistics, notifications/audio and other modes.
+ * The caller owns the general price callback (no-op for modes1/4), notifications/audio and other modes.
  * Source retains frames and the tornado's last frame clock across restarts. */
 export function beginMovingDisaster(world: Scenario, state: MovingDisasterState, kind: MovingDisasterKind,
   tick: number, random: FarmRandom): MovingDisasterStart {
