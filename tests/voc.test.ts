@@ -92,3 +92,20 @@ test('original plane engine sample retains every source PCM byte and rate', () =
   assert.equal(exe.subarray(0x8acfa, 0x8ad04).toString(), 'plane.voc\0');
   assert.equal(exe.subarray(0x23d72, 0x23d82).toString('hex'), 'ff36d4d09a150c59208be53d020074ec');
 });
+
+
+test('manual purchase feedback retains all source PCM bytes and caller resource names', () => {
+  const exe = source('SIMFARM.EXE');
+  for (const [name, offset, size, hash, ds] of [
+    ['plopitem.voc',2180124,7055,'55090423cb78e8e6a6364e4ecf735c3127fbfd3937b4e4a988d3f18d2ae9adf1',0x3ece],
+    ['ploptool.voc',2187179,1422,'9e499755c7dc872b77cad5ec085fbca2d35d4d3c4d1d95132e3222844f3caebe',0x59b6],
+    ['uhoh.voc',2200183,2326,'790158721270b66bf8069f2c4660b891eee75f1ed6e85aa621b40301607c55d8',0x3ec5],
+  ] as const) {
+    const entry=entries.find(e=>e.name===name)!, sound=decodeVoc(entry.bytes);
+    assert.equal(entry.offset,offset);assert.equal(entry.bytes.length,size);
+    assert.equal(createHash('sha256').update(entry.bytes).digest('hex'),hash);
+    assert.equal(exe.subarray(0x846f0+ds,0x846f0+ds+name.length+1).toString(),name+'\0');
+    assert.equal(sound.sampleRate,1000000/90);assert.equal(sound.samples.length,size-33);
+    for(let i=0;i<sound.samples.length;i++)assert.equal(sound.samples[i],(entry.bytes[i+32]-128)/128);
+  }
+});

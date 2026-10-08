@@ -1,3 +1,4 @@
+import { purchaseCropSupply, type CropSupplyPurchaseResult } from './crop-supply-purchase';
 import { createMovingDisasters, beginMovingDisaster, stopMovingDisaster, advanceMovingDisasters,
   type MovingDisasterState, type MovingDisasterKind, type MovingDisasterStart } from './moving-disasters';
 import { beginWindDisaster, advanceWindDisaster } from './wind-disaster';
@@ -125,6 +126,7 @@ export interface GameSnapshot {
   lastBuildingInteriorResult: BuildingInteriorResult | null;
   lastLandResult: LandPurchaseResult | null;
   lastBuildingResult: BuildingPlacementResult | null;
+  lastCropSupplyPurchaseResult: (CropSupplyPurchaseResult & { productType: number }) | null;
   lastEquipmentPurchaseResult: (EquipmentPurchaseResult & { equipmentType: number }) | null;
   lastIrrigationResult: IrrigationPlacementResult | null;
   lastLivestockResult: (LivestockPurchaseResult & { productType: number }) | null;
@@ -155,6 +157,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'step-flight' }
   | { type: 'buy-aircraft' }
   | { type: 'service-aircraft'; slot: number; action: AircraftServiceAction }
+  | { type: 'buy-crop-supply'; productType: number; x: number; y: number }
   | { type: 'buy-equipment'; equipmentType: number; x: number; y: number }
   | { type: 'buy-livestock'; productType: number; x: number; y: number }
   | { type: 'create-field'; x: number; y: number; cropSlot: number }
@@ -228,6 +231,7 @@ export class GameSimulation {
   private lastSupplyMoveResult: SupplyMoveResult | null = null;
   private lastBuildingInteriorResult: BuildingInteriorResult | null = null;
   private lastLandResult: LandPurchaseResult | null = null;
+  private lastCropSupplyPurchaseResult: GameSnapshot['lastCropSupplyPurchaseResult'] = null;
   private lastEquipmentPurchaseResult: GameSnapshot['lastEquipmentPurchaseResult'] = null;
   private lastBuildingResult: BuildingPlacementResult | null = null;
   private lastIrrigationResult: IrrigationPlacementResult | null = null;
@@ -403,6 +407,12 @@ export class GameSimulation {
       this.lastAircraftPurchaseResult = purchaseAircraft(this.scenario, this.finances);
     } else if (command.type === 'service-aircraft') {
       this.lastAircraftServiceResult = serviceAircraft(this.scenario, this.finances, this.aircraftService, command.slot, command.action);
+    } else if (command.type === 'buy-crop-supply') {
+      this.lastCropSupplyPurchaseResult = { productType: command.productType,
+        ...purchaseCropSupply(this.scenario, command.productType, command.x, command.y, this.weather.soilMoisture) };
+      if (this.lastCropSupplyPurchaseResult.ok) {
+        this.events.push({ type: 'sound', sound: 'plopitem' }, { type: 'sound', sound: 'ploptool' });
+      } else this.events.push({ type: 'sound', sound: 'uhoh' });
     } else if (command.type === 'buy-equipment') {
       this.lastEquipmentPurchaseResult = { equipmentType: command.equipmentType,
         ...purchaseEquipment(this.scenario, this.finances, command.equipmentType, command.x, command.y, this.weather.soilMoisture) };
@@ -715,6 +725,7 @@ export class GameSimulation {
       lastBuildingInteriorResult: this.lastBuildingInteriorResult ? { ...this.lastBuildingInteriorResult } : null,
       lastRemovalResult: this.lastRemovalResult ? { ...this.lastRemovalResult } : null,
       lastLandResult: this.lastLandResult ? { ...this.lastLandResult } : null,
+      lastCropSupplyPurchaseResult: this.lastCropSupplyPurchaseResult ? { ...this.lastCropSupplyPurchaseResult } : null,
       lastEquipmentPurchaseResult: this.lastEquipmentPurchaseResult ? { ...this.lastEquipmentPurchaseResult } : null,
       lastBuildingResult: this.lastBuildingResult ? { ...this.lastBuildingResult } : null,
       lastIrrigationResult: this.lastIrrigationResult ? { ...this.lastIrrigationResult } : null,

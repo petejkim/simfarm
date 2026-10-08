@@ -1140,3 +1140,6 @@ Native checkCropSupplyPurchase searches only actual inactive records1..126, retu
 ### SF-021/083/095 follow-up — manual seed and chemical buying
 
 These products share generic purchase0x1cb42, including debit before allocation/placement, destructive pre-placement clearing and the category0 refund on allocation failure. Seed and chemical expense categories differ from0, so preflight also avoids known refund-account drift. Both require storage in the purchase path; seed slots256..511 cannot be represented by the building's byte reference. Native rejects that boundary, incompatible/full storage, invalid definitions and insufficient cash without changes. Tests cover each rejection and unchanged entire state. Later outdoor relocation remains supported through its separate original path; it is not evidence that direct outdoor purchase is allowed.
+
+
+Live manual-supply follow-up: SF-134 and SF-021/083/095 guards now run through the canonical purchase command and browser shop. Successful purchased records survive v14 checkpoints and supply real planting/treatment orders; default/town/flight rejection precedes sound or mutation. This integration does not resolve SF-134's original entry-helper AX/reachability uncertainty or change the retained signed-price arithmetic.

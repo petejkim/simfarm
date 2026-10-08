@@ -4,11 +4,12 @@ The browser navigation is a native usability enhancement, not a reconstruction o
 
 ## Routes
 
-**Farm controls**, directly below the time controls, exposes four shortcuts:
+**Farm controls**, directly below the time controls, exposes five shortcuts:
 
 - **Crop planner** opens the planner and focuses its summary. **Plan for field** selects the same field used by map inspection and Locate a field. The planner remains discoverable before any field is selected. An empty farm offers **Create a field**. Switching fields/year resets the editor as before; closing and reopening a panel preserves its current choices.
 - **Buy land** selects the original land tool and focuses its quote panel. **Choose on map** scrolls to and focuses the viewport; after selecting a tile, **Review plot** returns to the quote. Buying is still a separate explicit command.
 - **New field** selects field placement and focuses its panel. The same map round trip uses **Review field**. Existing land selection and crop-selection behavior are preserved; the shortcut itself cannot buy, clear or plant.
+- **Seeds & chemicals** opens the supply shop and focuses its heading. The delivery chooser selects compatible storage; **Choose on map / Review supplies** makes a focused round trip. **Build storage** opens construction with equipment storage selected. Navigation does not purchase anything. See [manual supplies](crop-supply-purchase.md).
 - **Loans** opens and focuses the existing loan panel. Borrowing and repayment still require their own buttons and original eligibility checks.
 
 Existing map-tool and disclosure routes remain usable. During town/default/flight restrictions, placement/planner shortcuts are disabled; Loans remains available for inspection with its mutation controls disabled. Loading or replacing a farm resets all navigation state.
