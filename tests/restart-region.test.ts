@@ -1,3 +1,4 @@
+import { beginTerrainPreview } from '../src/simulation/terrain-preview';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -40,7 +41,9 @@ test('all loaded restart outcomes reset before loading, retain date/history, fin
     const game = old.restartRegion(bytes, selection, assets), next = readNativeSave(game.save(null)).state;
     assert.deepEqual(next.scenario.sourceBytes, Uint8Array.from(bytes)); assert.equal(next.scenario.origin, 'original');
     assert.equal(next.newFarm, null); assert.deepEqual(next.retainedSetup, state.newFarm);
-    assert.deepEqual(next.setup, state.setup); assert.deepEqual(next.scenario.farm.calendar, file.farm.calendar);
+    const preliminary = beginTerrainPreview(state.scenario.regionalConditions, state.random, state.setup.terrainHistory!, 5, 'restart');
+    assert.deepEqual(next.setup, { ...state.setup, terrainHistory: preliminary.terrainHistory, previewRaw: preliminary.raw });
+    assert.deepEqual(next.scenario.farm.calendar, file.farm.calendar);
     assert.deepEqual(next.scenario.climate, climateForSetup(assets.climate, selection));
     assert.equal(next.scenario.farm.cash, 40000); assert.equal(next.scenario.farm.workerExpenses, 12345);
     assert.equal(next.finances.accounts.buildingBookValue, 76543); assert.equal(next.finances.homestead.rank, 255);
@@ -62,7 +65,7 @@ test('all loaded restart outcomes reset before loading, retain date/history, fin
     assert.deepEqual(next.market.history.map(h => h.slice(0, 29)), state.market.history.map(h => h.slice(0, 29)));
     assert.deepEqual(next.market.history.map(h => h[29]), next.cropMarketPrices);
     assert.equal(next.traffic.activeCount, 8); assert.equal(next.traffic.records[0][1], 213); assert.equal(next.traffic.lastTick, 555);
-    const random = new FarmRandom(state.random), weather = { ...structuredClone(state.weather), windYear: 0, temperatureYear: 0, precipitationYear: 0 };
+    const random = new FarmRandom(preliminary.random), weather = { ...structuredClone(state.weather), windYear: 0, temperatureYear: 0, precipitationYear: 0 };
     initializeStartupWeather(weather, next.scenario.climate, file.farm.calendar, random, structuredClone(file.cells));
     const traffic = createTrafficState({ ...next.traffic, records: next.traffic.records.map(r => [0, ...r.slice(1)]), activeCount: 0 });
     initializeStartingTraffic(traffic, next.finances.town.activeSite, random);
@@ -84,10 +87,11 @@ test('loaded restart survives repeated source replacements and days, and rejects
   assert.throws(() => old.restartRegion(source('SCEN6.SSM'), { ...selection, wind: 4 }, assets));
   assert.throws(() => old.restartRegion(source('SCEN6.SSM'), selection, { ...assets, crops: [] }), /Missing simulation crop/);
   assert.equal(old.save(null), before);
-  // This modeled outcome consumes no terrain draws; unknown legacy history stays
-  // unknown and does not prohibit loading a preset or fabricate a preview stream.
+  // The full chooser now consumes preliminary draws even for a numbered farm.
+  // Legacy missing history cannot be recovered from the current RNG words.
   const legacy = parsed(a); legacy.version = 18; legacy.runtime.retainedSetup = null; delete legacy.runtime.setup;
-  const unknown = restore(JSON.stringify(legacy)).restartRegion(source('SCEN4.SSM'), selection, assets);
-  assert.equal(unknown.getSnapshot().setup.terrainHistory, null);
-  assert.deepEqual(parsed(restore(unknown.save(null))), parsed(unknown));
+  const unknown = restore(JSON.stringify(legacy)), oldCheckpoint = unknown.save(null);
+  assert.throws(() => unknown.restartRegion(source('SCEN4.SSM'), selection, assets), /no retained terrain history/);
+  assert.equal(unknown.save(null), oldCheckpoint);
+  assert.deepEqual(parsed(restore(oldCheckpoint)), parsed(unknown));
 });

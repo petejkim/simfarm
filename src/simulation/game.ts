@@ -1,4 +1,5 @@
 import { restartGeneratedFarm, restartRegionFarm, type RestartFarmOptions } from './restart-farm';
+import { createGeographicFarm, createGeographicRegion, restartGeographicFarm } from './geographic-setup';
 import type { ClimateSelection } from '../formats/new-farm';
 import { createSessionSetup, type SessionSetup } from './session-setup';
 import { transferOriginalFarm } from './original-load';
@@ -327,7 +328,8 @@ export class GameSimulation {
     this.publish();
   }
 
-  /** Original geographic preset selection includes post-load setup writes. */
+  /** Loaded-preset finalization phase. Full geographic entry additionally uses
+   * openGeographicRegion for preliminary generation and cold retained clocks. */
   static openRegion(scenario: Scenario, crops: readonly CropDefinition[], townLayouts: TownLayouts, climate: ClimateTables): GameSimulation {
     return new GameSimulation(scenario, crops, townLayouts, undefined, undefined, climate);
   }
@@ -357,6 +359,19 @@ export class GameSimulation {
   restartRegion(bytes: Uint8Array, climate: ClimateSelection, assets: NewFarmAssets): GameSimulation {
     const state = restartRegionFarm(readNativeSave(this.save(null)).state, bytes, climate, assets);
     return GameSimulation.load(writeNativeSave(state, null), assets.crops, assets.townLayouts).simulation;
+  }
+
+  restartGeographic(options: RestartFarmOptions, assets: NewFarmAssets): GameSimulation {
+    const state = restartGeographicFarm(readNativeSave(this.save(null)).state, options, assets);
+    return GameSimulation.load(writeNativeSave(state, null), assets.crops, assets.townLayouts).simulation;
+  }
+
+  static createGeographic(options: NewFarmOptions, assets: NewFarmAssets): GameSimulation {
+    return GameSimulation.load(writeNativeSave(createGeographicFarm(options, assets), null), assets.crops, assets.townLayouts).simulation;
+  }
+
+  static openGeographicRegion(bytes: Uint8Array, climate: ClimateSelection, seeds: RandomState, assets: NewFarmAssets): GameSimulation {
+    return GameSimulation.load(writeNativeSave(createGeographicRegion(bytes, climate, seeds, assets), null), assets.crops, assets.townLayouts).simulation;
   }
 
   /** Import an original SSM into the retained native session, atomically. */

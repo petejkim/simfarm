@@ -5,7 +5,8 @@ import { newFarmAssets } from '../support/new-farm';
 import { readScenario } from '../../src/formats/scenario';
 import { readCrop } from '../../src/formats/crop';
 import { readArchive } from '../../src/formats/archive';
-import { climateForSetup, readSetupMap } from '../../src/formats/new-farm';
+import { readSetupMap } from '../../src/formats/new-farm';
+import { readNativeSave } from '../../src/formats/native-save';
 const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
 const locations = readSetupMap(readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA')).find(e => e.name === 'scenario.odt')!.bytes).locations;
 async function save(page: Page, name: string) {
@@ -41,7 +42,7 @@ test('region map selects source climate, supports keyboard and mobile layout, an
   await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   const generated = await save(page, 'generated'), options = generated.runtime.newFarm.provenance.options;
   expect(options.climate).toEqual({ precipitation: p.precipitation, temperature: p.temperature, wind: p.wind });
-  const game = GameSimulation.createNew(options, newFarmAssets); expect(generated).toEqual(JSON.parse(game.save(null)));
+  const game = GameSimulation.createGeographic(options, newFarmAssets); expect(generated).toEqual(JSON.parse(game.save(null)));
   await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   expect(await save(page, 'next-day')).toEqual(JSON.parse(game.save(null))); expect(errors).toEqual([]);
 });
@@ -55,7 +56,7 @@ test('all eight map markers apply original post-load climate and town setup whil
     await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText(`Scenario ${id + 1} · original terrain`);
     const world = readScenario(source(`SCEN${id}.SSM`));
     const crops = world.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
-    const expected = GameSimulation.openRegion(world, crops, newFarmAssets.townLayouts, climateForSetup(newFarmAssets.climate, locations[y * 18 + x]));
+    const expected = GameSimulation.openGeographicRegion(world.sourceBytes!, locations[y * 18 + x], { visual: 9029, simulation: 9029, bounded: 9029 }, { ...newFarmAssets, crops });
     expect(await save(page, `preset-${id}`)).toEqual(JSON.parse(expected.save(id)));
   }
 });
@@ -100,4 +101,57 @@ test('malformed region metadata is rejected, cancelling a pending map remains us
   await page.locator('#choose-region').click(); await expect(page.locator('#region-map')).toBeVisible();
   await page.locator('#design-farm').click(); await expect(page.locator('#new-farm-temperature')).toBeEnabled();
   expect(await save(page, 'metadata-recovered')).toEqual(before);
+});
+
+test('unmarked retained geography keeps soil and source water flags while applying location climate through save/load', async ({ page }) => {
+  await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const old = await save(page, 'warm-before'); old.runtime.weather.soilMoisture = 5; old.runtime.weather.moistureBalance = 0;
+  await page.locator('#load-farm-file').setInputFiles({ name: 'retained-soil.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(old)) });
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+  const before = await save(page, 'warm-entry');
+  await page.locator('#new-farm').click(); await page.locator('#choose-region').click();
+  await page.locator('[data-region="3,8"]').click(); await page.locator('#new-farm-year').fill('1993');
+  await expect(page.locator('#new-farm-river')).toBeDisabled(); await expect(page.locator('#new-farm-river')).not.toBeChecked();
+  await expect(page.locator('#new-farm-lake')).toBeDisabled();
+  await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
+  await expect(page.locator('#terrain-design')).toHaveCount(0);
+  const actual = await save(page, 'warm-generated');
+  expect(actual.runtime.weather.soilMoisture).toBe(5);
+  expect(actual.runtime.newFarm.provenance.options.river).toBe(false);
+  expect(actual.runtime.newFarm.provenance.options.lake).toBe(false);
+  const oldWorld = readNativeSave(JSON.stringify(before)).state.scenario;
+  const catalog = [...newFarmAssets.crops];
+  for (const file of oldWorld.cropFiles) if (!catalog.some(c => `${c.id}.crp` === file)) catalog.push(readCrop(file.slice(0, -4), source(`CROPS/${file.toUpperCase()}`)));
+  const expected = GameSimulation.load(JSON.stringify(before), catalog, newFarmAssets.townLayouts).simulation
+    .restartGeographic(actual.runtime.newFarm.provenance.options, { ...newFarmAssets, crops: catalog });
+  expect(actual).toEqual(JSON.parse(expected.save(null)));
+  await page.locator('#load-farm-file').setInputFiles({ name: 'geography.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(actual)) });
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+  for (let i = 0; i < 7; i++) { await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); }
+  expect(await save(page, 'warm-continued')).toEqual(JSON.parse(expected.save(null)));
+});
+
+test('fresh numbered farms honor the explicit seed for discarded terrain and retain loaded clocks and date', async ({ page }) => {
+  await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const bytes = source('SCEN4.SSM'), world = readScenario(bytes);
+  const crops = world.cropFiles.map(file => readCrop(file.slice(0, -4), source(`CROPS/${file.toUpperCase()}`)));
+  let previous: any;
+  for (const seed of [19, 65535]) {
+    await openMap(page); await page.locator('[data-region="9,7"]').click();
+    await expect(page.locator('#new-farm-seed')).toBeEnabled(); await page.locator('#new-farm-seed').fill(String(seed));
+    await expect(page.locator('#new-farm-year')).toBeDisabled();
+    await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
+    const actual = await save(page, `fresh-seed-${seed}`);
+    const expected = GameSimulation.openGeographicRegion(bytes, locations[7 * 18 + 9], { visual: seed, simulation: seed, bounded: seed }, { ...newFarmAssets, crops });
+    expect(actual).toEqual(JSON.parse(expected.save(4)));
+    expect(actual.runtime.dayTicks).toBe(world.farm.animationTicks);
+    expect(actual.scenario.farm.calendar).toEqual(world.farm.calendar);
+    if (previous) {
+      expect(actual.scenario.source).toBe(previous.scenario.source);
+      expect(actual.scenario.world).toBe(previous.scenario.world);
+      expect(actual.runtime.setup.terrainHistory).not.toEqual(previous.runtime.setup.terrainHistory);
+      expect(actual.runtime.random).not.toEqual(previous.runtime.random);
+    }
+    previous = actual;
+  }
 });

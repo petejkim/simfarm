@@ -32,6 +32,13 @@ export interface NewFarmAssets {
   crops: readonly CropDefinition[];
   townLayouts: TownLayouts;
 }
+
+/** Known initialized registry, before any chooser SSM transfers. */
+export function createColdSetupIrrigation(defaults: NewFarmRuntimeDefaults): IrrigationState {
+  if (defaults.irrigation.sources.length !== 192 || defaults.irrigation.sources.some(n => !Number.isInteger(n) || n < 0 || n > 255)) throw new Error('Invalid cold irrigation bytes');
+  const state: IrrigationState = { ...defaults.irrigation, sources: Uint8Array.from(defaults.irrigation.sources), phase: 0, active: false, flow: [] };
+  validateIrrigation(state); return state;
+}
 /** Main first-launch sequence, with explicit seeds/date and no SSM input.
  * A supplied preview already owns terrain/sites/RNG; Play must not redraw them.
  * See docs/new-farm.md for each recovered phase and remaining fidelity gaps. */
@@ -59,10 +66,7 @@ export function createNewFarmState(options: NewFarmOptions, assets: NewFarmAsset
   const traffic = createTrafficState(assets.traffic); initializeStartingTraffic(traffic, town, random);
   // Cold registry is empty. Setup phase/flow are zero; delay is the EXE's64,
   // not the3 read from supplied saved farms. Original ring aliases are SF-088.
-  if (assets.runtime.irrigation.sources.length !== 192 || assets.runtime.irrigation.sources.some(n => !Number.isInteger(n) || n < 0 || n > 255)) throw new Error('Invalid cold irrigation bytes');
-  const irrigation: IrrigationState = { ...assets.runtime.irrigation, sources: Uint8Array.from(assets.runtime.irrigation.sources),
-    phase: 0, active: false, flow: [] };
-  validateIrrigation(irrigation);
+  const irrigation = createColdSetupIrrigation(assets.runtime);
   const scenario: Scenario = { origin: 'generated', sourceBytes: null, version: null,
     cells: world.cells, regionalConditions: world.regionalConditions, schedule, climate, farm: runtime.farm,
     cropFiles: [...assets.records.cropFiles], fields: records.fields, equipment: records.equipment,

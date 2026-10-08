@@ -1,4 +1,4 @@
-import { copyLocatedTerrainPreview, type TerrainPreviewState } from './terrain-preview';
+import { beginTerrainPreview, copyLocatedTerrainPreview, type TerrainPreviewState } from './terrain-preview';
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
 import { climateForSetup, type ClimateSelection } from '../formats/new-farm';
 import type { SetupRecords } from '../formats/new-farm-records';
@@ -95,11 +95,15 @@ export function restartGeneratedFarm(previous: SimulationState, options: Restart
 
 /** Loaded chooser result2: reset -> SSM transfers -> climate/cash/town -> main
  * weather/traffic. Skip new date, property, default crops and random history.
- * Like generated restart, this omits preliminary preview/reroll consumption. */
+ * Preliminary generation is discarded by SSM loading but advances its streams. */
 export function restartRegionFarm(previous: SimulationState, bytes: Uint8Array,
   selection: ClimateSelection, assets: NewFarmAssets): SimulationState {
   const climate = climateForSetup(assets.climate, selection);
   const { prior } = prepareRestart(previous, assets);
+  if (!prior.setup.terrainHistory) throw new Error('This older save has no retained terrain history. Start a fresh farm instead.');
+  const preview = beginTerrainPreview(prior.scenario.regionalConditions, prior.random, prior.setup.terrainHistory, prior.weather.soilMoisture, 'restart');
+  prior.random = preview.random;
+  prior.setup.terrainHistory = preview.terrainHistory; prior.setup.previewRaw = preview.raw;
   const state = loadOriginalFarmState(prior, bytes, assets.crops);
   synchronizeSetupIrrigation(state.scenario.irrigation, state.scenario.farm.animationTicks);
   finalizeRegionFarm(state.scenario, state.finances, assets.townLayouts, climate);

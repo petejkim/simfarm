@@ -124,7 +124,7 @@ test('older original saves explain missing restart history and allow an explicit
   await expect(page.locator('#restart-unavailable')).toContainText('older save');
   await expect(page.locator('#create-farm')).toBeDisabled();
   await page.locator('#choose-region').click(); await page.locator('[data-region="0,8"]').click();
-  await expect(page.locator('#create-farm')).toBeEnabled();
+  await expect(page.locator('#create-farm')).toBeDisabled();
   await page.locator('#design-farm').click(); await expect(page.locator('#create-farm')).toBeDisabled();
   await page.locator('#new-farm-session').selectOption('fresh');
   await expect(page.locator('#new-farm-seed')).toBeEnabled(); await expect(page.locator('#restart-unavailable')).toHaveCount(0);

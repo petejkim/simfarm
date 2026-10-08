@@ -65,3 +65,12 @@ export function rebuildTerrainPreview(previous: TerrainPreviewState, rain: numbe
   return locateTerrainPreview({ world, terrain, random: random.snapshot(), terrainHistory: terrainRandom.snapshot(),
     locations: null, raw: { ...previous.raw } });
 }
+
+/** Unmarked geography32327 calls the generator then3232c selects sites.
+ * It does not execute custom337a6's rain*4 writer or change water flags. */
+export function generateGeographicTerrain(previous: TerrainPreviewState): TerrainPreviewState {
+  const random = new FarmRandom(previous.random), terrainRandom = new TerrainRandom(random, previous.terrainHistory);
+  const world = generateFarmTerrain(previous.world.regionalConditions, previous.terrain, random, terrainRandom);
+  return locateTerrainPreview({ ...structuredClone(previous), world, locations: null,
+    random: random.snapshot(), terrainHistory: terrainRandom.snapshot() });
+}
