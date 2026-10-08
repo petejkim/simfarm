@@ -981,3 +981,10 @@ Status: verified control-flow fallthrough; player-visible incidence remains a hy
 Building confirmation0x25a6e..0x25a72 and field confirmation0x25b74..0x25b78 jump to0x25f40 when the dialog returns nonzero. This skips whole-object cleanup and its25 debit but does not return from the tool. The subsequent terrain-range chain can independently reach the second25 debit0x26222 and terrain replacement0x2628c. Ordinary closed building roofs/field images do not necessarily match these ranges. An exposed matching tile (for example175/176 supply graphics in an open storage view) could therefore be changed after the user cancels without deleting its record; exact reachable content/view combinations and visible consequences are deferred.
 
 Native field/building removal requires an explicit confirmation command against the selected object; deselection/cancellation leaves cash, records and terrain untouched. The original branch evidence remains documented. Revisit this when reconstructing building interiors and the remaining terrain-removal branches, rather than treating the potential desynchronization as a proven ordinary-game exploit.
+
+
+## SF-113 — terrain removal preserves isolated connection images and skips gate-neighbor repair
+
+Status: verified original visual quirks, retained natively; no security implication. Confidence high on branch conditions, with no claim that an isolated straight tile must have a different intended image.
+
+Neighbor repair0x25398 snapshots the nearby connection types, then obtains each neighbor's own mask. Zero masks skip repaint at0x2541e/0x2548f/0x25503/0x25576; the exact first test0x2541e is pinned. Fixed-orientation table flag0x20 also prevents rewriting gates, valves and crossings. Removing the only connection therefore retains the neighbor's old graphic. The manual handler repairs fences only for177..187 at0x26468..0x2649e. Gate188..191 is accepted for removal earlier but never enters a fence repair call, so adjacent fence images remain unchanged. Native removal preserves both asymmetries; a future visual enhancement may deliberately recompute these images after comparing expected original appearance.
