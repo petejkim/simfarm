@@ -42,7 +42,7 @@ test('all loaded restart outcomes reset before loading, retain date/history, fin
     assert.deepEqual(next.scenario.sourceBytes, Uint8Array.from(bytes)); assert.equal(next.scenario.origin, 'original');
     assert.equal(next.newFarm, null); assert.deepEqual(next.retainedSetup, state.newFarm);
     const preliminary = beginTerrainPreview(state.scenario.regionalConditions, state.random, state.setup.terrainHistory!, 5, 'restart');
-    assert.deepEqual(next.setup, { ...state.setup, terrainHistory: preliminary.terrainHistory, previewRaw: preliminary.raw });
+    assert.deepEqual(next.setup, { ...state.setup, climateSelection: selection, terrainHistory: preliminary.terrainHistory, previewRaw: preliminary.raw });
     assert.deepEqual(next.scenario.farm.calendar, file.farm.calendar);
     assert.deepEqual(next.scenario.climate, climateForSetup(assets.climate, selection));
     assert.equal(next.scenario.farm.cash, 40000); assert.equal(next.scenario.farm.workerExpenses, 12345);

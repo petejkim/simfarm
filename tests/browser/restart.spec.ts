@@ -41,6 +41,7 @@ test('accepted custom preview survives browser import and retains exact continua
   expect(initial).toEqual(JSON.parse(game.save(null)));
   expect(initial.runtime.setup.previewRaw).toEqual({ ds1521: 201, ds23db: 201 });
   expect(initial.runtime.setup.terrainHistory).toEqual(preview.terrainHistory);
+  expect(initial.runtime.setup.climateSelection).toEqual({ precipitation: 0, temperature: 3, wind: 0 });
   expect(initial.runtime.weather.soilMoisture).toBe(preview.terrain.soilMoisture);
   for (let day = 0; day < 7; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   const advanced = await save(page, 'preview-advanced'); expect(advanced).toEqual(JSON.parse(game.save(null)));
@@ -50,6 +51,7 @@ test('accepted custom preview survives browser import and retains exact continua
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   expect(await save(page, 'preview-original-import')).toEqual(JSON.parse(imported.save(null)));
   expect(imported.getSnapshot().setup.previewRaw).toEqual({ ds1521: 201, ds23db: 201 });
+  expect(imported.getSnapshot().setup.climateSelection).toEqual({ precipitation: 0, temperature: 3, wind: 0 });
   expect(errors).toEqual([]);
 });
 
@@ -65,7 +67,7 @@ test('a generated restart checkpoint preserves its original archive and continue
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   await expect(page.locator('#farm-cash')).toHaveText('$40,000');
   const initial = await save(page, 'initial');
-  expect(initial.version).toBe(20); expect(initial.runtime.newFarm.provenance.kind).toBe('restart');
+  expect(initial.version).toBe(21); expect(initial.runtime.newFarm.provenance.kind).toBe('restart');
   expect(initial.runtime.setup.sourceArchive).toBe(source('SCEN4.SSM').toString('hex'));
   expect(initial).toEqual(JSON.parse(game.save(null)));
   for (let day = 0; day < 7; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
@@ -146,9 +148,40 @@ test('invalid setup state leaves the browser farm intact and legacy original sav
   const expected = GameSimulation.load(JSON.stringify(legacy), crops, assets.townLayouts).simulation;
   await load(page, JSON.stringify(legacy));
   const migrated = await save(page, 'legacy');
-  expect(migrated.runtime.setup).toEqual({ terrainHistory: null, sourceArchive: null, previewRaw: null });
+  expect(migrated.runtime.setup).toEqual({ terrainHistory: null, sourceArchive: null, previewRaw: null, climateSelection: null });
   expect(migrated).toEqual(JSON.parse(expected.save(0)));
   await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
   const advanced = await save(page, 'legacy-advanced'); expect(advanced).toEqual(JSON.parse(expected.save(0)));
   await load(page, JSON.stringify(advanced)); expect(await save(page, 'legacy-restored')).toEqual(advanced);
+});
+
+
+test('v20 climate selection stays unknown through browser import until an explicit new choice is accepted', async ({ page }) => {
+  await page.clock.install({ time: new Date('1993-04-05T12:00:00Z') });
+  await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));
+  await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const game = GameSimulation.createNew(newFarmOptions, assets), legacy = JSON.parse(game.save(null));
+  legacy.version = 20; delete legacy.runtime.setup.climateSelection;
+  await load(page, JSON.stringify(legacy));
+  const migrated = await save(page, 'v20-climate');
+  expect(migrated.version).toBe(21); expect(migrated.runtime.setup.climateSelection).toBeNull();
+  expect(migrated.scenario).toEqual(legacy.scenario); expect(migrated.runtime.random).toEqual(legacy.runtime.random);
+  // SSM tables are unrelated to the retained chooser level bytes.
+  await page.locator('#load-farm-file').setInputFiles({ name: 'SCEN4.SSM', mimeType: 'application/octet-stream', buffer: source('SCEN4.SSM') });
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+  const imported = await save(page, 'unknown-after-import'); expect(imported.runtime.setup.climateSelection).toBeNull();
+  for (const selection of [undefined, { precipitation: 0, temperature: 0, wind: 4 }]) {
+    const bad = structuredClone(imported); bad.runtime.setup.climateSelection = selection;
+    await page.locator('#load-farm-file').setInputFiles({ name: 'invalid.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
+    await expect(page.locator('#save-status')).toContainText('Could not load farm');
+    expect(await save(page, 'climate-error')).toEqual(imported);
+  }
+  await page.locator('#new-farm').click(); await page.locator('#create-farm').click();
+  await page.locator('#terrain-precipitation').focus(); await page.keyboard.press('End');
+  await page.locator('#terrain-temperature').focus(); await page.keyboard.press('Home');
+  await page.locator('#terrain-wind').focus(); await page.keyboard.press('End');
+  await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
+  const accepted = await save(page, 'climate-established');
+  expect(accepted.runtime.setup.climateSelection).toEqual({ precipitation: 3, temperature: 0, wind: 3 });
+  await load(page, JSON.stringify(accepted)); expect(await save(page, 'climate-restored')).toEqual(accepted);
 });

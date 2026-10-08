@@ -540,7 +540,7 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
   // Clocks/cache migrate once; missing traffic stays empty without RNG replay.
   // V1 never recorded terrain history, so the migration keeps it unknown.
   expect(JSON.parse(await saved())).toEqual({ ...expected,
-    runtime: { ...expected.runtime, setup: { terrainHistory: null, sourceArchive: null, previewRaw: null },
+    runtime: { ...expected.runtime, setup: { terrainHistory: null, sourceArchive: null, previewRaw: null, climateSelection: null },
       finances: originalFinance, animalFrame: { lastCentreTick: 0, lastMoveTick: 0, herd: '00'.repeat(21) },
       traffic: { records: Array.from({ length: 16 }, () => Array(8).fill(0)), activeCount: 0, delay: 16, lastTick: 0 },
       market: { history: expected.runtime.cropMarketPrices.map((price: number) => [...Array(29).fill(null), price]), mood: 0, rawBC72: 0 } },

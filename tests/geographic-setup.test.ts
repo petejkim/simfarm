@@ -85,7 +85,7 @@ test('all cold numbered farms discard preliminary terrain but retain its RNG/his
     const catalog = crops.filter(c => saved.cropFiles.includes(`${c.id}.crp`));
     const game = GameSimulation.openGeographicRegion(bytes, selection, seeds, { ...assets, crops: catalog }), actual = state(game);
     assert.equal(actual.newFarm, null); assert.equal(actual.retainedSetup, null);
-    assert.deepEqual(actual.setup, { terrainHistory: preliminary.terrainHistory, previewRaw: preliminary.raw, sourceArchive: null });
+    assert.deepEqual(actual.setup, { terrainHistory: preliminary.terrainHistory, previewRaw: preliminary.raw, sourceArchive: null, climateSelection: selection });
     assert.deepEqual(actual.scenario.sourceBytes, Uint8Array.from(bytes)); assert.deepEqual(actual.scenario.farm.calendar, saved.farm.calendar);
     assert.deepEqual(actual.scenario.fields.map(f => f.bytes), saved.fields.map(f => f.bytes));
     assert.deepEqual(actual.scenario.schedule.bytes, saved.schedule.bytes); assert.deepEqual(actual.scenario.climate, climate);

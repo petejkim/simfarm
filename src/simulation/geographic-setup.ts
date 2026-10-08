@@ -65,7 +65,7 @@ export function createGeographicRegion(bytes: Uint8Array, selection: ClimateSele
   const traffic = createTrafficState({ ...assets.traffic, delay: new Binary(bytes).u16(0x2171e) });
   initializeStartingTraffic(traffic, finances.town.activeSite, random);
   return { scenario, finances, crops, cropMarketPrices, market, random: random.snapshot(), weather, traffic: snapshotTraffic(traffic),
-    setup: { terrainHistory: preliminary.terrainHistory, previewRaw: preliminary.raw, sourceArchive: null }, newFarm: null, retainedSetup: null,
+    setup: { climateSelection: { ...selection }, terrainHistory: preliminary.terrainHistory, previewRaw: preliminary.raw, sourceArchive: null }, newFarm: null, retainedSetup: null,
     townLayoutBytes: [...assets.townLayouts.bytes],
     // Calendar timestamp DS1f8e is initialized0 and not loaded;13a0 is loaded.
     dayTicks: scenario.farm.animationTicks, equipmentAnimationTick: scenario.farm.animationTicks,

@@ -79,7 +79,7 @@ export function restartGeneratedFarm(previous: SimulationState, options: Restart
   return { ...prior,
     scenario: { ...prior.scenario, ...world, origin: 'generated', sourceBytes: null, version: null, climate,
       cropFiles: [...assets.records.cropFiles], schedule: createSetupSchedule(records.plannerBuffer), irrigation: activity.irrigation },
-    setup: { terrainHistory, previewRaw: preview ? { ...preview.raw } : prior.setup.previewRaw, sourceArchive: sourceArchive ? Uint8Array.from(sourceArchive) : null },
+    setup: { climateSelection: { ...options.climate }, terrainHistory, previewRaw: preview ? { ...preview.raw } : prior.setup.previewRaw, sourceArchive: sourceArchive ? Uint8Array.from(sourceArchive) : null },
     newFarm: { provenance: { kind: 'restart', version: 1, options: { ...structuredClone(options), seeds: { ...prior.random } } },
       terrainHistory: [...terrainHistory], raw: runtime.raw, plannerBuffer: [...records.plannerBuffer] },
     retainedSetup: null, crops, cropMarketPrices,
@@ -103,6 +103,7 @@ export function restartRegionFarm(previous: SimulationState, bytes: Uint8Array,
   if (!prior.setup.terrainHistory) throw new Error('This older save has no retained terrain history. Start a fresh farm instead.');
   const preview = beginTerrainPreview(prior.scenario.regionalConditions, prior.random, prior.setup.terrainHistory, prior.weather.soilMoisture, 'restart');
   prior.random = preview.random;
+  prior.setup.climateSelection = { ...selection };
   prior.setup.terrainHistory = preview.terrainHistory; prior.setup.previewRaw = preview.raw;
   const state = loadOriginalFarmState(prior, bytes, assets.crops);
   synchronizeSetupIrrigation(state.scenario.irrigation, state.scenario.farm.animationTicks);
