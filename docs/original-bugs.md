@@ -817,9 +817,9 @@ Native animal purchases expose only the four ordinary definitions160–163; the 
 
 ## SF-096 — animal supply image can satisfy consumption without an inventory record
 
-**Status:** verified branch; malformed/stale-map reachability in ordinary play unproven; native consumer corrected; live care integration pending.
+**Status:** verified branch; malformed/stale-map reachability in ordinary play unproven; native consumer corrected and connected to live care.
 
-Supply scan0x12ea0 finds terrain base08fc+1 (176), looks up an inventory record at0x12f7f, then branches on zero at0x12f8c directly to success0x12f2a. Consumer0x12a4e treats that return as replenishment and clears animal byte+14 at0x12ae6. A matching image with no live inventory record can thus satisfy the need without consuming quantity. Valid placement normally allocates an inventory record; broader deletion/painting paths need auditing before asserting normal-game incidence. The analogous feed path0x131fe..0x13203 skips missing records instead. Native consumption now requires a matching active supply record with supported type and positive quantity; tests cover absent, empty and mismatched records. This primitive is not yet connected to live care. This is a conditional gameplay consistency defect, not a demonstrated security vulnerability.
+Supply scan0x12ea0 finds terrain base08fc+1 (176), looks up an inventory record at0x12f7f, then branches on zero at0x12f8c directly to success0x12f2a. Consumer0x12a4e treats that return as replenishment and clears animal byte+14 at0x12ae6. A matching image with no live inventory record can thus satisfy the need without consuming quantity. Valid placement normally allocates an inventory record; broader deletion/painting paths need auditing before asserting normal-game incidence. The analogous feed path0x131fe..0x13203 skips missing records instead. Native consumption now requires a matching active supply record with supported type and positive quantity; tests cover absent, empty and mismatched records. Live frame care uses the corrected consumer. This is a conditional gameplay consistency defect, not a demonstrated security vulnerability.
 
 ### SF-059 follow-up — animal needs traversal
 
@@ -839,7 +839,7 @@ The frame pass increments its processed counter even after health deletes an ani
 
 ### SF-097 implementation follow-up — explicit retained herd cache
 
-`animal-world.ts` now keeps exactly21 bytes for DS22f7–230b and reproduces the verified overlap, signed-divisor test, uncleared first counter, word wrapping, visual RNG draws and consumer mapping. This is ordinary native data processing, not CPU/DOS execution. Tests pin the executable operands and demonstrate a type160 animal writing the other count bytes, the resulting RNG consumption,128-count averaging skip and tick rollover. The mismatch is deliberately preserved for this reconstruction; correction remains deferred. Frame state still needs its live/checkpoint hook.
+`animal-world.ts` now keeps exactly21 bytes for DS22f7–230b and reproduces the verified overlap, signed-divisor test, uncleared first counter, word wrapping, visual RNG draws and consumer mapping. This is ordinary native data processing, not CPU/DOS execution. Tests pin the executable operands and demonstrate a type160 animal writing the other count bytes, the resulting RNG consumption,128-count averaging skip and tick rollover. The mismatch is deliberately preserved for this reconstruction; correction remains deferred. Native v10 persists this frame cache; live clock integration retains the same tested operations.
 
 ## SF-098 — animal masked-ground predicate accepts only image962
 

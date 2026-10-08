@@ -98,8 +98,9 @@ export function validateAnimalFrameState(state: AnimalFrameState): void {
 export function refreshAnimalHerd(world: Scenario, state: AnimalFrameState, random: FarmRandom, tick: number): boolean {
   validateAnimalFrameState(state);
   if (!Number.isInteger(tick) || tick < 0 || tick > 65535) throw new Error('Invalid animal tick');
+  if (((tick - state.lastCentreTick) & 65535) <= 320) return false;
   const animals = world.animals.filter(a => a.active);
-  if (!animals.length || ((tick - state.lastCentreTick) & 65535) <= 320) return false;
+  if (!animals.length) return false;
   animals.forEach(validateMovingAnimal);
   const bytes = state.herd, view = new Binary(bytes).view;
   bytes.fill(0, 1);

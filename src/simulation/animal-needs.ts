@@ -9,7 +9,7 @@ function validAnimal(animal: AnimalRecord): void {
 }
 
 /** 0x12d8e, called by odd-day work at0xd28b. Bounded native traversal
- * replaces the original count-driven scan. This is not yet a live clock hook. */
+ * replaces the original count-driven scan. GameSimulation owns its odd-day schedule. */
 export function increaseAnimalNeeds(world: Scenario, temperature: number): void {
   if (!Number.isInteger(temperature) || temperature < -128 || temperature > 127) throw new Error('Invalid animal temperature');
   const animals = world.animals.filter(a => a.active);

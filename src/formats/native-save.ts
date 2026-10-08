@@ -11,6 +11,7 @@ import { readHomestead } from './homestead';
 import { decodeFinancialState, encodeFinancialState } from './finance-save';
 import { TOWN_LAYOUT_BYTES } from './town';
 import { MAX_IRRIGATION_FLOW, validateIrrigation, type IrrigationState } from './irrigation';
+import { createAnimalFrameState } from '../simulation/animal-world';
 
 export const MAX_SAVE_BYTES = 1_000_000;
 const FORMAT = 'simfarm-native';
@@ -138,8 +139,8 @@ function decodeIrrigation(value: unknown): IrrigationState {
 export function writeNativeSave(state: SimulationState, scenarioId: number): string {
   number(scenarioId, 0, 7, 'scenario ID');
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 9, scenarioId, scenario: encodeScenario(scenario),
-    runtime: { ...runtime, finances: encodeFinancialState(finances) } });
+  const text = JSON.stringify({ format: FORMAT, version: 10, scenarioId, scenario: encodeScenario(scenario),
+    runtime: { ...runtime, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
 }
@@ -148,7 +149,7 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(save.version)) fail('unsupported format or version');
   const scenarioId = number(save.scenarioId, 0, 7, 'scenario ID'), s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const random = object(r.random, 'random');
   const rng = new FarmRandom({ visual: number(random.visual, 0, 65535, 'visual RNG'),
@@ -156,6 +157,13 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
   if (!Array.isArray(r.crops) || r.crops.length !== 16) fail('crop definitions');
   const speed = number(r.speed, 0.25, 16, 'speed', false);
   if (!SIMULATION_SPEEDS.some(n => n === speed)) fail('speed');
+  const animalFrame = createAnimalFrameState();
+  if (save.version >= 10) {
+    const a = object(r.animalFrame, 'animal frame');
+    animalFrame.lastCentreTick = number(a.lastCentreTick, 0, 65535, 'animal centre tick');
+    animalFrame.lastMoveTick = number(a.lastMoveTick, 0, 65535, 'animal move tick');
+    animalFrame.herd = bytes(a.herd, 21, 'animal herd cache');
+  }
   const state: SimulationState = { scenario: s, crops: r.crops.map(c => numbers(c, 128, 0, 255, 'crop bytes')),
     townLayoutBytes: save.version >= 5 ? numbers(r.townLayoutBytes, TOWN_LAYOUT_BYTES, 0, 255, 'town layout bytes') : null,
     pendingTown: save.version >= 6 ? decodePendingTown(r.pendingTown) : null,
@@ -164,6 +172,7 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
     dayTicks: number(r.dayTicks, 0, Math.max(1, s.farm.dayDelayTicks) - 1, 'day ticks'),
     disasterFlags: number(r.disasterFlags, 0, 65535, 'disaster flags'), grassTravelCount: number(r.grassTravelCount, 0, 65535, 'grass wear'),
     equipmentAnimationTick: number(r.equipmentAnimationTick, 0, 65535, 'equipment animation tick'),
+    animalFrame,
     cropMarketPrices: numbers(r.cropMarketPrices, 16, 0, 65535, 'crop prices'),
     finances: save.version >= 3 ? decodeFinancialState({ ...object(r.finances, 'financial state'),
       ...(save.version === 3 ? { defaultDecision: null } : {}),

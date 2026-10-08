@@ -19,9 +19,10 @@ function setup(type = 160, id = 4) {
   for (const c of world.cells) { c.terrain = 15; c.overlay = 0x800; }
   const a = world.animals[255]; a.bytes.fill(0); a.flags = 32; a.bytes[0] = a.bytes[1] = 20; a.bytes[6] = type; a.bytes[8] = 200;
   finances.accounts.assets.animalDefinitions[type - 160].count = 1;
+  const crops = world.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)).rawDefinition);
   const context: AnimalMovementContext = { tick: 16, frame: createAnimalFrameState(),
     random: new FarmRandom({ visual: 0x1234, simulation: 2, bounded: 99 }),
-    crops: world.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`))), pointer: null };
+    crops, pointer: null };
   const cell = (x: number, y: number) => world.cells[worldIndex(x, y)]; cell(a.x, a.y).terrain |= 0x800;
   const supply = (slot: number, type: number, x: number, y: number, quantity = 512) => {
     const i = world.inventory[slot], v = new DataView(i.bytes.buffer, i.bytes.byteOffset, i.bytes.byteLength);
@@ -37,7 +38,7 @@ function setup(type = 160, id = 4) {
     for (let dx = 0; dx < d.width; dx++) for (let dy = 0; dy < d.height; dy++) cell(x + dx, y + dy).terrain = (type === 68 ? 460 : 469) + dy * d.width + dx;
     return b;
   };
-  return { world, finances, a, context, cell, supply, building, move: () => moveAnimal(world, finances, a.slot, context) };
+  return { world, finances, a, context, crops, cell, supply, building, move: () => moveAnimal(world, finances, a.slot, context) };
 }
 
 test('animal walkability pins original tables, all terrain images, masking, edges and equal-direction correction', () => {
@@ -90,7 +91,7 @@ test('resource and crop seeking uses strict nearest ties, water priority, exact 
   g.move(); assert.equal(g.a.bytes[4], 3); assert.equal(g.a.x, 21); assert.equal(g.a.y, 21);
   const h = setup(); h.a.bytes[13] = 11;
   const field = h.world.fields[97]; field.bytes[7] |= 1; field.bytes[10] = field.bytes[11] = 21; field.bytes[12] = field.bytes[13] = 10;
-  field.bytes[14] = 0; h.context.crops[0].rawDefinition[62] &= ~4;
+  field.bytes[14] = 0; h.crops[0][62] &= ~4;
   h.cell(21, 21).terrain = 0xa000 | 688;
   new DataView(field.bytes.buffer, field.bytes.byteOffset).setUint16(18, 65000, true);
   h.move(); assert.equal(h.a.x, 21); assert.equal(h.a.y, 21); assert.equal(h.a.bytes[13], 0);

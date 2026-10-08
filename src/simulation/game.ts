@@ -51,6 +51,9 @@ import { purchaseBuilding, type BuildingPlacementResult } from './building-place
 import { copyIrrigation } from '../formats/irrigation';
 import { updateIrrigation } from './irrigation';
 import { placeIrrigation, type IrrigationTool, type IrrigationPlacementResult } from './irrigation-placement';
+import { createAnimalFrameState, type AnimalFrameState } from './animal-world';
+import { advanceAnimalFrame } from './animal-movement';
+import { increaseAnimalNeeds } from './animal-needs';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -76,6 +79,8 @@ export interface GameSnapshot {
   availableLoan: number;
   lastLoanResult: ({ kind: 'borrow' } & BorrowResult) | ({ kind: 'repay' } & RepayResult) | null;
   financeNotices: number[];
+  animalNotices: { slot: number; id: number }[];
+  animalFrame: AnimalFrameState;
   cropMarketPrices: number[];
   lastPlantResult: PlantResult | null;
   lastHarvestResult: HarvestOrderResult | null;
@@ -126,7 +131,7 @@ function copyScenario(scenario: Scenario): Scenario {
 }
 
 /** Owns mutable game state. React receives detached snapshots and submits commands.
- * The scheduler covers calendar, climate, machinery, planting, growth and harvesting.
+ * The scheduler covers calendar, climate, machinery, crops, irrigation and livestock.
  */
 export class GameSimulation {
   private readonly scenario: Scenario;
@@ -146,6 +151,8 @@ export class GameSimulation {
   private disasterFlags = 0;
   private dayTicks = 0;
   private readonly equipmentRuntime: EquipmentRuntime = { grassTravelCount: 0, animationTick: 0, notices: [] };
+  private animalFrame = createAnimalFrameState();
+  private animalNotices: { slot: number; id: number }[] = [];
   private readonly cropMarketPrices: number[];
   private lastPlantResult: PlantResult | null = null;
   private lastHarvestResult: HarvestOrderResult | null = null;
@@ -189,6 +196,7 @@ export class GameSimulation {
       this.elapsed = restored.elapsed; this.dayTicks = restored.dayTicks; this.disasterFlags = restored.disasterFlags;
       this.equipmentRuntime.grassTravelCount = restored.grassTravelCount;
       this.equipmentRuntime.animationTick = restored.equipmentAnimationTick;
+      this.animalFrame = { ...restored.animalFrame, herd: Uint8Array.from(restored.animalFrame.herd) };
     } else {
       this.random = new FarmRandom(seeds);
       // Crop loading 0x466d0..0x46728 overrides saved crop/seed prices from the loaded definitions.
@@ -208,6 +216,7 @@ export class GameSimulation {
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
       disasterFlags: this.disasterFlags, grassTravelCount: this.equipmentRuntime.grassTravelCount,
       equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices,
+      animalFrame: this.animalFrame,
       finances: this.finances, pendingTown: this.pendingTown, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
   }
 
@@ -337,6 +346,12 @@ export class GameSimulation {
         if (status) updateFieldStatus(field, this.crops[field.cropSlot], s.cells);
       }
     });
+    if (!this.finances.defaultDecision && !this.pendingTown) {
+      const animals = advanceAnimalFrame(s, this.finances, { tick: s.farm.animationTicks, frame: this.animalFrame,
+        random: this.random, crops: this.crops, pointer: null }, this.weather.soilMoisture);
+      const notices = animals.flatMap(a => [...(a.movement?.notices ?? []), ...(a.care?.notices ?? [])].map(id => ({ slot: a.slot, id })));
+      if (notices.length) this.animalNotices = notices.slice(-20);
+    }
   }
 
   private advanceDay(): void {
@@ -346,11 +361,14 @@ export class GameSimulation {
     // 0xd1ae runs after incrementing day but BEFORE wrapping day seven to zero.
     if (w.temperatureAnomaly >= 2) { w.temperature = (w.temperature - w.temperatureAnomaly) | 0; w.temperatureAnomaly -= 2; }
     else w.temperatureAnomaly = 0;
-    if ((before.day + 1) & 1) for (const field of s.fields.filter(f => f.active)) {
-      const crop = this.crops[field.cropSlot];
-      changeFieldCondition(field, crop, s.regionalConditions, 1, 1);
-      changeFieldCondition(field, crop, s.regionalConditions, 2, 2);
-      updateFieldStatus(field, crop, s.cells);
+    if ((before.day + 1) & 1) {
+      for (const field of s.fields.filter(f => f.active)) {
+        const crop = this.crops[field.cropSlot];
+        changeFieldCondition(field, crop, s.regionalConditions, 1, 1);
+        changeFieldCondition(field, crop, s.regionalConditions, 2, 2);
+        updateFieldStatus(field, crop, s.cells);
+      }
+      increaseAnimalNeeds(s, w.displayTemperature); // 0xd28b reads prior DS43dc; daily display refresh is later at0xd0cc.
     }
     if (next.weekEnded) {
       // Weekly dispatcher 0xbdbe updates old week's wind and field water before the calendar rolls.
@@ -458,6 +476,8 @@ export class GameSimulation {
       availableLoan: Math.min(Math.max(0, 9999999 - this.scenario.farm.cash),
         loanCreditLimit(this.scenario, this.finances.accounts.buildingBookValue, this.finances.loan.principal, this.weather.soilMoisture)),
       lastLoanResult: this.lastLoanResult ? { ...this.lastLoanResult } : null, financeNotices: [...this.financeNotices],
+      animalFrame: { ...this.animalFrame, herd: Uint8Array.from(this.animalFrame.herd) },
+      animalNotices: this.animalNotices.map(n => ({ ...n })),
       weather: { ...this.weather, forecast: [...this.weather.forecast], nextForecast: [...this.weather.nextForecast] },
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, cropMarketPrices: [...this.cropMarketPrices],
       lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null,

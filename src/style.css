@@ -14,3 +14,4 @@
 .homestead-notice { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 1rem; border: 1px solid #48563f; }
 
 header { flex-wrap: wrap; }
+.livestock-counts{border-spacing:12px 4px}.livestock-counts th{text-align:left}

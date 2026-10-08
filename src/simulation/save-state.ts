@@ -3,6 +3,7 @@ import type { RandomState } from './random';
 import type { WeatherState } from './weather';
 import type { FinancialState } from '../formats/finance';
 import type { TownSite } from './town';
+import type { AnimalFrameState } from './animal-world';
 
 /** Tax and reservation have completed; resume at 0xcdf9 after the choice.
  * The public calendar is normalized to January 1 while this phase is pending. */
@@ -28,6 +29,7 @@ export interface SimulationState {
   disasterFlags: number;
   grassTravelCount: number;
   equipmentAnimationTick: number;
+  animalFrame: AnimalFrameState;
   cropMarketPrices: number[];
   finances: FinancialState;
   pendingTown: PendingTownExpansion | null;

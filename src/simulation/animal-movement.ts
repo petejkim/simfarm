@@ -1,6 +1,5 @@
 import { Binary } from '../formats/binary';
 import type { AnimalRecord } from '../formats/animal';
-import type { CropDefinition } from '../formats/crop';
 import type { FinancialState } from '../formats/finance';
 import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
 import { findBuilding } from './building-storage';
@@ -14,7 +13,7 @@ export interface AnimalMovementContext {
   tick: number;
   frame: AnimalFrameState;
   random: FarmRandom;
-  crops: readonly CropDefinition[];
+  crops: readonly (readonly number[])[];
   /** Native map coordinates corresponding to the original pointer in a map
    * window. Null follows the original absent-window initialization at(0,0). */
   pointer: { x: number; y: number } | null;
@@ -35,10 +34,15 @@ export interface AnimalFrameResult {
 
 /** Original frame wrapper0xdf48. Native visits the bounded initial active
  * slots once even if an earlier animal dies, correcting SF-059's skipped tail.
- * This state/operation still needs its canonical live-clock/checkpoint hook. */
+ * GameSimulation owns the live clock and persists the complete frame state. */
 export function advanceAnimalFrame(world: Scenario, finances: FinancialState, context: AnimalMovementContext, soilMoisture: number): AnimalFrameResult[] {
   validateAnimalFrameState(context.frame);
   if (!Number.isInteger(context.tick) || context.tick < 0 || context.tick > 65535) throw new Error('Invalid animal tick');
+  if (!Number.isInteger(soilMoisture) || soilMoisture < -128 || soilMoisture > 127) throw new Error('Invalid animal soil moisture');
+  // Preserve source gates without scanning/validating every animal on the
+  // fifteen logical ticks between movement frames.
+  if (((context.tick - context.frame.lastMoveTick) & 65535) < 16 &&
+    ((context.tick - context.frame.lastCentreTick) & 65535) <= 320) return [];
   const animals = world.animals.filter(a => a.active), result: AnimalFrameResult[] = [];
   animals.forEach(validateMovingAnimal);
   if (!animals.length) return result;
@@ -79,7 +83,7 @@ export function moveAnimal(world: Scenario, finances: FinancialState, slot: numb
   if (!definition || definition.type !== a.type || definition.width !== 1 || definition.height !== 1 || base === undefined)
     throw new Error('Invalid animal movement definition');
   const fields = world.fields.filter(f => f.slot > 0 && f.active);
-  for (const f of fields) if (context.crops[f.cropSlot]?.rawDefinition.length !== 128) throw new Error('Invalid animal crop definition');
+  for (const f of fields) if (context.crops[f.cropSlot]?.length !== 128) throw new Error('Invalid animal crop definition');
   const b = a.bytes, random = context.random, type = a.type - 160;
   const water = [50, 35, 56, 56][type], feed = [160, 160, 80, 64][type];
   const result: AnimalMovementResult = { moved: false, stored: false, notices: [], sounds: [] };
@@ -107,7 +111,7 @@ export function moveAnimal(world: Scenario, finances: FinancialState, slot: numb
       target = { x: supply.x, y: supply.y }; b[4] = animalDirection(a.x, a.y, target.x, target.y);
       if ((random.nextSimulation() & 15) === 6) b[4] = (b[4] + 1) & 7;
     } else {
-      const field = nearest(fields.filter(f => !(context.crops[f.cropSlot].rawDefinition[62] & 4)), a);
+      const field = nearest(fields.filter(f => !(context.crops[f.cropSlot][62] & 4)), a);
       if (field) {
         target = { x: field.x + (random.nextVisual() & 7) + 2, y: field.y + (random.nextVisual() & 7) + 2 };
         b[4] = animalDirection(a.x, a.y, target.x, target.y);
@@ -135,7 +139,7 @@ export function moveAnimal(world: Scenario, finances: FinancialState, slot: numb
     destination.terrain |= 0x800; b[0] = x; b[1] = y; result.moved = true;
     if (tile >= 680 && tile <= 840) {
       const field = fields.find(f => f.contains(x, y));
-      if (field && !(context.crops[field.cropSlot].rawDefinition[62] & 4)) {
+      if (field && !(context.crops[field.cropSlot][62] & 4)) {
         const v = new Binary(field.bytes).view;
         v.setUint16(18, Math.min(65535, v.getUint16(18, true) + 1024), true);
         destination.terrain = (destination.terrain & 0xf824) | 36; b[13] = 0;
