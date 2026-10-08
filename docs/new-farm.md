@@ -185,7 +185,7 @@ All following addresses use DS6190 unless a segment is shown. The static-image f
 | --- | --- | --- |
 | Cash; sales accumulator | 3e48;3e44 | 20000;0 |
 | Calendar day/season/week/year/month | 124e/1250/1252/1254/1256 | 1/1/1/1992/0 |
-| Equipment/calendar ticks; animation ticks | 139e;13a0 | both0 |
+| Equipment ticks; animation/calendar ticks | 139e;13a0 | both0 |
 | Day delay; speed; equipment pacing | 1f8c;1f90;a8a0 | 256;1;2 (nonzero enables pacing);0187 is separate pause depth0 |
 | Automatic rent/seeds/clearing | a89d/a89c/a89f | 1/1/0 |
 | Equipment/building book value | 3e50/3e54 | both0; **3e4c is a different unnamed account** |

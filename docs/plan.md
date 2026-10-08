@@ -37,3 +37,5 @@ Original interface remains part of the preservation target: restore original men
 Restart audit found and corrected native cold equipment-pacing address selection and missing reset/resume assignments. See new-farm.md and original-load-startup.md. Remaining warm restart work includes retained terrain history/raw ownership, forecast/effect state and chooser outcomes; replacing those with a fresh cold constructor would lose original behavior.
 
 Detached restart activity reset, post-chooser irrigation synchronization and retained startup weather now have source-backed tests. They complement partial record/account reset but are not yet a live warm restart. SF-150 records potential retained-weather carry-over; next connect common setup-state ownership and the complete chooser/finalization sequence.
+
+Restart composition review corrected calendar clock ownership:13a0 drives the calendar while139e drives machinery. Original import now carries the animation-based phase, with unequal-counter regressions; native checkpoint restoration remains exact. The shared phase-transfer helper is ready for the reset-to-zero branch.

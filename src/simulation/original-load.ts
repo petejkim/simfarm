@@ -5,6 +5,7 @@ import { readFinancialState } from '../formats/finance';
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
 import { loadMarketCropPrices } from './market';
 import type { SimulationState } from './save-state';
+import { transferCalendarPhase } from './calendar-clock';
 
 /** In-game SSM transfer4543c..4644c and successful menu return43284.
  * Does not rerun chooser setup, weather generation or traffic allocation.
@@ -28,12 +29,11 @@ export function transferOriginalFarm(previous: SimulationState, bytes: Uint8Arra
   const finances = readFinancialState(bytes, prior.finances);
   // Native modal callbacks reference the replaced world and must not resume on it.
   finances.defaultDecision = null;
-  const lastDayTick = (prior.scenario.farm.timerTicks - prior.dayTicks) & 65535;
   const state: SimulationState = { ...prior, scenario, finances, crops: definitions, cropMarketPrices, market,
     newFarm: null, retainedSetup: prior.newFarm ?? prior.retainedSetup,
     weather: { ...prior.weather, precipitationDays: scenario.farm.precipitationDays },
     traffic: { ...prior.traffic, delay: new Binary(bytes).u16(0x2171e) },
-    dayTicks: (scenario.farm.timerTicks - lastDayTick) & 65535,
+    dayTicks: transferCalendarPhase(prior.scenario.farm.animationTicks, prior.dayTicks, scenario.farm.animationTicks),
     paused: true, elapsed: 0, pendingTown: null, aircraftFlight: null };
   // Ordinary source dialog adds one pause level. A previously paused native
   // session models an outer level, so its return does not perform1->0 writes.

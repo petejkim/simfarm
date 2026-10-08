@@ -19,7 +19,8 @@ test('original import retains runtime history, RNG, weather, traffic and timers 
   prior.weather.wind = 27; prior.weather.moistureBalance = -5; prior.weather.temperatureAnomaly = 19;
   prior.market.history[0][0] = 4321; prior.market.mood = 2; prior.market.rawBC72 = 250;
   prior.animalFrame.lastMoveTick = 456; prior.grassTravelCount = 731; prior.dayTicks = 17;
-  prior.scenario.farm.timerTicks = 60000; prior.traffic.lastTick = 65000; prior.disasters.frameDelay = 47;
+  prior.scenario.farm.timerTicks = 123; prior.scenario.farm.animationTicks = 60000;
+  prior.traffic.lastTick = 65000; prior.disasters.frameDelay = 47;
   const old = GameSimulation.load(writeNativeSave(prior, null), crops, layouts).simulation, before = old.save(null);
   for (let id = 0; id < 8; id++) {
     const bytes = source(`SCEN${id}.SSM`), file = readScenario(bytes), next = old.importOriginal(bytes, crops).simulation;
@@ -33,7 +34,7 @@ test('original import retains runtime history, RNG, weather, traffic and timers 
     assert.deepEqual(state.animalFrame, prior.animalFrame); assert.equal(state.grassTravelCount, 731);
     assert.deepEqual(state.traffic, { ...prior.traffic, delay: bytes.readUInt16LE(0x2171e) });
     assert.equal(state.disasters.frameDelay, 47); assert.equal(state.market.history[0][0], 4321); assert.equal(state.market.mood, 2); assert.equal(state.market.rawBC72, 250);
-    assert.equal(state.dayTicks, (file.farm.timerTicks - ((60000 - 17) & 65535)) & 65535);
+    assert.equal(state.dayTicks, (file.farm.animationTicks - ((60000 - 17) & 65535)) & 65535);
     state.crops.forEach((c, slot) => assert.equal(state.market.history[slot][29], c[34] | c[35] << 8));
     assert.equal(old.save(null), before); next.getSnapshot().scenario.cells[0].terrain = 0;
     assert.equal(old.save(null), before);

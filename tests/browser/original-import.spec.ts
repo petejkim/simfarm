@@ -73,3 +73,24 @@ test('invalid originals and missing crop assets leave the active farm intact and
   await page.unroute('**/assets/raw/crops/*.crp'); await load(page, bytes, 'farm.SSM');
   await expect(page.locator('#map-status')).toHaveText('Imported farm · original terrain');
 });
+
+test('original imports keep unequal calendar and machinery clocks distinct through Next day and native restore', async ({ page }) => {
+  await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const prior = (await save(page, 'unequal-before')).data;
+  prior.scenario.farm.animationTicks = 1000; prior.scenario.farm.timerTicks = 40000; prior.runtime.dayTicks = 17;
+  await load(page, Buffer.from(JSON.stringify(prior)), 'unequal.json');
+  const bytes = Buffer.from(source('SCEN0.SSM'));
+  bytes.writeUInt16LE(1010, 0x216f7); bytes.writeUInt16LE(7, 0x216f9);
+  await load(page, bytes, 'unequal.SSM');
+  const imported = (await save(page, 'unequal-imported')).data;
+  expect(imported.runtime.dayTicks).toBe(27);
+  const steps = imported.scenario.farm.dayDelayTicks - 27;
+  await page.locator('#next-day').click();
+  const next = (await save(page, 'unequal-next')).data;
+  expect(next.runtime.daysAdvanced).toBe(imported.runtime.daysAdvanced + 1);
+  expect(next.runtime.dayTicks).toBe(0);
+  expect(next.scenario.farm.animationTicks).toBe(1010 + steps);
+  expect(next.scenario.farm.timerTicks).toBe(7 + steps);
+  await load(page, Buffer.from(JSON.stringify(next)), 'unequal-restored.json');
+  expect((await save(page, 'unequal-restored')).data).toEqual(next);
+});
