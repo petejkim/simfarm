@@ -5,7 +5,8 @@ export type LandPurchaseResult = { ok: true; regionX: number; regionY: number; p
   | { ok: false; reason: 'outside-map' | 'not-for-sale' | 'insufficient-cash' };
 
 const validRegion = (x: number, y: number) => [x, y].every(n => Number.isInteger(n) && n >= 0 && n < 12);
-const ownership = (world: Scenario, x: number, y: number) => world.regionalConditions[(x * 12 + y) * 7 + 1];
+type LandMap = Pick<Scenario, 'cells' | 'regionalConditions'>;
+const ownership = (world: LandMap, x: number, y: number) => world.regionalConditions[(x * 12 + y) * 7 + 1];
 
 /** Overlay 15, file 0x3c766. Initialized base price at DS 6190:7516 is 15000.
  * The terrain surcharge tests the FIRST map word's bit 12, not ownership in the second word. */
@@ -26,7 +27,7 @@ export function quoteLand(world: Scenario, regionX: number, regionY: number, soi
 const fenceShapes = [0, 0, 1, 2, 0, 0, 3, 4, 1, 5, 1, 6, 7, 8, 9, 10];
 const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 const inMap = (x: number, y: number) => x >= 0 && y >= 0 && x < 96 && y < 96;
-function fenceMask(world: Scenario, x: number, y: number): number {
+function fenceMask(world: LandMap, x: number, y: number): number {
   let mask = 0;
   directions.forEach(([dx, dy], bit) => {
     if (!inMap(x + dx, y + dy)) return;
@@ -37,7 +38,7 @@ function fenceMask(world: Scenario, x: number, y: number): number {
 }
 
 /** Fence specialization of 21c2:1578 (file 0x25398), with mask helper 0x24b54. */
-function connectFence(world: Scenario, x: number, y: number): void {
+function connectFence(world: LandMap, x: number, y: number): void {
   const mask = fenceMask(world, x, y), cell = world.cells[worldIndex(x, y)];
   cell.terrain = (cell.terrain & 0xf800) | (177 + fenceShapes[mask]);
   directions.forEach(([dx, dy], bit) => {
@@ -50,7 +51,8 @@ function connectFence(world: Scenario, x: number, y: number): void {
 
 /** 0x3cd0a..0x3d692: top, bottom, left, right, skipping sides adjoining owned regions.
  * Only grass, 535..538 and 131..146 become fences. Existing obstacles remain. */
-function fencePurchasedLand(world: Scenario, regionX: number, regionY: number): void {
+export function fenceOwnedRegion(world: LandMap, regionX: number, regionY: number): void {
+  if (!validRegion(regionX, regionY)) throw new Error('Invalid land region');
   const x = regionX * 8, y = regionY * 8;
   const sides = [
     { neighbor: [regionX, regionY - 1], start: [x, y], step: [1, 0] },
@@ -101,6 +103,6 @@ export function purchaseLand(world: Scenario, regionX: number, regionY: number, 
   for (let x = regionX * 8; x < regionX * 8 + 8; x++) for (let y = regionY * 8; y < regionY * 8 + 8; y++) {
     world.cells[worldIndex(x, y)].overlay |= 0x0800;
   }
-  fencePurchasedLand(world, regionX, regionY);
+  fenceOwnedRegion(world, regionX, regionY);
   return { ok: true, regionX, regionY, price: quote.price };
 }

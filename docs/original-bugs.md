@@ -1197,3 +1197,17 @@ Native checks each brush cell and discards out-of-map writes, while preserving a
 After in-place attribute smoothing,0x40d31..0x40d50 uses region coordinates directly as x*96+y to fetch one map attribute and writes attribute<<4/<<2 to region channels6/5. Region coordinates are0..11, so all144 regions derive these two values from the top-left12×12 cells, despite each region representing8×8 map cells. The code does not multiply coordinates by8 or average a region. Three other region channels independently receive visual RNG values0..60. This may be intentional distribution seeding or a coordinate-scale defect; no stronger intent or vulnerability claim is supported.
 
 Native preserves this sampling and unrelated region bytes. Tests deliberately distinguish map(3,0) from map(24,0), verify all144 outputs and source RNG order, and retain the in-place smoothing dependency. Any change to use regional averages belongs to a later explicit enhancement.
+
+## SF-142 — starting-location selection retries without a termination condition
+
+**Status:** verified unbounded rejection loop; native random-cycle detection implemented. Ordinary generated-map failure frequency remains unmeasured; no security vulnerability is claimed.
+
+Chooser0x33aa6 sets a retry byte and returns to0x33ab5 after any of five region checks fails. It clears the retry byte only after all checks pass at0x33bc2. There is no retry limit or alternate search path. It consumes only the visual generator and does not change terrain. A repeated visual state at an attempt boundary therefore repeats the same future candidates. A zero visual seed stays zero, yielding the same candidate every attempt; water in any checked region makes this loop permanent. An all-water map likewise cannot succeed for any seed. These are verified input/state consequences, not evidence that the distributed defaults always hang.
+
+Native records visual states at attempt boundaries and returns no-reachable-location when one repeats. It preserves every candidate and RNG draw before that point, never selects a fabricated replacement, and leaves the map unchanged. Tests cover both the fixed-zero state and a nonzero stream on all-water terrain, plus generated maps/options. A future setup UI must present the failure and let the user change/reroll settings. Do not silently reseed or treat failure as user approval to alter settings.
+
+## SF-143 — player location validates2×2 regions but grants3×3
+
+**Status:** verified setup footprint mismatch; preserved; intended behavior uncertain, correction deferred.
+
+Chooser0x33b1e..0x33bbf checks player region(x,y), town region, then player(x+1,y), (x,y+1), (x+1,y+1), using helper0x33e36 to reject tile images39..68. Finalizer0x40f09..0x41014 instead grants ownership to3×3 regions, sets map overlay0800 across24×24 cells and fences the outer boundary. The third row/column can contain water despite successful selection. Native preserves both footprints and the source's image-based water test rather than broadening it to terrain flags. Tests place permanent water in the unchecked(x+2,y+2) region, then confirm selection accepts it, ownership is granted and water remains. Expanding the water checks to the full granted property would change location/RNG behavior and is deferred.

@@ -1,6 +1,6 @@
 # Original new-farm setup
 
-Setup resources, climate selection and the terrain-generation chain are recovered, but complete farm creation is not yet connected. `src/formats/new-farm.ts` decodes resources; `./tools/bun run import` produces ignored `public/assets/new-farm-setup.json` alongside the original raw members. `src/simulation/terrain-generation.ts` creates original terrain with a separate setup random history. Existing SSM loading and canonical simulation initialization are unchanged. Starting-location selection, ownership, starting records, crop selection and the setup UI still need reconstruction before a new farm can be offered as original behavior.
+Setup resources, climate selection and the terrain-generation chain are recovered, but complete farm creation is not yet connected. `src/formats/new-farm.ts` decodes resources; `./tools/bun run import` produces ignored `public/assets/new-farm-setup.json` alongside the original raw members. `src/simulation/terrain-generation.ts` creates original terrain with a separate setup random history. Existing SSM loading and canonical simulation initialization are unchanged. Starting-location selection and initial player ownership/homestead are also recovered below. Reset/default records, crop selection, initial town construction and the setup UI still need reconstruction before a new farm can be offered as original behavior.
 
 All executable addresses below are file offsets in SHA-256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`. Source files are read only. The independent annotated grids inside the original resource and saved climate triples provide cross-checks beyond the disassembly.
 
@@ -56,7 +56,7 @@ Saved climate triples independently match `(rain,temp,wind)` categories `(2,2,3)
 
 Custom-world rebuild `0x337a6..0x337b4` writes byte `DS67b6<<2` to soil moisture at ES:0164 before calling stub24e6:1230 (overlay19, file `0x3fe1a`). With the verified categories 0–3, this gives 0/4/8/12. This path therefore supplies no missing extreme beyond ordinary forecast clamps0..12; natural drought/flood checks require<0/>13. This is a bounded finding about this writer, not proof that all original paths make those events unreachable. Do not invent event probabilities or change the gates.
 
-Terrain generation `0x3fe1a` and DS67b4's river/lake bits are now implemented below. Next reconstruct starting-location selection and the reset/finalization chain into `0x41084`. Trace initial land, records, money, crop loading and weather-call order before connecting React setup controls to canonical game creation. The native fresh-SSM weather initialization remains unchanged; custom-world regeneration must not be treated as a save loader.
+Terrain generation `0x3fe1a` and DS67b4's river/lake bits are now implemented below. Starting-location selection and the player-property phase are now implemented; continue the reset/default-record and town initialization chain into `0x41084`. Trace initial land, records, money, crop loading and weather-call order before connecting React setup controls to canonical game creation. The native fresh-SSM weather initialization remains unchanged; custom-world regeneration must not be treated as a save loader.
 
 Tests cover executable instructions/strings, independent map annotations, retained suffix/bounds, all twelve files and all 64 combinations, malformed climate input, signed truncation, six saved-farm climate/forecast/RNG cross-checks and the two unmatched rainfall tables. Browser regression checks cover existing asset/scenario loading; no new setup UI is claimed.
 
@@ -94,4 +94,31 @@ Eight tests pin executable instructions/defaults and cover word wrap/inclusive R
 
 ### Next initialization dependency
 
-Setup preview `0x33ca6` calls location chooser `0x33aa6`: this selects a town region near an edge and a player region after water eligibility checks. Later `0x40ef2..0x4102f` temporarily assigns400000 cash, marks a3×3 player region block and its24×24 map overlay ownership, calls another per-region initializer and then sets40000 cash before a homestead callback. Those are research leads, not implemented starting-farm behavior. Resolve the callbacks, reset values, crop assignment and weather ordering before exposing creation in React.
+Setup preview `0x33ca6` calls location chooser `0x33aa6`: this selects a town region near an edge and a player region after water eligibility checks. Later `0x40ef2..0x4102f` temporarily assigns400000 cash, marks a3×3 player region block and its24×24 map overlay ownership, calls another per-region initializer and then sets40000 cash before a homestead callback. The location and property callbacks are now implemented below. Resolve the remaining reset values, crop assignment, town creation and weather ordering before exposing creation in React.
+
+## Starting locations and player property
+
+`src/simulation/starting-property.ts` implements chooser0x33aa6 and the player-property phase of0x40ef2..0x4102f. It operates on the plain TypeScript map/region bytes; React and live game construction are not connected yet.
+
+Location selection consumes a visual draw masked3 to choose an orientation. Subsequent draws are consumed in townX, townY, playerX, playerY order, omitting constant coordinates:
+
+| Orientation | Town region | Player region | Total draws per attempt |
+| --- | --- | --- | --- |
+| 0 | `(visual&7)+2, 0` | `(visual&7)+2, (visual&3)+6` | 4 |
+| 1 | `11−(visual&3), (visual&7)+2` | `(visual&3)+1, (visual&7)+2` | 5 |
+| 2 | `(visual&7)+2, 11−(visual&3)` | `(visual&7)+2, visual&3` | 5 |
+| 3 | `0, (visual&7)+2` | `(visual&3)+6, (visual&7)+2` | 4 |
+
+The same candidate is accepted only if player origin, town origin, player east, player south and player southeast regions pass, in that source order. Helper0x33e36 scans every8×8 tile of a region and rejects low11-bit images39..68 (base39, count30). Flags1000/2000 alone do not reject a location. Native precomputes the region predicates without changing map or random state. Original retry has no bound; native stops only when the visual state repeats at an attempt boundary, returning an explicit no-reachable-location result (SF-142). It does not retry with a guessed seed or substitute another position.
+
+The source writes the successful player region into protected-land coordinates and its tile origin(region×8) into homestead coordinates at0x33c7e..0x33ca0. Selection itself does not grant land or create a town. It tests2×2 player regions, although property finalization grants3×3 (SF-143). All resulting player origins fit the granted24×24 tile area.
+
+Finalization marks all nine regions owned before invoking any fencing, then ORs0800 into all576 overlay words, preserving other overlay bits. It visits the nine regions x-major and invokes0x3cd0a through overlay stub24e6:12bc. That routine is the already recovered boundary fence helper; the native `fenceOwnedRegion` is shared with land purchases. Neighbor ownership suppresses interior fences. Water/other obstacles remain, while eligible grass/trees/rocks receive source fence connections. This phase is not nine land purchases and creates no land expense.
+
+The original temporarily sets cash400000 before ownership/fencing, then sets40000 at0x41016 before calling1c78:0974 (file0x1f2f4) with rank0. The shared `updateHomestead` reproduces its nine terrain words. Reset0x407a5 supplies rank255, suppressing initial feedback. The native property phase returns40000 and the resulting rank0 homestead; the transient400000 value has no consumer in the recovered ownership/fence calls. It does not reset unrelated accounts or claim to supply the complete starting financial state.
+
+Seven new tests cover source instructions, each tile of edge/interior eligibility regions, all four orientation formulas/draw counts, rejection in each checked region, unchecked third-strip water, terminating impossible maps, exact576-tile/nine-region ownership,92 perimeter fences on clear land, exact homestead tiles, preserved other bytes and invalid-input atomicity. Integration tests run all16 soil/water combinations at three visual seeds through terrain→location→property, compare restored RNG selection and preserve the other random streams. An ignored original-tile preview `artifacts/starting-property-preview.png` was inspected for the four water options; no live setup UI or original DOS run is implied.
+
+Remaining initialization work: reset0x402a8/0x4060c and callback0x3f854, original crop/default record construction and price loading, starting town creation, financial accounts and weather ordering. The finalizer's climate call and selector tables are implemented separately; complete creation must combine these phases without retaining an existing farm's fields/equipment/loans. The current SSM loader remains authoritative for existing farms and must not become a substitute new-farm template with unexplained leftovers.
+
+Additional reset call-chain evidence:0x3f854 clears regional type bytes to255 and ownership to0 after calling asset loader24e6:1384 (file0x49426), calls terrain wrapper0x4027e, then setup/finalizer24e6:137a (file0x40d6c). Its24e6:1212 call resolves to palette loader0x491ec with simfarm.pal. These callbacks separate graphics/palette reload from gameplay reset; do not treat every call as a new-state constructor.
