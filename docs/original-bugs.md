@@ -869,6 +869,8 @@ Native `advanceAnimalFrame` visits the bounded initial active slots once. Death 
 
 Empty-trough refill at0xc2e0 requests64 from helper0x1a244 and doubles its return into inventory quantity. The helper finds active type72 buildings with nonzero word+10. At0x1a29e it caps its returned total to the requested amount, but0x1a2a5 unconditionally clears the entire supplying building's word+10 instead of subtracting the amount actually delivered. Thus a reservoir containing more than the remaining request loses its surplus. This is direct instruction evidence; the production routine and normal reachable contents still need tracing before quantifying ordinary gameplay loss. No security claim is made. Native automatic refills are not implemented yet; revisit partial withdrawal, source arithmetic and open-interior repaint together when implementing them.
 
+Follow-up source-data evidence: original SSM building records at0x5fc7+slot*70+10 already contain above64 quantities. SCEN0 slots19–21 contain250/255/255; SCEN3 slots1–2 contain255; SCEN5 slots6–17 contain50 followed by eleven255 values; SCEN6 slots11–14 and SCEN7 slots4–6 contain255. Each is active type72. Production0xc4e6 adds50 and caps at255 when adjacent to a wet ditch. Thus above64 contents are ordinary source state, not merely a malformed-save hypothesis. A64 withdrawal from a255 record discards191 stored units; native refill correction and its regression tests remain pending.
+
 ## SF-102 — supply purchases have no matching expense category
 
 **Status:** verified accounting omission/quirk; intent unresolved; native preserves cash-only posting.
