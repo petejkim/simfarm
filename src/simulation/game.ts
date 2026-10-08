@@ -60,6 +60,7 @@ import { ageInventoryAndRefillTroughs } from './weekly-inventory';
 import { ageAnimals, beginAnimalPregnancies, advanceAnimalGestation, type AnimalLifecycleNotice } from './animal-lifecycle';
 import { ageEquipment, type EquipmentAgingNotice } from './weekly-equipment';
 import { ageChemicals } from './weekly-chemicals';
+import { purchaseEquipment, type EquipmentPurchaseResult } from './equipment-purchase';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -97,6 +98,7 @@ export interface GameSnapshot {
   lastSaleResult: HarvestSaleResult | null;
   lastLandResult: LandPurchaseResult | null;
   lastBuildingResult: BuildingPlacementResult | null;
+  lastEquipmentPurchaseResult: (EquipmentPurchaseResult & { equipmentType: number }) | null;
   lastIrrigationResult: IrrigationPlacementResult | null;
   lastLivestockResult: (LivestockPurchaseResult & { productType: number }) | null;
   lastNewFieldResult: NewFieldResult | null;
@@ -115,6 +117,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'buy-land'; regionX: number; regionY: number }
   | { type: 'build'; buildingType: number; x: number; y: number }
   | { type: 'irrigation'; tool: IrrigationTool; x: number; y: number }
+  | { type: 'buy-equipment'; equipmentType: number; x: number; y: number }
   | { type: 'buy-livestock'; productType: number; x: number; y: number }
   | { type: 'create-field'; x: number; y: number; cropSlot: number }
   | { type: 'treat-field'; fieldSlot: number; treatment: Treatment }
@@ -172,6 +175,7 @@ export class GameSimulation {
   private lastHarvestResult: HarvestOrderResult | null = null;
   private lastSaleResult: HarvestSaleResult | null = null;
   private lastLandResult: LandPurchaseResult | null = null;
+  private lastEquipmentPurchaseResult: GameSnapshot['lastEquipmentPurchaseResult'] = null;
   private lastBuildingResult: BuildingPlacementResult | null = null;
   private lastIrrigationResult: IrrigationPlacementResult | null = null;
   private lastLivestockResult: GameSnapshot['lastLivestockResult'] = null;
@@ -311,6 +315,9 @@ export class GameSimulation {
       this.lastBuildingResult = purchaseBuilding(this.scenario, this.finances, command.buildingType, command.x, command.y, this.weather.soilMoisture);
     } else if (command.type === 'irrigation') {
       this.lastIrrigationResult = placeIrrigation(this.scenario, this.finances, command.tool, command.x, command.y, this.weather.soilMoisture);
+    } else if (command.type === 'buy-equipment') {
+      this.lastEquipmentPurchaseResult = { equipmentType: command.equipmentType,
+        ...purchaseEquipment(this.scenario, this.finances, command.equipmentType, command.x, command.y, this.weather.soilMoisture) };
     } else if (command.type === 'buy-livestock') {
       this.lastLivestockResult = { productType: command.productType,
         ...purchaseLivestock(this.scenario, this.finances, this.random, command.productType, command.x, command.y, this.weather.soilMoisture) };
@@ -533,6 +540,7 @@ export class GameSimulation {
       lastHarvestResult: this.lastHarvestResult ? { ...this.lastHarvestResult } : null,
       lastSaleResult: this.lastSaleResult ? { ...this.lastSaleResult } : null,
       lastLandResult: this.lastLandResult ? { ...this.lastLandResult } : null,
+      lastEquipmentPurchaseResult: this.lastEquipmentPurchaseResult ? { ...this.lastEquipmentPurchaseResult } : null,
       lastBuildingResult: this.lastBuildingResult ? { ...this.lastBuildingResult } : null,
       lastIrrigationResult: this.lastIrrigationResult ? { ...this.lastIrrigationResult } : null,
       lastLivestockResult: this.lastLivestockResult ? { ...this.lastLivestockResult } : null,

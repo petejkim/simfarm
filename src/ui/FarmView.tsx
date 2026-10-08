@@ -17,6 +17,8 @@ import { LoanPanel } from './LoanPanel';
 import { TaxPanel } from './TaxPanel';
 import { FarmReport } from './FarmReport';
 import { LivestockPanel } from './LivestockPanel';
+import { EquipmentShop } from './EquipmentShop';
+import { checkEquipmentPurchase } from '../simulation/equipment-purchase';
 import { MachineryPanel } from './MachineryPanel';
 import { TownChoicePanel } from './TownChoicePanel';
 import type { GameEvent } from '../simulation/events';
@@ -71,6 +73,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   const [mapTool, setMapTool] = useState<MapTool>('inspect');
   const [buildingType, setBuildingType] = useState(64);
   const [irrigationTool, setIrrigationTool] = useState<IrrigationTool>('ditch');
+  const [equipmentType, setEquipmentType] = useState(0);
   const [livestockType, setLivestockType] = useState(161);
   const data = resource.status === 'ready' && snapshot ? { tiles: resource.value.tiles, scenario: snapshot.scenario } : null;
   const field = data?.scenario.fields.find(f => f.slot === fieldSlot && f.active);
@@ -79,11 +82,12 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   const preview = position && data && snapshot && mapTool !== 'inspect' ? {
     x: mapTool === 'land' ? (position.x >> 3) * 8 : position.x,
     y: mapTool === 'land' ? (position.y >> 3) * 8 : position.y,
-    width: mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].width : mapTool === 'irrigation' || mapTool === 'livestock' ? 1 : 8,
-    height: mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].height : mapTool === 'irrigation' || mapTool === 'livestock' ? 1 : 8,
+    width: mapTool === 'equipment' ? data.scenario.equipmentDefinitions[equipmentType].width : mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].width : mapTool === 'irrigation' || mapTool === 'livestock' ? 1 : 8,
+    height: mapTool === 'equipment' ? data.scenario.equipmentDefinitions[equipmentType].height : mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].height : mapTool === 'irrigation' || mapTool === 'livestock' ? 1 : 8,
     valid: mapTool === 'land' ? quoteLand(data.scenario, position.x >> 3, position.y >> 3, snapshot.weather.soilMoisture)?.ownership === 0
       : mapTool === 'build' ? checkBuildingPlacement(data.scenario, buildingType, position.x, position.y, snapshot.weather.soilMoisture).ok
       : mapTool === 'irrigation' ? checkIrrigationPlacement(data.scenario, snapshot.finances, irrigationTool, position.x, position.y, snapshot.weather.soilMoisture).ok
+      : mapTool === 'equipment' ? checkEquipmentPurchase(data.scenario, equipmentType, position.x, position.y, snapshot.weather.soilMoisture).ok
       : mapTool === 'livestock' ? checkLivestockPurchase(data.scenario, snapshot.finances, livestockType, position.x, position.y, snapshot.weather.soilMoisture).ok
       : checkFieldPlacement(data.scenario, position.x, position.y).ok,
   } : undefined;
@@ -119,6 +123,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
         <option value="inspect">Inspect</option><option value="land">Buy land</option><option value="field">New field</option>
         <option value="build">Build</option>
         <option value="irrigation">Irrigation</option>
+        <option value="equipment">Buy machinery</option>
         <option value="livestock">Animals &amp; supplies</option>
       </select></label><label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
@@ -137,7 +142,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     {snapshot && <TaxPanel snapshot={snapshot} />}
     {snapshot && <FarmReport snapshot={snapshot} />}
     {snapshot && <LivestockPanel snapshot={snapshot} onShop={() => setMapTool('livestock')} />}
-    {snapshot && <MachineryPanel snapshot={snapshot} />}
+    {snapshot && <MachineryPanel snapshot={snapshot} onShop={() => setMapTool('equipment')} />}
     {data && <main>
       <section className="map-panel">
         <FarmMap scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
@@ -149,6 +154,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
         <div className="map-footer"><span>{mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
           ? 'Click the top-left corner of a new field' : mapTool === 'build' ? 'Click the top-left corner of a building'
           : mapTool === 'irrigation' ? 'Click a tile to dig a ditch or control a valve'
+          : mapTool === 'equipment' ? 'Click clear ground or an equipment storage building'
           : mapTool === 'livestock' ? 'Click a tile for your animal or supply' : 'Scroll to explore · click a tile to examine'}</span>
           <span id="cell-status">{cell && position ? `Tile ${position.x}, ${position.y} · graphic ${terrainTile(cell)}` : '96 × 96 tiles'}</span>
         </div>
@@ -159,6 +165,8 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
           onTypeChange={setBuildingType} onCommand={command => simulation?.dispatch(command)} />}
         {snapshot && mapTool === 'irrigation' && <IrrigationPanel snapshot={snapshot} position={position} tool={irrigationTool}
           onToolChange={setIrrigationTool} onCommand={command => simulation?.dispatch(command)} />}
+        {snapshot && mapTool === 'equipment' && <EquipmentShop snapshot={snapshot} position={position} equipmentType={equipmentType}
+          onTypeChange={setEquipmentType} onCommand={command => simulation?.dispatch(command)} />}
         {snapshot && mapTool === 'livestock' && <LivestockShop snapshot={snapshot} position={position} productType={livestockType}
           onTypeChange={setLivestockType} onCommand={command => simulation?.dispatch(command)} />}
         {snapshot && (mapTool === 'land' || mapTool === 'field') && <LandPanel tool={mapTool} position={position} snapshot={snapshot}
