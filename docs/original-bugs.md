@@ -1128,3 +1128,15 @@ Flood stop processes terrain2000 without1000. For ordinary graphics,0x36fcd..0x3
 
 
 Live integration evidence for SF-131..133: v14 checkpoints retain scan progress and the negative stopped counter, including unknown words. All eight original farms run70 days through flooding/drainage with repeated load validation; focused tests retain exact paired continuation before and after occupied-storage/field destruction. These checks do not establish that lost terrain flags are harmless for every working field or loose occupant. SF-133's correction and targeted downstream interaction investigation remain deferred; none of these entries is resolved by adding live controls.
+
+## SF-134 — full chemical allocator returns without an explicit failure value
+
+Status: source exhaustion branch verified; native purchase preflight rejects full tables before debit/mutation. Confidence high on the missing zero-return instruction, conditional on AX supplied by the entry stack helper for the resulting bogus slot. No proven security exploit is claimed.
+
+Chemical constructor0x14590 scans slots1..126. At0x145a5, `cmp [bp-2],127` / `jge 0x14609` reaches `leave; retf` directly. Success loads the slot into AX at0x14606, but the exhaustion jump skips it and never explicitly writes AX=0. The loop's occupied-record scan does not assign AX after the entry stack helper. Generic chemical allocation0x3a4eb..0x3a4fc treats a nonzero returned AX as success and increments the definition count; purchase can then attempt storage insertion with that stale slot. Contrast inventory constructor0x152ac, which explicitly zeroes AX on exhaustion. Full caller/entry-helper register consequences need further tracing before assigning an exact corrupt slot or claiming reachable arbitrary writes.
+
+Native checkCropSupplyPurchase searches only actual inactive records1..126, returns no-chemical-slots if none exists, and leaves cash, counts, storage and raw records unchanged. Tests fill the complete table and verify atomic rejection; exact source branch bytes are pinned. This corrects native behavior while retaining the original evidence and outstanding register/reachability investigation.
+
+### SF-021/083/095 follow-up — manual seed and chemical buying
+
+These products share generic purchase0x1cb42, including debit before allocation/placement, destructive pre-placement clearing and the category0 refund on allocation failure. Seed and chemical expense categories differ from0, so preflight also avoids known refund-account drift. Both require storage in the purchase path; seed slots256..511 cannot be represented by the building's byte reference. Native rejects that boundary, incompatible/full storage, invalid definitions and insufficient cash without changes. Tests cover each rejection and unchanged entire state. Later outdoor relocation remains supported through its separate original path; it is not evidence that direct outdoor purchase is allowed.
