@@ -3,8 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { readCrop } from '../../src/formats/crop';
 import { readNativeSave, writeNativeSave } from '../../src/formats/native-save';
 import { miniTileAtlas, readPalette } from '../../src/formats/graphics';
-import { readPreviewMarkers } from '../../src/formats/preview-markers';
-import { renderLocatedTerrainPreview } from '../../src/render/terrain-preview';
+import { renderTerrainPreview } from '../../src/render/terrain-preview';
 import { GameSimulation } from '../../src/simulation/game';
 import { CustomFarmSetup } from '../../src/simulation/custom-farm-setup';
 import { newFarmAssets, newFarmOptions } from '../support/new-farm';
@@ -14,7 +13,7 @@ const crops = readdirSync(new URL('../../../simfarm-dos/CROPS', import.meta.url)
   .map(n => readCrop(n.slice(0, -4).toLowerCase(), source('CROPS/' + n)));
 const assets = { ...newFarmAssets, crops };
 const options = { ...newFarmOptions, seeds: { visual: 9029, simulation: 9029, bounded: 9029 } };
-const miniature = miniTileAtlas(raw('far_mapc.mbm'), readPalette(raw('scenario.pal'))), markers = readPreviewMarkers(raw('egafont.fnt'));
+const miniature = miniTileAtlas(raw('far_mapc.mbm'), readPalette(raw('scenario.pal')));
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
   const path = await (await pending).path(); return JSON.parse(readFileSync(path!, 'utf8'));
@@ -24,7 +23,24 @@ async function pixels(page: Page) {
 }
 async function expectPreview(page: Page, draft: CustomFarmSetup) {
   const p = draft.getSnapshot().preview;
-  expect(await pixels(page)).toEqual(Array.from(renderLocatedTerrainPreview(p.world, miniature, markers, p.locations!).rgba));
+  expect(await pixels(page)).toEqual(Array.from(renderTerrainPreview(p.world, miniature).rgba));
+  await expect(page.locator('.terrain-marker')).toHaveText(['T', 'H']);
+  const panel = (await page.locator('#terrain-design').boundingBox())!;
+  for (const [letter, site] of [['T', p.locations!.town], ['H', p.locations!.player]] as const) {
+    const marker = (await page.locator('.terrain-marker').filter({ hasText: letter }).boundingBox())!;
+    expect((marker.x - panel.x) / panel.width).toBeCloseTo((264 + site.regionX * 16 - 128) / 352, 3);
+    expect((marker.y - panel.y) / panel.height).toBeCloseTo((72 + site.regionY * 16 - 32) / 304, 3);
+  }
+  await expect(page.locator('#terrain-design .setup-title')).toHaveText('DESIGN YOUR TERRAIN');
+  await expect(page.locator('#terrain-design label')).toHaveText(['Rainfall', 'Temperature', 'Wind speed']);
+  await expect(page.locator('#terrain-design .setup-button')).toHaveText(['River', 'Lake', 'Generate World', 'Play']);
+  // Text remains selectable/copyable and fits at desktop and narrow widths.
+  expect(await page.locator('#terrain-design .setup-title').evaluate(el => {
+    const range = document.createRange(); range.selectNodeContents(el);
+    return range.toString();
+  })).toBe('DESIGN YOUR TERRAIN');
+  expect(await page.locator('#terrain-design .setup-button, #terrain-design .setup-text').evaluateAll(els =>
+    els.every(el => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight))).toBe(true);
 }
 async function start(page: Page) {
   await page.clock.install({ time: new Date('1993-04-05T12:00:00Z') });
@@ -32,8 +48,9 @@ async function start(page: Page) {
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
 }
 
-test('original custom screen draws exact source pixels and Play accepts its unchanged map after option edits', async ({ page }) => {
+test('custom screen uses HTML text over exact terrain pixels and Play accepts its unchanged map after option edits', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.route('**/assets/raw/egafont.fnt', route => route.abort()); // Live text has no font-bitmap dependency.
   await start(page); const before = await save(page);
   await page.locator('#new-farm').click(); await page.locator('#new-farm-session').selectOption('fresh');
   await page.locator('#create-farm').click(); await expect(page.getByRole('heading', { name: 'Design your terrain' })).toBeFocused();
@@ -77,11 +94,11 @@ test('mobile restart rerolls retain original streams, respond to keyboard and co
 
 test('missing preview assets and cancellation leave the old farm intact and allow a fresh preview', async ({ page }) => {
   await start(page); const before = await save(page);
-  await page.route('**/assets/raw/egafont.fnt', route => route.fulfill({ status: 200, body: Buffer.alloc(3007), contentType: 'application/octet-stream' }));
+  await page.route('**/assets/raw/far_mapc.mbm', route => route.fulfill({ status: 200, body: Buffer.alloc(0), contentType: 'application/octet-stream' }));
   await page.locator('#new-farm').click(); await page.locator('#create-farm').click();
-  await expect(page.locator('#new-farm-error')).toContainText('Truncated terrain preview font');
+  await expect(page.locator('#new-farm-error')).toContainText('Invalid miniature tile atlas');
   expect(await save(page)).toEqual(before);
-  await page.unroute('**/assets/raw/egafont.fnt'); await page.locator('#create-farm').click();
+  await page.unroute('**/assets/raw/far_mapc.mbm'); await page.locator('#create-farm').click();
   await page.locator('#generate-world').click(); await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   expect(await save(page)).toEqual(before);
   let requested!: () => void, finish!: () => void;

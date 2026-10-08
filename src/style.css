@@ -69,3 +69,19 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .terrain-level-precipitation { background: #c20404; }
 .terrain-level-temperature { background: #fff304; }
 .terrain-level-wind { background: #00aa04; }
+
+/* Live setup text is HTML. Opaque source-colored surfaces cover the archived
+   bitmap lettering; the underlying source art remains unchanged. */
+.terrain-design, .geographic-chooser { container-type: inline-size; --setup-paper: #c2c2c2; }
+.setup-text { position: absolute; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0; background: var(--setup-paper); color: #000; text-align: center; white-space: nowrap; font-family: Arial, Helvetica, sans-serif; line-height: 1; }
+.geographic-chooser .setup-text, .geographic-chooser .setup-button { font-size: max(8px, 2.12cqw); }
+.terrain-design .setup-text, .terrain-design .setup-button { font-size: max(8px, 2.84cqw); }
+.new-farm-panel .setup-text { gap: 0; }
+.geographic-chooser .setup-title { font-size: 4cqw; }
+.terrain-design .setup-title { font-size: 5cqw; }
+.setup-text.setup-title { color: #0000eb; font-weight: bold; text-shadow: 1px 1px #000; }
+.geographic-chooser .setup-button, .terrain-design .setup-button { background: var(--setup-paper); color: #000; border: 2px outset #eee; font-family: Arial, Helvetica, sans-serif; line-height: 1; white-space: nowrap; }
+.geographic-chooser .setup-button:hover:not(:disabled), .terrain-design .setup-button:hover:not(:disabled) { background: #ddd; }
+.geographic-chooser .setup-button:disabled, .terrain-design .setup-button:disabled { background: var(--setup-paper); color: #555; }
+.terrain-design .setup-button[aria-pressed=true] { background: #b0b0b0; border-style: inset; box-shadow: none; }
+.terrain-marker { position: absolute; color: #000; font: bold 2.84cqw/1 Arial, Helvetica, sans-serif; pointer-events: none; }

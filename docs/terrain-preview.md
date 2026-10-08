@@ -84,3 +84,10 @@ Custom result0, numbered result2 and unmarked result3 are composed; other choose
 ## Chooser graphics follow-up
 
 The geographic panel now uses the complete original artwork, source yellow markers, palette-index XOR selection and blue32*level bars; see [scenario-selection.md](scenario-selection.md). Its Design Your Own button enters the existing canonical draft directly. The traced shared solid-fill primitive0416:137f/file76df truncates both horizontal edges to8-pixel byte boundaries at775d..7767. This corrects the custom panel's earlier native visual widths from0/27/54/80 to0/24/48/80; settings and generation are unchanged. Tests pin these source instructions and inspect the live scaled width. Native checkpoint restoration and the original chooser result1 file-load path remain distinct; the latter is still pending composition.
+
+
+## HTML text presentation (2026-10-08)
+
+At the user's request, live titles, climate labels, Low/High endpoints, River/Lake/Generate World/Play captions and H/T markers now use real React text. Opaque palette12 (#c2c2c2) surfaces cover the original embedded labels; CSS draws the text-button bevels. Source defworld artwork, miniature tiles, bars, framing and graphical arrow icons remain. Typography is intentionally browser-rendered rather than a pixel-exact reproduction of the DOS font. Original assets are unchanged.
+
+The canvas now contains only the exact192×192 miniature. React places town/home text at the previously recovered region*16 offsets within screen(264,72), in original town-then-home order. The original marker decoder and renderLocatedTerrainPreview remain tested reference tools; live setup no longer fetches egafont.fnt. This changes presentation only, with no RNG, setup, save-schema or simulation changes. Existing browser cases compare the entire terrain canvas, verify text/marker placement at desktop and390px, keyboard/reroll/Play continuation and asset-error/cancellation atomicity. The malformed live asset fixture now truncates far_mapc.mbm; font boundary checks remain in the decoder tests.

@@ -37,6 +37,12 @@ export function RegionMap({ assets, selected, disabled, unavailable, onSelect, o
   }
   return <div className="geographic-chooser" id="geographic-chooser" role="group" aria-label="Select a region" aria-describedby="region-map-help">
     <canvas ref={canvas} id="region-artwork" width={REGION_PANEL.width} height={REGION_PANEL.height} aria-hidden="true" />
+    <span className="setup-text setup-title" style={position(102, 28, 136, 48)}>SELECT<br />A REGION</span>
+    {['Rainfall', 'Temperature', 'Wind Speed'].map((label, i) => <div key={label}>
+      <span className="setup-text" style={position(112, 84 + i * 48, 112, 15)}>{label}</span>
+      <span className="setup-text" style={position(90, 113 + i * 48, 29, 13)}>Low</span>
+      <span className="setup-text" style={position(215, 113 + i * 48, 29, 13)}>High</span>
+    </div>)}
     <div className="region-grid" id="region-map" style={position(248, 40, 288, 288)} role="group" aria-label="Original region map">
       {assets.locations.map((p, index) => {
         const farm = assets.farms.find(f => f.x === p.x && f.y === p.y);
@@ -47,9 +53,9 @@ export function RegionMap({ assets, selected, disabled, unavailable, onSelect, o
           className={farm ? 'region-preset' : ''} onClick={() => onSelect(index)} onKeyDown={e => navigate(e, index)} />;
       })}
     </div>
-    <button id="region-use" className="region-hit" style={position(96, 232, 141, 24)} type="submit" aria-label="Use this region" disabled={disabled || unavailable} />
-    <button id="region-design" className="region-hit" style={position(96, 256, 141, 24)} type="button" aria-label="Design your own" disabled={disabled || unavailable} onClick={onDesign} />
-    <button id="region-load" className="region-hit" style={position(96, 280, 141, 25)} type="button" aria-label="Load a saved game" disabled={disabled} onClick={onLoad} />
-    <button id="region-quit" className="region-hit" style={position(96, 305, 141, 24)} type="button" aria-label="Quit setup" onClick={onQuit} />
+    <button id="region-use" className="region-hit setup-button" style={position(96, 232, 141, 24)} type="submit" aria-label="Use this region" disabled={disabled || unavailable}>Use This Region</button>
+    <button id="region-design" className="region-hit setup-button" style={position(96, 256, 141, 24)} type="button" aria-label="Design your own" disabled={disabled || unavailable} onClick={onDesign}>Design Your Own</button>
+    <button id="region-load" className="region-hit setup-button" style={position(96, 280, 141, 25)} type="button" aria-label="Load a saved game" disabled={disabled} onClick={onLoad}>Load a Saved Game</button>
+    <button id="region-quit" className="region-hit setup-button" style={position(96, 305, 141, 24)} type="button" aria-label="Quit setup" onClick={onQuit}>Quit</button>
   </div>;
 }

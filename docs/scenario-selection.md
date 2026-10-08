@@ -83,3 +83,8 @@ DOM action areas follow the artwork including edge pixels. Source pressed-state/
 ### Verification
 
 Three new unit cases pin source opcodes/hash, marker and XOR primitives, fill arguments and action branches; independently decode original pixel bits and compare every output pixel for all178 selectable regions; and exercise malformed/truncated artwork, palette, coordinates and levels plus offset buffers and source immutability. Three new Chromium flows compare live canvas pixels, test keyboard/direct custom entry, phone sizing, native checkpoint picker restoration, malformed files, Quit/pending cancellation and raw asset failures. Existing all-eight region tests now activate the original Use This Region button and compare canonical saved continuation. Desktop/mobile screenshots are inspected under ignored artifacts. Full gate results are recorded in progress.md.
+
+
+## HTML text presentation (2026-10-08)
+
+The live geographic chooser follows the user's text policy: SELECT A REGION, climate labels, Low/High and all four action captions are HTML/React text. Opaque source-gray surfaces cover the bitmap lettering and CSS supplies button bevels at the recovered rectangles. The original source canvas remains an exact reference beneath those surfaces; whole-canvas pixel tests verify that reference, not the final composited text. Desktop/mobile screenshots verify the composite. Browser checks also verify copyable title text, visible captions, fitting text bounds and existing keyboard, load/cancel and setup behavior. Map pixels, XOR/scenario markers and climate bars are unchanged; browser typography is a deliberate presentation adaptation. Future restored interfaces must also use actual text elements.

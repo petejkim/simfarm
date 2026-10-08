@@ -20,6 +20,14 @@ async function chooser(page: Page) {
   await page.locator('#new-farm').click(); await page.locator('#choose-region').click(); await expect(page.locator('#geographic-chooser')).toBeVisible();
 }
 async function pixels(page: Page, x: number, y: number) {
+  // The source raster remains an exact reference under opaque HTML text surfaces.
+  await expect(page.locator('#geographic-chooser .setup-title')).toHaveText('SELECTA REGION');
+  await expect(page.locator('#geographic-chooser .setup-button')).toHaveText(['Use This Region', 'Design Your Own', 'Load a Saved Game', 'Quit']);
+  expect(await page.locator('#geographic-chooser .setup-title').evaluate(el => {
+    const range = document.createRange(); range.selectNodeContents(el); return range.toString();
+  })).toBe('SELECTA REGION');
+  expect(await page.locator('#geographic-chooser .setup-button, #geographic-chooser .setup-text').evaluateAll(els =>
+    els.every(el => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight))).toBe(true);
   const actual = await page.locator('#region-artwork').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data));
   expect(actual).toEqual(Array.from(renderRegionChooser(artwork, farms, locations[y * 18 + x]).rgba));
 }
@@ -29,12 +37,13 @@ test('original geographic panel paints exact markers and bars, preserves selecti
   await start(page); const before = await save(page); await chooser(page); await pixels(page, 2, 8);
   await page.locator('[data-region="1,3"]').click(); await pixels(page, 1, 3);
   await expect(page.locator('#region-selection')).toContainText('Scenario 3');
-  await page.mouse.move(0, 0); await page.locator('#region-artwork').screenshot({ path: 'artifacts/browser-region-artwork-desktop.png' });
+  await page.mouse.move(0, 0); await page.locator('#geographic-chooser').screenshot({ path: 'artifacts/browser-region-artwork-desktop.png' });
   await page.locator('[data-region="1,3"]').focus(); await page.keyboard.press('ArrowRight');
   await pixels(page, 2, 3); expect(await save(page)).toEqual(before);
   const selected = locations[3 * 18 + 2];
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  await pixels(page, 2, 3);
   await page.locator('#geographic-chooser').screenshot({ path: 'artifacts/browser-region-artwork-mobile.png' });
   await page.locator('#region-design').focus(); await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: 'Design your terrain' })).toBeFocused();

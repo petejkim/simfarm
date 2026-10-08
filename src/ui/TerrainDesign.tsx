@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import type { TerrainPreviewAssets } from '../assets/game-assets';
 import type { CustomFarmSetup } from '../simulation/custom-farm-setup';
-import { paintTerrainPreview, renderLocatedTerrainPreview } from '../render/terrain-preview';
+import { paintTerrainPreview, renderTerrainPreview } from '../render/terrain-preview';
 
 const position = (x: number, y: number, width: number, height: number): CSSProperties => ({
   left: `${(x - 128) / 352 * 100}%`, top: `${(y - 32) / 304 * 100}%`, width: `${width / 352 * 100}%`, height: `${height / 304 * 100}%`,
@@ -20,7 +20,7 @@ export function TerrainDesign({ draft, assets, onPlay, onCancel, error }: {
   const rendered = useMemo(() => {
     try {
       if (!preview.locations) throw new Error('No starting sites selected');
-      return { raster: renderLocatedTerrainPreview(preview.world, assets.miniature, assets.markers, preview.locations), error: '' };
+      return { raster: renderTerrainPreview(preview.world, assets.miniature), error: '' };
     } catch (cause) { return { raster: null, error: cause instanceof Error ? cause.message : String(cause) }; }
   }, [preview, assets]);
   useEffect(() => { if (canvas.current && rendered.raster) paintTerrainPreview(canvas.current, rendered.raster); }, [rendered]);
@@ -33,11 +33,17 @@ export function TerrainDesign({ draft, assets, onPlay, onCancel, error }: {
     <p id="terrain-design-help">Choose your climate and water options, then Generate World to make a new map. Play accepts the displayed map. H marks your home; T marks the town.</p>
     <div className="terrain-design" id="terrain-design" role="group" aria-label="Original terrain design" aria-describedby="terrain-design-help">
       <img src={assets.screen.src} alt="" draggable={false} />
+      <span className="setup-text setup-title" style={position(176, 44, 260, 24)}>DESIGN YOUR TERRAIN</span>
       <canvas ref={canvas} id="terrain-preview" width={192} height={192} style={position(264, 72, 192, 192)} role="img" aria-label="Terrain preview with home and town markers" hidden={!rendered.raster} />
+      {rendered.raster && preview.locations && ([['T', preview.locations.town], ['H', preview.locations.player]] as const).map(([letter, site]) =>
+        <span key={letter} className="terrain-marker" style={position(264 + site.regionX * 16, 72 + site.regionY * 16, 8, 8)} aria-label={letter === 'H' ? 'Home' : 'Town'}>{letter}</span>)}
       {(['precipitation', 'temperature', 'wind'] as const).map((channel, i) => {
         const label = ['Rainfall', 'Temperature', 'Wind speed'][i], y = [105, 163, 222][i], value = settings.climate[channel];
         const change = (level: number) => run(() => draft.setSettings({ ...settings, climate: { ...settings.climate, [channel]: level } }));
         return <div key={channel}>
+          <label className="setup-text" htmlFor={`terrain-${channel}`} style={position(154, y - 20, 94, 15)}>{label}</label>
+          <span className="setup-text" style={position(156, y + 16, 30, 13)}>Low</span>
+          <span className="setup-text" style={position(213, y + 16, 34, 13)}>High</span>
           <div className="terrain-level terrain-level-background" style={position(160, y, 80, 10)} aria-hidden="true" />
           <div className={`terrain-level terrain-level-${channel}`} style={position(160, y, Math.floor(Math.min(80, value * 27) / 8) * 8, 10)} aria-hidden="true" />
           <button type="button" className="terrain-hit" style={position(140, y - 3, 15, 16)} aria-label={`Decrease ${label.toLowerCase()}`}
@@ -48,12 +54,12 @@ export function TerrainDesign({ draft, assets, onPlay, onCancel, error }: {
             disabled={closed || value === 3} onClick={() => change(value + 1)} />
         </div>;
       })}
-      {(['river', 'lake'] as const).map((water, i) => <button key={water} id={`terrain-${water}`} type="button" className="terrain-hit terrain-toggle"
+      {(['river', 'lake'] as const).map((water, i) => <button key={water} id={`terrain-${water}`} type="button" className="terrain-hit setup-button terrain-toggle"
         style={position(176, 258 + i * 27, 49, 25)} aria-label={water === 'river' ? 'River' : 'Lake'} aria-pressed={settings[water]} disabled={closed}
-        onClick={() => run(() => draft.setSettings({ ...settings, [water]: !settings[water] }))} />)}
-      <button id="generate-world" type="button" className="terrain-hit" style={position(266, 285, 123, 25)} aria-label="Generate World" disabled={closed}
-        onClick={() => run(() => draft.generateWorld())} />
-      <button id="play-farm" type="button" className="terrain-hit" style={position(401, 285, 49, 25)} aria-label="Play" disabled={closed || !rendered.raster} onClick={onPlay} />
+        onClick={() => run(() => draft.setSettings({ ...settings, [water]: !settings[water] }))}>{water === 'river' ? 'River' : 'Lake'}</button>)}
+      <button id="generate-world" type="button" className="terrain-hit setup-button" style={position(266, 285, 123, 25)} aria-label="Generate World" disabled={closed}
+        onClick={() => run(() => draft.generateWorld())}>Generate World</button>
+      <button id="play-farm" type="button" className="terrain-hit setup-button" style={position(401, 285, 49, 25)} aria-label="Play" disabled={closed || !rendered.raster} onClick={onPlay}>Play</button>
     </div>
     <p id="terrain-settings" role="status">Rainfall: {levels[settings.climate.precipitation]} · Temperature: {levels[settings.climate.temperature]} · Wind: {levels[settings.climate.wind]} · River: {settings.river ? 'on' : 'off'} · Lake: {settings.lake ? 'on' : 'off'}</p>
     <p>Water and rainfall changes affect the terrain when you Generate World. Your farm starts in April {settings.date.year} with $40,000.</p>
