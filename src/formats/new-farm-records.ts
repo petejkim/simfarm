@@ -22,6 +22,7 @@ export interface NewFarmRecordDefaults {
   records: Record<keyof typeof recordLayout, number[][]>;
   definitions: Record<keyof typeof definitionLayout, number[][]>;
   plannerBuffer: number[];
+  marketMood: number;
 }
 
 /** Exact cold data image, distinct from the partial in-process reset0x402a8. */
@@ -41,7 +42,8 @@ export function readNewFarmRecordDefaults(executable: Uint8Array): NewFarmRecord
   const offsets = [0x80, 0x89, 0x93, 0x9e, 0xab, 0xb4, 0xbd, 0xc9, 0xd6, 0xe1, 0xec, 0xf9, 0x105, 0x111, 0x11e, 0x128];
   const cropFiles = offsets.map(offset => b.text(imageOffset(0x6190, offset), 14));
   if (cropFiles.some(name => !/^[a-z0-9_]{1,8}\.crp$/.test(name))) throw new Error('Invalid starting crop filename');
-  return { records, definitions, cropFiles, plannerBuffer: Array.from(b.slice(imageOffset(0x2c8b, 0), 0xc00)) };
+  return { records, definitions, cropFiles, plannerBuffer: Array.from(b.slice(imageOffset(0x2c8b, 0), 0xc00)),
+    marketMood: b.slice(imageOffset(0x6190, 0xbc66), 1)[0] };
 }
 
 function bytes(raw: number[], size: number): Uint8Array {
@@ -72,6 +74,7 @@ export function createSetupRecords(defaults: NewFarmRecordDefaults) {
     harvestDefinitions: definitions('harvest', goods), seedDefinitions: definitions('seeds', goods),
     chemicalDefinitions: definitions('chemicals', goods), otherDefinitions: definitions('other', goods),
     plannerBuffer: bytes(defaults.plannerBuffer, 0xc00),
+    marketMood: bytes([defaults.marketMood], 1)[0],
   };
 }
 export type SetupRecords = ReturnType<typeof createSetupRecords>;
