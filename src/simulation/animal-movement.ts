@@ -1,5 +1,6 @@
 import { Binary } from '../formats/binary';
 import type { AnimalRecord } from '../formats/animal';
+import { animalVocal } from './animal-allocation';
 import type { FinancialState } from '../formats/finance';
 import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
 import { findBuilding } from './building-storage';
@@ -91,8 +92,7 @@ export function moveAnimal(world: Scenario, finances: FinancialState, slot: numb
   if (knocked && ((context.tick - new Binary(b).u16(30)) & 65535) > 640) {
     a.flags &= ~8; knocked = false;
     // 0x135f8: cow/sheep choose a variant using visual RNG; other two do not.
-    result.sounds.push(type === 0 ? 'horse1.voc' : type === 1 ? `cow${(random.nextVisual() & 1) + 1}.voc`
-      : type === 2 ? 'pig.voc' : `sheep${(random.nextVisual() & 1) + 1}.voc`);
+    result.sounds.push(animalVocal(a.type, random));
   }
   if (b[5]) { b[4] = random.nextVisual() & 7; b[5]--; }
   else if (b[14] > (water >>> 4)) {

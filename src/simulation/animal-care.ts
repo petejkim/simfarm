@@ -16,7 +16,7 @@ export interface AnimalCareResult {
 
 /** Generic deletion0x3a10a ->0x11b4c, with native count/storage validation.
  * Death removes occupancy without sale proceeds or a guessed asset reversal. */
-function prepareDeath(world: Scenario, finances: FinancialState, animal: AnimalRecord): () => void {
+export function prepareAnimalDeath(world: Scenario, finances: FinancialState, animal: AnimalRecord): () => void {
   const definition = finances.accounts.assets.animalDefinitions[animal.type - 160];
   if (!definition || definition.type !== animal.type || !definition.count || definition.width !== 1 || definition.height !== 1)
     throw new Error('Invalid animal care definition');
@@ -50,7 +50,7 @@ export function careForAnimal(world: Scenario, finances: FinancialState, slot: n
   if (!Number.isInteger(slot) || slot <= 0 || slot > 255 || !animal?.active || animal.type < 160 || animal.type > 163 ||
     animal.x >= 96 || animal.y >= 96) throw new Error('Unsupported animal care state');
   if (!Number.isInteger(soilMoisture) || soilMoisture < -128 || soilMoisture > 127) throw new Error('Invalid animal soil moisture');
-  const remove = prepareDeath(world, finances, animal), bytes = animal.bytes, type = animal.type - 160;
+  const remove = prepareAnimalDeath(world, finances, animal), bytes = animal.bytes, type = animal.type - 160;
   const result: AnimalCareResult = { died: null, notices: [], sound: null };
   if (bytes[14]) {
     if (animal.flags & 4) {

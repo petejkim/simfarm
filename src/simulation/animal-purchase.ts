@@ -1,14 +1,13 @@
-import { Binary } from '../formats/binary';
 import type { FinancialState } from '../formats/finance';
 import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
 import { findBuilding } from './building-storage';
 import type { FarmRandom } from './random';
+import { allocateAnimal } from './animal-allocation';
 
 // Four ordinary definitions. The fifth saved definition repeats type163 and
 // is deliberately not reinterpreted as a new purchasable species (SF-056).
 export const PURCHASABLE_ANIMALS = [160, 161, 162, 163] as const;
 const graphics: Readonly<Record<number, number>> = { 37: 946, 34: 962, 35: 978, 36: 994 };
-const initialCounter = [48, 40, 44, 24]; // DS6190:2294, indexed at0x11b1d.
 export type AnimalPurchaseResult = { ok: true; slot: number; price: number; clearingCost: number }
   | { ok: false; reason: 'unsupported-animal' | 'outside-map' | 'not-owned' | 'occupied'
     | 'blocked-terrain' | 'no-animal-slots' | 'insufficient-cash' };
@@ -51,18 +50,10 @@ export function purchaseAnimal(world: Scenario, finances: FinancialState, random
   const result = checkAnimalPurchase(world, finances, type, x, y, soilMoisture);
   if (!result.ok) return result;
   const definition = finances.accounts.assets.animalDefinitions[type - 160];
-  const animal = world.animals[result.slot], bytes = animal.bytes, v = new Binary(bytes).view;
-  bytes[0] = x; bytes[1] = y; v.setUint16(6, type, true);
-  bytes[4] = random.nextVisual() & 7; bytes[5] = 1; bytes[8] = 255;
-  bytes[14] = bytes[13] = 0; v.setUint16(10, 0, true); bytes[12] = 1;
-  v.setUint16(16, 0, true); v.setUint16(20, 0, true); bytes[18] = 0;
-  animal.flags = 0x20; v.setUint16(26, initialCounter[type - 160], true); bytes[28] = 0;
-  if (random.nextSimulation() & 1) animal.flags |= 2;
-  definition.count = (definition.count + 1) & 65535;
+  allocateAnimal(world, finances, random, type, x, y); // Free slot was preflighted above.
   world.farm.cash -= result.price + result.clearingCost;
   world.farm.workerExpenses = (world.farm.workerExpenses + result.clearingCost) >>> 0;
   finances.annual.livestockExpenses = (finances.annual.livestockExpenses + result.price) >>> 0;
-  finances.statistics.ds3e5c = (finances.statistics.ds3e5c + result.price) >>> 0;
   const cell = world.cells[worldIndex(x, y)];
   // Auto-clear restores the ground before the animal is painted over it.
   const oldTile = terrainTile(cell);

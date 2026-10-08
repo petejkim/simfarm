@@ -12,8 +12,9 @@ export class AnimalRecord {
   get y(): number { return this.bytes[1]; }
   get type(): number { return this.data.u16(6); }
   get conditionByte(): number { return this.bytes[8]; }
-  /** Word +10 contributes to valuation; its full lifecycle is not yet recovered. */
+  /** Word+10 is age in original weeks; it also contributes to valuation. */
   get valuationWord(): number { return this.data.u16(10); }
+  get ageWeeks(): number { return this.data.u16(10); }
   get buildingSlot(): number { return this.data.u16(16); }
   get flags(): number { return this.data.u16(2); }
   set flags(value: number) { this.data.view.setUint16(2, value, true); }

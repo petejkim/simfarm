@@ -896,3 +896,20 @@ Weekly0xc058 increments building word+8 before comparing with1020. At65535 it wr
 **Status:** verified shared-field initialization quirk; intent unresolved; preserved natively.
 
 Allocator0x1a0fc writes217 to all twelve building graphic words, including word+10. Type72 uses that first word as water quantity in production0xc4e6 and withdrawal0x1a28b. Its ordinary purchase path does not reset it, so a newly purchased water store starts with217 units despite no collection yet. This is verified initialization/consumer overlap, not proof of an unintended exploit: initial water could be intentional. Native construction preserves217 and all other initialized/retained bytes. All-eight-farm and browser construction tests verify it. Any change to start empty is deferred rather than silently imposed.
+
+
+## SF-106 — old-age deaths leave species counts stale
+
+**Status:** verified direct-call accounting omission; native lifecycle corrects the species count.
+
+Weekly animal aging clears terrain occupancy at0xc1fa, then calls0x11b4c directly at0xc203. That helper removes stored content, clears active32 and decrements the global live count; it never decrements the per-species definition count. Generic removal0x3a10a normally performs that decrement at0x3a131 before calling the same helper. Old-age death therefore leaves definition counts larger than the actual population. Native old-age removal shares the validated care cleanup and decrements the species count. Tests cover all four lifespan boundaries and multiple same-week deaths, including stored animals. The shrinking-count skipped-tail defect is separately corrected under SF-059. No cash or speculative DS3e5c reversal is added.
+
+## SF-107 — full animal capacity ends pregnancy without a newborn
+
+**Status:** verified capacity behavior; intent unresolved; preserved natively with explicit feedback.
+
+Gestation0x12d0e/0x12d39 clears pregnancy and resets its counter before the queued allocation pass. At0x12d72 it calls generic addition but never tests its result. Allocator0x11a76 returns0 if slots1–255 are full, so the pregnancy ends without producing a record and without a deferred retry. This is a gameplay capacity rule/quirk, not a demonstrated security vulnerability. Native preserves the original phase ordering and pregnancy reset, emits a birth-capacity notice, and consumes no initializer RNG or asset posting when allocation fails. Tests cover a full table and a high-slot parent producing into a free low slot. Any alternative retry policy remains deferred.
+
+### SF-104 animal-counter follow-up
+
+Weekly animal age0xc196 and gestation byte0x12cfa also wrap before comparisons. Age65535 becomes0 without clearing an already-set adult image byte18; gestation255 becomes0 without giving birth. Normal lifespan deletion and gestation completion happen much earlier, so these wraps require inconsistent/modified retained state rather than ordinary long-lived animals. Native preserves the exact arithmetic; boundary tests pin it. No additional vulnerability claim is made.

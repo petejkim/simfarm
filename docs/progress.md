@@ -767,3 +767,10 @@ All393 Bun tests pass across69 files (88.14s), including six new primitive and t
 Water-storage commit028ae8b passes both focused Chromium flows (3.8s) and the full45-case browser suite (1.5minutes), including all existing farming, finance, planner, save/load, audio and speed regressions. Inspected artifacts/browser-water-storage.png at390px: construction choices, quantity/condition feedback and map fit without horizontal overflow. The393-test unit gate, type/build and diff checks remain green. Logs are artifacts/water-storage-unit-tests.log and artifacts/water-storage-browser-full.log. Nothing was pushed.
 
 Recorded the next source lifecycle dependency in docs/livestock.md: weekly animal age/vocal triggers, monthly eligibility and weekly gestation/birth allocation, with exact DS tables and addresses. These remain unimplemented and are the next gameplay priority. The full preservation goal remains active and incomplete; worktree is committed locally.
+
+
+## 2026-10-07 — original animal age and reproduction primitives
+
+The preceding goal turn made progress through live water storage and all393 unit/45 browser gates. Revalidated clean source and traced weekly age/vocal requests, monthly pregnancy eligibility, weekly gestation and queued generic birth allocation. Shared the original initializer between purchases and births, retaining unknown bytes, exact RNG and raw asset posting without charging for births. Source byte18 is now identified as the adult image selector; no speculative animation clock is added.
+
+Six new lifecycle tests pass, along with all16 affected purchase/movement/care tests and type/build checks. SF-106 records and corrects old-age species-count drift; SF-107 preserves original full-table pregnancy termination with explicit feedback; SF-104 records counter wrap limits. These are primitives pending live clock/UI hookup. Next integrate month/week ordering, v10 continuation and readable birth/age/capacity feedback, then deliver remaining pointer/audio behavior. The full goal remains active and incomplete; commits stay local.
