@@ -1106,3 +1106,22 @@ Wind branch0x370ff..0x3710b subtractsDS6aa8 and compares unsigned elapsed agains
 Status: verified arithmetic semantics retained; overflow reachability through ordinary source crop prices is unproven. Confidence high on instructions; not a demonstrated exploit.
 
 General start callback0x4b090 selects wind mode6 at0x4b1be. It adds the shifted unsigned current price in a16-bit word, then compares against a16-bit four-times-base cap. Either addition or cap multiplication can wrap before the clamp; a nominal increase can become a decrease for sufficiently large values. The callback runs before mode eligibility, so an enabled wind start request can reprice even when existing flags prevent activation. Native preserves both ordering and width. Tests distinguish disabled starts, failed activation, ordinary cap behavior and a constructed65530/base30000 boundary yielding32759. That constructed boundary does not establish a reachable original save/game exploit. Further producer/range tracing is deferred.
+
+
+## SF-131 — flood scanning uses an asymmetric footprint and excludes far-edge origins
+
+Status: verified source scan semantics retained in native flood primitives; whether intentional coverage or a defect remains unresolved. Confidence high on loop bounds/clamping; no security implication.
+
+Dispatcher0x37889/0x378a1 ends each coordinate at94 (origins0..93). A water origin initializes X toorigin−2 at0x378e3..0x378e9 then increments before processing; its comparison at0x37863..0x3786f permits X−1 andX only. Y starts atorigin−1 (0x37875..0x3787a) and continues while less thanorigin+2. Clamp0xa254 mutates those counters, collapsing negative candidates. The effective footprint is two columns by three rows, not a centered3×3 square, and permanent-water origins94/95 are never scanned. Native preserves this, including final X94/Y0/inactive and64 origins per call. Tests cover interior/zero/far edges, full8836-origin scans and the absence of Y95 flooding. Revisit only with further source evidence or an explicit enhancement policy; do not silently expand to the whole96×96 origin grid.
+
+## SF-132 — flood stop counter cannot recover through the traced weekly updater
+
+Status: verified negative-counter/gate mismatch retained in native primitives; correction deferred. Confidence high for direct source paths, conditional on absence of an indirect reset elsewhere. No security implication.
+
+Flood stop0x3705f writesDS6997=0xf8(−8) after clearing active flag04. Weekly helper0x3792b..0x37936 increments that byte only if04 is active. Natural flood eligibility0x3650f..0x36514 requires counter==0. After a normal stop, this updater alone cannot advance the inactive counter back to0, apparently preventing another automatic flood until manual start or another reset. Manual start0x36b1c does reset0 and bypasses this counter gate. The current indexed code has these direct counter writes; indirect writes and full initialization remain research limits. Native preserves the source counter/weekly gate, tests20 inactive weeks and manual restart, and records signed-byte wrap separately from a proven reachable overflow. A future fix would need an explicit countdown/reset policy rather than assuming−8 already counts down.
+
+## SF-133 — flood drainage replaces the complete terrain word but retains its overlay
+
+Status: source flag-loss asymmetry retained in native flood primitives; downstream visible consequences remain to be traced. Confidence high on direct writes, not a demonstrated memory-safety vulnerability.
+
+Flood stop processes terrain2000 without1000. For ordinary graphics,0x36fcd..0x36fe1 writes base15+13 as a complete word, unlike drought stop's high-bit-preserving OR. It then clears2000. Thus other terrain flags such as0800/4000/8000 are lost while the secondary word and attribute remain untouched. Pump120..121 and crossing172..173 branches skip the replacement and only clear2000. Native tests both paths, including a retained overlay4000 occupant marker. Working fields survive flood deletion and loose assets are not separately removed, so flag/overlay consistency deserves further examination during live integration. The current implementation retains source behavior; any correction remains deferred with this evidence preserved.

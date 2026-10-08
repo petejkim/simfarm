@@ -3,6 +3,7 @@ import type { FieldRecord } from '../formats/field';
 import type { WeatherState } from './weather';
 import { changeFieldCondition } from './field-conditions';
 import type { MovingDisasterState } from './moving-disasters';
+import { adjustDisasterPrices } from './disaster-prices';
 
 /** 0x1e250: count covered rows/columns in the two-cell tree boundary.
  * Each row/column counts once even if multiple candidate cells contain trees. */
@@ -26,12 +27,7 @@ export function fieldWindbreaks(world: Scenario, f: FieldRecord): number {
 export function beginWindDisaster(world: Scenario, crops: readonly (readonly number[])[], prices: number[],
   weather: WeatherState, d: MovingDisasterState, tick: number): boolean {
   if (!d.enabled) return false;
-  for (let i = 0; i < 16; i++) {
-    const c = crops[i], shift = c[72] & 31;
-    if (!c[72]) continue;
-    prices[i] = Math.min((prices[i] + (shift >= 16 ? 0 : prices[i] >>> shift)) & 65535, ((c[34] | c[35] << 8) * 4) & 65535);
-    world.cropDefinitions[i].price = prices[i];
-  }
+  adjustDisasterPrices(world, crops, prices, 6);
   if (d.flags & 9) return false;
   d.flags = (d.flags & ~32) | 8;
   if (weather.wind < 30) weather.windAnomaly = (40 - weather.wind) << 24 >> 24;

@@ -64,6 +64,15 @@ function restoreShore(world: Scenario, x: number, y: number, random: FarmRandom)
   for (let nx = x - 1; nx <= x + 1; nx++) for (let ny = y - 1; ny <= y + 1; ny++) paint(nx, ny, shoreMask(world, nx, ny));
 }
 
+/** Whole-map water redraw0x16ff8..0x17301: x-major, evolving neighbor masks,
+ * identical protected tiles/3x3 isolated-water expansion to0x16d1c. Its source
+ * inner loop clamps copies; mask15 already excludes all four map edges. */
+export function refreshShorelines(world: Scenario, random: FarmRandom): void {
+  for (let x = 0; x < 96; x++) for (let y = 0; y < 96; y++) {
+    if (world.cells[worldIndex(x, y)].terrain & 0x2000) restoreShore(world, x, y, random);
+  }
+}
+
 /** Manual cleanup after affordability checks. No clearing queue for terrain.
  * Retains high bits, source shore RNG, bridge flags, and gate asymmetry. */
 export function clearManualTerrain(world: Scenario, x: number, y: number, soilMoisture: number, random?: FarmRandom): void {
