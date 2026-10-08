@@ -3,9 +3,9 @@ import { Binary } from '../formats/binary';
 import type { Scenario } from '../formats/scenario';
 import { reserveOwnedEquipment } from './building-storage';
 
-/** Ground-equipment constructor 0xf8be. Initialize only the members written by the original. */
+/** Shared equipment constructor 0xf8be. Initialize only the members written by the original. */
 export function createEquipment(world: Scenario, type: number, x: number, y: number, tick: number): EquipmentRecord | undefined {
-  if (!Number.isInteger(type) || type < 0 || type > 7) throw new Error('Unsupported ground equipment type');
+  if (!Number.isInteger(type) || type < 0 || type > 8) throw new Error('Unsupported equipment type');
   if (![x, y].every(n => Number.isInteger(n) && n >= 0 && n < 96)) throw new Error('Equipment coordinate outside map');
   const e = world.equipment.find(e => e.slot && !e.active);
   if (!e) return undefined;

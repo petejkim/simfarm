@@ -939,3 +939,13 @@ The shared purchase/placement routines also serve machinery types0..7. Direct so
 ### SF-104 follow-up — aircraft service arithmetic (implementation deferred)
 
 Fuel payment0x309c1..0x309d6 uses a wrapping word subtraction255−fuel, multiplies by DS65f6, and discards the high product word. Repair0x30d4d..0x30d62 similarly discards the high word of condition×signed byte DS65f8. Initialized rates1 and10 with normal fuel0..255/condition0..255 do not overflow; no reachable service exploit is established. Payload loading0x30cef..0x30d08 instead retains both product words. Future service reconstruction must preserve these distinctions, bound/validate native service inputs, and examine field/flight writers before claiming a reachable arithmetic defect. No service fix is yet implemented.
+
+## SF-109 — aircraft service selection is global rather than tied to the loaded plane
+
+Status: retained source behavior; possible unequal-price refund mismatch documented, correction deferred. Confidence: high on data flow; no profitable exploit demonstrated in the supplied farms.
+
+DS65fa/65fc initialize to chemical221 and persist across service windows. Readers0x30686/0x30940 obtain the current unit price from this global definition, not equipment word+34. Chemical switch handlers0x30a08/0x30a7e/0x30ae4 multiply the selected aircraft's payload by that prior shared price, refund its low word, clear payload, then change the global selection. Another plane can therefore change the selector independently of the first plane's retained loaded type. All four chemical definitions cost200 in all eight supplied farms, so these source states do not establish a monetary mismatch. A test with unequal saved definition prices verifies the conditional mismatch without claiming normal-game price variation or a security vulnerability. Native currently preserves this shared selection explicitly and checkpoints it; correction requires tracing price writers and deciding whether to price refunds from the loaded type instead. Original record word+34 survives selection and changes only on paid loading.
+
+### SF-104 aircraft service implementation update
+
+Native fuel/payload service preflight rejects out-of-range words above255 without mutation; source arithmetic remains documented. Valid fuel/repair costs retain low-word products; load keeps the full product; switch refunds keep the low word. Original zero-price loading does not fill the tank because its success branch tests a nonzero debit return. Tests cover all these distinctions and retained age after repair. This bounds native transactions without claiming an original reachable overflow exploit.
