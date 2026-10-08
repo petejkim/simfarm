@@ -1,4 +1,5 @@
 import { createMovingDisasters, validateMovingDisasters, type MovingDisasterState } from '../simulation/moving-disasters';
+import { createWaterDisasters, validateWaterDisasters, type WaterDisasterState } from '../simulation/water-disasters';
 import { readScenario, WORLD_OFFSET, type Scenario } from './scenario';
 import { FIELD_SCHEDULE_OFFSET, FIELD_SCHEDULE_SIZE } from './field-schedule';
 import type { SavedFarmState } from './scenario-state';
@@ -161,10 +162,17 @@ function decodeIrrigation(value: unknown): IrrigationState {
   };
   validateIrrigation(state); return state;
 }
+function decodeWaterDisasters(value: unknown): WaterDisasterState {
+  const w = object(value, 'water disasters');
+  const state = { counter: number(w.counter, -128, 127, 'flood counter'), scanning: boolean(w.scanning, 'flood scanning'),
+    scanX: number(w.scanX, 0, 94, 'flood scan X'), scanY: number(w.scanY, 0, 93, 'flood scan Y'),
+    rawFF6C: number(w.rawFF6C, 0, 65535, 'flood raw FF6C'), rawFF6E: number(w.rawFF6E, 0, 65535, 'flood raw FF6E') };
+  validateWaterDisasters(state); return state;
+}
 export function writeNativeSave(state: SimulationState, scenarioId: number): string {
   number(scenarioId, 0, 7, 'scenario ID');
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 13, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 14, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -174,7 +182,7 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(save.version)) fail('unsupported format or version');
   const scenarioId = number(save.scenarioId, 0, 7, 'scenario ID'), s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const random = object(r.random, 'random');
   const rng = new FarmRandom({ visual: number(random.visual, 0, 65535, 'visual RNG'),
@@ -196,6 +204,7 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
     paused: boolean(r.paused, 'paused'), speed, elapsed: number(r.elapsed, 0, 1, 'fractional ticks', false),
     dayTicks: number(r.dayTicks, 0, Math.max(1, s.farm.dayDelayTicks) - 1, 'day ticks'),
     disasters: decodeDisasters(r, save.version), grassTravelCount: number(r.grassTravelCount, 0, 65535, 'grass wear'),
+    waterDisasters: save.version >= 14 ? decodeWaterDisasters(r.waterDisasters) : createWaterDisasters(),
     equipmentAnimationTick: number(r.equipmentAnimationTick, 0, 65535, 'equipment animation tick'),
     animalFrame,
     aircraftService: save.version >= 11 ? { selectedChemical: number(object(r.aircraftService, 'aircraft service').selectedChemical, 221, 223, 'aircraft chemical') }

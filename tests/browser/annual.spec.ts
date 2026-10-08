@@ -35,7 +35,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   const path = 'artifacts/browser-pending-town.simfarm.json'; await (await download).saveAs(path);
   const checkpoint = JSON.parse(readFileSync(path, 'utf8'));
   expect(checkpoint.runtime.pendingTown.phase).toBe('annual-reset'); expect(checkpoint.runtime.daysAdvanced).toBe(0);
-  expect(checkpoint.version).toBe(13);
+  expect(checkpoint.version).toBe(14);
   expect(checkpoint.runtime.finances.statistics.words).toEqual(Array.from({ length: 14 }, (_, i) => 100 + i));
   expect(checkpoint.runtime.finances.statistics.regions).toEqual([3, 4, 5, 6]);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);

@@ -1,6 +1,8 @@
 import { createMovingDisasters, beginMovingDisaster, stopMovingDisaster, advanceMovingDisasters,
   type MovingDisasterState, type MovingDisasterKind, type MovingDisasterStart } from './moving-disasters';
 import { beginWindDisaster, advanceWindDisaster } from './wind-disaster';
+import { createWaterDisasters, beginWaterDisaster, stopWaterDisaster, advanceFloodCounter, advanceFlood,
+  type WaterDisasterKind, type WaterDisasterState } from './water-disasters';
 import { moveManualSupply, type SupplyMoveTarget, type SupplyMoveResult } from './manual-supply-move';
 import { moveManualEquipment, toggleManualBuildingInterior, type EquipmentMoveTarget, type EquipmentMoveResult, type BuildingInteriorResult } from './manual-equipment-move';
 import { removeManualTarget, type RemovalTarget, type ManualRemovalResult } from './manual-removal';
@@ -81,7 +83,8 @@ export interface FieldHarvestEstimate {
 
 export interface GameSnapshot {
   disasters: MovingDisasterState;
-  lastDisasterResult: MovingDisasterStart | null;
+  waterDisasters: WaterDisasterState;
+  lastDisasterResult: MovingDisasterStart | { ok: true; kind: WaterDisasterKind } | null;
   disasterNotices: string[];
   farmReport: { income: number; expenses: number; net: number; fields: FieldReport };
   revision: number;
@@ -137,7 +140,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'choose-town'; choice: TownChoice }
   | { type: 'edit-field-plan'; fieldSlot: number; week: number; action: FieldPlanEdit }
   | { type: 'set-speed'; speed: number }
-  | { type: 'start-disaster'; kind: MovingDisasterKind }
+  | { type: 'start-disaster'; kind: MovingDisasterKind | WaterDisasterKind }
   | { type: 'set-disasters-enabled'; enabled: boolean }
   | { type: 'set-auto-clear'; enabled: boolean }
   | { type: 'buy-land'; regionX: number; regionY: number }
@@ -200,7 +203,8 @@ export class GameSimulation {
   private speed = 1;
   private elapsed = 0;
   private disasters = createMovingDisasters();
-  private lastDisasterResult: MovingDisasterStart | null = null;
+  private waterDisasters = createWaterDisasters();
+  private lastDisasterResult: GameSnapshot['lastDisasterResult'] = null;
   private disasterNotices: string[] = [];
   private dayTicks = 0;
   private readonly equipmentRuntime: EquipmentRuntime = { grassTravelCount: 0, animationTick: 0, notices: [] };
@@ -262,6 +266,7 @@ export class GameSimulation {
       this.daysAdvanced = restored.daysAdvanced; this.paused = restored.paused; this.speed = restored.speed;
       this.pendingTown = restored.pendingTown ? { ...restored.pendingTown, site: { ...restored.pendingTown.site } } : null;
       this.elapsed = restored.elapsed; this.dayTicks = restored.dayTicks; this.disasters = structuredClone(restored.disasters);
+      this.waterDisasters = { ...restored.waterDisasters };
       this.equipmentRuntime.grassTravelCount = restored.grassTravelCount;
       this.equipmentRuntime.animationTick = restored.equipmentAnimationTick;
       this.aircraftService = { ...restored.aircraftService };
@@ -284,7 +289,7 @@ export class GameSimulation {
   save(scenarioId: number): string {
     return writeNativeSave({ scenario: this.scenario, crops: this.crops, random: this.random.snapshot(), weather: this.weather,
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
-      disasters: this.disasters, grassTravelCount: this.equipmentRuntime.grassTravelCount,
+      disasters: this.disasters, waterDisasters: this.waterDisasters, grassTravelCount: this.equipmentRuntime.grassTravelCount,
       equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices,
       animalFrame: this.animalFrame, aircraftService: this.aircraftService, aircraftFlight: this.aircraftFlight,
       finances: this.finances, pendingTown: this.pendingTown, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
@@ -373,8 +378,8 @@ export class GameSimulation {
       this.lastPlanEditResult = { ...editFieldPlan(this.scenario, this.crops, command.fieldSlot, command.week, command.action),
         fieldSlot: command.fieldSlot, week: command.week };
     } else if (command.type === 'start-disaster') {
-      if (!['tornado', 'swarm'].includes(command.kind)) throw new Error('Invalid disaster kind');
-      this.lastDisasterResult = this.startDisaster(command.kind);
+      if (!['tornado', 'swarm', 'drought', 'flood'].includes(command.kind)) throw new Error('Invalid disaster kind');
+      this.lastDisasterResult = command.kind === 'drought' || command.kind === 'flood' ? this.startWaterDisaster(command.kind) : this.startDisaster(command.kind);
     } else if (command.type === 'set-disasters-enabled') {
       this.disasters.enabled = command.enabled;
     } else if (command.type === 'set-auto-clear') {
@@ -510,12 +515,18 @@ export class GameSimulation {
       fillWaterStorage(s); // 0xd296, before the day-seven weekly phase and next irrigation frame.
     }
     if (next.weekEnded) {
+      advanceFloodCounter(this.disasters, this.waterDisasters); // Weekly0xbe38, before natural requests.
       // Weekly0xbe42: July's random requests precede aging and wind update.
       if (before.month === 6) {
         if ((this.random.nextSimulation() & 127) === 49) this.startWind();
         else if ((this.random.nextSimulation() & 255) === 55) this.startDisaster('tornado');
         if ((this.random.nextSimulation() & 63) === 33) this.startDisaster('swarm');
       }
+      // Remaining0x364b0 branches use old-week moisture and the updated counter.
+      if (w.soilMoisture > 13 && this.waterDisasters.counter === 0) this.startWaterDisaster('flood');
+      if (w.soilMoisture < 0) this.startWaterDisaster('drought');
+      if ((this.disasters.flags & 4) && w.soilMoisture <= 9 && this.waterDisasters.counter > 3) this.stopWater('flood');
+      if ((this.disasters.flags & 2) && w.soilMoisture >= 3) this.stopWater('drought');
       // Weekly0xbe4d: equipment, buildings, chemicals, animals, inventory;
       // every aging phase precedes wind0xbe74 and breeding0xbe81.
       const equipment = ageEquipment(s, this.finances, w.soilMoisture);
@@ -611,12 +622,34 @@ export class GameSimulation {
       this.events.push({ type: 'sound', sound: 'wind' });
     }
   }
+  private startWaterDisaster(kind: WaterDisasterKind): Exclude<GameSnapshot['lastDisasterResult'], null> {
+    const started = beginWaterDisaster(this.scenario, this.crops, this.cropMarketPrices, this.weather,
+      this.disasters, this.waterDisasters, kind, this.scenario.farm.animationTicks, this.random);
+    if (!started) return { ok: false, reason: this.disasters.enabled ? 'already-active' : 'disabled' };
+    this.disasterNotice(kind === 'flood' ? 'Floodwater is spreading beside permanent water. Fields and buildings are at risk.' : 'Drought has dried shallow water along the shoreline.');
+    if (kind === 'flood') this.events.push({ type: 'sound', sound: 'flood' });
+    return { ok: true, kind };
+  }
+  private stopWater(kind: WaterDisasterKind): void {
+    if (stopWaterDisaster(this.scenario, this.weather, this.disasters, this.waterDisasters, kind, this.random))
+      this.disasterNotice(kind === 'flood' ? 'The floodwater has receded.' : 'The drought has ended.');
+  }
   private advanceDisasters(): void {
     const s = this.scenario;
     advanceWindDisaster(s, this.crops, this.disasters.flags, s.farm.animationTicks, this.disasters.windReferenceTick, s.farm.dayDelayTicks);
     const step = advanceMovingDisasters(s, this.finances, this.disasters, s.farm.animationTicks, this.weather.soilMoisture, this.random);
     if (step.swarmEnded) this.disasterNotice('The locust swarm has dispersed.');
     if (step.hits.some(h => !h.result.ok && h.result.reason === 'insufficient-cash')) this.disasterNotice('Insufficient cash for disaster terrain clearing ($25).');
+    const flood = advanceFlood(s, this.finances, this.weather, this.disasters, this.waterDisasters, this.random);
+    for (const slot of flood.fields) {
+      this.disasterNotice(`Floodwater destroyed field ${s.fields[slot].number}.`);
+      this.events.push({ type: 'sound', sound: 'explode' });
+    }
+    for (const slot of flood.buildings) {
+      this.disasterNotice(`Floodwater destroyed a building at ${s.buildings[slot].x}, ${s.buildings[slot].y}.`);
+      this.events.push({ type: 'sound', sound: 'explode' });
+    }
+    if (flood.ended) this.disasterNotice('The floodwater has receded.');
   }
 
   private finishWeek(calendar: FarmCalendar, monthEnded: boolean): void {
@@ -647,7 +680,7 @@ export class GameSimulation {
     // until all of its annual consumers and lifecycle are reconstructed.
     const report = { ...this.finances.annual };
     updateAnnualReport(this.scenario.farm, this.finances.accounts, report);
-    this.snapshot = { disasters: structuredClone(this.disasters), lastDisasterResult: this.lastDisasterResult ? { ...this.lastDisasterResult } : null,
+    this.snapshot = { disasters: structuredClone(this.disasters), waterDisasters: { ...this.waterDisasters }, lastDisasterResult: this.lastDisasterResult ? { ...this.lastDisasterResult } : null,
       disasterNotices: [...this.disasterNotices], revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
       farmReport: { income: report.reportIncome, expenses: report.reportExpenses, net: report.reportNet,
         fields: summarizeFieldStatus(this.scenario.fields, this.scenario.farm.cash) },

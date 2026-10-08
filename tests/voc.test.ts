@@ -8,11 +8,12 @@ const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}
 const entries = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
 const sample = (name: string) => Uint8Array.from(entries.find(e => e.name === name)!.bytes);
 
-test('tornado, locust and wind effects retain fingerprinted original PCM and every unsigned sample', () => {
+test('tornado, locust, wind and flood effects retain fingerprinted original PCM and every unsigned sample', () => {
   for (const [name, offset, size, rate, hash] of [
     ['wind.voc', 2104327, 12165, 75, 'a2077a3cb17160f7d228d01bd2e6295de92d98568063c683820c0cc0bd341918'],
     ['swarm.voc', 2143313, 7292, 166, '694dc046f73a3a99034d59febbd1ade9509c13ec4b7c4a64e0ae6799565e43f0'],
     ['tornado.voc', 2188601, 11582, 75, '9d07506ad9833c92711ad6cc623d430e859af19c0974bb597cdefd8a5058fee8'],
+    ['flood.voc', 2170362, 9762, 75, 'bd0a36865d2f968a380678bb3ff7d0f99d923fa2eb232ff9592863673e0405ae'],
   ] as const) {
     const entry = entries.find(e => e.name === name)!, sound = decodeVoc(entry.bytes);
     assert.equal(entry.offset, offset); assert.equal(entry.bytes.length, size);
