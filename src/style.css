@@ -40,15 +40,15 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .region-mode { margin-bottom: 12px; }
 .region-mode [aria-pressed=true] { border-color: #f0d38b; }
 .region-chooser { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin: 16px 0; }
-.region-map { position: relative; overflow: hidden; width: min(100%, 576px); aspect-ratio: 1; flex-shrink: 0; border: 2px solid #7a8964; }
-.region-map > img { position: absolute; width: 222.222222%; max-width: none; height: auto; left: -86.111111%; top: -13.888889%; image-rendering: pixelated; pointer-events: none; }
-.region-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(18, 1fr); grid-template-rows: repeat(18, 1fr); }
-.region-grid button { min-width: 0; min-height: 0; padding: 0; border: 1px solid transparent; border-radius: 0; background: transparent; box-shadow: none; color: #fff; font-size: clamp(10px, 2vw, 16px); }
-.region-grid button:disabled { opacity: 1; cursor: default; }
-.region-grid button:not(:disabled):hover { background: #ffffff44; border-color: #fff; }
-.region-grid .region-preset { background: #153820; border-color: #f0d38b; }
-.region-grid button[aria-pressed=true] { outline: 3px solid #fff; outline-offset: -3px; background: #ffffff66; color: #102417; }
-.region-grid button:focus-visible { outline: 3px solid #fff; outline-offset: -3px; }
+.geographic-chooser { position: relative; overflow: hidden; width: min(100%, 944px); aspect-ratio: 472 / 328; flex-shrink: 0; background: #000; }
+.geographic-chooser canvas { width: 100%; height: 100%; image-rendering: pixelated; cursor: default; }
+.region-grid { position: absolute; display: grid; grid-template-columns: repeat(18, 1fr); grid-template-rows: repeat(18, 1fr); }
+.region-grid button, .geographic-chooser .region-hit { min-width: 0; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.geographic-chooser .region-hit { position: absolute; }
+.region-grid button:disabled, .geographic-chooser .region-hit:disabled { opacity: 1; cursor: default; }
+.region-grid button:not(:disabled):hover, .geographic-chooser .region-hit:not(:disabled):hover { background: #ffffff30; }
+.region-grid button:focus-visible, .geographic-chooser .region-hit:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+.geographic-chooser .region-hit:disabled { background: #0004; }
 .region-description { flex: 1; min-width: min(250px, 100%); max-width: 440px; }
 
 .terrain-design { position: relative; overflow: hidden; width: min(100%, 704px); aspect-ratio: 352 / 304; background: #bcbcbc; }

@@ -1,3 +1,4 @@
+import { readRegionArtwork, type RegionArtwork } from '../formats/region-artwork';
 import { rasterImage } from '../render/raster-image';
 import { tileAtlas, miniTileAtlas, readPalette, type Raster } from '../formats/graphics';
 import { readPreviewMarkers, type PreviewMarkers } from '../formats/preview-markers';
@@ -13,7 +14,7 @@ import { decodeVoc } from '../formats/voc';
 import type { GameSound } from '../simulation/events';
 import { readSetupMap, readScenarioChooserData, type ScenarioChooser, type SetupLocation } from '../formats/new-farm';
 
-export interface RegionAssets extends ScenarioChooser { locations: SetupLocation[]; screen: HTMLImageElement }
+export interface RegionAssets extends ScenarioChooser { locations: SetupLocation[]; artwork: RegionArtwork }
 export interface TerrainPreviewAssets { screen: HTMLImageElement; miniature: Raster; markers: PreviewMarkers }
 export async function loadTerrainPreviewAssets(signal: AbortSignal): Promise<TerrainPreviewAssets> {
   const binary = (path: string) => response(path, signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b));
@@ -23,15 +24,15 @@ export async function loadTerrainPreviewAssets(signal: AbortSignal): Promise<Ter
   return { screen, miniature: miniTileAtlas(miniature, readPalette(palette)), markers: readPreviewMarkers(font) };
 }
 export async function loadRegionAssets(signal: AbortSignal): Promise<RegionAssets> {
-  const [map, metadata, screen] = await Promise.all([
+  const [map, metadata, screen, palette] = await Promise.all([
     response('raw/scenario.odt', signal).then(r => r.arrayBuffer()).then(b => readSetupMap(new Uint8Array(b))),
     response('new-farm-setup.json', signal).then(r => r.json()).then(readScenarioChooserData),
-    image('scenario.png', signal),
+    response('raw/scenario.int', signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b)),
+    response('raw/scenario.pal', signal).then(r => r.arrayBuffer()).then(b => readPalette(new Uint8Array(b))),
   ]);
-  if (screen.naturalWidth !== 640 || screen.naturalHeight !== 480 ||
-    [...metadata.farms, metadata.initialLocation].some(p => !map.locations[p.y * 18 + p.x].selectable))
+  if ([...metadata.farms, metadata.initialLocation].some(p => !map.locations[p.y * 18 + p.x].selectable))
     throw new Error('Invalid region map assets');
-  return { ...metadata, locations: map.locations, screen };
+  return { ...metadata, locations: map.locations, artwork: readRegionArtwork(screen, palette) };
 }
 
 export interface Catalog {

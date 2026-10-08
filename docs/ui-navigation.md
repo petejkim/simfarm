@@ -33,3 +33,10 @@ Open **New farm**, choose the session/seed/year settings and **Design your own**
 
 
 Geographic setup now preserves the original preliminary generation for numbered farms and the separate second generation for unmarked regions. Water toggles are disabled in region mode; fresh geography starts with the original river flag, retained restart clears it, and geographic rainfall does not directly rewrite retained soil. Fresh numbered farms now allow the Map seed control because discarded terrain still advances RNG, while their saved dates remain unchanged. Older native saves missing terrain history must choose **Start fresh session** for any chooser outcome; **Load farm** can still import an original SSM into the retained session.
+
+
+## Original geographic panel
+
+Open **New farm → Use region map**. Yellow outlined squares represent the eight supplied farms; the selected region and scenario number appear in readable text beside/below the panel. **Use This Region** starts that choice. **Design Your Own** on the original panel goes straight to the terrain preview with the selected climate. Arrow/Home/End navigation still works on the map, and all four actions accept keyboard activation.
+
+**Load a Saved Game** opens the same browser file picker as **Load farm**, closing setup first. Checkpoints restore exactly; original SSMs currently follow the established in-game import. **Quit** closes setup and pauses the existing farm so it remains available to save/resume. **Cancel** retains its existing behavior. These browser actions are stated in the visible help text; they do not claim the original result1 startup-load or DOS exit lifecycle. Full source artwork/markers/bars are rendered at their original pixel relationships and scale down without horizontal overflow. Source evidence, native adaptations and remaining original UI work are in scenario-selection.md.

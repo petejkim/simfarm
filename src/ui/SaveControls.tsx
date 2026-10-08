@@ -1,15 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { loadScenarioAssets, loadGeneratedTiles, type GameAssets } from '../assets/game-assets';
 import { MAX_SAVE_BYTES } from '../formats/native-save';
 import { GameSimulation } from '../simulation/game';
 
 export interface LoadedFarm { scenarioId: number | null; simulation: GameSimulation; tiles: HTMLImageElement }
 
-export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad }: {
+export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, fileInput }: {
   simulation: GameSimulation; scenarioId: number | null; assets: GameAssets; loaded: boolean;
-  onLoad: (farm: LoadedFarm) => void;
+  onLoad: (farm: LoadedFarm) => void; fileInput?: RefObject<HTMLInputElement | null>;
 }) {
-  const input = useRef<HTMLInputElement>(null), pending = useRef<AbortController | null>(null);
+  const localInput = useRef<HTMLInputElement>(null), pending = useRef<AbortController | null>(null);
+  const input = fileInput ?? localInput;
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(loaded ? 'Farm loaded.' : '');
   useEffect(() => () => pending.current?.abort(), []);
   function save() {

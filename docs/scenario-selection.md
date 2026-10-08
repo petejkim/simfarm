@@ -47,10 +47,39 @@ Five tests cover source instructions/hashes, scanline/plane/bit order, first/las
 
 ## Live native region selection
 
-**New farm → Use region map** displays the corrected original map with React buttons over the18×18 grid. Raw ODT provides178 selectable cells; imported EXE metadata provides eight numbered markers and the initial cell2/8. Generated metadata is validated for shape, exact ordered IDs and coordinate bounds; loaded images must be640×480 and all marker/default cells must be selectable. No source files are changed.
+**New farm → Use region map** now displays the full original chooser panel. React buttons cover its18×18 map and four original actions; imperative pixel composition stays in `src/render/region-chooser.ts`. Original INT/palette files load directly from reproducibly imported raw assets. `readRegionArtwork` reuses the verified INT decoder and keeps palette indices for selection inversion. The native crop is `(80,16,472,328)`, including the complete frame; this crop/scaling is a browser presentation choice, not a new source screen resolution.
 
-An unmarked cell sets the three climate indices used by canonical `GameSimulation.createNew`; river/lake, seed and year remain editable. A marked cell uses `loadScenarioAssets` and `GameSimulation.openRegion`: the recovered post-load setup replaces climate with the selected presets, assigns40000 cash, reconstructs the type0 origin town and assigns its active development site before normal cold weather/traffic initialization. The saved calendar is retained. Direct supplied-file imports retain their separate native constructor path; native checkpoint restores never replay this setup. Selection alone changes only React form state. Creation/load publishes the replacement only after successful asset loading; failures and cancellation retain the current session. No save schema changes; the post-load setup correction is documented separately.
+The eight yellow outlined cells open supplied farms; other selectable cells create a new landscape. Accessible labels and the status text retain scenario numbers, but invented on-map number labels/fills are removed. Source ODT still supplies178 selectable cells, and the initialized cell is2/8. Arrow keys skip unavailable cells along their axis; Home/End select the first/last selectable location. Roving focus, hover highlights and scalable hit areas are browser accessibility additions. Native selection uses the full ODT mask rather than reproducing the strict original mouse-edge inequalities.
 
-**Design your own** returns to manual climate controls. Arrow keys skip unavailable cells along their axis without wrapping; Home/End select the first/last selectable cell. Roving focus, scalable buttons and an18-row image crop are native accessibility/presentation adaptations, not a claim of exact DOS held-button or pixel hit-bound behavior. Source strict Y<320 is documented above; native selection uses the ODT mask. The numbered labels are native controls over original artwork. No title sequence, terrain preview/reroll or exact in-process warm restart is claimed.
+Both geographic outcomes use the preliminary-generation/finalization compositions documented in [terrain-preview.md](terrain-preview.md). Numbered selection preserves loaded date/default-crop/history branch distinctions; unmarked selection performs its second generation with retained soil/water. Restart is the default; fresh setup is explicit. Selection alone changes React state without advancing RNG. Asset failures and cancellation leave the old farm intact. Checkpoints never replay chooser startup.
 
-A metadata boundary test and four browser flows cover source climate/default selection, keyboard/mobile layout, full generated checkpoint/next-day equality, all eight supplied-farm checkpoints, bad metadata, missing assets, retry and cancellation during both map and preset loading. The mobile screenshot was inspected. Original scenario expectations load each farm's own crop files, including almonds; using the generated-farm16-crop fixture was corrected after the initial browser run. Exact original loaded-scenario initialization and warm restart remain the next source investigations.
+### Recovered graphics helpers
+
+| Source | Recovered rendering |
+| --- | --- |
+|31dc5..31e01 →0863:0532/filead62 | Eight rectangles in palette color1, at `(248+16*x,40+16*y)` through `(264+16*x,56+16*y)` |
+|31e03..31e29;32077..320f2 →0863:04a0/fileacd0 | Selection rectangle XORs all four palette-index bits; repainting the previous rectangle removes it |
+|ad1b/ad30 →0416:059f/file68ff | Horizontal XOR uses left/right edge masks; right endpoint excluded |
+|ad45/ad5a →0416:0411/file6771 | Vertical XOR includes both endpoints (`67ef..67f3`) |
+|3fb85..3fbc5;3fcb1..3fcf8 | Both video-mode initializers build left masksff,7f,… and right masks00,80,c0,…; this establishes the horizontal right-edge exclusion |
+|31f53..31f98 →0636:1bb4/filea114 | Bars atx120,y101/149/197, width96, height10; value32*level, background palette12 and fill palette6 |
+|a180/a1a1 →0416:137f/file76df | Solid fill truncates both horizontal edges to8-pixel byte boundaries; all geographic widths are already aligned |
+
+Draw markers first, then XOR selection, then climate bars over the original indexed image. Reconstruct from the immutable base on each selection; do not invert already scaled RGB or accumulate browser drawing artifacts. XORing horizontal and vertical lines twice at the left corners leaves those corner pixels unchanged. The right corners invert once because horizontal lines exclude their right endpoint. This visible source endpoint convention is preserved, not classified as a proven game defect.
+
+The same solid-fill trace corrected the custom screen's native visual bar widths: `27*level` clamped to80 becomes0/24/48/80 visible pixels after byte alignment. Previously the browser used0/27/54/80. This is a native drawing correction, with no simulation/settings/save change; see [terrain-preview.md](terrain-preview.md).
+
+### Original actions and browser boundaries
+
+| Action | Source hit rectangle/branch | Live browser behavior |
+| --- | --- | --- |
+|Use this region | strict96<X<237,232<Y<256;3222c..32392 | Submit validated options through numbered/unmarked canonical setup |
+|Design your own | strict96<X<237,256<Y<280;3216e..32228 | Open the canonical custom preview directly, keeping selected climate; final acceptance remains Play |
+|Load a saved game | strict96<X<237,280<Y<305;32396..32472 | Close setup and open the existing browser Load farm picker; native checkpoints restore exactly and SSM files use the established in-game import |
+|Quit | strict96<X<237,304<Y<328;32474..3252a | Close setup and pause the current farm; do not discard it or attempt to terminate the browser |
+
+DOM action areas follow the artwork including edge pixels. Source pressed-state/bevel animations and held-mouse timing are not yet reconstructed. The Load action is explicitly a browser bridge, **not** the source result1 startup path. Source3245a/3245f generates another map and selects sites before returning1 at32464, then proceeds through additional setup and later file selection. That caller sequence still needs complete audit/composition; it must not be applied to native checkpoints or conflated with in-game SSM transfer. Quit's pause/retain behavior is an explicit browser adaptation. The initial native session/seed/year form, original startup/title lifecycle and remaining menus/dialogs/reports are still unfinished.
+
+### Verification
+
+Three new unit cases pin source opcodes/hash, marker and XOR primitives, fill arguments and action branches; independently decode original pixel bits and compare every output pixel for all178 selectable regions; and exercise malformed/truncated artwork, palette, coordinates and levels plus offset buffers and source immutability. Three new Chromium flows compare live canvas pixels, test keyboard/direct custom entry, phone sizing, native checkpoint picker restoration, malformed files, Quit/pending cancellation and raw asset failures. Existing all-eight region tests now activate the original Use This Region button and compare canonical saved continuation. Desktop/mobile screenshots are inspected under ignored artifacts. Full gate results are recorded in progress.md.

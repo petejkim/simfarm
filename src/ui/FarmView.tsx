@@ -61,6 +61,7 @@ interface Props {
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
 export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange, onGameEvent, onFlightRunning }: Props) {
   const [newFarmOpen, setNewFarmOpen] = useState(false);
+  const loadInput = useRef<HTMLInputElement>(null);
   const load = useCallback(async (signal: AbortSignal) => {
     if (loaded) return loaded;
     if (id === null) throw new Error('Missing generated farm state');
@@ -162,7 +163,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     }
   }
   return <>
-    {simulation && <NewFarmControls assets={assets} simulation={simulation} open={newFarmOpen} onOpenChange={setNewFarmOpen} onCreate={onLoad} />}
+    {simulation && <NewFarmControls assets={assets} simulation={simulation} open={newFarmOpen} onOpenChange={setNewFarmOpen} onCreate={onLoad} onLoadFile={() => loadInput.current?.click()} />}
     <section className="toolbar">
       <div><label>Original farm <select id="scenario" value={id ?? 'generated'} onChange={e => onScenarioChange(Number(e.target.value))}>
         {id === null && <option value="generated" disabled>{snapshot?.scenario.origin === 'original' ? 'Imported farm' : 'Generated farm'}</option>}
@@ -182,7 +183,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
       </select></label><label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
       </select></label><button id="center" disabled={!data || Boolean(snapshot?.aircraftFlight)} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
-      {simulation && <SaveControls simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} />}
+      {simulation && <SaveControls fileInput={loadInput} simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} />}
     </section>
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     {data && snapshot && <FarmNavigation tool={mapTool} blocked={Boolean(snapshot.pendingTown || snapshot.finances.defaultDecision || snapshot.aircraftFlight)} onNavigate={navigate} />}

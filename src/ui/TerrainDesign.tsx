@@ -39,7 +39,7 @@ export function TerrainDesign({ draft, assets, onPlay, onCancel, error }: {
         const change = (level: number) => run(() => draft.setSettings({ ...settings, climate: { ...settings.climate, [channel]: level } }));
         return <div key={channel}>
           <div className="terrain-level terrain-level-background" style={position(160, y, 80, 10)} aria-hidden="true" />
-          <div className={`terrain-level terrain-level-${channel}`} style={position(160, y, Math.min(80, value * 27), 10)} aria-hidden="true" />
+          <div className={`terrain-level terrain-level-${channel}`} style={position(160, y, Math.floor(Math.min(80, value * 27) / 8) * 8, 10)} aria-hidden="true" />
           <button type="button" className="terrain-hit" style={position(140, y - 3, 15, 16)} aria-label={`Decrease ${label.toLowerCase()}`}
             disabled={closed || value === 0} onClick={() => change(value - 1)} />
           <input id={`terrain-${channel}`} className="terrain-range" style={position(158, y - 3, 84, 16)} type="range" min={0} max={3} step={1}

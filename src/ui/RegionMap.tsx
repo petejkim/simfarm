@@ -1,11 +1,21 @@
-import { useRef, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent } from 'react';
 import type { RegionAssets } from '../assets/game-assets';
+import { paintRegionChooser, renderRegionChooser, REGION_PANEL } from '../render/region-chooser';
+
+const position = (x: number, y: number, width: number, height: number): CSSProperties => ({
+  left: `${(x - REGION_PANEL.x) / REGION_PANEL.width * 100}%`, top: `${(y - REGION_PANEL.y) / REGION_PANEL.height * 100}%`,
+  width: `${width / REGION_PANEL.width * 100}%`, height: `${height / REGION_PANEL.height * 100}%`,
+});
 
 /** Source grid covers pixels248..535,40..327 of scenario.int. DOM buttons
- * handle selection; cropped original pixels remain presentation only. */
-export function RegionMap({ assets, selected, disabled, onSelect }: {
-  assets: RegionAssets; selected: number; disabled: boolean; onSelect: (index: number) => void;
+ * handle selection; original pixels remain presentation only. */
+export function RegionMap({ assets, selected, disabled, unavailable, onSelect, onDesign, onLoad, onQuit }: {
+  assets: RegionAssets; selected: number; disabled: boolean; unavailable: boolean; onSelect: (index: number) => void;
+  onDesign: () => void; onLoad: () => void; onQuit: () => void;
 }) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const raster = useMemo(() => renderRegionChooser(assets.artwork, assets.farms, assets.locations[selected]), [assets, selected]);
+  useEffect(() => { if (canvas.current) paintRegionChooser(canvas.current, raster); }, [raster]);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   function navigate(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     const direction = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
@@ -25,19 +35,21 @@ export function RegionMap({ assets, selected, disabled, onSelect }: {
     }
     onSelect(next); buttons.current[next]?.focus();
   }
-  return <div className="region-map" id="region-map" role="group" aria-label="Original region map" aria-describedby="region-map-help">
-    <img src={assets.screen.src} alt="" draggable={false} />
-    <div className="region-grid">
+  return <div className="geographic-chooser" id="geographic-chooser" role="group" aria-label="Select a region" aria-describedby="region-map-help">
+    <canvas ref={canvas} id="region-artwork" width={REGION_PANEL.width} height={REGION_PANEL.height} aria-hidden="true" />
+    <div className="region-grid" id="region-map" style={position(248, 40, 288, 288)} role="group" aria-label="Original region map">
       {assets.locations.map((p, index) => {
         const farm = assets.farms.find(f => f.x === p.x && f.y === p.y);
         const label = `Region ${p.x + 1}, ${p.y + 1}${farm ? ` · Scenario ${farm.id + 1}` : ''}`;
         return <button key={index} ref={el => { buttons.current[index] = el; }} type="button"
           data-region={`${p.x},${p.y}`} disabled={disabled || !p.selectable} tabIndex={index === selected ? 0 : -1}
           aria-label={label} aria-pressed={index === selected} title={p.selectable ? label : 'Unavailable region'}
-          className={farm ? 'region-preset' : ''} onClick={() => onSelect(index)} onKeyDown={e => navigate(e, index)}>
-          {farm ? <span aria-hidden="true">{farm.id + 1}</span> : null}
-        </button>;
+          className={farm ? 'region-preset' : ''} onClick={() => onSelect(index)} onKeyDown={e => navigate(e, index)} />;
       })}
     </div>
+    <button id="region-use" className="region-hit" style={position(96, 232, 141, 24)} type="submit" aria-label="Use this region" disabled={disabled || unavailable} />
+    <button id="region-design" className="region-hit" style={position(96, 256, 141, 24)} type="button" aria-label="Design your own" disabled={disabled || unavailable} onClick={onDesign} />
+    <button id="region-load" className="region-hit" style={position(96, 280, 141, 25)} type="button" aria-label="Load a saved game" disabled={disabled} onClick={onLoad} />
+    <button id="region-quit" className="region-hit" style={position(96, 305, 141, 24)} type="button" aria-label="Quit setup" onClick={onQuit} />
   </div>;
 }

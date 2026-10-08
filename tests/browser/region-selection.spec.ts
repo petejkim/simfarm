@@ -53,7 +53,7 @@ test('all eight map markers apply original post-load climate and town setup whil
     await openMap(page); await page.locator(`[data-region="${x},${y}"]`).click();
     await expect(page.locator('#region-selection')).toContainText(`Scenario ${id + 1}`);
     await expect(page.locator('#new-farm-year')).toBeDisabled(); await expect(page.locator('#create-farm')).toHaveText(`Open Scenario ${id + 1}`);
-    await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText(`Scenario ${id + 1} · original terrain`);
+    await page.locator('#region-use').click(); await expect(page.locator('#map-status')).toHaveText(`Scenario ${id + 1} · original terrain`);
     const world = readScenario(source(`SCEN${id}.SSM`));
     const crops = world.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
     const expected = GameSimulation.openGeographicRegion(world.sourceBytes!, locations[y * 18 + x], { visual: 9029, simulation: 9029, bounded: 9029 }, { ...newFarmAssets, crops });
@@ -64,11 +64,11 @@ test('all eight map markers apply original post-load climate and town setup whil
 test('region asset failures allow custom creation or retry, and cancelled preset loads cannot replace the farm', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   const before = await save(page, 'failure-before');
-  await page.route('**/assets/scenario.png', route => route.fulfill({ status: 404, body: '' }));
+  await page.route('**/assets/raw/scenario.int', route => route.fulfill({ status: 404, body: '' }));
   await page.locator('#new-farm').click(); await page.locator('#choose-region').click();
-  await expect(page.locator('#region-error')).toContainText('scenario.png'); await expect(page.locator('#create-farm')).toBeDisabled();
+  await expect(page.locator('#region-error')).toContainText('scenario.int'); await expect(page.locator('#create-farm')).toBeDisabled();
   await page.locator('#design-farm').click(); await expect(page.locator('#create-farm')).toBeEnabled();
-  await page.unroute('**/assets/scenario.png'); await page.locator('#choose-region').click(); await expect(page.locator('#region-map')).toBeVisible();
+  await page.unroute('**/assets/raw/scenario.int'); await page.locator('#choose-region').click(); await expect(page.locator('#region-map')).toBeVisible();
   await page.locator('[data-region="15,8"]').click();
   await page.route('**/assets/raw/SCEN7.SSM', route => route.fulfill({ status: 404, body: '' }));
   await page.locator('#create-farm').click(); await expect(page.locator('#new-farm-error')).toContainText('SCEN7.SSM');

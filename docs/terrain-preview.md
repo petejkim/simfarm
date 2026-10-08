@@ -79,3 +79,8 @@ Five new unit cases pin source branch/counter bytes and cover both generations, 
 ## Integration still required
 
 Custom result0, numbered result2 and unmarked result3 are composed; other chooser return paths/callbacks and setup effects still need audit. The initial session/seed/date form and atomic replacement are native extensions. Native checkpoints do not serialize an open draft. Exact mouse/window/interrupt timing, original startup presentation and remaining menus/dialogs/reports remain unfinished. No DOS emulator or supplied-file modifications are used.
+
+
+## Chooser graphics follow-up
+
+The geographic panel now uses the complete original artwork, source yellow markers, palette-index XOR selection and blue32*level bars; see [scenario-selection.md](scenario-selection.md). Its Design Your Own button enters the existing canonical draft directly. The traced shared solid-fill primitive0416:137f/file76df truncates both horizontal edges to8-pixel byte boundaries at775d..7767. This corrects the custom panel's earlier native visual widths from0/27/54/80 to0/24/48/80; settings and generation are unchanged. Tests pin these source instructions and inspect the live scaled width. Native checkpoint restoration and the original chooser result1 file-load path remain distinct; the latter is still pending composition.
