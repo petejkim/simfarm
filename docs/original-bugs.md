@@ -931,3 +931,7 @@ Helper0x1454e reads chemical byte9 and computes band3−(byte9>>6), while its pr
 ### SF-059 weekly equipment follow-up
 
 Weekly0xc016 increments processed count even after sale deletes an equipment record;0xc023 compares against the reduced active count. Two initially active worn-out machines can therefore leave the second unprocessed. Native weekly aging visits the bounded initial active list, matching the existing animal/default traversal correction. Tests age/sell every original machine across all eight farms without skipping later slots.
+
+### SF-083/084/085/095 follow-up — manual equipment purchases
+
+The shared purchase/placement routines also serve machinery types0..7. Direct source tracing confirms the same destructive pre-placement clearing (0x1cb42/0x24224), multi-cell cash-equality rejection (0x22464), and origin-only ownership check (0x22473/0x24ad5). These are not building-only paths. Native equipment purchases retain equality/ownership quirks and preflight allocation, terrain and storage before cash/record/clearing changes. The equipment allocator0xf8be is explicitly bounded to slots1..126 and returns0 when full; unlike SF-081, a full equipment table reaches generic zero-allocation refund. For equipment category0..63 that category0 refund uses the same expense account. No separate equipment refund-category drift or security vulnerability is inferred. Ground and rotated-storage rejection/continuation tests cover the native policy; original defects remain documented.

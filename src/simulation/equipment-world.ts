@@ -14,7 +14,7 @@ export interface EquipmentRuntime {
 const s8 = (n: number) => n << 24 >> 24;
 const inMap = (x: number, y: number) => x >= 0 && y >= 0 && x < 96 && y < 96;
 // Initialized tile-base table 6190:085e, indexed by definition +0 (not by equipment type).
-const graphicBases: Readonly<Record<number, number>> = { 40: 848, 42: 852, 44: 856, 50: 868, 52: 860, 54: 876, 71: 892, 72: 896, 82: 1028 };
+export const EQUIPMENT_GRAPHICS: Readonly<Record<number, number>> = { 40: 848, 42: 852, 44: 856, 50: 868, 52: 860, 54: 876, 71: 892, 72: 896, 82: 1028 };
 
 export function equipmentChain(head: EquipmentRecord, world: EquipmentWorld): EquipmentRecord[] {
   const result = [head], visited = new Set([head.slot]);
@@ -27,7 +27,7 @@ export function equipmentChain(head: EquipmentRecord, world: EquipmentWorld): Eq
 }
 
 export function equipmentImage(e: EquipmentRecord, world: EquipmentWorld, direction = e.direction, frame = e.bytes[42]): number {
-  const def = world.equipmentDefinitions[e.type], base = graphicBases[def.graphic];
+  const def = world.equipmentDefinitions[e.type], base = EQUIPMENT_GRAPHICS[def.graphic];
   if (base === undefined) throw new Error('Unsupported equipment graphic');
   return base + s8(def.width) * s8(def.height) * (s8(def.bytes[10]) * (direction >> 1) + s8(frame));
 }
