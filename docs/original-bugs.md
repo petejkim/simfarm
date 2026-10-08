@@ -862,3 +862,15 @@ Direction helper `0x128b8` compares origin−target signs with eight nonzero dir
 ### SF-059 animal-frame implementation follow-up
 
 Native `advanceAnimalFrame` visits the bounded initial active slots once. Death of an early slot no longer suppresses later slots in the same frame. A two-animal regression verifies both care/deletion calls and exact definition-count cleanup. This intentionally corrects the skipped-tail behavior while retaining the original16-tick gate,320-tick herd refresh and movement-before-care order.
+
+## SF-101 — trough refill discards unused reservoir contents
+
+**Status:** verified helper mutation; production/capacity and live refill integration pending; native fix deferred.
+
+Empty-trough refill at0xc2e0 requests64 from helper0x1a244 and doubles its return into inventory quantity. The helper finds active type72 buildings with nonzero word+10. At0x1a29e it caps its returned total to the requested amount, but0x1a2a5 unconditionally clears the entire supplying building's word+10 instead of subtracting the amount actually delivered. Thus a reservoir containing more than the remaining request loses its surplus. This is direct instruction evidence; the production routine and normal reachable contents still need tracing before quantifying ordinary gameplay loss. No security claim is made. Native automatic refills are not implemented yet; revisit partial withdrawal, source arithmetic and open-interior repaint together when implementing them.
+
+## SF-102 — supply purchases have no matching expense category
+
+**Status:** verified accounting omission/quirk; intent unresolved; native preserves cash-only posting.
+
+The ground feed/water handlers call generic purchase0x1cb42 with definition type300/299. Debit0x1c88e subtracts cash and dispatches expense categories at0x1c900..0x1ca20; neither type matches any category. Allocation0x3a468..0x3a4c8 increments goods counts without another expense posting. Successful supplies therefore reduce cash without directly increasing annual expenses in this transaction. This is not proof of an unintended original bug: later lifecycle/report treatment remains incomplete. Native purchase preserves the verified behavior and tests unchanged annual/statistical ledgers. Any accounting correction is deferred pending that wider evidence.
