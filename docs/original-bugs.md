@@ -988,3 +988,26 @@ Native field/building removal requires an explicit confirmation command against 
 Status: verified original visual quirks, retained natively; no security implication. Confidence high on branch conditions, with no claim that an isolated straight tile must have a different intended image.
 
 Neighbor repair0x25398 snapshots the nearby connection types, then obtains each neighbor's own mask. Zero masks skip repaint at0x2541e/0x2548f/0x25503/0x25576; the exact first test0x2541e is pinned. Fixed-orientation table flag0x20 also prevents rewriting gates, valves and crossings. Removing the only connection therefore retains the neighbor's old graphic. The manual handler repairs fences only for177..187 at0x26468..0x2649e. Gate188..191 is accepted for removal earlier but never enters a fence repair call, so adjacent fence images remain unchanged. Native removal preserves both asymmetries; a future visual enhancement may deliberately recompute these images after comparing expected original appearance.
+
+
+## SF-114 — map movement accepts aircraft that the ground dispatcher never advances
+
+Status: verified handler/dispatcher mismatch; native rejects aircraft ground orders and retains dedicated flight controls. Confidence high on source control flow; exact original cursor availability over parked aircraft has not been measured in DOS.
+
+Equipment point finder0xf7fe tests active32 and the footprint without a type filter. Pickup0x13712/drop0x13c7e reject flags3, not type8; successful drop sets moving2, relocation state1 and manual0800 through0x13d5a/0x13d66. Dispatcher0x14c38 compares the type against7 and skips greater values, leaving type8 outside both driving and towing branches. If this normal map action is invoked on an idle parked plane, that order cannot advance through this dispatcher. No security implication or broader aircraft failure is claimed. Native preflight rejects the action before altering the aircraft/home/map; its existing manual-flight path remains available. Tests pin the type limit and exercise aircraft point selection/rejection.
+
+## SF-115 — automatic equipment allocation can supersede a manual movement order
+
+Status: verified original allocation semantics retained; whether this is an intended work-priority rule or a gameplay defect is unresolved. Confidence high; no security implication.
+
+Manual drop0x13d47/0x13d66 sets moving2/manual0800 but not reserved1. Owned allocator0x1162f tests only low flags09 (reserved1/fieldWork8), alongside rental64, condition and attachment checks. It does not reject moving2 or high manual0800. A healthy, owned, manually moving machine can therefore be selected for farm work before completing its manual trip. Native preserves these rules, with a test checking availability immediately after each ground-type order. Revisit only as a deliberate gameplay enhancement or if another original caller-level exclusion is found; do not silently turn manual movement into an exclusive reservation.
+
+## SF-116 — trough relocation has unchecked selection and early withdrawal branches
+
+Status: source hazards documented; native trough relocation is not yet implemented, fixes deferred to its reconstruction. Confidence high on the direct branches, conditional on reachable inconsistent map/storage states for the missing-slot case. No exploit is established.
+
+Trough pickup0x13a50 calls the inventory point finder without testing for a zero result, unlike the adjacent seed/harvest/feed branches. If a trough graphic exists without a matching inventory record, later coordinate/quantity accesses use the captured zero slot. The same pickup calls storage removal0x1aeb0 at0x13a91 before any destination has been accepted, so cancellation or repeated invalid drops can leave the original storage state changed. Drop0x14188 accepts ground15..31 but omits the terrain0800 occupancy guard present for feed/chemicals/seed/harvest. This can repaint ground beneath a masked occupant. Exact cancellation recovery outside this handler and ordinary-game reachability of inconsistent trough states remain to be traced. Future native relocation should validate a matching active record and stage source withdrawal until an accepted drop; retain the source behavior/evidence here after fixing it.
+
+### SF-011 manual equipment movement update
+
+Manual movement preflight validates every cell of the rotated source footprint against both equipment type and slot before withdrawal, then checks destination ownership and source identity without mutation. Tests exercise all original stored machines and a deliberately mismatched second footprint cell. Native rejects malformed storage atomically; no new claim about original loader exploitability is made.
