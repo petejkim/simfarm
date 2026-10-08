@@ -9,26 +9,29 @@ const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}
 const entries = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
 const palette = readPalette(entries.find(e => e.name === 'simfarm.pal')!.bytes);
 
-test('all flight sprite pixels and atlas frames match fingerprinted original mask and colour planes', () => {
-  for (const [name, offset, count, hash] of [
-    ['airplane.spr', 1720736, 8, '96596a523c83b3988d751afd4bd84575ecd8c7e244e6ea32a3c09cedea1011d9'],
-    ['apshadow.spr', 1725866, 8, 'b2d31dfc6a40db9e50a8e08df1e2b776ee1f1371dbb0c52996b54f526a64a93f'],
-    ['cropdust.spr', 1783826, 2, 'da48747a817847977b8936bce384b0e545b672073f6b4087699099ff59476848'],
+test('all flight/disaster sprite pixels and atlas frames match fingerprinted original mask and colour planes', () => {
+  for (const [name, offset, count, width, height, hash] of [
+    ['airplane.spr', 1720736, 8, 32, 32, '96596a523c83b3988d751afd4bd84575ecd8c7e244e6ea32a3c09cedea1011d9'],
+    ['apshadow.spr', 1725866, 8, 32, 32, 'b2d31dfc6a40db9e50a8e08df1e2b776ee1f1371dbb0c52996b54f526a64a93f'],
+    ['cropdust.spr', 1783826, 2, 32, 32, 'da48747a817847977b8936bce384b0e545b672073f6b4087699099ff59476848'],
+    ['tornado.spr', 1785116, 4, 48, 48, 'ac8960867e84acd422ea9e6ffd26a77e63f5af65f748b83c86011231f6fdb2f7'],
+    ['swarm.spr', 1790886, 4, 64, 40, '9217f7d2e3896e2072f36fd4c4e544d989009ad185ce40787478b914e8a67603'],
   ] as const) {
     const entry = entries.find(e => e.name === name)!, bytes = entry.bytes, before = Uint8Array.from(bytes);
-    assert.equal(entry.offset, offset); assert.equal(bytes.length, 10 + count * 640);
+    const planeSize = width * height / 8, frameSize = planeSize * 5;
+    assert.equal(entry.offset, offset); assert.equal(bytes.length, 10 + count * frameSize);
     assert.equal(createHash('sha256').update(bytes).digest('hex'), hash);
     const { frames, edgeMask, flags } = readSprite(bytes, palette), atlas = spriteAtlas(bytes, palette);
     assert.equal(edgeMask, 255); assert.equal(flags, 1); assert.equal(frames.length, count);
-    assert.deepEqual([atlas.width, atlas.height], [count * 32, 32]);
+    assert.deepEqual([atlas.width, atlas.height], [count * width, height]);
     for (let frame = 0; frame < count; frame++) {
-      assert.deepEqual([frames[frame].width, frames[frame].height], [32, 32]);
-      for (let pixel = 0; pixel < 1024; pixel++) {
-        const at = 10 + frame * 640 + Math.floor(pixel / 8), bit = 2 ** (7 - pixel % 8);
-        const colour = [1, 2, 3, 4].reduce((n, plane) => n + (bytes[at + plane * 128] & bit ? 2 ** (plane - 1) : 0), 0);
+      assert.deepEqual([frames[frame].width, frames[frame].height], [width, height]);
+      for (let pixel = 0; pixel < width * height; pixel++) {
+        const at = 10 + frame * frameSize + Math.floor(pixel / 8), bit = 2 ** (7 - pixel % 8);
+        const colour = [1, 2, 3, 4].reduce((n, plane) => n + (bytes[at + plane * planeSize] & bit ? 2 ** (plane - 1) : 0), 0);
         const expected = [...palette[colour], bytes[at] & bit ? 255 : 0];
         assert.deepEqual([...frames[frame].rgba.subarray(pixel * 4, pixel * 4 + 4)], expected);
-        const atlasPixel = (Math.floor(pixel / 32) * atlas.width + frame * 32 + pixel % 32) * 4;
+        const atlasPixel = (Math.floor(pixel / width) * atlas.width + frame * width + pixel % width) * 4;
         assert.deepEqual([...atlas.rgba.subarray(atlasPixel, atlasPixel + 4)], expected);
       }
     }

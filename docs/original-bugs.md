@@ -1071,3 +1071,17 @@ The post-clear repair chain0x26b30..0x26c58 handles road150..171, fence177..187 
 Status: native primitive rejects out-of-map/noninteger coordinates before access; original caller reachability still unproven. Confidence high on direct indexing, conditional on unsafe coordinates being supplied. No demonstrated security vulnerability.
 
 Entry0x265a8..0x265b1 calculates16-bit `x*96+y`, doubles it and reads the map without a local bounds check. Individual disaster callers may constrain their coordinates; those constraints still require complete tracing. Native accepts only integer coordinates0..95 and leaves state unchanged on rejection. Tests include negative,96,NaN and fractional inputs. Retain this entry and revisit each dispatcher caller rather than inferring a reachable overflow from the helper alone.
+
+Moving-caller update: tornado0x3746f clamps its origin to0..95, but0x37482 damages `(x+1,y+2)` without another clamp. An edge origin can therefore pass96/97; the native moving test exercises that exact state and rejects the damage while retaining movement/RNG. Swarm bounds are field origin..origin+5, followed by offsets up to2; ordinary8×8 fields fit, but narrow edge records need the same native guard. A complete natural RNG/trigger route to a DOS edge origin has not been established, so exploitability remains unclaimed.
+
+## SF-126 — random field selection doubles the first ordinal and excludes the last
+
+Status: verified selection bias retained in native moving-disaster primitives. Confidence high on bounded RNG and selector instructions; intended distribution is unknown. No security implication.
+
+Field selector0x1b802 calls bounded RNG0x8273 with the active count, then replaces zero with1 at0x1b827..0x1b82b. The subsequent active-record scan uses a1-based ordinal. The RNG yields0..count−1, so results0 and1 both select the first active field, while the last active field cannot be selected when count>1. Swarm start0x36bb6 and crop-circle start0x36736 both call this helper. Native swarm retains the bias but scans a bounded actual active list, avoiding the source's unbounded scan if a global count is inconsistent. Tests cover256 bounded seeds and sparse slots1/5/97, with only1/5 selected. Crop-circle integration remains pending.
+
+## SF-127 — disaster restart retains animation phase and tornado frame clock
+
+Status: verified retained-state behavior, preserved natively; whether intentional continuity or a defect is unresolved. Confidence high on complete start/stop branch writes; no security implication.
+
+Tornado start0x36874..0x369bb sets position, directions and start tick69a2 but does not write frame6998 or last-frame tick699a. Swarm start0x36bac..0x36ce7 writes position, field and both clocks69a8/69b0 but leaves frame69a6 and direction bytes unchanged. Stop branches clear flags/menu checks without resetting these fields. A restarted effect can therefore damage sooner than four fresh frame iterations, and a tornado may advance immediately when its old frame clock is sufficiently distant. Native retains those fields and tests restart phase/clock behavior instead of resetting them for convenience.
