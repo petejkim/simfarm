@@ -123,3 +123,9 @@ Native statistics/save validation now accepts the full byte range0..255 for this
 ## Pointer and vocal delivery now live
 
 [animal-input-audio.md](animal-input-audio.md) documents map-coordinate conversion, bounded transient simulation input, zoom/scroll/exit handling, original vocal assets and event playback. Source-based weekly and collision-recovery voices now use Enable sounds independently of MIDI. SF-108 records an uninitialized original pointer-local path; native outside-map input uses the defined absent-window fallback. Earlier pointer/audio-pending paragraphs are historical. Original audio arbitration, equipment/chemical aging and other systems remain unfinished.
+
+## Next weekly-phase dependencies
+
+Weekly0xbf02 starts with equipment: active records increment word+18 at0xbf2f. Above4,0xbf43 invokes the existing wear helper0x11972 with amount1, then resets that word to0. Condition255 and rental flag64 clear lead to generic action2 at0xbf8c; resident stub0x28042 selects overlay27 entry0x0fcc (file0x4c41c), the already-recovered asset-sale routine. Its failure result skips the remaining destruction presentation. Successful outside-building removal also obtains the footprint, requests per-cell clearing and notice73. Before integration, verify stored/linked/busy equipment, financial credit and clearing order rather than assuming this is a free deletion.
+
+Building aging follows at0xc03a. Chemical records then run0xc110..0xc13d: active flag32 at record+2, word+10 increment at0xc120, byte+9 increment at0xc125, both wrapping. Segment pointerDS:c674 initializes2d9f, confirming the20-byte record baseedbe. Animal age follows at0xc14c. The chemical byte's consumers still need tracing before naming it. These equipment/chemical phases remain unimplemented; existing native v10 already retains their record bytes.
