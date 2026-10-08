@@ -923,3 +923,11 @@ Movement0x11bce initializes many stack locals but not words[bp−28]/[bp−2c]. 
 ### SF-104 equipment/chemical follow-up awaiting integration
 
 Equipment0xbf2f increments word+18 with16-bit wrap before comparing against4;65535 therefore becomes0 without wear. Ordinary weekly processing resets values above4, so this extreme input requires inconsistent/modified state. Chemical0xc120 increments word+10 and0xc125 increments byte+9 without saturation, producing65535→0 and255→0. These operations and record offsets are verified; chemical-byte consumer semantics and ordinary visible consequences remain unresolved. Native equipment/chemical weekly integration and any intentional correction are deferred to the next increment. Do not classify these raw arithmetic facts as demonstrated exploits.
+
+### SF-104 chemical consumer and native primitive follow-up
+
+Helper0x1454e reads chemical byte9 and computes band3−(byte9>>6), while its price return and consumption0x146e0 do not scale by that byte. After256 weekly increments a retained chemical therefore regains the best condition band. Allocation0x14590 resets byte9 through word+8 but leaves word+10 unchanged, retaining a reused slot's prior age counter. These are verified arithmetic/initialization quirks with uncertain intent, not a demonstrated exploit or loss of treatment strength. The native weekly primitives preserve wrap and unknown bytes; any policy to saturate, expire or reset chemical age is deferred explicitly.
+
+### SF-059 weekly equipment follow-up
+
+Weekly0xc016 increments processed count even after sale deletes an equipment record;0xc023 compares against the reduced active count. Two initially active worn-out machines can therefore leave the second unprocessed. Native weekly aging visits the bounded initial active list, matching the existing animal/default traversal correction. Tests age/sell every original machine across all eight farms without skipping later slots.
