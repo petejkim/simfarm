@@ -1,3 +1,5 @@
+import type { ClimateTables } from '../formats/weather';
+import { finalizeRegionFarm } from './starting-environment';
 import { createColdMarket, loadMarketCropPrices, updateWeeklyMarket, type MarketState } from './market';
 import { createNewFarmState, type NewFarmAssets } from './create-farm';
 import { coldTrafficDefaults, createTrafficState, snapshotTraffic, type TrafficDefaults, type TrafficState } from '../formats/traffic';
@@ -266,7 +268,7 @@ export class GameSimulation {
   private lastHomesteadChange: HomesteadChange | null = null;
 
   constructor(scenario: Scenario, crops: readonly CropDefinition[], townLayouts: TownLayouts,
-    seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState) {
+    seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState, regionClimate?: ClimateTables) {
     if (!restored && scenario.origin !== 'original') throw new Error('Generated farms require initialized state');
     this.scenario = copyScenario(scenario);
     this.newFarm = restored?.newFarm ? structuredClone(restored.newFarm) : null;
@@ -299,6 +301,7 @@ export class GameSimulation {
       this.aircraftFlight = restored.aircraftFlight ? { ...restored.aircraftFlight, inputs: [...restored.aircraftFlight.inputs] } : null;
       this.animalFrame = { ...restored.animalFrame, herd: Uint8Array.from(restored.animalFrame.herd) };
     } else {
+      if (regionClimate) finalizeRegionFarm(this.scenario, this.finances, this.townLayouts, regionClimate);
       this.random = new FarmRandom(seeds);
       // Crop loading 0x466d0..0x46728 overrides saved crop/seed prices from the loaded definitions.
       this.cropMarketPrices = this.crops.map(c => c[34] | c[35] << 8);
@@ -312,6 +315,11 @@ export class GameSimulation {
       initializeStartingTraffic(this.traffic, { regionX: this.scenario.farm.townRegionX, regionY: this.scenario.farm.townRegionY }, this.random);
     }
     this.publish();
+  }
+
+  /** Original geographic preset selection includes post-load setup writes. */
+  static openRegion(scenario: Scenario, crops: readonly CropDefinition[], townLayouts: TownLayouts, climate: ClimateTables): GameSimulation {
+    return new GameSimulation(scenario, crops, townLayouts, undefined, undefined, climate);
   }
 
   /** Exact native checkpoint, including partial ticks. Does not mutate or advance the farm. */

@@ -1,3 +1,4 @@
+import { climateForSetup } from '../formats/new-farm';
 import { useEffect, useRef, useState } from 'react';
 import { loadGeneratedTiles, loadNewFarmAssets, loadRegionAssets, loadScenarioAssets, type GameAssets, type RegionAssets } from '../assets/game-assets';
 import { GameSimulation } from '../simulation/game';
@@ -45,9 +46,9 @@ export function NewFarmControls({ assets, open, onOpenChange, onCreate }: {
     setBusy(true); setError('');
     try {
       if (preset) {
-        const farm = await loadScenarioAssets(preset.id, controller.signal);
+        const [farm, setup] = await Promise.all([loadScenarioAssets(preset.id, controller.signal), loadNewFarmAssets(assets, controller.signal)]);
         controller.signal.throwIfAborted();
-        const simulation = new GameSimulation(farm.scenario, assets.catalog.crops, assets.townLayouts);
+        const simulation = GameSimulation.openRegion(farm.scenario, assets.catalog.crops, assets.townLayouts, climateForSetup(setup.climate, options.climate));
         if (!controller.signal.aborted) { onCreate({ scenarioId: preset.id, simulation, tiles: farm.tiles }); onOpenChange(false); }
         return;
       }
@@ -77,11 +78,11 @@ export function NewFarmControls({ assets, open, onOpenChange, onCreate }: {
           <div className="region-description">
             <p id="region-map-help">Choose a location. Numbered squares open original farms. Arrow keys move across selectable regions; Home and End jump to the first or last.</p>
             <p id="region-selection" role="status">Region {location!.x + 1}, {location!.y + 1} · {preset ? `Scenario ${preset.id + 1}` : 'New farm'}</p>
-            <p>{preset ? 'This original farm uses its saved land, climate and date.' : 'Start with $40,000, a homestead and nine plots, using this region’s climate.'}</p>
+            <p>{preset ? 'Uses this region’s climate, starts with $40,000 and rebuilds the starting town. The saved date is retained.' : 'Start with $40,000, a homestead and nine plots, using this region’s climate.'}</p>
           </div>
         </> : regionError ? <p id="region-error" role="alert">Could not load regions: {regionError} Use region map to retry, or Design your own.</p> : <p role="status">Loading regions…</p>}
       </div>}
-      <fieldset disabled={busy || Boolean(preset)}><legend>{preset ? 'Settings for a new farm (not used by this original farm)' : 'Landscape and climate'}</legend>
+      <fieldset disabled={busy || Boolean(preset)}><legend>{preset ? 'Region climate · other settings apply only to new farms' : 'Landscape and climate'}</legend>
         {(['precipitation', 'temperature', 'wind'] as const).map((channel, i) => <label key={channel}>
           {['Rainfall', 'Temperature', 'Wind'][i]} <select id={`new-farm-${channel}`} value={options.climate[channel]} disabled={regionMode}
             onChange={e => setOptions(o => ({ ...o, climate: { ...o.climate, [channel]: Number(e.target.value) } }))}>

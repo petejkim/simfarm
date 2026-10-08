@@ -1,3 +1,5 @@
+import type { ClimateTables } from '../formats/weather';
+import type { FinancialState } from '../formats/finance';
 import type { Scenario } from '../formats/scenario';
 import type { TownLayouts } from '../formats/town';
 import { validateCalendar, type FarmCalendar } from './calendar';
@@ -25,4 +27,23 @@ export function initializeStartingTown(world: Pick<Scenario, 'cells' | 'regional
   runtime.finances.town.activeSite = { ...site };
   runtime.raw.s4d9fFedd = 0;
   return result;
+}
+
+/** Geographic chooser return2 still passes through0x41032 climate loading,
+ *0x3f91b cash assignment and0x3fab0 town construction. This is not a native
+ *checkpoint restore or the in-game SSM file-load path. */
+export function finalizeRegionFarm(world: Scenario, finances: FinancialState, layouts: TownLayouts, climate: ClimateTables): void {
+  if (world.origin !== 'original' || world.cells.length !== 9216 || world.regionalConditions.length !== 1008)
+    throw new Error('Invalid region farm');
+  for (const channel of ['wind', 'precipitation', 'temperature'] as const) {
+    if (!Array.isArray(climate[channel]) || climate[channel].length !== 240 ||
+      climate[channel].some(n => !Number.isInteger(n) || n < -128 || n > (channel === 'precipitation' ? 7 : 127)))
+      throw new Error('Invalid region climate');
+  }
+  const site = { regionX: world.farm.townRegionX, regionY: world.farm.townRegionY };
+  const result = constructTownDistrict(world, finances.town, layouts, site, 0);
+  if (!result.ok) throw new Error('Invalid region town');
+  world.climate = structuredClone(climate);
+  world.farm.cash = 40000;
+  finances.town.activeSite = site;
 }

@@ -5,7 +5,7 @@ import { newFarmAssets } from '../support/new-farm';
 import { readScenario } from '../../src/formats/scenario';
 import { readCrop } from '../../src/formats/crop';
 import { readArchive } from '../../src/formats/archive';
-import { readSetupMap } from '../../src/formats/new-farm';
+import { climateForSetup, readSetupMap } from '../../src/formats/new-farm';
 const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
 const locations = readSetupMap(readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA')).find(e => e.name === 'scenario.odt')!.bytes).locations;
 async function save(page: Page, name: string) {
@@ -46,7 +46,7 @@ test('region map selects source climate, supports keyboard and mobile layout, an
   expect(await save(page, 'next-day')).toEqual(JSON.parse(game.save(null))); expect(errors).toEqual([]);
 });
 
-test('all eight map markers load their original farm and saved climate without applying new-farm settings', async ({ page }) => {
+test('all eight map markers apply original post-load climate and town setup while preserving the saved date', async ({ page }) => {
   await page.goto('/');
   for (const [id, x, y] of [[0,0,8],[1,1,11],[2,1,3],[3,3,6],[4,9,7],[5,11,6],[6,13,11],[7,15,8]]) {
     await openMap(page); await page.locator(`[data-region="${x},${y}"]`).click();
@@ -55,7 +55,7 @@ test('all eight map markers load their original farm and saved climate without a
     await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText(`Scenario ${id + 1} · original terrain`);
     const world = readScenario(source(`SCEN${id}.SSM`));
     const crops = world.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
-    const expected = new GameSimulation(world, crops, newFarmAssets.townLayouts);
+    const expected = GameSimulation.openRegion(world, crops, newFarmAssets.townLayouts, climateForSetup(newFarmAssets.climate, locations[y * 18 + x]));
     expect(await save(page, `preset-${id}`)).toEqual(JSON.parse(expected.save(id)));
   }
 });
