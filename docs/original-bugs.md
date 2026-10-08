@@ -952,6 +952,19 @@ Native fuel/payload service preflight rejects out-of-range words above255 withou
 
 ## SF-110 — first manual-flight spraying interval reads an uninitialized timestamp
 
-Status: documented; native flight implementation/fix deferred. Confidence: high on direct local-variable reads/writes; the first interval's observed DOS timing has not been measured.
+Status: corrected in the native flight primitive; live integration pending. Confidence: high on direct local-variable reads/writes; the first interval's observed DOS timing has not been measured.
 
-Flight0x30f70 initializes movement, wear and fuel timestamps (0x31018..0x3103f), but not stack word[bp−0x3a]. After spraying is enabled at0x31216, the next spraying tick subtracts that word from the animation clock at0x3119a before its first write at0x3111c6. Toggle/start handlers do not initialize it. Consequently the first payload-consumption gate can depend on retained stack contents; subsequent gates use a defined timestamp. Native flight should initialize this timestamp explicitly and test the first spray interval, recording the chosen policy. No out-of-bounds write, information disclosure or security exploit is claimed.
+Flight0x30f70 initializes movement, wear and fuel timestamps (0x31018..0x3103f), but not stack word[bp−0x3a]. After spraying is enabled at0x31216, the next spraying tick subtracts that word from the animation clock at0x3119a before its first write at0x311c6. Toggle/start handlers do not initialize it. Consequently the first payload-consumption gate can depend on retained stack contents; subsequent gates use a defined timestamp. The native primitive initializes the spraying timestamp to the takeoff animation tick, alongside the other flight clocks. Tests verify its first interval and16-bit wrap. Live flight integration is pending; arbitrary original stack contents are not reproduced. No out-of-bounds write, information disclosure or security exploit is claimed.
+
+
+## SF-111 — northwest flight clamps horizontal offset using the vertical limit
+
+Status: corrected in the native flight primitive; live integration pending. Confidence: high on the wrong-axis assignment; exact DOS window configurations and visible incidence are unmeasured.
+
+The northwest branch0x3148d loads horizontal limit byte[bp−0x22] and compares its negation with the decremented horizontal offset at0x31493..0x31499. On overflow,0x3149b instead loads **vertical** limit byte[bp−0x14], negates it and jumps to the horizontal assignment0x3142f. Other westward branches use the horizontal limit for both comparison and assignment. A nonsquare viewport can therefore displace the plane beyond its intended horizontal bound; sufficiently tall mathematical dimensions could produce a negative ground X. The original GUI's reachable dimension limits have not been established, so this is not classified as a demonstrated out-of-bounds access or exploitable vulnerability.
+
+Native uses the horizontal limit for both operations while retaining all other movement asymmetries. Tests pin the offending original instructions and exercise all eight headings at map edges with square, portrait, landscape and odd dimensions. The8-column/40-row northwest example remains at ground(3,3), rather than assigning−17 as its horizontal offset. Original defect evidence is retained after the fix.
+
+### SF-104 manual-flight arithmetic follow-up
+
+Flight wear0x31131 increments byte17 before checking>250. A preexisting255 wraps to0 and avoids wear termination at that gate; ordinary flight stops at251 and normal weekly aging handles maximum wear, so no ordinary reachable exploit is asserted. Fuel uses wrapping16-bit decrement and signed≤0 clamp; valid service quantities stay0..255. Native primitives preserve these source operations and test255→0 wear and zero-fuel timing. Canonical saved-flight validation and live command boundaries are still pending.

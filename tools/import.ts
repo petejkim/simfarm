@@ -3,6 +3,7 @@ import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { PNG } from 'pngjs';
 import { patchCropGraphics } from '../src/formats/crop-graphics';
+import { spriteAtlas } from '../src/formats/sprite';
 import { readScenario } from '../src/formats/scenario';
 import { readArchive } from '../src/formats/archive';
 import { readPalette, readBitmap, tileAtlas, decodePlanar, type Raster } from '../src/formats/graphics';
@@ -30,6 +31,7 @@ for (const e of entries) {
   if (e.name.endsWith('.bmp')) await png(`${e.name}.png`, readBitmap(e.bytes, palette));
 }
 await png('tiles.png', tileAtlas(asset('ega16til.til'), palette));
+for (const name of ['airplane', 'apshadow', 'cropdust']) await png(`${name}.sprites.png`, spriteAtlas(asset(`${name}.spr`), palette));
 await png('masked-tiles.png', tileAtlas(asset('mskdtile.til'), palette, 32, 7));
 for (const name of ['sftitle', 'scenario', 'prsnt480']) await png(`${name}.png`, decodePlanar(asset(`${name}.int`), 640, 480, readPalette(asset(`${name}.pal`))));
 const crops: CropDefinition[] = [];
