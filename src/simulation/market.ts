@@ -1,0 +1,91 @@
+import type { Scenario } from '../formats/scenario';
+import type { FarmRandom } from './random';
+
+export interface MarketState {
+  history: number[][];
+  mood: number;
+  /** DSbc72: tested/reset by the updater, but no increment is verified. */
+  rawBC72: number;
+}
+type MarketRandom = Pick<FarmRandom, 'nextSimulation' | 'below'>;
+type TradeTables = Pick<Scenario, 'cropDefinitions' | 'harvestDefinitions' | 'seedDefinitions'>;
+const signedWord = (n: number) => n << 16 >> 16;
+const signedByte = (n: number) => n << 24 >> 24;
+const isInteger = (n: number, max: number) => Number.isInteger(n) && n >= 0 && n <= max;
+
+export function validateMarketState(market: MarketState): void {
+  if (!isInteger(market.mood, 255) || !isInteger(market.rawBC72, 255)) throw new Error('Invalid market byte');
+  if (!Array.isArray(market.history) || market.history.length !== 16 || market.history.some(row =>
+    !Array.isArray(row) || row.length !== 30 || row.some(price => !isInteger(price, 65535)))) throw new Error('Invalid market history');
+}
+
+function validateCrops(crops: readonly (readonly number[])[]): void {
+  if (crops.length !== 16 || crops.some(crop => crop.length !== 128 || crop.some(byte => !isInteger(byte, 255)))) {
+    throw new Error('Invalid market crop definitions');
+  }
+}
+
+/** Crop loader0x466d0..0x466ee writes only the newest history word. Loading
+ * an SSM skips the random startup histories (main0x2393..0x239f). Retain all
+ * other words/mode bytes; a cold caller supplies the original EXE data. */
+export function loadMarketCropPrices(market: MarketState, crops: readonly (readonly number[])[]): void {
+  validateMarketState(market); validateCrops(crops);
+  crops.forEach((crop, slot) => { market.history[slot][29] = crop[34] | crop[35] << 8; });
+}
+
+/** Weekly0x4aea4, after all five aging phases and before wind0xbe55..0xbe74.
+ * Trade prices synchronize here, separately from planting/disaster history. */
+export function updateWeeklyMarket(world: TradeTables, crops: readonly (readonly number[])[], market: MarketState, random: MarketRandom): void {
+  validateMarketState(market); validateCrops(crops);
+  if ([world.cropDefinitions, world.harvestDefinitions, world.seedDefinitions].some(table =>
+    table.length < 16 || Array.from({ length: 16 }, (_, i) => table[i]).some(d => !d))) throw new Error('Invalid market trade tables');
+  if ((random.nextSimulation() & 15) >= 13) market.mood = random.below(3);
+  if (signedByte(market.rawBC72) > 12) {
+    market.mood = (market.mood + 1) & 255;
+    if (signedByte(market.mood) > 2) market.mood = 0;
+    market.rawBC72 = 0;
+  }
+  for (let slot = 0; slot < 16; slot++) {
+    const history = market.history[slot], crop = crops[slot];
+    history.copyWithin(0, 1);
+    let price = history[29];
+    const step = signedWord(price) >> 3; // Before the zero-to-one assignment.
+    if (!price) price = 1;
+    const choice = random.nextSimulation() & 7;
+    if (market.mood <= 2) {
+      const threshold = market.mood === 0 ? 3 : market.mood === 1 ? 1 : 5;
+      const adjustment = (random.nextSimulation() & 3) * step;
+      price = (price + (choice <= threshold ? adjustment : -adjustment)) & 65535;
+    }
+    const base = crop[34] | crop[35] << 8;
+    price = Math.min(price, (base << 1) & 65535);
+    price = Math.max(price, base >>> 1);
+    if (signedWord(price) < 10) { price = 10; market.mood = 1; }
+    history[29] = price;
+    world.cropDefinitions[slot].price = world.harvestDefinitions[slot].price = price;
+    world.seedDefinitions[slot].price = Math.max(5, (signedWord(price) >> 2) & 65535);
+  }
+}
+
+/** Plant callback0x4b066: changes history only, with a signed quarter step. */
+export function adjustMarketForPlanting(market: MarketState, slot: number): void {
+  validateMarketState(market);
+  if (!isInteger(slot, 15)) throw new Error('Invalid market crop slot');
+  const price = market.history[slot][29];
+  market.history[slot][29] = (price - (signedWord(price) >> 2)) & 65535;
+}
+
+/** General disaster callback0x4b090: changes history before eligibility gates.
+ * Modes1/4/7/8 do nothing. Native callers retain their own enabled gate. */
+export function adjustMarketForDisaster(market: MarketState, crops: readonly (readonly number[])[], mode: number): void {
+  validateMarketState(market); validateCrops(crops);
+  if (![2, 3, 5, 6].includes(mode)) return;
+  const sensitivity = mode === 2 ? 71 : mode === 3 ? 70 : 72;
+  for (let slot = 0; slot < 16; slot++) {
+    const crop = crops[slot];
+    if (!crop[sensitivity]) continue;
+    const shift = crop[sensitivity] & 31, price = market.history[slot][29];
+    market.history[slot][29] = Math.min((price + (shift >= 16 ? 0 : price >>> shift)) & 65535,
+      ((crop[34] | crop[35] << 8) << 2) & 65535);
+  }
+}
