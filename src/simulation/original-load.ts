@@ -12,6 +12,22 @@ import { transferCalendarPhase } from './calendar-clock';
  * Native import dismisses UI/modal continuations and starts paused. */
 export function transferOriginalFarm(previous: SimulationState, bytes: Uint8Array, crops: readonly CropDefinition[]): SimulationState {
   const prior = readNativeSave(writeNativeSave(previous, null)).state;
+  const state = loadOriginalFarmState(prior, bytes, crops);
+  // Ordinary source dialog adds one pause level. A previously paused native
+  // session models an outer level, so its return does not perform1->0 writes.
+  if (!prior.paused) {
+    state.scenario.farm.paceEquipment = true; //0x3f505 writes2 to DSa8a0.
+    state.disasters.frameDelay = 4;
+    state.scenario.farm.dayDelayTicks = 256; state.scenario.farm.speed = 1;
+    state.traffic.delay = 16; state.scenario.irrigation.delay = 2;
+  }
+  return state;
+}
+
+/** Common4543c loader transfers. Caller owns a detached, validated candidate,
+ * which may be between restart reset and chooser finalization. Does not apply
+ * the in-game menu's resume callback; chooser loads return to a different caller. */
+export function loadOriginalFarmState(prior: SimulationState, bytes: Uint8Array, crops: readonly CropDefinition[]): SimulationState {
   const scenario = readScenario(bytes, false, { workerExpenses: prior.scenario.farm.workerExpenses, irrigation: prior.scenario.irrigation });
   const definitions = scenario.cropFiles.map(file => {
     const crop = crops.find(c => `${c.id}.crp` === file);
@@ -35,13 +51,5 @@ export function transferOriginalFarm(previous: SimulationState, bytes: Uint8Arra
     traffic: { ...prior.traffic, delay: new Binary(bytes).u16(0x2171e) },
     dayTicks: transferCalendarPhase(prior.scenario.farm.animationTicks, prior.dayTicks, scenario.farm.animationTicks),
     paused: true, elapsed: 0, pendingTown: null, aircraftFlight: null };
-  // Ordinary source dialog adds one pause level. A previously paused native
-  // session models an outer level, so its return does not perform1->0 writes.
-  if (!prior.paused) {
-    scenario.farm.paceEquipment = true; //0x3f505 writes2 to DSa8a0.
-    state.disasters.frameDelay = 4;
-    scenario.farm.dayDelayTicks = 256; scenario.farm.speed = 1;
-    state.traffic.delay = 16; scenario.irrigation.delay = 2;
-  }
   return state;
 }

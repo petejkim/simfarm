@@ -13,7 +13,7 @@ async function save(page: Page, name: string) {
   const path = `artifacts/browser-region-${name}.json`; await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
 }
 async function openMap(page: Page) {
-  await page.locator('#new-farm').click(); await page.locator('#choose-region').click();
+  await page.locator('#new-farm').click(); await page.locator('#new-farm-session').selectOption('fresh'); await page.locator('#choose-region').click();
   await expect(page.locator('#region-map')).toBeVisible();
 }
 

@@ -1,4 +1,5 @@
 import { NetworkPanel } from './NetworkPanel';
+import { NewFarmControls } from './NewFarmControls';
 import { checkNetworkPlacement, type NetworkAction } from '../simulation/network-placement';
 import { CropSupplyShop } from './CropSupplyShop';
 import { checkCropSupplyPurchase } from '../simulation/crop-supply-purchase';
@@ -49,7 +50,6 @@ interface Props {
   loaded?: LoadedFarm;
   onLoad: (farm: LoadedFarm) => void;
   onScenarioChange: (id: number) => void;
-  onNewFarm: () => void;
   assets: GameAssets;
   zoom: number;
   onZoomChange: (zoom: number) => void;
@@ -59,7 +59,8 @@ interface Props {
   onFlightRunning: (running: boolean) => void;
 }
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
-export function FarmView({ id, loaded, onLoad, onScenarioChange, onNewFarm, assets, zoom, onZoomChange, cropId, onCropChange, onGameEvent, onFlightRunning }: Props) {
+export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange, onGameEvent, onFlightRunning }: Props) {
+  const [newFarmOpen, setNewFarmOpen] = useState(false);
   const load = useCallback(async (signal: AbortSignal) => {
     if (loaded) return loaded;
     if (id === null) throw new Error('Missing generated farm state');
@@ -161,6 +162,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, onNewFarm, asse
     }
   }
   return <>
+    {simulation && <NewFarmControls assets={assets} simulation={simulation} open={newFarmOpen} onOpenChange={setNewFarmOpen} onCreate={onLoad} />}
     <section className="toolbar">
       <div><label>Original farm <select id="scenario" value={id ?? 'generated'} onChange={e => onScenarioChange(Number(e.target.value))}>
         {id === null && <option value="generated" disabled>{snapshot?.scenario.origin === 'original' ? 'Imported farm' : 'Generated farm'}</option>}
@@ -191,7 +193,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, onNewFarm, asse
     </div>}
     {simulation && snapshot && <TownChoicePanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
-      restartCreatesFarm={id === null} onRestart={() => id === null ? onNewFarm() : onScenarioChange(id)} open={loansOpen} onOpenChange={setLoansOpen} summaryRef={loansRef} />}
+      onRestart={() => setNewFarmOpen(true)} open={loansOpen} onOpenChange={setLoansOpen} summaryRef={loansRef} />}
     {snapshot && <TaxPanel snapshot={snapshot} />}
     {snapshot && <FarmReport snapshot={snapshot} />}
     {snapshot && <LivestockPanel snapshot={snapshot} onMoveSupplies={() => { setMapTool('supply-move'); setSelection(null); }} onShop={() => setMapTool('livestock')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}

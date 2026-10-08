@@ -4,6 +4,8 @@ import { GameSimulation } from '../../src/simulation/game';
 import { readScenario } from '../../src/formats/scenario';
 import { readCrop } from '../../src/formats/crop';
 import { newFarmAssets, newFarmOptions } from '../support/new-farm';
+import { readArchive } from '../../src/formats/archive';
+import { readSetupMap } from '../../src/formats/new-farm';
 
 const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
 const crops = readdirSync(new URL('../../../simfarm-dos/CROPS', import.meta.url)).filter(n => /\.crp$/i.test(n))
@@ -21,8 +23,6 @@ async function save(page: Page, name: string) {
   await download.saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
 }
 
-// This verifies generated restart checkpoints in the browser. The live New farm
-// dialog remains the separate cold-entry path until both chooser outcomes exist.
 test('a generated restart checkpoint preserves its original archive and continues exactly through browser save/load', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const original = new GameSimulation(readScenario(source('SCEN4.SSM')), crops, assets.townLayouts);
@@ -44,6 +44,63 @@ test('a generated restart checkpoint preserves its original archive and continue
   await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   expect(await save(page, 'continued')).toEqual(JSON.parse(game.save(null)));
   expect(requests).toEqual([]); expect(errors).toEqual([]);
+});
+
+test('New farm restarts the active session, cancels safely and restores its generated continuation on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  await page.locator('#next-day').click();
+  const before = await save(page, 'live-before');
+  await page.locator('#new-farm').click();
+  await expect(page.locator('#new-farm-session')).toHaveValue('restart');
+  await expect(page.locator('#new-farm-seed')).toBeDisabled();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  expect(await save(page, 'live-cancelled')).toEqual(before);
+  await page.locator('#new-farm').click(); await page.locator('#new-farm-year').fill('1993');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  await page.screenshot({ path: 'artifacts/browser-restart-mobile.png', fullPage: true });
+  await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
+  const restarted = await save(page, 'live-generated');
+  const expected = GameSimulation.load(JSON.stringify(before), crops, assets.townLayouts).simulation
+    .restartGenerated(restarted.runtime.newFarm.provenance.options, assets);
+  expect(restarted).toEqual(JSON.parse(expected.save(null)));
+  expect(restarted.runtime.newFarm.provenance.kind).toBe('restart');
+  await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
+  const advanced = await save(page, 'live-generated-day'); expect(advanced).toEqual(JSON.parse(expected.save(null)));
+  await load(page, JSON.stringify(advanced)); expect(await save(page, 'live-generated-restored')).toEqual(advanced);
+});
+
+test('all eight live restart markers retain session history and continue after original preset setup', async ({ page }) => {
+  const locations = readSetupMap(readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA')).find(e => e.name === 'scenario.odt')!.bytes).locations;
+  await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  for (const [id, x, y] of [[0,0,8],[1,1,11],[2,1,3],[3,3,6],[4,9,7],[5,11,6],[6,13,11],[7,15,8]]) {
+    const before = await save(page, `live-region-before-${id}`);
+    const expected = GameSimulation.load(JSON.stringify(before), crops, assets.townLayouts).simulation
+      .restartRegion(source(`SCEN${id}.SSM`), locations[y * 18 + x], assets);
+    await page.locator('#new-farm').click(); await page.locator('#choose-region').click();
+    await page.locator(`[data-region="${x},${y}"]`).click(); await page.locator('#create-farm').click();
+    await expect(page.locator('#map-status')).toHaveText(`Scenario ${id + 1} · original terrain`);
+    expect(await save(page, `live-region-${id}`)).toEqual(JSON.parse(expected.save(id)));
+    await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
+    const advanced = await save(page, `live-region-day-${id}`); expect(advanced).toEqual(JSON.parse(expected.save(id)));
+    await load(page, JSON.stringify(advanced)); expect(await save(page, `live-region-restored-${id}`)).toEqual(advanced);
+  }
+});
+
+test('older original saves explain missing restart history and allow an explicit fresh farm', async ({ page }) => {
+  await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const legacy = await save(page, 'live-legacy-before'); legacy.version = 18; delete legacy.runtime.setup;
+  await load(page, JSON.stringify(legacy)); await page.locator('#new-farm').click();
+  await expect(page.locator('#restart-unavailable')).toContainText('older save');
+  await expect(page.locator('#create-farm')).toBeDisabled();
+  await page.locator('#choose-region').click(); await page.locator('[data-region="0,8"]').click();
+  await expect(page.locator('#create-farm')).toBeEnabled();
+  await page.locator('#design-farm').click(); await expect(page.locator('#create-farm')).toBeDisabled();
+  await page.locator('#new-farm-session').selectOption('fresh');
+  await expect(page.locator('#new-farm-seed')).toBeEnabled(); await expect(page.locator('#restart-unavailable')).toHaveCount(0);
+  await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
+  const fresh = await save(page, 'live-legacy-fresh'); expect(fresh.runtime.newFarm.provenance.kind).toBe('cold-start');
+  expect(fresh.runtime.setup.terrainHistory).not.toBeNull(); expect(fresh.runtime.setup.sourceArchive).toBeNull();
 });
 
 test('invalid setup state leaves the browser farm intact and legacy original saves keep unknown terrain history', async ({ page }) => {

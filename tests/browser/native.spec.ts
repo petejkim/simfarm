@@ -133,7 +133,8 @@ test('scenario changes cancel pending loads and recover after missing farm asset
 test('time controls advance the simulation, render crop changes, pause, and reset on scenario changes', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.clock.install();
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.goto('/');
   await page.locator('#scenario').selectOption('4');
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
@@ -785,6 +786,12 @@ test('saved financial default stops time and actions, supports ending or restart
   await expect(page.locator('#next-day')).toBeDisabled();
   await page.locator('#load-farm-file').setInputFiles(file); await page.locator('#default-restart').click();
   await expect(page.getByRole('heading', { name: 'Unable to pay debts' })).toHaveCount(0);
+  await expect(page.locator('.new-farm-panel')).toBeVisible(); await expect(page.locator('#next-day')).toBeDisabled();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Farm session ended' })).toBeVisible();
+  await page.getByRole('button', { name: 'Choose another farm', exact: true }).click();
+  await page.locator('#create-farm').click();
+  await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   await expect(page.locator('#next-day')).toBeEnabled(); await expect(page.locator('#time-status')).toContainText('0 days advanced');
   await page.locator('#loan-panel summary').click(); await expect(page.locator('#loan-overdue')).toHaveCount(0);
 });

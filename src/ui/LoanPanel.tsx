@@ -8,9 +8,9 @@ const failures = { 'invalid-amount': 'Enter a positive whole-dollar amount.', 'n
 const notices: Record<number, string> = { 166: 'The scheduled installment is overdue.', 168: 'Assets were sold to pay the overdue installment.',
   169: 'The overdue installment is still unpaid.', 170: 'The overdue installment has been paid.' };
 
-export function LoanPanel({ snapshot, onCommand, onRestart, open, onOpenChange, summaryRef, restartCreatesFarm }: {
+export function LoanPanel({ snapshot, onCommand, onRestart, open, onOpenChange, summaryRef }: {
   snapshot: GameSnapshot; onCommand: (command: GameCommand) => void; onRestart: () => void;
-  restartCreatesFarm: boolean; open: boolean; onOpenChange: (open: boolean) => void; summaryRef: Ref<HTMLElement>;
+  open: boolean; onOpenChange: (open: boolean) => void; summaryRef: Ref<HTMLElement>;
 }) {
   const [amount, setAmount] = useState('1000');
   const { finances: f, availableLoan, lastLoanResult: result } = snapshot, decision = f.defaultDecision;
@@ -21,9 +21,9 @@ export function LoanPanel({ snapshot, onCommand, onRestart, open, onOpenChange, 
       <h2>{decision.status === 'pending' ? 'Unable to pay debts' : 'Farm session ended'}</h2>
       <p>Available assets could not cover the debt. Your homestead remains yours. Time and farm actions are stopped.</p>
       {decision.status === 'pending' ? <div>
-        <button id="default-restart" onClick={() => { onCommand({ type: 'resolve-default', choice: 'restart' }); onRestart(); }}>{restartCreatesFarm ? 'Create another farm' : 'Restart this farm'}</button>
+        <button id="default-restart" onClick={() => { onCommand({ type: 'resolve-default', choice: 'restart' }); onRestart(); }}>Choose another farm</button>
         <button id="default-exit" onClick={() => onCommand({ type: 'resolve-default', choice: 'exit' })}>End session</button>
-      </div> : <button onClick={onRestart}>{restartCreatesFarm ? 'Create another farm' : 'Start this farm again'}</button>}
+      </div> : <button onClick={onRestart}>Choose another farm</button>}
       <p>You can also load a saved farm or choose another scenario above.</p>
     </section>}
     <details id="loan-panel" className="loan-panel" open={open} onToggle={e => onOpenChange(e.currentTarget.open)}>

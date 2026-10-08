@@ -6,9 +6,10 @@ import type { NewFarmOptions } from '../simulation/new-farm-state';
 import type { LoadedFarm } from './SaveControls';
 import { RegionMap } from './RegionMap';
 
-export function NewFarmControls({ assets, open, onOpenChange, onCreate }: {
-  assets: GameAssets; open: boolean; onOpenChange: (open: boolean) => void; onCreate: (farm: LoadedFarm) => void;
+export function NewFarmControls({ assets, simulation: current, open, onOpenChange, onCreate }: {
+  assets: GameAssets; simulation: GameSimulation; open: boolean; onOpenChange: (open: boolean) => void; onCreate: (farm: LoadedFarm) => void;
 }) {
+  const [session, setSession] = useState<'restart' | 'fresh'>('restart');
   const [options, setOptions] = useState<NewFarmOptions>(() => {
     const date = new Date();
     return { climate: { precipitation: 2, temperature: 2, wind: 1 }, river: true, lake: false,
@@ -25,6 +26,7 @@ export function NewFarmControls({ assets, open, onOpenChange, onCreate }: {
   }, [open]);
   const location = regionMode && region ? region.locations[selected] : null;
   const preset = location && region ? region.farms.find(f => f.x === location.x && f.y === location.y) : undefined;
+  const missingHistory = session === 'restart' && !preset && current.getSnapshot().setup.terrainHistory === null;
   function selectRegion(index: number, map = region) {
     const p = map?.locations[index]; if (!p?.selectable) return;
     setSelected(index); setError('');
@@ -48,14 +50,16 @@ export function NewFarmControls({ assets, open, onOpenChange, onCreate }: {
       if (preset) {
         const [farm, setup] = await Promise.all([loadScenarioAssets(preset.id, controller.signal), loadNewFarmAssets(assets, controller.signal)]);
         controller.signal.throwIfAborted();
-        const simulation = GameSimulation.openRegion(farm.scenario, assets.catalog.crops, assets.townLayouts, climateForSetup(setup.climate, options.climate));
+        const simulation = session === 'restart'
+          ? current.restartRegion(farm.scenario.sourceBytes!, options.climate, setup)
+          : GameSimulation.openRegion(farm.scenario, assets.catalog.crops, assets.townLayouts, climateForSetup(setup.climate, options.climate));
         if (!controller.signal.aborted) { onCreate({ scenarioId: preset.id, simulation, tiles: farm.tiles }); onOpenChange(false); }
         return;
       }
       const setup = await loadNewFarmAssets(assets, controller.signal);
+      const tiles = await loadGeneratedTiles(setup.records.cropFiles, controller.signal);
       controller.signal.throwIfAborted();
-      const simulation = GameSimulation.createNew(options, setup);
-      const tiles = await loadGeneratedTiles(simulation.getSnapshot().scenario.cropFiles, controller.signal);
+      const simulation = session === 'restart' ? current.restartGenerated(options, setup) : GameSimulation.createNew(options, setup);
       if (!controller.signal.aborted) { onCreate({ scenarioId: null, simulation, tiles }); onOpenChange(false); }
     } catch (cause) {
       if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : String(cause));
@@ -67,7 +71,11 @@ export function NewFarmControls({ assets, open, onOpenChange, onCreate }: {
   return <section className="new-farm-panel" aria-label="New farm">
     <h2 ref={heading} tabIndex={-1}>Choose a farm</h2>
     <p>Choose an original region or design your own farm. Starting a farm replaces the current session; save it first if you want to keep it.</p>
-    <form onSubmit={event => { event.preventDefault(); if (!busy && (!regionMode || region)) void create(); }}>
+    <form onSubmit={event => { event.preventDefault(); if (!busy && !missingHistory && (!regionMode || region)) void create(); }}>
+      <label>Session <select id="new-farm-session" value={session} disabled={busy} onChange={e => setSession(e.target.value as 'restart' | 'fresh')}>
+        <option value="restart">Restart current session</option><option value="fresh">Start fresh session</option>
+      </select></label>
+      <p>Restart keeps ongoing weather and financial history, as in the original game. Start fresh resets that history and lets you choose a map seed.</p>
       <div className="region-mode">
         <button id="choose-region" type="button" disabled={busy} aria-pressed={regionMode} onClick={() => void chooseRegion()}>Use region map</button>{' '}
         <button id="design-farm" type="button" disabled={busy} aria-pressed={!regionMode} onClick={designOwn}>Design your own</button>
@@ -90,13 +98,14 @@ export function NewFarmControls({ assets, open, onOpenChange, onCreate }: {
           </select></label>)}
         <label><input id="new-farm-river" type="checkbox" checked={options.river} onChange={e => setOptions(o => ({ ...o, river: e.target.checked }))} /> River</label>
         <label><input id="new-farm-lake" type="checkbox" checked={options.lake} onChange={e => setOptions(o => ({ ...o, lake: e.target.checked }))} /> Lake</label>
-        <label>Map seed <input id="new-farm-seed" type="number" min="1" max="65535" step="1" required value={options.seeds.simulation}
+        <label>Map seed <input id="new-farm-seed" type="number" min="1" max="65535" step="1" required disabled={session === 'restart'} value={options.seeds.simulation}
           onChange={e => { const seed = Number(e.target.value); setOptions(o => ({ ...o, seeds: { visual: seed, simulation: seed, bounded: seed } })); }} /></label>
         <label>Starting year <input id="new-farm-year" type="number" min="1" max="65535" step="1" required value={options.date.year}
           onChange={e => setOptions(o => ({ ...o, date: { ...o.date, year: Number(e.target.value) } }))} /></label>
       </fieldset>
-      {!preset && <p>The same seed and settings recreate the same terrain. Your farm starts in April with $40,000.</p>}
-      <button id="create-farm" disabled={busy || (regionMode && !region)}>{busy ? 'Starting farm…' : preset ? `Open Scenario ${preset.id + 1}` : 'Create farm'}</button>{' '}
+      {!preset && <p>{session === 'fresh' ? 'The same seed and settings recreate the same terrain. ' : 'Restart generates a new landscape from the current session. '}Your farm starts in April with $40,000.</p>}
+      {missingHistory && <p id="restart-unavailable" role="status">This older save cannot generate a restart map. Choose a numbered farm or Start fresh session.</p>}
+      <button id="create-farm" disabled={busy || missingHistory || (regionMode && !region)}>{busy ? 'Starting farm…' : preset ? `Open Scenario ${preset.id + 1}` : 'Create farm'}</button>{' '}
       <button type="button" onClick={() => { pending.current?.abort(); regionPending.current?.abort(); onOpenChange(false); }}>Cancel</button>
       {error && <p id="new-farm-error" role="alert">Could not create farm: {error}</p>}
     </form>

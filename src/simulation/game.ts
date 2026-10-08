@@ -1,4 +1,5 @@
-import { restartGeneratedFarm, type RestartFarmOptions } from './restart-farm';
+import { restartGeneratedFarm, restartRegionFarm, type RestartFarmOptions } from './restart-farm';
+import type { ClimateSelection } from '../formats/new-farm';
 import { createSessionSetup, type SessionSetup } from './session-setup';
 import { transferOriginalFarm } from './original-load';
 import type { ClimateTables } from '../formats/weather';
@@ -349,6 +350,12 @@ export class GameSimulation {
   /** Generate a new farm through the retained restart phases, without reseeding. */
   restartGenerated(options: RestartFarmOptions, assets: NewFarmAssets): GameSimulation {
     const state = restartGeneratedFarm(readNativeSave(this.save(null)).state, options, assets);
+    return GameSimulation.load(writeNativeSave(state, null), assets.crops, assets.townLayouts).simulation;
+  }
+
+  /** Supplied-farm chooser outcome of the retained restart, not in-game Load. */
+  restartRegion(bytes: Uint8Array, climate: ClimateSelection, assets: NewFarmAssets): GameSimulation {
+    const state = restartRegionFarm(readNativeSave(this.save(null)).state, bytes, climate, assets);
     return GameSimulation.load(writeNativeSave(state, null), assets.crops, assets.townLayouts).simulation;
   }
 

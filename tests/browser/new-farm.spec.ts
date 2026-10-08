@@ -26,6 +26,7 @@ test('create a generated farm on mobile, save it and restore without any origina
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#new-farm').click();
+  await page.locator('#new-farm-session').selectOption('fresh');
   await page.locator('#new-farm-year').fill('1993'); await page.locator('#new-farm-seed').fill('9029');
   await page.locator('#new-farm-lake').check();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
