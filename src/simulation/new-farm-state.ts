@@ -11,14 +11,12 @@ export interface NewFarmOptions {
   date: { year: number; dayOfWeek: number };
   seeds: RandomState;
 }
-/** Recovered state not yet consumed by ongoing market/traffic updates. Preserve
+/** Recovered setup and traffic state. Preserve
  * it independently of live prices and never reconstruct it by replaying setup. */
 export interface NewFarmState {
   provenance: { kind: 'cold-start'; version: 1; options: NewFarmOptions };
   raw: NewFarmRuntimeDefaults['raw'];
   terrainHistory: TerrainRandomHistory;
   plannerBuffer: number[];
-  marketMood: number;
-  marketHistory: number[][];
   traffic: TrafficDefaults;
 }

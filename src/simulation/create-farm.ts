@@ -69,11 +69,12 @@ export function createNewFarmState(options: NewFarmOptions, assets: NewFarmAsset
     harvestDefinitions: records.harvestDefinitions, chemicalDefinitions: records.chemicalDefinitions, irrigation };
   return { scenario, crops, townLayoutBytes: [...assets.townLayouts.bytes], random: random.snapshot(), weather,
     newFarm: { provenance: { kind: 'cold-start', version: 1, options: structuredClone(options) }, raw: runtime.raw,
-      terrainHistory: terrainRandom.snapshot(), plannerBuffer: [...records.plannerBuffer], marketMood: records.marketMood, marketHistory,
+      terrainHistory: terrainRandom.snapshot(), plannerBuffer: [...records.plannerBuffer],
       traffic: { ...traffic, records: traffic.records.map(r => [...r.bytes]) } },
     daysAdvanced: 0, paused: true, speed: 1, elapsed: 0, dayTicks: 0,
     disasters: createMovingDisasters(), waterDisasters: createWaterDisasters(),
     grassTravelCount: 0, equipmentAnimationTick: 0, animalFrame: createAnimalFrameState(),
     aircraftService: createAircraftServiceState(), aircraftFlight: null, cropMarketPrices,
+    market: { history: marketHistory, mood: records.marketMood, rawBC72: 0 },
     finances: runtime.finances, pendingTown: null };
 }

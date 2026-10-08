@@ -56,7 +56,7 @@ test('year-end dispatches row 48 once, completes pending work, and projects usin
   const game = new GameSimulation(scenario, crops), before = game.getSnapshot();
   game.dispatch({ type: 'advance-day' });
   const pending = game.getSnapshot(); assert.ok(pending.pendingTown);
-  assert.equal(pending.scenario.farm.seedExpenses, before.scenario.farm.seedExpenses + before.scenario.seedDefinitions[1].price + 20);
+  assert.equal(pending.scenario.farm.seedExpenses, before.scenario.farm.seedExpenses + pending.scenario.seedDefinitions[1].price + 20);
   assert.equal(pending.scenario.fields[2].bytes[29], 255); // Completion precedes the chooser and daily growth.
   game.dispatch({ type: 'choose-town', choice: 'residential' });
   const after = game.getSnapshot();

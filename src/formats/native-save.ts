@@ -1,3 +1,4 @@
+import { validateMarketState, type MarketState } from '../simulation/market';
 import type { NewFarmState } from '../simulation/new-farm-state';
 import { createTrafficState } from './traffic';
 import { createMovingDisasters, validateMovingDisasters, type MovingDisasterState } from '../simulation/moving-disasters';
@@ -158,7 +159,7 @@ export function writeNativeSave(state: SimulationState, scenarioId: number | nul
     if (state.scenario.origin !== 'original' || !state.scenario.sourceBytes || state.newFarm !== null) fail('original provenance');
   }
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 15, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 16, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -168,7 +169,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].includes(save.version)) fail('unsupported format or version');
   const s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const scenarioId = s.origin === 'generated' ? null : number(save.scenarioId, 0, 7, 'scenario ID');
   if (s.origin === 'generated' && save.scenarioId !== null) fail('generated scenario ID');
@@ -187,6 +188,10 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
     animalFrame.lastMoveTick = number(a.lastMoveTick, 0, 65535, 'animal move tick');
     animalFrame.herd = bytes(a.herd, 21, 'animal herd cache');
   }
+  const cropMarketPrices = numbers(r.cropMarketPrices, 16, 0, 65535, 'crop prices');
+  const market = save.version >= 16 ? decodeMarket(r.market) : save.version === 15 && newFarm
+    ? decodeLegacyGeneratedMarket(r.newFarm)
+    : { history: cropMarketPrices.map(price => [...Array(29).fill(null), price]), mood: 0, rawBC72: 0 };
   const state: SimulationState = { scenario: s, newFarm, crops: r.crops.map(c => numbers(c, 128, 0, 255, 'crop bytes')),
     townLayoutBytes: save.version >= 5 ? numbers(r.townLayoutBytes, TOWN_LAYOUT_BYTES, 0, 255, 'town layout bytes') : null,
     pendingTown: save.version >= 6 ? decodePendingTown(r.pendingTown) : null,
@@ -200,7 +205,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
     aircraftService: save.version >= 11 ? { selectedChemical: number(object(r.aircraftService, 'aircraft service').selectedChemical, 221, 223, 'aircraft chemical') }
       : createAircraftServiceState(),
     aircraftFlight: save.version >= 12 ? decodeFlight(r.aircraftFlight, s) : null,
-    cropMarketPrices: numbers(r.cropMarketPrices, 16, 0, 65535, 'crop prices'),
+    cropMarketPrices, market,
     finances: save.version >= 3 ? decodeFinancialState({ ...object(r.finances, 'financial state'),
       ...(save.version === 3 ? { defaultDecision: null } : {}),
       ...(save.version < 8 ? { homestead: readHomestead(originalSource(s)) } : {}),
@@ -269,7 +274,6 @@ function decodeNewFarm(value: unknown): NewFarmState | null {
   if (p.kind !== 'cold-start' || p.version !== 1) fail('setup version');
   const o = object(p.options, 'setup options'), c = object(o.climate, 'setup climate'), d = object(o.date, 'setup date'), rng = object(o.seeds, 'setup seeds');
   const raw = object(n.raw, 'setup raw'), t = object(n.traffic, 'traffic');
-  if (!Array.isArray(n.marketHistory) || n.marketHistory.length !== 16) fail('market history');
   if (!Array.isArray(t.records) || t.records.length !== 16) fail('traffic records');
   const traffic = { records: t.records.map(r => numbers(r, 8, 0, 255, 'traffic bytes')),
     activeCount: number(t.activeCount, 0, 16, 'traffic count'), delay: number(t.delay, 0, 65535, 'traffic delay'), lastTick: number(t.lastTick, 0, 65535, 'traffic tick') };
@@ -282,6 +286,23 @@ function decodeNewFarm(value: unknown): NewFarmState | null {
   } }, raw: { ds3e4c: number(raw.ds3e4c, 0, 0xffffffff, 'raw3e4c'), ds3eb8: number(raw.ds3eb8, 0, 0xffffffff, 'raw3eb8'),
     ds4468: numbers(raw.ds4468, 19, 0, 65535, 'raw4468'), ds64c5: number(raw.ds64c5, 0, 255, 'raw64c5'), s4d9fFedd: number(raw.s4d9fFedd, 0, 255, 'rawFedd') },
     terrainHistory: numbers(n.terrainHistory, 5, 0, 65535, 'terrain history') as NewFarmState['terrainHistory'],
-    plannerBuffer: numbers(n.plannerBuffer, 3072, 0, 255, 'planner scratch'), marketMood: number(n.marketMood, 0, 255, 'market mood'),
-    marketHistory: n.marketHistory.map(row => numbers(row, 30, 0, 65535, 'market history')), traffic };
+    plannerBuffer: numbers(n.plannerBuffer, 3072, 0, 255, 'planner scratch'), traffic };
+}
+
+/** Missing legacy samples remain explicitly unknown; only the latest word feeds
+ * price arithmetic. V15 generated histories/mode move intact, without RNG. */
+function decodeLegacyGeneratedMarket(value: unknown): MarketState {
+  const n = object(value, 'legacy generated market');
+  if (!Array.isArray(n.marketHistory) || n.marketHistory.length !== 16) fail('market history');
+  return { history: n.marketHistory.map(row => numbers(row, 30, 0, 65535, 'market history')),
+    mood: number(n.marketMood, 0, 255, 'market mood'), rawBC72: 0 };
+}
+function decodeMarket(value: unknown): MarketState {
+  const m = object(value, 'market');
+  if (!Array.isArray(m.history) || m.history.length !== 16) fail('market history');
+  const market = { history: m.history.map(row => {
+    if (!Array.isArray(row) || row.length !== 30) fail('market history');
+    return row.map((price, i) => price === null && i < 29 ? null : number(price, 0, 65535, 'market price'));
+  }), mood: number(m.mood, 0, 255, 'market mood'), rawBC72: number(m.rawBC72, 0, 255, 'market raw BC72') };
+  validateMarketState(market); return market;
 }

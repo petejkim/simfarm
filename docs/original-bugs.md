@@ -1111,7 +1111,7 @@ Status: verified arithmetic semantics retained; overflow reachability through or
 
 General start callback0x4b090 selects wind mode6 at0x4b1be. It adds the shifted unsigned newest history price in a16-bit word, then compares against a16-bit four-times-base cap. Either addition or cap multiplication can wrap before the clamp; a nominal increase can become a decrease for sufficiently large values. The callback runs before mode eligibility, so an enabled wind start request can adjust history even when existing flags prevent activation. Tests distinguish disabled starts, failed activation, ordinary cap behavior and a constructed65530/base30000 boundary yielding32759. That constructed boundary does not establish a reachable original save/game exploit. Further producer/range tracing is deferred.
 
-Market trace correction: selectorcf7e is4d9f and offsetfa3a is history sample29, not the live trade table. Trade prices synchronize separately in weekly0x4aea4. The new market primitive preserves this distinction and the word arithmetic; the existing live disaster caller still adjusts trade prices immediately and its redirection is pending canonical market/save integration. See docs/market.md. This corrects the earlier target interpretation without deleting the overflow finding or claiming the live timing has already been fixed.
+Market trace correction: selectorcf7e is4d9f and offsetfa3a is history sample29, not the live trade table. Trade prices synchronize separately in weekly0x4aea4. The new market primitive preserves this distinction and the word arithmetic; all live disaster callers now use that shared history owner, with weekly synchronization and v16 continuation. See docs/market.md. This corrects the earlier target interpretation without deleting the overflow finding while correcting the former native timing.
 
 
 ## SF-131 — flood scanning uses an asymmetric footprint and excludes far-edge origins
@@ -1236,7 +1236,7 @@ Native validates count0..16 against actual active records, checks live coordinat
 
 ## SF-146 — weekly market combines signed steps with unsigned wrapping bounds
 
-**Status:** verified arithmetic quirk; preserved in the independent native weekly primitive, live integration pending. Confidence high on instructions and constructed boundary cases. Ordinary original clock-seed reachability and a profitable exploit are not established; correction deferred.
+**Status:** verified arithmetic quirk; preserved in the live native weekly updater with v16 continuation. Confidence high on instructions and constructed boundary cases. Ordinary original clock-seed reachability and a profitable exploit are not established; correction deferred.
 
 Updater0x4afbf..0x4afca computes a signed eighth of the newest history word. Values32768..65535 therefore produce negative steps, reversing the apparent increasing/decreasing direction. The subsequent add/subtract at0x4af04/0x4b012 wraps before unsigned comparison with a doubled-base word at0x4af18..0x4af21 and a half-base word at0x4af2f..0x4af36. Final comparison0x4af39 uses signed JGE: values still≥32768 become10 and set global market mode1, affecting later crops in the same weekly call. Doubling a custom base≥32768 wraps too; the following lower bound can override that wrapped upper bound.
 

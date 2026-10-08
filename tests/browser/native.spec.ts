@@ -392,12 +392,12 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   await expect(page.locator('#treatment-progress')).toHaveCount(0);
   await page.screenshot({ path: 'artifacts/browser-fertilizer.png', fullPage: true });
   for (let day = 3; day < 84; day++) await page.locator('#next-day').click();
-  await expect(page.locator('#harvest-estimate')).toContainText('value: $1,461');
+  await expect(page.locator('#harvest-estimate')).toContainText('value: $924');
   await page.locator('#harvest-field').click();
   await page.locator('#next-day').click();
-  // Other fields replant at this boundary, lowering the live sale price of the new field's lot.
-  await page.getByRole('button', { name: 'Sell Corn, lot 5, for $398', exact: true }).click();
-  await expect(page.locator('#farm-cash')).toHaveText('$21,803');
+  // Scheduled replanting changes history after the weekly quote; the lot still sells at that quote.
+  await page.getByRole('button', { name: 'Sell Corn, lot 5, for $924', exact: true }).click();
+  await expect(page.locator('#farm-cash')).toHaveText('$22,385');
   await expect(page.locator('#harvest-stock')).toHaveText('4 stored harvests');
   await page.locator('#scenario').selectOption('0');
   await page.locator('#field').selectOption('1');
@@ -482,11 +482,11 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   expect(JSON.parse(readFileSync(restoredPath, 'utf8')).scenario.schedule).toBe(saved.scenario.schedule);
   await page.screenshot({ path: 'artifacts/browser-load.png', fullPage: true });
   for (let day = 2; day < 84; day++) await page.locator('#next-day').click();
-  await expect(page.locator('#harvest-estimate')).toContainText('value: $1,461');
+  await expect(page.locator('#harvest-estimate')).toContainText('value: $924');
   await page.locator('#harvest-field').click();
   await page.locator('#next-day').click();
-  await page.getByRole('button', { name: 'Sell Corn, lot 5, for $398', exact: true }).click();
-  await expect(page.locator('#farm-cash')).toHaveText('$21,803');
+  await page.getByRole('button', { name: 'Sell Corn, lot 5, for $924', exact: true }).click();
+  await expect(page.locator('#farm-cash')).toHaveText('$22,385');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#save-farm').scrollIntoViewIfNeeded();
   await expect(page.locator('#save-farm')).toBeVisible();
@@ -528,13 +528,14 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   expect(JSON.parse(await saved())).toEqual(expected);
   const legacy = JSON.parse(text); legacy.version = 1; delete legacy.scenario.schedule; delete legacy.scenario.irrigation;
-  delete legacy.runtime.animalFrame;
+  delete legacy.runtime.animalFrame; delete legacy.runtime.market;
   await page.locator('#load-farm-file').setInputFiles({ name: 'old-farm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(legacy)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   // Pre-v9 saves lacked water waves; pre-v10 saves lacked animal frame state.
-  // Both migrate once to their cold clocks/cache, retaining other saved values.
+  // Clocks/cache migrate once; absent market samples stay explicitly unknown.
   expect(JSON.parse(await saved())).toEqual({ ...expected,
-    runtime: { ...expected.runtime, animalFrame: { lastCentreTick: 0, lastMoveTick: 0, herd: '00'.repeat(21) } },
+    runtime: { ...expected.runtime, animalFrame: { lastCentreTick: 0, lastMoveTick: 0, herd: '00'.repeat(21) },
+      market: { history: expected.runtime.cropMarketPrices.map((price: number) => [...Array(29).fill(null), price]), mood: 0, rawBC72: 0 } },
     scenario: { ...expected.scenario,
     irrigation: { ...expected.scenario.irrigation, phase: 0, lastTick: 0, active: false, flow: [] } } });
   await page.clock.runFor(1100);
@@ -604,13 +605,13 @@ test('original field plans harvest and replant automatically through the browser
   await expect(page.locator('#farm-cash')).toHaveText('$40,000');
   for (let day = 78; day < 85; day++) await page.locator('#next-day').click();
   await expect(page.locator('#field-status')).toContainText('Planting');
-  await expect(page.locator('#farm-cash')).toHaveText('$39,792');
+  await expect(page.locator('#farm-cash')).toHaveText('$39,848');
   await expect(page.locator('#harvest-stock')).toHaveText('4 stored harvests');
   const sell = page.locator('.sell-harvest').first();
   const amount = Number((await sell.textContent())!.replace(/[^0-9]/g, ''));
   expect(amount).toBeGreaterThan(0);
   await sell.click();
-  await expect(page.locator('#farm-cash')).toHaveText(`$${(39792 + amount).toLocaleString('en-US')}`);
+  await expect(page.locator('#farm-cash')).toHaveText(`$${(39848 + amount).toLocaleString('en-US')}`);
   await page.screenshot({ path: 'artifacts/browser-automatic-plans.png', fullPage: true });
   expect(errors).toEqual([]);
 });

@@ -1,3 +1,4 @@
+import { createColdMarket, loadMarketCropPrices, updateWeeklyMarket, type MarketState } from './market';
 import { createNewFarmState, type NewFarmAssets } from './create-farm';
 import type { NewFarmOptions, NewFarmState } from './new-farm-state';
 import { beginStationaryDisaster, advanceFrostDay, advanceStationaryDisasters,
@@ -120,6 +121,7 @@ export interface GameSnapshot {
   lastAircraftPurchaseResult: AircraftPurchaseResult | null;
   lastAircraftServiceResult: AircraftServiceResult | null;
   cropMarketPrices: number[];
+  market: MarketState;
   lastPlantResult: PlantResult | null;
   lastHarvestResult: HarvestOrderResult | null;
   fieldHarvestEstimates: (FieldHarvestEstimate | null)[];
@@ -231,6 +233,7 @@ export class GameSimulation {
   private animalLifecycleNotices: AnimalLifecycleNotice[] = [];
   private equipmentAgingNotices: EquipmentAgingNotice[] = [];
   private readonly cropMarketPrices: number[];
+  private readonly market: MarketState;
   private lastPlantResult: PlantResult | null = null;
   private lastHarvestResult: HarvestOrderResult | null = null;
   private lastSaleResult: HarvestSaleResult | null = null;
@@ -278,6 +281,7 @@ export class GameSimulation {
       }
       this.random = new FarmRandom(restored.random);
       this.cropMarketPrices = [...restored.cropMarketPrices];
+      this.market = structuredClone(restored.market);
       this.weather = { ...restored.weather, forecast: [...restored.weather.forecast], nextForecast: [...restored.weather.nextForecast] };
       this.daysAdvanced = restored.daysAdvanced; this.paused = restored.paused; this.speed = restored.speed;
       this.pendingTown = restored.pendingTown ? { ...restored.pendingTown, site: { ...restored.pendingTown.site } } : null;
@@ -292,6 +296,7 @@ export class GameSimulation {
       this.random = new FarmRandom(seeds);
       // Crop loading 0x466d0..0x46728 overrides saved crop/seed prices from the loaded definitions.
       this.cropMarketPrices = this.crops.map(c => c[34] | c[35] << 8);
+      this.market = createColdMarket(); loadMarketCropPrices(this.market, this.crops);
       this.crops.forEach((c, slot) => {
         this.scenario.cropDefinitions[slot].price = this.cropMarketPrices[slot];
         this.scenario.seedDefinitions[slot].price = Math.max(5, (c[38] | c[39] << 8) >>> 2);
@@ -306,7 +311,7 @@ export class GameSimulation {
     return writeNativeSave({ scenario: this.scenario, newFarm: this.newFarm, crops: this.crops, random: this.random.snapshot(), weather: this.weather,
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
       disasters: this.disasters, waterDisasters: this.waterDisasters, grassTravelCount: this.equipmentRuntime.grassTravelCount,
-      equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices,
+      equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices, market: this.market,
       animalFrame: this.animalFrame, aircraftService: this.aircraftService, aircraftFlight: this.aircraftFlight,
       finances: this.finances, pendingTown: this.pendingTown, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
   }
@@ -446,7 +451,7 @@ export class GameSimulation {
     } else if (command.type === 'create-field') {
       this.lastPlantResult = null; this.lastHarvestResult = null;
       this.lastNewFieldResult = plantNewField(this.scenario, command.x, command.y, command.cropSlot, this.crops,
-        this.cropMarketPrices, this.random, this.weather.soilMoisture);
+        this.market, this.random, this.weather.soilMoisture);
       if (this.lastNewFieldResult.ok) {
         this.lastPlantResult = this.lastNewFieldResult;
         recordFieldPlanOrder(this.scenario, this.crops, this.lastNewFieldResult.slot, { kind: 'plant', cropSlot: command.cropSlot });
@@ -457,7 +462,7 @@ export class GameSimulation {
     } else if (command.type === 'plant-field') {
       this.lastHarvestResult = null;
       this.lastPlantResult = plantField(this.scenario, command.fieldSlot, command.cropSlot, this.crops,
-        this.cropMarketPrices, this.random, this.weather.soilMoisture);
+        this.market, this.random, this.weather.soilMoisture);
       if (this.lastPlantResult.ok) recordFieldPlanOrder(this.scenario, this.crops, command.fieldSlot, { kind: 'plant', cropSlot: command.cropSlot });
     } else if (command.type === 'harvest-field') {
       this.lastPlantResult = null;
@@ -571,6 +576,8 @@ export class GameSimulation {
       this.requestAnimalVocals(aging.sounds);
       this.animalLifecycleNotices = [...this.animalLifecycleNotices, ...aging.notices].slice(-20);
       ageInventoryAndRefillTroughs(s);
+      updateWeeklyMarket(s, this.crops, this.market, this.random); // 0xbe55, before wind and scheduled planting.
+      for (let i = 0; i < 16; i++) this.cropMarketPrices[i] = s.cropDefinitions[i].price;
       // Weekly dispatcher0xbdbe updates old week's wind and field water before the calendar rolls.
       const wind = updateWeeklyWind(w, s.climate, before);
       if (wind.storm) this.startWind();
@@ -588,7 +595,7 @@ export class GameSimulation {
       // At year-end this executes old plan row 48 and completes the final week's work.
       s.farm.calendar = { ...before, day: 0, week: before.week + 1, season: next.calendar.season };
       developTown(s, this.finances.town, this.townLayouts, w.soilMoisture, this.random); // 0xcbb3, before field orders.
-      this.lastScheduleResult = dispatchFieldSchedule(s, this.crops, this.cropMarketPrices, this.random, this.equipmentRuntime, w.soilMoisture);
+      this.lastScheduleResult = dispatchFieldSchedule(s, this.crops, this.market, this.random, this.equipmentRuntime, w.soilMoisture);
       // 0xcbc6 indexes temperature before month/year rollover. Index 240 aliases DS:4368 (wind).
       const index = w.temperatureYear * 48 + before.month * 4 + before.week + 1;
       w.temperature = index === 240 ? w.wind : s.climate.temperature[index];
@@ -650,7 +657,7 @@ export class GameSimulation {
     return result;
   }
   private startStationaryDisaster(kind: StationaryDisasterKind): StationaryDisasterStart {
-    const result = beginStationaryDisaster(this.scenario, this.crops, this.cropMarketPrices, this.weather,
+    const result = beginStationaryDisaster(this.scenario, this.crops, this.market, this.weather,
       this.disasters, kind, this.scenario.farm.animationTicks, this.random);
     if (result.ok) {
       if (kind === 'frost') {
@@ -665,7 +672,7 @@ export class GameSimulation {
     return result;
   }
   private startWind(): Exclude<GameSnapshot['lastDisasterResult'], null> {
-    if (beginWindDisaster(this.scenario, this.crops, this.cropMarketPrices, this.weather, this.disasters, this.scenario.farm.animationTicks)) {
+    if (beginWindDisaster(this.scenario, this.crops, this.market, this.weather, this.disasters, this.scenario.farm.animationTicks)) {
       this.disasterNotice('High winds are stripping nutrients from fields without enough nearby trees.');
       this.events.push({ type: 'sound', sound: 'wind' });
       return { ok: true, kind: 'wind' };
@@ -673,7 +680,7 @@ export class GameSimulation {
     return { ok: false, reason: this.disasters.enabled ? 'already-active' : 'disabled' };
   }
   private startWaterDisaster(kind: WaterDisasterKind): Exclude<GameSnapshot['lastDisasterResult'], null> {
-    const started = beginWaterDisaster(this.scenario, this.crops, this.cropMarketPrices, this.weather,
+    const started = beginWaterDisaster(this.scenario, this.crops, this.market, this.weather,
       this.disasters, this.waterDisasters, kind, this.scenario.farm.animationTicks, this.random);
     if (!started) return { ok: false, reason: this.disasters.enabled ? 'already-active' : 'disabled' };
     this.disasterNotice(kind === 'flood' ? 'Floodwater is spreading beside permanent water. Fields and buildings are at risk.' : 'Drought has dried shallow water along the shoreline.');
@@ -756,7 +763,7 @@ export class GameSimulation {
       animalLifecycleNotices: this.animalLifecycleNotices.map(n => ({ ...n })),
       equipmentAgingNotices: this.equipmentAgingNotices.map(n => ({ ...n })),
       weather: { ...this.weather, forecast: [...this.weather.forecast], nextForecast: [...this.weather.nextForecast] },
-      daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, cropMarketPrices: [...this.cropMarketPrices],
+      daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, cropMarketPrices: [...this.cropMarketPrices], market: structuredClone(this.market),
       lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null,
       lastHarvestResult: this.lastHarvestResult ? { ...this.lastHarvestResult } : null,
       lastSaleResult: this.lastSaleResult ? { ...this.lastSaleResult } : null,

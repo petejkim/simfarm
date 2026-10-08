@@ -4,7 +4,7 @@ import type { FieldRecord } from '../formats/field';
 import type { WeatherState } from './weather';
 import type { FarmRandom } from './random';
 import { selectDisasterField, validateMovingDisasters, type MovingDisasterState } from './moving-disasters';
-import { adjustDisasterPrices } from './disaster-prices';
+import { adjustMarketForDisaster, type MarketState } from './market';
 
 export type StationaryDisasterKind = 'frost' | 'crop-circles' | 'toxic-land';
 export type StationaryDisasterStart = { ok: true; kind: StationaryDisasterKind; fields: number[]; cancelledSwarm: boolean }
@@ -20,13 +20,13 @@ function addLoss(field: FieldRecord, amount: number): void {
 
 /** Start branches0x365a0/0x3672c/0x36836. No guessed natural triggers or
  * periodic damage. Audio, event dialogs and menu state belong to the caller. */
-export function beginStationaryDisaster(world: Scenario, crops: readonly (readonly number[])[], prices: number[],
+export function beginStationaryDisaster(world: Scenario, crops: readonly (readonly number[])[], market: MarketState,
   weather: WeatherState, shared: MovingDisasterState, kind: StationaryDisasterKind, tick: number,
   random: FarmRandom): StationaryDisasterStart {
   validateMovingDisasters(shared);
   if (!Number.isInteger(tick) || tick < 0 || tick > 65535) throw new Error('Invalid disaster tick');
   if (!shared.enabled) return { ok: false, reason: 'disabled' };
-  if (kind === 'frost') adjustDisasterPrices(world, crops, prices, 5); // Before already-active check.
+  if (kind === 'frost') adjustMarketForDisaster(market, crops, 5); // Before already-active check.
   if (shared.flags & masks[kind]) return { ok: false, reason: 'already-active' };
   const affected: number[] = [];
   let cancelledSwarm = false;

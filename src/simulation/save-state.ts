@@ -1,3 +1,4 @@
+import type { MarketState } from './market';
 import type { NewFarmState } from './new-farm-state';
 import type { MovingDisasterState } from './moving-disasters';
 import type { WaterDisasterState } from './water-disasters';
@@ -41,6 +42,7 @@ export interface SimulationState {
   aircraftService: AircraftServiceState;
   aircraftFlight: AircraftFlight | null;
   cropMarketPrices: number[];
+  market: MarketState;
   finances: FinancialState;
   pendingTown: PendingTownExpansion | null;
 }

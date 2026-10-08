@@ -16,7 +16,9 @@ test('live frost cancels locusts, posts original loss/prices/sound and resumes d
   g.dispatch({type:'start-disaster',kind:'swarm'});const rng=saved(g).runtime.random;
   g.dispatch({type:'start-disaster',kind:'frost'});let s=g.getSnapshot();
   assert.equal(s.disasters.flags&48,16);assert.equal(loss(s.scenario.fields[1].bytes),255);assert.equal(s.weather.temperature,50);assert.equal(s.weather.temperatureAnomaly,22);
-  assert.equal(s.cropMarketPrices[4],Math.min((f.state.cropMarketPrices[4]+(f.state.cropMarketPrices[4]>>>f.state.crops[4][72]))&65535,(f.state.crops[4][34]|f.state.crops[4][35]<<8)*4));
+  const history = f.state.market.history[4][29]!;
+  assert.equal(s.market.history[4][29],Math.min((history+(history>>>f.state.crops[4][72]))&65535,(f.state.crops[4][34]|f.state.crops[4][35]<<8)*4));
+  assert.deepEqual(s.cropMarketPrices,f.state.cropMarketPrices);
   assert.deepEqual(events,[{type:'sound',sound:'swarm'},{type:'sound',sound:'wind'}]);assert.deepEqual(saved(g).runtime.random,rng);
   const checkpoint=g.save(4),result=s.lastDisasterResult;
   if(result?.ok&&'fields'in result)result.fields.push(97);s.disasters.flags=0;assert.equal(g.save(4),checkpoint);

@@ -33,16 +33,16 @@ test('two-cell windbreak boundary counts covered rows/columns once, protects at8
 
 test('high-wind eligibility follows price changes, disabled starts are inert, and price arithmetic wraps before the source cap', () => {
   const f = disasterFixture(), { scenario: w, weather, disasters: d } = f.state;
-  const crops = f.state.crops.map(c => [...c]), prices = [...f.state.cropMarketPrices];
+  const crops = f.state.crops.map(c => [...c]), market = f.state.market, oldTrade = w.cropDefinitions[0].price;
   for (const c of crops) c[72] = 0;
-  crops[0][72] = 1; crops[0][34] = 100; crops[0][35] = 0; prices[0] = 100;
-  d.enabled = false; assert.equal(beginWindDisaster(w, crops, prices, weather, d, 1), false); assert.equal(prices[0], 100);
+  crops[0][72] = 1; crops[0][34] = 100; crops[0][35] = 0; market.history[0][29] = 100;
+  d.enabled = false; assert.equal(beginWindDisaster(w, crops, market, weather, d, 1), false); assert.equal(market.history[0][29], 100);
   d.enabled = true; d.flags = 32; d.swarm.fieldSlot = 1; weather.wind = 5;
-  assert.equal(beginWindDisaster(w, crops, prices, weather, d, 2), true); assert.equal(d.flags, 8); assert.equal(weather.windAnomaly, 35);
-  assert.equal(prices[0], 150); assert.equal(w.cropDefinitions[0].price, 150); assert.equal(d.lastStartTick, 2);
-  assert.equal(beginWindDisaster(w, crops, prices, weather, d, 3), false); assert.equal(prices[0], 225); assert.equal(d.lastStartTick, 2);
-  d.flags = 1; assert.equal(beginWindDisaster(w, crops, prices, weather, d, 4), false); assert.equal(prices[0], 337);
-  beginWindDisaster(w, crops, prices, weather, d, 5); assert.equal(prices[0], 400);
-  crops[0][34] = 30000 & 255; crops[0][35] = 30000 >> 8; prices[0] = 65530;
-  beginWindDisaster(w, crops, prices, weather, d, 6); assert.equal(prices[0], 32759);
+  assert.equal(beginWindDisaster(w, crops, market, weather, d, 2), true); assert.equal(d.flags, 8); assert.equal(weather.windAnomaly, 35);
+  assert.equal(market.history[0][29], 150); assert.equal(w.cropDefinitions[0].price, oldTrade); assert.equal(d.lastStartTick, 2);
+  assert.equal(beginWindDisaster(w, crops, market, weather, d, 3), false); assert.equal(market.history[0][29], 225); assert.equal(d.lastStartTick, 2);
+  d.flags = 1; assert.equal(beginWindDisaster(w, crops, market, weather, d, 4), false); assert.equal(market.history[0][29], 337);
+  beginWindDisaster(w, crops, market, weather, d, 5); assert.equal(market.history[0][29], 400);
+  crops[0][34] = 30000 & 255; crops[0][35] = 30000 >> 8; market.history[0][29] = 65530;
+  beginWindDisaster(w, crops, market, weather, d, 6); assert.equal(market.history[0][29], 32759);
 });

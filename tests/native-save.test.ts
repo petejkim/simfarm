@@ -66,9 +66,9 @@ test('save midway through new-field work and treatments continues through valuab
   same(original, restored, 4);
   restored = GameSimulation.load(restored.save(4), crops).simulation;
   const inventory = original.getSnapshot().scenario.inventory.find(i => i.active && i.type === 168 && !priorItems.has(i.slot))!;
-  assert.ok(inventory); assert.equal(original.getSnapshot().storedHarvestValues[inventory.slot], 398);
+  assert.ok(inventory); assert.equal(original.getSnapshot().storedHarvestValues[inventory.slot], 924);
   for (const game of [original, restored]) game.dispatch({ type: 'sell-harvest', inventorySlot: inventory.slot });
-  same(original, restored, 4); assert.equal(restored.getSnapshot().scenario.farm.cash, 21803);
+  same(original, restored, 4); assert.equal(restored.getSnapshot().scenario.farm.cash, 22385);
 }, 15000);
 
 test('all four treatments, tick rollover and fifth-year weather retain exact continuation', () => {

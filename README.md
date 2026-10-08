@@ -1,6 +1,6 @@
 # SimFarm native preservation
 
-Incremental reconstruction of the supplied 16-bit DOS SimFarm as a native TypeScript/React/Vite browser game, developed with Bun. No DOS runtime or x86 emulator is used. The current build supports land purchase, new fields, planting, crop treatments, growing, harvesting, storage and crop sales, with machinery, weather, calendar progression and converted MIDI music. Positive-value corn farming cycles on existing fields and newly purchased/fertilized land are verified in the browser. Native save/load is available; DOS-compatible export and many other original systems remain unfinished.
+Incremental reconstruction of the supplied 16-bit DOS SimFarm as a native TypeScript/React/Vite browser game, developed with Bun. No DOS runtime or x86 emulator is used. The current build supports land purchase, new fields, planting, crop treatments, growing, harvesting, storage and crop sales, with machinery, weather, calendar progression and converted MIDI music. Positive-value corn farming cycles on existing fields and newly purchased/fertilized land are verified in the browser. Original weekly markets now update crop sale and seed purchase prices; planting and disasters affect the next market update. Native save/load is available; DOS-compatible export and many other original systems remain unfinished.
 
 ## Run locally
 

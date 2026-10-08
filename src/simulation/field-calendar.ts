@@ -1,3 +1,4 @@
+import type { MarketState } from './market';
 import { Binary } from '../formats/binary';
 import type { Scenario } from '../formats/scenario';
 import { describeScheduleEntry } from '../formats/field-schedule';
@@ -16,7 +17,7 @@ export type ScheduleDispatchResult = { ok: true }
  * An explicit January week-zero call skips completion; actual year-end calls do not.
  * A failed seed order exits the whole scan.
  * Calendar advancement and year-plan projection remain separate caller responsibilities. */
-export function dispatchFieldSchedule(world: Scenario, crops: readonly (readonly number[])[], marketPrices: number[],
+export function dispatchFieldSchedule(world: Scenario, crops: readonly (readonly number[])[], market: MarketState,
   random: FarmRandom, runtime: EquipmentRuntime, soilMoisture: number): ScheduleDispatchResult {
   const calendar = world.farm.calendar;
   validateCalendar(calendar.week === 4 ? { ...calendar, week: 0 } : calendar);
@@ -28,7 +29,7 @@ export function dispatchFieldSchedule(world: Scenario, crops: readonly (readonly
     switch (entry.kind) {
       case 'plant': {
         // SF-018: preserve the existing field if seed fails, but retain the original stop-on-failure ordering.
-        const result = plantField(world, field.slot, entry.cropSlot, crops, marketPrices, random, soilMoisture, true);
+        const result = plantField(world, field.slot, entry.cropSlot, crops, market, random, soilMoisture, true);
         if (!result.ok) return { ok: false, fieldSlot: field.slot, reason: result.reason };
         break;
       }

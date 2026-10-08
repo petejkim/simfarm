@@ -3,7 +3,7 @@ import type { FieldRecord } from '../formats/field';
 import type { WeatherState } from './weather';
 import { changeFieldCondition } from './field-conditions';
 import type { MovingDisasterState } from './moving-disasters';
-import { adjustDisasterPrices } from './disaster-prices';
+import { adjustMarketForDisaster, type MarketState } from './market';
 
 /** 0x1e250: count covered rows/columns in the two-cell tree boundary.
  * Each row/column counts once even if multiple candidate cells contain trees. */
@@ -24,10 +24,10 @@ export function fieldWindbreaks(world: Scenario, f: FieldRecord): number {
 
 /** General start's mode6 callback0x4b1be precedes eligibility checks.
  * Its source sensitivity is crop byte72, with 16-bit wrapping before the cap. */
-export function beginWindDisaster(world: Scenario, crops: readonly (readonly number[])[], prices: number[],
+export function beginWindDisaster(world: Scenario, crops: readonly (readonly number[])[], market: MarketState,
   weather: WeatherState, d: MovingDisasterState, tick: number): boolean {
   if (!d.enabled) return false;
-  adjustDisasterPrices(world, crops, prices, 6);
+  adjustMarketForDisaster(market, crops, 6);
   if (d.flags & 9) return false;
   d.flags = (d.flags & ~32) | 8;
   if (weather.wind < 30) weather.windAnomaly = (40 - weather.wind) << 24 >> 24;

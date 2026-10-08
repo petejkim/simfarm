@@ -13,7 +13,7 @@ import { readNativeSave, writeNativeSave } from '../src/formats/native-save';
 const source=(n:string)=>readFileSync(new URL('../../simfarm-dos/'+n,import.meta.url));
 const rng=(bounded=99)=>new FarmRandom({visual:1234,simulation:5678,bounded});
 function fixture() {
-  const f=disasterFixture(),w=f.state.scenario,c=f.crops.map(c=>c.rawDefinition),p=w.cropDefinitions.map(d=>d.price),d=createMovingDisasters(),r=rng();
+  const f=disasterFixture(),w=f.state.scenario,c=f.crops.map(c=>c.rawDefinition),p=f.state.market,d=createMovingDisasters(),r=rng();
   const weather=f.state.weather;
   const start=(kind:Parameters<typeof beginStationaryDisaster>[5],tick=65535)=>beginStationaryDisaster(w,c,p,weather,d,kind,tick,r);
   return {f,w,c,p,d,r,weather,start,field:w.fields[1]};
@@ -45,9 +45,9 @@ test('frost damages all sensitive active fields regardless of state, saturates l
     assert.equal(d.flags,16);assert.equal(weather.temperatureAnomaly,22);assert.equal(weather.temperature,50);
   }
   assert.deepEqual(r.snapshot(),beforeRandom);assert.deepEqual(w.cells,beforeCells);assert.deepEqual(w.sourceBytes,beforeSource);
-  p[1]=100;const oldLoss=loss(field);assert.deepEqual(start('frost'),{ok:false,reason:'already-active'});
-  assert.equal(p[1],150);assert.equal(loss(field),oldLoss);
-  d.enabled=false;p[1]=100;assert.deepEqual(start('frost'),{ok:false,reason:'disabled'});assert.equal(p[1],100);
+  p.history[1][29]=100;const oldLoss=loss(field);assert.deepEqual(start('frost'),{ok:false,reason:'already-active'});
+  assert.equal(p.history[1][29],150);assert.equal(loss(field),oldLoss);
+  d.enabled=false;p.history[1][29]=100;assert.deepEqual(start('frost'),{ok:false,reason:'disabled'});assert.equal(p.history[1][29],100);
 });
 
 test('frost temperature retains signed byte assignment, cumulative32-bit subtraction and distinct daily/dispatcher stop boundaries',()=>{
@@ -68,7 +68,7 @@ test('frost temperature retains signed byte assignment, cumulative32-bit subtrac
 test('crop circles use the biased selector without retrying ineligible crops and retain exact seven source tiles/flags',()=>{
   const {w,c,p,d,r,weather,field,start}=fixture();field.bytes[14]=1;
   for(const cell of w.cells){cell.terrain=0xa800|688;cell.overlay=0xbeef;cell.attribute=123;}
-  const before=structuredClone(w.cells),records=w.fields.map(f=>Uint8Array.from(f.bytes)),prices=[...p],expected=rng();expected.below(1);
+  const before=structuredClone(w.cells),records=w.fields.map(f=>Uint8Array.from(f.bytes)),prices=structuredClone(p),expected=rng();expected.below(1);
   assert.deepEqual(start('crop-circles'),{ok:true,kind:'crop-circles',fields:[1],cancelledSwarm:false});assert.equal(loss(field),10);
   const pattern=[[2,4,211],[3,4,212],[4,4,213],[5,4,214],[6,4,215],[4,3,210],[4,5,216]];
   for(const [dx,dy,tile]of pattern)before[worldIndex(field.x+dx,field.y+dy)].terrain=0xa800|tile;
@@ -106,7 +106,7 @@ test('toxic-land warning changes only its persistent flag/start tick, with no in
 test('all eight farms retain stationary flags, original field/terrain changes and weather through existing v14 checkpoints',()=>{
   for(let id=0;id<8;id++){
     const world=readScenario(source(`SCEN${id}.SSM`)),crops=world.cropFiles.map(n=>readCrop(n.replace('.crp',''),source('CROPS/'+n.toUpperCase())));
-    const {state}=readNativeSave(new GameSimulation(world,crops).save(id)),c=crops.map(c=>c.rawDefinition),p=state.cropMarketPrices;
+    const {state}=readNativeSave(new GameSimulation(world,crops).save(id)),c=crops.map(c=>c.rawDefinition),p=state.market;
     const r=new FarmRandom(state.random),raw=Uint8Array.from(world.sourceBytes!);
     for(const kind of ['frost','crop-circles','toxic-land'] as const)beginStationaryDisaster(state.scenario,c,p,state.weather,state.disasters,kind,17,r);
     state.random=r.snapshot();const text=writeNativeSave(state,id),loaded=GameSimulation.load(text,crops).simulation;

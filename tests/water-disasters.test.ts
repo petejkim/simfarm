@@ -5,7 +5,7 @@ import { readScenario, worldIndex } from '../src/formats/scenario';
 import { readFinancialState } from '../src/formats/finance';
 import { readCrop } from '../src/formats/crop';
 import { createMovingDisasters } from '../src/simulation/moving-disasters';
-import { adjustDisasterPrices } from '../src/simulation/disaster-prices';
+import { createColdMarket, loadMarketCropPrices, adjustMarketForDisaster } from '../src/simulation/market';
 import { createWaterDisasters, beginWaterDisaster, stopWaterDisaster, advanceFlood, advanceFloodCounter,
   countDryNeighbors, validateWaterDisasters } from '../src/simulation/water-disasters';
 import { refreshShorelines } from '../src/simulation/terrain-removal';
@@ -57,18 +57,18 @@ test('drought, flood and wind use distinct crop sensitivity bytes and original m
   const unused = w.cropDefinitions.slice(16).map(c => Array.from(c.bytes));
   for (const c of crops) { c[34] = 100; c[35] = 0; c[70] = 2; c[71] = 1; c[72] = 3; }
   for (const [mode, expected] of [[2, 150], [3, 125], [5, 112], [6, 112]] as const) {
-    const prices = Array(16).fill(100); adjustDisasterPrices(w, crops, prices, mode);
-    assert.deepEqual(prices, Array(16).fill(expected)); assert.deepEqual(w.cropDefinitions.slice(0, 16).map(c => c.price), prices);
+    const market = createColdMarket(); loadMarketCropPrices(market, crops); adjustMarketForDisaster(market, crops, mode);
+    assert.deepEqual(market.history.map(h => h[29]), Array(16).fill(expected));
     assert.deepEqual(w.cropDefinitions.slice(16).map(c => Array.from(c.bytes)), unused);
   }
-  const prices = Array(16).fill(100);
+  const market = createColdMarket(); loadMarketCropPrices(market, crops);
   for (const [i, shift] of [0, 16, 31, 32, 33, 255].entries()) crops[i][71] = shift;
-  adjustDisasterPrices(w, crops, prices, 2);
-  assert.deepEqual(prices.slice(0, 6), [100, 100, 100, 200, 150, 100]);
+  adjustMarketForDisaster(market, crops, 2);
+  assert.deepEqual(market.history.slice(0, 6).map(h => h[29]), [100, 100, 100, 200, 150, 100]);
 });
 
 test('drought counts clamped dry neighbors, preserves original water/obstacle flags, reprices before eligibility and restores permanent water', () => {
-  const f = fixture(), { scenario: w, disasters: d, weather, crops, cropMarketPrices: prices } = f.state, a = f.water;
+  const f = fixture(), { scenario: w, disasters: d, weather, crops, market } = f.state, a = f.water;
   for (const c of w.cells) c.terrain = 0x3000 | 55;
   w.cells[0].terrain = 15;
   assert.equal(countDryNeighbors(w, 0, 0), 4); assert.equal(countDryNeighbors(w, 1, 1), 1);
@@ -77,15 +77,15 @@ test('drought counts clamped dry neighbors, preserves original water/obstacle fl
   for (let i = 0; i < 5; i++) w.cells[worldIndex(20 + i * 3, 20)].terrain = 0xb800 | (protectedTiles[i] ?? 55);
   // One interior permanent-water cell surrounded by land dries; high flags survive start.
   w.cells[worldIndex(32, 20)].overlay = 0x4000;
-  const originalRandom = f.random.snapshot(), oldPrice = prices[0], sensitivity = crops[0][71];
-  d.enabled = false; assert.equal(beginWaterDisaster(w, crops, prices, weather, d, a, 'drought', 99, f.random), false);
-  assert.equal(prices[0], oldPrice); assert.deepEqual(f.random.snapshot(), originalRandom);
-  d.enabled = true; assert.equal(beginWaterDisaster(w, crops, prices, weather, d, a, 'drought', 100, f.random), true);
+  const originalRandom = f.random.snapshot(), oldPrice = market.history[0][29]!, sensitivity = crops[0][71];
+  d.enabled = false; assert.equal(beginWaterDisaster(w, crops, market, weather, d, a, 'drought', 99, f.random), false);
+  assert.equal(market.history[0][29]!, oldPrice); assert.deepEqual(f.random.snapshot(), originalRandom);
+  d.enabled = true; assert.equal(beginWaterDisaster(w, crops, market, weather, d, a, 'drought', 100, f.random), true);
   assert.equal(d.flags & 2, 2); assert.equal(d.lastStartTick, 100);
   assert.equal(w.cells[worldIndex(32, 20)].terrain, 0x981c); // Start ignores overlay protection; only shoreline redraw checks it.
   for (let i = 0; i < 4; i++) assert.equal(w.cells[worldIndex(20 + i * 3, 20)].terrain, 0xb800 | protectedTiles[i]);
-  const firstPrice = prices[0]; assert.equal(beginWaterDisaster(w, crops, prices, weather, d, a, 'drought', 101, f.random), false);
-  assert.equal(d.lastStartTick, 100); if (sensitivity) assert.ok(prices[0] >= firstPrice);
+  const firstPrice = market.history[0][29]!; assert.equal(beginWaterDisaster(w, crops, market, weather, d, a, 'drought', 101, f.random), false);
+  assert.equal(d.lastStartTick, 100); if (sensitivity) assert.ok(market.history[0][29]! >= firstPrice);
   assert.equal(stopWaterDisaster(w, weather, d, a, 'drought', f.random), true);
   assert.equal(w.cells[worldIndex(32, 20)].terrain, 0xb836); // Stop sets54 and water; overlay suppresses redraw.
   assert.equal(d.flags & 2, 0); assert.equal(stopWaterDisaster(w, weather, d, a, 'drought', f.random), false);
@@ -137,7 +137,7 @@ test('flood removes idle/growing fields with plans intact, leaves working fields
 });
 
 test('flood stop retains source high-bit loss, negative inactive counter and reset-on-manual-start behavior', () => {
-  const f = fixture(), { scenario: w, weather, disasters: d, crops, cropMarketPrices: prices, finances } = f.state, s = f.water;
+  const f = fixture(), { scenario: w, weather, disasters: d, crops, market, finances } = f.state, s = f.water;
   d.flags = 4; weather.precipitationBonus = 4; s.counter = 8; s.rawFF6C = 123; s.rawFF6E = 456;
   const plain = w.cells[worldIndex(20, 20)], bridge = w.cells[worldIndex(30, 30)];
   plain.terrain = 0xe800 | 55; plain.overlay = 0x4800; bridge.terrain = 0xe800 | 172;
@@ -146,7 +146,7 @@ test('flood stop retains source high-bit loss, negative inactive counter and res
   assert.equal(plain.terrain, 28); assert.equal(plain.overlay, 0x4800); assert.equal(bridge.terrain, 0xc800 | 172);
   assert.equal(s.counter, -8); assert.equal(weather.precipitationBonus, 0); assert.equal(s.rawFF6C, 123); assert.equal(s.rawFF6E, 456);
   for (let week = 0; week < 20; week++) advanceFloodCounter(d, s); assert.equal(s.counter, -8);
-  assert.equal(beginWaterDisaster(w, crops, prices, weather, d, s, 'flood', 65535, f.random), true);
+  assert.equal(beginWaterDisaster(w, crops, market, weather, d, s, 'flood', 65535, f.random), true);
   assert.deepEqual(s, { counter: 0, scanning: true, scanX: 0, scanY: 0, rawFF6C: 0, rawFF6E: 0 });
   assert.equal(weather.precipitationBonus, 4); assert.equal(d.lastStartTick, 65535);
   s.counter = 127; advanceFloodCounter(d, s); assert.equal(s.counter, -128);
@@ -156,10 +156,10 @@ test('all original farms support drought recovery and full flood scans without a
   for (let id = 0; id < 8; id++) {
     const bytes = source(`SCEN${id}.SSM`), w = readScenario(bytes), finances = readFinancialState(bytes);
     const crops = w.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)).rawDefinition);
-    const f = fixture(), d = createMovingDisasters(), s = createWaterDisasters(), prices = w.cropDefinitions.map(c => c.price), cash = w.farm.cash;
-    assert.ok(beginWaterDisaster(w, crops, prices, f.state.weather, d, s, 'drought', 0, f.random));
+    const f = fixture(), d = createMovingDisasters(), s = createWaterDisasters(), market = createColdMarket(), cash = w.farm.cash; loadMarketCropPrices(market, crops);
+    assert.ok(beginWaterDisaster(w, crops, market, f.state.weather, d, s, 'drought', 0, f.random));
     assert.ok(stopWaterDisaster(w, f.state.weather, d, s, 'drought', f.random));
-    assert.ok(beginWaterDisaster(w, crops, prices, f.state.weather, d, s, 'flood', 1, f.random));
+    assert.ok(beginWaterDisaster(w, crops, market, f.state.weather, d, s, 'flood', 1, f.random));
     let scanned = 0;
     while (s.scanning) scanned += advanceFlood(w, finances, f.state.weather, d, s, f.random).scanned;
     assert.equal(scanned, 94 * 94); assert.ok(stopWaterDisaster(w, f.state.weather, d, s, 'flood', f.random));

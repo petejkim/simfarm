@@ -2,7 +2,7 @@ import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readMarketDefaults } from '../src/formats/market-defaults';
-import { adjustMarketForDisaster, adjustMarketForPlanting, loadMarketCropPrices, updateWeeklyMarket, validateMarketState } from '../src/simulation/market';
+import { createColdMarket, adjustMarketForDisaster, adjustMarketForPlanting, loadMarketCropPrices, updateWeeklyMarket, validateMarketState } from '../src/simulation/market';
 import { FarmRandom } from '../src/simulation/random';
 import { createSetupRecords } from '../src/formats/new-farm-records';
 import { newFarmAssets, newFarmExe as exe } from './support/new-farm';
@@ -45,6 +45,7 @@ test('market load, weekly dispatch, signed arithmetic and separate history write
 
 test('cold history decoding and crop loading preserve every other word and unknown mode byte without RNG', () => {
   assert.deepEqual(readMarketDefaults(exe), fresh(0));
+  assert.deepEqual(createColdMarket(), readMarketDefaults(exe));
   assert.equal(createHash('sha256').update(exe.subarray(0x801e0, 0x805a0)).digest('hex'), '3dc463a76fc170607c07b104c3cb531362ce7d6e10c1a34e0c0f370aeae08ce8');
   const changed = Buffer.from(exe);
   for (let i = 0; i < 480; i++) changed.writeUInt16LE(i * 137 & 65535, 0x801e0 + i * 2);
@@ -173,7 +174,7 @@ test('market and RNG continuation survive detached serialization across weekly c
   // Independent Python calculation from CRP blocks and documented arithmetic,
   // not a capture from an emulated/running DOS game.
   const encoded = Buffer.alloc(960);
-  state.history.flat().forEach((price, i) => encoded.writeUInt16LE(price, i * 2));
+  state.history.flat().forEach((price, i) => encoded.writeUInt16LE(price!, i * 2));
   assert.equal(createHash('sha256').update(encoded).digest('hex'), '28ee597ec92285571b6fba2e84d6aead17d85135f4f812061943e0fde0862af2');
   assert.deepEqual(state.history.map(h => h[29]), [196, 26, 45, 68, 47, 112, 47, 32, 22, 238, 387, 161, 131, 970, 640, 34]);
   assert.equal(state.mood, 2); assert.equal(state.rawBC72, 0);

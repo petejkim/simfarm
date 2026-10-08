@@ -3,7 +3,7 @@ import type { FinancialState } from '../formats/finance';
 import type { WeatherState } from './weather';
 import type { MovingDisasterState } from './moving-disasters';
 import type { FarmRandom } from './random';
-import { adjustDisasterPrices } from './disaster-prices';
+import { adjustMarketForDisaster, type MarketState } from './market';
 import { refreshShorelines } from './terrain-removal';
 import { removeField } from './field-removal';
 import { findBuilding } from './building-storage';
@@ -40,12 +40,12 @@ export function countDryNeighbors(world: Scenario, x: number, y: number): number
 
 /** 0x369be/0x36b12. The callback reprices even a rejected repeated start.
  * Native presentation/audio is left to the caller; no host RNG is used. */
-export function beginWaterDisaster(world: Scenario, crops: readonly (readonly number[])[], prices: number[], weather: WeatherState,
+export function beginWaterDisaster(world: Scenario, crops: readonly (readonly number[])[], market: MarketState, weather: WeatherState,
   shared: MovingDisasterState, state: WaterDisasterState, kind: WaterDisasterKind, tick: number, random: FarmRandom): boolean {
   validateWaterDisasters(state);
   if (!shared.enabled) return false;
   const flag = kind === 'drought' ? 2 : 4;
-  adjustDisasterPrices(world, crops, prices, kind === 'drought' ? 2 : 3);
+  adjustMarketForDisaster(market, crops, kind === 'drought' ? 2 : 3);
   if (shared.flags & flag) return false;
   shared.flags |= flag;
   if (kind === 'drought') {

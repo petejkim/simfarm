@@ -2,13 +2,18 @@ import type { Scenario } from '../formats/scenario';
 import type { FarmRandom } from './random';
 
 export interface MarketState {
-  history: number[][];
+  /** Null denotes an unrecorded sample in a migrated native checkpoint. */
+  history: (number | null)[][];
   mood: number;
   /** DSbc72: tested/reset by the updater, but no increment is verified. */
   rawBC72: number;
 }
 type MarketRandom = Pick<FarmRandom, 'nextSimulation' | 'below'>;
 type TradeTables = Pick<Scenario, 'cropDefinitions' | 'harvestDefinitions' | 'seedDefinitions'>;
+// Source cold bytes at801e0..8059f,90356,90362; tested against readMarketDefaults.
+export function createColdMarket(): MarketState {
+  return { history: Array.from({ length: 16 }, () => Array(30).fill(0)), mood: 0, rawBC72: 0 };
+}
 const signedWord = (n: number) => n << 16 >> 16;
 const signedByte = (n: number) => n << 24 >> 24;
 const isInteger = (n: number, max: number) => Number.isInteger(n) && n >= 0 && n <= max;
@@ -16,7 +21,7 @@ const isInteger = (n: number, max: number) => Number.isInteger(n) && n >= 0 && n
 export function validateMarketState(market: MarketState): void {
   if (!isInteger(market.mood, 255) || !isInteger(market.rawBC72, 255)) throw new Error('Invalid market byte');
   if (!Array.isArray(market.history) || market.history.length !== 16 || market.history.some(row =>
-    !Array.isArray(row) || row.length !== 30 || row.some(price => !isInteger(price, 65535)))) throw new Error('Invalid market history');
+    !Array.isArray(row) || row.length !== 30 || row.some((price, i) => price === null ? i === 29 : !isInteger(price, 65535)))) throw new Error('Invalid market history');
 }
 
 function validateCrops(crops: readonly (readonly number[])[]): void {
@@ -48,7 +53,7 @@ export function updateWeeklyMarket(world: TradeTables, crops: readonly (readonly
   for (let slot = 0; slot < 16; slot++) {
     const history = market.history[slot], crop = crops[slot];
     history.copyWithin(0, 1);
-    let price = history[29];
+    let price = history[29]!;
     const step = signedWord(price) >> 3; // Before the zero-to-one assignment.
     if (!price) price = 1;
     const choice = random.nextSimulation() & 7;
@@ -71,7 +76,7 @@ export function updateWeeklyMarket(world: TradeTables, crops: readonly (readonly
 export function adjustMarketForPlanting(market: MarketState, slot: number): void {
   validateMarketState(market);
   if (!isInteger(slot, 15)) throw new Error('Invalid market crop slot');
-  const price = market.history[slot][29];
+  const price = market.history[slot][29]!;
   market.history[slot][29] = (price - (signedWord(price) >> 2)) & 65535;
 }
 
@@ -84,7 +89,7 @@ export function adjustMarketForDisaster(market: MarketState, crops: readonly (re
   for (let slot = 0; slot < 16; slot++) {
     const crop = crops[slot];
     if (!crop[sensitivity]) continue;
-    const shift = crop[sensitivity] & 31, price = market.history[slot][29];
+    const shift = crop[sensitivity] & 31, price = market.history[slot][29]!;
     market.history[slot][29] = Math.min((price + (shift >= 16 ? 0 : price >>> shift)) & 65535,
       ((crop[34] | crop[35] << 8) << 2) & 65535);
   }

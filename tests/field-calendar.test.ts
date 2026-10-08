@@ -18,7 +18,7 @@ function setup(id = 4) {
   const world = snapshot.scenario, crops = definitions.map(d => d.rawDefinition), prices = snapshot.cropMarketPrices;
   const random = new FarmRandom({ visual: 27, simulation: 9029, bounded: 51 });
   const runtime = { grassTravelCount: 0, animationTick: 0, notices: [] };
-  return { world, crops, prices, random, runtime, run: () => dispatchFieldSchedule(world, crops, prices, random, runtime, 8) };
+  return { world, crops, prices, random, runtime, run: () => dispatchFieldSchedule(world, crops, snapshot.market, random, runtime, 8) };
 }
 function oneField() {
   const context = setup();
