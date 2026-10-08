@@ -1,3 +1,4 @@
+import { moveManualSupply, type SupplyMoveTarget, type SupplyMoveResult } from './manual-supply-move';
 import { moveManualEquipment, toggleManualBuildingInterior, type EquipmentMoveTarget, type EquipmentMoveResult, type BuildingInteriorResult } from './manual-equipment-move';
 import { removeManualTarget, type RemovalTarget, type ManualRemovalResult } from './manual-removal';
 import { sellManualAsset, type AssetSaleKind, type ManualAssetSaleResult } from './manual-asset-sale';
@@ -111,6 +112,7 @@ export interface GameSnapshot {
   lastAssetSaleResult: (ManualAssetSaleResult & { kind: AssetSaleKind }) | null;
   lastRemovalResult: ManualRemovalResult | null;
   lastEquipmentMoveResult: EquipmentMoveResult | null;
+  lastSupplyMoveResult: SupplyMoveResult | null;
   lastBuildingInteriorResult: BuildingInteriorResult | null;
   lastLandResult: LandPurchaseResult | null;
   lastBuildingResult: BuildingPlacementResult | null;
@@ -132,6 +134,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'set-auto-clear'; enabled: boolean }
   | { type: 'buy-land'; regionX: number; regionY: number }
   | { type: 'build'; buildingType: number; x: number; y: number }
+  | { type: 'move-supply'; selected: SupplyMoveTarget; x: number; y: number }
   | { type: 'move-equipment'; selected: EquipmentMoveTarget; x: number; y: number }
   | { type: 'toggle-building-interior'; x: number; y: number; slot: number }
   | { type: 'remove-object'; x: number; y: number; kind: RemovalTarget['kind']; slot: number; tile?: number }
@@ -208,6 +211,7 @@ export class GameSimulation {
   private lastAssetSaleResult: GameSnapshot['lastAssetSaleResult'] = null;
   private lastRemovalResult: ManualRemovalResult | null = null;
   private lastEquipmentMoveResult: EquipmentMoveResult | null = null;
+  private lastSupplyMoveResult: SupplyMoveResult | null = null;
   private lastBuildingInteriorResult: BuildingInteriorResult | null = null;
   private lastLandResult: LandPurchaseResult | null = null;
   private lastEquipmentPurchaseResult: GameSnapshot['lastEquipmentPurchaseResult'] = null;
@@ -364,6 +368,8 @@ export class GameSimulation {
       this.lastLandResult = purchaseLand(this.scenario, command.regionX, command.regionY, this.weather.soilMoisture);
     } else if (command.type === 'build') {
       this.lastBuildingResult = purchaseBuilding(this.scenario, this.finances, command.buildingType, command.x, command.y, this.weather.soilMoisture);
+    } else if (command.type === 'move-supply') {
+      this.lastSupplyMoveResult = moveManualSupply(this.scenario, this.finances, command.selected, command.x, command.y, this.weather.soilMoisture);
     } else if (command.type === 'move-equipment') {
       this.lastEquipmentMoveResult = moveManualEquipment(this.scenario, command.selected, command.x, command.y, this.scenario.farm.timerTicks);
     } else if (command.type === 'toggle-building-interior') {
@@ -621,6 +627,7 @@ export class GameSimulation {
       lastHarvestResult: this.lastHarvestResult ? { ...this.lastHarvestResult } : null,
       lastSaleResult: this.lastSaleResult ? { ...this.lastSaleResult } : null,
       lastAssetSaleResult: this.lastAssetSaleResult ? { ...this.lastAssetSaleResult } : null,
+      lastSupplyMoveResult: this.lastSupplyMoveResult ? { ...this.lastSupplyMoveResult } : null,
       lastEquipmentMoveResult: this.lastEquipmentMoveResult ? { ...this.lastEquipmentMoveResult } : null,
       lastBuildingInteriorResult: this.lastBuildingInteriorResult ? { ...this.lastBuildingInteriorResult } : null,
       lastRemovalResult: this.lastRemovalResult ? { ...this.lastRemovalResult } : null,

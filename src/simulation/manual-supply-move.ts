@@ -1,6 +1,6 @@
 import type { FinancialState } from '../formats/finance';
 import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
-import { findBuilding, findStorageSpace, toggleBuildingInterior } from './building-storage';
+import { BUILDING_GRAPHICS, findBuilding, findStorageSpace, toggleBuildingInterior } from './building-storage';
 import { findEquipmentAt } from './manual-equipment-move';
 
 export type SupplyMoveKind = 'chemical' | 'seed' | 'harvest' | 'trough' | 'feed';
@@ -46,6 +46,8 @@ export function checkSupplyPickup(world: Scenario, finances: FinancialState, x: 
   if (!d || d.type !== type || d.graphic !== expectedGraphic || d.width !== 1 || d.height !== 1)
     return { ok: false, reason: 'inconsistent-supply' };
   if (b) {
+    if (b.type !== 70 && b.type !== 71 && BUILDING_GRAPHICS[world.buildingDefinitions[b.type - 64].graphic] === undefined)
+      return { ok: false, reason: 'inconsistent-supply' };
     const content = b.content((x - b.x) * 3 + y - b.y);
     if (content.type !== type || content.slot !== item.slot) return { ok: false, reason: 'inconsistent-supply' };
   }
@@ -70,6 +72,9 @@ function prepare(world: Scenario, finances: FinancialState, selected: SupplyMove
   if (found && kind === 'feed') return { ok: false, reason: 'incompatible-storage' };
   let storageIndex: number | null = null, dx = x, dy = y;
   if (storage) {
+    // Refresh must be supported before coordinates/content can be changed.
+    if (storage.type !== 70 && storage.type !== 71 && BUILDING_GRAPHICS[world.buildingDefinitions[storage.type - 64].graphic] === undefined)
+      return { ok: false, reason: 'inconsistent-supply' };
     // Source grouping0x1a5ca..0x1a72c: seeds bypass the64/65 gate;
     // the general66..69 branch also accepts harvests (SF-117/118).
     const accepts = kind === 'seed' || (kind === 'harvest' && [64, 65].includes(storage.type)) || (storage.type >= 66 && storage.type <= 69);

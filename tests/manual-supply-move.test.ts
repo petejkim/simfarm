@@ -168,3 +168,18 @@ test('relocated harvest remains sellable and chemicals consumable; original crop
   assert.ok(moveManualSupply(w, a, selected(f, 20, 20), 30, 30, 0).ok); assert.equal(chemical.item.bytes[2] & 4, 4);
   assert.deepEqual(consumeChemical(w, 220, 0), { ok: true, source: 'stored', cost: 0 }); assert.equal(w.buildings[1].content(0).type, -1);
 });
+
+test('unsupported saved storage graphics fail before insertion or withdrawal changes any canonical state', () => {
+  const f = setup(), w = f.world, a = f.finances;
+  assert.ok(purchaseBuilding(w, a, 67, 20, 20, 0).ok); goods(f, 220);
+  const original = w.buildingDefinitions[3].bytes[0], picked = selected(f);
+  w.buildingDefinitions[3].bytes[0] = 255;
+  let before = JSON.stringify(f);
+  assert.deepEqual(moveManualSupply(w, a, picked, 20, 20, 0), { ok: false, reason: 'inconsistent-supply' });
+  assert.equal(JSON.stringify(f), before);
+  w.buildingDefinitions[3].bytes[0] = original;
+  assert.ok(moveManualSupply(w, a, picked, 20, 20, 0).ok); const stored = selected(f, 20, 20);
+  w.buildingDefinitions[3].bytes[0] = 255; before = JSON.stringify(f);
+  assert.deepEqual(moveManualSupply(w, a, stored, 30, 30, 0), { ok: false, reason: 'inconsistent-supply' });
+  assert.equal(JSON.stringify(f), before);
+});

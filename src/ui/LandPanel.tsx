@@ -4,7 +4,7 @@ import type { GameCommand, GameSnapshot } from '../simulation/game';
 import { quoteLand } from '../simulation/land';
 import { checkFieldPlacement } from '../simulation/field-placement';
 
-export type MapTool = 'move' | 'inspect' | 'land' | 'field' | 'build' | 'remove' | 'irrigation' | 'livestock' | 'equipment';
+export type MapTool = 'supply-move' | 'move' | 'inspect' | 'land' | 'field' | 'build' | 'remove' | 'irrigation' | 'livestock' | 'equipment';
 interface Props {
   tool: MapTool;
   position: { x: number; y: number } | null;

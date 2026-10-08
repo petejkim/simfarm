@@ -1004,7 +1004,7 @@ Manual drop0x13d47/0x13d66 sets moving2/manual0800 but not reserved1. Owned allo
 
 ## SF-116 — trough relocation has unchecked selection and early withdrawal branches
 
-Status: source hazards documented; native transfer primitives now correct the pickup/occupancy/content hazards as detailed in the implementation update below. Live controls follow. Confidence high on the direct branches, conditional on reachable inconsistent map/storage states for the missing-slot case. No exploit is established.
+Status: source hazards documented; native transfer primitives now correct the pickup/occupancy/content hazards as detailed in the implementation update below. Live commands and browser controls use these corrected primitives. Confidence high on the direct branches, conditional on reachable inconsistent map/storage states for the missing-slot case. No exploit is established.
 
 Trough pickup0x13a50 calls the inventory point finder without testing for a zero result, unlike the adjacent seed/harvest/feed branches. If a trough graphic exists without a matching inventory record, later coordinate/quantity accesses use the captured zero slot. The same pickup calls storage removal0x1aeb0 at0x13a91 before any destination has been accepted, so cancellation or repeated invalid drops can leave the original storage state changed. Drop0x14188 accepts ground15..31 but omits the terrain0800 occupancy guard present for feed/chemicals/seed/harvest. This can repaint ground beneath a masked occupant. Exact cancellation recovery outside this handler and ordinary-game reachability of inconsistent trough states remain to be traced. Future native relocation should validate a matching active record and stage source withdrawal until an accepted drop; retain the source behavior/evidence here after fixing it.
 
@@ -1033,4 +1033,17 @@ The crop insertion body0x1a626..0x1a6f6 writes inventory coordinates and buildin
 
 ### SF-116 supply movement implementation update
 
-Native trough/feed transfer preflights a matching active record and source content, then withdraws only after a valid drop. Occupied trough destinations are rejected, and source interior floors remain correctly refreshed. The source trough path instead paints grass over the original cell even after an interior withdrawal0x14227..0x1426c. Feed pickup forces source-building slot0 at0x13b6d, so stored feed can leave stale contents when moved out; native releases a matching stored-feed reference on accepted transfer. Tests cover read-only selection, invalid drops and both accepted departures. These corrections are implemented in primitives; live browser controls follow. Original unsafe branches remain documented above rather than deleted.
+Native trough/feed transfer preflights a matching active record and source content, then withdraws only after a valid drop. Occupied trough destinations are rejected, and source interior floors remain correctly refreshed. The source trough path instead paints grass over the original cell even after an interior withdrawal0x14227..0x1426c. Feed pickup forces source-building slot0 at0x13b6d, so stored feed can leave stale contents when moved out; native releases a matching stored-feed reference on accepted transfer. Tests cover read-only selection, invalid drops and both accepted departures. These corrections run through the live move-supply command and browser controls, with exact saved continuation. Original unsafe branches remain documented above rather than deleted.
+
+
+## SF-120 — disaster field traversal repeats an inactive slot and skips the active tail
+
+Status: verified loop-control defect on sparse field tables; correction deferred to disaster reconstruction. Confidence high on source branches, with original visible incidence not measured.
+
+Disaster dispatcher0x3709e, bit8 branch0x37112..0x37169, initializes record slot1 and processed count0. Inactive test0x37126 jumps directly to0x3715a. Slot increment0x37157 is reached only for active records, while0x3715a increments processed count unconditionally and0x37164 compares it to the active-field count. An inactive slot therefore repeats until the processed count reaches the bound; active records after that hole are skipped. Field removal can leave sparse records, but exact original storm timing after removal is not yet traced. Native disaster reconstruction should use bounded active-record traversal and test holes at the beginning/middle, retaining this evidence. No security vulnerability is asserted.
+
+## SF-121 — disaster rendering can read an uninitialized map-window local
+
+Status: conditional uninitialized-local read, native disaster integration pending. Confidence high on the missing assignment; reachability of a missing map window while the effect is active remains unresolved.
+
+Dispatcher0x370ae..0x370b7 tests global far pointer13ae/13b0. Only the nonzero branch initializes stack locals[bp−0x10]/[bp−0xe] at0x370c2/0x370c5. The bit20 effect later passes those locals to redraw call0x37215, and tests their combined value0x372c3..0x372c9 before window dereferences. A zero global does not initialize the locals to zero. Native should represent an absent viewport explicitly and keep simulation effects independent of drawing. No null-window DOS configuration or exploitable memory consequence has been established; do not label this a demonstrated security vulnerability.
