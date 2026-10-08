@@ -1,3 +1,4 @@
+import type { NewFarmState } from './new-farm-state';
 import type { MovingDisasterState } from './moving-disasters';
 import type { WaterDisasterState } from './water-disasters';
 import type { Scenario } from '../formats/scenario';
@@ -20,6 +21,8 @@ export interface PendingTownExpansion {
 /** Native checkpoint, not the original DOS SSM format. UI feedback is deliberately transient. */
 export interface SimulationState {
   scenario: Scenario;
+  /** Null for original imports; their unsaved startup records are not invented. */
+  newFarm: NewFarmState | null;
   crops: readonly (readonly number[])[];
   /** Null only when migrating a checkpoint predating live town development. */
   townLayoutBytes: readonly number[] | null;

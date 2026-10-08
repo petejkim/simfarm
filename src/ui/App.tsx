@@ -1,3 +1,4 @@
+import { NewFarmControls } from './NewFarmControls';
 import { useCallback, useState } from 'react';
 import type { GameEvent } from '../simulation/events';
 import { loadGameAssets, type GameAssets } from '../assets/game-assets';
@@ -18,7 +19,9 @@ export function App() {
   return <Game assets={assets.value} />;
 }
 function Game({ assets }: { assets: GameAssets }) {
-  const [farm, setFarm] = useState<{ id: number; serial: number; loaded?: LoadedFarm }>({ id: 0, serial: 0 });
+  const [farm, setFarm] = useState<{ id: number | null; serial: number; loaded?: LoadedFarm }>({ id: 0, serial: 0 });
+  const [newFarmOpen, setNewFarmOpen] = useState(false);
+  const onLoad = (loaded: LoadedFarm) => setFarm(previous => ({ id: loaded.scenarioId, serial: previous.serial + 1, loaded }));
   const [zoom, setZoom] = useState(1), [cropId, setCropId] = useState('wheat');
   const music = useMusic();
   const sound = useSound();
@@ -32,9 +35,10 @@ function Game({ assets }: { assets: GameAssets }) {
       <MusicControls tracks={assets.catalog.music} music={music} />
       <button id="sound-toggle" aria-pressed={sound.enabled} onClick={() => void sound.toggle()}>{sound.enabled ? 'Mute sounds' : 'Enable sounds'}</button>
     </header>
+    <NewFarmControls key={`setup-${farm.serial}`} assets={assets} open={newFarmOpen} onOpenChange={setNewFarmOpen} onCreate={onLoad} />
     <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded}
       onScenarioChange={id => setFarm(previous => ({ id, serial: previous.serial + 1 }))}
-      onLoad={loaded => setFarm(previous => ({ id: loaded.scenarioId, serial: previous.serial + 1, loaded }))} assets={assets}
+      onLoad={onLoad} onNewFarm={() => setNewFarmOpen(true)} assets={assets}
       zoom={zoom} onZoomChange={setZoom} cropId={cropId} onCropChange={setCropId} onGameEvent={onGameEvent} onFlightRunning={sound.setFlightRunning} />
     <footer><strong>Reconstruction in progress</strong>
       <span>Loans, land purchases, field care, the farming cycle and native save/load are running. Other original systems remain in progress.</span>

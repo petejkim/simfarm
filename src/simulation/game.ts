@@ -1,3 +1,5 @@
+import { createNewFarmState, type NewFarmAssets } from './create-farm';
+import type { NewFarmOptions, NewFarmState } from './new-farm-state';
 import { beginStationaryDisaster, advanceFrostDay, advanceStationaryDisasters,
   type StationaryDisasterKind, type StationaryDisasterStart } from './stationary-disasters';
 import { placeNetwork, type NetworkAction, type NetworkPlacementResult } from './network-placement';
@@ -86,6 +88,7 @@ export interface FieldHarvestEstimate {
 }
 
 export interface GameSnapshot {
+  newFarm: NewFarmState | null;
   disasters: MovingDisasterState;
   waterDisasters: WaterDisasterState;
   lastDisasterResult: StationaryDisasterStart | MovingDisasterStart | { ok: true; kind: WaterDisasterKind | 'wind' } | null;
@@ -173,7 +176,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'sell-harvest'; inventorySlot: number };
 
 function copyScenario(scenario: Scenario): Scenario {
-  return { ...scenario, irrigation: copyIrrigation(scenario.irrigation), schedule: new FieldSchedule(Uint8Array.from(scenario.schedule.bytes)), sourceBytes: Uint8Array.from(scenario.sourceBytes), cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
+  return { ...scenario, irrigation: copyIrrigation(scenario.irrigation), schedule: new FieldSchedule(Uint8Array.from(scenario.schedule.bytes)), sourceBytes: scenario.sourceBytes === null ? null : Uint8Array.from(scenario.sourceBytes), cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
     fields: scenario.fields.map(f => new FieldRecord(f.slot, Uint8Array.from(f.bytes))),
     equipment: scenario.equipment.map(e => new EquipmentRecord(e.slot, Uint8Array.from(e.bytes))),
     equipmentDefinitions: scenario.equipmentDefinitions.map(e => new EquipmentDefinition(e.slot, Uint8Array.from(e.bytes))),
@@ -196,6 +199,7 @@ function copyScenario(scenario: Scenario): Scenario {
  */
 export class GameSimulation {
   private readonly scenario: Scenario;
+  private readonly newFarm: NewFarmState | null;
   private readonly crops: readonly (readonly number[])[];
   private readonly random: FarmRandom;
   private readonly weather: WeatherState;
@@ -255,9 +259,11 @@ export class GameSimulation {
 
   constructor(scenario: Scenario, crops: readonly CropDefinition[], townLayouts: TownLayouts,
     seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState) {
+    if (!restored && scenario.origin !== 'original') throw new Error('Generated farms require initialized state');
     this.scenario = copyScenario(scenario);
+    this.newFarm = restored?.newFarm ? structuredClone(restored.newFarm) : null;
     this.townLayouts = new TownLayouts(townLayouts.bytes);
-    this.finances = restored ? copyFinancialState(restored.finances) : readFinancialState(scenario.sourceBytes);
+    this.finances = restored ? copyFinancialState(restored.finances) : readFinancialState(scenario.sourceBytes!);
     this.crops = scenario.cropFiles.map(file => {
       const crop = crops.find(c => `${c.id}.crp` === file);
       if (!crop) throw new Error(`Missing simulation crop ${file}`);
@@ -296,8 +302,8 @@ export class GameSimulation {
   }
 
   /** Exact native checkpoint, including partial ticks. Does not mutate or advance the farm. */
-  save(scenarioId: number): string {
-    return writeNativeSave({ scenario: this.scenario, crops: this.crops, random: this.random.snapshot(), weather: this.weather,
+  save(scenarioId: number | null): string {
+    return writeNativeSave({ scenario: this.scenario, newFarm: this.newFarm, crops: this.crops, random: this.random.snapshot(), weather: this.weather,
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
       disasters: this.disasters, waterDisasters: this.waterDisasters, grassTravelCount: this.equipmentRuntime.grassTravelCount,
       equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices,
@@ -305,9 +311,16 @@ export class GameSimulation {
       finances: this.finances, pendingTown: this.pendingTown, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
   }
 
-  static load(text: string, crops: readonly CropDefinition[], townLayouts: TownLayouts): { scenarioId: number; simulation: GameSimulation } {
+  static load(text: string, crops: readonly CropDefinition[], townLayouts: TownLayouts): { scenarioId: number | null; simulation: GameSimulation } {
     const { scenarioId, state } = readNativeSave(text);
     return { scenarioId, simulation: new GameSimulation(state.scenario, crops, townLayouts, state.random, state) };
+  }
+
+  /** Validate initialized state through the same checkpoint boundary as loading.
+   * No imported-farm initialization, RNG draws or audio are replayed. */
+  static createNew(options: NewFarmOptions, assets: NewFarmAssets): GameSimulation {
+    const state = createNewFarmState(options, assets);
+    return GameSimulation.load(writeNativeSave(state, null), assets.crops, assets.townLayouts).simulation;
   }
 
   getSnapshot = (): GameSnapshot => this.snapshot;
@@ -718,7 +731,7 @@ export class GameSimulation {
     // until all of its annual consumers and lifecycle are reconstructed.
     const report = { ...this.finances.annual };
     updateAnnualReport(this.scenario.farm, this.finances.accounts, report);
-    this.snapshot = { disasters: structuredClone(this.disasters), waterDisasters: { ...this.waterDisasters }, lastDisasterResult: this.lastDisasterResult ? structuredClone(this.lastDisasterResult) : null,
+    this.snapshot = { newFarm: this.newFarm ? structuredClone(this.newFarm) : null, disasters: structuredClone(this.disasters), waterDisasters: { ...this.waterDisasters }, lastDisasterResult: this.lastDisasterResult ? structuredClone(this.lastDisasterResult) : null,
       disasterNotices: [...this.disasterNotices], revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
       farmReport: { income: report.reportIncome, expenses: report.reportExpenses, net: report.reportNet,
         fields: summarizeFieldStatus(this.scenario.fields, this.scenario.farm.cash) },

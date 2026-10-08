@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
+import { loadScenarioAssets, loadGeneratedTiles, type GameAssets } from '../assets/game-assets';
 import { MAX_SAVE_BYTES } from '../formats/native-save';
 import { GameSimulation } from '../simulation/game';
 
-export interface LoadedFarm { scenarioId: number; simulation: GameSimulation; tiles: HTMLImageElement }
+export interface LoadedFarm { scenarioId: number | null; simulation: GameSimulation; tiles: HTMLImageElement }
 
 export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad }: {
-  simulation: GameSimulation; scenarioId: number; assets: GameAssets; loaded: boolean;
+  simulation: GameSimulation; scenarioId: number | null; assets: GameAssets; loaded: boolean;
   onLoad: (farm: LoadedFarm) => void;
 }) {
   const input = useRef<HTMLInputElement>(null), pending = useRef<AbortController | null>(null);
@@ -17,7 +17,7 @@ export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad }:
       const text = simulation.save(scenarioId), date = simulation.getSnapshot().scenario.farm.calendar;
       const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
       const link = document.createElement('a');
-      link.href = url; link.download = `simfarm-${scenarioId + 1}-${date.year}-${date.month + 1}-${date.week * 7 + date.day + 1}.simfarm.json`;
+      link.href = url; link.download = `simfarm-${scenarioId === null ? 'new-farm' : scenarioId + 1}-${date.year}-${date.month + 1}-${date.week * 7 + date.day + 1}.simfarm.json`;
       document.body.append(link); link.click(); link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       setMessage('Farm saved to file.');
@@ -32,12 +32,17 @@ export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad }:
       const text = await file.text();
       if (controller.signal.aborted) return;
       const restored = GameSimulation.load(text, assets.catalog.crops, assets.townLayouts);
-      const original = await loadScenarioAssets(restored.scenarioId, controller.signal);
-      const template = restored.simulation.getSnapshot().scenario.sourceBytes;
-      if (template.some((byte, i) => byte !== original.scenario.sourceBytes[i])) {
-        throw new Error('This farm needs different original scenario assets.');
+      const world = restored.simulation.getSnapshot().scenario;
+      let tiles: HTMLImageElement;
+      if (restored.scenarioId === null) tiles = await loadGeneratedTiles(world.cropFiles, controller.signal);
+      else {
+        const original = await loadScenarioAssets(restored.scenarioId, controller.signal);
+        if (!world.sourceBytes || world.sourceBytes.some((byte, i) => byte !== original.scenario.sourceBytes[i])) {
+          throw new Error('This farm needs different original scenario assets.');
+        }
+        tiles = original.tiles;
       }
-      if (!controller.signal.aborted) onLoad({ ...restored, tiles: original.tiles });
+      if (!controller.signal.aborted) onLoad({ ...restored, tiles });
     } catch (error) {
       if (!controller.signal.aborted) setMessage(`Could not load farm: ${error instanceof Error ? error.message : String(error)}`);
     } finally {

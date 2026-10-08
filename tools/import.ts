@@ -24,7 +24,7 @@ async function png(name: string, raster: Raster) {
   image.data = Buffer.from(raster.rgba);
   await writeFile(join(output, name), PNG.sync.write(image));
 }
-await mkdir(join(output, 'raw'), { recursive: true });
+await mkdir(join(output, 'raw/crops'), { recursive: true });
 const [index, data, exe] = await Promise.all([read('MEGADATA.IDX'), read('MEGADATA.EEA'), read('SIMFARM.EXE')]);
 const entries = readArchive(index, data);
 const assets = new Map(entries.map(e => [e.name, e.bytes]));
@@ -53,6 +53,7 @@ const inputs = [
 for (const name of (await readdir(join(source, 'CROPS'))).filter(n => /\.crp$/i.test(n)).sort()) {
   const bytes = await read(`CROPS/${name}`), id = name.toLowerCase().replace('.crp', '');
   crops.push(readCrop(id, bytes));
+  await writeFile(join(output, 'raw/crops', name.toLowerCase()), bytes);
   cropBytes.set(name.toLowerCase(), bytes);
   inputs.push({ name: `CROPS/${name}`, size: bytes.length, sha256: sha256(bytes) });
   await png(`${id}.png`, tileAtlas(bytes.subarray(0, 0x400), palette, 8));

@@ -28,7 +28,7 @@ test('native saves retain unknown source/record bytes, all eight farms and detac
     assert.equal(restored.scenarioId, id); same(game, restored.simulation, id);
     assert.deepEqual(restored.simulation.getSnapshot().scenario.sourceBytes, Uint8Array.from(source(`SCEN${id}.SSM`)));
     const view = restored.simulation.getSnapshot();
-    view.scenario.sourceBytes.fill(0); view.scenario.fields[97].bytes.fill(0); view.weather.forecast.fill(4);
+    view.scenario.sourceBytes!.fill(0); view.scenario.fields[97].bytes.fill(0); view.weather.forecast.fill(4);
     same(game, restored.simulation, id);
     game.tick(18000.125); restored.simulation.tick(18000.125); same(game, restored.simulation, id);
     assert.equal(restored.simulation.getSnapshot().scenario.fields[97].bytes[67], 173);
@@ -114,7 +114,7 @@ test('native save validation rejects malformed boundaries and incompatible asset
     assert.equal(game.save(4), text);
   }
   assert.throws(() => GameSimulation.load(text, []), /Missing simulation crop/);
-  const parsed = readNativeSave(text); parsed.state.scenario.sourceBytes.fill(0);
+  const parsed = readNativeSave(text); parsed.state.scenario.sourceBytes!.fill(0);
   assert.equal(game.save(4), text);
 });
 

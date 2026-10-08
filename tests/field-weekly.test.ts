@@ -53,7 +53,7 @@ test('weekly planting completion handles every actual planting phase on all eigh
       if (!phases.has(field.step)) {
         phases.add(field.step);
         const used = assigned(world), cash = world.farm.cash, marker = field.bytes[33], heat = new Binary(field.bytes).u16(36);
-        const plan = Uint8Array.from(world.schedule.bytes), source = Uint8Array.from(world.sourceBytes);
+        const plan = Uint8Array.from(world.schedule.bytes), source = Uint8Array.from(world.sourceBytes!);
         finishWeeklyFieldWork(world, crops, runtime(world));
         assert.equal(field.state, 4); assert.equal(field.step, 0); assert.equal(field.bytes[34], 0);
         assert.equal(field.bytes[33], marker); assert.equal(new Binary(field.bytes).u16(36), heat);

@@ -80,7 +80,7 @@ test('frost stop boundaries run both daily and per frame, with original tornado-
 test('new disaster commands remain silent and unchanged through town/default/flight modal guards',()=>{
   const f=disasterFixture();f.state.finances.defaultDecision={status:'pending',originalExitCode:0};const debt=f.load();
   const a=aircraftFixture(),flight=a.load();flight.dispatch({type:'buy-aircraft'});flight.dispatch({type:'service-aircraft',slot:1,action:{kind:'fuel'}});flight.dispatch({type:'start-flight',slot:1,columns:20,rows:16});
-  const state=readNativeSave(new GameSimulation(readScenario(f.state.scenario.sourceBytes),f.crops).save(4)).state;
+  const state=readNativeSave(new GameSimulation(readScenario(f.state.scenario.sourceBytes!),f.crops).save(4)).state;
   state.scenario.schedule.bytes.fill(0);state.finances.town.townRevenue=50000;state.scenario.farm.calendar={day:6,week:3,month:11,year:1993,season:3};state.dayTicks=state.scenario.farm.dayDelayTicks-1;
   const town=GameSimulation.load(writeNativeSave(state,4),f.crops).simulation;town.dispatch({type:'advance-day'});assert.ok(town.getSnapshot().pendingTown);
   for(const g of [debt,flight,town]){

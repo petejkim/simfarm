@@ -31,7 +31,7 @@ test('live supply purchases retain every product and original accounting through
   assert.equal(g.save(4), save);
   const copy = GameSimulation.load(save, f.crops).simulation; assert.equal(copy.getSnapshot().lastCropSupplyPurchaseResult, null);
   for (let d = 0; d < 35; d++) { g.dispatch({ type: 'advance-day' }); copy.dispatch({ type: 'advance-day' }); }
-  assert.deepEqual(parsed(g), parsed(copy)); assert.equal(parsed(copy).version, 14);
+  assert.deepEqual(parsed(g), parsed(copy)); assert.equal(parsed(copy).version, 15);
 });
 
 test('purchased seeds and all four chemicals feed live planting and treatment orders without paying automatic purchase surcharges', () => {
@@ -70,7 +70,7 @@ test('supply commands reject atomically and remain silent during pending default
   flight.dispatch({type:'start-flight',slot:1,columns:20,rows:16});flight.dispatch({type:'set-paused',paused:true});
   const inFlight=flight.save(4);flight.dispatch({type:'buy-crop-supply',productType:220,x:10,y:10});assert.equal(flight.save(4),inFlight);
   // Use a real annual town prompt so the checkpoint's modal invariants remain valid.
-  const state=readNativeSave(new GameSimulation(readScenario(f.state.scenario.sourceBytes),f.crops).save(4)).state;state.scenario.schedule.bytes.fill(0);state.finances.town.townRevenue=50000;state.scenario.farm.calendar={day:6,week:3,month:11,year:1993,season:3};
+  const state=readNativeSave(new GameSimulation(readScenario(f.state.scenario.sourceBytes!),f.crops).save(4)).state;state.scenario.schedule.bytes.fill(0);state.finances.town.townRevenue=50000;state.scenario.farm.calendar={day:6,week:3,month:11,year:1993,season:3};
   state.dayTicks=state.scenario.farm.dayDelayTicks-1;
   const annual=GameSimulation.load(writeNativeSave(state,4),f.crops).simulation;annual.dispatch({type:'advance-day'});
   assert.ok(annual.getSnapshot().pendingTown);const prior=annual.save(4);const blockedEvents:GameEvent[]=[];

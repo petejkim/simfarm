@@ -1,3 +1,4 @@
+import type { Scenario } from '../src/formats/scenario';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -30,7 +31,7 @@ test('all four treatment jobs consume once, traverse without repainting, restore
     assert.equal(world.farm.cash, paid);
     let tick = 0;
     for (; tick < 5000; tick++) {
-      const allocate = (w: typeof world, type: number, x: number, y: number) => reserveEquipment(w, type, x, y, tick);
+      const allocate = (w: Scenario, type: number, x: number, y: number) => reserveEquipment(w, type, x, y, tick);
       updateEquipment(world, runtime, tick, true, allocate);
       if (field.state >= 6 && field.state <= 9) steps.add(field.step);
       if (field.equipment) used.add(field.equipment);
@@ -94,7 +95,7 @@ test('waiting fields resume their saved substep and treatment timing survives th
   field.bytes[2] = 0; field.bytes[3] = 7;
   assert.ok(orderTreatment(world, field.slot, 'fertilizer', 8).ok);
   for (let tick = 0; tick < 5000 && field.step !== 5; tick++) {
-    const allocate = (w: typeof world, type: number, x: number, y: number) => reserveEquipment(w, type, x, y, tick);
+    const allocate = (w: Scenario, type: number, x: number, y: number) => reserveEquipment(w, type, x, y, tick);
     updateEquipment(world, runtime, tick, true, allocate);
     updateTreatmentField(field, crop, world, runtime, tick, 8, allocate);
   }

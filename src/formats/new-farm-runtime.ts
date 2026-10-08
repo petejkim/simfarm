@@ -12,6 +12,7 @@ type FinancialDefaults = Omit<FinancialState, 'accounts' | 'town' | 'clearing' |
 };
 export interface NewFarmRuntimeDefaults {
   farm: SavedFarmState;
+  irrigation: { sources: number[]; sourceCount: number; delay: number; lastTick: number };
   finances: FinancialDefaults;
   /** Unexplained reset targets retain address-based names. */
   raw: { ds3e4c: number; ds3eb8: number; ds4468: number[]; ds64c5: number; s4d9fFedd: number };
@@ -39,6 +40,8 @@ export function readNewFarmRuntimeDefaults(executable: Uint8Array): NewFarmRunti
       contractLosses: dword(0x3e84), salesAccumulator: dword(0x3e44), workerExpenses: dword(0x3e88), landExpenses: dword(0x3e80),
       chemicalExpenses: dword(0x3ea0), townRegionX: word(0x7592), townRegionY: word(0xd530, 0x2d9f),
     },
+    irrigation: { sources: Array.from(b.slice(address(0xf954, 0x2d9f), 192)), sourceCount: byte(0x240f),
+      delay: word(0x2402), lastTick: word(0xf7d2, 0x2d9f) },
     finances: {
       accounts: {
         assets: { equipmentBookValue: dword(0x3e50), equipmentIncome: dword(0x3e64), livestockIncome: dword(0x3e74) },

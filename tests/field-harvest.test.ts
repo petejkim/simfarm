@@ -1,3 +1,4 @@
+import type { Scenario } from '../src/formats/scenario';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -28,7 +29,7 @@ function setup(id: number) {
     for (let tick = 1; tick < 5000; tick++) {
       runtime.animationTick = tick;
       if (tick % 256 === 0) world.farm.calendar.day = (world.farm.calendar.day + 1) % 7;
-      const allocate = (w: typeof world, type: number, x: number, y: number) => reserveEquipment(w, type, x, y, tick);
+      const allocate = (w: Scenario, type: number, x: number, y: number) => reserveEquipment(w, type, x, y, tick);
       updateEquipment(world, runtime, tick, true, allocate);
       if (field.state === 5) steps.add(field.step);
       updateHarvestField(field, crop, world, runtime, tick, random, allocate);

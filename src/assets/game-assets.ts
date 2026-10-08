@@ -1,3 +1,7 @@
+import { rasterImage } from '../render/raster-image';
+import { tileAtlas, readPalette } from '../formats/graphics';
+import { patchCropGraphics } from '../formats/crop-graphics';
+import type { NewFarmAssets } from '../simulation/create-farm';
 import type { DisasterSprites } from '../render/disaster-renderer';
 import type { FlightSprites } from '../render/aircraft-renderer';
 import type { CropDefinition } from '../formats/crop';
@@ -53,4 +57,17 @@ export async function loadMusic(id: string, signal: AbortSignal): Promise<MidiSe
 }
 export async function loadSound(id: GameSound, signal: AbortSignal) {
   return decodeVoc(new Uint8Array(await (await response(`raw/${id}.voc`, signal)).arrayBuffer()));
+}
+
+/** Assemble the sixteen crop slots from original resources, without a SCEN file. */
+export async function loadGeneratedTiles(cropFiles: readonly string[], signal: AbortSignal): Promise<HTMLImageElement> {
+  if (cropFiles.length !== 16 || cropFiles.some(n => !/^[a-z0-9_]{1,8}\.crp$/.test(n))) throw new Error('Invalid crop filenames');
+  const binary = (path: string) => response(path, signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b));
+  const [tiles, palette, ...crops] = await Promise.all([binary('raw/ega16til.til'), binary('raw/simfarm.pal'), ...cropFiles.map(file => binary(`raw/crops/${file}`))]);
+  return rasterImage(tileAtlas(patchCropGraphics(tiles, crops), readPalette(palette)), signal);
+}
+export async function loadNewFarmAssets(assets: GameAssets, signal: AbortSignal): Promise<NewFarmAssets> {
+  const [records, runtime, traffic, setup] = await Promise.all(['new-farm-records.json', 'new-farm-runtime.json', 'traffic-defaults.json', 'new-farm-setup.json']
+    .map(file => response(file, signal).then(r => r.json())));
+  return { records, runtime, traffic, climate: setup.climate, crops: assets.catalog.crops, townLayouts: assets.townLayouts };
 }

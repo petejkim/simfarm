@@ -45,10 +45,11 @@ const subscribeEmpty = () => () => {};
 const emptySnapshot = () => null;
 
 interface Props {
-  id: number;
+  id: number | null;
   loaded?: LoadedFarm;
   onLoad: (farm: LoadedFarm) => void;
   onScenarioChange: (id: number) => void;
+  onNewFarm: () => void;
   assets: GameAssets;
   zoom: number;
   onZoomChange: (zoom: number) => void;
@@ -58,9 +59,10 @@ interface Props {
   onFlightRunning: (running: boolean) => void;
 }
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
-export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange, onGameEvent, onFlightRunning }: Props) {
+export function FarmView({ id, loaded, onLoad, onScenarioChange, onNewFarm, assets, zoom, onZoomChange, cropId, onCropChange, onGameEvent, onFlightRunning }: Props) {
   const load = useCallback(async (signal: AbortSignal) => {
     if (loaded) return loaded;
+    if (id === null) throw new Error('Missing generated farm state');
     const data = await loadScenarioAssets(id, signal);
     return { tiles: data.tiles, simulation: new GameSimulation(data.scenario, assets.catalog.crops, assets.townLayouts) };
   }, [id, loaded, assets.catalog.crops, assets.townLayouts]);
@@ -86,7 +88,10 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     return () => cancelAnimationFrame(frame);
   }, [simulation]);
   const [selection, setSelection] = useState<number | null>(null), [fieldSlot, setFieldSlot] = useState<number | null>(null);
-  const [focus, setFocus] = useState<MapFocus>({ x: 48, y: 48 });
+  const [focus, setFocus] = useState<MapFocus>(() => {
+    const home = id === null ? loaded?.simulation.getSnapshot().finances.homestead : null;
+    return home ? { x: home.x + 2, y: home.y + 2 } : { x: 48, y: 48 };
+  });
   const [mapTool, setMapTool] = useState<MapTool>('inspect');
   const [plannerOpen, setPlannerOpen] = useState(false), [loansOpen, setLoansOpen] = useState(false);
   const [navigation, setNavigation] = useState<{ target: FarmDestination } | null>(null);
@@ -157,10 +162,11 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   }
   return <>
     <section className="toolbar">
-      <div><label>Original farm <select id="scenario" value={id} onChange={e => onScenarioChange(Number(e.target.value))}>
+      <div><label>Original farm <select id="scenario" value={id ?? 'generated'} onChange={e => onScenarioChange(Number(e.target.value))}>
+        {id === null && <option value="generated" disabled>Generated farm</option>}
         {Array.from({ length: 8 }, (_, i) => <option key={i} value={i}>Scenario {i + 1}</option>)}
       </select></label>
-        <span id="map-status" role="status">{resource.status === 'ready' ? `Scenario ${id + 1} · original terrain`
+        <span id="map-status" role="status">{resource.status === 'ready' ? (id === null ? 'Generated farm · original terrain' : `Scenario ${id + 1} · original terrain`)
           : resource.status === 'error' ? resource.error : 'Loading map…'}</span></div>
       <div><label>Map tool <select id="map-tool" disabled={Boolean(snapshot?.aircraftFlight)} value={mapTool} onChange={e => setMapTool(e.target.value as MapTool)}>
         <option value="inspect">Inspect</option><option value="land">Buy land</option><option value="field">New field</option>
@@ -185,7 +191,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     </div>}
     {simulation && snapshot && <TownChoicePanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
-      onRestart={() => onScenarioChange(id)} open={loansOpen} onOpenChange={setLoansOpen} summaryRef={loansRef} />}
+      onRestart={() => id === null ? onNewFarm() : onScenarioChange(id)} open={loansOpen} onOpenChange={setLoansOpen} summaryRef={loansRef} />}
     {snapshot && <TaxPanel snapshot={snapshot} />}
     {snapshot && <FarmReport snapshot={snapshot} />}
     {snapshot && <LivestockPanel snapshot={snapshot} onMoveSupplies={() => { setMapTool('supply-move'); setSelection(null); }} onShop={() => setMapTool('livestock')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}

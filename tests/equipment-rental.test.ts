@@ -1,3 +1,4 @@
+import type { Scenario } from '../src/formats/scenario';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -71,7 +72,7 @@ test('planting on farms without the required equipment rents each missing type a
     const runtime: EquipmentRuntime = { grassTravelCount: 0, animationTick: 0, notices: [] };
     const rentals: number[] = [], ownedCount = world.equipment.filter(e => e.active).length;
     let tick = 0;
-    const allocate = (w: typeof world, type: number, x: number, y: number) => {
+    const allocate = (w: Scenario, type: number, x: number, y: number) => {
       const e = reserveEquipment(w, type, x, y, tick);
       if (e && (e.flags & 0x40)) rentals.push(type);
       return e;

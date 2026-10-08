@@ -21,9 +21,9 @@ export function LoanPanel({ snapshot, onCommand, onRestart, open, onOpenChange, 
       <h2>{decision.status === 'pending' ? 'Unable to pay debts' : 'Farm session ended'}</h2>
       <p>Available assets could not cover the debt. Your homestead remains yours. Time and farm actions are stopped.</p>
       {decision.status === 'pending' ? <div>
-        <button id="default-restart" onClick={() => { onCommand({ type: 'resolve-default', choice: 'restart' }); onRestart(); }}>Restart this farm</button>
+        <button id="default-restart" onClick={() => { onCommand({ type: 'resolve-default', choice: 'restart' }); onRestart(); }}>{snapshot.scenario.origin === 'generated' ? 'Create another farm' : 'Restart this farm'}</button>
         <button id="default-exit" onClick={() => onCommand({ type: 'resolve-default', choice: 'exit' })}>End session</button>
-      </div> : <button onClick={onRestart}>Start this farm again</button>}
+      </div> : <button onClick={onRestart}>{snapshot.scenario.origin === 'generated' ? 'Create another farm' : 'Start this farm again'}</button>}
       <p>You can also load a saved farm or choose another scenario above.</p>
     </section>}
     <details id="loan-panel" className="loan-panel" open={open} onToggle={e => onOpenChange(e.currentTarget.open)}>

@@ -773,7 +773,7 @@ Registry removal `0x17944..0x179d9` finds the coordinate, then copies entry i+1 
 
 ### SF-086–089 irrigation primitive update
 
-The reconstructed primitive preserves SF-086's exact merge arithmetic. Source import performs original overlapping writes (SF-087), rejects counts whose active tail was not transferred, and retains the source payload; native state can represent all64 entries without that lossy layout. SF-088 is corrected with an explicitly occupied FIFO bounded by the world plus source seeds. SF-089 shifts only live successors and retains inactive bytes. Tests cover these decisions. The original warm-tail lifecycle and ordinary maximum-occupancy/topology remain unresolved; live checkpoint/clock integration is still pending.
+The reconstructed primitive preserves SF-086's exact merge arithmetic. Source import performs original overlapping writes (SF-087), rejects counts whose active tail was not transferred, and retains the source payload; native state can represent all64 entries without that lossy layout. SF-088 is corrected with an explicitly occupied FIFO bounded by the world plus source seeds. Generated farms now initialize this FIFO empty with the EXE registry/count/tick and cold delay64, independently of SSM imports with delay3; native v15 preserves it directly. This does not resolve original warm-tail behavior. SF-089 shifts only live successors and retains inactive bytes. Tests cover these decisions. The original warm-tail lifecycle and ordinary maximum-occupancy/topology remain unresolved; live checkpoint/clock integration is still pending.
 
 ## SF-090 — zero-strength irrigation packets re-enqueue indefinitely
 

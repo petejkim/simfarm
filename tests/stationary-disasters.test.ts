@@ -37,7 +37,7 @@ test('frost damages all sensitive active fields regardless of state, saturates l
   const {w,c,p,d,r,weather,start,field}=fixture();weather.temperature=50;field.bytes[14]=1;
   w.fields[97].bytes.set(field.bytes);w.fields[97].bytes[14]=6;assert.equal(c[6][72],0);
   w.fields[5].bytes.set(field.bytes);setLoss(w.fields[5],65500);
-  const beforeRandom=r.snapshot(),beforeCells=structuredClone(w.cells),beforeSource=Uint8Array.from(w.sourceBytes);
+  const beforeRandom=r.snapshot(),beforeCells=structuredClone(w.cells),beforeSource=Uint8Array.from(w.sourceBytes!);
   for(let state=0;state<256;state++){
     field.bytes[2]=state;setLoss(field,0);d.flags=32;d.swarm.fieldSlot=1;
     const result=start('frost');assert.deepEqual(result,{ok:true,kind:'frost',fields:[1,5],cancelledSwarm:true});
@@ -107,7 +107,7 @@ test('all eight farms retain stationary flags, original field/terrain changes an
   for(let id=0;id<8;id++){
     const world=readScenario(source(`SCEN${id}.SSM`)),crops=world.cropFiles.map(n=>readCrop(n.replace('.crp',''),source('CROPS/'+n.toUpperCase())));
     const {state}=readNativeSave(new GameSimulation(world,crops).save(id)),c=crops.map(c=>c.rawDefinition),p=state.cropMarketPrices;
-    const r=new FarmRandom(state.random),raw=Uint8Array.from(world.sourceBytes);
+    const r=new FarmRandom(state.random),raw=Uint8Array.from(world.sourceBytes!);
     for(const kind of ['frost','crop-circles','toxic-land'] as const)beginStationaryDisaster(state.scenario,c,p,state.weather,state.disasters,kind,17,r);
     state.random=r.snapshot();const text=writeNativeSave(state,id),loaded=GameSimulation.load(text,crops).simulation;
     assert.deepEqual(JSON.parse(loaded.save(id)),JSON.parse(text));assert.deepEqual(loaded.getSnapshot().scenario.sourceBytes,raw);
