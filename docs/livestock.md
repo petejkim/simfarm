@@ -103,3 +103,9 @@ Live tests buy all four species, run purchased supplies through actual movement/
 ## Water-storage dependency completed
 
 The earlier pending refill/construction notes are now resolved by [water-storage.md](water-storage.md): type72 purchases, wet-ditch collection, weekly wear, inventory aging and automatic trough refills are live and persist in v10. Native partial withdrawals correct SF-101; source initialization217 and arithmetic remain explicit. The shop explains how to build the supply, and Livestock displays stored water/worn-out locations. Animal aging/reproduction, animation phases, pointer delivery and remaining audio lifecycle are still unfinished.
+
+## Next lifecycle evidence
+
+The unimplemented animal phase of weekly0xbf02 is0xc14c..0xc21f, between chemical aging and the now-live inventory tail. It draws simulation RNG per active animal, requesting vocal helper0x135f8 when low7bits==75; this is an audio trigger, not reproduction. It increments word+10, sets byte+18 to1 when age exceeds byte tableDS2290=[192,80,32,12], and removes animals past word tableDS2288=[960,960,720,480]. Source deletion/storage cleanup and bounded traversal need integration with those age rules.
+
+Monthly caller0xd032 invokes0x12c38 after the scheduled-loan branch;0xcc0d skips to0xd03c when the month has not ended. The helper requires active,flag2,notflag1,age strictly aboveDS2290 and condition>110, then setsflag1 and clears byte28. Weekly0xbe81 invokes0x12cae after wind: it increments byte28 for active flag2+flag1 animals and, aboveDS2294=[48,40,44,24], clearsflag1, resets byte28 and queues the parent's type/coordinates for generic allocation0x3a2ca. No mate-distance requirement appears in these routines; do not invent one. Birth allocation/painting/capacity, accounting, stored parents, boundary arithmetic and complete source call order remain the next reconstruction work. These observations are evidence, not implemented lifecycle behavior.
