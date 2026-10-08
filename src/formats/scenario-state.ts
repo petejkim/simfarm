@@ -28,7 +28,8 @@ export interface SavedFarmState {
   townRegionY: number;
 }
 /** Loader file 0x45f0e..0x45ffe and 0x461c6..0x461de. */
-export function readFarmState(bytes: Uint8Array): SavedFarmState {
+export function readFarmState(bytes: Uint8Array, workerExpenses = 0): SavedFarmState {
+  if (!Number.isInteger(workerExpenses) || workerExpenses < 0 || workerExpenses > 0xffffffff) throw new Error('Invalid retained worker expenses');
   const b = new Binary(bytes);
   const calendar = { day: b.u16(CALENDAR_OFFSET), season: b.u16(CALENDAR_OFFSET + 2), week: b.u16(CALENDAR_OFFSET + 4),
     year: b.u16(CALENDAR_OFFSET + 6), month: b.u16(CALENDAR_OFFSET + 8) };
@@ -39,7 +40,7 @@ export function readFarmState(bytes: Uint8Array): SavedFarmState {
     dayDelayTicks: b.u16(0x2171a), speed: b.u16(0x2171c), precipitationDays: b.u16(0x216e8),
     autoRent: Boolean(bytes[0x21731]), rentalExpenses: b.u32(0x216c4), townRegionX, townRegionY,
     cropIncome: b.u32(0x21690), contractGains: b.u32(0x2169c), contractLosses: b.u32(0x216b0),
-    salesAccumulator: b.u32(0x21722), workerExpenses: 0, // SF-014: original loader never restores 6190:3e88.
+    salesAccumulator: b.u32(0x21722), workerExpenses, // SF-014: original loader never restores 6190:3e88.
     landExpenses: b.u32(0x216b4), // SF-014: second 3e80 read overwrites the entry at 0x216ac.
     chemicalExpenses: b.u32(0x216bc), // 0x45e06 -> 6190:3ea0.
     autoBuySeeds: Boolean(bytes[0x2173b]), autoClear: Boolean(bytes[0x21737]),

@@ -18,13 +18,17 @@ export const MAX_IRRIGATION_FLOW = 96 * 96 + 64;
 
 /** Loader 0x459b7..0x45a35 uses overlapping stride TWO, not runtime stride three.
  * SF-087: records43..63 are not transferred. Reject an active missing tail;
- * native cold imports zero only the inactive, untransferred runtime bytes. */
-export function readIrrigation(bytes: Uint8Array): IrrigationState {
+ * native cold imports zero only the inactive, untransferred runtime bytes.
+ * Warm transfers preserve bytes129..191 and the running FIFO/phase/clock;
+ * caller/menu pacing changes are separate from the SSM decoder. */
+export function readIrrigation(bytes: Uint8Array, retained?: IrrigationState): IrrigationState {
+  if (retained) validateIrrigation(retained);
   const b = new Binary(bytes), sourceCount = b.slice(IRRIGATION_SOURCE_OFFSET, 1)[0];
-  const raw = b.slice(IRRIGATION_SOURCE_OFFSET + 1, 192), sources = new Uint8Array(192);
-  if (sourceCount > 43) throw new Error('Original irrigation source tail is not saved');
+  const raw = b.slice(IRRIGATION_SOURCE_OFFSET + 1, 192), sources = retained ? Uint8Array.from(retained.sources) : new Uint8Array(192);
+  if (!retained && sourceCount > 43) throw new Error('Original irrigation source tail is not saved');
   for (let i = 0; i < 64; i++) sources.set(raw.subarray(i * 3, i * 3 + 3), i * 2);
-  const state: IrrigationState = { sources, sourceCount, flow: [], phase: 0, active: false, delay: b.u16(0x21720), lastTick: 0 };
+  const state: IrrigationState = { ...(retained ? copyIrrigation(retained) : { flow: [], phase: 0, active: false, lastTick: 0 }),
+    sources, sourceCount, delay: b.u16(0x21720) };
   validateIrrigation(state); return state;
 }
 export function copyIrrigation(s: IrrigationState): IrrigationState {
