@@ -15,7 +15,7 @@ export type SupplyPurchaseResult = { ok: true; slot: number; price: number; clea
 export type LivestockPurchaseResult = AnimalPurchaseResult | SupplyPurchaseResult;
 
 /** Ground-shop branches0x242ba..0x244d0, generic placement0x1ce04.
- * Grass must be owned; roads have the original ownership exception. Atomic
+ * Both grass and roads must be owned after the final generic guard. Atomic
  * preparation avoids the click caller's destructive early clearing (SF-095). */
 export function checkSupplyPurchase(world: Scenario, finances: FinancialState, type: number,
   x: number, y: number, soilMoisture: number): SupplyPurchaseResult {
@@ -39,9 +39,8 @@ export function checkSupplyPurchase(world: Scenario, finances: FinancialState, t
   }
   // Click allows31/172, but generic placement rejects them and refunds. Use
   // the intersection, without changing records/accounts on failed placement.
-  if (tile >= 15 && tile < 31) {
-    if (!(cell.overlay & 0x800)) return { ok: false, reason: 'not-owned' };
-  } else if (!(tile >= 150 && tile < 172)) return { ok: false, reason: 'blocked-terrain' };
+  if (!((tile >= 15 && tile < 31) || (tile >= 150 && tile < 172))) return { ok: false, reason: 'blocked-terrain' };
+  if (!(cell.overlay & 0x800)) return { ok: false, reason: 'not-owned' }; // Final generic guard0x1cf17.
   const free = world.inventory.find(i => i.slot > 0 && i.slot < 512 && !i.active);
   if (!free) return { ok: false, reason: 'no-inventory-slots' };
   const price = (def.price << 16 >> 16) >>> 0;

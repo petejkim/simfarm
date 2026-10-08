@@ -23,6 +23,7 @@ test('supplies retain source allocator bytes, quantities, full images and cash-o
   exact(0x3a46f, '6a00680002'); exact(0x3a4a1, '6a00680001'); exact(0x15249, '817efe0002');
   exact(0x152a0, '26c787c4d50000'); exact(0x21a86, '268b875e0840');
   exact(0x24391, '260b060009'); exact(0x1ca0e, '817e06c409'); // Last debit category2500, no299/300 match.
+  exact(0x1cf17, '26f687254c08'); exact(0x1cf1f, '837e1046'); // Only type70 bypasses final ownership.
   for (let id = 0; id < 8; id++) for (const type of [299, 300]) {
     const f = setup(id), d = f.finances.accounts.otherDefinitions[type - 288];
     const count = d.count, annual = structuredClone(f.finances.annual), statistics = structuredClone(f.finances.statistics);
@@ -38,7 +39,7 @@ test('supplies retain source allocator bytes, quantities, full images and cash-o
   }
 });
 
-test('supply ground guards retain the road ownership exception, generic exclusive bounds, capacity and atomic failures', () => {
+test('supply ground guards include final road ownership, generic exclusive bounds, capacity and atomic failures', () => {
   const f = setup(), state = () => JSON.stringify({ world: f.world, finances: f.finances });
   for (const type of [299, 300]) for (const terrain of [14, 31, 149, 172, 175, 176, 481, 535, 0x80f]) {
     f.cell.terrain = terrain; const before = state(); assert.equal(f.buy(type).ok, false); assert.equal(state(), before);
@@ -49,8 +50,9 @@ test('supply ground guards retain the road ownership exception, generic exclusiv
   }
   f.cell.overlay = 0; assert.deepEqual(f.buy(), { ok: false, reason: 'not-owned' });
   for (const terrain of [150, 160, 161, 171]) {
-    f.cell.terrain = terrain; f.world.inventory[1].bytes[10] = 0;
-    assert.ok(f.buy().ok); // Original roads need no ownership flag.
+    f.cell.terrain = terrain; f.cell.overlay = 0; f.world.inventory[1].bytes[10] = 0;
+    assert.deepEqual(f.buy(), { ok: false, reason: 'not-owned' });
+    f.cell.overlay = 0x800; assert.ok(f.buy().ok);
   }
   f.world.inventory[1].bytes[10] = 0; f.cell.terrain = 150; f.cell.overlay = 0x4000;
   assert.deepEqual(f.buy(), { ok: false, reason: 'not-owned' });
