@@ -10,6 +10,24 @@ export interface ScenarioChooser {
   initialLocation: { x: number; y: number };
 }
 
+/** Validate the generated chooser metadata before exposing browser controls. */
+export function readScenarioChooserData(value: unknown): ScenarioChooser {
+  const object = (v: unknown): Record<string, unknown> => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error('Invalid region metadata');
+    return v as Record<string, unknown>;
+  };
+  const coordinate = (v: unknown): number => {
+    if (typeof v !== 'number' || !Number.isInteger(v) || v < 0 || v >= 18) throw new Error('Invalid region coordinate');
+    return v;
+  };
+  const data = object(value), initial = object(data.initialLocation);
+  if (!Array.isArray(data.farms) || data.farms.length !== 8) throw new Error('Invalid region farms');
+  return { farms: data.farms.map((value, id) => {
+    const f = object(value); if (f.id !== id) throw new Error('Invalid region farm ID');
+    return { id, x: coordinate(f.x), y: coordinate(f.y) };
+  }), initialLocation: { x: coordinate(initial.x), y: coordinate(initial.y) } };
+}
+
 /** DS66ae/66b6: eight X/Y marker bytes, selected in0x32342..0x32380.
  * DS66c0/66c2: initial grid selection. No mission/objective identifier. */
 export function readScenarioChooser(executable: Uint8Array): ScenarioChooser {

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { readArchive } from '../src/formats/archive';
 import { readInterleavedScreen, readPalette } from '../src/formats/graphics';
-import { readScenarioChooser, readSetupMap } from '../src/formats/new-farm';
+import { readScenarioChooser, readScenarioChooserData, readSetupMap } from '../src/formats/new-farm';
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
 const exe = source('SIMFARM.EXE'), archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
 const asset = (name: string) => archive.find(e => e.name === name)!;
@@ -73,4 +73,20 @@ test('chooser data rejects missing executable and out-of-grid coordinates while 
   const bad = Uint8Array.from(exe); bad[0] = 0; assert.throws(() => readScenarioChooser(bad), /executable/);
   const padded = new Uint8Array(exe.length + 13); padded.set(exe, 13);
   assert.deepEqual(readScenarioChooser(padded.subarray(13)), readScenarioChooser(exe));
+});
+
+test('browser chooser metadata preserves every source marker and rejects malformed IDs, coordinates and shapes', () => {
+  const sourceData = readScenarioChooser(exe), json = JSON.parse(JSON.stringify(sourceData));
+  const decoded = readScenarioChooserData({ ...json, locations: [], trailingBytes: [173] });
+  assert.deepEqual(decoded, sourceData); decoded.farms[0].x = 17; decoded.initialLocation.y = 0;
+  assert.deepEqual(json, sourceData);
+  for (const change of [
+    (d: any) => d.farms.pop(), (d: any) => d.farms[0].id = 8, (d: any) => d.farms[0].id = '0',
+    (d: any) => d.farms[0] = null, (d: any) => d.farms[0].x = 18, (d: any) => d.farms[0].y = -1,
+    (d: any) => d.initialLocation = [], (d: any) => d.initialLocation.x = 2.5,
+    (d: any) => delete d.initialLocation.y,
+  ]) {
+    const bad = structuredClone(json); change(bad); assert.throws(() => readScenarioChooserData(bad), /region/);
+  }
+  for (const bad of [null, [], 'map', 3]) assert.throws(() => readScenarioChooserData(bad), /region/);
 });

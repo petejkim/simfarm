@@ -10,6 +10,20 @@ import type { MidiSequence } from '../formats/xmidi';
 import { TownLayouts } from '../formats/town';
 import { decodeVoc } from '../formats/voc';
 import type { GameSound } from '../simulation/events';
+import { readSetupMap, readScenarioChooserData, type ScenarioChooser, type SetupLocation } from '../formats/new-farm';
+
+export interface RegionAssets extends ScenarioChooser { locations: SetupLocation[]; screen: HTMLImageElement }
+export async function loadRegionAssets(signal: AbortSignal): Promise<RegionAssets> {
+  const [map, metadata, screen] = await Promise.all([
+    response('raw/scenario.odt', signal).then(r => r.arrayBuffer()).then(b => readSetupMap(new Uint8Array(b))),
+    response('new-farm-setup.json', signal).then(r => r.json()).then(readScenarioChooserData),
+    image('scenario.png', signal),
+  ]);
+  if (screen.naturalWidth !== 640 || screen.naturalHeight !== 480 ||
+    [...metadata.farms, metadata.initialLocation].some(p => !map.locations[p.y * 18 + p.x].selectable))
+    throw new Error('Invalid region map assets');
+  return { ...metadata, locations: map.locations, screen };
+}
 
 export interface Catalog {
   crops: CropDefinition[];
