@@ -106,7 +106,7 @@ test('v7 statistics persist raw history and reject malformed members; v1–6 ini
     (f: any) => { f.statistics.ds3e58 = -1; }, (f: any) => { f.statistics.ds3e5c = 0x100000000; },
     (f: any) => { f.statistics.regions[0] = 256; }, (f: any) => { f.statistics.regions.pop(); },
     (f: any) => { f.statistics.words[13] = 65536; }, (f: any) => { f.statistics.words[0] = '1'; },
-    (f: any) => { f.statistics.words.pop(); }, (f: any) => { f.statistics.fieldPresence[0] = 2; },
+    (f: any) => { f.statistics.words.pop(); }, (f: any) => { f.statistics.fieldPresence[0] = 256; },
     (f: any) => { f.statistics.distinctFieldStatuses = 9; }, (f: any) => { f.statistics.nutrientDeficientFields = 65536; },
     (f: any) => { f.statistics.chemicallyStressedFields = 0.5; },
   ];

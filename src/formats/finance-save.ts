@@ -66,7 +66,7 @@ export function decodeFinancialState(value: unknown): FinancialState {
       'livestockExpenses', 'otherExpenses', 'reportIncome', 'reportExpenses', 'reportNet']),
     statistics: { ...fields(statistics, ['ds3e58', 'ds3e5c']),
       regions: numbers(statistics.regions, 4, 255), words: numbers(statistics.words, 14, 65535),
-      fieldPresence: numbers(statistics.fieldPresence, 8, 1), distinctFieldStatuses: number(statistics.distinctFieldStatuses, 8),
+      fieldPresence: numbers(statistics.fieldPresence, 8, 255), distinctFieldStatuses: number(statistics.distinctFieldStatuses, 8),
       nutrientDeficientFields: number(statistics.nutrientDeficientFields, 65535),
       chemicallyStressedFields: number(statistics.chemicallyStressedFields, 65535) },
     debt: { ...fields(debt, ['balanceDue', 'unpaidTaxes']), balanceCountdown: number(debt.balanceCountdown, 255), taxCountdown: number(debt.taxCountdown, 255) },

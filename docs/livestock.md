@@ -113,3 +113,9 @@ Monthly caller0xd032 invokes0x12c38 after the scheduled-loan branch;0xcc0d skips
 ## Age and reproduction now live
 
 The preceding lifecycle investigation is implemented in [animal-lifecycle.md](animal-lifecycle.md), including shared allocation, weekly age/vocal selection, adult image changes, old-age storage cleanup, monthly eligibility, queued births, capacity handling and v10 continuation. SF-106 corrects species-count drift on old-age removal; SF-107 retains the original full-table behavior. Byte18 is verified as the adult image selector, not a per-frame animation toggle. Livestock now shows ages, pregnancies and transient birth/death/capacity feedback. Pointer delivery and actual animal audio remain pending; earlier lifecycle-pending paragraphs record the investigation sequence.
+
+## Correction: death call6 is report state, not sound
+
+Direct tracing of both care calls0x12b68/0x12c00 identifies their destination1c78:0956 = file0x1f2d6. It sign-extends the index argument, reads DS448e+index, and increments only below255 (0x1f2e6..0x1f2f2). It makes no audio call. For index6, this is DS4494, already retained in native `statistics.fieldPresence[6]`. The earlier “sound6” label was our reconstruction error, not an original defect. Care now performs that saturating increment on either need-related death; old-age removal does not use it. Distinct-status count4560 is untouched. The weekly field aggregation still clears/replaces these bytes, as verified previously.
+
+Native statistics/save validation now accepts the full byte range0..255 for this shared report array, without renaming saved keys or changing v10 layout. Tests pin the call and helper bytes, saturation, unchanged distinct count, malformed counts and exact checkpoint round trips. Source vocal requests from0x135f8 remain actual audio calls to212a:08b6; death does not acquire an invented sound.

@@ -8,7 +8,8 @@ export interface AnnualStatistics {
   regions: number[];
   /** Fourteen raw words 6190:444c..4466. Do not replace recurrences with guessed deltas. */
   words: number[];
-  /** 6190:448e..4495 and :4560; the weekly aggregate also refreshes these. */
+  /** 6190:448e..4495 byte counters and :4560. Weekly field aggregation resets
+   * these to presence bits; animal deaths can increment entry6 up to255. */
   fieldPresence: number[];
   distinctFieldStatuses: number;
   nutrientDeficientFields: number; // 2d9f:fa1c
@@ -19,7 +20,7 @@ export function validateAnnualStatistics(s: AnnualStatistics): void {
   if (![s.ds3e58, s.ds3e5c].every(n => valid(n, 0xffffffff)) ||
     !Array.isArray(s.regions) || s.regions.length !== 4 || !s.regions.every(n => valid(n, 255)) ||
     !Array.isArray(s.words) || s.words.length !== 14 || !s.words.every(n => valid(n, 65535)) ||
-    !Array.isArray(s.fieldPresence) || s.fieldPresence.length !== 8 || !s.fieldPresence.every(n => valid(n, 1)) ||
+    !Array.isArray(s.fieldPresence) || s.fieldPresence.length !== 8 || !s.fieldPresence.every(n => valid(n, 255)) ||
     !valid(s.distinctFieldStatuses, 8) || !valid(s.nutrientDeficientFields, 65535) || !valid(s.chemicallyStressedFields, 65535)) {
     throw new Error('Invalid annual statistics');
   }

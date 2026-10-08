@@ -11,7 +11,6 @@ const feedLimits = [160, 160, 80, 64];
 export interface AnimalCareResult {
   died: 'water' | 'feed' | null;
   notices: (56 | 57 | 58 | 59)[];
-  sound: 6 | null;
 }
 
 /** Generic deletion0x3a10a ->0x11b4c, with native count/storage validation.
@@ -43,15 +42,18 @@ export function prepareAnimalDeath(world: Scenario, finances: FinancialState, an
 }
 
 /** 0x12a4e: post-movement water then feed, condition and death handling.
- * Returned source notice/sound identifiers belong to presentation, not state.
+ * Returned source notice identifiers belong to presentation, not state.
  * Frame scheduling and movement are deliberately separate callers. */
 export function careForAnimal(world: Scenario, finances: FinancialState, slot: number, soilMoisture: number): AnimalCareResult {
   const animal = world.animals[slot];
   if (!Number.isInteger(slot) || slot <= 0 || slot > 255 || !animal?.active || animal.type < 160 || animal.type > 163 ||
     animal.x >= 96 || animal.y >= 96) throw new Error('Unsupported animal care state');
   if (!Number.isInteger(soilMoisture) || soilMoisture < -128 || soilMoisture > 127) throw new Error('Invalid animal soil moisture');
+  const presence = finances.statistics.fieldPresence;
+  if (presence.length !== 8 || !Number.isInteger(presence[6]) || presence[6] < 0 || presence[6] > 255)
+    throw new Error('Invalid animal death report counter');
   const remove = prepareAnimalDeath(world, finances, animal), bytes = animal.bytes, type = animal.type - 160;
-  const result: AnimalCareResult = { died: null, notices: [], sound: null };
+  const result: AnimalCareResult = { died: null, notices: [] };
   if (bytes[14]) {
     if (animal.flags & 4) {
       bytes[14] = bytes[13] = 0;
@@ -61,7 +63,8 @@ export function careForAnimal(world: Scenario, finances: FinancialState, slot: n
       result.notices.push(57); bytes[8] = Math.max(0, bytes[8] - 1);
     }
     if (bytes[14] > waterLimits[type]) {
-      remove(); result.died = 'water'; result.notices.push(58); result.sound = 6;
+      remove(); result.died = 'water'; result.notices.push(58);
+      presence[6] = Math.min(255, presence[6] + 1); // 1c78:0956 /0x1f2d6 is a status counter, not audio.
       return result; // No feed search after death from lack of water.
     }
   }
@@ -71,7 +74,8 @@ export function careForAnimal(world: Scenario, finances: FinancialState, slot: n
       result.notices.push(59); bytes[8] = Math.max(0, bytes[8] - 1);
     }
     if (bytes[13] > feedLimits[type]) {
-      remove(); result.died = 'feed'; result.notices.push(56); result.sound = 6;
+      presence[6] = Math.min(255, presence[6] + 1);
+      remove(); result.died = 'feed'; result.notices.push(56);
     }
   }
   return result;

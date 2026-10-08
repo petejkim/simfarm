@@ -95,7 +95,7 @@ test('weekly aggregation leaves annual history untouched and invalid annual inpu
   assert.throws(() => updateAnnualStatistics({ ...world, fields: [] }, state, 0, 0, 0, 0));
   assert.throws(() => updateAnnualStatistics({ ...world, regionalConditions: new Uint8Array(1007) }, state, 0, 0, 0, 0));
   assert.deepEqual(state, before);
-  for (const bad of [{ ...state, words: [] }, { ...state, regions: [0, 0, 0, 256] }, { ...state, fieldPresence: Array(8).fill(2) }]) {
+  for (const bad of [{ ...state, words: [] }, { ...state, regions: [0, 0, 0, 256] }, { ...state, fieldPresence: Array(8).fill(256) }]) {
     assert.throws(() => validateAnnualStatistics(bad));
   }
 });
