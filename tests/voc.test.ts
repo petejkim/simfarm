@@ -3,9 +3,28 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { readArchive } from '../src/formats/archive';
 import { decodeVoc } from '../src/formats/voc';
+import { createHash } from 'node:crypto';
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
 const entries = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
 const sample = (name: string) => Uint8Array.from(entries.find(e => e.name === name)!.bytes);
+
+test('all six original animal voices decode exact source PCM with species-specific sample rates', () => {
+  const expected = [
+    ['cow1', 7868, 75, '3cb705ffd984e36a03ae6e3702af7e2942abe18cd9b71872a008e433b3b20e95'],
+    ['cow2', 8210, 75, '9b1a384ca0fed18494a9c880cc6ecd3248dfe85b50b924d29f04f3367557e946'],
+    ['sheep1', 6456, 166, 'd7a093603e91aa73f5f9cd1c1eec165d8bd675913bacafdef119174752ec8dc5'],
+    ['sheep2', 11219, 166, '801f9e35392e327e0fe0d746dd9c6718cd4d7399f6918115aff193f629be7365'],
+    ['horse1', 8300, 75, '82925dd4a69bb81ea8d1b98e7712b8bba776e27786ab658b74122c12080843f6'],
+    ['pig', 5204, 166, '2b37747e7efebe87df9e90a154bd0ae8ec89f36271b71b962b3ad95c5f4109ee'],
+  ] as const;
+  for (const [name, length, rateByte, hash] of expected) {
+    const bytes = sample(`${name}.voc`), sound = decodeVoc(bytes);
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), hash);
+    assert.equal(sound.samples.length, length); assert.equal(sound.sampleRate, 1000000 / (256 - rateByte));
+    for (let i = 0; i < length; i++) assert.equal(sound.samples[i], (bytes[32 + i] - 128) / 128);
+    for (const end of [26, 31, bytes.length - 2, bytes.length - 1]) assert.throws(() => decodeVoc(bytes.subarray(0, end)));
+  }
+});
 
 test('original homestead VOC samples decode their exact unsigned PCM bytes and source time constant', () => {
   for (const [name, size] of [['boos.voc', 11663], ['cheers.voc', 12343]] as const) {

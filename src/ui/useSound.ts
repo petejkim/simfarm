@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PcmPlayer } from '../audio/pcm-player';
 import { loadSound } from '../assets/game-assets';
+import type { GameSound } from '../simulation/events';
 
 export function useSound() {
   const [player] = useState(() => new PcmPlayer());
@@ -17,7 +18,7 @@ export function useSound() {
     try { await player.enable(); }
     catch (error) { if (active.current) { stop(); setError(String(error)); } }
   };
-  const play = useCallback((id: 'cheers' | 'boos') => {
+  const play = useCallback((id: GameSound) => {
     if (!active.current) return;
     request.current?.abort(); player.stop();
     const controller = new AbortController(); request.current = controller;

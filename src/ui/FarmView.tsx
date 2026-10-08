@@ -50,6 +50,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   }, [id, loaded, assets.catalog.crops, assets.townLayouts]);
   const resource = useResource(load);
   const simulation = resource.status === 'ready' ? resource.value.simulation : null;
+  const onMapPointer = useCallback((pointer: MapFocus | null) => simulation?.dispatch({ type: 'set-map-pointer', pointer }), [simulation]);
   const snapshot = useSyncExternalStore(simulation?.subscribe ?? subscribeEmpty, simulation?.getSnapshot ?? emptySnapshot);
   useEffect(() => simulation?.subscribeEvents(onGameEvent), [simulation, onGameEvent]);
   useEffect(() => {
@@ -138,7 +139,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     {data && <main>
       <section className="map-panel">
         <FarmMap scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
-          field={field} selection={selection} preview={preview} onSelect={index => {
+          field={field} selection={selection} preview={preview} onPointer={onMapPointer} onSelect={index => {
             setSelection(index);
             const { x, y } = worldPosition(index);
             selectField(data.scenario.fields.find(f => f.contains(x, y))?.slot ?? null, false);

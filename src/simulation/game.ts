@@ -46,7 +46,7 @@ import { beginTownExpansion } from './town';
 import { resolveTownChoice, type TownChoice, type TownConstructionResult } from './town-construction';
 import { updateClearingEffects } from './clearing-effects';
 import { updateHomestead, type HomesteadChange } from './homestead';
-import type { GameEvent } from './events';
+import type { GameEvent, AnimalSound, AnimalVocal } from './events';
 import { purchaseBuilding, type BuildingPlacementResult } from './building-placement';
 import { copyIrrigation } from '../formats/irrigation';
 import { updateIrrigation } from './irrigation';
@@ -102,6 +102,7 @@ export interface GameSnapshot {
   lastPlanEditResult: (FieldPlanEditResult & { fieldSlot: number; week: number }) | null;
 }
 export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused: boolean }
+  | { type: 'set-map-pointer'; pointer: { x: number; y: number } | null }
   | { type: 'borrow'; amount: number } | { type: 'repay-loan' }
   | { type: 'resolve-default'; choice: 'restart' | 'exit' }
   | { type: 'choose-town'; choice: TownChoice }
@@ -150,6 +151,7 @@ export class GameSimulation {
   private readonly listeners = new Set<() => void>();
   private readonly eventListeners = new Set<(event: GameEvent) => void>();
   private events: GameEvent[] = [];
+  private mapPointer: { x: number; y: number } | null = null;
   private snapshot!: GameSnapshot;
   private daysAdvanced = 0;
   private paused = true;
@@ -247,7 +249,20 @@ export class GameSimulation {
     if (track) this.events.push({ type: 'music', track });
   }
 
+  private requestAnimalVocals(vocals: readonly AnimalVocal[]): void {
+    for (const vocal of vocals) this.events.push({ type: 'sound', sound: vocal.slice(0, -4) as AnimalSound });
+  }
+
   dispatch(command: GameCommand): void {
+    // External input, not checkpoint state. Clearing remains available while
+    // modal decisions suspend gameplay; no redraw or simulation step is needed.
+    if (command.type === 'set-map-pointer') {
+      const p = command.pointer;
+      if (p && (!Number.isInteger(p.x) || !Number.isInteger(p.y) || p.x < 0 || p.y < 0 || p.x >= 96 || p.y >= 96))
+        throw new Error('Invalid map pointer');
+      this.mapPointer = p ? { x: p.x, y: p.y } : null;
+      return;
+    }
     if (command.type === 'choose-town') {
       const pending = this.pendingTown;
       if (!pending) return;
@@ -360,7 +375,8 @@ export class GameSimulation {
     });
     if (!this.finances.defaultDecision && !this.pendingTown) {
       const animals = advanceAnimalFrame(s, this.finances, { tick: s.farm.animationTicks, frame: this.animalFrame,
-        random: this.random, crops: this.crops, pointer: null }, this.weather.soilMoisture);
+        random: this.random, crops: this.crops, pointer: this.mapPointer }, this.weather.soilMoisture);
+      for (const animal of animals) this.requestAnimalVocals(animal.movement?.sounds ?? []);
       const notices = animals.flatMap(a => [...(a.movement?.notices ?? []), ...(a.care?.notices ?? [])]
         .map(id => ({ slot: a.slot, id, animalType: s.animals[a.slot].type })));
       if (notices.length) this.animalNotices = notices.slice(-20);
@@ -389,6 +405,7 @@ export class GameSimulation {
       // Equipment/chemical aging still need their separate source phases.
       ageBuildings(s, this.random);
       const aging = ageAnimals(s, this.finances, this.random);
+      this.requestAnimalVocals(aging.sounds);
       this.animalLifecycleNotices = [...this.animalLifecycleNotices, ...aging.notices].slice(-20);
       ageInventoryAndRefillTroughs(s);
       // Weekly dispatcher0xbdbe updates old week's wind and field water before the calendar rolls.

@@ -5,6 +5,7 @@ import type { Scenario } from '../formats/scenario';
 import { allocateAnimal, animalVocal, ANIMAL_ADULT_WEEKS, ANIMAL_GESTATION_WEEKS, ANIMAL_LIFESPAN_WEEKS } from './animal-allocation';
 import { prepareAnimalDeath } from './animal-care';
 import type { FarmRandom } from './random';
+import type { AnimalVocal } from './events';
 
 /** Native presentation notices; these are not invented original string IDs. */
 export interface AnimalLifecycleNotice {
@@ -25,7 +26,7 @@ function activeAnimals(world: Scenario): AnimalRecord[] {
  * old-age removal. Bounded initial slots correct the shrinking-count scan
  * (SF-059); removal also keeps the species count consistent (SF-106). */
 export function ageAnimals(world: Scenario, finances: FinancialState, random: FarmRandom): {
-  notices: AnimalLifecycleNotice[]; sounds: string[];
+  notices: AnimalLifecycleNotice[]; sounds: AnimalVocal[];
 } {
   const animals = activeAnimals(world), removals = new Map<number, () => void>(), counts = [0, 0, 0, 0];
   for (const a of animals) if (((a.ageWeeks + 1) & 65535) > ANIMAL_LIFESPAN_WEEKS[a.type - 160]) {
@@ -34,7 +35,7 @@ export function ageAnimals(world: Scenario, finances: FinancialState, random: Fa
   counts.forEach((count, type) => {
     if (count && count > finances.accounts.assets.animalDefinitions[type].count) throw new Error('Invalid animal lifecycle count');
   });
-  const result: { notices: AnimalLifecycleNotice[]; sounds: string[] } = { notices: [], sounds: [] };
+  const result: { notices: AnimalLifecycleNotice[]; sounds: AnimalVocal[] } = { notices: [], sounds: [] };
   for (const a of animals) {
     if ((random.nextSimulation() & 127) === 75) result.sounds.push(animalVocal(a.type, random));
     const age = (a.ageWeeks + 1) & 65535;

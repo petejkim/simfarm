@@ -3,6 +3,7 @@ import { readScenario } from '../formats/scenario';
 import type { MidiSequence } from '../formats/xmidi';
 import { TownLayouts } from '../formats/town';
 import { decodeVoc } from '../formats/voc';
+import type { GameSound } from '../simulation/events';
 
 export interface Catalog {
   crops: CropDefinition[];
@@ -47,6 +48,6 @@ export async function loadScenarioAssets(id: number, signal: AbortSignal) {
 export async function loadMusic(id: string, signal: AbortSignal): Promise<MidiSequence> {
   return (await response(`${id}.music.json`, signal)).json();
 }
-export async function loadSound(id: 'cheers' | 'boos', signal: AbortSignal) {
+export async function loadSound(id: GameSound, signal: AbortSignal) {
   return decodeVoc(new Uint8Array(await (await response(`raw/${id}.voc`, signal)).arrayBuffer()));
 }

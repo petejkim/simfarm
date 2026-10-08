@@ -31,7 +31,7 @@ A full255-animal table makes allocation return0 with no RNG/count/account change
 
 ## Native implementation and checks
 
-`animal-allocation.ts` shares exact initialization and vocal selection. `animal-lifecycle.ts` implements age, monthly eligibility and queued births independently of React/canvas. Source sound requests are returned separately; actual animal-vocal playback remains pending.
+`animal-allocation.ts` shares exact initialization and vocal selection. `animal-lifecycle.ts` implements age, monthly eligibility and queued births independently of React/canvas. Source sound requests are returned separately and delivered by the live event/audio layer; see [animal-input-audio.md](animal-input-audio.md).
 
 Six primitive tests pin executable instructions/tables, all eight source farms, exact newborn bytes/RNG/accounts, every byte-valued condition around maturity, strict gestation/lifespan boundaries, wrap behavior, high-slot parents/free low slots, full capacity, stored death cleanup and rejection of invalid state before mutation. Existing purchase/movement/care tests remain unchanged and pass after sharing allocation/removal/vocal helpers.
 
@@ -43,4 +43,4 @@ The Livestock panel shows adults/expecting totals and expandable per-animal ages
 
 Two live tests run a stored cow through maturation/monthly eligibility and the full41-week gestation, preserve saved continuation into birth, verify death frees a slot before that week's birth pass, retain event identity across cross-species slot reuse, and freeze pending default. Browser checks compare the adult cow against original masked tile119, show monthly/weekly counters, save/reload births, report old-age death and full-table failure, and verify390px layout. The new nested details element required browser selectors to target the outer Livestock summary directly.
 
-Animal pointer delivery and actual vocal/death audio remain pending. Source byte18's age transition is now live; no further animation phase is asserted merely because there are two sprite images per direction. Equipment/chemical weekly aging and other original systems remain separately unfinished.
+Animal pointer delivery and vocal playback are now live, as documented in [animal-input-audio.md](animal-input-audio.md). The earlier death-sound interpretation was corrected to report-counter state, not audio. Source byte18's age transition is now live; no further animation phase is asserted merely because there are two sprite images per direction. Equipment/chemical weekly aging and other original systems remain separately unfinished.

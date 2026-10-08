@@ -1,6 +1,7 @@
 import { Binary } from '../formats/binary';
 import type { AnimalRecord } from '../formats/animal';
 import { animalVocal } from './animal-allocation';
+import type { AnimalVocal } from './events';
 import type { FinancialState } from '../formats/finance';
 import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
 import { findBuilding } from './building-storage';
@@ -23,7 +24,7 @@ export interface AnimalMovementResult {
   moved: boolean;
   stored: boolean;
   notices: (67)[];
-  sounds: string[];
+  sounds: AnimalVocal[];
 }
 
 export interface AnimalFrameResult {

@@ -913,3 +913,9 @@ Gestation0x12d0e/0x12d39 clears pregnancy and resets its counter before the queu
 ### SF-104 animal-counter follow-up
 
 Weekly animal age0xc196 and gestation byte0x12cfa also wrap before comparisons. Age65535 becomes0 without clearing an already-set adult image byte18; gestation255 becomes0 without giving birth. Normal lifespan deletion and gestation completion happen much earlier, so these wraps require inconsistent/modified retained state rather than ordinary long-lived animals. Native preserves the exact arithmetic; boundary tests pin it. No additional vulnerability claim is made.
+
+## SF-108 — animal avoidance reads uninitialized pointer coordinates outside a map window
+
+**Status:** verified control-flow/stack-local omission; visible DOS incidence unmeasured; native corrected to the defined absent-window fallback.
+
+Movement0x11bce initializes many stack locals but not words[bp−28]/[bp−2c]. With no current window,0x1206e initializes those words to0. With a current window, failed interior tests0x11fb0/0x11fd6/0x11ff8/0x12019 and unsupported types at0x12029 jump directly to0x12076. Only the accepted map-interior path writes coordinates at0x12048/0x12067. Subsequent distance/direction calls read both locals, so those rejected paths use prior stack contents. Static evidence establishes the undefined read; exact visible consequences and GUI timing are not measured. Native validates live coordinates and maps absent/outside input to the original defined(0,0) case. Tests cover pointer exit/blur and equal-position handling (SF-100). No exploitable security vulnerability is asserted.

@@ -2,6 +2,7 @@ import { Binary } from '../formats/binary';
 import type { FinancialState } from '../formats/finance';
 import type { Scenario } from '../formats/scenario';
 import type { FarmRandom } from './random';
+import type { AnimalVocal } from './events';
 
 export const ANIMAL_ADULT_WEEKS = [192, 80, 32, 12] as const; // DS2290.
 export const ANIMAL_LIFESPAN_WEEKS = [960, 960, 720, 480] as const; // DS2288.
@@ -33,10 +34,10 @@ export function allocateAnimal(world: Scenario, finances: FinancialState, random
 
 /** Source0x135f8 consumes visual RNG only for cow/sheep variants, even if
  * presentation is muted. Delivery belongs to the independent audio layer. */
-export function animalVocal(type: number, random: FarmRandom): string {
+export function animalVocal(type: number, random: FarmRandom): AnimalVocal {
   if (type === 160) return 'horse1.voc';
-  if (type === 161) return `cow${(random.nextVisual() & 1) + 1}.voc`;
+  if (type === 161) return random.nextVisual() & 1 ? 'cow2.voc' : 'cow1.voc';
   if (type === 162) return 'pig.voc';
-  if (type === 163) return `sheep${(random.nextVisual() & 1) + 1}.voc`;
+  if (type === 163) return random.nextVisual() & 1 ? 'sheep2.voc' : 'sheep1.voc';
   throw new Error('Invalid animal vocal type');
 }
