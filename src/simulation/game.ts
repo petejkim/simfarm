@@ -1,3 +1,5 @@
+import { beginStationaryDisaster, advanceFrostDay, advanceStationaryDisasters,
+  type StationaryDisasterKind, type StationaryDisasterStart } from './stationary-disasters';
 import { placeNetwork, type NetworkAction, type NetworkPlacementResult } from './network-placement';
 import { purchaseCropSupply, type CropSupplyPurchaseResult } from './crop-supply-purchase';
 import { createMovingDisasters, beginMovingDisaster, stopMovingDisaster, advanceMovingDisasters,
@@ -86,7 +88,7 @@ export interface FieldHarvestEstimate {
 export interface GameSnapshot {
   disasters: MovingDisasterState;
   waterDisasters: WaterDisasterState;
-  lastDisasterResult: MovingDisasterStart | { ok: true; kind: WaterDisasterKind } | null;
+  lastDisasterResult: StationaryDisasterStart | MovingDisasterStart | { ok: true; kind: WaterDisasterKind | 'wind' } | null;
   disasterNotices: string[];
   farmReport: { income: number; expenses: number; net: number; fields: FieldReport };
   revision: number;
@@ -144,7 +146,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'choose-town'; choice: TownChoice }
   | { type: 'edit-field-plan'; fieldSlot: number; week: number; action: FieldPlanEdit }
   | { type: 'set-speed'; speed: number }
-  | { type: 'start-disaster'; kind: MovingDisasterKind | WaterDisasterKind }
+  | { type: 'start-disaster'; kind: MovingDisasterKind | WaterDisasterKind | StationaryDisasterKind | 'wind' }
   | { type: 'set-disasters-enabled'; enabled: boolean }
   | { type: 'set-auto-clear'; enabled: boolean }
   | { type: 'buy-land'; regionX: number; regionY: number }
@@ -317,7 +319,7 @@ export class GameSimulation {
     this.eventListeners.add(listener);
     return () => { this.eventListeners.delete(listener); };
   };
-  private requestMusic(track: 'dfarm' | 'ffarm' | 'cowman' | null): void {
+  private requestMusic(track: Extract<GameEvent, { type: 'music' }>['track'] | null): void {
     if (track) this.events.push({ type: 'music', track });
   }
 
@@ -386,8 +388,9 @@ export class GameSimulation {
       this.lastPlanEditResult = { ...editFieldPlan(this.scenario, this.crops, command.fieldSlot, command.week, command.action),
         fieldSlot: command.fieldSlot, week: command.week };
     } else if (command.type === 'start-disaster') {
-      if (!['tornado', 'swarm', 'drought', 'flood'].includes(command.kind)) throw new Error('Invalid disaster kind');
-      this.lastDisasterResult = command.kind === 'drought' || command.kind === 'flood' ? this.startWaterDisaster(command.kind) : this.startDisaster(command.kind);
+      if (!['tornado', 'swarm', 'drought', 'flood', 'frost', 'crop-circles', 'toxic-land', 'wind'].includes(command.kind)) throw new Error('Invalid disaster kind');
+      this.lastDisasterResult = command.kind === 'wind' ? this.startWind() : command.kind === 'drought' || command.kind === 'flood' ? this.startWaterDisaster(command.kind)
+        : command.kind === 'tornado' || command.kind === 'swarm' ? this.startDisaster(command.kind) : this.startStationaryDisaster(command.kind);
     } else if (command.type === 'set-disasters-enabled') {
       this.disasters.enabled = command.enabled;
     } else if (command.type === 'set-auto-clear') {
@@ -520,8 +523,7 @@ export class GameSimulation {
     this.random.nextSimulation(); // Calendar entry 0xc899; additional DOS frame/UI consumers are not reproduced.
     const next = advanceCalendarDay(before);
     // 0xd1ae runs after incrementing day but BEFORE wrapping day seven to zero.
-    if (w.temperatureAnomaly >= 2) { w.temperature = (w.temperature - w.temperatureAnomaly) | 0; w.temperatureAnomaly -= 2; }
-    else w.temperatureAnomaly = 0;
+    if (advanceFrostDay(w, this.disasters)) this.disasterNotice('The frost has ended.');
     if ((before.day + 1) & 1) {
       for (const field of s.fields.filter(f => f.active)) {
         const crop = this.crops[field.cropSlot];
@@ -634,11 +636,28 @@ export class GameSimulation {
     }
     return result;
   }
-  private startWind(): void {
+  private startStationaryDisaster(kind: StationaryDisasterKind): StationaryDisasterStart {
+    const result = beginStationaryDisaster(this.scenario, this.crops, this.cropMarketPrices, this.weather,
+      this.disasters, kind, this.scenario.farm.animationTicks, this.random);
+    if (result.ok) {
+      if (kind === 'frost') {
+        if (result.cancelledSwarm) this.disasterNotice('The frost has dispersed the locust swarm.');
+        this.disasterNotice(`Frost has begun, damaging ${result.fields.length} sensitive field${result.fields.length === 1 ? '' : 's'}.`);
+        this.events.push({ type: 'sound', sound: 'wind' });
+      } else if (kind === 'crop-circles') {
+        this.disasterNotice(`Crop circles have appeared in field ${this.scenario.fields[result.fields[0]].number}.`);
+        this.requestMusic('alien');
+      } else this.disasterNotice('A toxic-land warning has been recorded.');
+    }
+    return result;
+  }
+  private startWind(): Exclude<GameSnapshot['lastDisasterResult'], null> {
     if (beginWindDisaster(this.scenario, this.crops, this.cropMarketPrices, this.weather, this.disasters, this.scenario.farm.animationTicks)) {
       this.disasterNotice('High winds are stripping nutrients from fields without enough nearby trees.');
       this.events.push({ type: 'sound', sound: 'wind' });
+      return { ok: true, kind: 'wind' };
     }
+    return { ok: false, reason: this.disasters.enabled ? 'already-active' : 'disabled' };
   }
   private startWaterDisaster(kind: WaterDisasterKind): Exclude<GameSnapshot['lastDisasterResult'], null> {
     const started = beginWaterDisaster(this.scenario, this.crops, this.cropMarketPrices, this.weather,
@@ -654,6 +673,7 @@ export class GameSimulation {
   }
   private advanceDisasters(): void {
     const s = this.scenario;
+    if (advanceStationaryDisasters(this.weather, this.disasters).includes('frost')) this.disasterNotice('The frost has ended.');
     advanceWindDisaster(s, this.crops, this.disasters.flags, s.farm.animationTicks, this.disasters.windReferenceTick, s.farm.dayDelayTicks);
     const step = advanceMovingDisasters(s, this.finances, this.disasters, s.farm.animationTicks, this.weather.soilMoisture, this.random);
     if (step.swarmEnded) this.disasterNotice('The locust swarm has dispersed.');
@@ -698,7 +718,7 @@ export class GameSimulation {
     // until all of its annual consumers and lifecycle are reconstructed.
     const report = { ...this.finances.annual };
     updateAnnualReport(this.scenario.farm, this.finances.accounts, report);
-    this.snapshot = { disasters: structuredClone(this.disasters), waterDisasters: { ...this.waterDisasters }, lastDisasterResult: this.lastDisasterResult ? { ...this.lastDisasterResult } : null,
+    this.snapshot = { disasters: structuredClone(this.disasters), waterDisasters: { ...this.waterDisasters }, lastDisasterResult: this.lastDisasterResult ? structuredClone(this.lastDisasterResult) : null,
       disasterNotices: [...this.disasterNotices], revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
       farmReport: { income: report.reportIncome, expenses: report.reportExpenses, net: report.reportNet,
         fields: summarizeFieldStatus(this.scenario.fields, this.scenario.farm.cash) },
