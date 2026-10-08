@@ -31,6 +31,7 @@ test('construction evidence pins allocation, debit, category clearing, origin ow
 test('all eight farms allocate original records, retain unknown byte, post accounts and paint all supported footprints', () => {
   for (let id = 0; id < 8; id++) for (const type of PURCHASABLE_BUILDINGS) {
     const { world, finances } = setup(id), d = world.buildingDefinitions[type - 64];
+    if (type === 72) world.cells[0].overlay &= ~0x4000; // Type72 follows the one-cell town guard.
     const free = world.buildings.find(b => b.slot && !b.active)!;
     free.bytes.fill(0xa5); free.flags = 0;
     const count = d.count, cells = world.cells.map(c => ({ ...c })), oldExpense = finances.annual.ds3e90;
@@ -60,7 +61,7 @@ test('rejected construction is atomic at bounds, terrain, ownership, capacity an
     assert.deepEqual(purchaseBuilding(world, finances, type, x, y, 0), { ok: false, reason });
     assert.equal(JSON.stringify({ world, finances }), before);
   }
-  for (const type of [63, 72, 73, 65.5, NaN]) reject(type, 0, 0, 'unsupported-building');
+  for (const type of [63, 73, 65.5, NaN]) reject(type, 0, 0, 'unsupported-building');
   for (const [x, y] of [[-1, 0], [95, 0], [0, 95], [0.5, 0], [0, NaN], [Infinity, 0]]) reject(65, x, y, 'outside-map');
   world.cells[0].overlay = 0; reject(65, 0, 0, 'not-owned'); world.cells[0].overlay = 0x800;
   for (const tile of [14, 31, 36, 149, 172, 440, 0x800 | 15, 534, 539]) {

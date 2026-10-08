@@ -4,8 +4,7 @@ import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
 import { BUILDING_GRAPHICS, findBuilding } from './building-storage';
 import { addIrrigationSource, validateIrrigation } from '../formats/irrigation';
 
-// Type72 stores water for trough refills; its production/construction is pending.
-export const PURCHASABLE_BUILDINGS = [64, 65, 66, 67, 68, 69, 70, 71] as const;
+export const PURCHASABLE_BUILDINGS = [64, 65, 66, 67, 68, 69, 70, 71, 72] as const;
 export type BuildingPlacementResult = { ok: true; slot: number; price: number; clearingCost: number }
   | { ok: false; reason: 'unsupported-building' | 'outside-map' | 'not-owned' | 'occupied'
     | 'blocked-terrain' | 'no-building-slots' | 'no-water-source-slots' | 'insufficient-cash' };
@@ -25,6 +24,7 @@ export function checkBuildingPlacement(world: Scenario, type: number, x: number,
     throw new Error('Invalid construction state');
   // The original checks only the origin, even for a multi-cell footprint (SF-085).
   if (type !== 70 && !(world.cells[worldIndex(x, y)].overlay & 0x800)) return { ok: false, reason: 'not-owned' };
+  if (type === 72 && (world.cells[worldIndex(x, y)].overlay & 0x4000)) return { ok: false, reason: 'not-owned' }; // One-cell click0x24266.
   if (findBuilding(world, x, y, def.width, def.height)) return { ok: false, reason: 'occupied' };
   const free = world.buildings.find(b => b.slot > 0 && b.slot <= 126 && !b.active);
   if (!free) return { ok: false, reason: 'no-building-slots' };
@@ -45,8 +45,10 @@ export function checkBuildingPlacement(world: Scenario, type: number, x: number,
     const paidTree = tile >= 535 && tile < 539, freeTree = tile >= 131 && tile < 147;
     if (world.farm.autoClear && (paidTree || freeTree)) {
       // Both families require $25 remaining; only 535..538 debit it.
-      if (remaining < 25) return { ok: false, reason: 'insufficient-cash' };
+      // Type72 uses the one-cell click's initial clear BEFORE its purchase.
+      if ((type === 72 ? world.farm.cash : remaining) < 25) return { ok: false, reason: 'insufficient-cash' };
       if (paidTree) { remaining -= 25; clearingCost += 25; }
+      if (remaining < 0) return { ok: false, reason: 'insufficient-cash' };
       tile = ((cell.terrain & 0xf800) | (15 + soilMoisture + (cell.attribute >>> 2))) & 0x7ff;
     }
     if (!((tile >= 15 && tile < 31) || (tile >= 150 && tile < 172)))

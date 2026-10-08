@@ -865,14 +865,34 @@ Native `advanceAnimalFrame` visits the bounded initial active slots once. Death 
 
 ## SF-101 — trough refill discards unused reservoir contents
 
-**Status:** verified helper mutation; production/capacity and live refill integration pending; native fix deferred.
+**Status:** verified helper mutation and ordinary source quantities; native partial-withdrawal correction implemented and live.
 
 Empty-trough refill at0xc2e0 requests64 from helper0x1a244 and doubles its return into inventory quantity. The helper finds active type72 buildings with nonzero word+10. At0x1a29e it caps its returned total to the requested amount, but0x1a2a5 unconditionally clears the entire supplying building's word+10 instead of subtracting the amount actually delivered. Thus a reservoir containing more than the remaining request loses its surplus. This is direct instruction evidence; the production routine and normal reachable contents still need tracing before quantifying ordinary gameplay loss. No security claim is made. Native automatic refills are not implemented yet; revisit partial withdrawal, source arithmetic and open-interior repaint together when implementing them.
 
 Follow-up source-data evidence: original SSM building records at0x5fc7+slot*70+10 already contain above64 quantities. SCEN0 slots19–21 contain250/255/255; SCEN3 slots1–2 contain255; SCEN5 slots6–17 contain50 followed by eleven255 values; SCEN6 slots11–14 and SCEN7 slots4–6 contain255. Each is active type72. Production0xc4e6 adds50 and caps at255 when adjacent to a wet ditch. Thus above64 contents are ordinary source state, not merely a malformed-save hypothesis. A64 withdrawal from a255 record discards191 stored units; native refill correction and its regression tests remain pending.
+
+Implementation follow-up: native `withdrawStoredWater` subtracts only the actual contribution and repaints an open store from its remaining quantity. Weekly inventory uses that corrected helper, retaining source slot order,64 request, doubled delivery, partial shortages and no top-up for nonempty troughs. Primitive tests exercise multiple stores/troughs and live/browser tests retain191 after a normal255→64 withdrawal. The earlier pending notes above record the discovery sequence; this fix is now live. No original evidence is removed.
 
 ## SF-102 — supply purchases have no matching expense category
 
 **Status:** verified accounting omission/quirk; intent unresolved; native preserves cash-only posting.
 
 The ground feed/water handlers call generic purchase0x1cb42 with definition type300/299. Debit0x1c88e subtracts cash and dispatches expense categories at0x1c900..0x1ca20; neither type matches any category. Allocation0x3a468..0x3a4c8 increments goods counts without another expense posting. Successful supplies therefore reduce cash without directly increasing annual expenses in this transaction. This is not proof of an unintended original bug: later lifecycle/report treatment remains incomplete. Native purchase preserves the verified behavior and tests unchanged annual/statistical ledgers. Any accounting correction is deferred pending that wider evidence.
+
+## SF-103 — water storage probes neighbors without map bounds
+
+**Status:** verified coordinate alias/out-of-map reads; native ignores absent neighbors.
+
+Producer0xc3cf/0xc41c/0xc469/0xc4b3 reads four terrain words using offsets−2,+192,+2,−192 from its map cell, with no preceding bounds check. A valid building at(1,0) therefore treats(0,95) as its northern neighbor; at outside edges a probe can leave the terrain array. Generic one-cell placement permits map-edge coordinates. A wet ditch in the aliased cell can incorrectly produce stored water. Native enumerates only valid cardinal neighbors; tests cover corners and that cross-column alias. This is a bounded native correction, not a demonstrated arbitrary-code execution vulnerability.
+
+## SF-104 — weekly age words and water production wrap
+
+**Status:** verified arithmetic quirks; preserved natively; correction deferred.
+
+Weekly0xc058 increments building word+8 before comparing with1020. At65535 it wraps to0 and byte+6 becomes0 for a building not already flagged2. Inventory age word+6 similarly wraps at0xc344. Production0xc4e6 adds50 in16 bits before capping at255: prior65486 produces0 and prior65535 produces49. Ordinary produced water stays0..255, so the latter cases require inconsistent/modified retained state; age wrap requires extremely long-lived records. These are not proven security vulnerabilities. Native tests explicitly preserve the arithmetic and unknown prior words; revisit only with an intentional compatibility policy.
+
+## SF-105 — water storage starts with the generic floor-image value217
+
+**Status:** verified shared-field initialization quirk; intent unresolved; preserved natively.
+
+Allocator0x1a0fc writes217 to all twelve building graphic words, including word+10. Type72 uses that first word as water quantity in production0xc4e6 and withdrawal0x1a28b. Its ordinary purchase path does not reset it, so a newly purchased water store starts with217 units despite no collection yet. This is verified initialization/consumer overlap, not proof of an unintended exploit: initial water could be intentional. Native construction preserves217 and all other initialized/retained bytes. All-eight-farm and browser construction tests verify it. Any change to start empty is deferred rather than silently imposed.

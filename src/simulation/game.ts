@@ -55,6 +55,8 @@ import { createAnimalFrameState, type AnimalFrameState } from './animal-world';
 import { advanceAnimalFrame } from './animal-movement';
 import { increaseAnimalNeeds } from './animal-needs';
 import { purchaseLivestock, type LivestockPurchaseResult } from './livestock-purchase';
+import { ageBuildings, fillWaterStorage } from './water-storage';
+import { ageInventoryAndRefillTroughs } from './weekly-inventory';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -376,9 +378,14 @@ export class GameSimulation {
         updateFieldStatus(field, crop, s.cells);
       }
       increaseAnimalNeeds(s, w.displayTemperature); // 0xd28b reads prior DS43dc; daily display refresh is later at0xd0cc.
+      fillWaterStorage(s); // 0xd296, before the day-seven weekly phase and next irrigation frame.
     }
     if (next.weekEnded) {
-      // Weekly dispatcher 0xbdbe updates old week's wind and field water before the calendar rolls.
+      // Weekly0xbe4d ages buildings before inventory refills; both precede wind0xbe74.
+      // Equipment, chemicals and animal aging between these phases remain separate reconstruction work.
+      ageBuildings(s, this.random);
+      ageInventoryAndRefillTroughs(s);
+      // Weekly dispatcher0xbdbe updates old week's wind and field water before the calendar rolls.
       const wind = updateWeeklyWind(w, s.climate, before);
       this.disasterFlags = wind.storm ? this.disasterFlags | 8 : this.disasterFlags & ~8;
       if (wind.hurricane) this.disasterFlags |= 1;

@@ -28,7 +28,7 @@ export function LivestockShop({ snapshot, position, productType, onTypeChange, o
       })}
     </select></label>
     <p>Place feed and water near your animals. Each trough starts with 256 units of water; each feed pile holds 512 units.</p>
-    <p>Automatic trough refills are not available yet. Replace depleted feed by buying a new pile; place another trough when water runs out.</p>
+    <p>For automatic weekly refills, use Map tool → Build → Water storage beside a wet ditch. It supplies empty troughs anywhere on the farm. Replace depleted feed by buying a new pile.</p>
     <p id="livestock-supplies">Water remaining: {supplies.filter(i => i.type === 299).reduce((n, i) => n + i.quantity, 0)} units · Feed remaining: {supplies.filter(i => i.type === 300).reduce((n, i) => n + i.quantity, 0)} units</p>
     <label className="clearing"><input id="livestock-auto-clear" type="checkbox" checked={world.farm.autoClear}
       onChange={e => onCommand({ type: 'set-auto-clear', enabled: e.target.checked })} /> Automatically clear trees</label>

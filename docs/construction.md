@@ -54,3 +54,7 @@ Retained defect evidence: SF-086 (flow merge adds one packet twice after saturat
 ## Irrigation buildings enabled
 
 Types70/71 now use the reconstructed live irrigation registry and flow driver; see [irrigation.md](irrigation.md). The Build menu exposes their original prices and normal/masked footprints, and native v9 preserves sources and in-progress waves. Capacity failure is atomic (SF-092). Type72 and animal-water behavior remain pending with livestock. Earlier sections record the dependency discovery; types70/71 are no longer blocked on that investigation.
+
+## Water storage enabled
+
+Type72 is now available under **Build → Water storage**, with original1×1/base481/$200 definition, single-cell clearing/town/ownership guards, original217-unit initialization and standard building accounting. It collects from adjacent wet ditches, ages and refills empty troughs through the live calendar. See [water-storage.md](water-storage.md) for source evidence, exact timing, SF-101/103 corrections and retained arithmetic/initializer quirks. Earlier pending notes are historical; construction types64–72 are now live. Original repair/demolition input and remaining lifecycle gaps are not claimed complete.
