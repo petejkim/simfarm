@@ -9,6 +9,7 @@ import { readArchive } from '../src/formats/archive';
 import { readClimatePresets, readSetupMap } from '../src/formats/new-farm';
 import { readNewFarmRecordDefaults } from '../src/formats/new-farm-records';
 import { readNewFarmRuntimeDefaults } from '../src/formats/new-farm-runtime';
+import { readTrafficDefaults } from '../src/formats/traffic';
 import { readPalette, readBitmap, tileAtlas, decodePlanar, type Raster } from '../src/formats/graphics';
 import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
 import { readCrop, type CropDefinition } from '../src/formats/crop';
@@ -33,6 +34,7 @@ const setupMap = readSetupMap(asset('scenario.odt'));
 await json('new-farm-setup.json', { ...setupMap, trailingBytes: Array.from(setupMap.trailingBytes), climate: readClimatePresets(asset) });
 await json('new-farm-records.json', readNewFarmRecordDefaults(exe));
 await json('new-farm-runtime.json', readNewFarmRuntimeDefaults(exe));
+await json('traffic-defaults.json', readTrafficDefaults(exe));
 for (const e of entries) {
   await writeFile(join(output, 'raw', e.name), e.bytes);
   if (e.name.endsWith('.bmp')) await png(`${e.name}.png`, readBitmap(e.bytes, palette));
