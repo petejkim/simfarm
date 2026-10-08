@@ -1011,3 +1011,10 @@ Trough pickup0x13a50 calls the inventory point finder without testing for a zero
 ### SF-011 manual equipment movement update
 
 Manual movement preflight validates every cell of the rotated source footprint against both equipment type and slot before withdrawal, then checks destination ownership and source identity without mutation. Tests exercise all original stored machines and a deliberately mismatched second footprint cell. Native rejects malformed storage atomically; no new claim about original loader exploitability is made.
+
+
+## SF-117 — generic crop insertion bypasses the building-type gate for harvested goods
+
+Status: verified conditional grouping, native manual crop relocation not implemented; classification as unintended storage compatibility is provisional. Confidence high on instructions, with no claim of corruption or a security vulnerability.
+
+Generic insertion0x1a596 first checks building types64/65 at0x1a5ca..0x1a5d8 and accepts item types168..191 through0x1a5da..0x1a5e6. However, building mismatch branches to0x1a5e8, where types192..215 can still branch to the same insertion body0x1a5fc. Thus the harvested-goods range bypasses that building compatibility gate, provided first-fit space exists. Automatic harvest reservation0x1aff0 separately restricts buildings to64/65, so copying that helper's policy into the manual transfer would conceal this distinction. Trace all ordinary manual destinations and presentation effects before deciding whether to retain or deliberately correct the mismatch. No change to existing automatic harvest storage is justified by this finding.

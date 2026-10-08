@@ -1,3 +1,4 @@
+import { EquipmentMovePanel, BuildingInteriorControls } from './EquipmentMovePanel';
 import { FlightControls } from './FlightControls';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
@@ -89,7 +90,8 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   const cell = selection !== null ? data?.scenario.cells[selection] : undefined;
   const position = selection !== null ? worldPosition(selection) : null;
   const removal = position && data && mapTool === 'remove' ? checkManualRemoval(data.scenario, position.x, position.y) : null;
-  const preview = mapTool === 'remove' ? removal?.ok ? { x: removal.x, y: removal.y, width: removal.width, height: removal.height, valid: true } : undefined
+  const preview = mapTool === 'move' ? position ? { ...position, width: 1, height: 1, valid: true } : undefined
+    : mapTool === 'remove' ? removal?.ok ? { x: removal.x, y: removal.y, width: removal.width, height: removal.height, valid: true } : undefined
     : position && data && snapshot && mapTool !== 'inspect' ? {
     x: mapTool === 'land' ? (position.x >> 3) * 8 : position.x,
     y: mapTool === 'land' ? (position.y >> 3) * 8 : position.y,
@@ -135,7 +137,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
         <option value="build">Build</option>
         <option value="remove">Bulldoze</option>
         <option value="irrigation">Irrigation</option>
-        <option value="equipment">Buy machinery</option>
+        <option value="equipment">Buy machinery</option><option value="move">Move machinery</option>
         <option value="livestock">Animals &amp; supplies</option>
       </select></label><label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
@@ -156,7 +158,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     {snapshot && <LivestockPanel snapshot={snapshot} onShop={() => setMapTool('livestock')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     {snapshot && simulation && <AircraftPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
       onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
-    {snapshot && <MachineryPanel snapshot={snapshot} onShop={() => setMapTool('equipment')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
+    {snapshot && <MachineryPanel snapshot={snapshot} onMove={() => { setMapTool('move'); setSelection(null); }} onShop={() => setMapTool('equipment')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     {data && <main>
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
@@ -169,6 +171,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
           }} />
         <div className="map-footer"><span>{snapshot?.aircraftFlight ? 'Following aircraft · farm calendar suspended' : mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
           ? 'Click the top-left corner of a new field' : mapTool === 'build' ? 'Click the top-left corner of a building'
+          : mapTool === 'move' ? 'Select a machine, then choose its destination in the movement panel'
           : mapTool === 'remove' ? 'Click an object or terrain to review its removal'
           : mapTool === 'irrigation' ? 'Click a tile to dig a ditch or control a valve'
           : mapTool === 'equipment' ? 'Click clear ground or an equipment storage building'
@@ -178,6 +181,10 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
       </section>
       <aside>
         <fieldset className="farm-actions" aria-label="Farm actions" disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)}>
+        {snapshot && mapTool === 'move' && <EquipmentMovePanel snapshot={snapshot} position={position}
+          onCommand={command => simulation?.dispatch(command)} onPicked={() => setSelection(null)} />}
+        {snapshot && (mapTool === 'inspect' || mapTool === 'move') && <BuildingInteriorControls snapshot={snapshot} position={position}
+          onCommand={command => simulation?.dispatch(command)} />}
         {snapshot && mapTool === 'remove' && <RemovalPanel snapshot={snapshot} position={position}
           onCommand={command => simulation?.dispatch(command)} onCancel={() => { setSelection(null); setFieldSlot(null); }} />}
         {snapshot && mapTool === 'build' && <BuildingPanel snapshot={snapshot} position={position} buildingType={buildingType}

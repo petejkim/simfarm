@@ -30,4 +30,18 @@ The same handler selects chemicals(category220), seeds87, harvested crops109, tr
 - Trough pickup0x13a50 does not reject a missing inventory slot, and0x13a91 removes source storage **during pickup**. Drop0x14188 accepts ground15..31 without testing terrain0800, paints175/176 and updates coordinates. SF-116 records the unresolved hazards separately.
 - Feed drop0x142a2 rejects buildings, requires ground15..31 and no occupancy, restores source secondary grass using15+(attribute&15), moves the record, then chooses image1024/1023/1022/1021/1020 at quantity thresholds102/206/308/410. Zero quantity deletes it. No new quantity, age or fee should be invented.
 
-Current primitive tests pin executable instructions and exercise all eight supplied farms, source footprints, every destination terrain ID, gates/atomicity, all eight ground types, towing/rentals, destination storage, building types and bounded sparse lookup. Live commands, React controls and saved in-transit/browser verification follow as a separate increment.
+Current primitive tests pin executable instructions and exercise all eight supplied farms, source footprints, every destination terrain ID, gates/atomicity, all eight ground types, towing/rentals, destination storage, building types and bounded sparse lookup. Live commands and React controls now connect these primitives as described below.
+
+
+## Live controls and checkpoint integration
+
+Canonical move-equipment and toggle-building-interior commands run inside GameSimulation after the same flight/default/town gates as other farm actions. Orders use the source timer clock; no UI hook owns movement state. Transient result snapshots are detached and do not replay after loading. Existing v12 equipment bytes, links, clocks, storage contents and map words already capture the complete action and in-progress towing, so no save migration is required.
+
+Machinery → Move machinery and Map tool → Move machinery expose native two-step selection: click a machine, Select machine, click a destination, Move here. Cancel selection performs no canonical mutation. Clicked buildings expose Open building / Close building under either Inspect or Move machinery. The source mouse cursor/held-button modal presentation and its selection/error sounds remain unimplemented; no substitute original sound is asserted. Paused games retain queued orders until Play or Next day advances the simulation. The interface explains that tractor rental may cost money and farm work can preempt manual travel.
+
+Three live tests verify interior persistence, exact mid-trip and attached-trailer save/load,35-day continuation, detached feedback and all modal gates. Two Chromium flows exercise actual map clicks/buttons, storage pickup/delivery, cancellation, busy/unowned feedback, tractor delivery/return, exact browser/native saves, original217 interior and459 roof pixels, and390px layout. The screenshot artifacts/browser-manual-movement.png was visually inspected. Remaining source branches above are still pending, not implied complete by the equipment controls.
+
+
+### Next storage dependency evidence
+
+Generic insertion0x1a596 reads actual type from definition+2, dimensions+8/+9 and graphic+0. The gate0x1a5ca..0x1a5f7 accepts types168..191 only through the64/65 building test, but the subsequent192..215 test can succeed independently of building type. Do not replace this with the automatic harvest reservation helper's64/65-only policy without an explicit fidelity decision (SF-117). Both use first-fit0x1abae, but manual insertion writes slot references as bytes at0x1a69d/0x1a6a0, so the existing SF-021 inventory-slot truncation boundary also needs a preflight here. The generic routine updates inventory coordinates before its final refresh0x1ab89/0x1aba2; manual transfer's later source removal must therefore use captured original coordinates. Next trace the chemical branch and same-building transfer ordering before implementing it.

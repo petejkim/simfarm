@@ -1,3 +1,4 @@
+import { moveManualEquipment, toggleManualBuildingInterior, type EquipmentMoveTarget, type EquipmentMoveResult, type BuildingInteriorResult } from './manual-equipment-move';
 import { removeManualTarget, type RemovalTarget, type ManualRemovalResult } from './manual-removal';
 import { sellManualAsset, type AssetSaleKind, type ManualAssetSaleResult } from './manual-asset-sale';
 import { advanceFlight, beginFlight, FLIGHT_CONTROLS, MAX_FLIGHT_INPUTS, type AircraftFlight, type FlightControl, type FlightEnd, type FlightStartResult } from './aircraft-flight';
@@ -109,6 +110,8 @@ export interface GameSnapshot {
   lastSaleResult: HarvestSaleResult | null;
   lastAssetSaleResult: (ManualAssetSaleResult & { kind: AssetSaleKind }) | null;
   lastRemovalResult: ManualRemovalResult | null;
+  lastEquipmentMoveResult: EquipmentMoveResult | null;
+  lastBuildingInteriorResult: BuildingInteriorResult | null;
   lastLandResult: LandPurchaseResult | null;
   lastBuildingResult: BuildingPlacementResult | null;
   lastEquipmentPurchaseResult: (EquipmentPurchaseResult & { equipmentType: number }) | null;
@@ -129,6 +132,8 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'set-auto-clear'; enabled: boolean }
   | { type: 'buy-land'; regionX: number; regionY: number }
   | { type: 'build'; buildingType: number; x: number; y: number }
+  | { type: 'move-equipment'; selected: EquipmentMoveTarget; x: number; y: number }
+  | { type: 'toggle-building-interior'; x: number; y: number; slot: number }
   | { type: 'remove-object'; x: number; y: number; kind: RemovalTarget['kind']; slot: number; tile?: number }
   | { type: 'irrigation'; tool: IrrigationTool; x: number; y: number }
   | { type: 'start-flight'; slot: number; columns: number; rows: number }
@@ -202,6 +207,8 @@ export class GameSimulation {
   private lastSaleResult: HarvestSaleResult | null = null;
   private lastAssetSaleResult: GameSnapshot['lastAssetSaleResult'] = null;
   private lastRemovalResult: ManualRemovalResult | null = null;
+  private lastEquipmentMoveResult: EquipmentMoveResult | null = null;
+  private lastBuildingInteriorResult: BuildingInteriorResult | null = null;
   private lastLandResult: LandPurchaseResult | null = null;
   private lastEquipmentPurchaseResult: GameSnapshot['lastEquipmentPurchaseResult'] = null;
   private lastBuildingResult: BuildingPlacementResult | null = null;
@@ -357,6 +364,10 @@ export class GameSimulation {
       this.lastLandResult = purchaseLand(this.scenario, command.regionX, command.regionY, this.weather.soilMoisture);
     } else if (command.type === 'build') {
       this.lastBuildingResult = purchaseBuilding(this.scenario, this.finances, command.buildingType, command.x, command.y, this.weather.soilMoisture);
+    } else if (command.type === 'move-equipment') {
+      this.lastEquipmentMoveResult = moveManualEquipment(this.scenario, command.selected, command.x, command.y, this.scenario.farm.timerTicks);
+    } else if (command.type === 'toggle-building-interior') {
+      this.lastBuildingInteriorResult = toggleManualBuildingInterior(this.scenario, command.x, command.y, command.slot);
     } else if (command.type === 'remove-object') {
       this.lastRemovalResult = removeManualTarget(this.scenario, this.finances, command.x, command.y, command, this.weather.soilMoisture, this.random);
       if (this.lastRemovalResult.ok) this.events.push({ type: 'sound', sound: this.lastRemovalResult.kind === 'terrain' ? 'bulldoze' : 'explode' });
@@ -610,6 +621,8 @@ export class GameSimulation {
       lastHarvestResult: this.lastHarvestResult ? { ...this.lastHarvestResult } : null,
       lastSaleResult: this.lastSaleResult ? { ...this.lastSaleResult } : null,
       lastAssetSaleResult: this.lastAssetSaleResult ? { ...this.lastAssetSaleResult } : null,
+      lastEquipmentMoveResult: this.lastEquipmentMoveResult ? { ...this.lastEquipmentMoveResult } : null,
+      lastBuildingInteriorResult: this.lastBuildingInteriorResult ? { ...this.lastBuildingInteriorResult } : null,
       lastRemovalResult: this.lastRemovalResult ? { ...this.lastRemovalResult } : null,
       lastLandResult: this.lastLandResult ? { ...this.lastLandResult } : null,
       lastEquipmentPurchaseResult: this.lastEquipmentPurchaseResult ? { ...this.lastEquipmentPurchaseResult } : null,
