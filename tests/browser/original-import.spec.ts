@@ -94,3 +94,38 @@ test('original imports keep unequal calendar and machinery clocks distinct throu
   await load(page, Buffer.from(JSON.stringify(next)), 'unequal-restored.json');
   expect((await save(page, 'unequal-restored')).data).toEqual(next);
 });
+
+test('loaded pause depth decides original resume pacing for both running and paused browser sessions', async ({ page }) => {
+  await page.clock.install({ time: new Date('1993-04-05T12:00:00Z') });
+  await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));
+  await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const baseline = (await save(page, 'pause-baseline')).data;
+  baseline.runtime.disasters.frameDelay = 47;
+  for (const running of [false, true]) for (const depth of [0, 1, 2, 255]) {
+    await load(page, Buffer.from(JSON.stringify(baseline)), 'pause-baseline.json');
+    if (running) await page.locator('#play-pause').click();
+    await expect(page.locator('#time-status')).toContainText(running ? 'Running' : 'Paused');
+    const prior = (await save(page, 'pause-prior')).data;
+    const bytes = Buffer.from(source('SCEN0.SSM'));
+    bytes[0x21718] = 0; bytes[0x21719] = depth;
+    bytes.writeUInt16LE(777, 0x2171a); bytes.writeUInt16LE(5, 0x2171c);
+    bytes.writeUInt16LE(29, 0x2171e); bytes.writeUInt16LE(13, 0x21720);
+    await load(page, bytes, `pause-${depth}.SSM`);
+    const actual = (await save(page, `pause-${running}-${depth}`)).data, resumes = depth === 1;
+    expect(actual.scenario.farm.paceEquipment).toBe(resumes);
+    expect(actual.scenario.farm.dayDelayTicks).toBe(resumes ? 256 : 777);
+    expect(actual.scenario.farm.speed).toBe(resumes ? 1 : 5);
+    expect(actual.scenario.irrigation.delay).toBe(resumes ? 2 : 13);
+    expect(actual.runtime.traffic.delay).toBe(resumes ? 16 : 29);
+    expect(actual.runtime.disasters.frameDelay).toBe(resumes ? 4 : 47);
+    expect(actual.runtime.random).toEqual(prior.runtime.random);
+    expect(actual.scenario.source).toBe(bytes.toString('hex'));
+    await expect(page.locator('#time-status')).toContainText('Paused');
+    const expected = GameSimulation.load(JSON.stringify(prior), crops, newFarmAssets.townLayouts).simulation.importOriginal(bytes, crops).simulation;
+    expect(actual).toEqual(JSON.parse(expected.save(null)));
+    await load(page, Buffer.from(JSON.stringify(actual)), 'pause-restored.json');
+    expect((await save(page, 'pause-restored')).data).toEqual(actual);
+    await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
+    expect((await save(page, 'pause-next')).data).toEqual(JSON.parse(expected.save(null)));
+  }
+});

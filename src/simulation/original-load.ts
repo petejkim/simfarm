@@ -13,9 +13,10 @@ import { transferCalendarPhase } from './calendar-clock';
 export function transferOriginalFarm(previous: SimulationState, bytes: Uint8Array, crops: readonly CropDefinition[]): SimulationState {
   const prior = readNativeSave(writeNativeSave(previous, null)).state;
   const state = loadOriginalFarmState(prior, bytes, crops);
-  // Ordinary source dialog adds one pause level. A previously paused native
-  // session models an outer level, so its return does not perform1->0 writes.
-  if (!prior.paused) {
+  //461a8..461b3 replaces DS0187 from SSM21719 before43284 resumes.
+  //Only loaded depth1 reaches the1->0 pacing writes at3f505; the old
+  //browser pause state cannot decide this branch. Native play stays paused.
+  if (bytes[0x21719] === 1) {
     state.scenario.farm.paceEquipment = true; //0x3f505 writes2 to DSa8a0.
     state.disasters.frameDelay = 4;
     state.scenario.farm.dayDelayTicks = 256; state.scenario.farm.speed = 1;

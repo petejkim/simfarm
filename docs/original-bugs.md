@@ -1302,3 +1302,12 @@ SF-151 full-generation follow-up: the population result is intermediate. `genera
 
 
 SF-151 geographic follow-up: numbered chooser result2 does not select sites or draw the discarded preliminary map;32314 branches around32327/3232c. A retained−128-soil fixture therefore successfully loads a numbered farm after preliminary generation, even though the same preliminary landscape has no reachable home/town for the custom path. Native tests preserve that branch distinction and the retained signed soil; no speculative clamp is added. This further limits the earlier lookup/rejection concern to the relevant phase/caller. Ordinary negative-soil reachability remains unproven.
+
+
+## SF-152 — file loading replaces active pause nesting with a saved byte
+
+**Status:** verified transfer/callback arithmetic; ordinary nesting-loss/overflow consequences require further menu audit. Native loaded-byte pacing behavior preserved; complete nested-window owner/fix deferred. No security vulnerability established.
+
+Loader4619e..461b3 reads SSM21719 into6190:0187; writer45186/45189 saves that same byte. Pause3f49d increments0187 as a byte, and resume3f4f3..3f503 returns for0 or decrements a nonzero value, assigning normal pacing only on1→0. Successful button load43258→4543c then43284→3f4e8 therefore discards the active dialog's pre-load depth in favor of the stored value. All eight supplied files store0 and bypass those resume stores, even though opening an ordinary file dialog increments the counter. Values2..255 remain nonzero after return;0/1 become0. A later pause increment can wrap255→0 at3f49d and skip its menu-state writes via3f4a2. These byte operations and lack of loader range validation are verified; the number/order of nested dialogs reachable through normal input and any harmful gameplay effect are not yet proven. Do not label a synthetic high-depth file an ordinary-play or exploitable bug.
+
+Native import preserves the loaded-byte pacing gate and complete immutable source bytes, while retaining its explicit start-paused browser policy. Its earlier use of the old browser pause boolean was a native reconstruction error, now corrected; it was not an original-game fix. Source tests pin both writer/reader and callback, exercise0/1/2/127/128/254/255 with both prior browser pause states, and keep the source numbered chooser's no-resume path distinct. Exact DOS nesting and any proposed correction remain deferred pending the full startup/dialog lifecycle. Retain this entry after future fixes.
