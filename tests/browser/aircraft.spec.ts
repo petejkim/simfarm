@@ -13,7 +13,7 @@ async function save(page: Page, path: string) {
   await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
 }
 
-test('Aircraft panel buys at the original airport pad, refuels, changes and loads payload, and continues v11 saves', async ({ page }) => {
+test('Aircraft panel buys at the original airport pad, refuels, changes and loads payload, and continues current saves', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = aircraftFixture(), game = f.load(); await page.goto('/'); await load(page, game.save(4));
   await page.locator('#aircraft-panel > summary').click();

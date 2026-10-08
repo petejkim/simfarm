@@ -12,6 +12,7 @@ import { decodeFinancialState, encodeFinancialState } from './finance-save';
 import { TOWN_LAYOUT_BYTES } from './town';
 import { MAX_IRRIGATION_FLOW, validateIrrigation, type IrrigationState } from './irrigation';
 import { createAircraftServiceState } from '../simulation/aircraft';
+import { FLIGHT_CONTROLS, MAX_FLIGHT_INPUTS, validFlightAircraft, type AircraftFlight } from '../simulation/aircraft-flight';
 import { createAnimalFrameState } from '../simulation/animal-world';
 
 export const MAX_SAVE_BYTES = 1_000_000;
@@ -140,7 +141,7 @@ function decodeIrrigation(value: unknown): IrrigationState {
 export function writeNativeSave(state: SimulationState, scenarioId: number): string {
   number(scenarioId, 0, 7, 'scenario ID');
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 11, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 12, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -150,7 +151,7 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(save.version)) fail('unsupported format or version');
   const scenarioId = number(save.scenarioId, 0, 7, 'scenario ID'), s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const random = object(r.random, 'random');
   const rng = new FarmRandom({ visual: number(random.visual, 0, 65535, 'visual RNG'),
@@ -176,12 +177,14 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
     animalFrame,
     aircraftService: save.version >= 11 ? { selectedChemical: number(object(r.aircraftService, 'aircraft service').selectedChemical, 221, 223, 'aircraft chemical') }
       : createAircraftServiceState(),
+    aircraftFlight: save.version >= 12 ? decodeFlight(r.aircraftFlight, s) : null,
     cropMarketPrices: numbers(r.cropMarketPrices, 16, 0, 65535, 'crop prices'),
     finances: save.version >= 3 ? decodeFinancialState({ ...object(r.finances, 'financial state'),
       ...(save.version === 3 ? { defaultDecision: null } : {}),
       ...(save.version < 8 ? { homestead: readHomestead(s.sourceBytes) } : {}),
       ...(save.version < 7 ? { statistics: readAnnualStatistics(s.sourceBytes) } : {}) }) : readFinancialState(s.sourceBytes) };
   if (state.finances.defaultDecision && !state.paused) fail('unpaused terminal default');
+  if (state.aircraftFlight && (state.finances.defaultDecision || state.pendingTown)) fail('flight during modal decision');
   const town = state.finances.town.activeSite, townIndex = (town.regionX * 12 + town.regionY) * 7;
   // A reserved, unbuilt plot still contains its original regional byte. The
   // chooser replaces it before weekly development can use it as a district.
@@ -195,6 +198,34 @@ export function readNativeSave(text: string): { scenarioId: number; state: Simul
   if (state.elapsed >= 1) fail('fractional ticks');
   if (state.cropMarketPrices.some((price, i) => price !== s.cropDefinitions[i].price)) fail('inconsistent crop prices');
   return { scenarioId, state };
+}
+
+function decodeFlight(value: unknown, world: Scenario): AircraftFlight | null {
+  if (value === null) return null;
+  const f = object(value, 'aircraft flight');
+  const columns = number(f.columns, 8, 80, 'flight columns'), rows = number(f.rows, 8, 80, 'flight rows');
+  if (f.active !== true || !Array.isArray(f.inputs) || f.inputs.length > MAX_FLIGHT_INPUTS ||
+    !f.inputs.every(input => FLIGHT_CONTROLS.includes(input))) fail('flight controls');
+  const result: AircraftFlight = {
+    slot: number(f.slot, 1, 126, 'flight slot'), columns, rows,
+    cameraX: number(f.cameraX, 0, 96 - columns, 'flight camera X'), cameraY: number(f.cameraY, 0, 96 - rows, 'flight camera Y'),
+    offsetX: number(f.offsetX, 3 - (columns >> 1), (columns >> 1) - 3, 'flight offset X'),
+    offsetY: number(f.offsetY, 3 - (rows >> 1), (rows >> 1) - 3, 'flight offset Y'),
+    heading: number(f.heading, 0, 7, 'flight heading'), altitude: number(f.altitude, 1, 100, 'flight altitude'),
+    spraying: boolean(f.spraying, 'flight spraying'), sprayFrame: number(f.sprayFrame, 0, 3, 'flight spray frame'),
+    lastFrameTick: number(f.lastFrameTick, 0, 65535, 'flight frame tick'),
+    lastWearTick: number(f.lastWearTick, 0, 65535, 'flight wear tick'),
+    lastFuelTick: number(f.lastFuelTick, 0, 65535, 'flight fuel tick'),
+    lastSprayTick: number(f.lastSprayTick, 0, 65535, 'flight spray tick'),
+    turbulence: boolean(f.turbulence, 'flight turbulence'), turbulenceTick: number(f.turbulenceTick, 0, 65535, 'flight turbulence tick'),
+    spin: number(f.spin, 0, 65535, 'flight spin'), inputs: [...f.inputs], active: true,
+    resumePaused: boolean(f.resumePaused, 'flight return pause'),
+  };
+  if (!validFlightAircraft(world, result.slot)) fail('flight aircraft/home');
+  const tick = world.farm.animationTicks;
+  if (((tick - result.lastFrameTick) & 65535) > 1 || ((tick - result.lastFuelTick) & 65535) > 33 ||
+    ((tick - result.lastWearTick) & 65535) > 33) fail('flight clock');
+  return result;
 }
 
 function decodePendingTown(value: unknown): PendingTownExpansion | null {

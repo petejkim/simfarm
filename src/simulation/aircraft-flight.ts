@@ -2,11 +2,12 @@ import { Binary } from '../formats/binary';
 import type { FinancialState } from '../formats/finance';
 import { worldIndex, type Scenario } from '../formats/scenario';
 import { aircraftChemical, aircraftFuel, aircraftPayload, checkAircraftService, createAircraftServiceState } from './aircraft';
-import { clearAircraftHome } from './aircraft-home';
+import { clearAircraftHome, validAircraftHome } from './aircraft-home';
 import { changeFieldCondition } from './field-conditions';
 
 export const FLIGHT_CONTROLS = ['left', 'right', 'climb', 'descend', 'spray-toggle', 'spray-on', 'spray-off', 'end'] as const;
 export type FlightControl = typeof FLIGHT_CONTROLS[number];
+export const MAX_FLIGHT_INPUTS = 32; // Native input bound; not a claim about BIOS buffer capacity.
 export interface AircraftFlight {
   slot: number; columns: number; rows: number; cameraX: number; cameraY: number; offsetX: number; offsetY: number;
   heading: number; altitude: number; spraying: boolean; sprayFrame: number;
@@ -22,6 +23,20 @@ export function flightPosition(f: AircraftFlight): { x: number; y: number } {
   return { x: f.cameraX + (f.columns >> 1) + f.offsetX, y: f.cameraY + (f.rows >> 1) + f.offsetY };
 }
 
+/** Shared takeoff/checkpoint invariants; airborne terrain no longer has parked sprites. */
+export function validFlightAircraft(world: Scenario, slot: number): boolean {
+  const e = world.equipment[slot], definition = world.equipmentDefinitions[8];
+  if (!Number.isInteger(slot) || slot < 1 || slot > 126 || !e?.active || e.type !== 8 || (e.flags & 15) ||
+    !validAircraftHome(e) || e.x !== e.bytes[50] || e.y !== e.bytes[51] || e.parent || e.attachment ||
+    !definition.ownedCount || definition.type !== 8 || definition.width !== 2 || definition.height !== 2 ||
+    aircraftFuel(e) > 255 || aircraftPayload(e) > 255) return false;
+  const pad = (e.x & 7) === 3 ? 32 : (e.x & 7) === 5 ? 64 : 0;
+  const region = world.regionalConditions[((e.x >> 3) * 12 + (e.y >> 3)) * 7];
+  return Boolean(pad && (e.y & 7) === 6 && (region & 15) === 5 && (region & pad)) &&
+    !world.equipment.some(other => other.active && other.slot !== slot &&
+      (other.attachment === slot || (other.type !== 7 && other.parent === slot)));
+}
+
 /** 0x30f70 + centering0x22578. Native canvas has no DOS client-border offsets.
  * Preserve captured viewport dimensions across browser resizes and checkpoints. */
 export function beginFlight(world: Scenario, finances: FinancialState, slot: number, columns: number, rows: number,
@@ -30,8 +45,7 @@ export function beginFlight(world: Scenario, finances: FinancialState, slot: num
   const check = checkAircraftService(world, finances, createAircraftServiceState(), slot, { kind: 'repair' });
   if (!check.ok && check.reason !== 'insufficient-cash') return { ok: false, reason: 'not-parked' };
   const e = world.equipment[slot];
-  if (!world.equipmentDefinitions[8].ownedCount || e.parent || e.attachment ||
-    world.equipment.some(other => other.active && other.slot !== slot && (other.attachment === slot || (other.type !== 7 && other.parent === slot))) ||
+  if (!validFlightAircraft(world, slot) ||
     !Number.isInteger(soilMoisture) || soilMoisture < -128 || soilMoisture > 127)
     return { ok: false, reason: 'invalid-aircraft' };
   const tick = world.farm.animationTicks;

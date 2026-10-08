@@ -1,3 +1,4 @@
+import { advanceFlight, beginFlight, FLIGHT_CONTROLS, MAX_FLIGHT_INPUTS, type AircraftFlight, type FlightControl, type FlightEnd, type FlightStartResult } from './aircraft-flight';
 import type { CropDefinition } from '../formats/crop';
 import { FieldRecord } from '../formats/field';
 import { FieldSchedule } from '../formats/field-schedule';
@@ -93,6 +94,9 @@ export interface GameSnapshot {
   equipmentAgingNotices: EquipmentAgingNotice[];
   animalFrame: AnimalFrameState;
   aircraftService: AircraftServiceState;
+  aircraftFlight: AircraftFlight | null;
+  lastFlightStartResult: { ok: true } | Extract<FlightStartResult, { ok: false }> | null;
+  lastFlightEnd: FlightEnd | null;
   lastAircraftPurchaseResult: AircraftPurchaseResult | null;
   lastAircraftServiceResult: AircraftServiceResult | null;
   cropMarketPrices: number[];
@@ -122,6 +126,9 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'buy-land'; regionX: number; regionY: number }
   | { type: 'build'; buildingType: number; x: number; y: number }
   | { type: 'irrigation'; tool: IrrigationTool; x: number; y: number }
+  | { type: 'start-flight'; slot: number; columns: number; rows: number }
+  | { type: 'flight-control'; control: FlightControl }
+  | { type: 'step-flight' }
   | { type: 'buy-aircraft' }
   | { type: 'service-aircraft'; slot: number; action: AircraftServiceAction }
   | { type: 'buy-equipment'; equipmentType: number; x: number; y: number }
@@ -175,6 +182,9 @@ export class GameSimulation {
   private readonly equipmentRuntime: EquipmentRuntime = { grassTravelCount: 0, animationTick: 0, notices: [] };
   private animalFrame = createAnimalFrameState();
   private aircraftService = createAircraftServiceState();
+  private aircraftFlight: AircraftFlight | null = null;
+  private lastFlightStartResult: GameSnapshot['lastFlightStartResult'] = null;
+  private lastFlightEnd: FlightEnd | null = null;
   private lastAircraftPurchaseResult: AircraftPurchaseResult | null = null;
   private lastAircraftServiceResult: AircraftServiceResult | null = null;
   private animalNotices: GameSnapshot['animalNotices'] = [];
@@ -226,6 +236,7 @@ export class GameSimulation {
       this.equipmentRuntime.grassTravelCount = restored.grassTravelCount;
       this.equipmentRuntime.animationTick = restored.equipmentAnimationTick;
       this.aircraftService = { ...restored.aircraftService };
+      this.aircraftFlight = restored.aircraftFlight ? { ...restored.aircraftFlight, inputs: [...restored.aircraftFlight.inputs] } : null;
       this.animalFrame = { ...restored.animalFrame, herd: Uint8Array.from(restored.animalFrame.herd) };
     } else {
       this.random = new FarmRandom(seeds);
@@ -246,7 +257,7 @@ export class GameSimulation {
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
       disasterFlags: this.disasterFlags, grassTravelCount: this.equipmentRuntime.grassTravelCount,
       equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices,
-      animalFrame: this.animalFrame, aircraftService: this.aircraftService,
+      animalFrame: this.animalFrame, aircraftService: this.aircraftService, aircraftFlight: this.aircraftFlight,
       finances: this.finances, pendingTown: this.pendingTown, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
   }
 
@@ -303,7 +314,21 @@ export class GameSimulation {
       this.publish(); return;
     }
     if (this.finances.defaultDecision) return; // Terminal choice/end state freezes every gameplay command.
-    if (command.type === 'borrow') {
+    if (this.aircraftFlight && !['flight-control', 'step-flight', 'set-paused', 'set-speed'].includes(command.type)) return;
+    if (command.type === 'start-flight') {
+      const result = beginFlight(this.scenario, this.finances, command.slot, command.columns, command.rows,
+        this.weather.soilMoisture, this.paused);
+      this.lastFlightStartResult = result.ok ? { ok: true } : result;
+      if (result.ok) { this.aircraftFlight = result.flight; this.lastFlightEnd = null; this.paused = false; this.elapsed = 0; }
+    } else if (command.type === 'flight-control') {
+      if (!this.aircraftFlight) return;
+      if (!FLIGHT_CONTROLS.includes(command.control)) throw new Error('Invalid flight control');
+      if (this.aircraftFlight.inputs.length >= MAX_FLIGHT_INPUTS) return;
+      this.aircraftFlight.inputs.push(command.control);
+    } else if (command.type === 'step-flight') {
+      if (!this.aircraftFlight || !this.paused) return;
+      for (let i = 0; i < 2 && this.aircraftFlight; i++) this.advanceTick();
+    } else if (command.type === 'borrow') {
       this.lastLoanResult = { kind: 'borrow', ...borrowLoan(this.scenario, this.finances.loan,
         this.finances.accounts.buildingBookValue, this.finances.loanRate, command.amount, this.weather.soilMoisture) };
     } else if (command.type === 'repay-loan') {
@@ -372,14 +397,24 @@ export class GameSimulation {
     const ticks = Math.floor(this.elapsed + 1e-9);
     if (!ticks) return;
     this.elapsed = Math.max(0, this.elapsed - ticks);
-    for (let i = 0; i < ticks; i++) this.advanceTick();
+    for (let i = 0; i < ticks && !this.paused; i++) this.advanceTick();
     this.publish();
   }
 
   private advanceTick(): void {
     if (this.finances.defaultDecision || this.pendingTown) return;
     const s = this.scenario, tick = s.farm.timerTicks = (s.farm.timerTicks + 1) & 0xffff;
-    this.equipmentRuntime.animationTick = s.farm.animationTicks = (s.farm.animationTicks + 1) & 0xffff;
+    s.farm.animationTicks = (s.farm.animationTicks + 1) & 0xffff;
+    if (this.aircraftFlight) {
+      const flight = this.aircraftFlight;
+      const result = advanceFlight(s, this.finances, this.crops, flight, s.farm.animationTicks);
+      if (result.end) {
+        this.lastFlightEnd = result.end; this.aircraftFlight = null; this.paused = flight.resumePaused;
+        if (this.paused) this.elapsed = 0;
+      }
+      return; // Original modal loop suspends ordinary calendar, machinery, clearing, irrigation and animals.
+    }
+    this.equipmentRuntime.animationTick = s.farm.animationTicks;
     // Dispatcher 0xbcc8 precedes machinery/calendar. The native Pause control
     // freezes logical animation ticks as well as simulation time.
     updateClearingEffects(s, this.finances.clearing, this.weather.soilMoisture, s.farm.animationTicks);
@@ -546,6 +581,9 @@ export class GameSimulation {
         loanCreditLimit(this.scenario, this.finances.accounts.buildingBookValue, this.finances.loan.principal, this.weather.soilMoisture)),
       lastLoanResult: this.lastLoanResult ? { ...this.lastLoanResult } : null, financeNotices: [...this.financeNotices],
       aircraftService: { ...this.aircraftService },
+      aircraftFlight: this.aircraftFlight ? { ...this.aircraftFlight, inputs: [...this.aircraftFlight.inputs] } : null,
+      lastFlightStartResult: this.lastFlightStartResult ? { ...this.lastFlightStartResult } : null,
+      lastFlightEnd: this.lastFlightEnd ? { ...this.lastFlightEnd } : null,
       lastAircraftPurchaseResult: this.lastAircraftPurchaseResult ? { ...this.lastAircraftPurchaseResult } : null,
       lastAircraftServiceResult: this.lastAircraftServiceResult ? { ...this.lastAircraftServiceResult } : null,
       animalFrame: { ...this.animalFrame, herd: Uint8Array.from(this.animalFrame.herd) },

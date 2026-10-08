@@ -6,7 +6,7 @@ import { readNativeSave } from '../src/formats/native-save';
 import { aircraftChemical, aircraftFuel, aircraftPayload } from '../src/simulation/aircraft';
 import { constructTownDistrict } from '../src/simulation/town-construction';
 
-test('live aircraft purchase and service change canonical records/accounts and v11 preserves shared selection and future wear', () => {
+test('live aircraft purchase and service change canonical records/accounts and v12 preserves shared selection and future wear', () => {
   const f = aircraftFixture();
   constructTownDistrict(f.state.scenario, f.state.finances.town, originalTownLayouts, { regionX: 3, regionY: 2 }, 5);
   const game = f.load(); game.dispatch({ type: 'buy-aircraft' }); assert.ok(game.getSnapshot().lastAircraftPurchaseResult?.ok);
@@ -19,7 +19,7 @@ test('live aircraft purchase and service change canonical records/accounts and v
   assert.deepEqual([aircraftFuel(snapshot.scenario.equipment[1]), aircraftPayload(snapshot.scenario.equipment[1]), aircraftChemical(snapshot.scenario.equipment[1])], [255, 255, 221]);
   snapshot.aircraftService.selectedChemical = 222; snapshot.scenario.equipment[1].bytes.fill(0);
   assert.equal(game.save(4), saved);
-  assert.equal(JSON.parse(saved).version, 11);
+  assert.equal(JSON.parse(saved).version, 12);
   const restored = GameSimulation.load(saved, f.crops).simulation;
   assert.equal(restored.getSnapshot().lastAircraftPurchaseResult, null); assert.equal(restored.getSnapshot().lastAircraftServiceResult, null);
   assert.equal(restored.getSnapshot().aircraftService.selectedChemical, 223);
@@ -34,7 +34,7 @@ test('live aircraft purchase and service change canonical records/accounts and v
   assert.deepEqual(JSON.parse(restored.save(4)), JSON.parse(game.save(4)));
 });
 
-test('v11 aircraft selection validates, v10 migrates once, failed commands/default do not mutate checkpoints', () => {
+test('current aircraft selection validates, v10 migrates once, failed commands/default do not mutate checkpoints', () => {
   const f = aircraftFixture(), game = f.load(); game.dispatch({ type: 'buy-aircraft' });
   let before = game.save(4); game.dispatch({ type: 'buy-aircraft' });
   assert.deepEqual(game.getSnapshot().lastAircraftPurchaseResult, { ok: false, reason: 'no-parking' }); assert.equal(game.save(4), before);
