@@ -949,3 +949,9 @@ DS65fa/65fc initialize to chemical221 and persist across service windows. Reader
 ### SF-104 aircraft service implementation update
 
 Native fuel/payload service preflight rejects out-of-range words above255 without mutation; source arithmetic remains documented. Valid fuel/repair costs retain low-word products; load keeps the full product; switch refunds keep the low word. Original zero-price loading does not fill the tank because its success branch tests a nonzero debit return. Tests cover all these distinctions and retained age after repair. This bounds native transactions without claiming an original reachable overflow exploit.
+
+## SF-110 — first manual-flight spraying interval reads an uninitialized timestamp
+
+Status: documented; native flight implementation/fix deferred. Confidence: high on direct local-variable reads/writes; the first interval's observed DOS timing has not been measured.
+
+Flight0x30f70 initializes movement, wear and fuel timestamps (0x31018..0x3103f), but not stack word[bp−0x3a]. After spraying is enabled at0x31216, the next spraying tick subtracts that word from the animation clock at0x3119a before its first write at0x3111c6. Toggle/start handlers do not initialize it. Consequently the first payload-consumption gate can depend on retained stack contents; subsequent gates use a defined timestamp. Native flight should initialize this timestamp explicitly and test the first spray interval, recording the chosen policy. No out-of-bounds write, information disclosure or security exploit is claimed.
