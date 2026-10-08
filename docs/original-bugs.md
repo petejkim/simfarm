@@ -354,6 +354,8 @@ Year-end calls reset `0x1d396` at `0xcdf9`. It clears dwords `3e60..3e84`, then 
 
 The native annual-reset primitive now deliberately preserves worker expenses, with tests across all eight farms and repeated resets. Live calendar integration and any correction remain deferred; retain this evidence alongside ledger migration and reports.
 
+New-farm reset follow-up: restart0x40355 also calls the same0x1d396 ledger reset. The recovered account reset phase retains worker expenses, transfers the old tax ledger into prior taxes, and leaves report totals untouched. Native setup reset preserves these distinctions; tests seed nonzero accounts rather than relying on zero cold defaults. Later setup/finalization remains a separate phase, so this does not by itself prove every retained value remains visible after a complete original restart.
+
 ## SF-043 — annual sales tax interprets a wrapped sales accumulator as signed
 
 **Status:** confirmed arithmetic boundary; normal-play reachability unproven; preserved in native assessment.
@@ -527,6 +529,8 @@ Native demolition prevalidates types, positions, active unique-record counts, ai
 **Status:** suspected lifecycle omission; not a confirmed original save defect; investigation and any fix deferred.
 
 The runtime ledger changed by building add/delete is `6190:3e54` (`0x3a36d`, `0x3a0e8`), and asset reporting reads it. Its initialized dword is zero. The inspected save/load sequences directly transfer the separate `3e4c` (`0x44c79`, `0x45c9b`) and adjacent other ledgers, with no direct `3e54` transfer. A byte-reference scan found only add/delete/report references to the latter. This does not rule out bulk/indirect initialization or recalculation, so original runtime loss of building value has not been proven.
+
+New-farm reset follow-up:0x406c7..0x406cf explicitly clears3e4c, not3e54. The cold decoder now reads3e54 directly for building book value and retains3e4c under its address-based name. Native account reset clears only the latter; an unequal-value regression catches conflation. This narrows the known reset lifecycle but does not resolve later indirect/finalizer behavior or prove stale building value survives every complete original restart. Broader lifecycle analysis and any correction remain deferred.
 
 Native demolition takes explicit runtime book value instead of guessing a saved offset or reconstructing a total without evidence. Live finance/checkpoint integration must resolve its startup/load lifecycle. Retain this entry and update its confidence when those callers are traced.
 

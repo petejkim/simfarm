@@ -172,3 +172,53 @@ The source does not write these generated prices back to crop, seed or harvest d
 SF-144 records the unchecked arithmetic and mode2 asymmetry. Five tests cover exact instruction/data evidence, all256 mode bytes with every low-three-bit choice/gate/magnitude, the final discarded adjustment, fixed unsigned steps, zero/small/high prices, actual corn underflow with seed19, sixteen original crops, record-price preservation, resumed RNG and invalid-input rejection before random consumption. With initial streams visual27/simulation9029/bounded51 and cold mode0, all sixteen histories consume1206 simulation draws, end at simulation10344 and leave the other streams unchanged. The960 little-endian history bytes hash to SHA256 `d05fde61efbf8980b9e7c988cfc7b8df79a7d6871230df9ca2ba116941dd9cdc`; this fixture was independently calculated from the documented arithmetic and source CRP blocks, not captured from original execution.
 
 The ongoing updater0x4aea4 is separate: it shifts histories, uses a signed eighth-price step and different mode direction thresholds, applies bounds, and synchronizes crop/harvest/seed prices. Its dispatch timing, counter DSbc72 writers and live history ownership/save integration remain to be recovered. This startup increment does not claim that periodic market fluctuations or the setup UI are live. Next resolve runtime/account initialization, then town/calendar/weather and canonical creation.
+
+## Cold accounts, clock fields and partial restart
+
+`src/formats/new-farm-runtime.ts` reads the initialized overlay29 image into serializable farm/financial defaults. Reproducible import writes ignored `new-farm-runtime.json`. This is the state **before** location/property/town/date initialization, not a complete new farm or a cleared SSM. For example, cold cash is20000 and town-region X is the unset word65535. Property finalization later supplies40000 and location selection supplies real coordinates. Cold calendar is day1/season1/week1/year1992/month0; the separate first-launch date routine can overwrite it. The decoder does not silently replace those source values with a guessed playable state.
+
+All following addresses use DS6190 unless a segment is shown. The static-image formula remains `4ec60 + (segment−2be7)*16 + offset`, and source SHA256 remains `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`.
+
+| State | Source offsets | Cold values / interpretation |
+| --- | --- | --- |
+| Cash; sales accumulator | 3e48;3e44 | 20000;0 |
+| Calendar day/season/week/year/month | 124e/1250/1252/1254/1256 | 1/1/1/1992/0 |
+| Equipment/calendar ticks; animation ticks | 139e;13a0 | both0 |
+| Day delay; speed; pacing flag | 1f8c;1f90;0187 | 256;1;0 |
+| Automatic rent/seeds/clearing | a89d/a89c/a89f | 1/1/0 |
+| Equipment/building book value | 3e50/3e54 | both0; **3e4c is a different unnamed account** |
+| Crop/equipment/land/contract/livestock income | 3e60/3e64/3e68/3e6c/3e74 | all0 |
+| Seed/equipment/land/contract-loss/worker/chemical expenses | 3e78/3e7c/3e80/3e84/3e88/3ea0 | all0 |
+| Balance payments/rentals/taxes | 3ea4/3ea8/3eb4 | all0 |
+| Prior taxes; unnamed annual accounts | 3e40;3e70/3e8c/3e90/3e94/3e9c | all0; existing address-based names retained |
+| Livestock/other expenses; report income/expense/net | 3e98/3eac;3ebc/3ec0/2d9f:fa18 | all0 |
+| Principal/payment/available credit/selection/rate | b3ae/b3b2/b394/b398/b3a4 | 0/0/0/0/15 |
+| Balance due/countdown; unpaid taxes/countdown | 2d9f:d5ba/4d9f:fed6;7518/4d9f:fed7 | all0 |
+| Tax failure byte | 3eed | 0; increment verified at0x1d64c |
+| Protected player-region coordinates | 2d9f:0010/0012 | 0/0; later selected |
+| Homestead coordinates/rank | 2d9f:000c/000e;462e | 0/0/255 |
+| Town origin; active development site | 7592/2d9f:d530;4d9f:fedb/fedc | 65535/0;0/0 |
+| Town revenue/expansion funds/development spending | 758a/758e/7514 | 4800/40000/0 |
+| Airport/recreation counts | 64c6/9cbc | both0 |
+| Recreation X/Y byte arrays | 2d9f:f7aa/f7b2 | eight zero bytes each; interleaved in native representation |
+| Annual statistic dwords/regions/words | 3e58/3e5c;750d..7510;444c..4466 | all0 |
+| Field presence/distinct count; deficient/stressed counts | 448e..4495/4560;2d9f:fa1c/fa1e | all0 |
+| Retained unnamed reset fields | 3e4c;3eb8;4468..448c;64c5 | two dwords, nineteen words and one byte, initially0 |
+
+`createSetupRuntime` creates detached native owners and validates input values, while linking animal/other definition tables to the same objects as `SetupRecords`. It uses the existing bounded financial decoder and the existing SF-060 native empty clearing queue (X sentinel255), not the defective cold zero-coordinate interpretation. No active default decision exists in cold native setup. The returned unset town coordinate deliberately cannot be treated as a live farm: the complete constructor still must finalize it, place property/town, initialize weather and represent retained raw fields in native saves. No existing scenario records or loans are borrowed as templates.
+
+`resetSetupRuntime` ports only the account/clock/statistic phases of0x402a8 and0x4060c, separately from record reset, map/disaster reset and subsequent setup callbacks:
+
+- At0x40318..0x40355, clear distinct field statuses, eight presence bytes and **nineteen words at4468**, then call annual reset0x1d396. The preceding fourteen statistic words at444c are not this array and remain unchanged.
+- Reuse the recovered annual reset: clear its listed income/expense ledgers and both native precipitation views, copy old taxes3eb4 into prior taxes3e40, then clear taxes. Worker expenses and report totals survive this phase (SF-042).
+- At0x4061b..0x40723, restore expansion funds40000/revenue4800, clear recreation count, equipment book value, unnamed3e4c/3eb8 and statistic dwords3e58/3e5c. Do **not** clear building book value3e54 (SF-065).
+- At0x40727..0x407c9, restore auto-rent/auto-seeds, disable auto-clear, set day/season/week1, year1992, month0, rank255, and both tick words0. The source also changes unrelated UI/settings bytes; this helper makes no claim to cover those subsystems.
+- At0x407dc..0x408de, clear the four loan dwords, balance due, tax debt, sales accumulator, airport count, unnamed64c5 and both debt countdowns.
+
+Cash, player/town/home coordinates, loan rate, tax-failure count, town active site, recreation coordinate bytes, development-spending word, annual regions/fourteen-word history, deficient/stressed counters, pacing flag, speed and day delay are retained by this phase. Later routines may replace some of them; these limited writes do not prove a complete restart leaves all of them intact. Weather, disaster flags, map clearing and setup decisions retain their separate ownership and pending integration. Existing live SSM imports/checkpoints do not invoke this helper.
+
+Five tests pin original instructions/hash and cold values, perturb neighboring source dwords to distinguish every financial account (including3e4c versus3e54), exercise high-bit values and interleaved recreation coordinates, check detached/shared ownership and malformed-input rejection, and run repeated reset with nonzero/maximal ledgers and retained values. Financial encode/decode round trips reuse the current native representation without claiming complete new-farm save integration. Remaining construction work is town creation, first-launch versus restart calendar/weather order, other runtime owners and the canonical setup constructor/UI.
+
+Next-step call-chain evidence: startup0x3fab5..0x3facb invokes district constructor through stub24e6:112c (overlay15 offset0, file3aba0) with town X/Y, type0 and fourth argument2. It then writes town origin into active-site locations4d9f:fedb/fedc at0x3fadc/0x3faec; the writes are words at adjacent addresses, while existing native/SSM coordinates are bytes. Audit the extra neighboring byte before claiming complete raw-state coverage. Stub1370 immediately preceding construction resolves to the already decoded town-layout loader0x4a366. Main's eight later calls9ab:163a resolve to file0xd2ea, an allocator for sixteen eight-byte entries atDS1efc with active count1efa: it sets flags3, X/Y, argument byte4 and a visual random direction masked3. Reset9ab:160e at0x405fc resolves to0xd2be, clearing each entry's flag byte and the count. These entries are an additional runtime owner, not eight district constructions; their broader meaning/updates remain unclaimed.
+
+First-launch calendar follow-up: helper0084:337a is file0x5dba and invokes INT21/AH2a, then stores CX at caller buffer+2, DH at+1, DL at+0 and AL at+4. Main0x235c..0x2367 copies buffer+4 to day and buffer+2 to year, while0x2381..0x238d forces week0/month3/season1. Resolve the date input policy and distinguish it from restart's fixed calendar before connecting native setup. No DOS calls or execution environment will be used in the browser.
