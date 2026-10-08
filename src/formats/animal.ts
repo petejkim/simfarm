@@ -33,7 +33,11 @@ export function readAnimalDefinitions(bytes: Uint8Array): GoodsDefinition[] {
 export function readAnimals(bytes: Uint8Array): AnimalRecord[] {
   const data = new Binary(bytes);
   const animals = Array.from({ length: 256 }, (_, slot) => new AnimalRecord(slot, Uint8Array.from(data.slice(3 + slot * 32, 32))));
-  if (animals[0].active || animals.filter(a => a.active).length !== data.u16(1)) throw new Error('Invalid animal count');
-  if (animals.some(a => a.active && (a.x >= 96 || a.y >= 96))) throw new Error('Invalid animal position');
+  validateAnimals(animals, data.u16(1));
   return animals;
+}
+
+export function validateAnimals(animals: AnimalRecord[], count = animals.filter(a => a.active).length): void {
+  if (animals[0].active || animals.filter(a => a.active).length !== count) throw new Error('Invalid animal count');
+  if (animals.some(a => a.active && (a.x >= 96 || a.y >= 96))) throw new Error('Invalid animal position');
 }

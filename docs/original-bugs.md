@@ -148,7 +148,7 @@ Native handling rejects a zero seed count or a mismatched storage cross-referenc
 
 The distributed `SCEN6.SSM` stores count 65 at `0x8281`, but its 512 records at `0x8283` contain only 64 active flags (record +10 bit 0x20); reserved slot zero is inactive. The loader copies the count and records directly (`0x45688`–`0x456d2`). Seed search `0x152d6` stops only after visiting the declared number of active records and has no independent 512-slot bound. A missing seed type can therefore advance beyond the table if no intervening initialization corrects the count. The saved bytes and scan structure are confirmed; DOS startup repair and observable memory consequences have not been established.
 
-Native handling accepts this original farm, derives active items from bounded records and never uses the inconsistent count as a search limit. Tests decode all farms, consume all 36 original SCEN6 seed items and successfully fall back to purchasing after exhaustion. No security exploit is claimed.
+Native handling accepts this original farm, derives active items from bounded records and never uses the inconsistent count as a search limit. Direct native record decoding now shares the original inventory validator, derives its live count and preserves the separate original SSM bytes/count verbatim. A regression verifies65 in the source versus64 active native records without constructing or repairing an SSM image. Tests decode all farms, consume all 36 original SCEN6 seed items and successfully fall back to purchasing after exhaustion. No security exploit is claimed.
 
 ## SF-018 — a failed scheduled planting attempt clears the existing crop
 

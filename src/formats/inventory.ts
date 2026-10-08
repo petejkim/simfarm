@@ -35,21 +35,23 @@ export class GoodsDefinition {
 export function readInventory(bytes: Uint8Array): InventoryRecord[] {
   const data = new Binary(bytes);
   const items = Array.from({ length: 512 }, (_, slot) => new InventoryRecord(slot, Uint8Array.from(data.slice(0x8283 + slot * 12, 12))));
-  // SCEN6 declares 65 but contains 64 active items (SF-017). Iterate bounded records, not that count.
-  if (items[0].active || data.u16(0x8281) > 511) throw new Error('Invalid inventory count');
-  for (const item of items) if (item.active && (item.x >= 96 || item.y >= 96)) throw new Error('Invalid inventory position');
+  validateInventory(items, data.u16(0x8281));
   return items;
 }
 
 export function readGoodsDefinitions(bytes: Uint8Array, kind: boolean | 'harvest'): GoodsDefinition[] {
   const data = new Binary(bytes), offset = kind === 'harvest' ? 0x20d18 : kind ? 0x20e38 : 0x20b0e;
+  const definitions = Array.from({ length: kind ? 16 : 24 }, (_, i) => new GoodsDefinition(Uint8Array.from(data.slice(offset + i * 18, 18))));
+  validateGoodsDefinitions(definitions, kind);
+  return definitions;
+}
+
+export function validateGoodsDefinitions(definitions: GoodsDefinition[], kind: boolean | 'harvest'): void {
   const startType = kind === 'harvest' ? 168 : kind ? 192 : 128;
-  return Array.from({ length: kind ? 16 : 24 }, (_, i) => {
-    const def = new GoodsDefinition(Uint8Array.from(data.slice(offset + i * 18, 18)));
+  definitions.forEach((def, i) => {
     // Only sixteen of the twenty-four crop entries are populated.
     if (i < 16 && (def.type !== startType + i || (kind && (def.width !== 1 || def.height !== 1)))) throw new Error('Invalid goods definition');
     if (kind === 'harvest' && def.graphic !== 109 + i) throw new Error('Invalid harvested crop graphic');
-    return def;
   });
 }
 
@@ -62,4 +64,10 @@ export function readOtherGoodsDefinitions(bytes: Uint8Array): GoodsDefinition[] 
     if (d.type !== 288 + i) throw new Error('Invalid additional goods definition');
     return d;
   });
+}
+
+export function validateInventory(items: InventoryRecord[], count = items.filter(i => i.active).length): void {
+  // SCEN6 declares 65 but contains 64 active items (SF-017). Iterate bounded records, not that count.
+  if (items[0].active || count > 511) throw new Error('Invalid inventory count');
+  for (const item of items) if (item.active && (item.x >= 96 || item.y >= 96)) throw new Error('Invalid inventory position');
 }

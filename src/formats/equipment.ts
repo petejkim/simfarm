@@ -53,7 +53,18 @@ export function readEquipment(bytes: Uint8Array, nativeRuntime = false): Equipme
   const data = new Binary(bytes);
   const records = Array.from({ length: EQUIPMENT_SLOT_COUNT }, (_, slot) => new EquipmentRecord(slot,
     Uint8Array.from(data.slice(EQUIPMENT_RECORDS_OFFSET + slot * EQUIPMENT_RECORD_SIZE, EQUIPMENT_RECORD_SIZE))));
-  if (records[0].active || records.filter(e => e.active).length !== data.u16(EQUIPMENT_RECORDS_OFFSET - 2)) throw new Error('Invalid equipment count');
+  validateEquipment(records, nativeRuntime, data.u16(EQUIPMENT_RECORDS_OFFSET - 2));
+  return records;
+}
+
+export function readEquipmentDefinitions(bytes: Uint8Array): EquipmentDefinition[] {
+  const data = new Binary(bytes);
+  return Array.from({ length: 12 }, (_, slot) => new EquipmentDefinition(slot,
+    Uint8Array.from(data.slice(EQUIPMENT_DEFINITIONS_OFFSET + slot * 18, 18))));
+}
+
+export function validateEquipment(records: EquipmentRecord[], nativeRuntime = false, count = records.filter(e => e.active).length): void {
+  if (records[0].active || records.filter(e => e.active).length !== count) throw new Error('Invalid equipment count');
   for (const e of records.filter(e => e.active)) {
     if (e.type >= 9 || (!nativeRuntime && [e.x, e.y, e.targetX, e.targetY].some(v => v >= 96)) || e.fieldSlot >= 98) throw new Error('Invalid equipment type, coordinates or field');
     // Native harvest trucks overload +44 with a storage-building index (0x15f9a..0x1602f).
@@ -69,11 +80,4 @@ export function readEquipment(bytes: Uint8Array, nativeRuntime = false): Equipme
       visited.add(link); link = records[link].attachment;
     }
   }
-  return records;
-}
-
-export function readEquipmentDefinitions(bytes: Uint8Array): EquipmentDefinition[] {
-  const data = new Binary(bytes);
-  return Array.from({ length: 12 }, (_, slot) => new EquipmentDefinition(slot,
-    Uint8Array.from(data.slice(EQUIPMENT_DEFINITIONS_OFFSET + slot * 18, 18))));
 }

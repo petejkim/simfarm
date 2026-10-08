@@ -1,7 +1,7 @@
 import { createMovingDisasters, validateMovingDisasters, type MovingDisasterState } from '../simulation/moving-disasters';
 import { createWaterDisasters, validateWaterDisasters, type WaterDisasterState } from '../simulation/water-disasters';
-import { readScenario, WORLD_OFFSET, type Scenario } from './scenario';
-import { FIELD_SCHEDULE_OFFSET, FIELD_SCHEDULE_SIZE } from './field-schedule';
+import { readScenario, type Scenario } from './scenario';
+import { FieldSchedule, FIELD_SCHEDULE_SIZE } from './field-schedule';
 import type { SavedFarmState } from './scenario-state';
 import { validateCalendar } from '../simulation/calendar';
 import { FarmRandom } from '../simulation/random';
@@ -17,17 +17,10 @@ import { createAircraftServiceState } from '../simulation/aircraft';
 import { FLIGHT_CONTROLS, MAX_FLIGHT_INPUTS, validFlightAircraft, type AircraftFlight } from '../simulation/aircraft-flight';
 import { createAnimalFrameState } from '../simulation/animal-world';
 
+import { SCENARIO_TABLES as tables, decodeScenarioRecords, type ScenarioTableBytes } from './scenario-records';
+
 export const MAX_SAVE_BYTES = 1_000_000;
 const FORMAT = 'simfarm-native';
-// Offsets/sizes are the existing, source-verified loader layout. Unknown bytes stay in the template.
-const tables = {
-  fields: [0x45bd, 98, 68], equipment: [0x29f3, 127, 56], animals: [3, 256, 32],
-  buildings: [0x5fc7, 127, 70], inventory: [0x8283, 512, 12], chemicals: [0x2005, 127, 20],
-  equipmentDefinitions: [0x20994, 12, 18], buildingDefinitions: [0x20a6c, 9, 18],
-  seedDefinitions: [0x20e38, 16, 18], cropDefinitions: [0x20b0e, 24, 18],
-  harvestDefinitions: [0x20d18, 16, 18], chemicalDefinitions: [0x20f58, 4, 18],
-} as const;
-const counted = ['fields', 'equipment', 'animals', 'buildings', 'inventory', 'chemicals'] as const;
 function fail(label: string): never { throw new Error(`Invalid native save: ${label}`); }
 function object(value: unknown, label: string): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) fail(label);
@@ -77,46 +70,22 @@ function decodeFarm(value: unknown): SavedFarmState {
 function decodeScenario(value: unknown, version: number): Scenario {
   const s = object(value, 'scenario'), records = object(s.records, 'records');
   const source = bytes(s.source, 139072, 'source template');
-  readScenario(source); // Preserve a valid original template independently of the mutable native state.
-  const image = Uint8Array.from(source), view = new DataView(image.buffer);
-  if (version >= 2) image.set(bytes(s.schedule, FIELD_SCHEDULE_SIZE, 'field schedule'), FIELD_SCHEDULE_OFFSET);
-  image.set(bytes(s.world, 96 * 96 * 5, 'world'), WORLD_OFFSET);
-  image.set(bytes(s.regions, 12 * 12 * 7, 'regions'), 0x21273);
-  for (const [key, [offset, count, stride]] of Object.entries(tables)) image.set(bytes(records[key], count * stride, key), offset);
-  // Rebuild loader counts only in the temporary validation image; original contradictory counts stay in source.
-  for (const key of counted) {
-    const [offset, count, stride] = tables[key];
-    let active = 0;
-    for (let i = 0; i < count; i++) active += Number(Boolean(image[offset + i * stride + (key === 'fields' ? 7 : key === 'inventory' ? 10 : 2)] & (key === 'fields' ? 1 : 32)));
-    view.setUint16(offset - 2, active, true);
-  }
+  const original = readScenario(source); // Validate and retain the immutable original independently.
+  const raw = {} as ScenarioTableBytes;
+  for (const [key, [, count, stride]] of Object.entries(tables)) raw[key as keyof ScenarioTableBytes] = bytes(records[key], count * stride, key);
+  const world = bytes(s.world, 96 * 96 * 5, 'world'), view = new DataView(world.buffer);
   const climate = object(s.climate, 'climate');
-  const wind = numbers(climate.wind, 240, -128, 127, 'wind table');
-  const rain = numbers(climate.precipitation, 240, -128, 7, 'precipitation table');
-  const temperature = numbers(climate.temperature, 240, -128, 127, 'temperature table');
-  for (let i = 0; i < 240; i++) image.set([wind[i] & 255, rain[i] & 255, temperature[i] & 255], 0x206c4 + i * 3);
-  const result = readScenario(image, true);
-  result.sourceBytes = source;
-  if (version >= 9) result.irrigation = decodeIrrigation(s.irrigation);
-  result.farm = decodeFarm(s.farm); // Do not repeat DOS startup's lost/overwritten ledgers (SF-014).
-  for (const f of result.fields.filter(f => f.active)) {
-    if (f.state > 9 || f.step > 16) fail('field work state');
-    for (const slot of [f.equipment, f.pendingEquipment]) if (slot && !result.equipment[slot]?.active) fail('field equipment reference');
-  }
-  for (const def of result.equipmentDefinitions.slice(0, 9)) {
-    if (def.type !== def.slot || ![40, 42, 44, 50, 52, 54, 71, 72, 82].includes(def.graphic) ||
-      def.width < 1 || def.width > 4 || def.height < 1 || def.height > 4 || def.bytes[10] < 1 || def.bytes[10] > 4) fail('equipment definition');
-  }
-  // Field passes and attached implements can occupy byte-wrapped border coordinates. Moving heads cannot.
-  for (const e of result.equipment.filter(e => e.active)) {
-    if (e.type === 7 && e.parent && !result.buildings[e.parent]?.active) fail('harvest truck storage reference');
-    if (e.direction > 7 || e.targetX >= 96 || e.targetY >= 96) fail('equipment direction or destination');
-    const attached = e.type !== 7 && e.parent !== 0;
-    if (!attached && !(e.flags & 8) && (e.x >= 96 || e.y >= 96)) fail('equipment position');
-    if (e.fieldSlot && !result.fields[e.fieldSlot]?.active) fail('equipment field reference');
-  }
-  return result;
+  return { ...original, ...decodeScenarioRecords(raw), sourceBytes: source,
+    schedule: version >= 2 ? new FieldSchedule(bytes(s.schedule, FIELD_SCHEDULE_SIZE, 'field schedule')) : original.schedule,
+    cells: Array.from({ length: 96 * 96 }, (_, i) => ({ terrain: view.getUint16(i * 5, true), overlay: view.getUint16(i * 5 + 2, true), attribute: world[i * 5 + 4] })),
+    regionalConditions: bytes(s.regions, 12 * 12 * 7, 'regions'),
+    climate: { wind: numbers(climate.wind, 240, -128, 127, 'wind table'),
+      precipitation: numbers(climate.precipitation, 240, -128, 7, 'precipitation table'),
+      temperature: numbers(climate.temperature, 240, -128, 127, 'temperature table') },
+    irrigation: version >= 9 ? decodeIrrigation(s.irrigation) : original.irrigation,
+    farm: decodeFarm(s.farm) }; // No repeat of DOS startup's lost/overwritten ledgers (SF-014).
 }
+
 function decodeWeather(value: unknown): WeatherState {
   const w = object(value, 'weather'), result = {} as WeatherState;
   for (const key of ['current'] as const) result[key] = number(w[key], 0, 4, key);

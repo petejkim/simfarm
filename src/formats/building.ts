@@ -51,19 +51,27 @@ export class BuildingDefinition {
 export function readBuildings(bytes: Uint8Array): BuildingRecord[] {
   const data = new Binary(bytes), definitions = readBuildingDefinitions(bytes);
   const buildings = Array.from({ length: 127 }, (_, slot) => new BuildingRecord(slot, Uint8Array.from(data.slice(BUILDING_RECORDS_OFFSET + slot * 70, 70))));
-  if (buildings[0].active || buildings.filter(b => b.active).length !== data.u16(BUILDING_RECORDS_OFFSET - 2)) throw new Error('Invalid building count');
-  for (const b of buildings.filter(b => b.active)) {
-    const def = definitions[b.type - 64];
-    if (!def || b.x + def.width > 96 || b.y + def.height > 96) throw new Error('Invalid building type or bounds');
-  }
+  validateBuildings(buildings, definitions, data.u16(BUILDING_RECORDS_OFFSET - 2));
   return buildings;
 }
 
 export function readBuildingDefinitions(bytes: Uint8Array): BuildingDefinition[] {
   const data = new Binary(bytes);
-  return Array.from({ length: 9 }, (_, i) => {
-    const def = new BuildingDefinition(Uint8Array.from(data.slice(BUILDING_DEFINITIONS_OFFSET + i * 18, 18)));
+  const definitions = Array.from({ length: 9 }, (_, i) => new BuildingDefinition(Uint8Array.from(data.slice(BUILDING_DEFINITIONS_OFFSET + i * 18, 18))));
+  validateBuildingDefinitions(definitions);
+  return definitions;
+}
+
+export function validateBuildings(buildings: BuildingRecord[], definitions: BuildingDefinition[], count = buildings.filter(b => b.active).length): void {
+  if (buildings[0].active || buildings.filter(b => b.active).length !== count) throw new Error('Invalid building count');
+  for (const b of buildings.filter(b => b.active)) {
+    const def = definitions[b.type - 64];
+    if (!def || b.x + def.width > 96 || b.y + def.height > 96) throw new Error('Invalid building type or bounds');
+  }
+}
+
+export function validateBuildingDefinitions(definitions: BuildingDefinition[]): void {
+  definitions.forEach((def, i) => {
     if (def.type !== 64 + i || def.width < 1 || def.width > 4 || def.height < 1 || def.height > 3) throw new Error('Invalid building definition');
-    return def;
   });
 }

@@ -21,17 +21,25 @@ export function readChemicals(bytes: Uint8Array): ChemicalRecord[] {
   const b = new Binary(bytes);
   const records = Array.from({ length: 127 }, (_, slot) => new ChemicalRecord(slot,
     Uint8Array.from(b.slice(CHEMICAL_RECORDS_OFFSET + slot * 20, 20))));
-  if (records[0].active || records.filter(r => r.active).length !== b.u16(CHEMICAL_RECORDS_OFFSET - 2)) throw new Error('Invalid chemical count');
-  for (const r of records) if (r.active && (r.type < 220 || r.type > 223 || r.x >= 96 || r.y >= 96)) throw new Error('Invalid chemical type or position');
+  validateChemicals(records, b.u16(CHEMICAL_RECORDS_OFFSET - 2));
   return records;
 }
 
 /** Four eighteen-byte definitions at 6190:737c; loader 0x45966..0x4598a. */
 export function readChemicalDefinitions(bytes: Uint8Array): GoodsDefinition[] {
   const b = new Binary(bytes);
-  return Array.from({ length: 4 }, (_, i) => {
-    const d = new GoodsDefinition(Uint8Array.from(b.slice(CHEMICAL_DEFINITIONS_OFFSET + i * 18, 18)));
+  const definitions = Array.from({ length: 4 }, (_, i) => new GoodsDefinition(Uint8Array.from(b.slice(CHEMICAL_DEFINITIONS_OFFSET + i * 18, 18))));
+  validateChemicalDefinitions(definitions);
+  return definitions;
+}
+
+export function validateChemicals(records: ChemicalRecord[], count = records.filter(r => r.active).length): void {
+  if (records[0].active || records.filter(r => r.active).length !== count) throw new Error('Invalid chemical count');
+  for (const r of records) if (r.active && (r.type < 220 || r.type > 223 || r.x >= 96 || r.y >= 96)) throw new Error('Invalid chemical type or position');
+}
+
+export function validateChemicalDefinitions(definitions: GoodsDefinition[]): void {
+  definitions.forEach((d, i) => {
     if (d.type !== 220 + i || d.width !== 1 || d.height !== 1) throw new Error('Invalid chemical definition');
-    return d;
   });
 }
