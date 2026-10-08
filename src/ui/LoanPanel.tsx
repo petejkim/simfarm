@@ -39,10 +39,10 @@ export function LoanPanel({ snapshot, onCommand, onRestart }: {
       <form onSubmit={event => { event.preventDefault(); if (valid) onCommand({ type: 'borrow', amount: requested }); }}>
         <label htmlFor="loan-amount">Amount to borrow</label>
         <input id="loan-amount" type="number" min="1" max={availableLoan} step="1" required value={amount}
-          disabled={Boolean(decision || snapshot.pendingTown)} onChange={event => setAmount(event.target.value)} />
+          disabled={Boolean(decision || snapshot.pendingTown || snapshot.aircraftFlight)} onChange={event => setAmount(event.target.value)} />
         <span id="loan-quote">{installment === null ? 'Enter an amount within your available credit.' : `Adds ${money(installment)} to each scheduled installment.`}</span>
-        <button id="borrow-loan" disabled={!valid || Boolean(decision || snapshot.pendingTown)}>Borrow</button>
-        <button id="repay-loan" type="button" disabled={Boolean(decision || snapshot.pendingTown) || !f.loan.principal || f.loan.principal > snapshot.scenario.farm.cash}
+        <button id="borrow-loan" disabled={!valid || Boolean(decision || snapshot.pendingTown || snapshot.aircraftFlight)}>Borrow</button>
+        <button id="repay-loan" type="button" disabled={Boolean(decision || snapshot.pendingTown || snapshot.aircraftFlight) || !f.loan.principal || f.loan.principal > snapshot.scenario.farm.cash}
           onClick={() => onCommand({ type: 'repay-loan' })}>Pay off loan</button>
       </form>
       <p id="loan-result" role="status">{result && (result.ok ? result.kind === 'borrow'

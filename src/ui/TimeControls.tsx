@@ -26,6 +26,6 @@ export function TimeControls({ snapshot, onCommand }: { snapshot: GameSnapshot; 
         <output id="simulation-speed-value" htmlFor="simulation-speed" title="At 1×, one real second advances one game day.">{snapshot.speed}×</output>
       </label>
       <button id="play-pause" disabled={Boolean(snapshot.finances.defaultDecision || snapshot.pendingTown)} onClick={() => onCommand({ type: 'set-paused', paused: !paused })}>{paused ? 'Play' : 'Pause'}</button>
-      <button id="next-day" disabled={!paused || Boolean(snapshot.finances.defaultDecision || snapshot.pendingTown)} onClick={() => onCommand({ type: 'advance-day' })}>Next day</button></div>
+      <button id="next-day" disabled={!paused || Boolean(snapshot.finances.defaultDecision || snapshot.pendingTown || snapshot.aircraftFlight)} onClick={() => onCommand({ type: 'advance-day' })}>Next day</button></div>
   </section>;
 }

@@ -57,3 +57,14 @@ test('original equipment-removal explosion decodes every fingerprinted PCM sampl
   for (let i = 0; i < sound.samples.length; i++) assert.equal(sound.samples[i], (e.bytes[i + 32] - 128) / 128);
   for (const end of [26, 31, e.bytes.length - 1]) assert.throws(() => decodeVoc(e.bytes.subarray(0, end)));
 });
+
+test('original plane engine sample retains every source PCM byte and rate', () => {
+  const e = entries.find(e => e.name === 'plane.voc')!, sound = decodeVoc(e.bytes);
+  assert.equal(e.offset, 2062992); assert.equal(e.bytes.length, 12881);
+  assert.equal(createHash('sha256').update(e.bytes).digest('hex'), '96b0153d97a84086d82a7a960597ce8c641da73f556c0b8707bce3c12456c95b');
+  assert.equal(sound.samples.length, 12848); assert.equal(sound.sampleRate, 1000000 / (256 - e.bytes[30]));
+  for (let i = 0; i < sound.samples.length; i++) assert.equal(sound.samples[i], (e.bytes[i + 32] - 128) / 128);
+  const exe = source('SIMFARM.EXE');
+  assert.equal(exe.subarray(0x8acfa, 0x8ad04).toString(), 'plane.voc\0');
+  assert.equal(exe.subarray(0x23d72, 0x23d82).toString('hex'), 'ff36d4d09a150c59208be53d020074ec');
+});

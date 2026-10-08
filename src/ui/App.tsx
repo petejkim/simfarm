@@ -35,7 +35,7 @@ function Game({ assets }: { assets: GameAssets }) {
     <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded}
       onScenarioChange={id => setFarm(previous => ({ id, serial: previous.serial + 1 }))}
       onLoad={loaded => setFarm(previous => ({ id: loaded.scenarioId, serial: previous.serial + 1, loaded }))} assets={assets}
-      zoom={zoom} onZoomChange={setZoom} cropId={cropId} onCropChange={setCropId} onGameEvent={onGameEvent} />
+      zoom={zoom} onZoomChange={setZoom} cropId={cropId} onCropChange={setCropId} onGameEvent={onGameEvent} onFlightRunning={sound.setFlightRunning} />
     <footer><strong>Reconstruction in progress</strong>
       <span>Loans, land purchases, field care, the farming cycle and native save/load are running. Other original systems remain in progress.</span>
       <span id="audio-status" role="status">{music.message}</span>

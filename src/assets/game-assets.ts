@@ -1,3 +1,4 @@
+import type { FlightSprites } from '../render/aircraft-renderer';
 import type { CropDefinition } from '../formats/crop';
 import { readScenario } from '../formats/scenario';
 import type { MidiSequence } from '../formats/xmidi';
@@ -10,7 +11,7 @@ export interface Catalog {
   music: { id: string; duration: number }[];
   tileCount: number;
 }
-export interface GameAssets { catalog: Catalog; maskedTiles: HTMLImageElement; townLayouts: TownLayouts }
+export interface GameAssets { catalog: Catalog; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites }
 export const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}assets/${path}`;
 
 async function response(path: string, signal?: AbortSignal): Promise<Response> {
@@ -33,11 +34,12 @@ function image(path: string, signal: AbortSignal): Promise<HTMLImageElement> {
   });
 }
 export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
-  const [catalog, maskedTiles, townLayouts] = await Promise.all([
+  const [catalog, maskedTiles, townLayouts, airplane, shadow, dust] = await Promise.all([
     response('catalog.json', signal).then(r => r.json()) as Promise<Catalog>, image('masked-tiles.png', signal),
     response('raw/townly0.cmp', signal).then(r => r.arrayBuffer()).then(b => new TownLayouts(new Uint8Array(b))),
+    image('airplane.sprites.png', signal), image('apshadow.sprites.png', signal), image('cropdust.sprites.png', signal),
   ]);
-  return { catalog, maskedTiles, townLayouts };
+  return { catalog, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust } };
 }
 export async function loadScenarioAssets(id: number, signal: AbortSignal) {
   const [buffer, tiles] = await Promise.all([

@@ -408,6 +408,7 @@ export class GameSimulation {
     if (this.aircraftFlight) {
       const flight = this.aircraftFlight;
       const result = advanceFlight(s, this.finances, this.crops, flight, s.farm.animationTicks);
+      if (result.advanced) this.events.push({ type: 'sound', sound: 'plane' }); // Original request0x3107e, before next frame.
       if (result.end) {
         this.lastFlightEnd = result.end; this.aircraftFlight = null; this.paused = flight.resumePaused;
         if (this.paused) this.elapsed = 0;

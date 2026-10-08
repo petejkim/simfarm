@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import { FlightControls } from './FlightControls';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
 import { terrainTile, worldPosition, worldIndex } from '../formats/scenario';
 import { CropGuide } from './CropGuide';
@@ -44,9 +45,10 @@ interface Props {
   cropId: string;
   onCropChange: (id: string) => void;
   onGameEvent: (event: GameEvent) => void;
+  onFlightRunning: (running: boolean) => void;
 }
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
-export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange, onGameEvent }: Props) {
+export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange, onGameEvent, onFlightRunning }: Props) {
   const load = useCallback(async (signal: AbortSignal) => {
     if (loaded) return loaded;
     const data = await loadScenarioAssets(id, signal);
@@ -57,6 +59,10 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   const onMapPointer = useCallback((pointer: MapFocus | null) => simulation?.dispatch({ type: 'set-map-pointer', pointer }), [simulation]);
   const snapshot = useSyncExternalStore(simulation?.subscribe ?? subscribeEmpty, simulation?.getSnapshot ?? emptySnapshot);
   useEffect(() => simulation?.subscribeEvents(onGameEvent), [simulation, onGameEvent]);
+  const flightRunning = Boolean(snapshot?.aircraftFlight && !snapshot.paused);
+  useEffect(() => { onFlightRunning(flightRunning); return () => onFlightRunning(false); }, [flightRunning, onFlightRunning]);
+  const mapSize = useRef({ columns: 20, rows: 16 });
+  const onViewportSize = useCallback((size: { columns: number; rows: number }) => { mapSize.current = size; }, []);
   useEffect(() => {
     if (!simulation) return;
     let frame: number, previous: number | null = null;
@@ -120,7 +126,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
       </select></label>
         <span id="map-status" role="status">{resource.status === 'ready' ? `Scenario ${id + 1} · original terrain`
           : resource.status === 'error' ? resource.error : 'Loading map…'}</span></div>
-      <div><label>Map tool <select id="map-tool" value={mapTool} onChange={e => setMapTool(e.target.value as MapTool)}>
+      <div><label>Map tool <select id="map-tool" disabled={Boolean(snapshot?.aircraftFlight)} value={mapTool} onChange={e => setMapTool(e.target.value as MapTool)}>
         <option value="inspect">Inspect</option><option value="land">Buy land</option><option value="field">New field</option>
         <option value="build">Build</option>
         <option value="irrigation">Irrigation</option>
@@ -128,7 +134,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
         <option value="livestock">Animals &amp; supplies</option>
       </select></label><label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
-      </select></label><button id="center" disabled={!data} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
+      </select></label><button id="center" disabled={!data || Boolean(snapshot?.aircraftFlight)} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
       {simulation && <SaveControls simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} />}
     </section>
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
@@ -143,17 +149,20 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     {snapshot && <TaxPanel snapshot={snapshot} />}
     {snapshot && <FarmReport snapshot={snapshot} />}
     {snapshot && <LivestockPanel snapshot={snapshot} onShop={() => setMapTool('livestock')} />}
-    {snapshot && simulation && <AircraftPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
+    {snapshot && simulation && <AircraftPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
+      onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
     {snapshot && <MachineryPanel snapshot={snapshot} onShop={() => setMapTool('equipment')} />}
     {data && <main>
-      <section className="map-panel">
-        <FarmMap scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
+      <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`}>
+        {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
+        <FarmMap flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
+          onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           field={field} selection={selection} preview={preview} onPointer={onMapPointer} onSelect={index => {
             setSelection(index);
             const { x, y } = worldPosition(index);
             selectField(data.scenario.fields.find(f => f.contains(x, y))?.slot ?? null, false);
           }} />
-        <div className="map-footer"><span>{mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
+        <div className="map-footer"><span>{snapshot?.aircraftFlight ? 'Following aircraft · farm calendar suspended' : mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
           ? 'Click the top-left corner of a new field' : mapTool === 'build' ? 'Click the top-left corner of a building'
           : mapTool === 'irrigation' ? 'Click a tile to dig a ditch or control a valve'
           : mapTool === 'equipment' ? 'Click clear ground or an equipment storage building'
@@ -162,7 +171,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
         </div>
       </section>
       <aside>
-        <fieldset className="farm-actions" aria-label="Farm actions" disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision)}>
+        <fieldset className="farm-actions" aria-label="Farm actions" disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)}>
         {snapshot && mapTool === 'build' && <BuildingPanel snapshot={snapshot} position={position} buildingType={buildingType}
           onTypeChange={setBuildingType} onCommand={command => simulation?.dispatch(command)} />}
         {snapshot && mapTool === 'irrigation' && <IrrigationPanel snapshot={snapshot} position={position} tool={irrigationTool}

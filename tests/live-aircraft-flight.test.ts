@@ -137,3 +137,11 @@ test('live spraying treats the field actually flown over and continues its toxic
   }
   assert.deepEqual(saved(restored), saved(game));
 });
+
+test('engine requests occur once per original flight iteration and audio subscribers cannot change saved flight continuation', () => {
+  const f = ready(); launch(f.game); const silent = GameSimulation.load(f.game.save(4), f.crops).simulation;
+  const sounds: string[] = []; f.game.subscribeEvents(event => { if (event.type === 'sound') sounds.push(event.sound); });
+  f.game.tick(1); assert.deepEqual(sounds, []); f.game.tick(5); silent.tick(6);
+  assert.deepEqual(sounds, ['plane', 'plane', 'plane']); assert.deepEqual(saved(f.game), saved(silent));
+  f.game.dispatch({ type: 'set-paused', paused: true }); f.game.tick(1000); assert.equal(sounds.length, 3);
+});

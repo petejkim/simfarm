@@ -4,6 +4,7 @@ import type { PcmSound } from '../formats/voc';
 export class PcmPlayer {
   private context?: AudioContext;
   private source?: AudioBufferSourceNode;
+  get playing(): boolean { return Boolean(this.source); }
   async enable(): Promise<void> {
     this.context ??= new AudioContext();
     await this.context.resume();
