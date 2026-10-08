@@ -8,8 +8,19 @@ import { readNativeSave, writeNativeSave } from '../src/formats/native-save';
 import { worldIndex } from '../src/formats/scenario';
 
 const saved = (game: { save(id: number): string }) => JSON.parse(game.save(4));
+test('a stored parent can produce an outside newborn on building terrain; premature sale stays atomic (SF-147)', () => {
+  const f = breedingFixture(); f.state.random.visual = 0x1234;
+  f.state.scenario.animals[1].flags |= 3; f.state.scenario.animals[1].bytes[28] = 40;
+  const game = f.load(); game.dispatch({ type: 'advance-day' }); const a = game.getSnapshot().scenario.animals[2];
+  assert.deepEqual([a.x, a.y, a.flags, a.bytes[16], a.bytes[17]], [20, 20, 32, 0, 0]);
+  const before = game.save(4); game.dispatch({ type: 'sell-asset', kind: 'animal', slot: 2 });
+  assert.deepEqual(game.getSnapshot().lastAssetSaleResult, { ok: false, reason: 'inconsistent-asset', kind: 'animal' });
+  assert.equal(game.save(4), before);
+});
+
 test('breeding produces a saleable newborn, stored parent sales release their stall, and receipts survive exact native continuation', () => {
-  const f = breedingFixture(); f.state.scenario.animals[1].flags |= 3; f.state.scenario.animals[1].bytes[28] = 40;
+  const f = breedingFixture(); f.state.random.visual = 10; // Newborn moves NW after weekly traffic allocation.
+  f.state.scenario.animals[1].flags |= 3; f.state.scenario.animals[1].bytes[28] = 40;
   const game = f.load(); game.dispatch({ type: 'advance-day' });
   assert.equal(game.getSnapshot().scenario.animals[2].active, true);
   const restored = GameSimulation.load(game.save(4), f.crops).simulation;

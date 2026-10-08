@@ -1,5 +1,8 @@
 import { createColdMarket, loadMarketCropPrices, updateWeeklyMarket, type MarketState } from './market';
 import { createNewFarmState, type NewFarmAssets } from './create-farm';
+import { coldTrafficDefaults, createTrafficState, snapshotTraffic, type TrafficDefaults, type TrafficState } from '../formats/traffic';
+import { allocateTraffic, initializeStartingTraffic } from './starting-traffic';
+import { advanceTraffic } from './traffic';
 import type { NewFarmOptions, NewFarmState } from './new-farm-state';
 import { beginStationaryDisaster, advanceFrostDay, advanceStationaryDisasters,
   type StationaryDisasterKind, type StationaryDisasterStart } from './stationary-disasters';
@@ -90,6 +93,7 @@ export interface FieldHarvestEstimate {
 
 export interface GameSnapshot {
   newFarm: NewFarmState | null;
+  traffic: TrafficDefaults;
   disasters: MovingDisasterState;
   waterDisasters: WaterDisasterState;
   lastDisasterResult: StationaryDisasterStart | MovingDisasterStart | { ok: true; kind: WaterDisasterKind | 'wind' } | null;
@@ -234,6 +238,7 @@ export class GameSimulation {
   private equipmentAgingNotices: EquipmentAgingNotice[] = [];
   private readonly cropMarketPrices: number[];
   private readonly market: MarketState;
+  private readonly traffic: TrafficState;
   private lastPlantResult: PlantResult | null = null;
   private lastHarvestResult: HarvestOrderResult | null = null;
   private lastSaleResult: HarvestSaleResult | null = null;
@@ -282,6 +287,7 @@ export class GameSimulation {
       this.random = new FarmRandom(restored.random);
       this.cropMarketPrices = [...restored.cropMarketPrices];
       this.market = structuredClone(restored.market);
+      this.traffic = createTrafficState(restored.traffic);
       this.weather = { ...restored.weather, forecast: [...restored.weather.forecast], nextForecast: [...restored.weather.nextForecast] };
       this.daysAdvanced = restored.daysAdvanced; this.paused = restored.paused; this.speed = restored.speed;
       this.pendingTown = restored.pendingTown ? { ...restored.pendingTown, site: { ...restored.pendingTown.site } } : null;
@@ -302,6 +308,8 @@ export class GameSimulation {
         this.scenario.seedDefinitions[slot].price = Math.max(5, (c[38] | c[39] << 8) >>> 2);
       });
       this.weather = initializeWeather(this.scenario.climate, this.scenario.farm.calendar, this.scenario.farm.precipitationDays, this.random, this.scenario.cells);
+      this.traffic = createTrafficState(coldTrafficDefaults());
+      initializeStartingTraffic(this.traffic, { regionX: this.scenario.farm.townRegionX, regionY: this.scenario.farm.townRegionY }, this.random);
     }
     this.publish();
   }
@@ -311,7 +319,7 @@ export class GameSimulation {
     return writeNativeSave({ scenario: this.scenario, newFarm: this.newFarm, crops: this.crops, random: this.random.snapshot(), weather: this.weather,
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
       disasters: this.disasters, waterDisasters: this.waterDisasters, grassTravelCount: this.equipmentRuntime.grassTravelCount,
-      equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices, market: this.market,
+      equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices, market: this.market, traffic: snapshotTraffic(this.traffic),
       animalFrame: this.animalFrame, aircraftService: this.aircraftService, aircraftFlight: this.aircraftFlight,
       finances: this.finances, pendingTown: this.pendingTown, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
   }
@@ -343,6 +351,14 @@ export class GameSimulation {
 
   private requestAnimalVocals(vocals: readonly AnimalVocal[]): void {
     for (const vocal of vocals) this.events.push({ type: 'sound', sound: vocal.slice(0, -4) as AnimalSound });
+  }
+
+  private requestCollisionSounds(): void {
+    for (const notice of this.equipmentRuntime.notices) if (notice.type === 'animal-hit') {
+      // 0x133d5/0x1357e both request smack.voc, at DS230e/DS2318.
+      this.events.push({ type: 'sound', sound: 'smack' }, { type: 'sound', sound: 'smack' });
+    }
+    this.equipmentRuntime.notices.length = 0;
   }
 
   dispatch(command: GameCommand): void {
@@ -516,6 +532,7 @@ export class GameSimulation {
       updateHarvestField(field, this.crops[field.cropSlot], s, this.equipmentRuntime, tick, this.random, allocate);
       if (!updateTreatmentField(field, this.crops[field.cropSlot], s, this.equipmentRuntime, tick, this.weather.soilMoisture, allocate)) break;
     }
+    this.requestCollisionSounds();
     if (++this.dayTicks >= Math.max(1, s.farm.dayDelayTicks)) { this.dayTicks = 0; this.advanceDay(); }
     // 0xbd42 follows the calendar and equipment calls. Modal decisions suspend
     // the remaining work; native Pause freezes the same logical animation clock.
@@ -532,7 +549,9 @@ export class GameSimulation {
       const notices = animals.flatMap(a => [...(a.movement?.notices ?? []), ...(a.care?.notices ?? [])]
         .map(id => ({ slot: a.slot, id, animalType: s.animals[a.slot].type })));
       if (notices.length) this.animalNotices = notices.slice(-20);
-      this.advanceDisasters(); // Main-loop0xbd85, after animals.
+      advanceTraffic(s, this.traffic, this.random, this.equipmentRuntime); // Main0xbd73, after animals and before disasters.
+      this.requestCollisionSounds();
+      this.advanceDisasters(); // Main-loop0xbd85.
     }
   }
 
@@ -553,6 +572,7 @@ export class GameSimulation {
       fillWaterStorage(s); // 0xd296, before the day-seven weekly phase and next irrigation frame.
     }
     if (next.weekEnded) {
+      allocateTraffic(this.traffic, s.farm.townRegionX * 8, s.farm.townRegionY * 8, 0, this.random); // Weekly0xbdf0..0xbe0e.
       advanceFloodCounter(this.disasters, this.waterDisasters); // Weekly0xbe38, before natural requests.
       // Weekly0xbe42: July's random requests precede aging and wind update.
       if (before.month === 6) {
@@ -734,11 +754,12 @@ export class GameSimulation {
   }
 
   private publish(): void {
+    this.requestCollisionSounds(); // Includes any collision from a direct machinery command.
     // Read-only current view: keep the saved original report cache separate
     // until all of its annual consumers and lifecycle are reconstructed.
     const report = { ...this.finances.annual };
     updateAnnualReport(this.scenario.farm, this.finances.accounts, report);
-    this.snapshot = { newFarm: this.newFarm ? structuredClone(this.newFarm) : null, disasters: structuredClone(this.disasters), waterDisasters: { ...this.waterDisasters }, lastDisasterResult: this.lastDisasterResult ? structuredClone(this.lastDisasterResult) : null,
+    this.snapshot = { newFarm: this.newFarm ? structuredClone(this.newFarm) : null, traffic: snapshotTraffic(this.traffic), disasters: structuredClone(this.disasters), waterDisasters: { ...this.waterDisasters }, lastDisasterResult: this.lastDisasterResult ? structuredClone(this.lastDisasterResult) : null,
       disasterNotices: [...this.disasterNotices], revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
       farmReport: { income: report.reportIncome, expenses: report.reportExpenses, net: report.reportNet,
         fields: summarizeFieldStatus(this.scenario.fields, this.scenario.farm.cash) },

@@ -30,7 +30,7 @@ test('live flight advances both original clocks while suspending ordinary farm p
   assert.equal(s.scenario.farm.timerTicks, 100); assert.equal(s.scenario.farm.animationTicks, 100);
   assert.deepEqual(s.scenario.farm.calendar, view.scenario.farm.calendar);
   assert.equal(s.daysAdvanced, view.daysAdvanced); assert.equal(after.runtime.dayTicks, 3);
-  for (const key of ['random', 'weather', 'animalFrame', 'equipmentAnimationTick', 'finances'])
+  for (const key of ['random', 'weather', 'animalFrame', 'equipmentAnimationTick', 'finances', 'traffic'])
     assert.deepEqual(after.runtime[key], before.runtime[key]);
   for (const key of ['fields', 'animals', 'buildings', 'inventory', 'chemicals'])
     assert.equal(after.scenario.records[key], before.scenario.records[key]);
@@ -44,7 +44,7 @@ test('v12 resumes fractional flight ticks and queued controls exactly across pau
   game.dispatch({ type: 'flight-control', control: 'spray-on' }); game.tick(7.375);
   for (const control of ['left', 'right', 'climb', 'spray-off', 'spray-on'] as const) game.dispatch({ type: 'flight-control', control });
   const checkpoint = game.save(4), restored = GameSimulation.load(checkpoint, crops).simulation;
-  assert.equal(saved(game).version, 16); assert.equal(saved(game).runtime.elapsed, 0.375);
+  assert.equal(saved(game).version, 17); assert.equal(saved(game).runtime.elapsed, 0.375);
   game.tick(111.625); for (const ms of [0.625, 1, 30, 0.5, 79.5]) restored.tick(ms);
   assert.deepEqual(saved(restored), saved(game));
   for (const g of [game, restored]) {

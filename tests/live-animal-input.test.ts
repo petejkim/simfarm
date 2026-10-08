@@ -50,7 +50,7 @@ test('live collision and weekly vocal events preserve source filenames/RNG, deta
   const f = livestockFixture(16); f.state.scenario.farm.calendar.day = 6;
   f.state.random.simulation = 300; // Calendar draws150; weekly draw75 triggers0xc16b.
   const game = f.load(), seen: GameEvent[] = []; game.subscribeEvents(e => seen.push(e));
-  game.dispatch({ type: 'advance-day' }); assert.deepEqual(seen, [{ type: 'sound', sound: 'cow1' }]);
+  game.dispatch({ type: 'advance-day' }); assert.deepEqual(seen, [{ type: 'sound', sound: 'cow2' }]); // Traffic allocates before weekly vocals.
   const restored = GameSimulation.load(game.save(4), f.crops).simulation, replay: GameEvent[] = [];
   restored.subscribeEvents(e => replay.push(e)); restored.dispatch({ type: 'set-paused', paused: true }); assert.deepEqual(replay, []);
 });

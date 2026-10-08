@@ -8,6 +8,17 @@ const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}
 const entries = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
 const sample = (name: string) => Uint8Array.from(entries.find(e => e.name === name)!.bytes);
 
+test('both livestock collision calls use the exact original smack PCM resource', () => {
+  const e = entries.find(e => e.name === 'smack.voc')!, sound = decodeVoc(e.bytes), exe = source('SIMFARM.EXE');
+  assert.equal(e.offset, 2150605); assert.equal(e.bytes.length, 1500);
+  assert.equal(createHash('sha256').update(e.bytes).digest('hex'), 'a4f4d1de4fd51164e51387a4548bf55e74bd661718f2c6e0f7acec65a98df3a7');
+  assert.equal(sound.samples.length, 1467); assert.equal(sound.sampleRate, 1000000 / 90);
+  for (let i = 0; i < sound.samples.length; i++) assert.equal(sound.samples[i], (e.bytes[32 + i] - 128) / 128);
+  for (const ds of [0x230e, 0x2318]) assert.equal(exe.subarray(0x846f0 + ds, 0x846f0 + ds + 10).toString(), 'smack.voc\0');
+  assert.equal(exe.subarray(0x133d1, 0x133da).toString('hex'), '1e680e239ab6082a21');
+  assert.equal(exe.subarray(0x13578, 0x13583).toString('hex'), '1e6818238bf39ab6082a21');
+});
+
 test('tornado, locust, wind and flood effects retain fingerprinted original PCM and every unsigned sample', () => {
   for (const [name, offset, size, rate, hash] of [
     ['wind.voc', 2104327, 12165, 75, 'a2077a3cb17160f7d228d01bd2e6295de92d98568063c683820c0cc0bd341918'],

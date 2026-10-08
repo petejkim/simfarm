@@ -102,6 +102,7 @@ test('v1–15 scenario migrations preserve prices/RNG, mark missing history and 
 
 test('v15 generated migration retains existing histories/mode without startup replay, while v16 rejects malformed market state', () => {
   const g = GameSimulation.createNew(newFarmOptions, newFarmAssets), before = parsed(g, null), old = structuredClone(before);
+  old.runtime.newFarm.traffic = old.runtime.traffic; delete old.runtime.traffic;
   old.version = 15; old.runtime.newFarm.marketHistory = old.runtime.market.history; old.runtime.newFarm.marketMood = 255;
   delete old.runtime.market;
   for (const change of [

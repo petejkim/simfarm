@@ -27,9 +27,9 @@ test('cold irrigation bytes and startup phase ordering reach canonical generated
     assert.equal(view.scenario.farm.calendar.month, 3); assert.equal(view.weather.soilMoisture, precipitation * 4);
     assert.deepEqual(view.scenario.cropFiles, assets.records.cropFiles);
     assert.equal(view.scenario.irrigation.delay, 64); assert.equal(view.scenario.fields.filter(f => f.active).length, 0);
-    const save = parsed(game); assert.equal(save.version, 16); assert.equal(save.scenarioId, null); assert.equal(save.scenario.source, null);
+    const save = parsed(game); assert.equal(save.version, 17); assert.equal(save.scenarioId, null); assert.equal(save.scenario.source, null);
     assert.deepEqual(save.runtime.random, state.random); assert.deepEqual(view.newFarm, state.newFarm);
-    assert.equal(view.newFarm!.traffic.activeCount, 8); assert.equal(view.market.history.length, 16);
+    assert.equal(view.traffic.activeCount, 8); assert.equal(view.market.history.length, 16);
     assert.deepEqual(save, parsed(restore(game.save(null))));
     assert.throws(() => game.save(0), /provenance/);
     assert.throws(() => new GameSimulation(state.scenario, assets.crops, assets.townLayouts), /initialized state/);
@@ -37,18 +37,18 @@ test('cold irrigation bytes and startup phase ordering reach canonical generated
   assert.equal(assets.runtime.farm.cash, 20000); assert.equal(assets.records.records.fields[0][7], 0);
 });
 
-test('v16 preserves raw setup bytes, market history, traffic clocks and detached partial-tick continuation', () => {
+test('v17 preserves raw setup bytes, market history, traffic clocks and detached partial-tick continuation', () => {
   const state = createNewFarmState(options, assets), n = state.newFarm!;
   n.raw = { ds3e4c: 0xfedcba98, ds3eb8: 0x89abcdef, ds4468: Array(19).fill(65535), ds64c5: 255, s4d9fFedd: 173 };
   state.market.mood = 255; state.market.history[0][29] = 65535; n.terrainHistory[4] = 65535; n.plannerBuffer[3071] = 173;
-  n.traffic.records[15].fill(255); n.traffic.records[15][0] &= ~1; n.traffic.delay = 65535; n.traffic.lastTick = 65534;
+  state.traffic.records[15].fill(255); state.traffic.records[15][0] &= ~1; state.traffic.delay = 65535; state.traffic.lastTick = 65534;
   state.scenario.fields[97].bytes[67] = 173; state.scenario.irrigation.sources[191] = 207;
   const a = restore(writeNativeSave(state, null));
   a.dispatch({ type: 'set-disasters-enabled', enabled: false }); a.dispatch({ type: 'set-paused', paused: false }); a.tick(123.456);
   const text = a.save(null), b = restore(text), events: unknown[] = []; b.subscribeEvents(e => events.push(e));
   assert.ok(parsed(a).runtime.elapsed > 0); assert.ok(parsed(a).runtime.dayTicks > 0);
   const view = b.getSnapshot(); view.newFarm!.raw.ds4468.fill(0); view.market.history[0].fill(0);
-  view.newFarm!.traffic.records[0].fill(0); view.newFarm!.provenance.options.climate.precipitation = 0;
+  view.traffic.records[0].fill(0); view.newFarm!.provenance.options.climate.precipitation = 0;
   view.scenario.fields[97].bytes[67] = 0; assert.equal(b.save(null), text); assert.deepEqual(events, []);
   for (let i = 0; i < 35; i++) { a.tick(1000); b.tick(1000); }
   assert.deepEqual(parsed(a), parsed(b)); assert.deepEqual(b.getSnapshot().newFarm, n);
@@ -56,7 +56,7 @@ test('v16 preserves raw setup bytes, market history, traffic clocks and detached
   assert.equal(b.getSnapshot().scenario.irrigation.sources[191], 207);
 });
 
-test('v16 rejects forged provenance, missing generated state and malformed startup boundaries atomically', () => {
+test('v17 rejects forged provenance, missing generated state and malformed startup boundaries atomically', () => {
   const game = create(), text = game.save(null);
   const changes: ((s: any) => void)[] = [s => s.version = 14, s => s.scenarioId = 0, s => s.scenario.origin = 'other',
     s => s.scenario.source = '00', s => s.scenario.cropFiles.pop(), s => s.scenario.cropFiles[0] = '../corn.crp',
@@ -67,10 +67,10 @@ test('v16 rejects forged provenance, missing generated state and malformed start
     s => s.runtime.newFarm.raw.ds3e4c = 0x100000000, s => s.runtime.newFarm.raw.ds4468.pop(), s => s.runtime.newFarm.raw.ds64c5 = 256,
     s => s.runtime.newFarm.raw.s4d9fFedd = -1, s => s.runtime.newFarm.plannerBuffer.push(0), s => s.runtime.newFarm.plannerBuffer[0] = 256,
     s => s.runtime.market.history.pop(), s => s.runtime.market.history[0].pop(), s => s.runtime.market.history[0][0] = -1,
-    s => s.runtime.market.mood = 256, s => s.runtime.newFarm.traffic.activeCount = 9, s => s.runtime.newFarm.traffic.records.pop(),
-    s => s.runtime.newFarm.traffic.records[0][2] = 96, s => s.runtime.newFarm.traffic.records[0][6] = 8,
-    s => s.runtime.newFarm.traffic.records[0][7] = 4, s => s.runtime.newFarm.traffic.lastTick = 65536,
-    s => s.runtime.newFarm.traffic.delay = -1, s => s.runtime.finances.accounts.homeRegionX = 12,
+    s => s.runtime.market.mood = 256, s => s.runtime.traffic.activeCount = 9, s => s.runtime.traffic.records.pop(),
+    s => s.runtime.traffic.records[0][2] = 96, s => s.runtime.traffic.records[0][6] = 8,
+    s => s.runtime.traffic.records[0][7] = 4, s => s.runtime.traffic.lastTick = 65536,
+    s => s.runtime.traffic.delay = -1, s => s.runtime.finances.accounts.homeRegionX = 12,
   ];
   for (const change of changes) { const s = JSON.parse(text); change(s); assert.throws(() => restore(JSON.stringify(s))); assert.equal(game.save(null), text); }
   assert.throws(() => GameSimulation.load(text, [], assets.townLayouts), /Missing simulation crop/);
@@ -78,7 +78,7 @@ test('v16 rejects forged provenance, missing generated state and malformed start
   assert.throws(() => GameSimulation.load(text, changed, assets.townLayouts), /different crop definitions/);
 });
 
-test('v1–14 original checkpoints migrate to v16 without invented generated provenance or lost source bytes', () => {
+test('v1–14 original checkpoints migrate to v17 without invented generated provenance or lost source bytes', () => {
   const source = new Uint8Array(readFileSync(new URL('../../simfarm-dos/SCEN4.SSM', import.meta.url)));
   const scenario = readScenario(source), game = new GameSimulation(scenario, assets.crops, assets.townLayouts);
   const baseline = JSON.parse(game.save(4)); assert.equal(baseline.runtime.newFarm, null);
@@ -88,7 +88,7 @@ test('v1–14 original checkpoints migrate to v16 without invented generated pro
     const loaded = GameSimulation.load(JSON.stringify(old), assets.crops, assets.townLayouts);
     assert.equal(loaded.scenarioId, 4); assert.equal(loaded.simulation.getSnapshot().newFarm, null);
     assert.deepEqual(loaded.simulation.getSnapshot().scenario.sourceBytes, source);
-    const upgraded = JSON.parse(loaded.simulation.save(4)); assert.equal(upgraded.version, 16); assert.equal(upgraded.scenario.origin, 'original');
+    const upgraded = JSON.parse(loaded.simulation.save(4)); assert.equal(upgraded.version, 17); assert.equal(upgraded.scenario.origin, 'original');
     assert.equal(upgraded.runtime.newFarm, null);
   }
   baseline.runtime.newFarm = createNewFarmState(options, assets).newFarm;

@@ -1,6 +1,6 @@
 import { validateMarketState, type MarketState } from '../simulation/market';
 import type { NewFarmState } from '../simulation/new-farm-state';
-import { createTrafficState } from './traffic';
+import { coldTrafficDefaults, createTrafficState, type TrafficDefaults } from './traffic';
 import { createMovingDisasters, validateMovingDisasters, type MovingDisasterState } from '../simulation/moving-disasters';
 import { createWaterDisasters, validateWaterDisasters, type WaterDisasterState } from '../simulation/water-disasters';
 import { readScenario, type Scenario } from './scenario';
@@ -159,7 +159,7 @@ export function writeNativeSave(state: SimulationState, scenarioId: number | nul
     if (state.scenario.origin !== 'original' || !state.scenario.sourceBytes || state.newFarm !== null) fail('original provenance');
   }
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 16, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 17, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -169,7 +169,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].includes(save.version)) fail('unsupported format or version');
   const s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const scenarioId = s.origin === 'generated' ? null : number(save.scenarioId, 0, 7, 'scenario ID');
   if (s.origin === 'generated' && save.scenarioId !== null) fail('generated scenario ID');
@@ -206,6 +206,8 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
       : createAircraftServiceState(),
     aircraftFlight: save.version >= 12 ? decodeFlight(r.aircraftFlight, s) : null,
     cropMarketPrices, market,
+    traffic: save.version >= 17 ? decodeTraffic(r.traffic) : newFarm
+      ? decodeTraffic(object(r.newFarm, 'new farm state').traffic) : coldTrafficDefaults(),
     finances: save.version >= 3 ? decodeFinancialState({ ...object(r.finances, 'financial state'),
       ...(save.version === 3 ? { defaultDecision: null } : {}),
       ...(save.version < 8 ? { homestead: readHomestead(originalSource(s)) } : {}),
@@ -273,11 +275,7 @@ function decodeNewFarm(value: unknown): NewFarmState | null {
   const n = object(value, 'new farm state'), p = object(n.provenance, 'setup provenance');
   if (p.kind !== 'cold-start' || p.version !== 1) fail('setup version');
   const o = object(p.options, 'setup options'), c = object(o.climate, 'setup climate'), d = object(o.date, 'setup date'), rng = object(o.seeds, 'setup seeds');
-  const raw = object(n.raw, 'setup raw'), t = object(n.traffic, 'traffic');
-  if (!Array.isArray(t.records) || t.records.length !== 16) fail('traffic records');
-  const traffic = { records: t.records.map(r => numbers(r, 8, 0, 255, 'traffic bytes')),
-    activeCount: number(t.activeCount, 0, 16, 'traffic count'), delay: number(t.delay, 0, 65535, 'traffic delay'), lastTick: number(t.lastTick, 0, 65535, 'traffic tick') };
-  createTrafficState(traffic); // Reuse slot/count/coordinate/heading/variant validation.
+  const raw = object(n.raw, 'setup raw');
   return { provenance: { kind: 'cold-start', version: 1, options: {
     climate: { precipitation: number(c.precipitation, 0, 3, 'setup rain'), temperature: number(c.temperature, 0, 3, 'setup temperature'), wind: number(c.wind, 0, 3, 'setup wind') },
     river: boolean(o.river, 'setup river'), lake: boolean(o.lake, 'setup lake'),
@@ -286,7 +284,15 @@ function decodeNewFarm(value: unknown): NewFarmState | null {
   } }, raw: { ds3e4c: number(raw.ds3e4c, 0, 0xffffffff, 'raw3e4c'), ds3eb8: number(raw.ds3eb8, 0, 0xffffffff, 'raw3eb8'),
     ds4468: numbers(raw.ds4468, 19, 0, 65535, 'raw4468'), ds64c5: number(raw.ds64c5, 0, 255, 'raw64c5'), s4d9fFedd: number(raw.s4d9fFedd, 0, 255, 'rawFedd') },
     terrainHistory: numbers(n.terrainHistory, 5, 0, 65535, 'terrain history') as NewFarmState['terrainHistory'],
-    plannerBuffer: numbers(n.plannerBuffer, 3072, 0, 255, 'planner scratch'), traffic };
+    plannerBuffer: numbers(n.plannerBuffer, 3072, 0, 255, 'planner scratch') };
+}
+
+function decodeTraffic(value: unknown): TrafficDefaults {
+  const t = object(value, 'traffic');
+  if (!Array.isArray(t.records) || t.records.length !== 16) fail('traffic records');
+  const traffic = { records: t.records.map(r => numbers(r, 8, 0, 255, 'traffic bytes')),
+    activeCount: number(t.activeCount, 0, 16, 'traffic count'), delay: number(t.delay, 0, 65535, 'traffic delay'), lastTick: number(t.lastTick, 0, 65535, 'traffic tick') };
+  createTrafficState(traffic); return traffic;
 }
 
 /** Missing legacy samples remain explicitly unknown; only the latest word feeds

@@ -18,7 +18,8 @@ async function save(page: Page, file: string) {
 
 test('Livestock controls sell a live newborn and stored parent, show original quotes/income and continue exact saved state', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const f = breedingFixture(); f.state.scenario.animals[1].flags |= 3; f.state.scenario.animals[1].bytes[28] = 40;
+  const f = breedingFixture(); f.state.random.visual = 10; // Newborn moves NW onto free ground after the traffic draw.
+  f.state.scenario.animals[1].flags |= 3; f.state.scenario.animals[1].bytes[28] = 40;
   const game = f.load(); await page.goto('/'); await load(page, game.save(4));
   await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   await page.locator('#livestock-panel > summary').click(); await expect(page.locator('#livestock-panel > summary')).toContainText('2 animals');

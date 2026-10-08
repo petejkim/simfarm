@@ -36,7 +36,7 @@ test('day-seven collection precedes weekly wear and refill; decisions suspend co
     const { state } = readNativeSave(initial.save(4)), store = state.scenario.buildings[2], v = new Binary(store.bytes).view;
     v.setUint16(10, 0, true); v.setUint16(8, wornOut ? 480 : 0, true);
     state.scenario.cells[worldIndex(13, 10)].terrain = 99;
-    state.scenario.farm.calendar.day = 6; state.dayTicks = 15; state.random.visual = 1792;
+    state.scenario.farm.calendar.day = 6; state.dayTicks = 15; state.random.visual = 10; // Weekly traffic draws1792, then wear draws7.
     const game = GameSimulation.load(writeNativeSave(state, 4), f.crops).simulation;
     game.dispatch({ type: 'advance-day' }); const s = game.getSnapshot();
     assert.equal(s.scenario.inventory[1].quantity, wornOut ? 0 : 100);

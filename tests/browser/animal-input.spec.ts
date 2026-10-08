@@ -68,10 +68,10 @@ test('original animal voices are audible when enabled, mute does not alter state
   await load(page, weekly.load().save(4)); await page.locator('#sound-toggle').click(); await page.locator('#next-day').click();
   await expect.poll(() => page.evaluate(() => {
     const voices = (window as unknown as { __animalVoices: { length: number; analyser: AnalyserNode }[] }).__animalVoices;
-    const voice = voices.find(v => v.length === 7868), values = new Float32Array(2048);
+    const voice = voices.find(v => v.length === 8210), values = new Float32Array(2048);
     voice?.analyser.getFloatTimeDomainData(values); return Math.max(...values.map(Math.abs));
   })).toBeGreaterThan(0.01);
-  expect(requests.filter(r => r.endsWith('/cow1.voc'))).toHaveLength(1);
+  expect(requests.filter(r => r.endsWith('/cow2.voc'))).toHaveLength(1);
   expect(await save(page)).toEqual(JSON.parse(muted.save(4)));
   // Collision recovery exercises all six verified filename/variant paths.
   for (const [type, visual, name, length] of [[160, 0, 'horse1', 8300], [161, 256, 'cow2', 8210],
@@ -80,7 +80,7 @@ test('original animal voices are audible when enabled, mute does not alter state
     a.bytes[13] = a.bytes[14] = a.bytes[30] = a.bytes[31] = 0;
     f.state.scenario.farm.calendar.day = 1;
     f.state.scenario.farm.animationTicks = f.state.scenario.farm.timerTicks = f.state.animalFrame.lastMoveTick = 640;
-    f.state.animalFrame.lastCentreTick = 640; f.state.random.visual = visual;
+    f.state.animalFrame.lastCentreTick = f.state.traffic.lastTick = 640; f.state.random.visual = visual;
     for (const d of f.state.finances.accounts.assets.animalDefinitions) d.count = Number(d.type === type);
     const game = f.load(); await load(page, game.save(4)); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
     await expect.poll(() => page.evaluate(n => (window as unknown as { __animalVoices: { length: number }[] }).__animalVoices.some(v => v.length === n), length)).toBe(true);
@@ -89,8 +89,8 @@ test('original animal voices are audible when enabled, mute does not alter state
   }
   await page.locator('#sound-toggle').click(); await load(page, weekly.load().save(4));
   const count = requests.length; await page.locator('#next-day').click(); expect(requests).toHaveLength(count);
-  await page.route('**/cow1.voc', route => route.fulfill({ status: 404, body: 'Missing voice' }));
+  await page.route('**/cow2.voc', route => route.fulfill({ status: 404, body: 'Missing voice' }));
   await load(page, weekly.load().save(4)); await page.locator('#sound-toggle').click(); await page.locator('#next-day').click();
-  await expect(page.locator('#sound-error')).toContainText('cow1.voc'); await expect(page.locator('#next-day')).toBeEnabled();
+  await expect(page.locator('#sound-error')).toContainText('cow2.voc'); await expect(page.locator('#next-day')).toBeEnabled();
   expect(await save(page)).toEqual(JSON.parse(muted.save(4))); expect(errors).toEqual([]);
 });

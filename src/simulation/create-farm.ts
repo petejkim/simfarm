@@ -2,7 +2,7 @@ import type { CropDefinition } from '../formats/crop';
 import { climateForSetup, type ClimatePresets } from '../formats/new-farm';
 import { createSetupRecords, type NewFarmRecordDefaults } from '../formats/new-farm-records';
 import type { NewFarmRuntimeDefaults } from '../formats/new-farm-runtime';
-import { createTrafficState, type TrafficDefaults } from '../formats/traffic';
+import { createTrafficState, snapshotTraffic, type TrafficDefaults } from '../formats/traffic';
 import { validateIrrigation, type IrrigationState } from '../formats/irrigation';
 import type { TownLayouts } from '../formats/town';
 import type { Scenario } from '../formats/scenario';
@@ -69,8 +69,8 @@ export function createNewFarmState(options: NewFarmOptions, assets: NewFarmAsset
     harvestDefinitions: records.harvestDefinitions, chemicalDefinitions: records.chemicalDefinitions, irrigation };
   return { scenario, crops, townLayoutBytes: [...assets.townLayouts.bytes], random: random.snapshot(), weather,
     newFarm: { provenance: { kind: 'cold-start', version: 1, options: structuredClone(options) }, raw: runtime.raw,
-      terrainHistory: terrainRandom.snapshot(), plannerBuffer: [...records.plannerBuffer],
-      traffic: { ...traffic, records: traffic.records.map(r => [...r.bytes]) } },
+      terrainHistory: terrainRandom.snapshot(), plannerBuffer: [...records.plannerBuffer] },
+    traffic: snapshotTraffic(traffic),
     daysAdvanced: 0, paused: true, speed: 1, elapsed: 0, dayTicks: 0,
     disasters: createMovingDisasters(), waterDisasters: createWaterDisasters(),
     grassTravelCount: 0, equipmentAnimationTick: 0, animalFrame: createAnimalFrameState(),

@@ -63,7 +63,7 @@ test('water storage wear is visible and removes its supply before weekly refills
   const f = waterStorageFixture(), initial = f.load(); initial.dispatch({ type: 'build', buildingType: 72, x: 13, y: 11 });
   const { state } = readNativeSave(initial.save(4)), store = state.scenario.buildings[2], v = new Binary(store.bytes).view;
   v.setUint16(8, 480, true); state.scenario.cells[worldIndex(13, 10)].terrain = 99;
-  state.scenario.farm.calendar.day = 6; state.dayTicks = 15; state.random.visual = 1792;
+  state.scenario.farm.calendar.day = 6; state.dayTicks = 15; state.random.visual = 10; // Weekly traffic draws1792, then wear draws7.
   const game = GameSimulation.load(writeNativeSave(state, 4), f.crops).simulation;
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'worn-water-store.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');

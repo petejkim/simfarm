@@ -82,7 +82,7 @@ export function hitAnimal(x: number, y: number, world: Pick<EquipmentWorld, 'cel
   cell.overlay = (cell.overlay & 0xf800) | aftermath;
   animal.flags |= 8; // 0x13572 preserves breeding eligibility bit2.
   animal.deathTick = runtime.animationTick;
-  // The collision's two original sound calls remain an event pending their audio mapping.
+  // Both source requests use smack.voc; canonical integration drains this transient notice.
   runtime.notices.push({ type: 'animal-hit', slot: animal.slot });
 }
 

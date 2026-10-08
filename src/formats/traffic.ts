@@ -17,6 +17,14 @@ export class TrafficRecord {
 export interface TrafficDefaults { records: number[][]; activeCount: number; delay: number; lastTick: number }
 export interface TrafficState { records: TrafficRecord[]; activeCount: number; delay: number; lastTick: number }
 
+/** Initialized DS1efc/1efa/2286/2090; tests compare with readTrafficDefaults. */
+export function coldTrafficDefaults(): TrafficDefaults {
+  return { records: Array.from({ length: 16 }, () => Array(8).fill(0)), activeCount: 0, delay: 16, lastTick: 0 };
+}
+export function snapshotTraffic(state: TrafficState): TrafficDefaults {
+  return { records: state.records.map(r => [...r.bytes]), activeCount: state.activeCount, delay: state.delay, lastTick: state.lastTick };
+}
+
 /** Cold initialized globals in data overlay29. These runtime records are not
  * recovered by reading the farm's SSM animal/equipment tables. */
 export function readTrafficDefaults(executable: Uint8Array): TrafficDefaults {
