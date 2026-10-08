@@ -40,11 +40,12 @@ export function generateTerrainHeights(world: Pick<Scenario, 'cells'>, random: P
  * Smooth attributes in-place y-major, then seed five region channels (SF-141). */
 export function populateTerrain(world: TerrainWorld, soilMoisture: number, random: Pick<FarmRandom, 'nextVisual'>): void {
   if (world.cells.length !== 9216 || world.regionalConditions.length !== 1008) throw new Error('Invalid terrain dimensions');
-  if (!Number.isInteger(soilMoisture) || soilMoisture < 0 || soilMoisture > 12) throw new Error('Invalid setup soil moisture');
+  if (!Number.isInteger(soilMoisture) || soilMoisture < -128 || soilMoisture > 127) throw new Error('Invalid setup soil moisture');
   for (let y = 0; y < 96; y++) for (let x = 0; x < 96; x++) {
     const cell = world.cells[worldIndex(x, y)];
     const attribute = cell.attribute = (cell.terrain - 15) & 15;
-    cell.terrain = (cell.terrain & 0xf800) | (15 + soilMoisture + (attribute >> 2));
+    //40ab7 sign-extends soil;40ae1..40afa adds/ORs/stores unsigned words.
+    cell.terrain = ((cell.terrain & 0xf800) | (15 + soilMoisture + (attribute >> 2))) & 65535;
     if (attribute >= 10 && (random.nextVisual() & 15) < 7) cell.terrain = 131 + attribute;
     if (attribute > 3 && attribute < 6 && (random.nextVisual() & 15) < 2) cell.terrain = 535 + (random.nextVisual() & 3);
   }
@@ -107,7 +108,8 @@ export function addTerrainWater(world: Pick<Scenario, 'cells'>, options: Pick<Te
 
 /** Complete terrain-generation chain0x3fe1a. Starting ownership/records remain separate. */
 export function generateFarmTerrain(regionalConditions: Uint8Array, options: TerrainOptions, random: FarmRandom, terrainRandom: TerrainRandom): TerrainWorld {
-  if (regionalConditions.length !== 1008 || !Number.isInteger(options.soilMoisture) || options.soilMoisture < 0 || options.soilMoisture > 12) {
+  if (regionalConditions.length !== 1008 || !Number.isInteger(options.soilMoisture) || options.soilMoisture < -128 || options.soilMoisture > 127 ||
+    typeof options.river !== 'boolean' || typeof options.lake !== 'boolean') {
     throw new Error('Invalid terrain setup');
   }
   const world: TerrainWorld = { cells: Array.from({ length: 9216 }, () => ({ terrain: 0, overlay: 0, attribute: 0 })),

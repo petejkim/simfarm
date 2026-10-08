@@ -35,6 +35,21 @@ export function readInterleavedScreen(bytes: Uint8Array, palette: Palette): Rast
   }
   return decodePlanar(planar, 640, 480, palette);
 }
+
+/** far_mapc.mbm:960 two-byte tiles. Each byte is one row of two pixels,
+ * with the four plane pairs ordered high to low (renderer0x6e51..0x70b9). */
+export function miniTileAtlas(bytes: Uint8Array, palette: Palette): Raster {
+  if (bytes.length !== 1920 || palette.length !== 16 || palette.some(c => c.length !== 3 ||
+    c.some(v => !Number.isInteger(v) || v < 0 || v > 255))) throw new Error('Invalid miniature tile atlas');
+  const width = 64, height = 60, rgba = new Uint8Array(width * height * 4);
+  for (let tile = 0; tile < 960; tile++) for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) {
+    let color = 0;
+    for (let plane = 0; plane < 4; plane++) color |= ((bytes[tile * 2 + y] >> (7 - plane * 2 - x)) & 1) << plane;
+    const offset = (((tile >> 5) * 2 + y) * width + (tile & 31) * 2 + x) * 4;
+    rgba.set([...palette[color], 255], offset);
+  }
+  return { width, height, rgba };
+}
 export function tileAtlas(bytes: Uint8Array, palette: Palette, columns = 32, transparentIndex?: number): Raster {
   if (!bytes.length || bytes.length % 128 || !Number.isInteger(columns) || columns <= 0) throw new Error('Invalid tile atlas');
   const count = bytes.length / 128, width = columns * 16, height = Math.ceil(count / columns) * 16;

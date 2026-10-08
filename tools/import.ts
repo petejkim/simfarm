@@ -10,7 +10,7 @@ import { readClimatePresets, readSetupMap, readScenarioChooser } from '../src/fo
 import { readNewFarmRecordDefaults } from '../src/formats/new-farm-records';
 import { readNewFarmRuntimeDefaults } from '../src/formats/new-farm-runtime';
 import { readTrafficDefaults } from '../src/formats/traffic';
-import { readPalette, readBitmap, tileAtlas, decodePlanar, readInterleavedScreen, type Raster } from '../src/formats/graphics';
+import { readPalette, readBitmap, tileAtlas, miniTileAtlas, decodePlanar, readInterleavedScreen, type Raster } from '../src/formats/graphics';
 import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
 import { readCrop, type CropDefinition } from '../src/formats/crop';
 
@@ -43,6 +43,10 @@ await png('tiles.png', tileAtlas(asset('ega16til.til'), palette));
 for (const name of ['airplane', 'apshadow', 'cropdust', 'tornado', 'swarm']) await png(`${name}.sprites.png`, spriteAtlas(asset(`${name}.spr`), palette));
 await png('masked-tiles.png', tileAtlas(asset('mskdtile.til'), palette, 32, 7));
 for (const name of ['sftitle', 'scenario', 'prsnt480']) await png(`${name}.png`, readInterleavedScreen(asset(`${name}.int`), readPalette(asset(`${name}.pal`))));
+// Custom setup inherits scenario.pal from the geographic chooser. The gameplay
+// palette is restored only after this screen returns to3f854.
+await png('defworld.png', readInterleavedScreen(asset('defworld.int'), readPalette(asset('scenario.pal'))));
+await png('mini-tiles.png', miniTileAtlas(asset('far_mapc.mbm'), readPalette(asset('scenario.pal'))));
 const crops: CropDefinition[] = [];
 const cropBytes = new Map<string, Uint8Array>();
 const inputs = [

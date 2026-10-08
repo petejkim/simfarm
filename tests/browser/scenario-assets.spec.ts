@@ -8,11 +8,15 @@ test('imported region, title and presentation screens retain the source scanline
     ['scenario', '58893a592c53294c30746a0206d522e31317a67a6bfa2da99a35b0d7b57e2cdf'],
     ['sftitle', '32269cf18061fa1d62f8bd9197da0347e8ce23f4210ec4abf0e83ae3ab36d349'],
     ['prsnt480', 'cbfca80cdc25a46a7f888a61deaf53d39882ad4d95826587b08422e811a6c169'],
+    ['defworld', '6ed5cbf89537cd4b49fc1c53067485901c807157bde2fae5a7ea9f2fac35636a'],
   ]) {
     const response = await page.request.get(`/assets/${name}.png`); expect(response.ok()).toBe(true);
     const png = PNG.sync.read(await response.body()); expect([png.width, png.height]).toEqual([640, 480]);
     expect(createHash('sha256').update(png.data).digest('hex')).toBe(hash);
   }
+  const mini = await page.request.get('/assets/mini-tiles.png'); expect(mini.ok()).toBe(true);
+  const miniature = PNG.sync.read(await mini.body()); expect([miniature.width, miniature.height]).toEqual([64, 60]);
+  expect(createHash('sha256').update(miniature.data).digest('hex')).toBe('9e2f3b9e380d28cb557a30ac664f2de56a309c55cc253d5c55eb9efaae5febb8');
   const response = await page.request.get('/assets/new-farm-setup.json'), setup = await response.json();
   expect(setup.farms.map((f: { id: number; x: number; y: number }) => [f.id, f.x, f.y])).toEqual([
     [0,0,8],[1,1,11],[2,1,3],[3,3,6],[4,9,7],[5,11,6],[6,13,11],[7,15,8],
