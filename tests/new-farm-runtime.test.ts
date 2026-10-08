@@ -29,7 +29,7 @@ test('starting accounts and restart phases are pinned to source instructions and
 test('cold setup is independent of SSM balances and retains unset town, calendar, rate and native queue correction', () => {
   const state = fresh();
   assert.deepEqual(state.farm, { cash: 20000, calendar: { day: 1, season: 1, week: 1, year: 1992, month: 0 },
-    timerTicks: 0, animationTicks: 0, dayDelayTicks: 256, speed: 1, paceEquipment: false, precipitationDays: 0,
+    timerTicks: 0, animationTicks: 0, dayDelayTicks: 256, speed: 1, paceEquipment: true, precipitationDays: 0,
     autoRent: true, autoBuySeeds: true, autoClear: false, seedExpenses: 0, rentalExpenses: 0, cropIncome: 0,
     contractGains: 0, contractLosses: 0, salesAccumulator: 0, workerExpenses: 0, landExpenses: 0,
     chemicalExpenses: 0, townRegionX: 65535, townRegionY: 0 });
@@ -107,7 +107,7 @@ test('restart clears source accounts and clocks but retains omitted ledgers, rep
   farm.cash = 76543; farm.workerExpenses = 0xffffffff; farm.salesAccumulator = 55;
   farm.cropIncome = farm.contractGains = farm.contractLosses = farm.seedExpenses = farm.rentalExpenses = farm.landExpenses = farm.chemicalExpenses = 123;
   farm.precipitationDays = 99; farm.timerTicks = 47; farm.animationTicks = 63;
-  farm.dayDelayTicks = 12; farm.speed = 4; farm.paceEquipment = true;
+  farm.dayDelayTicks = 12; farm.speed = 4; farm.paceEquipment = false;
   farm.autoRent = farm.autoBuySeeds = false; farm.autoClear = true;
   farm.calendar = { day: 6, season: 3, week: 3, year: 2020, month: 11 };
   f.accounts.assets.equipmentBookValue = 88; f.accounts.buildingBookValue = 99;
@@ -145,4 +145,18 @@ test('restart clears source accounts and clocks but retains omitted ledgers, rep
   assert.deepEqual([f.statistics.ds3e58, f.statistics.ds3e5c, f.statistics.nutrientDeficientFields, f.statistics.chemicallyStressedFields], [0, 0, 7, 8]);
   assert.deepEqual(raw, { ds3e4c: 0, ds3eb8: 0, ds4468: Array(19).fill(0), ds64c5: 0, s4d9fFedd: 199 });
   resetSetupRuntime(state, weather); assert.equal(f.annual.priorTaxExpenses, 0); assert.equal(farm.workerExpenses, 0xffffffff);
+});
+
+test('equipment pacing uses DSa8a0, independently of pause depth, and setup/resume restore its nonzero gate', () => {
+  const exact = (offset: number, hex: string) => assert.equal(exe.subarray(offset, offset + hex.length / 2).toString('hex'), hex);
+  exact(0x14a61, '263b06901f770f8e06d0c726803ea0a8007403');
+  exact(0x4072b, '26c606a0a802'); exact(0x3f505, 'c606a0a802');
+  exact(0x46193, '68a0a8');
+  assert.equal(exe[0x846f0 + 0xa8a0], 2); assert.equal(exe[0x846f0 + 0x187], 0);
+  const copy = Buffer.from(exe);
+  for (let pacing = 0; pacing < 256; pacing++) {
+    copy[0x846f0 + 0xa8a0] = pacing;
+    copy[0x846f0 + 0x187] = pacing ? 0 : 255;
+    assert.equal(readNewFarmRuntimeDefaults(copy).farm.paceEquipment, pacing !== 0);
+  }
 });

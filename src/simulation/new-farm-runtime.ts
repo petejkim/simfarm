@@ -53,6 +53,7 @@ export function resetSetupRuntime(state: SetupRuntime, weather: Pick<WeatherStat
   f.town.recreationCount = f.town.airportCount = 0;
   f.accounts.assets.equipmentBookValue = 0; //3e54 building ledger is omitted (SF-065).
   farm.autoRent = farm.autoBuySeeds = true; farm.autoClear = false;
+  farm.paceEquipment = true; //0x4072b writes2 to DSa8a0; consumer tests nonzero.
   farm.calendar = { day: 1, season: 1, week: 1, year: 1992, month: 0 };
   farm.timerTicks = farm.animationTicks = farm.salesAccumulator = 0;
   f.homestead.rank = 255;

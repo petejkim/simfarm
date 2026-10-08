@@ -42,11 +42,14 @@ test('original import retains runtime history, RNG, weather, traffic and timers 
 
 test('running menu return applies source pacing and imported overdue day phase advances and checkpoints exactly', () => {
   const old = cold(); old.dispatch({ type: 'set-paused', paused: false }); old.tick(50);
-  const imported = old.importOriginal(source('SCEN6.SSM'), crops).simulation;
+  const bytes = Buffer.from(source('SCEN6.SSM')); bytes[0x21718] = 0;
+  const imported = old.importOriginal(bytes, crops).simulation;
   let s = parsed(imported);
   assert.equal(s.scenario.farm.dayDelayTicks, 256); assert.equal(s.scenario.farm.speed, 1);
   assert.equal(s.scenario.irrigation.delay, 2); assert.equal(s.runtime.traffic.delay, 16); assert.equal(s.runtime.disasters.frameDelay, 4);
   assert.equal(s.runtime.paused, true); assert.equal(s.runtime.elapsed, 0);
+  assert.equal(s.scenario.farm.paceEquipment, true);
+  assert.equal(cold().importOriginal(bytes, crops).simulation.getSnapshot().scenario.farm.paceEquipment, false);
   s.runtime.dayTicks = 300; s.runtime.traffic.records[0][1] = 213;
   const a = GameSimulation.load(JSON.stringify(s), crops, layouts).simulation, b = GameSimulation.load(a.save(null), crops, layouts).simulation;
   const before = a.getSnapshot().daysAdvanced;

@@ -38,6 +38,7 @@ export function transferOriginalFarm(previous: SimulationState, bytes: Uint8Arra
   // Ordinary source dialog adds one pause level. A previously paused native
   // session models an outer level, so its return does not perform1->0 writes.
   if (!prior.paused) {
+    scenario.farm.paceEquipment = true; //0x3f505 writes2 to DSa8a0.
     state.disasters.frameDelay = 4;
     scenario.farm.dayDelayTicks = 256; scenario.farm.speed = 1;
     state.traffic.delay = 16; scenario.irrigation.delay = 2;

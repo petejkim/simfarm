@@ -109,7 +109,9 @@ test('generated farms plant, grow, harvest into purchased storage and sell with 
   a.dispatch({ type: 'set-paused', paused: false }); a.tick(12.345);
   let b = restore(a.save(null));
   let treated = false;
-  for (let day = 0; day < 84; day++) {
+  // Source-paced equipment changes field completion and subsequent RNG timing.
+  // Allow the growing season; harvest when the recovered quote becomes valuable.
+  for (let day = 0; day < 168; day++) {
     a.dispatch({ type: 'advance-day' }); b.dispatch({ type: 'advance-day' });
     if (!treated && a.getSnapshot().scenario.fields[1].state === 4) for (const g of [a, b]) {
       treated = true;
@@ -119,10 +121,13 @@ test('generated farms plant, grow, harvest into purchased storage and sell with 
     if (treated && (a.getSnapshot().fieldHarvestEstimates[1]?.value ?? 0) > 0) break;
   }
   assert.ok((a.getSnapshot().fieldHarvestEstimates[1]?.value ?? 0) > 0);
+  // Automatic plans may have stored an earlier crop during the longer season.
+  // Verify the new manual harvest, not the first occupied inventory slot.
+  const priorHarvests = new Set(a.getSnapshot().scenario.inventory.filter(i => i.active && i.type === 168).map(i => i.slot));
   for (const g of [a, b]) { g.dispatch({ type: 'harvest-field', fieldSlot: 1 }); assert.ok(g.getSnapshot().lastHarvestResult?.ok); }
   for (let day = 0; day < 12; day++) { a.dispatch({ type: 'advance-day' }); b.dispatch({ type: 'advance-day' }); }
   assert.deepEqual(parsed(a), parsed(b));
-  const harvest = a.getSnapshot().scenario.inventory.find(i => i.active && i.type === 168); assert.ok(harvest);
+  const harvest = a.getSnapshot().scenario.inventory.find(i => i.active && i.type === 168 && !priorHarvests.has(i.slot)); assert.ok(harvest);
   assert.ok((a.getSnapshot().storedHarvestValues[harvest.slot] ?? 0) > 0);
   for (const g of [a, b]) { g.dispatch({ type: 'sell-harvest', inventorySlot: harvest.slot }); assert.ok(g.getSnapshot().lastSaleResult?.ok); }
   assert.deepEqual(parsed(a), parsed(b)); a = restore(a.save(null)); assert.equal(a.getSnapshot().scenario.inventory[harvest.slot].active, false);

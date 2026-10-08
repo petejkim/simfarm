@@ -186,7 +186,7 @@ All following addresses use DS6190 unless a segment is shown. The static-image f
 | Cash; sales accumulator | 3e48;3e44 | 20000;0 |
 | Calendar day/season/week/year/month | 124e/1250/1252/1254/1256 | 1/1/1/1992/0 |
 | Equipment/calendar ticks; animation ticks | 139e;13a0 | both0 |
-| Day delay; speed; pacing flag | 1f8c;1f90;0187 | 256;1;0 |
+| Day delay; speed; equipment pacing | 1f8c;1f90;a8a0 | 256;1;2 (nonzero enables pacing);0187 is separate pause depth0 |
 | Automatic rent/seeds/clearing | a89d/a89c/a89f | 1/1/0 |
 | Equipment/building book value | 3e50/3e54 | both0; **3e4c is a different unnamed account** |
 | Crop/equipment/land/contract/livestock income | 3e60/3e64/3e68/3e6c/3e74 | all0 |
@@ -217,7 +217,7 @@ All following addresses use DS6190 unless a segment is shown. The static-image f
 - At0x40727..0x407c9, restore auto-rent/auto-seeds, disable auto-clear, set day/season/week1, year1992, month0, rank255, and both tick words0. The source also changes unrelated UI/settings bytes; this helper makes no claim to cover those subsystems.
 - At0x407dc..0x408de, clear the four loan dwords, balance due, tax debt, sales accumulator, airport count, unnamed64c5 and both debt countdowns.
 
-Cash, player/town/home coordinates, loan rate, tax-failure count, town active site, recreation coordinate bytes, development-spending word, annual regions/fourteen-word history, deficient/stressed counters, pacing flag, speed and day delay are retained by this phase. Later routines may replace some of them; these limited writes do not prove a complete restart leaves all of them intact. Weather, disaster flags, map clearing and setup decisions retain their separate ownership and pending integration. Existing live SSM imports/checkpoints do not invoke this helper.
+Cash, player/town/home coordinates, loan rate, tax-failure count, town active site, recreation coordinate bytes, development-spending word, annual regions/fourteen-word history, deficient/stressed counters, speed and day delay are retained by this phase. Equipment pacing is explicitly set to2 at0x4072b. Later routines may replace some of them; these limited writes do not prove a complete restart leaves all of them intact. Weather, disaster flags, map clearing and setup decisions retain their separate ownership and pending integration. Existing live SSM imports/checkpoints do not invoke this helper.
 
 Five tests pin original instructions/hash and cold values, perturb neighboring source dwords to distinguish every financial account (including3e4c versus3e54), exercise high-bit values and interleaved recreation coordinates, check detached/shared ownership and malformed-input rejection, and run repeated reset with nonzero/maximal ledgers and retained values. Financial encode/decode round trips reuse the current native representation without claiming complete new-farm save integration. Remaining construction work is town creation, first-launch versus restart calendar/weather order, other runtime owners and the canonical setup constructor/UI.
 
@@ -296,3 +296,12 @@ Ongoing market history/trade updates are now live with shared v16 state; origina
 ## Geographic preset caller correction
 
 Tracing beyond the chooser changes the earlier saved-climate conclusion: loaded result2 skips property allocation and main's new date/history, but still runs0x41032 climate replacement and0x3f91b/0x3fab0 cash/town setup. `GameSimulation.openRegion` now applies these verified writes for geographic presets, retaining the saved calendar and canonical native continuation. Direct imports and native checkpoint restoration remain separate paths. See [original-load-startup.md](original-load-startup.md) and SF-148; complete in-process restart remains unfinished.
+
+
+## Equipment pacing address correction
+
+Restart review exposed a native decoder error: the cold `paceEquipment` boolean read DS0187 (pause nesting, file84877, initial0) instead of DSa8a0 (file8ef90, initial2). Equipment dispatcher0x14a61 compares unsigned elapsed timer139e against speed1f90, then0x14a6c bypasses that wait only when a8a0 is zero. Reset0x4072b and menu-resume0x3f505 both write2 to a8a0. The Boolean representation matches this zero/nonzero consumer; raw original SSM bytes remain retained independently.
+
+The cold decoder now uses a8a0; partial setup reset enables its gate, and a running-session original import applies the same resume write. An already paused original import keeps the SSM value, following the documented native pause mapping. Existing native checkpoints retain their saved pacing value without migration or replay. No original defect is inferred: this corrects native address selection and omitted native lifecycle assignments.
+
+Tests pin the consumer, loader, reset/resume instruction bytes and cold values, distinguish pause depth from all256 pacing byte values, and verify paused-versus-running import. Correct pacing changes generated machinery completion and downstream RNG timing. The farming continuation fixture now waits through the growing season and selects the newly delivered manual harvest, since an automatic plan can have stored an older lot meanwhile. It still verifies positive harvest/sale value and exact saved continuation. No production farming rule was changed to preserve old fixture timing.
