@@ -54,6 +54,7 @@ import { placeIrrigation, type IrrigationTool, type IrrigationPlacementResult } 
 import { createAnimalFrameState, type AnimalFrameState } from './animal-world';
 import { advanceAnimalFrame } from './animal-movement';
 import { increaseAnimalNeeds } from './animal-needs';
+import { purchaseLivestock, type LivestockPurchaseResult } from './livestock-purchase';
 export { SIMULATION_SPEEDS } from './save-state';
 
 export interface FieldHarvestEstimate {
@@ -90,6 +91,7 @@ export interface GameSnapshot {
   lastLandResult: LandPurchaseResult | null;
   lastBuildingResult: BuildingPlacementResult | null;
   lastIrrigationResult: IrrigationPlacementResult | null;
+  lastLivestockResult: (LivestockPurchaseResult & { productType: number }) | null;
   lastNewFieldResult: NewFieldResult | null;
   lastTreatmentResult: TreatmentResult | null;
   lastScheduleResult: ScheduleDispatchResult | null;
@@ -105,6 +107,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'buy-land'; regionX: number; regionY: number }
   | { type: 'build'; buildingType: number; x: number; y: number }
   | { type: 'irrigation'; tool: IrrigationTool; x: number; y: number }
+  | { type: 'buy-livestock'; productType: number; x: number; y: number }
   | { type: 'create-field'; x: number; y: number; cropSlot: number }
   | { type: 'treat-field'; fieldSlot: number; treatment: Treatment }
   | { type: 'plant-field'; fieldSlot: number; cropSlot: number }
@@ -160,6 +163,7 @@ export class GameSimulation {
   private lastLandResult: LandPurchaseResult | null = null;
   private lastBuildingResult: BuildingPlacementResult | null = null;
   private lastIrrigationResult: IrrigationPlacementResult | null = null;
+  private lastLivestockResult: GameSnapshot['lastLivestockResult'] = null;
   private lastNewFieldResult: NewFieldResult | null = null;
   private lastTreatmentResult: TreatmentResult | null = null;
   private lastScheduleResult: ScheduleDispatchResult | null = null;
@@ -283,6 +287,9 @@ export class GameSimulation {
       this.lastBuildingResult = purchaseBuilding(this.scenario, this.finances, command.buildingType, command.x, command.y, this.weather.soilMoisture);
     } else if (command.type === 'irrigation') {
       this.lastIrrigationResult = placeIrrigation(this.scenario, this.finances, command.tool, command.x, command.y, this.weather.soilMoisture);
+    } else if (command.type === 'buy-livestock') {
+      this.lastLivestockResult = { productType: command.productType,
+        ...purchaseLivestock(this.scenario, this.finances, this.random, command.productType, command.x, command.y, this.weather.soilMoisture) };
     } else if (command.type === 'create-field') {
       this.lastPlantResult = null; this.lastHarvestResult = null;
       this.lastNewFieldResult = plantNewField(this.scenario, command.x, command.y, command.cropSlot, this.crops,
@@ -486,6 +493,7 @@ export class GameSimulation {
       lastLandResult: this.lastLandResult ? { ...this.lastLandResult } : null,
       lastBuildingResult: this.lastBuildingResult ? { ...this.lastBuildingResult } : null,
       lastIrrigationResult: this.lastIrrigationResult ? { ...this.lastIrrigationResult } : null,
+      lastLivestockResult: this.lastLivestockResult ? { ...this.lastLivestockResult } : null,
       lastNewFieldResult: this.lastNewFieldResult ? { ...this.lastNewFieldResult } : null,
       lastTreatmentResult: this.lastTreatmentResult ? { ...this.lastTreatmentResult } : null,
       lastScheduleResult: this.lastScheduleResult ? { ...this.lastScheduleResult } : null,

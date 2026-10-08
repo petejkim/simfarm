@@ -32,3 +32,15 @@ export function livestockFixture(dayDelay = 1000) {
   const load = () => GameSimulation.load(writeNativeSave(state, 4), crops).simulation;
   return { state, crops, load };
 }
+
+export function shopFixture() {
+  const f = livestockFixture(16);
+  f.state.scenario.animals[1].flags = 0;
+  f.state.scenario.inventory[1].bytes[10] = 0;
+  for (const c of f.state.scenario.cells) { c.terrain = 15; c.overlay = 0x800; }
+  for (const d of f.state.finances.accounts.assets.animalDefinitions) d.count = 0;
+  for (const d of f.state.finances.accounts.otherDefinitions) d.count = 0;
+  f.state.scenario.farm.cash = 100000;
+  f.state.scenario.farm.autoClear = false;
+  return f;
+}

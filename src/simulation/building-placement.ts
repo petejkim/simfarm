@@ -4,7 +4,7 @@ import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
 import { BUILDING_GRAPHICS, findBuilding } from './building-storage';
 import { addIrrigationSource, validateIrrigation } from '../formats/irrigation';
 
-// Type72 (animal trough) belongs to the pending livestock work.
+// Type72 stores water for trough refills; its production/construction is pending.
 export const PURCHASABLE_BUILDINGS = [64, 65, 66, 67, 68, 69, 70, 71] as const;
 export type BuildingPlacementResult = { ok: true; slot: number; price: number; clearingCost: number }
   | { ok: false; reason: 'unsupported-building' | 'outside-map' | 'not-owned' | 'occupied'
