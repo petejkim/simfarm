@@ -8,19 +8,20 @@ import { townStatistics, type TownSite } from './town';
 const shapes = [0, 0, 1, 2, 0, 0, 3, 4, 1, 5, 1, 6, 7, 8, 9, 10];
 const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 const inMap = (x: number, y: number) => x >= 0 && x < 96 && y >= 0 && y < 96;
-function roadBase(world: Scenario, x: number, y: number): number | null {
+type TownWorld = Pick<Scenario, 'cells' | 'regionalConditions' | 'farm'>;
+function roadBase(world: Pick<Scenario, 'cells'>, x: number, y: number): number | null {
   if (!inMap(x, y)) return null;
   const tile = terrainTile(world.cells[worldIndex(x, y)]);
   return tile >= 150 && tile < 161 ? 150 : tile >= 161 && tile < 172 ? 161 : tile >= 172 && tile < 174 ? 172 : null;
 }
-function roadMask(world: Scenario, x: number, y: number): number {
+function roadMask(world: Pick<Scenario, 'cells'>, x: number, y: number): number {
   let mask = 0;
   directions.forEach(([dx, dy], bit) => { if (roadBase(world, x + dx, y + dy) !== null) mask |= 1 << bit; });
   return mask;
 }
 /** Town specialization of 0x25398. Capture neighbor categories before drawing;
  * then reshape N/E/S/W in source order, retaining each road's own base/flags. */
-export function connectTownRoad(world: Scenario, x: number, y: number, centerBase: 150 | 161 = 161): void {
+export function connectTownRoad(world: Pick<Scenario, 'cells'>, x: number, y: number, centerBase: 150 | 161 = 161): void {
   const cell = world.cells[worldIndex(x, y)];
   const neighbors = directions.map(([dx, dy]) => roadBase(world, x + dx, y + dy));
   cell.terrain = (cell.terrain & 0xf800) | (centerBase + shapes[roadMask(world, x, y)]);
@@ -40,7 +41,7 @@ function validSite(site: TownSite): boolean {
 /** Original 0x3aba0..0x3ae18. District buildings appear through the later town
  * growth routine; ordinary construction clears non-road template cells to grass.
  * Only airport type 5 writes the complete template immediately. */
-export function constructTownDistrict(world: Scenario, state: TownConstructionState, layouts: TownLayouts,
+export function constructTownDistrict(world: TownWorld, state: TownConstructionState, layouts: TownLayouts,
   site: TownSite, type: number): TownConstructionResult {
   if (!validSite(site)) return { ok: false, reason: 'invalid-site' };
   if (!Number.isInteger(type) || type < 0 || type > 14) return { ok: false, reason: 'invalid-type' };

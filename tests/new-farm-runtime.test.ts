@@ -40,7 +40,7 @@ test('cold setup is independent of SSM balances and retains unset town, calendar
   assert.equal(state.finances.town.townRevenue, 4800); assert.equal(state.finances.town.expansionFunds, 40000);
   assert.ok(Object.values(state.finances.annual).every(n => n === 0));
   assert.ok(state.finances.clearing.x.every(n => n === 255)); assert.equal(state.finances.clearing.count, 0);
-  assert.deepEqual(state.raw, { ds3e4c: 0, ds3eb8: 0, ds4468: Array(19).fill(0), ds64c5: 0 });
+  assert.deepEqual(state.raw, { ds3e4c: 0, ds3eb8: 0, ds4468: Array(19).fill(0), ds64c5: 0, s4d9fFedd: 0 });
   assert.deepEqual(encodeFinancialState(decodeFinancialState(encodeFinancialState(state.finances))), encodeFinancialState(state.finances));
 });
 
@@ -122,7 +122,7 @@ test('restart clears source accounts and clocks but retains omitted ledgers, rep
   f.statistics.words.fill(321); f.statistics.regions.fill(42); f.statistics.fieldPresence.fill(1);
   f.statistics.distinctFieldStatuses = 8; f.statistics.ds3e58 = 123; f.statistics.ds3e5c = 456;
   f.statistics.nutrientDeficientFields = 7; f.statistics.chemicallyStressedFields = 8;
-  raw.ds3e4c = 987; raw.ds3eb8 = 123; raw.ds4468.fill(567); raw.ds64c5 = 9;
+  raw.ds3e4c = 987; raw.ds3eb8 = 123; raw.ds4468.fill(567); raw.ds64c5 = 9; raw.s4d9fFedd = 199;
   const weather = { precipitationDays: 99 };
   resetSetupRuntime(state, weather);
   assert.equal(farm.cash, 76543); assert.equal(farm.workerExpenses, 0xffffffff);
@@ -143,6 +143,6 @@ test('restart clears source accounts and clocks but retains omitted ledgers, rep
   assert.ok(f.statistics.words.every(n => n === 321)); assert.ok(f.statistics.regions.every(n => n === 42));
   assert.ok(f.statistics.fieldPresence.every(n => n === 0)); assert.equal(f.statistics.distinctFieldStatuses, 0);
   assert.deepEqual([f.statistics.ds3e58, f.statistics.ds3e5c, f.statistics.nutrientDeficientFields, f.statistics.chemicallyStressedFields], [0, 0, 7, 8]);
-  assert.deepEqual(raw, { ds3e4c: 0, ds3eb8: 0, ds4468: Array(19).fill(0), ds64c5: 0 });
+  assert.deepEqual(raw, { ds3e4c: 0, ds3eb8: 0, ds4468: Array(19).fill(0), ds64c5: 0, s4d9fFedd: 199 });
   resetSetupRuntime(state, weather); assert.equal(f.annual.priorTaxExpenses, 0); assert.equal(farm.workerExpenses, 0xffffffff);
 });

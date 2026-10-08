@@ -14,7 +14,7 @@ export interface NewFarmRuntimeDefaults {
   farm: SavedFarmState;
   finances: FinancialDefaults;
   /** Unexplained reset targets retain address-based names. */
-  raw: { ds3e4c: number; ds3eb8: number; ds4468: number[]; ds64c5: number };
+  raw: { ds3e4c: number; ds3eb8: number; ds4468: number[]; ds64c5: number; s4d9fFedd: number };
 }
 
 /** Initialized overlay29, before setup/finalization. In particular, town X is
@@ -61,6 +61,7 @@ export function readNewFarmRuntimeDefaults(executable: Uint8Array): NewFarmRunti
         activeSite: { regionX: byte(0xfedb, 0x4d9f), regionY: byte(0xfedc, 0x4d9f) },
         townRevenue: dword(0x758a), expansionFunds: dword(0x758e), developmentSpent: word(0x7514) },
     },
-    raw: { ds3e4c: dword(0x3e4c), ds3eb8: dword(0x3eb8), ds4468: words(0x4468, 19), ds64c5: byte(0x64c5) },
+    raw: { ds3e4c: dword(0x3e4c), ds3eb8: dword(0x3eb8), ds4468: words(0x4468, 19), ds64c5: byte(0x64c5),
+      s4d9fFedd: byte(0xfedd, 0x4d9f) },
   };
 }

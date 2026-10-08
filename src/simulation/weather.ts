@@ -77,11 +77,13 @@ export function updateWeeklyWind(weather: WeatherState, tables: ClimateTables, c
   return { storm: weather.wind >= 35, tornado: weather.wind > 70 };
 }
 
-/** Fresh-process defaults plus startup 0x24ef..0x2532. SSM files do not save these runtime globals. */
-export function initializeWeather(tables: ClimateTables, calendar: FarmCalendar, precipitationDays: number, random: FarmRandom, cells: WorldCell[]): WeatherState {
+/** Fresh-process defaults plus startup0x24ef..0x2532. Setup retains its generated
+ * soil moisture; SSM imports use the cold value8 because they omit this global. */
+export function initializeWeather(tables: ClimateTables, calendar: FarmCalendar, precipitationDays: number, random: FarmRandom, cells: WorldCell[], soilMoisture = 8): WeatherState {
+  if (!Number.isInteger(soilMoisture) || soilMoisture < -128 || soilMoisture > 127) throw new Error('Invalid initial soil moisture');
   const weather: WeatherState = {
     current: 0, forecast: [3, 3, 3, 0, 0, 0, 0], nextForecast: [0, 0, 0, 0, 0, 0, 0], wind: 5,
-    soilMoisture: 8, moistureBalance: 0, precipitationActive: false, precipitationDays, precipitationBonus: 0,
+    soilMoisture, moistureBalance: 0, precipitationActive: false, precipitationDays, precipitationBonus: 0,
     precipitationYear: 0, temperatureYear: 0, windYear: 0, windAnomaly: 0, temperatureAnomaly: 0,
     temperature: tables.temperature[0], displayTemperature: 0,
   };

@@ -24,6 +24,7 @@ export function createSetupRuntime(defaults: NewFarmRuntimeDefaults, records: Se
   }
   if (raw.ds4468.length !== 19 || raw.ds4468.some(n => !Number.isInteger(n) || n < 0 || n > 65535) ||
     !valid(raw.ds3e4c, 0xffffffff) ||
+    !valid(raw.s4d9fFedd, 255) ||
     !Number.isInteger(raw.ds3eb8) || raw.ds3eb8 < 0 || raw.ds3eb8 > 0xffffffff ||
     !Number.isInteger(raw.ds64c5) || raw.ds64c5 < 0 || raw.ds64c5 > 255) throw new Error('Invalid starting runtime words');
   // SF-060: use the native empty clearing queue rather than cold zero X bytes.
