@@ -31,6 +31,9 @@ export function animalSaleQuote(a: AnimalRecord, definitions: readonly GoodsDefi
   return { value: ((definition.price + increment) >>> (3 - band)) & 65535, conditionBand: band };
 }
 
+type PreparedSale = Exclude<AssetSaleResult, { ok: true }> | (Extract<AssetSaleResult, { ok: true }> & { remove: () => void });
+const quoteOnly = (p: PreparedSale): AssetSaleResult => p.ok ? { ok: true, slot: p.slot, value: p.value } : p;
+
 const wordSigned = (n: number) => n << 16 >> 16;
 const inMap = (n: number) => Number.isInteger(n) && n >= 0 && n < 96;
 function validAccounts(world: Scenario, state: AssetSaleState): boolean {
@@ -73,7 +76,7 @@ function prepareRemoval(world: Scenario, x: number, y: number, width: number, he
 }
 
 /** Livestock branch of 0x4c41c. Does not rename or reset unrelated animal bytes. */
-export function sellAnimal(world: Scenario, state: AssetSaleState, slot: number): AssetSaleResult {
+function prepareAnimalSale(world: Scenario, state: AssetSaleState, slot: number): PreparedSale {
   const animal = world.animals[slot], definition = animal && state.animalDefinitions[animal.type - 160];
   if (!Number.isInteger(slot) || slot <= 0 || !animal?.active || animal.type < 160 || animal.type > 164 || !definition) return { ok: false, reason: 'invalid-asset' };
   if (!validAccounts(world, state) || !definition.count) return { ok: false, reason: 'inconsistent-asset' };
@@ -81,14 +84,24 @@ export function sellAnimal(world: Scenario, state: AssetSaleState, slot: number)
   if ((animal.flags & 4) && (!building || animal.buildingSlot !== building.slot)) return { ok: false, reason: 'inconsistent-asset' };
   const remove = prepareRemoval(world, animal.x, animal.y, definition.width, definition.height, animal.type, slot, true, 0);
   if (!remove) return { ok: false, reason: 'inconsistent-asset' };
-  const value = credit(world, state, animalSaleQuote(animal, state.animalDefinitions).value, 'livestockIncome');
-  remove(); definition.count--; animal.flags &= ~0x20;
+  return { ok: true, slot, value: wordSigned(animalSaleQuote(animal, state.animalDefinitions).value), remove };
+}
+
+export function checkAnimalSale(world: Scenario, state: AssetSaleState, slot: number): AssetSaleResult {
+  return quoteOnly(prepareAnimalSale(world, state, slot));
+}
+export function sellAnimal(world: Scenario, state: AssetSaleState, slot: number): AssetSaleResult {
+  const prepared = prepareAnimalSale(world, state, slot);
+  if (!prepared.ok) return prepared;
+  const animal = world.animals[slot], definition = state.animalDefinitions[animal.type - 160];
+  const value = credit(world, state, prepared.value, 'livestockIncome');
+  prepared.remove(); definition.count--; animal.flags &= ~0x20;
   return { ok: true, slot, value };
 }
 
 /** Equipment branch of 0x4c41c, including plane-home cleanup 0x319ee.
  * The generic sale permits rentals; default selection separately excludes them. */
-export function sellEquipment(world: Scenario, state: AssetSaleState, slot: number, soilMoisture: number): AssetSaleResult {
+function prepareEquipmentSale(world: Scenario, state: AssetSaleState, slot: number, soilMoisture: number): PreparedSale {
   const e = world.equipment[slot], definition = e && world.equipmentDefinitions[e.type];
   if (!Number.isInteger(slot) || slot <= 0 || !e?.active || e.type > 8 || !definition) return { ok: false, reason: 'invalid-asset' };
   if (e.flags & 9) return { ok: false, reason: 'asset-busy' };
@@ -101,8 +114,18 @@ export function sellEquipment(world: Scenario, state: AssetSaleState, slot: numb
   if (e.type === 8 && !validAircraftHome(e)) return { ok: false, reason: 'inconsistent-asset' };
   const remove = prepareRemoval(world, e.x, e.y, width, height, e.type, slot, e.type !== 8, soilMoisture);
   if (!remove) return { ok: false, reason: 'inconsistent-asset' };
-  const value = credit(world, state, equipmentSaleQuote(e, world.equipmentDefinitions).value, 'equipmentIncome');
-  remove();
+  return { ok: true, slot, value: wordSigned(equipmentSaleQuote(e, world.equipmentDefinitions).value), remove };
+}
+
+export function checkEquipmentSale(world: Scenario, state: AssetSaleState, slot: number, soilMoisture: number): AssetSaleResult {
+  return quoteOnly(prepareEquipmentSale(world, state, slot, soilMoisture));
+}
+export function sellEquipment(world: Scenario, state: AssetSaleState, slot: number, soilMoisture: number): AssetSaleResult {
+  const prepared = prepareEquipmentSale(world, state, slot, soilMoisture);
+  if (!prepared.ok) return prepared;
+  const e = world.equipment[slot], definition = world.equipmentDefinitions[e.type];
+  const value = credit(world, state, prepared.value, 'equipmentIncome');
+  prepared.remove();
   if (!(e.flags & 0x40)) {
     definition.ownedCount--;
     state.equipmentBookValue = (state.equipmentBookValue - definition.price) >>> 0;

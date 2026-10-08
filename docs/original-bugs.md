@@ -968,3 +968,7 @@ Native uses the horizontal limit for both operations while retaining all other m
 ### SF-104 manual-flight arithmetic follow-up
 
 Flight wear0x31131 increments byte17 before checking>250. A preexisting255 wraps to0 and avoids wear termination at that gate; ordinary flight stops at251 and normal weekly aging handles maximum wear, so no ordinary reachable exploit is asserted. Fuel uses wrapping16-bit decrement and signed≤0 clamp; valid service quantities stay0..255. Native primitives preserve these source operations and test255→0 wear and zero-fuel timing. Canonical saved-flight validation now enforces fuel/payload0..255 and coherent active aircraft/home references. Live commands and browser flight controls use these same boundaries.
+
+### SF-058 manual-shop reachability resolved
+
+The manual sale list does hide rentals: builder0x4baee selects equipment at0x4c0a6, and0x4bd7a tests flag0x40 before active0x20. All three visible-row buttons0x4c2d0/0x4c346/0x4c38a consume those filtered entries. Confidence is high on this direct list-to-handler path. Generic sale's rental credit/accounting quirk remains, but it is not reachable through this normal shop list. Other callers would need separate evidence before asserting an exploit. Native manual commands use the source filter; generic sale/default/weekly consumers retain their separate policies. Tests pin both the filter and preserved generic distinction. Original evidence remains recorded rather than deleting the entry.
