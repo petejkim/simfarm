@@ -1,3 +1,4 @@
+import { removeManualTarget, type RemovalTarget, type ManualRemovalResult } from './manual-removal';
 import { sellManualAsset, type AssetSaleKind, type ManualAssetSaleResult } from './manual-asset-sale';
 import { advanceFlight, beginFlight, FLIGHT_CONTROLS, MAX_FLIGHT_INPUTS, type AircraftFlight, type FlightControl, type FlightEnd, type FlightStartResult } from './aircraft-flight';
 import type { CropDefinition } from '../formats/crop';
@@ -107,6 +108,7 @@ export interface GameSnapshot {
   storedHarvestValues: (number | null)[];
   lastSaleResult: HarvestSaleResult | null;
   lastAssetSaleResult: (ManualAssetSaleResult & { kind: AssetSaleKind }) | null;
+  lastRemovalResult: ManualRemovalResult | null;
   lastLandResult: LandPurchaseResult | null;
   lastBuildingResult: BuildingPlacementResult | null;
   lastEquipmentPurchaseResult: (EquipmentPurchaseResult & { equipmentType: number }) | null;
@@ -127,6 +129,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'set-auto-clear'; enabled: boolean }
   | { type: 'buy-land'; regionX: number; regionY: number }
   | { type: 'build'; buildingType: number; x: number; y: number }
+  | { type: 'remove-object'; x: number; y: number; kind: RemovalTarget['kind']; slot: number }
   | { type: 'irrigation'; tool: IrrigationTool; x: number; y: number }
   | { type: 'start-flight'; slot: number; columns: number; rows: number }
   | { type: 'flight-control'; control: FlightControl }
@@ -198,6 +201,7 @@ export class GameSimulation {
   private lastHarvestResult: HarvestOrderResult | null = null;
   private lastSaleResult: HarvestSaleResult | null = null;
   private lastAssetSaleResult: GameSnapshot['lastAssetSaleResult'] = null;
+  private lastRemovalResult: ManualRemovalResult | null = null;
   private lastLandResult: LandPurchaseResult | null = null;
   private lastEquipmentPurchaseResult: GameSnapshot['lastEquipmentPurchaseResult'] = null;
   private lastBuildingResult: BuildingPlacementResult | null = null;
@@ -353,6 +357,9 @@ export class GameSimulation {
       this.lastLandResult = purchaseLand(this.scenario, command.regionX, command.regionY, this.weather.soilMoisture);
     } else if (command.type === 'build') {
       this.lastBuildingResult = purchaseBuilding(this.scenario, this.finances, command.buildingType, command.x, command.y, this.weather.soilMoisture);
+    } else if (command.type === 'remove-object') {
+      this.lastRemovalResult = removeManualTarget(this.scenario, this.finances, command.x, command.y, command, this.weather.soilMoisture);
+      if (this.lastRemovalResult.ok) this.events.push({ type: 'sound', sound: 'explode' });
     } else if (command.type === 'irrigation') {
       this.lastIrrigationResult = placeIrrigation(this.scenario, this.finances, command.tool, command.x, command.y, this.weather.soilMoisture);
     } else if (command.type === 'buy-aircraft') {
@@ -603,6 +610,7 @@ export class GameSimulation {
       lastHarvestResult: this.lastHarvestResult ? { ...this.lastHarvestResult } : null,
       lastSaleResult: this.lastSaleResult ? { ...this.lastSaleResult } : null,
       lastAssetSaleResult: this.lastAssetSaleResult ? { ...this.lastAssetSaleResult } : null,
+      lastRemovalResult: this.lastRemovalResult ? { ...this.lastRemovalResult } : null,
       lastLandResult: this.lastLandResult ? { ...this.lastLandResult } : null,
       lastEquipmentPurchaseResult: this.lastEquipmentPurchaseResult ? { ...this.lastEquipmentPurchaseResult } : null,
       lastBuildingResult: this.lastBuildingResult ? { ...this.lastBuildingResult } : null,

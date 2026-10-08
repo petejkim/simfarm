@@ -25,6 +25,8 @@ import { MachineryPanel } from './MachineryPanel';
 import { TownChoicePanel } from './TownChoicePanel';
 import type { GameEvent } from '../simulation/events';
 import { BuildingPanel } from './BuildingPanel';
+import { RemovalPanel } from './RemovalPanel';
+import { checkManualRemoval } from '../simulation/manual-removal';
 import { checkBuildingPlacement } from '../simulation/building-placement';
 import { IrrigationPanel } from './IrrigationPanel';
 import { checkIrrigationPlacement, type IrrigationTool } from '../simulation/irrigation-placement';
@@ -86,7 +88,9 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   const field = data?.scenario.fields.find(f => f.slot === fieldSlot && f.active);
   const cell = selection !== null ? data?.scenario.cells[selection] : undefined;
   const position = selection !== null ? worldPosition(selection) : null;
-  const preview = position && data && snapshot && mapTool !== 'inspect' ? {
+  const removal = position && data && mapTool === 'remove' ? checkManualRemoval(data.scenario, position.x, position.y) : null;
+  const preview = mapTool === 'remove' ? removal?.ok ? { x: removal.x, y: removal.y, width: removal.width, height: removal.height, valid: true } : undefined
+    : position && data && snapshot && mapTool !== 'inspect' ? {
     x: mapTool === 'land' ? (position.x >> 3) * 8 : position.x,
     y: mapTool === 'land' ? (position.y >> 3) * 8 : position.y,
     width: mapTool === 'equipment' ? data.scenario.equipmentDefinitions[equipmentType].width : mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].width : mapTool === 'irrigation' || mapTool === 'livestock' ? 1 : 8,
@@ -129,6 +133,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
       <div><label>Map tool <select id="map-tool" disabled={Boolean(snapshot?.aircraftFlight)} value={mapTool} onChange={e => setMapTool(e.target.value as MapTool)}>
         <option value="inspect">Inspect</option><option value="land">Buy land</option><option value="field">New field</option>
         <option value="build">Build</option>
+        <option value="remove">Remove field / building</option>
         <option value="irrigation">Irrigation</option>
         <option value="equipment">Buy machinery</option>
         <option value="livestock">Animals &amp; supplies</option>
@@ -164,6 +169,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
           }} />
         <div className="map-footer"><span>{snapshot?.aircraftFlight ? 'Following aircraft · farm calendar suspended' : mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
           ? 'Click the top-left corner of a new field' : mapTool === 'build' ? 'Click the top-left corner of a building'
+          : mapTool === 'remove' ? 'Click a field or building to review its removal'
           : mapTool === 'irrigation' ? 'Click a tile to dig a ditch or control a valve'
           : mapTool === 'equipment' ? 'Click clear ground or an equipment storage building'
           : mapTool === 'livestock' ? 'Click a tile for your animal or supply' : 'Scroll to explore · click a tile to examine'}</span>
@@ -172,6 +178,8 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
       </section>
       <aside>
         <fieldset className="farm-actions" aria-label="Farm actions" disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)}>
+        {snapshot && mapTool === 'remove' && <RemovalPanel snapshot={snapshot} position={position}
+          onCommand={command => simulation?.dispatch(command)} onCancel={() => { setSelection(null); setFieldSlot(null); }} />}
         {snapshot && mapTool === 'build' && <BuildingPanel snapshot={snapshot} position={position} buildingType={buildingType}
           onTypeChange={setBuildingType} onCommand={command => simulation?.dispatch(command)} />}
         {snapshot && mapTool === 'irrigation' && <IrrigationPanel snapshot={snapshot} position={position} tool={irrigationTool}
