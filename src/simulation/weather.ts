@@ -87,7 +87,16 @@ export function initializeWeather(tables: ClimateTables, calendar: FarmCalendar,
     precipitationYear: 0, temperatureYear: 0, windYear: 0, windAnomaly: 0, temperatureAnomaly: 0,
     temperature: tables.temperature[0], displayTemperature: 0,
   };
-  advanceForecast(weather, tables, calendar, random, cells);
-  weather.displayTemperature = signedByte(weather.temperature + random.below(5));
+  initializeStartupWeather(weather, tables, calendar, random, cells);
   return weather;
+}
+
+/** Main24ef..2532, shared by first launch and restart after chooser returns.
+ * Advances retained forecast/moisture before assigning temperature table[0].
+ * Does not clear wind, anomalies, forecasts or precipitation state. */
+export function initializeStartupWeather(weather: WeatherState, tables: ClimateTables, calendar: FarmCalendar,
+  random: FarmRandom, cells: WorldCell[]): void {
+  advanceForecast(weather, tables, calendar, random, cells);
+  weather.temperature = tables.temperature[0];
+  weather.displayTemperature = signedByte(weather.temperature + random.below(5));
 }

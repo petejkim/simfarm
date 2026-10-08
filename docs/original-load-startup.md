@@ -98,3 +98,23 @@ Review of402a8..4094d confirms the following phases for the next composition. Th
 - 4072b writes equipment pacing2;407c1/407c9 reset timer/animation words. Calendar main2343 still replaces the intermediate fixed1992 date for non-loaded chooser returns. Main24ef advances the retained forecast through1e63c; a fresh weather object would silently clear unrelated globals.
 
 Full composition still needs explicit ownership of retained terrain RNG history and raw setup fields for every origin, forecast/reset ordering, source menu pacing and generated-versus-loaded chooser outcomes. The current generated setup archive is historical provenance, not a complete live DOS memory image. Keep these boundaries explicit rather than silently using cold defaults during a warm restart.
+
+## Detached restart activity phases
+
+`resetSetupActivity` now ports the direct activity writes from402a8..4094d on detached map/irrigation/traffic/weather/effect owners. This is an intermediate reset, not a complete playable farm. Existing record/account reset helpers remain separate. It validates map words/attributes, active irrigation/traffic/effect bounds and climate-year indices before returning; rejected inputs never mutate the old owners.
+
+| Owner | Direct reset | Deliberately retained in this phase |
+| --- | --- | --- |
+| Map | Terrain word ANDc7ff, overlay word AND87ff for all9216 cells | Other bits, low image bytes and attributes; subsequent generation remains separate |
+| Irrigation | All192 source bytes, count, active flag, phase and native FIFO cleared | Delay and lastTick |
+| Traffic | All16 flag bytes and active count cleared through0xd2be | Seven other bytes per record, delay and lastTick |
+| Weather | windYear4092, temperatureYear4277, precipitationYear4185 become0 | Forecast buffers, moisture accumulator, current wind, anomalies, precipitation-active state and other globals; annual-reset precipitationDays remains the financial reset helper's write |
+| Disasters | enabled6995 becomes1 | Flags, positions, frames and timestamps; this is not proof that every later callback leaves effects untouched |
+
+Selector words at initialized DS cd82/cda0/cdca resolve to2d9f for map/registry stores; cdd2/cd90/ce58/ce5a/ce5c resolve to6190 for runtime and climate-year stores. The source tests pin these segments as well as instruction bytes, avoiding an assumed shared ES segment.
+
+`synchronizeSetupIrrigation` separately implements3fa90..3fa9c: assign lastTick from the current animation word after the chooser returns. A loaded chooser outcome can have replaced this word, so synchronization must not be folded into the earlier zero-timer reset. It changes no delay, registry or wave members.
+
+`initializeStartupWeather` implements main24ef..2532 on retained weather: call forecast1e63c, then assign temperature table[0] and signed-byte display temperature plus one bounded5 draw. Forecast copies407f..4085 into4078..407e before generating a new next week. If retained accumulator23fe crosses±8, it applies signed/clamped soil change and redraws grass on the current map before clearing the accumulator. Wind, anomalies and precipitation-active globals are not cold-initialized by this phase. Cold `initializeWeather` now delegates the same startup phase after constructing its existing fresh defaults; cold results remain identical. SF-150 records the potential cross-farm carry-over and limits of the complete-caller evidence.
+
+Five new tests pin source hash/instructions/segment selectors, exercise all original maps and every high-byte mask value, retain inactive traffic data, clear a64-source active irrigation wave, verify repeated reset and detached copies, reject malformed inputs atomically, and verify clock boundaries plus retained forecast/moisture and exact RNG consumption. These phases are not yet wired to a browser restart. The live creation/import browser regressions protect unchanged cold startup after extracting the common weather phase. Canonical warm reset still needs raw/terrain-history ownership, record/account composition, chooser outcomes and full callback ordering.
