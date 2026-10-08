@@ -1,10 +1,13 @@
 import { climateForSetup } from '../formats/new-farm';
 import { useEffect, useRef, useState } from 'react';
-import { loadGeneratedTiles, loadNewFarmAssets, loadRegionAssets, loadScenarioAssets, type GameAssets, type RegionAssets } from '../assets/game-assets';
+import { loadGeneratedTiles, loadNewFarmAssets, loadRegionAssets, loadScenarioAssets, loadTerrainPreviewAssets, type TerrainPreviewAssets, type GameAssets, type RegionAssets } from '../assets/game-assets';
 import { GameSimulation } from '../simulation/game';
+import { CustomFarmSetup } from '../simulation/custom-farm-setup';
+import { readNativeSave, writeNativeSave } from '../formats/native-save';
 import type { NewFarmOptions } from '../simulation/new-farm-state';
 import type { LoadedFarm } from './SaveControls';
 import { RegionMap } from './RegionMap';
+import { TerrainDesign } from './TerrainDesign';
 
 export function NewFarmControls({ assets, simulation: current, open, onOpenChange, onCreate }: {
   assets: GameAssets; simulation: GameSimulation; open: boolean; onOpenChange: (open: boolean) => void; onCreate: (farm: LoadedFarm) => void;
@@ -16,12 +19,13 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
       date: { year: date.getFullYear(), dayOfWeek: date.getDay() }, seeds: { visual: 9029, simulation: 9029, bounded: 9029 } };
   });
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const [draft, setDraft] = useState<{ setup: CustomFarmSetup; artwork: TerrainPreviewAssets; tiles: HTMLImageElement } | null>(null);
   const [regionMode, setRegionMode] = useState(false), [region, setRegion] = useState<RegionAssets | null>(null);
   const [selected, setSelected] = useState(0), [regionError, setRegionError] = useState('');
   const regionPending = useRef<AbortController | null>(null);
   const pending = useRef<AbortController | null>(null), heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
-    if (open) { setBusy(false); setError(''); setRegionMode(false); setRegion(null); setRegionError(''); heading.current?.focus(); }
+    if (open) { setDraft(null); setBusy(false); setError(''); setRegionMode(false); setRegion(null); setRegionError(''); heading.current?.focus(); }
     return () => { pending.current?.abort(); pending.current = null; regionPending.current?.abort(); };
   }, [open]);
   const location = regionMode && region ? region.locations[selected] : null;
@@ -57,8 +61,16 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
         return;
       }
       const setup = await loadNewFarmAssets(assets, controller.signal);
-      const tiles = await loadGeneratedTiles(setup.records.cropFiles, controller.signal);
+      const [tiles, artwork] = await Promise.all([loadGeneratedTiles(setup.records.cropFiles, controller.signal),
+        regionMode ? Promise.resolve(null) : loadTerrainPreviewAssets(controller.signal)]);
       controller.signal.throwIfAborted();
+      if (artwork) {
+        const preview = session === 'restart' ? CustomFarmSetup.restart(readNativeSave(current.save(null)).state, options, setup)
+          : CustomFarmSetup.fresh(options, setup);
+        setDraft({ setup: preview, artwork, tiles }); return;
+      }
+      // Unmarked geographic result3 remains its separate direct creation path
+      // until its preliminary-generation branch is composed (terrain-preview.md).
       const simulation = session === 'restart' ? current.restartGenerated(options, setup) : GameSimulation.createNew(options, setup);
       if (!controller.signal.aborted) { onCreate({ scenarioId: null, simulation, tiles }); onOpenChange(false); }
     } catch (cause) {
@@ -68,6 +80,16 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
     }
   }
   if (!open) return <div className="new-farm-action"><button id="new-farm" onClick={() => { setBusy(false); setError(''); onOpenChange(true); }}>New farm</button></div>;
+  if (draft) return <section className="new-farm-panel" aria-label="New farm">
+    <TerrainDesign draft={draft.setup} assets={draft.artwork} error={error}
+      onCancel={() => { if (draft.setup.getSnapshot().phase === 'preview') draft.setup.cancel(); setDraft(null); onOpenChange(false); }}
+      onPlay={() => {
+        try {
+          const simulation = GameSimulation.load(writeNativeSave(draft.setup.accept(), null), assets.catalog.crops, assets.townLayouts).simulation;
+          onCreate({ scenarioId: null, simulation, tiles: draft.tiles }); onOpenChange(false);
+        } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+      }} />
+  </section>;
   return <section className="new-farm-panel" aria-label="New farm">
     <h2 ref={heading} tabIndex={-1}>Choose a farm</h2>
     <p>Choose an original region or design your own farm. Starting a farm replaces the current session; save it first if you want to keep it.</p>
@@ -105,7 +127,7 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
       </fieldset>
       {!preset && <p>{session === 'fresh' ? 'The same seed and settings recreate the same terrain. ' : 'Restart generates a new landscape from the current session. '}Your farm starts in April with $40,000.</p>}
       {missingHistory && <p id="restart-unavailable" role="status">This older save cannot generate a restart map. Choose a numbered farm or Start fresh session.</p>}
-      <button id="create-farm" disabled={busy || missingHistory || (regionMode && !region)}>{busy ? 'Starting farm…' : preset ? `Open Scenario ${preset.id + 1}` : 'Create farm'}</button>{' '}
+      <button id="create-farm" disabled={busy || missingHistory || (regionMode && !region)}>{busy ? 'Loading farm…' : preset ? `Open Scenario ${preset.id + 1}` : regionMode ? 'Create farm' : 'Preview terrain'}</button>{' '}
       <button type="button" onClick={() => { pending.current?.abort(); regionPending.current?.abort(); onOpenChange(false); }}>Cancel</button>
       {error && <p id="new-farm-error" role="alert">Could not create farm: {error}</p>}
     </form>

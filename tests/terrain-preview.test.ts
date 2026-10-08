@@ -115,3 +115,14 @@ test('retained signed soil follows word arithmetic; preview rendering preserves 
   assert.throws(() => beginTerrainPreview(new Uint8Array(1007), seeds, history, 8, 'cold'));
   for (const soil of [-129, 128, NaN]) assert.throws(() => beginTerrainPreview(new Uint8Array(1008), seeds, history, soil, 'cold'));
 });
+
+test('extreme negative soil flags undergo shoreline redraw before site selection, limiting the observed lookup hazard', () => {
+  for (const soil of [-128, -19, -18, -17, -16]) {
+    const preview = beginTerrainPreview(new Uint8Array(1008), { visual: 9029, simulation: 9029, bounded: 9029 }, history, soil, 'restart');
+    // SF-151's out-of-atlas word is an intermediate population result. The
+    // full generator consumes its water flags; these fixtures then hit SF-142.
+    assert.equal(preview.world.cells.filter(c => (c.terrain & 2047) >= 960).length, 0);
+    assert.ok(preview.world.cells.filter(c => (c.terrain & 2047) >= 39 && (c.terrain & 2047) < 69).length > 6000);
+    assert.throws(() => locateTerrainPreview(preview), /No starting property/);
+  }
+});

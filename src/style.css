@@ -50,3 +50,22 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .region-grid button[aria-pressed=true] { outline: 3px solid #fff; outline-offset: -3px; background: #ffffff66; color: #102417; }
 .region-grid button:focus-visible { outline: 3px solid #fff; outline-offset: -3px; }
 .region-description { flex: 1; min-width: min(250px, 100%); max-width: 440px; }
+
+.terrain-design { position: relative; overflow: hidden; width: min(100%, 704px); aspect-ratio: 352 / 304; background: #bcbcbc; }
+.terrain-design > img { position: absolute; width: 181.818182%; max-width: none; height: auto; left: -36.363636%; top: -10.526316%; image-rendering: pixelated; pointer-events: none; }
+.terrain-design canvas { position: absolute; max-width: none; image-rendering: pixelated; cursor: default; }
+.terrain-design canvas[hidden] { display: none; }
+.terrain-design .terrain-hit { position: absolute; padding: 0; border: 0; border-radius: 0; background: transparent; min-width: 0; min-height: 0; }
+.terrain-design .terrain-hit:hover:not(:disabled) { background: #ffffff30; }
+.terrain-design .terrain-hit:disabled { opacity: 1; cursor: default; }
+.terrain-design .terrain-hit:focus-visible,.terrain-design .terrain-range:focus-visible { outline: 2px solid #0024ff; outline-offset: -2px; }
+.terrain-design .terrain-toggle[aria-pressed=true] { box-shadow: inset 2px 2px #333, inset -2px -2px #fff; background: #0002; }
+.terrain-design .terrain-range { position: absolute; margin: 0; opacity: 1; appearance: none; background: transparent; cursor: pointer; border: 0; padding: 0; border-radius: 0; }
+.terrain-range::-webkit-slider-thumb { appearance: none; width: 1px; height: 100%; background: transparent; }
+.terrain-range::-moz-range-thumb { width: 1px; border: 0; background: transparent; }
+.terrain-range::-moz-range-track { background: transparent; }
+.terrain-level { position: absolute; pointer-events: none; }
+.terrain-level-background { background: #000; }
+.terrain-level-precipitation { background: #c20404; }
+.terrain-level-temperature { background: #fff304; }
+.terrain-level-wind { background: #00aa04; }

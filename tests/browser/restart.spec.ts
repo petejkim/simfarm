@@ -89,10 +89,10 @@ test('New farm restarts the active session, cancels safely and restores its gene
   await page.locator('#new-farm').click(); await page.locator('#new-farm-year').fill('1993');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.screenshot({ path: 'artifacts/browser-restart-mobile.png', fullPage: true });
-  await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
+  await page.locator('#create-farm').click(); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   const restarted = await save(page, 'live-generated');
-  const expected = GameSimulation.load(JSON.stringify(before), crops, assets.townLayouts).simulation
-    .restartGenerated(restarted.runtime.newFarm.provenance.options, assets);
+  const draft = CustomFarmSetup.restart(readNativeSave(JSON.stringify(before)).state, restarted.runtime.newFarm.provenance.options, assets);
+  const expected = GameSimulation.load(writeNativeSave(draft.accept(), null), crops, assets.townLayouts).simulation;
   expect(restarted).toEqual(JSON.parse(expected.save(null)));
   expect(restarted.runtime.newFarm.provenance.kind).toBe('restart');
   await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
@@ -128,7 +128,7 @@ test('older original saves explain missing restart history and allow an explicit
   await page.locator('#design-farm').click(); await expect(page.locator('#create-farm')).toBeDisabled();
   await page.locator('#new-farm-session').selectOption('fresh');
   await expect(page.locator('#new-farm-seed')).toBeEnabled(); await expect(page.locator('#restart-unavailable')).toHaveCount(0);
-  await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
+  await page.locator('#create-farm').click(); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   const fresh = await save(page, 'live-legacy-fresh'); expect(fresh.runtime.newFarm.provenance.kind).toBe('cold-start');
   expect(fresh.runtime.setup.terrainHistory).not.toBeNull(); expect(fresh.runtime.setup.sourceArchive).toBeNull();
 });

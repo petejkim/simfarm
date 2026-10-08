@@ -1,5 +1,6 @@
 import { rasterImage } from '../render/raster-image';
-import { tileAtlas, readPalette } from '../formats/graphics';
+import { tileAtlas, miniTileAtlas, readPalette, type Raster } from '../formats/graphics';
+import { readPreviewMarkers, type PreviewMarkers } from '../formats/preview-markers';
 import { patchCropGraphics } from '../formats/crop-graphics';
 import type { NewFarmAssets } from '../simulation/create-farm';
 import type { DisasterSprites } from '../render/disaster-renderer';
@@ -13,6 +14,14 @@ import type { GameSound } from '../simulation/events';
 import { readSetupMap, readScenarioChooserData, type ScenarioChooser, type SetupLocation } from '../formats/new-farm';
 
 export interface RegionAssets extends ScenarioChooser { locations: SetupLocation[]; screen: HTMLImageElement }
+export interface TerrainPreviewAssets { screen: HTMLImageElement; miniature: Raster; markers: PreviewMarkers }
+export async function loadTerrainPreviewAssets(signal: AbortSignal): Promise<TerrainPreviewAssets> {
+  const binary = (path: string) => response(path, signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b));
+  const [screen, miniature, palette, font] = await Promise.all([image('defworld.png', signal),
+    binary('raw/far_mapc.mbm'), binary('raw/scenario.pal'), binary('raw/egafont.fnt')]);
+  if (screen.naturalWidth !== 640 || screen.naturalHeight !== 480) throw new Error('Invalid terrain design artwork');
+  return { screen, miniature: miniTileAtlas(miniature, readPalette(palette)), markers: readPreviewMarkers(font) };
+}
 export async function loadRegionAssets(signal: AbortSignal): Promise<RegionAssets> {
   const [map, metadata, screen] = await Promise.all([
     response('raw/scenario.odt', signal).then(r => r.arrayBuffer()).then(b => readSetupMap(new Uint8Array(b))),

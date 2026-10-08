@@ -4,7 +4,8 @@ import { GameSimulation } from '../../src/simulation/game';
 import { newFarmAssets, newFarmOptions } from '../support/new-farm';
 import { checkFieldPlacement } from '../../src/simulation/field-placement';
 import { checkBuildingPlacement } from '../../src/simulation/building-placement';
-import { readNativeSave } from '../../src/formats/native-save';
+import { CustomFarmSetup } from '../../src/simulation/custom-farm-setup';
+import { readNativeSave, writeNativeSave } from '../../src/formats/native-save';
 
 async function save(page: Page, name: string) {
   const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
@@ -33,12 +34,13 @@ test('create a generated farm on mobile, save it and restore without any origina
   await page.screenshot({ path: 'artifacts/browser-new-farm-setup.png', fullPage: true });
   const scenarioRequests: string[] = [];
   await page.route('**/assets/raw/SCEN*.SSM', route => { scenarioRequests.push(route.request().url()); return route.abort(); });
-  await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
+  await page.locator('#create-farm').click(); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   await expect(page.locator('.new-farm-panel')).toHaveCount(0); await expect(page.locator('#new-farm')).toHaveCount(1);
   await expect(page.locator('#farm-cash')).toHaveText('$40,000'); await expect(page.locator('#scenario')).toHaveValue('generated');
   const first = await save(page, 'browser-created-farm'); expect(first.filename).toContain('simfarm-new-farm-1993-4-');
   expect(first.data.version).toBe(20); expect(first.data.scenarioId).toBeNull(); expect(first.data.scenario.source).toBeNull();
-  const original = GameSimulation.createNew(first.data.runtime.newFarm.provenance.options, newFarmAssets);
+  const draft = CustomFarmSetup.fresh(first.data.runtime.newFarm.provenance.options, newFarmAssets);
+  const original = GameSimulation.load(writeNativeSave(draft.accept(), null), newFarmAssets.crops, newFarmAssets.townLayouts).simulation;
   expect(first.data).toEqual(JSON.parse(original.save(null)));
   await page.locator('#next-day').click(); original.dispatch({ type: 'advance-day' });
   expect((await save(page, 'browser-created-farm-day')).data).toEqual(JSON.parse(original.save(null)));
@@ -67,8 +69,9 @@ test('generated load rejects corrupt startup state and unavailable crop assets w
   expect((await save(page, 'browser-generated-recovered')).data).toEqual(JSON.parse(text));
 });
 
-test('a generated farm plants on its starting land and delivers harvest into newly built storage through React', async ({ page }) => {
-  const generated = GameSimulation.createNew(newFarmOptions, newFarmAssets);
+test('a previewed farm plants on its starting land and delivers harvest into newly built storage through React', async ({ page }) => {
+  const draft = CustomFarmSetup.fresh(newFarmOptions, newFarmAssets);
+  const generated = GameSimulation.load(writeNativeSave(draft.accept(), null), newFarmAssets.crops, newFarmAssets.townLayouts).simulation;
   generated.dispatch({ type: 'set-disasters-enabled', enabled: false });
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1'); await load(page, generated.save(null));
   generated.dispatch({ type: 'set-auto-clear', enabled: true });
@@ -110,5 +113,5 @@ test('a failed creation keeps the current session, and Cancel followed by anothe
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.unroute('**/assets/new-farm-runtime.json'); await page.locator('#new-farm').click();
   await expect(page.locator('#create-farm')).toBeEnabled(); await expect(page.locator('#new-farm-error')).toHaveCount(0);
-  await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
+  await page.locator('#create-farm').click(); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
 });
