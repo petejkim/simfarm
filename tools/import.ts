@@ -1,3 +1,4 @@
+import { readScheduleArtwork, readFieldGauges } from '../src/formats/schedule-window';
 import { readMapArtwork } from '../src/formats/map-window';
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
@@ -49,6 +50,8 @@ for (const e of entries) {
 }
 await json('buy-catalog.json', readBuyCatalog(exe));
 await png('buy-cards.png', readBuyCards(asset('alltiles.btl'), palette));
+await png('schedule-window.png', readScheduleArtwork(asset('fdstatus.bmp'), palette));
+await png('field-gauges.png', readFieldGauges(asset('fldgrph.til'), palette));
 await png('map-window.png', readMapArtwork(asset('mapwndo.bmp'), palette));
 await png('sell-window.png', readSellArtwork(asset('sellwndo.bmp'), palette));
 await png('sell-conditions.png', readSellConditions(asset('ega16til.til'), palette));

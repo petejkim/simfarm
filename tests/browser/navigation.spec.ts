@@ -1,3 +1,4 @@
+import { scheduleMonth, scheduleWeek } from '../support/schedule-window';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -17,20 +18,19 @@ test('visible shortcuts open and focus planner and loans; navigation alone prese
   const before = await checkpoint(page, 'before');
   const planner = controls(page).getByRole('button', { name: 'Crop planner', exact: true });
   await openWindow(page, 'navigation'); await planner.focus(); await page.keyboard.press('Enter');
-  await expect(page.locator('#field-planner > summary')).toBeFocused();
-  await expect(page.locator('#field-planner > summary')).toBeInViewport();
-  await page.keyboard.press('Tab'); await expect(page.locator('#planner-field')).toBeFocused();
+  await expect(page.locator('#field-planner')).toBeFocused();
+  await expect(page.locator('#field-planner')).toBeInViewport();
   await reveal(page, '#planner-field'); await page.locator('#planner-field').selectOption('1');
   await expect(page.locator('#field')).toHaveValue('1');
-  await expect(page.locator('#field-planner > summary')).toHaveText('Crop plan · Field 1');
+  await expect(page.locator('#field-planner')).toHaveAttribute('aria-label','Field 1 schedule');
   await reveal(page, '.plan-calendar'); await expect(page.locator('.plan-calendar')).toBeVisible();
-  await reveal(page, '#plan-year'); await page.locator('#plan-year').selectOption('4');
-  await reveal(page, '#field-planner > summary'); await page.locator('#field-planner > summary').click();
-  await openWindow(page, 'navigation'); await planner.click(); // Shortcut must reopen a manually closed disclosure.
-  await expect(page.locator('#plan-year')).toHaveValue('4');
+  await scheduleMonth(page,48);
+  await page.getByRole('button',{name:'Close Schedule',exact:true}).click();
+  await openWindow(page, 'navigation'); await planner.click(); // Shortcut reopens the window without resetting its scroll position.
+  await expect(page.locator('#schedule-month')).toHaveValue('48');
   await reveal(page, '#planner-field'); await page.locator('#planner-field').selectOption('2');
   await expect(page.locator('#field')).toHaveValue('2');
-  await expect(page.locator('#plan-year')).toHaveValue('0');
+  await expect(page.locator('#schedule-month')).toHaveValue(String(before.scenario.farm.calendar.month));
   await openWindow(page, 'navigation'); await controls(page).getByRole('button', { name: 'Loans', exact: true }).click();
   await expect(page.locator('#loan-panel')).toBeFocused();
   await reveal(page, '#loan-amount'); await expect(page.locator('#loan-amount')).toBeVisible();
@@ -42,7 +42,7 @@ test('visible shortcuts open and focus planner and loans; navigation alone prese
   await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('1');
   await expect(page.locator('#map-status')).toContainText('Scenario 2');
   await expect(page.locator('#loan-panel')).not.toBeVisible();
-  await expect(page.locator('#field-planner')).not.toHaveAttribute('open');
+  await expect(page.locator('#field-planner')).not.toBeVisible();
   await expect(page.locator('#field')).toHaveValue('');
   await page.screenshot({ path: 'artifacts/browser-navigation-desktop.png', fullPage: true });
   expect(errors).toEqual([]);
@@ -73,9 +73,8 @@ test('desktop window shortcuts lead through land purchase, new-field planting an
   await expect(page.locator('#field-status')).toContainText('Field 9 · Planting');
   await openWindow(page, 'navigation'); await controls(page).getByRole('button', { name: 'Crop planner', exact: true }).click();
   await expect(page.locator('#planner-field')).toHaveValue('9');
-  await expect(page.locator('#field-planner > summary')).toBeInViewport();
-  await reveal(page, '#plan-year'); await page.locator('#plan-year').selectOption('4'); await page.locator('[data-plan-week="239"]').click();
-  await reveal(page, '#plan-action'); await page.locator('#plan-action').selectOption('clear'); await reveal(page, '#apply-plan'); await page.locator('#apply-plan').click();
+  await expect(page.locator('#field-planner')).toBeInViewport();
+  await page.getByRole('button',{name:'Clear remaining plan',exact:true}).click(); await (await scheduleWeek(page,239)).click();
   await expect(page.locator('#plan-result')).toContainText('Plan updated');
   await openWindow(page, 'navigation'); await controls(page).getByRole('button', { name: 'Loans', exact: true }).click();
   await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('1000'); await reveal(page, '#borrow-loan'); await page.locator('#borrow-loan').click();
@@ -97,7 +96,7 @@ test('an empty farm offers a path from the planner to creating a field and reset
   await page.getByRole('button', { name: 'Create a field', exact: true }).click();
   await expect(page.locator('#land-heading')).toHaveText('New field'); await expect(page.locator('#land-heading')).toBeFocused();
   await expect(page.locator('#create-field')).toBeDisabled();
-  await load(); await expect(page.locator('#field-planner')).not.toHaveAttribute('open');
+  await load(); await expect(page.locator('#field-planner')).not.toBeVisible();
   await expect(page.locator('#map-tool')).toHaveValue('inspect');
   expect(await checkpoint(page, 'empty')).toEqual(JSON.parse(text));
 });

@@ -19,7 +19,7 @@ import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
 import { terrainTile, worldPosition, worldIndex } from '../formats/scenario';
 import { CropGuide } from './CropGuide';
 import { FieldPanel } from './FieldPanel';
-import { FieldPlanner } from './FieldPlanner';
+import { ScheduleWindow } from './ScheduleWindow';
 import { FarmMap, type MapFocus } from './FarmMap';
 import { useResource } from './useResource';
 import { GameSimulation, type GameCommand } from '../simulation/game';
@@ -108,7 +108,6 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     return home ? { x: home.x + 2, y: home.y + 2 } : { x: 48, y: 48 };
   });
   const [mapTool, setMapTool] = useState<MapTool>('inspect');
-  const [plannerOpen, setPlannerOpen] = useState(false);
   const [navigation, setNavigation] = useState<{ target: FarmDestination | WindowCommand } | null>(null);
   const [reportOpen, setReportOpen] = useState(false), [taxOpen, setTaxOpen] = useState(false);
   const reportRef = useRef<HTMLElement>(null), weatherRef = useRef<HTMLSpanElement>(null);
@@ -129,9 +128,9 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   }, [navigation]);
   function navigate(target: FarmDestination) {
     setBuyPlacement(null);
-    if (target === 'planner') { setPlannerOpen(true); setMapTool('inspect'); }
+    if (target === 'planner') setMapTool('inspect');
     if (target === 'land' || target === 'field' || target === 'crop-supplies' || target === 'network') setMapTool(target);
-    windows.show(target === 'map' ? null : target === 'loans' ? 'bank' : 'actions');
+    windows.show(target === 'map' ? null : target === 'loans' ? 'bank' : target === 'planner' ? 'schedule' : 'actions');
     setNavigation({ target });
   }
   function openWindow(window: WindowCommand) {
@@ -310,6 +309,8 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     <GameWindow windowKey="disasters" title="Disasters">
     {snapshot && <DisasterPanel snapshot={snapshot} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     </GameWindow>
+    {data && snapshot && <ScheduleWindow assets={assets} snapshot={snapshot} tiles={data.tiles} field={field} focusRef={plannerRef}
+      onSelect={slot=>{setSelection(null);selectField(slot,true);}} onNewField={()=>navigate('field')} onCommand={command=>simulation?.dispatch(command)}/>}
     {data && snapshot && <MapWindow assets={assets} snapshot={snapshot} onCommand={command=>simulation?.dispatch(command)} viewportRef={viewportRef} zoom={zoom}
       onLocate={(x,y)=>setFocus({x:x+(viewportRef.current?.clientWidth??0)/(32*zoom),y:y+(viewportRef.current?.clientHeight??0)/(32*zoom)})} />}
     {data && snapshot && <SellWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={sellRef} onCommand={command=>simulation?.dispatch(command)} />}
@@ -328,8 +329,9 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
             setSelection(index);
             const { x, y } = worldPosition(index);
             if (buyPlacement) { placePurchase(x,y); return; }
-            selectField(data.scenario.fields.find(f => f.contains(x, y))?.slot ?? null, false);
-            windows.show('actions');
+            const selected=data.scenario.fields.find(f => f.contains(x,y));
+            selectField(selected?.slot ?? null,false);
+            windows.show(mapTool==='inspect'&&selected?'schedule':'actions');
           }} />
         <div className="map-footer">{buyPlacement && <button id="cancel-buy-placement" onClick={cancelPurchase}>Cancel purchase</button>}<span id="buy-result" role="status">{buyMessage}</span><span>{buyPlacement ? `${buyPlacement.name}: click to place · Escape cancels` : snapshot?.aircraftFlight ? 'Following aircraft · farm calendar suspended' : mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
           ? 'Click the top-left corner of a new field' : mapTool === 'build' ? 'Click the top-left corner of a building'
@@ -387,10 +389,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
           onHarvest={fieldSlot => simulation?.dispatch({ type: 'harvest-field', fieldSlot })}
           onPlant={(fieldSlot, cropSlot) => simulation?.dispatch({ type: 'plant-field', fieldSlot, cropSlot })}
           onSelect={slot => { setSelection(null); selectField(slot, true); }} />}
-        {snapshot && mapTool === 'inspect' && <FieldPlanner open={plannerOpen} onOpenChange={setPlannerOpen} summaryRef={plannerRef}
-          onSelect={slot => { setSelection(null); selectField(slot, true); }} onNewField={() => navigate('field')}
-          scenario={data.scenario} crops={assets.catalog.crops} field={field} result={snapshot.lastPlanEditResult}
-          onEdit={(fieldSlot, week, action) => simulation?.dispatch({ type: 'edit-field-plan', fieldSlot, week, action })} />}
+        {mapTool === 'inspect' && <button onClick={()=>navigate('planner')}>Crop planner</button>}
         </fieldset>
       </GameWindow>
       <GameWindow windowKey="expert" title="Farm Expert">

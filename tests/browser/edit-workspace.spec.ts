@@ -33,8 +33,8 @@ test('palette opens field planning and real tools; Speed retains slower pacing a
   await page.clock.install({ time: new Date('1993-04-05T12:00:00Z') }); await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));
   await page.goto('/'); await expect(page.locator('#world')).toBeVisible();
   await page.getByRole('button', { name: 'Plant', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Field information', exact: true })).toBeVisible();
-  await expect(page.locator('#field-planner')).toHaveAttribute('open', '');
+  await expect(page.getByRole('dialog', { name: 'Schedule', exact: true })).toBeVisible();
+  await expect(page.locator('#field-planner')).toBeVisible();
   await page.locator('#window-edit').click();
   await page.getByRole('button', { name: 'Dirt road', exact: true }).click();
   await page.getByRole('button', { name: 'Edit tools and help', exact: true }).click();

@@ -6,7 +6,6 @@
 .field-panel p,.harvest-inventory{font-size:12px;line-height:1.6;color:#c2cbb4}.harvest-controls{border-bottom:1px solid #48563f;padding-bottom:4px}.harvest-inventory{border-bottom:1px solid #48563f;margin-bottom:20px;padding-bottom:12px}#harvest-items{padding-left:18px}#harvest-items li{margin:8px 0}
 .time-controls{border-top:1px solid #44503b;font-size:12px;flex-wrap:wrap}.time-controls>div{flex-wrap:wrap}#farm-date{color:#ead6a1}#farm-weather,#time-status,#field-growth{color:#c2cbb4;font-size:12px}#field-growth{line-height:1.6}#viewport{height:calc(100vh - 308px)}aside{max-height:calc(100vh - 268px)}@media(max-width:800px){#viewport{height:55vh}aside{max-height:none}}
 .toolbar{flex-wrap:wrap}.toolbar>.save-controls{flex-direction:column;align-items:flex-start;gap:4px;max-width:100%}.save-controls>div{display:flex;gap:8px}#save-status{font-size:12px;color:#c2cbb4;overflow-wrap:anywhere}
-.field-planner{margin:0 0 20px;padding-bottom:16px;border-bottom:1px solid #48563f;color:#c2cbb4;line-height:1.5}.field-planner summary{color:#ead6a1;font-weight:bold}.field-planner select{max-width:100%;min-width:0}.field-planner .crop-label{margin:10px 0}.plan-calendar{width:100%;table-layout:fixed;border-collapse:collapse;margin-top:12px;font-size:10px}.plan-calendar th{font-weight:normal;color:#a8b598}.plan-calendar th:first-child{width:30px}.plan-calendar td{padding:2px}.plan-calendar button{font-size:10px;width:100%;padding:4px 2px;min-height:38px}.plan-calendar button span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px}.plan-calendar button[aria-pressed=true]{border-color:#ead6a1;background:#53613e}.plan-calendar button[aria-current=date]{outline:1px solid #97b889}.field-planner #apply-plan{width:100%}
 .loan-panel,.default-panel{margin:0 0 16px;padding:12px 16px;border:1px solid #48563f;background:#20291d;color:#c2cbb4;line-height:1.5}.loan-panel summary{cursor:pointer;color:#ead6a1;font-weight:bold}.loan-panel dl{display:flex;gap:12px 30px;flex-wrap:wrap}.loan-panel dt{font-size:12px;color:#a8b598}.loan-panel dd{margin:0;color:#ead6a1}.loan-panel form{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.loan-panel input{width:125px;max-width:100%;padding:7px;color:#f3ecd9;background:#111b11;border:1px solid #7a8964}.loan-panel p{font-size:13px}.default-panel{border-color:#b99258}.default-panel h2{font-size:18px;margin-top:0}.default-panel button{margin-right:10px}
 
 .town-choices{display:flex;flex-wrap:wrap;gap:10px}.town-choices button{margin:0}
@@ -143,7 +142,7 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .game-window[data-window=town],.game-window:has(.default-panel){z-index:35}
 .game-window .toolbar,.game-window header,.game-window footer,.game-window .farm-navigation{padding:8px 0;margin:0;background:transparent;color:#000;border:0;display:flex;flex-wrap:wrap;gap:8px}
 .game-window .toolbar>div{flex-wrap:wrap}
-.game-window .loan-panel,.game-window .default-panel,.game-window .new-farm-panel,.game-window .land-panel,.game-window .field-panel,.game-window .field-planner,.game-window .harvest-inventory{background:transparent;color:#000;margin:0 0 10px;padding:8px 0;border-color:#888;border-radius:0}
+.game-window .loan-panel,.game-window .default-panel,.game-window .new-farm-panel,.game-window .land-panel,.game-window .field-panel,.game-window .harvest-inventory{background:transparent;color:#000;margin:0 0 10px;padding:8px 0;border-color:#888;border-radius:0}
 .game-window :is(p,h2,h3,summary,dt,dd,pre,label,span,strong,output){color:inherit}
 .game-window :is(button,input,select){background:#eee;color:#000;border:2px outset #ddd;border-radius:0;padding:5px;font:14px Arial,sans-serif}
 .game-window input[type=range]{padding:0}
@@ -273,3 +272,31 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .overview-help span:nth-child(even):before{width:8px}
 .overview-feedback:has(p){padding:4px;font:11px Arial,sans-serif}
 .overview-feedback p{margin:2px 0}
+
+/* Schedule DS5d8c:336×224 client at160,80 with original16px title. */
+.game-window[data-window=schedule]{left:160px;top:80px;right:auto;width:336px;border:0;max-height:calc(100% - 96px)}
+.game-window[data-window=schedule] .game-window-body{padding:0}
+.schedule-window{position:relative;width:336px;height:224px;color:#000;font:10px/10px monospace}
+.schedule-window>img{display:block;image-rendering:pixelated;pointer-events:none}
+.schedule-preview{position:absolute;inset:0;width:336px;height:224px;pointer-events:none;image-rendering:pixelated}
+.game-window .schedule-window button{position:absolute;border:0;border-radius:0;padding:0;background:transparent;color:#000;margin:0;font:bold 10px/12px monospace}
+.game-window .schedule-window button:hover:not(:disabled){background:#fff3}
+.schedule-icon{width:16px;height:16px}
+.schedule-window button[aria-pressed=true]{outline:1px solid #ffff00;outline-offset:-1px}
+.schedule-window button:focus-visible{outline:1px dotted #fff;outline-offset:-2px}
+.schedule-label{position:absolute;text-align:center;font:bold 10px/12px monospace}
+.schedule-month{position:absolute;top:50px;font:8px/10px monospace}
+.schedule-season{position:absolute;left:104px;top:108px;font:10px/10px monospace}
+.game-window .schedule-page{left:254px;width:16px;height:16px;font:bold 14px/16px monospace}
+.schedule-caption{left:272px;width:48px;height:16px}
+.schedule-window #schedule-month{position:absolute;left:88px;top:88px;width:160px;height:16px;opacity:0;margin:0;cursor:pointer}
+.schedule-window:has(#schedule-month:focus-visible):after{content:'';position:absolute;left:88px;top:88px;width:160px;height:16px;outline:1px dotted #000;pointer-events:none}
+.schedule-window .schedule-weather-number{position:absolute;left:0;font:8px/8px monospace;color:#fff;pointer-events:none}
+#schedule-value{position:absolute;left:120px;top:132px;font:10px/10px monospace}
+.schedule-quality{position:absolute;left:272px;top:128px;width:32px;height:32px;image-rendering:pixelated}
+.schedule-feedback{padding:4px;font:11px/14px Arial,sans-serif}
+.game-window .schedule-feedback p{margin:3px 0;font:11px/14px Arial,sans-serif}
+.game-window .schedule-feedback select{font:11px Arial,sans-serif;max-width:280px;padding:1px}
+
+.schedule-window .plan-calendar{position:absolute;inset:0;pointer-events:none}
+.schedule-window .plan-calendar>button{pointer-events:auto}

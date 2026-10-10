@@ -1,0 +1,57 @@
+import { test, expect, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { readScenario } from '../../src/formats/scenario';
+import { readArchive } from '../../src/formats/archive';
+import { readPalette, decodePlanar } from '../../src/formats/graphics';
+import { browserCrops } from '../support/crop-catalog';
+import { scheduleMonth } from '../support/schedule-window';
+const source=(name:string)=>readFileSync(new URL('../../../simfarm-dos/'+name,import.meta.url));
+async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await (await pending).path())!,'utf8'));}
+
+test('Schedule restores source geometry, field artwork, gauges, all24 crops and weather overlays without changing the farm',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');const before=await save(page);
+  const world=readScenario(source('SCEN0.SSM')),field=world.fields[1],firstWeek=world.farm.calendar.month*4;
+  await page.getByRole('button',{name:'Plant',exact:true}).click();await page.locator('#planner-field').selectOption('1');
+  const dialog=page.getByRole('dialog',{name:'Schedule',exact:true});
+  expect(await dialog.locator('.game-window-title').boundingBox()).toEqual({x:160,y:80,width:336,height:16});
+  expect(await page.locator('.schedule-window').boundingBox()).toEqual({x:160,y:96,width:336,height:224});
+  expect(await page.locator('.schedule-preview').boundingBox()).toEqual({x:160,y:96,width:336,height:224});
+  await expect(page.locator('[data-plan-week]')).toHaveCount(12);await expect(page.locator('[data-plan-action]')).toHaveCount(6);
+  await expect(page.locator('.schedule-label').filter({hasText:'Disease'})).toHaveText('Disease');
+  const archive=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),asset=(name:string)=>archive.find(e=>e.name===name)!.bytes;
+  const palette=readPalette(asset('simfarm.pal')),gauge=Math.floor(field.bytes[22]/52);
+  const pixels=decodePlanar(asset('fldgrph.til').subarray(gauge*576,(gauge+1)*576),48,24,palette).rgba;
+  expect(await page.locator('.schedule-preview').evaluate((c:HTMLCanvasElement)=>[...c.getContext('2d')!.getImageData(24,176,48,24).data])).toEqual([...pixels]);
+  await page.getByRole('button',{name:'Water overlay',exact:true}).click();
+  const first=browserCrops.find(c=>`${c.id}.crp`===world.cropFiles[0])!;
+  await expect(page.locator('[data-plan-crop="0"]')).toHaveText(String(first.rawDefinition[40]>>>1));
+  await expect(page.locator(`[data-plan-week="${firstWeek}"]`)).toHaveText(String(world.climate.precipitation[firstWeek]));
+  await page.getByRole('button',{name:'Temperature overlay',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Water overlay',exact:true})).toHaveAttribute('aria-pressed','false');
+  await expect(page.locator(`[data-plan-week="${firstWeek}"]`)).toHaveText(String(world.climate.temperature[firstWeek]));
+  await page.getByRole('button',{name:'Temperature overlay',exact:true}).click();
+  await expect(page.locator('[data-plan-crop]')).toHaveCount(16);await page.getByRole('button',{name:'Next crops',exact:true}).click();
+  await expect(page.locator('[data-plan-crop]')).toHaveCount(8);await page.locator('[data-plan-crop="23"]').click();
+  await expect(page.locator('[data-plan-crop="23"]')).toHaveAttribute('aria-pressed','true');
+  const toolPixels=await page.locator('.schedule-preview').evaluate((c:HTMLCanvasElement)=>[...c.getContext('2d')!.getImageData(272,8,32,32).data]);
+  await page.getByRole('button',{name:'Clear remaining plan',exact:true}).click();
+  expect(await page.locator('.schedule-preview').evaluate((c:HTMLCanvasElement)=>[...c.getContext('2d')!.getImageData(272,8,32,32).data])).toEqual(toolPixels);
+  await scheduleMonth(page,57);await expect(page.locator('[data-plan-week="239"]')).toBeVisible();
+  await expect(page.getByRole('button',{name:'Next month',exact:true})).toBeDisabled();
+  await page.getByRole('button',{name:'TODAY',exact:true}).click();await expect(page.locator('#schedule-month')).toHaveValue(String(world.farm.calendar.month));
+  await page.getByRole('button',{name:'Previous crops',exact:true}).click();
+  await page.screenshot({path:'artifacts/browser-schedule-window.png'});
+  await page.getByRole('button',{name:'CLOSE',exact:true}).click();
+  await page.getByRole('button',{name:'View object',exact:true}).click();
+  const rect=(await page.locator('#world').boundingBox())!;
+  await page.mouse.click(rect.x+(field.x+2)*16+8,rect.y+(field.y+2)*16+8);
+  await expect(dialog).toBeVisible();await expect(page.locator('#planner-field')).toHaveValue('1');
+  expect(await save(page)).toEqual(before);expect(errors).toEqual([]);
+});
+
+test('missing Schedule artwork fails before play',async({page})=>{
+  await page.route('**/assets/field-gauges.png',route=>route.abort());await page.goto('/');
+  await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();
+  await expect(page.locator('.loading')).toContainText('field-gauges.png');await expect(page.locator('#world')).toHaveCount(0);
+});

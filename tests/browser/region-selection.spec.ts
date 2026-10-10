@@ -142,7 +142,10 @@ test('fresh numbered farms honor the explicit seed for discarded terrain and ret
     await openMap(page); await page.locator('[data-region="9,7"]').click();
     await expect(page.locator('#new-farm-seed')).toBeEnabled(); await reveal(page, '#new-farm-seed'); await page.locator('#new-farm-seed').fill(String(seed));
     await expect(page.locator('#new-farm-year')).toBeDisabled();
-    await reveal(page, '#create-farm'); await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
+    await reveal(page, '#create-farm'); await page.locator('#create-farm').click();
+    // The second load has the same scenario label; wait for the accepted new farm.
+    await expect(page.getByRole('dialog', { name:'New Game',exact:true })).toBeHidden();
+    await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
     const actual = await save(page, `fresh-seed-${seed}`);
     const expected = GameSimulation.openGeographicRegion(bytes, locations[7 * 18 + 9], { visual: seed, simulation: seed, bounded: seed }, { ...newFarmAssets, crops }).withAllCrops(browserCrops);
     expect(actual).toEqual(JSON.parse(expected.save(4)));

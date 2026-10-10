@@ -45,7 +45,7 @@ export interface Catalog {
   palette: number[][];
 }
 export interface WindowArtwork { title: HTMLImageElement; inactive: HTMLImageElement; close: HTMLImageElement }
-export interface GameAssets { mapArtwork: HTMLImageElement; miniature: MapMiniature; catalog: Catalog; mainMenus: MainMenus; controlBar: HTMLImageElement; editPalette: HTMLImageElement; bankArtwork: HTMLImageElement; sellArtwork: HTMLImageElement; sellConditions: HTMLImageElement; buyArtwork: HTMLImageElement; buyCards: HTMLImageElement; buyCatalog: BuyCatalog; itemText: Uint8Array; windowArtwork: WindowArtwork; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
+export interface GameAssets { scheduleArtwork: HTMLImageElement; fieldGauges: HTMLImageElement; mapArtwork: HTMLImageElement; miniature: MapMiniature; catalog: Catalog; mainMenus: MainMenus; controlBar: HTMLImageElement; editPalette: HTMLImageElement; bankArtwork: HTMLImageElement; sellArtwork: HTMLImageElement; sellConditions: HTMLImageElement; buyArtwork: HTMLImageElement; buyCards: HTMLImageElement; buyCatalog: BuyCatalog; itemText: Uint8Array; windowArtwork: WindowArtwork; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
 export const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}assets/${path}`;
 
 async function response(path: string, signal?: AbortSignal): Promise<Response> {
@@ -68,7 +68,8 @@ function image(path: string, signal: AbortSignal): Promise<HTMLImageElement> {
   });
 }
 export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
-  const [catalog, maskedTiles, townLayouts, airplane, shadow, dust, tornado, swarm, mainMenus, controlBar, editPalette, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, mapArtwork, miniatureBytes, sellArtwork, sellConditions, windowTitle, windowInactive, windowClose] = await Promise.all([
+  const [scheduleArtwork, fieldGauges, catalog, maskedTiles, townLayouts, airplane, shadow, dust, tornado, swarm, mainMenus, controlBar, editPalette, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, mapArtwork, miniatureBytes, sellArtwork, sellConditions, windowTitle, windowInactive, windowClose] = await Promise.all([
+    image('schedule-window.png', signal), image('field-gauges.png', signal),
     response('catalog.json', signal).then(r => r.json()) as Promise<Catalog>, image('masked-tiles.png', signal),
     response('raw/townly0.cmp', signal).then(r => r.arrayBuffer()).then(b => new TownLayouts(new Uint8Array(b))),
     image('airplane.sprites.png', signal), image('apshadow.sprites.png', signal), image('cropdust.sprites.png', signal), image('tornado.sprites.png', signal), image('swarm.sprites.png', signal),
@@ -87,7 +88,8 @@ export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
   if ([windowTitle, windowInactive, windowClose].some(img => img.naturalWidth !== 16 || img.naturalHeight !== 16)) throw new Error('Invalid window title artwork');
   if (sellArtwork.naturalWidth !== 192 || sellArtwork.naturalHeight !== 256 || sellConditions.naturalWidth !== 128 || sellConditions.naturalHeight !== 32) throw new Error('Invalid Sell artwork');
   if (mapArtwork.naturalWidth !== 288 || mapArtwork.naturalHeight !== 240) throw new Error('Invalid Map artwork');
-  return { mapArtwork, miniature: readMapMiniature(miniatureBytes, catalog.palette), sellArtwork, sellConditions, catalog, mainMenus, controlBar, editPalette, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, windowArtwork: { title: windowTitle, inactive: windowInactive, close: windowClose }, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
+  if (scheduleArtwork.naturalWidth !== 336 || scheduleArtwork.naturalHeight !== 224 || fieldGauges.naturalWidth !== 960 || fieldGauges.naturalHeight !== 24) throw new Error('Invalid Schedule artwork');
+  return { scheduleArtwork, fieldGauges, mapArtwork, miniature: readMapMiniature(miniatureBytes, catalog.palette), sellArtwork, sellConditions, catalog, mainMenus, controlBar, editPalette, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, windowArtwork: { title: windowTitle, inactive: windowInactive, close: windowClose }, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
 }
 export async function loadScenarioAssets(id: number, signal: AbortSignal) {
   const [buffer, tiles] = await Promise.all([

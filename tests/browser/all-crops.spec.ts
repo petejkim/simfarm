@@ -42,9 +42,11 @@ test('all crops are immediately plantable and plannable with source artwork and 
   // The selected field draws a border over the badge's outside pixels.
   const interior = Array.from({ length: 12 }, (_, y) => [...pixels.slice(((y + 2) * 16 + 2) * 4, ((y + 2) * 16 + 14) * 4)]).flat();
   expect(await page.locator('#world').evaluate((canvas: HTMLCanvasElement) => Array.from(canvas.getContext('2d')!.getImageData(642, 642, 12, 12).data))).toEqual(interior);
-  await reveal(page, '#field-planner > summary'); await page.locator('#field-planner > summary').click();
-  await expect(page.locator('#plan-crop option')).toHaveCount(24);
-  await reveal(page, '#plan-crop'); await page.locator('#plan-crop').selectOption('22'); await reveal(page, '#apply-plan'); await page.locator('#apply-plan').click();
+  await openWindow(page, 'schedule');
+  await expect(page.locator('[data-plan-crop]')).toHaveCount(16);
+  await page.getByRole('button', { name:'Next crops',exact:true }).click();
+  await expect(page.locator('[data-plan-crop]')).toHaveCount(8);
+  await page.locator('[data-plan-crop="22"]').click(); await page.locator('[data-plan-week="1"]').click();
   game.dispatch({ type: 'edit-field-plan', fieldSlot: 1, week: 1, action: { kind: 'plant', cropSlot: 22 } });
   await expect(page.locator('#plan-result')).toContainText('Plan updated');
   await page.screenshot({ path: 'artifacts/browser-all-crops.png', fullPage: true });

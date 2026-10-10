@@ -1366,3 +1366,19 @@ The native Map pointer handler rejects tile coordinates outside0..95 before divi
 Quote3c766 calls the free-region counter3c710, subtracts it from144 at3c81e..3c821, and adds100 per occupied region at3c826..3c829. Buy3c8fd quotes before setting ownership1 at3c933. Ordinary sale3ca05 quotes while the plot is still owned;3ca65 clears ownership only after crediting cash and posting income. Thus buying one empty, non-home plot raises its subsequent sale quote by100 when fertility, moisture, terrain surcharge and other ownership remain fixed and arithmetic/cash caps do not intervene. The Map callback permits the BUY→SELL sequence without a fee or holding-period gate; native browser tests exercise it through the actual controls. No original executable was run.
 
 The source-backed empty-grass fixture explicitly verifies resale price=purchase price+100, exact cash and retained land-expense/taxable-sales/land-income ledgers, and native save/load continuation. Native preserves this original result rather than silently changing the recovered economics. Immediate cash gain does not establish net long-term profit: sale posts gross taxable proceeds and later accounting/tax effects still apply. Revisit whether to add a deliberate enhancement rule after documenting those broader consequences; retain the original formula and evidence separately.
+
+## SF-159 — Schedule water gauge never selects its fourth step
+
+**Status:** verified original display arithmetic; apparent visual discontinuity retained. Intent and wider gameplay impact are unproven. Any enhancement is deferred; no security vulnerability is claimed.
+
+In the pinned executable's Schedule paint2d83d..2d888, the selected water band is assigned0 below the lower threshold,1 below the midpoint,2 below the upper threshold, and4 at/above the upper threshold. No assignment3 exists. Loader4a196 receives band+5; source frame8 exists in the20-frame fldgrph.til library but is skipped here. For synthetic lower20, upper60 and midpoint40, water19/20/39/40/59/60 selects frames5/6/6/7/7/9. Source threshold bytes are sign-extended and compared as unsigned words; negative upper values can therefore become very large bounds. These are exact arithmetic observations, not proof of unintended irrigation behavior or an exploitable flaw.
+
+Native Schedule preserves those steps and signed/wrapped thresholds; it changes no watering rule. Tests cover every ordinary transition and synthetic signed-byte cases. The display is now independently auditable from the actual water simulation. Revisit intended gauge interpretation and source dynamic field/crop inputs before changing the visual bands; retain this evidence after any enhancement.
+
+## SF-160 — Schedule maturity strip stops at75 of80 pixels
+
+**Status:** verified display quantization; whether it is an intentional visual convention is unknown. Native preserves it; any visual correction is deferred.
+
+Maturity helper1c1aa caps its word result at65535. Schedule2d8cd..2d8db takes AH, shifts right4 and multiplies by5, giving a maximum75. The following cap against80 cannot raise it. At2d8e6..2d8fd the caller supplies total width80 to helpera0c8, which draws an8-pixel-high strip using palette6 for progress and12 for the remainder. Thus even a fully mature returned value leaves five background pixels. This does not establish a maturity/harvest simulation defect; that arithmetic and known hazards are documented separately.
+
+Native renders the same75/80 maximum and retains the underlying maturity/quality/value functions. Boundary tests establish the maximum and quality transitions. Consider a deliberate fully-filled visual enhancement later, rather than silently changing the recovered display formula. No security issue is claimed.
