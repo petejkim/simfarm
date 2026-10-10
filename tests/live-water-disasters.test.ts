@@ -29,7 +29,7 @@ test('live flood saves mid-scan, destroys fields and storage, retains unknown wo
   const a = GameSimulation.load(writeNativeSave(state, 4), f.crops).simulation;
   const checkpoint = a.save(4), b = GameSimulation.load(checkpoint, f.crops).simulation;
   const restoredEvents: GameEvent[] = []; b.subscribeEvents(e => restoredEvents.push(e));
-  assert.equal(saved(a).version, 21); assert.equal(b.save(4), checkpoint);
+  assert.equal(saved(a).version, 22); assert.equal(b.save(4), checkpoint);
   a.tick(300.25); b.tick(100); b.tick(200.25); assert.deepEqual(saved(a), saved(b));
   for (const game of [a, b]) {
     game.dispatch({ type: 'set-disasters-enabled', enabled: false });
@@ -91,7 +91,8 @@ test('v14 rejects malformed water runtime; v13 migration preserves flags, moistu
   assert.throws(() => GameSimulation.load(JSON.stringify(missing), f.crops));
   missing.version = 13; missing.runtime.disasters.flags |= 0x100; missing.runtime.disasterFlags |= 0x100;
   const loaded = GameSimulation.load(JSON.stringify(missing), f.crops).simulation, migrated = saved(loaded);
-  assert.deepEqual(migrated.runtime.random, missing.runtime.random); assert.deepEqual(migrated.scenario, missing.scenario);
+  assert.deepEqual(migrated.runtime.random, missing.runtime.random);
+  assert.deepEqual(migrated.scenario, { ...missing.scenario, farm: { ...missing.scenario.farm, equipmentPacingByte: null } });
   assert.deepEqual(migrated.runtime.weather, missing.runtime.weather); assert.equal(migrated.runtime.disasters.flags, 0x104);
   assert.deepEqual(migrated.runtime.waterDisasters, { counter: 0, scanning: false, scanX: 0, scanY: 0, rawFF6C: 0, rawFF6E: 0 });
   assert.equal(loaded.getSnapshot().disasterNotices.length, 0); assert.equal(loaded.getSnapshot().lastDisasterResult, null);

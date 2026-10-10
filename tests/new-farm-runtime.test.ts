@@ -29,7 +29,7 @@ test('starting accounts and restart phases are pinned to source instructions and
 test('cold setup is independent of SSM balances and retains unset town, calendar, rate and native queue correction', () => {
   const state = fresh();
   assert.deepEqual(state.farm, { cash: 20000, calendar: { day: 1, season: 1, week: 1, year: 1992, month: 0 },
-    timerTicks: 0, animationTicks: 0, dayDelayTicks: 256, speed: 1, paceEquipment: true, precipitationDays: 0,
+    timerTicks: 0, animationTicks: 0, dayDelayTicks: 256, speed: 1, paceEquipment: true, equipmentPacingByte: 2, precipitationDays: 0,
     autoRent: true, autoBuySeeds: true, autoClear: false, seedExpenses: 0, rentalExpenses: 0, cropIncome: 0,
     contractGains: 0, contractLosses: 0, salesAccumulator: 0, workerExpenses: 0, landExpenses: 0,
     chemicalExpenses: 0, townRegionX: 65535, townRegionY: 0 });
@@ -93,6 +93,9 @@ test('setup ownership detaches imported data while sharing canonical definition 
     (d: typeof defaults) => { d.farm.cash = -1; },
     (d: typeof defaults) => { delete (d.farm as Partial<typeof d.farm>).cash; },
     (d: typeof defaults) => { d.farm.timerTicks = 65536; },
+    (d: typeof defaults) => { d.farm.equipmentPacingByte = null; },
+    (d: typeof defaults) => { d.farm.equipmentPacingByte = 256; },
+    (d: typeof defaults) => { d.farm.equipmentPacingByte = 0; },
     (d: typeof defaults) => { d.finances.loan.principal = 0x100000000; },
     (d: typeof defaults) => { d.raw.ds4468.pop(); },
   ]) {
@@ -158,5 +161,6 @@ test('equipment pacing uses DSa8a0, independently of pause depth, and setup/resu
     copy[0x846f0 + 0xa8a0] = pacing;
     copy[0x846f0 + 0x187] = pacing ? 0 : 255;
     assert.equal(readNewFarmRuntimeDefaults(copy).farm.paceEquipment, pacing !== 0);
+    assert.equal(readNewFarmRuntimeDefaults(copy).farm.equipmentPacingByte, pacing);
   }
 });

@@ -545,6 +545,7 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
       traffic: { records: Array.from({ length: 16 }, () => Array(8).fill(0)), activeCount: 0, delay: 16, lastTick: 0 },
       market: { history: expected.runtime.cropMarketPrices.map((price: number) => [...Array(29).fill(null), price]), mood: 0, rawBC72: 0 } },
     scenario: { ...expected.scenario,
+    farm: { ...expected.scenario.farm, equipmentPacingByte: null },
     irrigation: { ...expected.scenario.irrigation, phase: 0, lastTick: 0, active: false, flow: [] } } });
   await page.clock.runFor(1100);
   await expect(page.locator('#time-status')).toContainText('Running · 6 days advanced');

@@ -60,7 +60,7 @@ test('accepted custom/geographic choices replace the retained levels; SSM import
 
 test('v21 requires bounded climate selections or explicit unknown; older saves never infer them from tables or provenance', () => {
   const generated = GameSimulation.createNew(options, assets), original = cold();
-  const current = JSON.parse(generated.save(null)); assert.equal(current.version, 21);
+  const current = JSON.parse(generated.save(null)); assert.equal(current.version, 22);
   for (const value of [null, { precipitation: 0, temperature: 3, wind: 0 }, { precipitation: 3, temperature: 0, wind: 3 }]) {
     const valid = structuredClone(current); valid.runtime.setup.climateSelection = value;
     const decoded = readNativeSave(JSON.stringify(valid)).state;
@@ -82,7 +82,7 @@ test('v21 requires bounded climate selections or explicit unknown; older saves n
       if (version === 19) delete legacy.runtime.setup.previewRaw;
       const migrated = load(JSON.stringify(legacy)), saved = JSON.parse(migrated.save(null));
       assert.equal(saved.runtime.setup.climateSelection, null);
-      assert.deepEqual(saved.scenario, initial.scenario); assert.deepEqual(saved.runtime.random, initial.runtime.random);
+      assert.deepEqual(saved.scenario, { ...initial.scenario, farm: { ...initial.scenario.farm, equipmentPacingByte: null } }); assert.deepEqual(saved.runtime.random, initial.runtime.random);
       assert.deepEqual(saved.runtime.weather, initial.runtime.weather); assert.deepEqual(saved.runtime.market, initial.runtime.market);
       assert.deepEqual(JSON.parse(load(migrated.save(null)).save(null)), JSON.parse(migrated.save(null)));
       assert.equal(migrated.importOriginal(source('SCEN4.SSM'), crops).simulation.getSnapshot().setup.climateSelection, null);

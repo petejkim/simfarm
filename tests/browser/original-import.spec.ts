@@ -129,3 +129,29 @@ test('loaded pause depth decides original resume pacing for both running and pau
     expect((await save(page, 'pause-next')).data).toEqual(JSON.parse(expected.save(null)));
   }
 });
+
+test('equipment pacing bytes survive browser checkpoints; v21 keeps unknown identity and rejects malformed v22 atomically', async ({ page }) => {
+  await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const current = (await save(page, 'byte-before')).data;
+  const legacy = structuredClone(current); legacy.version = 21; delete legacy.scenario.farm.equipmentPacingByte;
+  await load(page, Buffer.from(JSON.stringify(legacy)), 'legacy.json');
+  const migrated = (await save(page, 'byte-migrated')).data;
+  expect(migrated.version).toBe(22);
+  expect(migrated).toEqual({ ...current, scenario: { ...current.scenario, farm: { ...current.scenario.farm, equipmentPacingByte: null } } });
+  await page.locator('#next-day').click();
+  const advanced = (await save(page, 'byte-advanced')).data; expect(advanced.scenario.farm.equipmentPacingByte).toBeNull();
+  for (const byte of [undefined, -1, 256, 0.5, '2']) {
+    const bad = structuredClone(advanced); bad.scenario.farm.equipmentPacingByte = byte;
+    await page.locator('#load-farm-file').setInputFiles({ name: 'bad-byte.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
+    await expect(page.locator('#save-status')).toContainText('equipment pacing');
+    expect((await save(page, 'byte-rejected')).data).toEqual(advanced);
+  }
+  for (const [byte, depth, expected] of [[3, 0, 3], [255, 2, 255], [255, 1, 2], [0, 0, 0]]) {
+    const bytes = Buffer.from(source('SCEN4.SSM')); bytes[0x21718] = byte; bytes[0x21719] = depth;
+    await load(page, bytes, 'source.SSM'); const imported = (await save(page, 'byte-original')).data;
+    expect(imported.scenario.farm.equipmentPacingByte).toBe(expected);
+    expect(imported.scenario.farm.paceEquipment).toBe(expected !== 0);
+    await load(page, Buffer.from(JSON.stringify(imported)), 'checkpoint.json');
+    expect((await save(page, 'byte-restored')).data).toEqual(imported);
+  }
+});

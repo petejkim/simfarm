@@ -34,7 +34,7 @@ export function readNewFarmRuntimeDefaults(executable: Uint8Array): NewFarmRunti
     farm: {
       cash: dword(0x3e48), calendar: { day: word(0x124e), season: word(0x1250), week: word(0x1252), year: word(0x1254), month: word(0x1256) },
       timerTicks: word(0x139e), animationTicks: word(0x13a0), dayDelayTicks: word(0x1f8c), speed: word(0x1f90),
-      paceEquipment: Boolean(byte(0xa8a0)), precipitationDays: word(0x2412),
+      paceEquipment: Boolean(byte(0xa8a0)), equipmentPacingByte: byte(0xa8a0), precipitationDays: word(0x2412),
       autoRent: Boolean(byte(0xa89d)), autoBuySeeds: Boolean(byte(0xa89c)), autoClear: Boolean(byte(0xa89f)),
       seedExpenses: dword(0x3e78), rentalExpenses: dword(0x3ea8), cropIncome: dword(0x3e60), contractGains: dword(0x3e6c),
       contractLosses: dword(0x3e84), salesAccumulator: dword(0x3e44), workerExpenses: dword(0x3e88), landExpenses: dword(0x3e80),

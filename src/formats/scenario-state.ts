@@ -11,6 +11,8 @@ export interface SavedFarmState {
   dayDelayTicks: number;
   speed: number;
   paceEquipment: boolean;
+  /** Full DSa8a0 / SSM21718. Legacy checkpoints retain only the boolean gate. */
+  equipmentPacingByte: number | null;
   precipitationDays: number;
   autoRent: boolean;
   autoBuySeeds: boolean;
@@ -44,5 +46,11 @@ export function readFarmState(bytes: Uint8Array, workerExpenses = 0): SavedFarmS
     landExpenses: b.u32(0x216b4), // SF-014: second 3e80 read overwrites the entry at 0x216ac.
     chemicalExpenses: b.u32(0x216bc), // 0x45e06 -> 6190:3ea0.
     autoBuySeeds: Boolean(bytes[0x2173b]), autoClear: Boolean(bytes[0x21737]),
-    seedExpenses: b.u32(0x216a4), paceEquipment: Boolean(bytes[0x21718]) };
+    seedExpenses: b.u32(0x216a4), paceEquipment: Boolean(b.slice(0x21718, 1)[0]), equipmentPacingByte: b.slice(0x21718, 1)[0] };
+}
+
+/** Verified source stores update both the byte and its nonzero machinery gate. */
+export function setEquipmentPacingByte(farm: SavedFarmState, value: number): void {
+  if (!Number.isInteger(value) || value < 0 || value > 255) throw new Error('Invalid equipment pacing byte');
+  farm.equipmentPacingByte = value; farm.paceEquipment = value !== 0;
 }

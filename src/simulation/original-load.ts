@@ -6,6 +6,7 @@ import { readNativeSave, writeNativeSave } from '../formats/native-save';
 import { loadMarketCropPrices } from './market';
 import type { SimulationState } from './save-state';
 import { transferCalendarPhase } from './calendar-clock';
+import { setEquipmentPacingByte } from '../formats/scenario-state';
 
 /** In-game SSM transfer4543c..4644c and successful menu return43284.
  * Does not rerun chooser setup, weather generation or traffic allocation.
@@ -17,7 +18,7 @@ export function transferOriginalFarm(previous: SimulationState, bytes: Uint8Arra
   //Only loaded depth1 reaches the1->0 pacing writes at3f505; the old
   //browser pause state cannot decide this branch. Native play stays paused.
   if (bytes[0x21719] === 1) {
-    state.scenario.farm.paceEquipment = true; //0x3f505 writes2 to DSa8a0.
+    setEquipmentPacingByte(state.scenario.farm, 2); //0x3f505 writes2 to DSa8a0.
     state.disasters.frameDelay = 4;
     state.scenario.farm.dayDelayTicks = 256; state.scenario.farm.speed = 1;
     state.traffic.delay = 16; state.scenario.irrigation.delay = 2;

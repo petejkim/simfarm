@@ -5,6 +5,7 @@ import { validateCalendar } from './calendar';
 import { createClearingEffects } from './clearing-effects';
 import { resetAnnualLedgers } from './annual-ledger';
 import type { WeatherState } from './weather';
+import { setEquipmentPacingByte } from '../formats/scenario-state';
 
 /** Cold native state before property/town/calendar finalization. The unset town
  * coordinate is intentional; this intermediate state is not a playable farm. */
@@ -15,6 +16,8 @@ export function createSetupRuntime(defaults: NewFarmRuntimeDefaults, records: Se
   for (const key of ['paceEquipment', 'autoRent', 'autoBuySeeds', 'autoClear'] as const) {
     if (typeof farm[key] !== 'boolean') throw new Error('Invalid starting farm option');
   }
+  if (farm.equipmentPacingByte === null || !valid(farm.equipmentPacingByte, 255) || farm.paceEquipment !== (farm.equipmentPacingByte !== 0))
+    throw new Error('Invalid starting equipment pacing byte');
   for (const key of ['timerTicks', 'animationTicks', 'dayDelayTicks', 'speed', 'precipitationDays', 'townRegionX', 'townRegionY'] as const) {
     if (!valid(farm[key], 65535)) throw new Error('Invalid starting farm word');
   }
@@ -53,7 +56,7 @@ export function resetSetupRuntime(state: SetupRuntime, weather: Pick<WeatherStat
   f.town.recreationCount = f.town.airportCount = 0;
   f.accounts.assets.equipmentBookValue = 0; //3e54 building ledger is omitted (SF-065).
   farm.autoRent = farm.autoBuySeeds = true; farm.autoClear = false;
-  farm.paceEquipment = true; //0x4072b writes2 to DSa8a0; consumer tests nonzero.
+  setEquipmentPacingByte(farm, 2); //0x4072b writes2 to DSa8a0; consumer tests nonzero.
   farm.calendar = { day: 1, season: 1, week: 1, year: 1992, month: 0 };
   farm.timerTicks = farm.animationTicks = farm.salesAccumulator = 0;
   f.homestead.rank = 255;
