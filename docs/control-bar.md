@@ -27,7 +27,7 @@ Source date formatter2a4dc refers to DS5af0, `Week %d of %s %d`. The current nat
 
 ## Native increment
 
-The strip uses fixed2× desktop coordinates (source640×48 becomes1280×96), including the original unused space after the menu headings. There is no breakpoint that compresses/reorders this strip for phones. A narrow browser can scroll horizontally; a mobile layout is future work. Existing prototype panels below it still have their older styles until replaced by original windows.
+The strip uses fixed1× desktop coordinates (source640×48 displays at640×48), including the original unused space after the menu headings. There is no breakpoint that compresses/reorders this strip for phones. A narrow browser can scroll horizontally; a mobile layout is future work. Working panels open over the permanent Edit workspace; their original interiors remain under reconstruction.
 
 Import keeps the complete preservation bitmap and also writes ignored `control-bar.png`. `readControlBar` validates dimensions and erases only five caption rectangles with source palette12, RGB194/194/194: Buy(3,20,26,10), Sell(35,20,26,10), Edit(225,19,30,12), Date(416,2,44,12), Funds(416,18,44,12). Coordinates are local to the bitmap. Every other pixel is unchanged. React renders the captions, live date/funds, menu headings and popup entries as actual text. Other toolbar pictograms remain source art. Replacement font metrics and the cleared Edit caption surface are not pixel-identical to the original lettering.
 

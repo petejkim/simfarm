@@ -20,13 +20,13 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
   await start(page);
   const bar = page.getByRole('toolbar', { name: 'Game toolbar' });
   const box = await bar.boundingBox();
-  expect(box).toEqual({ x: 0, y: 32, width: 1280, height: 64 });
+  expect(box).toEqual({ x: 0, y: 16, width: 640, height: 32 });
   expect(await bar.getByRole('button').evaluateAll(els => els.map(el => el.getAttribute('aria-label')))).toEqual(
     ['Buy', 'Sell', 'Evaluation', 'Map', 'Weather', 'Balance Sheet', 'Bank', 'Edit', 'Market Value']);
   for (const [index, button] of (await bar.getByRole('button').all()).entries()) {
-    expect(await button.boundingBox()).toEqual({ x: index * 64, y: 32, width: 64, height: 64 });
+    expect(await button.boundingBox()).toEqual({ x: index * 32, y: 16, width: 32, height: 32 });
   }
-  expect(await page.locator('#windows-menu-button').boundingBox()).toMatchObject({ x: 416, y: 0, width: 112, height: 32 });
+  expect(await page.locator('#windows-menu-button').boundingBox()).toMatchObject({ x: 208, y: 0, width: 56, height: 16 });
   await expect(page.locator('#window-market')).toBeDisabled();
   const caption = await page.locator('#window-buy .toolbar-caption').evaluate(el => {
     const range = document.createRange(); range.selectNodeContents(el);
@@ -43,8 +43,8 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
   await page.screenshot({ path: 'artifacts/browser-control-bar-desktop.png' });
   await page.setViewportSize({ width: 390, height: 844 }); await page.evaluate(() => scrollTo(0, 0));
   expect(await bar.boundingBox()).toEqual(box);
-  expect(await page.locator('#windows-menu-button').boundingBox()).toMatchObject({ x: 416, width: 112 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  expect(await page.locator('#windows-menu-button').boundingBox()).toMatchObject({ x: 208, width: 56 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(640);
 });
 
 test('Windows menu and toolbar route to the same controls; Edit focuses the map without changing the farm', async ({ page }) => {

@@ -38,6 +38,7 @@ test('original geographic panel paints exact markers and bars, preserves selecti
   await start(page); const before = await save(page); await chooser(page); await pixels(page, 2, 8);
   await page.locator('[data-region="1,3"]').click(); await pixels(page, 1, 3);
   await expect(page.locator('#region-selection')).toContainText('Scenario 3');
+  expect(await page.locator('#geographic-chooser').boundingBox()).toMatchObject({ width: 472, height: 328 });
   await page.mouse.move(0, 0); await page.locator('#geographic-chooser').screenshot({ path: 'artifacts/browser-region-artwork-desktop.png' });
   await page.locator('[data-region="1,3"]').focus(); await page.keyboard.press('ArrowRight');
   await pixels(page, 2, 3); expect(await save(page)).toEqual(before);
@@ -48,6 +49,7 @@ test('original geographic panel paints exact markers and bars, preserves selecti
   await page.locator('#geographic-chooser').screenshot({ path: 'artifacts/browser-region-artwork-mobile.png' });
   await reveal(page, '#region-design'); await page.locator('#region-design').focus(); await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: 'Design your terrain' })).toBeFocused();
+  expect(await page.locator('#terrain-design').boundingBox()).toMatchObject({ width: 352, height: 304 });
   for (const key of ['precipitation', 'temperature', 'wind'] as const)
     await expect(page.locator(`#terrain-${key}`)).toHaveValue(String(selected[key]));
   // The source fill helper truncates both X edges to bytes:27/54 become24/48.

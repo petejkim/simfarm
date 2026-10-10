@@ -99,9 +99,11 @@ Native1× now takes four seconds per day; the0.25×–16× slider and saved sele
 
 ## Current UI increment: original main control strip
 
-The source toolbar and Windows menu are restored at fixed2× desktop coordinates, with React captions/live values and source art stripped of lettering. Window launchers currently target existing native panels; this is not full dialog reconstruction. See [control-bar.md](control-bar.md). Next replace the dashboard with the always-visible, maximized, non-resizable Edit workspace and restore its original tools/window interactions. Original Buy/Sell, Bank, Map/land and field/planner dialogs follow. Mobile rearrangement remains deferred.
+The source toolbar and Windows menu are restored at fixed1× desktop coordinates, with React captions/live values and source art stripped of lettering. Window launchers currently target existing native panels; this is not full dialog reconstruction. See [control-bar.md](control-bar.md). Next replace the dashboard with the always-visible, maximized, non-resizable Edit workspace and restore its original tools/window interactions. Original Buy/Sell, Bank, Map/land and field/planner dialogs follow. Mobile rearrangement remains deferred.
 
 
 ## Permanent Edit workspace increment
 
 The dashboard stack has moved into nonmodal game windows, leaving the canvas maximized beneath the source strip with the original two-column tool art. Edit cannot be closed or resized. Options/Speed/Disasters now expose the existing native controls; File and window launchers remain available. This implements the workspace structure, not complete original dialog interiors or tool-callback fidelity. Next restore individual Bank/Buy/Sell/land and field dialogs from source art/descriptors. See [edit-workspace.md](edit-workspace.md).
+
+UI scale correction: render original artwork at1× to match default terrain pixels, including the control strip, Edit palette, region/setup graphics and crop illustrations. Preserve source layout and permanent Edit. Continue original dialog reconstruction after this correction; mobile redesign remains deferred.

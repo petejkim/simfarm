@@ -90,3 +90,5 @@ Expand **Disasters** below **Machinery** to allow or disable new disasters, manu
 
 
 In **Disasters**, **Start frost** damages sensitive crops and disperses an active locust swarm. **Create crop circles** chooses a field; wheat, barley, oats and sorghum are eligible. Successful circles play the original alien MIDI when music is enabled; **Locate crop circles** finds the resulting pattern. **Start high winds** invokes the original wind event. **Show toxic-land warning** records the original warning without adding a new pollution mechanic. Active effects and warnings survive Save farm / Load farm, which does not replay their start audio.
+
+Original UI artwork uses1× source pixels, matching default terrain zoom: the640×32 control strip and48×208 Edit palette retain their original spacing. Edit stays maximized. Small-screen layout changes remain a future task.

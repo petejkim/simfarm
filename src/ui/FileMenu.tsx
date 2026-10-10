@@ -46,7 +46,7 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
       onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
       {data.menus.map((entry, index) => <button key={entry.offset} ref={index === 0 ? button : undefined}
         id={`${entry.title.toLowerCase()}-menu-button`} disabled={busy}
-        style={{ left: entry.header.x * 2, width: entry.header.width * 2, paddingLeft: index === 0 ? 16 : 0 }}
+        style={{ left: entry.header.x, width: entry.header.width, paddingLeft: index === 0 ? 8 : 0 }}
         title={undefined}
         aria-haspopup={index === 0 || index === 3 ? 'menu' : undefined} aria-expanded={index === 0 || index === 3 ? open === index : undefined}
         aria-controls={index === 0 || index === 3 ? `original-${entry.title.toLowerCase()}-menu` : undefined}
@@ -54,7 +54,7 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
           if ((index === 0 || index === 3) && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) { event.preventDefault(); setOpen(index); }
         }}>{entry.title}</button>)}
       {active && <div ref={menu} id={`original-${active.title.toLowerCase()}-menu`} className="original-menu-popup" role="menu" aria-label={active.title}
-        style={{ left: active.popup.x * 2, width: active.popup.width * 2 }} onKeyDown={event => {
+        style={{ left: active.popup.x, width: active.popup.width }} onKeyDown={event => {
           const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
           const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
           if (event.key === 'Escape') { event.preventDefault(); closeMenu(); }
