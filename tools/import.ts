@@ -1,3 +1,4 @@
+import { readMapArtwork } from '../src/formats/map-window';
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -48,6 +49,7 @@ for (const e of entries) {
 }
 await json('buy-catalog.json', readBuyCatalog(exe));
 await png('buy-cards.png', readBuyCards(asset('alltiles.btl'), palette));
+await png('map-window.png', readMapArtwork(asset('mapwndo.bmp'), palette));
 await png('sell-window.png', readSellArtwork(asset('sellwndo.bmp'), palette));
 await png('sell-conditions.png', readSellConditions(asset('ega16til.til'), palette));
 await png('buy-window.png', readBuyArtwork(asset('buywndo.bmp'), palette));

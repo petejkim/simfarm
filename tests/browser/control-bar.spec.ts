@@ -62,7 +62,7 @@ test('Windows menu and toolbar route to the same controls; Edit focuses the map 
     await open('bank', 'Bank'); await expect(page.locator('#loan-panel')).toBeVisible();
     await expect(page.locator('#loan-panel')).toBeFocused();
     await open('buy', 'Buy'); await expect(page.getByRole('region', { name: 'Buy catalog' })).toBeVisible();
-    await open('map', 'Map'); await expect(page.locator('#map-tool')).toHaveValue('land');
+    await open('map', 'Map'); await expect(page.getByRole('region', { name: 'Farm overview' })).toBeVisible();
     await open('sell', 'Sell'); await expect(page.getByRole('region', { name: 'Sell catalog' })).toBeFocused();
     await open('weather', 'Weather'); await expect(page.locator('#farm-weather')).toBeFocused();
     await open('evaluation', 'Evaluation'); await expect(page.locator('#farm-report')).toHaveAttribute('open', '');

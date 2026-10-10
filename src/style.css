@@ -245,3 +245,31 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .sale-accessible-detail{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .sell-feedback{padding:4px;font:11px Arial,sans-serif}
 .sell-feedback p{margin:2px 0}
+
+/* Map DS68ce:288×240 client, miniature at72,0; source UI scale1×. */
+.game-window[data-window=map]{left:80px;top:64px;right:auto;width:288px;border:0;max-height:calc(100% - 80px)}
+.game-window[data-window=map] .game-window-body{padding:0}
+.overview-window{position:relative;width:288px;height:240px;flex-shrink:0;color:#000;font:10px/10px monospace}
+.overview-window>img{display:block;image-rendering:pixelated;pointer-events:none}
+.game-window .overview-window button{position:absolute;padding:0;border:0;border-radius:0;background:transparent;color:#000;font:bold 10px Arial,sans-serif}
+.game-window .overview-window button:hover:not(:disabled){background:#fff2}
+.overview-mode{width:28px;height:29px}
+.overview-mode[aria-pressed=true]{box-shadow:inset 1px 1px #000,inset -1px -1px #fff}
+.game-window .overview-window .overview-help-button{left:25px;top:123px;width:28px;height:28px;font:bold 26px/28px monospace}
+.overview-land-label{position:absolute;left:20px;top:161px;width:36px;text-align:center;font:bold 10px/10px monospace}
+.overview-land-value{position:absolute;left:10px;top:183px;width:56px;text-align:center;font:10px/10px monospace}
+.overview-viewport{position:absolute;left:72px;top:0;width:192px;height:192px;overflow:hidden}
+.overview-viewport canvas{display:block;width:192px;height:192px;image-rendering:pixelated;touch-action:none}
+.overview-edit-outline{position:absolute;pointer-events:none;border:1px solid #fff;outline:1px solid #000;outline-offset:-2px}
+.overview-mode-name{position:absolute;left:8px;width:144px;text-align:center;font:10px/10px monospace}
+.overview-low,.overview-high{position:absolute;top:199px;font:10px/10px monospace}
+.overview-low{left:24px}.overview-high{left:80px}
+.overview-gradient{position:absolute;left:32px;top:210px;width:64px;height:8px;image-rendering:pixelated;outline:2px groove #fff}
+.game-window .overview-window .overview-trade{left:160px;top:202px;width:48px;height:24px;border:2px outset #fff;background:#c2c2c2}
+.overview-close{left:224px;top:202px;width:48px;height:24px}
+.overview-help{position:absolute;left:0;top:0;width:80px;height:120px;background:#c2c2c2;color:#000}
+.overview-help span{position:absolute;font:7px/8px monospace;white-space:nowrap}
+.overview-help span:before{content:'';position:absolute;right:100%;top:3px;width:16px;border-top:1px solid #000}
+.overview-help span:nth-child(even):before{width:8px}
+.overview-feedback:has(p){padding:4px;font:11px Arial,sans-serif}
+.overview-feedback p{margin:2px 0}

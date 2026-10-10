@@ -1,3 +1,4 @@
+import { sellManualLand, type ManualLandSaleResult } from './manual-land-sale';
 import { expandCropCatalog } from './all-crops';
 import { createOriginalSaveStartup, restartOriginalSaveStartup, type OriginalStartupOptions } from './original-startup';
 import { calendarDayDue, ticksUntilCalendarDay } from './calendar-clock';
@@ -152,6 +153,7 @@ export interface GameSnapshot {
   lastSupplyMoveResult: SupplyMoveResult | null;
   lastBuildingInteriorResult: BuildingInteriorResult | null;
   lastLandResult: LandPurchaseResult | null;
+  lastLandSaleResult: ManualLandSaleResult | null;
   lastBuildingResult: BuildingPlacementResult | null;
   lastCropSupplyPurchaseResult: (CropSupplyPurchaseResult & { productType: number }) | null;
   lastEquipmentPurchaseResult: (EquipmentPurchaseResult & { equipmentType: number }) | null;
@@ -173,7 +175,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'start-disaster'; kind: MovingDisasterKind | WaterDisasterKind | StationaryDisasterKind | 'wind' }
   | { type: 'set-disasters-enabled'; enabled: boolean }
   | { type: 'set-auto-clear'; enabled: boolean }
-  | { type: 'buy-land'; regionX: number; regionY: number }
+  | { type: 'buy-land' | 'sell-land'; regionX: number; regionY: number }
   | { type: 'build'; buildingType: number; x: number; y: number }
   | { type: 'move-supply'; selected: SupplyMoveTarget; x: number; y: number }
   | { type: 'move-equipment'; selected: EquipmentMoveTarget; x: number; y: number }
@@ -266,6 +268,7 @@ export class GameSimulation {
   private lastSupplyMoveResult: SupplyMoveResult | null = null;
   private lastBuildingInteriorResult: BuildingInteriorResult | null = null;
   private lastLandResult: LandPurchaseResult | null = null;
+  private lastLandSaleResult: ManualLandSaleResult | null = null;
   private lastCropSupplyPurchaseResult: GameSnapshot['lastCropSupplyPurchaseResult'] = null;
   private lastEquipmentPurchaseResult: GameSnapshot['lastEquipmentPurchaseResult'] = null;
   private lastBuildingResult: BuildingPlacementResult | null = null;
@@ -509,6 +512,8 @@ export class GameSimulation {
       this.scenario.farm.autoClear = command.enabled;
     } else if (command.type === 'buy-land') {
       this.lastLandResult = purchaseLand(this.scenario, command.regionX, command.regionY, this.weather.soilMoisture);
+    } else if (command.type === 'sell-land') {
+      this.lastLandSaleResult = sellManualLand(this.scenario, this.finances, command.regionX, command.regionY, this.weather.soilMoisture);
     } else if (command.type === 'build') {
       this.lastBuildingResult = purchaseBuilding(this.scenario, this.finances, command.buildingType, command.x, command.y, this.weather.soilMoisture);
     } else if (command.type === 'move-supply') {
@@ -877,6 +882,7 @@ export class GameSimulation {
       lastBuildingInteriorResult: this.lastBuildingInteriorResult ? { ...this.lastBuildingInteriorResult } : null,
       lastRemovalResult: this.lastRemovalResult ? { ...this.lastRemovalResult } : null,
       lastLandResult: this.lastLandResult ? { ...this.lastLandResult } : null,
+      lastLandSaleResult: this.lastLandSaleResult ? { ...this.lastLandSaleResult, ...(this.lastLandSaleResult.ok ? { demolishedBuildings: [...this.lastLandSaleResult.demolishedBuildings] } : {}) } : null,
       lastCropSupplyPurchaseResult: this.lastCropSupplyPurchaseResult ? { ...this.lastCropSupplyPurchaseResult } : null,
       lastEquipmentPurchaseResult: this.lastEquipmentPurchaseResult ? { ...this.lastEquipmentPurchaseResult } : null,
       lastBuildingResult: this.lastBuildingResult ? { ...this.lastBuildingResult } : null,

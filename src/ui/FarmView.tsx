@@ -1,3 +1,4 @@
+import { MapWindow } from './MapWindow';
 import { BuyWindow } from './BuyWindow';
 import type { ShopProduct } from '../simulation/shop-product';
 import { GameWindow, useWindows } from './GameWindow';
@@ -138,7 +139,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     if (window !== 'edit') setBuyPlacement(null);
     if (window === 'buy') { setNavigation(null); return; }
     if (window === 'bank') { navigate('loans'); return; }
-    if (window === 'map') { navigate('land'); return; }
+    if (window === 'map') { setNavigation(null); return; }
     if (window === 'evaluation' || window === 'balance') { setReportOpen(true); windows.show('evaluation'); }
     if (window === 'balance') setTaxOpen(true);
     if (window === 'weather') windows.show('speed');
@@ -309,6 +310,8 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     <GameWindow windowKey="disasters" title="Disasters">
     {snapshot && <DisasterPanel snapshot={snapshot} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     </GameWindow>
+    {data && snapshot && <MapWindow assets={assets} snapshot={snapshot} onCommand={command=>simulation?.dispatch(command)} viewportRef={viewportRef} zoom={zoom}
+      onLocate={(x,y)=>setFocus({x:x+(viewportRef.current?.clientWidth??0)/(32*zoom),y:y+(viewportRef.current?.clientHeight??0)/(32*zoom)})} />}
     {data && snapshot && <SellWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={sellRef} onCommand={command=>simulation?.dispatch(command)} />}
     {data && snapshot && <BuyWindow assets={assets} snapshot={snapshot} tiles={data.tiles} onBuy={beginPurchase} />}
     {resource.status !== 'ready' && <div className="loading"><p role="status">{resource.status === 'error' ? resource.error : 'Loading farm…'}</p>
