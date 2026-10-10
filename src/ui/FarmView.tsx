@@ -162,6 +162,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     }
   }
   return <>
+    {simulation && <SaveControls simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} />}
     {simulation && <NewFarmControls assets={assets} simulation={simulation} open={newFarmOpen} onOpenChange={setNewFarmOpen} onCreate={onLoad} />}
     <section className="toolbar">
       <div><label>Original farm <select id="scenario" value={id ?? 'generated'} onChange={e => onScenarioChange(Number(e.target.value))}>
@@ -182,7 +183,6 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
       </select></label><label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
       </select></label><button id="center" disabled={!data || Boolean(snapshot?.aircraftFlight)} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
-      {simulation && <SaveControls simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} />}
     </section>
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     {data && snapshot && <FarmNavigation tool={mapTool} blocked={Boolean(snapshot.pendingTown || snapshot.finances.defaultDecision || snapshot.aircraftFlight)} onNavigate={navigate} />}

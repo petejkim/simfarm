@@ -10,6 +10,7 @@ import { readClimatePresets, readSetupMap, readScenarioChooser } from '../src/fo
 import { readNewFarmRecordDefaults } from '../src/formats/new-farm-records';
 import { readNewFarmRuntimeDefaults } from '../src/formats/new-farm-runtime';
 import { readTrafficDefaults } from '../src/formats/traffic';
+import { readOriginalMainMenus } from '../src/formats/main-menus';
 import { readPalette, readBitmap, tileAtlas, miniTileAtlas, decodePlanar, readInterleavedScreen, type Raster } from '../src/formats/graphics';
 import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
 import { readCrop, type CropDefinition } from '../src/formats/crop';
@@ -35,6 +36,7 @@ await json('new-farm-setup.json', { ...setupMap, ...readScenarioChooser(exe), tr
 await json('new-farm-records.json', readNewFarmRecordDefaults(exe));
 await json('new-farm-runtime.json', readNewFarmRuntimeDefaults(exe));
 await json('traffic-defaults.json', readTrafficDefaults(exe));
+await json('main-menus.json', readOriginalMainMenus(exe));
 for (const e of entries) {
   await writeFile(join(output, 'raw', e.name), e.bytes);
   if (e.name.endsWith('.bmp')) await png(`${e.name}.png`, readBitmap(e.bytes, palette));

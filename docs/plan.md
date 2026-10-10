@@ -72,3 +72,6 @@ Original geographic saved-game result1 is now connected: temporary cold/retained
 
 
 Main-menu research starting points in the unchanged EXE: literal File/Options/Speed/Windows strings at8a1bb/8a1c0/8a1c8/8a1ce, Pause/Slow/Normal/Fast at8ec37/8ec3d/8ec42/8ec49, and Load Game/New Game at8ecaf/8ecc6. These are verified ASCII locations only; menu descriptor geometry, item ordering, command dispatch and enabled-state ownership still need tracing before UI reconstruction.
+
+
+The original main-menu descriptor and item chains are recovered, including source order, geometry, initial checks and File dispatch targets. Restore the File menu first using React text and the existing canonical file/new-game actions, with documented browser download/quit policies; Load Crop stays explicitly unavailable until its separate descriptor/callback is reconstructed. Other menu headers are retained for subsequent integration. Next audit Speed's independent delays and pause ownership (including SF-153's Slow omission), then connect remaining Options/Windows/Disasters callbacks and restore their original dialogs/artwork. Existing enhancement controls and speed slider remain usable. Original About/file-picker layout, title lifecycle, nested-window timing and broader fidelity remain unfinished; this menu increment does not complete the port.
