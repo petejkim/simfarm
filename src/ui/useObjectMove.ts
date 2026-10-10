@@ -7,7 +7,7 @@ import type { MapPreview } from '../render/world-renderer';
 type Selection={kind:'equipment';target:EquipmentMoveTarget}|{kind:'supply';target:SupplyMoveTarget};
 const reasons:Record<string,string>={
   'outside-map':'Choose a tile inside the map.','no-equipment':'Choose machinery or a supply to move.','no-supply':'Choose machinery, seeds, harvested crops, chemicals, feed or a trough.',
-  'equipment-busy':'This machine is in use or already moving.','building-closed':'Open the building with View object before selecting its machinery.',
+  'equipment-busy':'This machine is in use or already moving.','building-closed':'Open the building with a right-click or View object before selecting its machinery.',
   'use-aircraft-controls':'Use Aircraft controls to fly this plane.','not-owned':'Choose a destination on your land.',
   'inconsistent-equipment':'This machine has inconsistent storage or attachment records.','inconsistent-supply':'This supply has inconsistent inventory or storage records.',
   'target-changed':'The selected object has changed. Cancel and select it again.','equipment-here':'A machine occupies this tile.',

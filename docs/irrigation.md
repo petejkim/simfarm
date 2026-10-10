@@ -55,3 +55,6 @@ The live panel is **Map tool → Irrigation**. GameSimulation dispatches placeme
 
 
 Warm-transfer follow-up: `readIrrigation(bytes, retained)` now preserves source registry bytes129..191, active wave, phase and last tick while applying the original overlapping writes/count and saved delay. It accepts counts44..64 only with a valid retained tail; cold imports keep their rejection. This is a detached decoder phase, not a live original-file load. The in-game return callback can subsequently assign delay2 when nested pause depth reaches0; do not confuse that with the decoded SSM delay. See original-load-startup.md and SF-087/SF-149.
+
+
+Original map valve interaction is now recovered separately from construction: right-button press toggles122/123 or124/125, bypasses construction-only gates, and updates field byte6 bit0 at the source(x+1,y+1) lookup point. The orientation asymmetry is retained as SF-162 with unproven downstream meaning. See [map-interactions.md](map-interactions.md). Older explicit form controls retain their documented native tile-only policy; full primary-button and held construction gestures remain unfinished.

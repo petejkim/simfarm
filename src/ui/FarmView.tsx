@@ -1,4 +1,5 @@
 import { useObjectMove } from './useObjectMove';
+import { mapObjectInteraction } from '../simulation/map-interaction';
 import { ExamineWindow } from './ExamineWindow';
 import { FieldToolMenu } from './FieldToolMenu';
 import { SPRAY_TOOLS, type FieldMapTool } from '../formats/field-tool-menu';
@@ -84,6 +85,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   const simulation = resource.status === 'ready' ? resource.value.simulation : null;
   const [fieldMenu,setFieldMenu]=useState<'plant'|'spray'|null>(null),[fieldMapTool,setFieldMapTool]=useState<FieldMapTool|null>(null);
   const [fieldToolMessage,setFieldToolMessage]=useState('');
+  const [interactionMessage,setInteractionMessage]=useState('');
   const [buyPlacement, setBuyPlacement] = useState<Pick<ShopProduct, 'type' | 'name'> | null>(null);
   const [toolPointer, setToolPointer] = useState<MapFocus | null>(null), [buyMessage, setBuyMessage] = useState('');
   const snapshot = useSyncExternalStore(simulation?.subscribe ?? subscribeEmpty, simulation?.getSnapshot ?? emptySnapshot);
@@ -160,6 +162,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   const [livestockType, setLivestockType] = useState(161);
   function chooseTool(tool: MapTool) { objectMove.cancel();setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null); setMapTool(tool); windows.show('actions'); }
   function editTool(tool: EditTool) {
+    setInteractionMessage('');
     objectMove.cancel();
     setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null);
     if (tool === 'View object') { setMapTool('inspect'); windows.show(null); }
@@ -271,6 +274,23 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     return()=>window.removeEventListener('keydown',cancel);
   },[objectMove.active,cancelObjectMove]);
   function cancelPurchase() { setBuyPlacement(null); setToolPointer(null); setMapTool('inspect'); setBuyMessage(''); }
+  function interactWithMap(index:number){
+    if(!simulation)return;
+    const current=simulation.getSnapshot();
+    if(current.pendingTown||current.finances.defaultDecision||current.aircraftFlight)return;
+    const {x,y}=worldPosition(index),command=mapObjectInteraction(current.scenario,x,y);
+    setInteractionMessage('');
+    if(!command)return;
+    simulation.dispatch(command);
+    const next=simulation.getSnapshot();
+    if(command.type==='toggle-building-interior'){
+      const result=next.lastBuildingInteriorResult;
+      if(result?.ok)setInteractionMessage(result.open?'Building opened.':'Building closed.');
+    }else if(command.type==='toggle-valve'){
+      const result=next.lastIrrigationResult;
+      if(result?.ok)setInteractionMessage(result.tile&1?'Valve closed.':'Valve opened.');
+    }else if(next.lastNetworkResult?.ok)setInteractionMessage(command.tool==='open-gate'?'Gate opened.':'Gate closed.');
+  }
   function landCommand(command: GameCommand) {
     if (!simulation) return;
     simulation.dispatch(command);
@@ -382,7 +402,8 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
         <FarmMap viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
-          field={field} selection={selection} preview={preview} onPointer={onMapPointer} onSelect={index => {
+          field={field} selection={selection} preview={preview} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {
+            setInteractionMessage('');
             setSelection(index);
             const { x, y } = worldPosition(index);
             if(objectMove.active){objectMove.click(x,y);return;}
@@ -392,7 +413,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
             selectField(selected?.slot ?? null,false);
             windows.show(mapTool==='inspect'?(selected?'schedule':'examine'):'actions');
           }} />
-        <div className="map-footer">{objectMove.active&&<><button id="cancel-object-move" onClick={cancelObjectMove}>Cancel move</button><span id="object-move-result" role="status">{objectMove.message}</span></>}<span id="field-tool-result" role="status">{fieldToolMessage}</span>{fieldMapTool&&<button id="cancel-field-tool" onClick={cancelFieldTool}>Cancel field tool</button>}{buyPlacement && <button id="cancel-buy-placement" onClick={cancelPurchase}>Cancel purchase</button>}<span id="buy-result" role="status">{buyMessage}</span><span id="map-tool-hint">{objectMove.active?objectMove.hint:fieldMapTool ? fieldMapTool.kind==='plant' ? `Plant ${assets.catalog.crops.find(c=>`${c.id}.crp`===data.scenario.cropFiles[fieldMapTool.cropSlot])?.name}: click the top-left corner of a new field · Escape cancels` : `${SPRAY_TOOLS.find(t=>t.kind===fieldMapTool.kind)?.label}: click an existing field · Escape cancels` : buyPlacement ? `${buyPlacement.name}: click to place · Escape cancels` : snapshot?.aircraftFlight ? 'Following aircraft · farm calendar suspended' : mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
+        <div className="map-footer"><span id="map-interaction-result" role="status">{interactionMessage}</span>{objectMove.active&&<><button id="cancel-object-move" onClick={cancelObjectMove}>Cancel move</button><span id="object-move-result" role="status">{objectMove.message}</span></>}<span id="field-tool-result" role="status">{fieldToolMessage}</span>{fieldMapTool&&<button id="cancel-field-tool" onClick={cancelFieldTool}>Cancel field tool</button>}{buyPlacement && <button id="cancel-buy-placement" onClick={cancelPurchase}>Cancel purchase</button>}<span id="buy-result" role="status">{buyMessage}</span><span id="map-tool-hint">{objectMove.active?objectMove.hint:fieldMapTool ? fieldMapTool.kind==='plant' ? `Plant ${assets.catalog.crops.find(c=>`${c.id}.crp`===data.scenario.cropFiles[fieldMapTool.cropSlot])?.name}: click the top-left corner of a new field · Escape cancels` : `${SPRAY_TOOLS.find(t=>t.kind===fieldMapTool.kind)?.label}: click an existing field · Escape cancels` : buyPlacement ? `${buyPlacement.name}: click to place · Escape cancels` : snapshot?.aircraftFlight ? 'Following aircraft · farm calendar suspended' : mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
           ? 'Click the top-left corner of a new field' : mapTool === 'build' ? 'Click the top-left corner of a building'
           : mapTool === 'supply-move' ? 'Select a supply, then choose its destination in the movement panel'
           : mapTool === 'move' ? 'Select a machine, then choose its destination in the movement panel'

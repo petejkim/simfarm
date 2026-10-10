@@ -6,6 +6,19 @@ export type IrrigationPlacementResult = { ok: true; price: number; clearingCost:
   | { ok: false; reason: 'outside-map' | 'town-land' | 'blocked-terrain' | 'straight-ditch-required'
     | 'valve-required' | 'insufficient-cash' };
 const inMap = (x: number, y: number) => [x, y].every(n => Number.isInteger(n) && n >= 0 && n < 96);
+
+/** Original map interaction255f8..25705. No construction/ownership/cash gate.
+ * SF-162: closing122 clears field byte6 bit0; the other three transitions set it.
+ * Preserve this source write without inventing a meaning for the retained flag. */
+export function toggleMapValve(world:Scenario,x:number,y:number):IrrigationPlacementResult {
+  if(!inMap(x,y))return {ok:false,reason:'outside-map'};
+  const cell=world.cells[worldIndex(x,y)],tile=terrainTile(cell);
+  if(tile<122||tile>125)return {ok:false,reason:'valve-required'};
+  cell.terrain=(cell.terrain&0xf800)|(tile^1);
+  const field=world.fields.find(f=>f.slot!==0&&f.contains(x+1,y+1));
+  if(field)field.bytes[6]=tile===122?field.bytes[6]&~1:field.bytes[6]|1;
+  return {ok:true,price:0,clearingCost:0,tile:tile^1};
+}
 const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 // DS59c4, N/E/S/W bits. Helper0x24b54 scans only the first FOUR DS56ae
 // entries: dry, wet, crossing, valve. The fifth pump entry is not visited.
@@ -34,8 +47,8 @@ function connect(world: Scenario, x: number, y: number, crossing: boolean): void
 
 /** Source click path0x2424e..0x24a94. Its ditch/valve branches do not require
  * ownership. Native preflight makes auto-clearing and payment atomic (SF-095).
- * Open/close is an explicit native command over verified flow states; original
- * input dispatch and any additional toggle side effects remain untraced. */
+ * Open/close here remains an explicit native tile-state command. The recovered
+ * map interaction and its additional field write use toggleMapValve above. */
 export function checkIrrigationPlacement(world: Scenario, finances: FinancialState, tool: IrrigationTool,
   x: number, y: number, soilMoisture: number): IrrigationPlacementResult {
   if (!inMap(x, y)) return { ok: false, reason: 'outside-map' };

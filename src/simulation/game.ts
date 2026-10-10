@@ -82,7 +82,7 @@ import type { GameEvent, AnimalSound, AnimalVocal } from './events';
 import { purchaseBuilding, type BuildingPlacementResult } from './building-placement';
 import { copyIrrigation } from '../formats/irrigation';
 import { updateIrrigation } from './irrigation';
-import { placeIrrigation, type IrrigationTool, type IrrigationPlacementResult } from './irrigation-placement';
+import { placeIrrigation,toggleMapValve, type IrrigationTool, type IrrigationPlacementResult } from './irrigation-placement';
 import { createAnimalFrameState, type AnimalFrameState } from './animal-world';
 import { advanceAnimalFrame } from './animal-movement';
 import { increaseAnimalNeeds } from './animal-needs';
@@ -183,6 +183,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'remove-object'; x: number; y: number; kind: RemovalTarget['kind']; slot: number; tile?: number }
   | { type: 'network'; tool: NetworkAction; x: number; y: number }
   | { type: 'irrigation'; tool: IrrigationTool; x: number; y: number }
+  | { type: 'toggle-valve'; x: number; y: number }
   | { type: 'start-flight'; slot: number; columns: number; rows: number }
   | { type: 'flight-control'; control: FlightControl }
   | { type: 'step-flight' }
@@ -531,6 +532,8 @@ export class GameSimulation {
         this.events.push({ type: 'sound', sound: this.lastNetworkResult.ok ? 'ploptool' : 'uhoh' });
     } else if (command.type === 'irrigation') {
       this.lastIrrigationResult = placeIrrigation(this.scenario, this.finances, command.tool, command.x, command.y, this.weather.soilMoisture);
+    } else if (command.type === 'toggle-valve') {
+      this.lastIrrigationResult = toggleMapValve(this.scenario,command.x,command.y);
     } else if (command.type === 'buy-aircraft') {
       this.lastAircraftPurchaseResult = purchaseAircraft(this.scenario, this.finances);
     } else if (command.type === 'service-aircraft') {

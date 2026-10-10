@@ -138,3 +138,8 @@ Restore overlay12's non-field inspection dispatch and208×208 source card, using
 ## 2026-10-10 — direct Move object interaction
 
 Restore the shared original pickup/drop gesture behind the Move object palette icon. Machinery and all five supply categories now use canonical preflights/commands directly from map clicks, with read-only selection, cancellation, rejected-drop feedback and saved travel/transfer outcomes. See [manual-movement.md](manual-movement.md) for source mode11, cursor identity and dispatch evidence. Complete full regression gates and commit this increment locally. Next trace building-entry input events and direct construction gestures before retiring their temporary forms. Original Aircraft/Expert/Market and other remaining window interiors are still queued. The movable wooden titlebars are already committed as9f07f9e; keep fixed Edit,1× desktop artwork, HTML text, native pacing and all24 crops.
+
+
+## 2026-10-10 — original secondary-button fixture interactions
+
+Recover event7 from the INT33 callback and queued button mask, then connect right-button press to canonical building/gate operations and the newly recovered valve/field-bit command. This removes the need to leave Move object to open storage. Preserve raw field effects and document SF-162 without guessing its broader semantics. See [map-interactions.md](map-interactions.md). Finish regression checks and commit locally. Next restore direct construction gestures and the source primary-button interception, followed by town/aircraft map entry with original remaining window interiors. Market Value still needs its own reconstruction; do not route its town building to another window.

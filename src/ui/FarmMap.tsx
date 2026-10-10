@@ -26,6 +26,7 @@ interface Props {
   selection: number | null;
   preview?: MapPreview;
   onSelect: (index: number) => void;
+  onSecondarySelect: (index: number) => void;
   onPointer: (pointer: MapFocus | null) => void;
 }
 function followAircraft(viewport: HTMLDivElement, flight: AircraftFlight, zoom: number): void {
@@ -36,7 +37,7 @@ const directions: Record<string, [number, number]> = {
   ArrowLeft: [-64, 0], ArrowRight: [64, 0], ArrowUp: [0, -64], ArrowDown: [0, 64],
 };
 
-export function FarmMap({ viewportRef, scenario, tiles, maskedTiles, zoom, focus, field, selection, preview, onSelect, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
+export function FarmMap({ viewportRef, scenario, tiles, maskedTiles, zoom, focus, field, selection, preview, onSelect,onSecondarySelect, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const flightRef = useRef(flight);
   useLayoutEffect(() => { flightRef.current = flight; }, [flight]);
@@ -98,11 +99,11 @@ export function FarmMap({ viewportRef, scenario, tiles, maskedTiles, zoom, focus
     previousFocus.current = focus; previousZoom.current = zoom;
     updatePointer();
   }, [focus, zoom, updatePointer, flight]);
-  function selectTile(event: MouseEvent<HTMLCanvasElement>) {
+  function selectTile(event: MouseEvent<HTMLCanvasElement>,secondary=false) {
     if (flight) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const x = Math.floor((event.clientX - rect.left) / (16 * zoom)), y = Math.floor((event.clientY - rect.top) / (16 * zoom));
-    if (x >= 0 && y >= 0 && x < WORLD_SIZE && y < WORLD_SIZE) onSelect(worldIndex(x, y));
+    if (x >= 0 && y >= 0 && x < WORLD_SIZE && y < WORLD_SIZE) (secondary?onSecondarySelect:onSelect)(worldIndex(x, y));
   }
   return <div id="viewport" ref={viewportRef} tabIndex={0} aria-label={flight ? "Farm map. Left and right arrows steer the aircraft. Home toggles spraying; End ends flight." : "Farm map. Scroll or use arrow keys to explore."}
     onKeyDown={event => {
@@ -111,7 +112,10 @@ export function FarmMap({ viewportRef, scenario, tiles, maskedTiles, zoom, focus
       if (offset) { event.preventDefault(); event.currentTarget.scrollBy(...offset); }
     }}>
     <canvas id="world" ref={canvasRef} width={1536} height={1536} style={{ width: 1536 * zoom, height: 1536 * zoom }}
-      aria-label="Original scenario terrain" onClick={selectTile}
+      aria-label="Original scenario terrain" title="Right-click buildings, gates or valves to open or close them."
+      onClick={event=>selectTile(event)}
+      onPointerDown={event=>{if(event.isPrimary&&event.button===2){event.preventDefault();selectTile(event,true);}}}
+      onContextMenu={event=>event.preventDefault()}
       onPointerMove={event => { pointerRef.current = { clientX: event.clientX, clientY: event.clientY }; updatePointer(); }}
       onPointerLeave={clearPointer} onPointerCancel={clearPointer}
       onPointerUp={event => { if (event.pointerType === 'touch') clearPointer(); }} />
