@@ -57,13 +57,15 @@ test('fertilizer makes a newly purchased original plot produce a valuable stored
   game.dispatch({ type: 'advance-day' }); // The next week completes harvest and replants four original corn fields.
   const stored = game.getSnapshot(), item = stored.scenario.inventory.find(i => i.active && i.type === 168 && !priorItems.has(i.slot))!;
   assert.ok(item);
-  assert.deepEqual([item.quantity, item.loss, stored.cropMarketPrices[0]], [289, 35574, 75]);
-  assert.equal(stored.storedHarvestValues[item.slot], Math.floor(289 * 7 * (65535 - 35574) / 65536));
-  assert.equal(stored.storedHarvestValues[item.slot], 924);
+  // Strict source days include one more logical tick than the former >= gate;
+  // the shared random stream now yields a different stress/weekly-price path.
+  assert.deepEqual([item.quantity, item.loss, stored.cropMarketPrices[0]], [289, 35873, 147]);
+  assert.equal(stored.storedHarvestValues[item.slot], Math.floor(289 * 14 * (65535 - 35873) / 65536));
+  assert.equal(stored.storedHarvestValues[item.slot], 1831);
   const cash = stored.scenario.farm.cash;
   game.dispatch({ type: 'sell-harvest', inventorySlot: item.slot });
-  assert.equal(game.getSnapshot().scenario.farm.cash, cash + 924);
-  assert.equal(game.getSnapshot().scenario.farm.cash, 22385);
+  assert.equal(game.getSnapshot().scenario.farm.cash, cash + 1831);
+  assert.equal(game.getSnapshot().scenario.farm.cash, 23220);
   assert.equal(game.getSnapshot().scenario.fields[result.slot].state, 0);
 });
 

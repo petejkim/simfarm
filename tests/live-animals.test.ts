@@ -59,7 +59,7 @@ test('v10 strictly persists overlapping herd bytes and both ticks; versions1–9
 test('all original farms preserve live animal motion and generators across saved continuation; death feedback stays transient', () => {
   const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
   for (let id = 0; id < 8; id++) {
-    const world = readScenario(source(`SCEN${id}.SSM`)); world.farm.dayDelayTicks = 1000;
+    const world = readScenario(source(`SCEN${id}.SSM`)); world.farm.dayDelayTicks = 999;
     const crops = world.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
     const game = new GameSimulation(world, crops); game.dispatch({ type: 'set-paused', paused: false }); game.tick(333);
     const copy = GameSimulation.load(game.save(id), crops).simulation;

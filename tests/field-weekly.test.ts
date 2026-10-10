@@ -61,7 +61,7 @@ test('weekly planting completion handles every actual planting phase on all eigh
         assert.equal(world.cells[worldIndex(field.x + 3, field.y + 4)].terrain & 0x7ff, 688);
         assert.equal(world.farm.cash, cash); assert.deepEqual(world.schedule.bytes, plan); assert.deepEqual(world.sourceBytes, source);
       }
-      game.tick(1000 / scenario.farm.dayDelayTicks);
+      game.tick(1000 / (scenario.farm.dayDelayTicks + 1));
     }
     assert.deepEqual([...phases], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   }
@@ -87,7 +87,7 @@ test('weekly treatments restore prior state, release actual machinery and apply 
           assert.equal(f.bytes[59 + kind], [63, 128, 255][kind - 1] >> 2);
         }
       }
-      game.tick(1000 / scenario.farm.dayDelayTicks);
+      game.tick(1000 / (scenario.farm.dayDelayTicks + 1));
     }
     assert.deepEqual([...phases], [1, 2, 3, 4, 5]);
   }
@@ -117,7 +117,7 @@ test('weekly harvest completion settles actual machinery and worker phases acros
         const after = JSON.stringify(world); finishWeeklyFieldWork(world, crops, runtime(world));
         assert.equal(JSON.stringify(world), after, 'completion must not pay or store twice');
       }
-      game.tick(1000 / scenario.farm.dayDelayTicks);
+      game.tick(1000 / (scenario.farm.dayDelayTicks + 1));
     }
     assert.ok(phases.size >= (crops[scenario.fields[1].cropSlot][57] === 1 ? 5 : 7), `farm ${id} phases ${[...phases]}`);
   }

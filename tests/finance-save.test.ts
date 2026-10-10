@@ -76,7 +76,7 @@ test('native financial restore retains changed ledgers, raw definitions, debts, 
   // This source farm crosses a month boundary: retry debts and advance the saved clearing queue.
   const after = structuredClone(f); after.accounts.balancePayments += 98; after.accounts.taxExpenses += 99;
   // First tick is already >=16 past 65535, then updates occur every sixteen ticks.
-  after.clearing.lastTick = (saved.scenario.farm.animationTicks + 1 + 16 * Math.floor((saved.scenario.farm.dayDelayTicks - 1) / 16)) & 65535;
+  after.clearing.lastTick = (saved.scenario.farm.animationTicks + 1 + 16 * Math.floor(saved.scenario.farm.dayDelayTicks / 16)) & 65535;
   Object.assign(after.debt, { balanceDue: 0, balanceCountdown: 0, unpaidTaxes: 0, taxCountdown: 0 });
   // Original farm's eight active fields have pre-water flood and nutrient flags (0x82).
   Object.assign(after.statistics, { fieldPresence: [0, 1, 0, 0, 0, 0, 0, 1], distinctFieldStatuses: 2, nutrientDeficientFields: 8 });

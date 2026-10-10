@@ -85,8 +85,11 @@ test('v1–16 original migrations preserve map/RNG with empty traffic and v15–
   const f = trafficFixture(), current = parsed(f.load());
   for (let version = 1; version <= 16; version++) {
     const old = structuredClone(current); old.version = version; delete old.runtime.traffic;
+    // Historical schemas require phase < delay; equality became valid in v18.
+    old.runtime.dayTicks = old.scenario.farm.dayDelayTicks - 1;
     const g = GameSimulation.load(JSON.stringify(old), f.crops).simulation, next = parsed(g);
     assert.deepEqual(next.runtime.traffic, coldTrafficDefaults()); assert.deepEqual(next.runtime.random, old.runtime.random);
+    assert.equal(next.runtime.dayTicks, old.runtime.dayTicks);
     assert.equal(next.scenario.world, old.scenario.world); assert.equal(next.version, 22);
   }
   const game = GameSimulation.createNew(newFarmOptions, newFarmAssets), before = parsed(game, null);

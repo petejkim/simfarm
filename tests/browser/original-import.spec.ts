@@ -84,7 +84,7 @@ test('original imports keep unequal calendar and machinery clocks distinct throu
   await load(page, bytes, 'unequal.SSM');
   const imported = (await save(page, 'unequal-imported')).data;
   expect(imported.runtime.dayTicks).toBe(27);
-  const steps = imported.scenario.farm.dayDelayTicks - 27;
+  const steps = imported.scenario.farm.dayDelayTicks + 1 - 27;
   await page.locator('#next-day').click();
   const next = (await save(page, 'unequal-next')).data;
   expect(next.runtime.daysAdvanced).toBe(imported.runtime.daysAdvanced + 1);

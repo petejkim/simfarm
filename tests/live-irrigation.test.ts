@@ -23,7 +23,7 @@ function fixture() {
   for (let x = 11; x <= 19; x++) scenario.cells[worldIndex(x, 10)].terrain = 87;
   scenario.cells[worldIndex(9, 10)].terrain = 0x200f;
   scenario.irrigation.sourceCount = 0; scenario.irrigation.sources.fill(0);
-  Object.assign(scenario.farm, { animationTicks: 0, timerTicks: 0, dayDelayTicks: 1000, cash: 100000 });
+  Object.assign(scenario.farm, { animationTicks: 0, timerTicks: 0, dayDelayTicks: 999, cash: 100000 });
   return { scenario, crops };
 }
 

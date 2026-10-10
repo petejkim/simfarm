@@ -38,7 +38,7 @@ test('native saves retain unknown source/record bytes, all eight farms and detac
 test('save midway through new-field work and treatments continues through valuable harvest and sale', () => {
   const { scenario, crops } = farm();
   const original = new GameSimulation(scenario, crops);
-  original.dispatch({ type: 'set-disasters-enabled', enabled: false }); // Fixed-price farming checkpoint; disaster continuation has its own tests.
+  original.dispatch({ type: 'set-disasters-enabled', enabled: false }); // Isolate saved farming from damage; weekly markets still run.
   original.dispatch({ type: 'buy-land', regionX: 0, regionY: 2 });
   original.dispatch({ type: 'set-auto-clear', enabled: true });
   original.dispatch({ type: 'create-field', x: 0, y: 16, cropSlot: 0 });
@@ -66,9 +66,9 @@ test('save midway through new-field work and treatments continues through valuab
   same(original, restored, 4);
   restored = GameSimulation.load(restored.save(4), crops).simulation;
   const inventory = original.getSnapshot().scenario.inventory.find(i => i.active && i.type === 168 && !priorItems.has(i.slot))!;
-  assert.ok(inventory); assert.equal(original.getSnapshot().storedHarvestValues[inventory.slot], 924);
+  assert.ok(inventory); assert.equal(original.getSnapshot().storedHarvestValues[inventory.slot], 1831);
   for (const game of [original, restored]) game.dispatch({ type: 'sell-harvest', inventorySlot: inventory.slot });
-  same(original, restored, 4); assert.equal(restored.getSnapshot().scenario.farm.cash, 22385);
+  same(original, restored, 4); assert.equal(restored.getSnapshot().scenario.farm.cash, 23220);
 }, 15000);
 
 test('all four treatments, tick rollover and fifth-year weather retain exact continuation', () => {
@@ -155,7 +155,7 @@ test('harvest truck storage indices survive checkpoints during delivery and the 
   game.dispatch({ type: 'set-paused', paused: false });
   let delivering = false;
   for (let tick = 0; tick < 2048; tick++) {
-    game.tick(1000 / scenario.farm.dayDelayTicks);
+    game.tick(1000 / (scenario.farm.dayDelayTicks + 1));
     const field = game.getSnapshot().scenario.fields[1];
     if (field.state === 5 && field.step === 15) { delivering = true; break; }
   }
@@ -166,7 +166,7 @@ test('harvest truck storage indices survive checkpoints during delivery and the 
   same(game, restored, 1);
   let returned = false;
   for (let tick = 0; tick < 2048; tick++) {
-    game.tick(1000 / scenario.farm.dayDelayTicks); restored.tick(1000 / scenario.farm.dayDelayTicks);
+    game.tick(1000 / (scenario.farm.dayDelayTicks + 1)); restored.tick(1000 / (scenario.farm.dayDelayTicks + 1));
     const next = restored.getSnapshot().scenario.equipment[truck.slot];
     if (next.flags & 0x200) {
       same(game, restored, 1);

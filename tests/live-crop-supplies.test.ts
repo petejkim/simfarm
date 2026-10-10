@@ -71,7 +71,7 @@ test('supply commands reject atomically and remain silent during pending default
   const inFlight=flight.save(4);flight.dispatch({type:'buy-crop-supply',productType:220,x:10,y:10});assert.equal(flight.save(4),inFlight);
   // Use a real annual town prompt so the checkpoint's modal invariants remain valid.
   const state=readNativeSave(new GameSimulation(readScenario(f.state.scenario.sourceBytes!),f.crops).save(4)).state;state.scenario.schedule.bytes.fill(0);state.finances.town.townRevenue=50000;state.scenario.farm.calendar={day:6,week:3,month:11,year:1993,season:3};
-  state.dayTicks=state.scenario.farm.dayDelayTicks-1;
+  state.dayTicks=state.scenario.farm.dayDelayTicks;
   const annual=GameSimulation.load(writeNativeSave(state,4),f.crops).simulation;annual.dispatch({type:'advance-day'});
   assert.ok(annual.getSnapshot().pendingTown);const prior=annual.save(4);const blockedEvents:GameEvent[]=[];
   annual.subscribeEvents(e=>blockedEvents.push(e));annual.dispatch({type:'buy-crop-supply',productType:192,x:10,y:10});assert.equal(annual.save(4),prior);assert.deepEqual(blockedEvents,[]);

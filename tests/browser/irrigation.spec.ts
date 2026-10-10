@@ -58,9 +58,13 @@ test('purchased water pump wets original ditch pixels, refreshes fields and cont
   for (let i = 0; i < 2; i++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(game.getSnapshot().scenario.fields[1].bytes[51]).toBe(9);
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
+  // The wave has advanced since the first wet atlas check. A failed load must
+  // preserve its current pixels and checkpoint, not restore the earlier phase.
+  const beforeRejectedLoad = await pixel();
   const malformed = JSON.parse(game.save(4)); malformed.scenario.irrigation.sourceCount = 65;
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad-water.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(malformed)) });
-  await expect(page.locator('#save-status')).toContainText('irrigation source count'); expect(await pixel()).toEqual(wet);
+  await expect(page.locator('#save-status')).toContainText('irrigation source count'); expect(await pixel()).toEqual(beforeRejectedLoad);
+  expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#map-tool').selectOption('build');
   await page.locator('#building-type').selectOption('71'); await select(page, 20, 20); await page.locator('#building-type').scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

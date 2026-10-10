@@ -23,7 +23,7 @@ function fixture(field = false) {
   const tile = () => terrainTile(game.getSnapshot().scenario.cells[worldIndex(x, y)]);
   return { state, game, crops, tile, x, y };
 }
-const ticks = (game: GameSimulation, count: number) => game.tick(count * 1000 / 256);
+const ticks = (game: GameSimulation, count: number) => game.tick(count * 1000 / 257);
 
 test('live clearing uses the original animation word and wrapped sixteen-tick threshold; paused farms preserve pending work', () => {
   const exe = source('SIMFARM.EXE');
@@ -63,7 +63,7 @@ test('a removed original field retires with the source changing-count budget and
 test('clearing retirement runs before the same tick changes weekly soil moisture', () => {
   const { state, crops, x, y } = fixture();
   Object.assign(state.scenario.farm.calendar, { day: 6, week: 0, month: 0 });
-  state.dayTicks = 255; state.scenario.farm.animationTicks = 9; state.equipmentAnimationTick = 9;
+  state.dayTicks = 256; state.scenario.farm.animationTicks = 9; state.equipmentAnimationTick = 9;
   Object.assign(state.weather, { soilMoisture: 0, moistureBalance: 16, precipitationBonus: 0 });
   const cell = state.scenario.cells[worldIndex(x, y)]; cell.terrain = 672; cell.attribute = 80;
   const game = GameSimulation.load(writeNativeSave(state, 4), crops).simulation;

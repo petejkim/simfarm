@@ -1,0 +1,29 @@
+# Calendar threshold and browser pacing
+
+Evidence is from unchanged `SIMFARM.EXE`, SHA-256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`, size0x917b9. Addresses here are hexadecimal file offsets. Confidence is high for the word increments, unsigned comparison, timestamp store and resulting threshold boundaries. Source interrupt/window scheduling and wall-clock equivalence remain separate unfinished work.
+
+The interrupt increments machinery139e at625d and animation13a0 at6261 (`ff069e13ff06a013`). Calendarc8a9 loads13a0, subtracts timestamp1f8e as a16-bit word, compares against delay1f8c and branches with **JA**, not JAE, atc8b5. The exact gate bytes are `26a1a0132b068e1f3b068c1f7703e9c208`. After the daily work, d175..d17b stores13a0 into1f8e (`26a1a013a38e1f`). Native dayTicks is the elapsed unsigned phase; it must wrap before comparison and must not be reset merely by loading a checkpoint or changing a delay.
+
+The native calendar now applies `phase > delay`. The former `phase >= max(1, delay)` was a reconstruction error at positive delays. A fresh day with a representable advancing delay takes `delay + 1` logical ticks:1 at delay0,65 at64,129 at128,257 at256,641 at640, and65535 at65534. A delay65535 can never be exceeded by a16-bit phase. SF-154 records that original boundary and its reachability limitations; the native port retains it instead of silently clamping the saved word.
+
+## Bounded Next day
+
+`calendarDayPeriod` returns the period above or null for65535. `ticksUntilCalendarDay` validates both words and computes the next successful check after a logical tick:
+
+- For nonadvancing delay65535, return null. Dispatch leaves the farm/checkpoint/snapshot unchanged.
+- For phase65535, the first tick wraps to0, so the distance is `period + 1`.
+- Otherwise the distance is `max(1, period - phase)`. An imported already-overdue phase advances on the next represented tick, not during loading.
+
+Every advancing case is bounded by65536 ticks. This fast-forward is a browser action; the original callback simply checks its current timestamp during the ordinary loop. Pending town decisions, defaults and aircraft flight retain their existing command guards. The UI disables Next day for the nonadvancing case and explains how to recover by loading another save or starting a farm. Other source work can still run when Play is selected; the unadvanceable calendar is not conflated with a paused simulation. Original Speed-menu recovery will become available when that menu is integrated.
+
+## Existing slider and checkpoints
+
+The enhancement slider retains1×=one full game day per second for advancing calendars. Browser milliseconds are converted at `(dayDelayTicks + 1) * multiplier` logical ticks per second, replacing the old `max(1, dayDelayTicks)` normalization. The maximum saved delay therefore still runs logical ticks while its calendar gate remains false. This rate is an explicit browser adaptation; it is not the original hardware timer frequency, and it is still unsuitable for connecting original delay presets unchanged because per-delay normalization cancels their calendar-rate effect. Source hook62de..62e8 writes timer word3fff; fixed source timing, menu flags and pause nesting remain the next independent prerequisites.
+
+The schema remains v22. The meaning of dayTicks (unsigned elapsed phase) and elapsed (fraction of a logical tick) does not change. Checkpoints retain their words, phase, fraction, random streams and all game state byte-for-byte on restoration; no rule replay or inferred speed selection occurs. Subsequent ticks use the corrected rule, including for older migrated checkpoints. Historical native outcomes from the erroneous threshold are not promised to replay identically under corrected rules.
+
+Each ordinary day now allows one additional tick of machinery, traffic, animals and effects. This can change shared random consumption, crop stress and later market quotes even though the slider still advances the same number of days per second. The isolated original SCEN4 fertilized-new-field regression still stores289 units; the corrected84/85-day sequence produces loss35873, crop quote147, lot value1831 and final cash23220. The preceding estimate is1700. The sale arithmetic independently checks `floor(289 * 14 * (65535 - 35873) / 65536) = 1831`; these numbers are native regression outcomes under reconstructed rules, not measurements from an executed DOS game. Source harvest arithmetic remains unchanged.
+
+Tests pin instructions, compare the closed-form Next day distance with an independent wrapping-word walk, exercise equality/zero/65535/wrap/overdue phases, preserve unequal machinery/calendar clocks and fractional continuation, and compare manual versus timed advancement on all eight supplied farms. Synthetic one-tick-per-millisecond fixtures use delay999 so the strict period remains1000; source SSM words are never changed on disk. Other boundary fixtures now place the saved phase at equality when the next tick is intended to dispatch a day. Browser checks cover equality restoration, slider cadence, maximum-delay explanation/disabled controls, running clock continuation, file round trips and recovery through ordinary loading.
+
+The shared livestock fixture accepts a synthetic tick period and stores period minus one as its delay. This preserves its deliberate16-tick alignment between weekly care and animal frames, independently of the actual SSM timing tests. Without that fixture correction, an animal frame occurred before weekly care, changing vocal draws, supply consumption and newborn movement. The source-farm clearing continuation expectation includes the extra tick: after its immediate first update, sixteen-tick updates continue through delay+1. No livestock, clearing or financial production rules were changed to accommodate these fixtures.

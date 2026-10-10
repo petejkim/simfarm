@@ -147,7 +147,7 @@ test('version-six town continuations reject missing or inconsistent phases, coor
 test('weekly report records pre-water field flags and leaves annual history untouched across reload', () => {
   const { game: original, crops } = fixture(), { state } = readNativeSave(original.save(4));
   Object.assign(state.scenario.farm.calendar, { day: 6, week: 0, month: 0 });
-  state.dayTicks = state.scenario.farm.dayDelayTicks - 1;
+  state.dayTicks = state.scenario.farm.dayDelayTicks;
   state.weather.soilMoisture = 0;
   state.finances.statistics.words.fill(123); state.finances.statistics.regions = [2, 3, 4, 5];
   for (const f of state.scenario.fields.filter(f => f.active)) { f.bytes[24] = 255; f.bytes[25] = 255; }

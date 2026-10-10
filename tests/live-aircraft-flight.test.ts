@@ -7,7 +7,7 @@ import { flightPosition, MAX_FLIGHT_INPUTS, type FlightControl } from '../src/si
 import { aircraftFuel, aircraftPayload } from '../src/simulation/aircraft';
 
 function ready(paused = true) {
-  const f = aircraftFixture(); f.state.scenario.farm.dayDelayTicks = 1000;
+  const f = aircraftFixture(); f.state.scenario.farm.dayDelayTicks = 999; // Strict gate:1000 ticks/day, one logical tick/ms at1x.
   f.state.dayTicks = 3; f.state.paused = paused;
   const game = f.load(); game.dispatch({ type: 'buy-aircraft' });
   for (const kind of ['fuel', 'load'] as const) game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind } });

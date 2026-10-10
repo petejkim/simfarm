@@ -61,7 +61,7 @@ test('weekly music requests follow original thresholds, preserve RNG/state and d
   for (const [balance, mask, track] of [[4999, 0x8f, 'dfarm'], [500001, 0, 'ffarm'], [5000, 0x8f, null], [500000, 0, null]] as const) {
     const { game, crops, save } = fixture(s => {
       s.scenario.farm.cash = balance; Object.assign(s.scenario.farm.calendar, { day: 6, week: 0, month: 0 });
-      s.runtime.dayTicks = s.scenario.farm.dayDelayTicks - 1;
+      s.runtime.dayTicks = s.scenario.farm.dayDelayTicks;
       const fields = Buffer.from(s.scenario.records.fields, 'hex');
       for (let slot = 1; slot < 98; slot++) if (fields[slot * 68 + 7] & 1) {
         const offset = slot * 68;

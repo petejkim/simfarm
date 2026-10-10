@@ -47,6 +47,7 @@ test('live collision and weekly vocal events preserve source filenames/RNG, deta
     assert.equal(game.save(4), muted.save(4)); unsubscribe(); game.tick(16); muted.tick(16);
     assert.equal(game.save(4), muted.save(4)); assert.equal(second.length, 1);
   }
+  // A16-tick day keeps weekly vocals before the first animal frame on that tick.
   const f = livestockFixture(16); f.state.scenario.farm.calendar.day = 6;
   f.state.random.simulation = 300; // Calendar draws150; weekly draw75 triggers0xc16b.
   const game = f.load(), seen: GameEvent[] = []; game.subscribeEvents(e => seen.push(e));

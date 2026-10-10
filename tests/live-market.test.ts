@@ -46,7 +46,7 @@ test('manual new-field and replanting commands change only history; failed order
 
 test('weekly market follows animal aging and precedes scheduled planting, using the updated seed quote', () => {
   const f = livestockFixture(64), s = f.state;
-  s.scenario.farm.calendar.day = 6; s.dayTicks = 63; s.disasters.enabled = false;
+  s.scenario.farm.calendar.day = 6; s.dayTicks = s.scenario.farm.dayDelayTicks; s.disasters.enabled = false;
   s.scenario.climate.wind.fill(5); s.random.simulation = 9029;
   // One growing field with a planting order in the incoming week.
   const field = s.scenario.fields[1]; field.bytes[7] = 1; field.bytes[2] = 4;

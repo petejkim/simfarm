@@ -1,4 +1,5 @@
 import { createOriginalSaveStartup, restartOriginalSaveStartup, type OriginalStartupOptions } from './original-startup';
+import { calendarDayDue, ticksUntilCalendarDay } from './calendar-clock';
 import { restartGeneratedFarm, restartRegionFarm, type RestartFarmOptions } from './restart-farm';
 import { createGeographicFarm, createGeographicRegion, restartGeographicFarm } from './geographic-setup';
 import type { ClimateSelection } from '../formats/new-farm';
@@ -551,20 +552,20 @@ export class GameSimulation {
     } else if (command.type === 'sell-harvest') {
       this.lastSaleResult = sellStoredHarvest(this.scenario, command.inventorySlot, this.weather.soilMoisture);
     } else {
-      const delay = Math.max(1, this.scenario.farm.dayDelayTicks);
-      // The imported unsigned phase may wrap on the next tick. Next day still
-      // advances to the next day boundary, subject to ordinary modal stops.
-      const remaining = this.dayTicks === 65535 ? delay + 1 : Math.max(1, delay - this.dayTicks);
+      const remaining = ticksUntilCalendarDay(this.dayTicks, this.scenario.farm.dayDelayTicks);
+      if (remaining === null) return; // SF-154: no u16 phase can exceed FFFF.
       for (let i = 0; i < remaining; i++) this.advanceTick();
     }
     this.publish();
   }
 
-  /** Browser pacing only: speed 1 is one game day per second. Original DOS timer speed is not claimed. */
+  /** Browser pacing only: at1x an advancing calendar takes one second per full
+   * day. The maximum delay still runs logical ticks but cannot advance a day.
+   * Original interrupt frequency/menu timing is not claimed here. */
   tick(milliseconds: number): void {
     if (!Number.isFinite(milliseconds) || milliseconds < 0) throw new Error('Invalid elapsed time');
     if (this.paused) return;
-    this.elapsed += milliseconds * this.speed * Math.max(1, this.scenario.farm.dayDelayTicks) / 1000;
+    this.elapsed += milliseconds * this.speed * (this.scenario.farm.dayDelayTicks + 1) / 1000;
     const ticks = Math.floor(this.elapsed + 1e-9);
     if (!ticks) return;
     this.elapsed = Math.max(0, this.elapsed - ticks);
@@ -600,7 +601,7 @@ export class GameSimulation {
     }
     this.requestCollisionSounds();
     this.dayTicks = (this.dayTicks + 1) & 65535;
-    if (this.dayTicks >= Math.max(1, s.farm.dayDelayTicks)) { this.dayTicks = 0; this.advanceDay(); }
+    if (calendarDayDue(this.dayTicks, s.farm.dayDelayTicks)) { this.dayTicks = 0; this.advanceDay(); }
     // 0xbd42 follows the calendar and equipment calls. Modal decisions suspend
     // the remaining work; native Pause freezes the same logical animation clock.
     if (!this.finances.defaultDecision && !this.pendingTown) updateIrrigation(s, s.irrigation, s.farm.animationTicks, this.weather.wind, status => {

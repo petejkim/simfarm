@@ -8,8 +8,10 @@ import { GameSimulation } from './game';
 
 const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${name}`, import.meta.url));
 /** A source-backed animal with a visible full trough. Field/equipment records
- * are inactive so movement/consumption assertions have no unrelated traffic. */
-export function livestockFixture(dayDelay = 1000) {
+ * are inactive so movement/consumption assertions have no unrelated traffic.
+ * The synthetic period is in ticks, not the source delay word. The default
+ * gives one logical tick/ms; short periods align weekly work with animal frames. */
+export function livestockFixture(ticksPerDay = 1000) {
   const world = readScenario(source('SCEN4.SSM'));
   const crops = world.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
   for (const c of world.cells) { c.terrain = 15; c.overlay = 0x800; c.attribute = 0; }
@@ -19,7 +21,7 @@ export function livestockFixture(dayDelay = 1000) {
   for (const e of world.equipment) e.flags = 0;
   for (const i of world.inventory) i.bytes[10] &= ~32;
   world.schedule.bytes.fill(0); world.irrigation.sourceCount = 0; world.irrigation.sources.fill(0);
-  Object.assign(world.farm, { dayDelayTicks: dayDelay, animationTicks: 0, timerTicks: 0, cash: 100000 });
+  Object.assign(world.farm, { dayDelayTicks: ticksPerDay - 1, animationTicks: 0, timerTicks: 0, cash: 100000 });
   Object.assign(world.farm.calendar, { day: 0, week: 0, month: 0 });
   const { state } = readNativeSave(new GameSimulation(world, crops).save(4));
   for (const d of state.finances.accounts.assets.animalDefinitions) d.count = 0;

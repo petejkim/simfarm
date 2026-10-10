@@ -54,7 +54,7 @@ test('SSM loads with unequal clocks retain animation phase, advance at its bound
   assert.equal(saved.scenario.farm.animationTicks, 1010); assert.equal(saved.scenario.farm.timerTicks, 7);
   const restored = GameSimulation.load(imported.save(null), crops, layouts).simulation;
   for (const sim of [imported, restored]) sim.dispatch({ type: 'advance-day' });
-  const expectedSteps = saved.scenario.farm.dayDelayTicks - 27;
+  const expectedSteps = saved.scenario.farm.dayDelayTicks + 1 - 27;
   const next = JSON.parse(imported.save(null));
   assert.equal(next.runtime.daysAdvanced, saved.runtime.daysAdvanced + 1);
   assert.equal(next.runtime.dayTicks, 0);

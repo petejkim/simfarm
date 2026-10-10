@@ -70,7 +70,7 @@ test('weekly moisture requests and flood counters retain original strict thresho
     [9, 4, 2, true, 4, 3], [9, 4, 3, true, 0, -8], [10, 4, 3, true, 4, 4], [12, 4, 8, true, 0, -8],
     [3, 2, 0, false, 0, 0], [2, 2, 0, true, 2, 0],
   ] as const) {
-    const f = disasterFixture(); Object.assign(f.state.scenario.farm.calendar, { day: 6, week: 0, month: 0 }); f.state.dayTicks = 63;
+    const f = disasterFixture(); Object.assign(f.state.scenario.farm.calendar, { day: 6, week: 0, month: 0 }); f.state.dayTicks = 64;
     f.state.weather.soilMoisture = moisture; f.state.weather.moistureBalance = 0;
     f.state.disasters.flags = initialFlag; f.state.disasters.enabled = enabled; f.state.waterDisasters.counter = counter;
     const game = f.load(); game.dispatch({ type: 'advance-day' });

@@ -393,12 +393,12 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   await expect(page.locator('#treatment-progress')).toHaveCount(0);
   await page.screenshot({ path: 'artifacts/browser-fertilizer.png', fullPage: true });
   for (let day = 3; day < 84; day++) await page.locator('#next-day').click();
-  await expect(page.locator('#harvest-estimate')).toContainText('value: $924');
+  await expect(page.locator('#harvest-estimate')).toContainText('value: $1,700');
   await page.locator('#harvest-field').click();
   await page.locator('#next-day').click();
   // Scheduled replanting changes history after the weekly quote; the lot still sells at that quote.
-  await page.getByRole('button', { name: 'Sell Corn, lot 5, for $924', exact: true }).click();
-  await expect(page.locator('#farm-cash')).toHaveText('$22,385');
+  await page.getByRole('button', { name: 'Sell Corn, lot 5, for $1831', exact: true }).click();
+  await expect(page.locator('#farm-cash')).toHaveText('$23,220');
   await expect(page.locator('#harvest-stock')).toHaveText('4 stored harvests');
   await page.locator('#scenario').selectOption('0');
   await page.locator('#field').selectOption('1');
@@ -483,11 +483,11 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   expect(JSON.parse(readFileSync(restoredPath, 'utf8')).scenario.schedule).toBe(saved.scenario.schedule);
   await page.screenshot({ path: 'artifacts/browser-load.png', fullPage: true });
   for (let day = 2; day < 84; day++) await page.locator('#next-day').click();
-  await expect(page.locator('#harvest-estimate')).toContainText('value: $924');
+  await expect(page.locator('#harvest-estimate')).toContainText('value: $1,700');
   await page.locator('#harvest-field').click();
   await page.locator('#next-day').click();
-  await page.getByRole('button', { name: 'Sell Corn, lot 5, for $924', exact: true }).click();
-  await expect(page.locator('#farm-cash')).toHaveText('$22,385');
+  await page.getByRole('button', { name: 'Sell Corn, lot 5, for $1831', exact: true }).click();
+  await expect(page.locator('#farm-cash')).toHaveText('$23,220');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#save-farm').scrollIntoViewIfNeeded();
   await expect(page.locator('#save-farm')).toBeVisible();
@@ -588,7 +588,7 @@ test('a farm saved while a harvest truck drives to storage loads and completes d
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
   const game = new GameSimulation(scenario, crops);
   game.dispatch({ type: 'harvest-field', fieldSlot: 1 }); game.dispatch({ type: 'set-paused', paused: false });
-  for (let tick = 0; tick < 2048 && game.getSnapshot().scenario.fields[1].step !== 15; tick++) game.tick(1000 / scenario.farm.dayDelayTicks);
+  for (let tick = 0; tick < 2048 && game.getSnapshot().scenario.fields[1].step !== 15; tick++) game.tick(1000 / (scenario.farm.dayDelayTicks + 1));
   expect(game.getSnapshot().scenario.fields[1].step).toBe(15);
   game.dispatch({ type: 'set-paused', paused: true });
   await page.goto('/'); await expect(page.locator('#save-farm')).toBeEnabled();

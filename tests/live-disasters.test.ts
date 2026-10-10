@@ -36,18 +36,18 @@ test('live locusts damage a real field, checkpoint every clock/RNG phase, pause,
 test('source July requests and weekly wind start real disasters, and low wind stops tornado only after its minimum age', () => {
   for (const [seed, flag] of [[17, 32], [440, 1], [196, 8]]) {
     const f = disasterFixture(); Object.assign(f.state.scenario.farm.calendar, { day: 6, week: 0, month: 6 });
-    f.state.random.simulation = seed; f.state.dayTicks = 63;
+    f.state.random.simulation = seed; f.state.dayTicks = 64;
     const game = f.load(); game.dispatch({ type: 'advance-day' });
     assert.equal(game.getSnapshot().disasters.flags & flag, flag, `source seed${seed}`);
     assert.ok(game.getSnapshot().disasterNotices.length > 0);
   }
   const f = disasterFixture(); f.state.scenario.climate.wind.fill(80);
-  Object.assign(f.state.scenario.farm.calendar, { day: 6, week: 0 }); f.state.dayTicks = 63;
+  Object.assign(f.state.scenario.farm.calendar, { day: 6, week: 0 }); f.state.dayTicks = 64;
   const game = f.load(); game.dispatch({ type: 'advance-day' }); assert.equal(game.getSnapshot().disasters.flags & 9, 9);
   const state = readNativeSave(game.save(4)).state; state.scenario.climate.wind.fill(5); state.weather.windAnomaly = 0;
   for (const age of [1919, 1920]) {
     state.scenario.farm.animationTicks = (state.disasters.tornado.startedTick + age - 1) & 65535;
-    Object.assign(state.scenario.farm.calendar, { day: 6, week: 1 }); state.dayTicks = 63;
+    Object.assign(state.scenario.farm.calendar, { day: 6, week: 1 }); state.dayTicks = 64;
     const g = GameSimulation.load(writeNativeSave(state, 4), f.crops).simulation; g.dispatch({ type: 'advance-day' });
     assert.equal(Boolean(g.getSnapshot().disasters.flags & 1), age < 1920); assert.equal(g.getSnapshot().disasters.flags & 8, 0);
   }
