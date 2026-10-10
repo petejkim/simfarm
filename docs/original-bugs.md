@@ -394,11 +394,11 @@ Native construction validates count 0–7 and both coordinate-array bounds befor
 
 ## SF-048 — town-choice timeout ignores a rejected recreational district
 
-**Status:** confirmed ignored result; native constructor failure is exposed; complete pending-choice integration remains deferred.
+**Status:** confirmed ignored result; native pending-choice correction is integrated and tested, including the restored original chooser.
 
-At `0x3c385..0x3c3a3`, timeout chooses `below(14)+1`, calls constructor `0x3aba0`, then unconditionally clears the choice-pending local without checking AX. Random type 4 may fail its recreation quota/cap. The plot was already paid for and assigned town ownership by `0x3bff0..0x3c032`, so this path can leave a reserved plot without the new district. Interactive recreation checks the result and keeps the chooser open, demonstrating the difference. Full runtime reproduction is pending clock/choice integration; no security claim.
+At `0x3c385..0x3c3a3`, timeout chooses `below(14)+1`, calls constructor `0x3aba0`, then unconditionally clears the choice-pending local without checking AX. Random type 4 may fail its recreation quota/cap. The plot was already paid for and assigned town ownership by `0x3bff0..0x3c032`, so this path can leave a reserved plot without the new district. Interactive recreation checks the result and keeps the chooser open, demonstrating the difference. The ignored return is statically verified; original runtime reproduction remains unperformed, and no security claim is made.
 
-Native `resolveTownChoice` returns this failure, including for timeout, preserving the reservation and map so the eventual UI can retain the pending choice. A bounded-RNG fixture produces type 4 at a blocked quota and verifies no construction mutation. Do not silently replace it with another random type or discard the paid plot.
+Native `resolveTownChoice` returns this failure, including for timeout, preserving the reservation and map. Annual integration keeps the choice pending across save/load while retaining the bounded random draw. The restored [town chooser](town-choice.md) exposes the failure and permits a subsequent valid choice; browser coverage checks exact saved continuation with bounded seed6 at a blocked quota. Do not silently replace it with another random type or discard the paid plot. Original runtime reproduction remains unperformed; no security claim.
 
 ## SF-049 — invalid district type can use an uninitialized template offset
 

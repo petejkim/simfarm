@@ -12,8 +12,8 @@ export function WindowDesktop({ children, artwork }: { children: ReactNode; artw
 }
 interface Position { left: number; top: number }
 /** Shared movable frame; optional native modal dialog keeps Edit mounted. */
-export function GameWindow({ windowKey, title, children, forced = false, modal = false, descriptionId, onClose }: {
-  windowKey: string; title: string; children: ReactNode; forced?: boolean; modal?: boolean; descriptionId?: string; onClose?: () => void;
+export function GameWindow({ windowKey, title, children, forced = false, modal = false, descriptionId, onClose, titleArtwork }: {
+  windowKey: string; title: string; children: ReactNode; forced?: boolean; modal?: boolean; descriptionId?: string; onClose?: () => void; titleArtwork?: string;
 }) {
   const { active, show } = useWindows(), open = forced || active === windowKey;
   const ref = useRef<HTMLDivElement>(null);
@@ -69,7 +69,7 @@ export function GameWindow({ windowKey, title, children, forced = false, modal =
     style={position ? { left: position.left, top: position.top, right: 'auto' } : undefined}
     onCancel={event=>{event.preventDefault();event.stopPropagation();close();}}
     onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); } }}>
-    <div className="game-window-title" tabIndex={0} ref={ref} aria-label={`${title} window titlebar`}
+    <div className="game-window-title" style={titleArtwork?{backgroundImage:`url("${titleArtwork}")`}:undefined} tabIndex={0} ref={ref} aria-label={`${title} window titlebar`}
       title="Drag to move; arrow keys move a focused titlebar (Shift for one pixel)"
       onPointerDown={startDrag} onPointerMove={event => {
         const start = drag.current; if (!start || start.pointer !== event.pointerId) return;

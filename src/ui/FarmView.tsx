@@ -380,8 +380,8 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
         ? 'Your home has been improved after a rise in cash.' : 'Your home has been downgraded after a fall in cash.'}</span>
       <button id="view-home" onClick={() => setFocus({ x: snapshot.finances.homestead.x + 2, y: snapshot.finances.homestead.y + 2 })}>View home</button>
     </div>}
-    <GameWindow windowKey="town" title="Town development" forced={Boolean(snapshot?.pendingTown)}>
-    {simulation && snapshot && <TownChoicePanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
+    <GameWindow windowKey="town" title="Town development" titleArtwork={assets.townChoiceArtwork.src} forced={Boolean(snapshot?.pendingTown)}>
+    {simulation && snapshot && <TownChoicePanel assets={assets} onEvent={onGameEvent} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     </GameWindow>
     <GameWindow windowKey="bank" title="Bank" forced={Boolean(snapshot?.finances.defaultDecision)}>
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
