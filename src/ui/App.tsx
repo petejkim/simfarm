@@ -26,7 +26,7 @@ function Game({ assets }: { assets: GameAssets }) {
   const sound = useSound();
   const onGameEvent = useCallback((event: GameEvent) => {
     if (event.type === 'music') music.requestTrack(event.track);
-    else sound.play(event.sound);
+    else if(event.type==='sound') sound.play(event.sound);
   }, [music.requestTrack, sound.play]);
   return <WindowDesktop artwork={assets.windowArtwork}>
     <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded}

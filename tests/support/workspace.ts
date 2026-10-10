@@ -1,8 +1,15 @@
 import type { Page } from '@playwright/test';
 
+/** Existing subsystem tests acknowledge real informational dialogs before
+ * continuing their next action. Dedicated message tests assert each notice. */
+export async function acknowledgeFinanceMessages(page:Page){
+  while(await page.locator('#finance-message-ok').isVisible())await page.locator('#finance-message-ok').click();
+}
+
 /** Existing subsystem flows use the real launchers before accessing a window.
  * Workspace/layout tests exercise discovery and window behavior directly. */
 export async function openWindow(page: Page, key: string) {
+  await acknowledgeFinanceMessages(page);
   if (key === 'schedule') { if (!await page.locator('[data-window="schedule"]').isVisible()) {await openWindow(page,'navigation');await page.getByRole('button',{name:'Crop planner',exact:true}).click();} return; }
   if (key === 'taxes') { await openWindow(page,'balance'); await page.getByRole('button',{name:'View tax details',exact:true}).click(); return; }
   if (key === 'edit') { await page.locator('#window-edit').click(); return; }

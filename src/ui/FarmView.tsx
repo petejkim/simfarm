@@ -1,4 +1,6 @@
 import {BalanceWindow} from './BalanceWindow';
+import {FinanceMessage} from './FinanceMessage';
+import type {FinanceNoticeId} from '../simulation/events';
 import {EvaluationWindow} from './EvaluationWindow';
 import { MarketWindow } from './MarketWindow';
 import { WeatherWindow } from './WeatherWindow';
@@ -99,11 +101,18 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   const objectMove=useObjectMove(simulation,snapshot);
   const construction=useConstruction(simulation,snapshot);
   const bulldoze=useBulldoze(simulation,snapshot);
+  const [financeMessages,setFinanceMessages]=useState<{serial:number;id:FinanceNoticeId}[]>([]);
+  const financeMessageSerial=useRef(0);
   const onMapPointer = useCallback((pointer: MapFocus | null) => {
     simulation?.dispatch({ type: 'set-map-pointer', pointer });
     if (buyPlacement || fieldMapTool || objectMove.active || construction.tool || bulldoze.active) setToolPointer(old => old?.x === pointer?.x && old?.y === pointer?.y ? old : pointer);
   }, [simulation, buyPlacement, fieldMapTool, objectMove.active,construction.tool,bulldoze.active]);
-  useEffect(() => simulation?.subscribeEvents(onGameEvent), [simulation, onGameEvent]);
+  useEffect(() => simulation?.subscribeEvents(event=>{
+    if(event.type==='finance-notice'){
+      const message={serial:++financeMessageSerial.current,id:event.id};
+      setFinanceMessages(previous=>[...previous,message]);
+    }else onGameEvent(event);
+  }), [simulation, onGameEvent]);
   const flightRunning = Boolean(snapshot?.aircraftFlight && !snapshot.paused);
   useEffect(() => { onFlightRunning(flightRunning); return () => onFlightRunning(false); }, [flightRunning, onFlightRunning]);
   const mapSize = useRef({ columns: 20, rows: 16 });
@@ -113,13 +122,13 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     let frame: number, previous: number | null = null;
     const tick = (now: number) => {
       // Background tabs do not accumulate days; wall-clock pacing remains outside the simulation rules.
-      if (!document.hidden && previous !== null && !bulldoze.pending) simulation.tick(Math.min(250, Math.max(0, now - previous)));
+      if (!document.hidden && previous !== null && !bulldoze.pending && !financeMessages.length) simulation.tick(Math.min(250, Math.max(0, now - previous)));
       previous = now;
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [simulation,Boolean(bulldoze.pending)]);
+  }, [simulation,Boolean(bulldoze.pending),Boolean(financeMessages.length)]);
   const [selection, setSelection] = useState<number | null>(null), [fieldSlot, setFieldSlot] = useState<number | null>(null);
   const [focus, setFocus] = useState<MapFocus>(() => {
     const home = id === null ? loaded?.simulation.getSnapshot().finances.homestead : null;
@@ -456,6 +465,9 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
         </div>
       </section>
       {bulldoze.pending&&<BulldozeDialog pending={bulldoze.pending} assets={assets} onConfirm={bulldoze.confirm} onCancel={bulldoze.dismiss}/>}
+      {financeMessages[0]&&<FinanceMessage key={financeMessages[0].serial} id={financeMessages[0].id} assets={assets} onClose={()=>{
+        onGameEvent({type:'sound',sound:'click'});setFinanceMessages(previous=>previous.slice(1));
+      }}/>}
       <GameWindow windowKey="actions" title={mapTool === 'inspect' ? 'Field information' : mapTool === 'land' ? 'Land purchase' : mapTool === 'field' ? 'New field' : ['build', 'equipment', 'crop-supplies', 'livestock'].includes(mapTool) ? 'Buy' : 'Edit object'}>
         <div className="window-actions">{!['land', 'field', 'crop-supplies', 'network'].includes(mapTool) && <button onClick={() => { windows.show(null); viewportRef.current?.focus(); }}>Choose on map</button>}
           <button onClick={() => windows.show('tools')}>Tools</button>

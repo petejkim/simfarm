@@ -726,7 +726,7 @@ export class GameSimulation {
       if (next.monthEnded) {
         this.random.mixMonth(before.month + 1);
         const retry = retryMonthlyDebts(s, this.finances.accounts, this.finances.debt, this.finances.clearing,
-          w.soilMoisture, before.month + 1);
+          w.soilMoisture, before.month + 1, id=>this.events.push({type:'finance-notice',id}));
         this.financeNotices = retry.notices;
         if (retry.pendingDefault) {
           this.finances.defaultDecision = retry.pendingDefault.decision;
@@ -738,7 +738,7 @@ export class GameSimulation {
       }
       if (next.yearEnded) {
         this.lastTaxSettlement = settleAnnualTax(s, w.soilMoisture, taxAccounts(this.finances)); // 0xcdf4.
-        if (!this.lastTaxSettlement.paid) this.financeNotices.push(159);
+        if (!this.lastTaxSettlement.paid) { this.financeNotices.push(159); this.events.push({type:'finance-notice',id:159}); }
         const site = this.lastTaxSettlement.offerExpansion ? beginTownExpansion(s, this.finances.town) : null;
         if (site) {
           this.finances.town.activeSite = { ...site }; // 0x3c03f/0x3c04a, before chooser.
@@ -838,7 +838,7 @@ export class GameSimulation {
     const s = this.scenario, w = this.weather;
     if (monthEnded && isLoanPaymentMonth(calendar.month)) {
       const payment = payScheduledLoan(s.farm, this.finances.loan, this.finances.debt, loanPaymentAccounts(this.finances));
-      if (payment.notice) this.financeNotices.push(payment.notice);
+      if (payment.notice) { this.financeNotices.push(payment.notice); this.events.push({type:'finance-notice',id:payment.notice}); }
     }
     if (monthEnded) beginAnimalPregnancies(s); // 0xd032, skipped by non-month-ending weeks.
     w.windAnomaly = Math.max(0, w.windAnomaly - 2);
