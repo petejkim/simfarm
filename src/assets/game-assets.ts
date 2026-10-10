@@ -1,3 +1,4 @@
+import { readBuyCatalogData, type BuyCatalog } from '../formats/buy-window';
 import { allCropFiles } from '../formats/crop-slots';
 import { readRegionArtwork, type RegionArtwork } from '../formats/region-artwork';
 import { rasterImage } from '../render/raster-image';
@@ -42,7 +43,7 @@ export interface Catalog {
   tileCount: number;
   palette: number[][];
 }
-export interface GameAssets { catalog: Catalog; mainMenus: MainMenus; controlBar: HTMLImageElement; editPalette: HTMLImageElement; bankArtwork: HTMLImageElement; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
+export interface GameAssets { catalog: Catalog; mainMenus: MainMenus; controlBar: HTMLImageElement; editPalette: HTMLImageElement; bankArtwork: HTMLImageElement; buyArtwork: HTMLImageElement; buyCards: HTMLImageElement; buyCatalog: BuyCatalog; itemText: Uint8Array; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
 export const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}assets/${path}`;
 
 async function response(path: string, signal?: AbortSignal): Promise<Response> {
@@ -65,17 +66,20 @@ function image(path: string, signal: AbortSignal): Promise<HTMLImageElement> {
   });
 }
 export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
-  const [catalog, maskedTiles, townLayouts, airplane, shadow, dust, tornado, swarm, mainMenus, controlBar, editPalette, bankArtwork] = await Promise.all([
+  const [catalog, maskedTiles, townLayouts, airplane, shadow, dust, tornado, swarm, mainMenus, controlBar, editPalette, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText] = await Promise.all([
     response('catalog.json', signal).then(r => r.json()) as Promise<Catalog>, image('masked-tiles.png', signal),
     response('raw/townly0.cmp', signal).then(r => r.arrayBuffer()).then(b => new TownLayouts(new Uint8Array(b))),
     image('airplane.sprites.png', signal), image('apshadow.sprites.png', signal), image('cropdust.sprites.png', signal), image('tornado.sprites.png', signal), image('swarm.sprites.png', signal),
     response('main-menus.json', signal).then(r => r.json()).then(readMainMenusData),
-    image('control-bar.png', signal), image('edit-palette.png', signal), image('bank-terminal.png', signal),
+    image('control-bar.png', signal), image('edit-palette.png', signal), image('bank-terminal.png', signal), image('buy-window.png', signal), image('buy-cards.png', signal),
+    response('buy-catalog.json', signal).then(r => r.json()).then(readBuyCatalogData),
+    response('raw/itemtext.dat', signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b)),
   ]);
   if (controlBar.naturalWidth !== 640 || controlBar.naturalHeight !== 32) throw new Error('Invalid control-bar artwork');
   if (editPalette.naturalWidth !== 48 || editPalette.naturalHeight !== 208) throw new Error('Invalid edit-palette artwork');
   if (bankArtwork.naturalWidth !== 288 || bankArtwork.naturalHeight !== 224) throw new Error('Invalid Bank artwork');
-  return { catalog, mainMenus, controlBar, editPalette, bankArtwork, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
+  if (buyArtwork.naturalWidth !== 256 || buyArtwork.naturalHeight !== 224 || buyCards.naturalWidth !== 896 || buyCards.naturalHeight !== 640 || itemText.length !== 18929) throw new Error('Invalid Buy artwork or text');
+  return { catalog, mainMenus, controlBar, editPalette, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
 }
 export async function loadScenarioAssets(id: number, signal: AbortSignal) {
   const [buffer, tiles] = await Promise.all([

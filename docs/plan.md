@@ -109,3 +109,5 @@ The dashboard stack has moved into nonmodal game windows, leaving the canvas max
 UI scale correction: render original artwork at1× to match default terrain pixels, including the control strip, Edit palette, region/setup graphics and crop illustrations. Preserve source layout and permanent Edit. Continue original dialog reconstruction after this correction; mobile redesign remains deferred.
 
 Bank now uses its actual terminal bitmap, source window/control descriptors and callback dispatch in place of the interim loan disclosure. Follow with original Buy/Sell, land and field dialog layouts/interactions. Preserve source1× artwork, HTML text, permanent Edit and the existing native timing/all-crops policies. See bank-dialog.md for evidence and remaining Bank fidelity work.
+
+Buy now uses the original category catalog, photographs, descriptions and direct Edit placement through existing purchase commands; all24 crops remain available. See [buy-dialog.md](buy-dialog.md). The user's next priority is movable windows and original titlebar styling, preserving the fixed maximized Edit exception, before continuing Sell/land/field interiors.

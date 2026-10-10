@@ -61,8 +61,7 @@ test('Windows menu and toolbar route to the same controls; Edit focuses the map 
     const open = (key: string, label: string) => viaMenu ? windowMenu(page, label) : page.locator(`#window-${key}`).click();
     await open('bank', 'Bank'); await expect(page.locator('#loan-panel')).toBeVisible();
     await expect(page.locator('#loan-panel')).toBeFocused();
-    await open('buy', 'Buy'); await expect(page.locator('#map-tool')).toHaveValue('crop-supplies');
-    await reveal(page, '#crop-supply-shop'); await expect(page.locator('#crop-supply-shop')).toBeVisible();
+    await open('buy', 'Buy'); await expect(page.getByRole('region', { name: 'Buy catalog' })).toBeVisible();
     await open('map', 'Map'); await expect(page.locator('#map-tool')).toHaveValue('land');
     await open('sell', 'Sell'); await expect(page.getByRole('region', { name: 'Sell harvest' })).toBeFocused();
     await open('weather', 'Weather'); await expect(page.locator('#farm-weather')).toBeFocused();
