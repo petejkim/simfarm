@@ -1,3 +1,4 @@
+import { cropStageTile } from '../formats/crop-slots';
 import { Binary } from '../formats/binary';
 import type { BuildingRecord } from '../formats/building';
 import type { FieldRecord } from '../formats/field';
@@ -112,7 +113,7 @@ export function updatePlantingField(field: FieldRecord, definition: readonly num
       if (definition.length !== 128) throw new Error('Invalid planting crop definition');
       const implement = world.equipment[tractor.attachment];
       if (!implement?.active) throw new Error('Planting implement is missing');
-      if (traverseEquipmentField(tractor, field, 688 + field.cropSlot * 8, world, runtime)) {
+      if (traverseEquipmentField(tractor, field, cropStageTile(field.cropSlot), world, runtime)) {
         b[34] = 0; f.view.setUint16(38, 0, true); f.view.setUint16(40, 0, true);
         order(implement.bytes[50] - 1, implement.bytes[51], 0x0100);
         b[6] = (b[6] | 4) & ~2;

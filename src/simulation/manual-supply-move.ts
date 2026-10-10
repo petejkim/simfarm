@@ -1,3 +1,4 @@
+import { cropPlantTile, cropHarvestTile, cropPlantSlot, cropHarvestSlot } from '../formats/crop-slots';
 import type { FinancialState } from '../formats/finance';
 import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
 import { BUILDING_GRAPHICS, findBuilding, findStorageSpace, toggleBuildingInterior } from './building-storage';
@@ -20,7 +21,7 @@ function definition(world: Scenario, finances: FinancialState, t: SupplyMoveTarg
 /** Initialized tile table0x4ec60+DS085e: chemicals74..77, seeds87..102,
  * harvest109..124, trough79 and feed81. Only source-decoded single-cell goods. */
 const graphic = (t: SupplyMoveTarget) => t.kind === 'chemical' ? 915 - (t.type - 220)
-  : t.kind === 'seed' ? 832 + t.type - 192 : t.kind === 'harvest' ? 816 + t.type - 168 : t.kind === 'trough' ? 175 : 1020;
+  : t.kind === 'seed' ? cropPlantTile(t.type - 192) : t.kind === 'harvest' ? cropHarvestTile(t.type - 168) : t.kind === 'trough' ? 175 : 1020;
 
 /** Non-equipment pickup branches0x13774..0x13bce. Chemicals are found by
  * record coordinates; other categories first require their original map graphic.
@@ -30,15 +31,15 @@ export function checkSupplyPickup(world: Scenario, finances: FinancialState, x: 
   if (findEquipmentAt(world, x, y)) return { ok: false, reason: 'equipment-here' };
   const chemical = world.chemicals.find(c => c.slot > 0 && c.active && c.x === x && c.y === y);
   const cell = world.cells[worldIndex(x, y)], tile = terrainTile(cell), overlay = cell.overlay & 0x7ff;
-  const kind: SupplyMoveKind | undefined = chemical ? 'chemical' : tile >= 832 && tile <= 847 ? 'seed'
-    : tile >= 816 && tile <= 831 ? 'harvest' : tile === 175 || tile === 176 ? 'trough'
+  const kind: SupplyMoveKind | undefined = chemical ? 'chemical' : cropPlantSlot(tile, world.cropFiles.length) >= 0 ? 'seed'
+    : cropHarvestSlot(tile) >= 0 ? 'harvest' : tile === 175 || tile === 176 ? 'trough'
     : overlay >= 1020 && overlay <= 1024 ? 'feed' : undefined;
   if (!kind) return { ok: false, reason: 'no-supply' };
   const item = chemical ?? world.inventory.find(i => i.slot > 0 && i.active && i.x === x && i.y === y);
   if (!item) return { ok: false, reason: 'inconsistent-supply' };
   const type = item.type;
-  if (!(kind === 'chemical' ? type >= 220 && type <= 223 : kind === 'seed' ? type >= 192 && type <= 207
-    : kind === 'harvest' ? type >= 168 && type <= 183 : type === (kind === 'trough' ? 299 : 300)))
+  if (!(kind === 'chemical' ? type >= 220 && type <= 223 : kind === 'seed' ? type >= 192 && type < 192 + world.cropFiles.length
+    : kind === 'harvest' ? type >= 168 && type < 168 + world.cropFiles.length : type === (kind === 'trough' ? 299 : 300)))
     return { ok: false, reason: 'inconsistent-supply' };
   const b = findBuilding(world, x, y), target: SupplyMoveTarget = { kind, type, slot: item.slot, x, y, buildingSlot: b?.slot ?? null };
   const d = definition(world, finances, target), expectedGraphic = kind === 'chemical' ? 74 + type - 220

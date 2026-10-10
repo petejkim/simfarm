@@ -1,3 +1,4 @@
+import { cropPlantTile } from '../formats/crop-slots';
 import type { Scenario } from '../formats/scenario';
 import { worldIndex, terrainTile } from '../formats/scenario';
 import { BUILDING_GRAPHICS, findBuilding, findStorageSpace, toggleBuildingInterior } from './building-storage';
@@ -12,7 +13,7 @@ export type CropSupplyPurchaseResult = { ok: true; slot: number; price: number; 
  * purchasing excludes buildings70..72 before generic insertion (SF-117).
  * Preflight preserves SF-021/083/095 native transaction corrections. */
 export function checkCropSupplyPurchase(world: Scenario, type: number, x: number, y: number, soilMoisture: number): CropSupplyPurchaseResult {
-  if (!CROP_SUPPLY_TYPES.includes(type)) return { ok: false, reason: 'unsupported-supply' };
+  if (!Number.isInteger(type) || !(type >= 192 && type < 192 + world.cropFiles.length || type >= 220 && type <= 223)) return { ok: false, reason: 'unsupported-supply' };
   if (![x, y].every(n => Number.isInteger(n) && n >= 0 && n < 96)) return { ok: false, reason: 'outside-map' };
   const chemical = type >= 220, def = chemical ? world.chemicalDefinitions[type - 220] : world.seedDefinitions[type - 192];
   if (!def || def.type !== type || def.width !== 1 || def.height !== 1 || def.graphic !== (chemical ? 74 + type - 220 : 87 + type - 192))
@@ -68,7 +69,7 @@ export function purchaseCropSupply(world: Scenario, type: number, x: number, y: 
   if (world.farm.autoClear && ((tile >= 535 && tile < 539) || (tile >= 131 && tile < 147)))
     cell.terrain = ((cell.terrain & 0xf800) | (15 + soilMoisture + (cell.attribute >>> 2))) & 65535;
   const b = world.buildings[result.buildingSlot];
-  b.setContent((result.x - b.x) * 3 + result.y - b.y, chemical ? 915 - type + 220 : 832 + type - 192, type, result.slot);
+  b.setContent((result.x - b.x) * 3 + result.y - b.y, chemical ? 915 - type + 220 : cropPlantTile(type - 192), type, result.slot);
   toggleBuildingInterior(b, world); toggleBuildingInterior(b, world);
   return result;
 }

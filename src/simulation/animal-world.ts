@@ -1,3 +1,4 @@
+import { nativeCropTile, nativeCropBadge } from '../formats/crop-slots';
 import { Binary } from '../formats/binary';
 import type { AnimalRecord } from '../formats/animal';
 import type { BuildingRecord } from '../formats/building';
@@ -22,7 +23,7 @@ export function animalCanWalk(world: Scenario, x: number, y: number): boolean {
   const cell = world.cells[worldIndex(x, y)], tile = terrainTile(cell);
   const accepted = (tile >= 175 && tile < 177) || (tile >= 15 && tile <= 31) ||
     (tile >= 150 && tile <= 172) || (tile >= 535 && tile <= 539) || (tile >= 131 && tile <= 147) ||
-    (tile >= 680 && tile <= 840) || [189, 191, 192, 193, 36, 12].includes(tile);
+    (tile >= 680 && tile <= 840) || (world.cropFiles.length === 24 && nativeCropTile(tile) && !nativeCropBadge(tile)) || [189, 191, 192, 193, 36, 12].includes(tile);
   return accepted && (!(cell.terrain & 0x800) || (cell.overlay & 0x7ff) === 962);
 }
 

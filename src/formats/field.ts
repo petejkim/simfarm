@@ -38,9 +38,9 @@ export function readFields(bytes: Uint8Array): FieldRecord[] {
 }
 
 /** Shared original/native validation; native tables derive their active count. */
-export function validateFields(fields: FieldRecord[], count = fields.filter(f => f.active).length): void {
+export function validateFields(fields: FieldRecord[], count = fields.filter(f => f.active).length, cropCount = 16): void {
   if (fields[0].active || fields.filter(f => f.active).length !== count) throw new Error('Invalid field count');
   for (const f of fields.filter(f => f.active)) {
-    if (!f.width || !f.height || f.x + f.width > 96 || f.y + f.height > 96 || f.cropSlot >= 16) throw new Error('Invalid field bounds or crop slot');
+    if (!f.width || !f.height || f.x + f.width > 96 || f.y + f.height > 96 || f.cropSlot >= cropCount) throw new Error('Invalid field bounds or crop slot');
   }
 }

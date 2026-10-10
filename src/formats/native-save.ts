@@ -1,3 +1,4 @@
+import { allCropFiles } from './crop-slots';
 import type { SessionSetup } from '../simulation/session-setup';
 import { unknownOriginalPause, type OriginalPauseState } from '../simulation/original-pause';
 import { validateMarketState, type MarketState } from '../simulation/market';
@@ -59,8 +60,8 @@ function encodeScenario(s: Scenario) {
   s.cells.forEach((c, i) => { view.setUint16(i * 5, c.terrain, true); view.setUint16(i * 5 + 2, c.overlay, true); world[i * 5 + 4] = c.attribute; });
   return { origin: s.origin, source: s.sourceBytes === null ? null : hex(s.sourceBytes), cropFiles: s.cropFiles, world: hex(world), schedule: hex(s.schedule.bytes), regions: hex(s.regionalConditions), farm: s.farm, climate: s.climate,
     irrigation: { ...s.irrigation, sources: hex(s.irrigation.sources) },
-    records: Object.fromEntries(Object.entries(tables).map(([key, [, count, stride]]) => {
-      const records = s[key as keyof typeof tables], raw = new Uint8Array(count * stride);
+    records: Object.fromEntries(Object.entries(tables).map(([key, [, , stride]]) => {
+      const records = s[key as keyof typeof tables], raw = new Uint8Array(records.length * stride);
       records.forEach((r, i) => raw.set(r.bytes, i * stride));
       return [key, hex(raw)];
     })) };
@@ -90,16 +91,21 @@ function decodeScenario(value: unknown, version: number): Scenario {
   const original = source ? readScenario(source, false, version >= 18 && irrigation ? { workerExpenses: 0, irrigation } : undefined) : null;
   let cropFiles = original?.cropFiles;
   if (version >= 15) {
-    if (!Array.isArray(s.cropFiles) || s.cropFiles.length !== 16 || s.cropFiles.some(n => typeof n !== 'string' || !/^[a-z0-9_]{1,8}\.crp$/.test(n))) fail('crop filenames');
+    if (!Array.isArray(s.cropFiles) || s.cropFiles.length !== (version >= 24 ? 24 : 16) || s.cropFiles.some(n => typeof n !== 'string' || !/^[a-z0-9_]{1,8}\.crp$/.test(n))) fail('crop filenames');
     cropFiles = [...s.cropFiles];
-    if (original && cropFiles.some((file, i) => file !== original.cropFiles[i])) fail('original crop filenames');
+    if (original && cropFiles.slice(0, 16).some((file, i) => file !== original.cropFiles[i])) fail('original crop filenames');
   }
   if (!cropFiles) fail('crop filenames');
+  if (version >= 24) { try { allCropFiles(cropFiles); } catch { fail('expanded crop catalog'); } }
+  const cropCount = cropFiles.length;
   const raw = {} as ScenarioTableBytes;
-  for (const [key, [, count, stride]] of Object.entries(tables)) raw[key as keyof ScenarioTableBytes] = bytes(records[key], count * stride, key);
+  for (const [key, [, originalCount, stride]] of Object.entries(tables)) {
+    const count = key === 'cropDefinitions' ? cropCount + 8 : key === 'seedDefinitions' || key === 'harvestDefinitions' ? cropCount : originalCount;
+    raw[key as keyof ScenarioTableBytes] = bytes(records[key], count * stride, key);
+  }
   const world = bytes(s.world, 96 * 96 * 5, 'world'), view = new DataView(world.buffer);
   const climate = object(s.climate, 'climate');
-  return { ...decodeScenarioRecords(raw), origin, sourceBytes: source, version: original?.version ?? null, cropFiles,
+  return { ...decodeScenarioRecords(raw, cropCount), origin, sourceBytes: source, version: original?.version ?? null, cropFiles,
     schedule: version >= 2 ? new FieldSchedule(bytes(s.schedule, FIELD_SCHEDULE_SIZE, 'field schedule')) : original!.schedule,
     cells: Array.from({ length: 96 * 96 }, (_, i) => ({ terrain: view.getUint16(i * 5, true), overlay: view.getUint16(i * 5 + 2, true), attribute: world[i * 5 + 4] })),
     regionalConditions: bytes(s.regions, 12 * 12 * 7, 'regions'),
@@ -170,7 +176,7 @@ export function writeNativeSave(state: SimulationState, scenarioId: number | nul
     if (state.scenario.origin !== 'original' || !state.scenario.sourceBytes || state.newFarm !== null) fail('original provenance');
   }
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 23, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: scenario.cropFiles.length === 24 ? 24 : 23, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, setup: { ...state.setup, sourceArchive: state.setup.sourceArchive ? hex(state.setup.sourceArchive) : null }, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -180,7 +186,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24].includes(save.version)) fail('unsupported format or version');
   const s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const scenarioId = s.origin === 'generated' || (save.version >= 18 && save.scenarioId === null) ? null : number(save.scenarioId, 0, 7, 'scenario ID');
   if (s.origin === 'generated' && save.scenarioId !== null) fail('generated scenario ID');
@@ -189,7 +195,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   const random = object(r.random, 'random');
   const rng = new FarmRandom({ visual: number(random.visual, 0, 65535, 'visual RNG'),
     simulation: number(random.simulation, 0, 65535, 'simulation RNG'), bounded: number(random.bounded, 0, 65535, 'bounded RNG') });
-  if (!Array.isArray(r.crops) || r.crops.length !== 16) fail('crop definitions');
+  if (!Array.isArray(r.crops) || r.crops.length !== s.cropFiles.length) fail('crop definitions');
   const speed = number(r.speed, 0.25, 16, 'speed', false);
   if (!SIMULATION_SPEEDS.some(n => n === speed)) fail('speed');
   const animalFrame = createAnimalFrameState();
@@ -199,8 +205,8 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
     animalFrame.lastMoveTick = number(a.lastMoveTick, 0, 65535, 'animal move tick');
     animalFrame.herd = bytes(a.herd, 21, 'animal herd cache');
   }
-  const cropMarketPrices = numbers(r.cropMarketPrices, 16, 0, 65535, 'crop prices');
-  const market = save.version >= 16 ? decodeMarket(r.market) : save.version === 15 && newFarm
+  const cropMarketPrices = numbers(r.cropMarketPrices, s.cropFiles.length, 0, 65535, 'crop prices');
+  const market = save.version >= 16 ? decodeMarket(r.market, s.cropFiles.length) : save.version === 15 && newFarm
     ? decodeLegacyGeneratedMarket(r.newFarm)
     : { history: cropMarketPrices.map(price => [...Array(29).fill(null), price]), mood: 0, rawBC72: 0 };
   const retainedSetup = save.version >= 18 ? decodeNewFarm(r.retainedSetup, save.version) : null;
@@ -319,9 +325,9 @@ function decodeLegacyGeneratedMarket(value: unknown): MarketState {
   return { history: n.marketHistory.map(row => numbers(row, 30, 0, 65535, 'market history')),
     mood: number(n.marketMood, 0, 255, 'market mood'), rawBC72: 0 };
 }
-function decodeMarket(value: unknown): MarketState {
+function decodeMarket(value: unknown, cropCount = 16): MarketState {
   const m = object(value, 'market');
-  if (!Array.isArray(m.history) || m.history.length !== 16) fail('market history');
+  if (!Array.isArray(m.history) || m.history.length !== cropCount) fail('market history');
   const market = { history: m.history.map(row => {
     if (!Array.isArray(row) || row.length !== 30) fail('market history');
     return row.map((price, i) => price === null && i < 29 ? null : number(price, 0, 65535, 'market price'));

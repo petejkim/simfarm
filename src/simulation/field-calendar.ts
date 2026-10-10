@@ -25,7 +25,7 @@ export function dispatchFieldSchedule(world: Scenario, crops: readonly (readonly
   if (week >= 1) finishWeeklyFieldWork(world, crops, runtime);
   for (const field of world.fields) {
     if (!field.slot || !field.active) continue;
-    const entry = describeScheduleEntry(world.schedule.get(week, field.slot - 1)), b = field.bytes;
+    const entry = describeScheduleEntry(world.schedule.get(week, field.slot - 1), crops.length), b = field.bytes;
     switch (entry.kind) {
       case 'plant': {
         // SF-018: preserve the existing field if seed fails, but retain the original stop-on-failure ordering.

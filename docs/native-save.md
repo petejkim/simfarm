@@ -1,4 +1,4 @@
-# Native checkpoints, versions 1–23
+# Native checkpoints, versions 1–24
 
 Version17 adds `runtime.traffic`: sixteen eight-byte records, active count, update delay and last animation tick. It is the sole live owner for both farm origins; v15/v16 generated `newFarm.traffic` moves here unchanged. Original v1–v16 saves migrate an empty source-default table (delay16, lastTick0), preserving current map and RNG rather than replaying eight startup allocations. Weekly spawning then populates traffic normally. V17 validates record/count consistency and active bounds while retaining unused bytes; copies detach from both input and snapshots. Collision audio notices are transient and never replay on restore. See [traffic.md](traffic.md).
 
@@ -171,3 +171,7 @@ Calendar correction (unchanged v22): dayTicks continues to represent the unsigne
 Ordinary SSM import now retains the actual post-return depth and the opening/resume check writes. Restart resets checks but retains depth; numbered chooser loads skip the ordinary dialog callback, and fresh startup uses source initialization. Browser pausing/multiplier remain separate and unchanged. See [original-pause.md](original-pause.md) for exact source pins, unknown-state propagation, composition boundaries and deferred timing/Speed integration.
 
 User-requested pacing adjustment (still v23): the native1× baseline is now one full day per four seconds. Stored multiplier values and partial logical ticks restore unchanged; the same selected multiplier advances wall time at one quarter of its previous rate. This needs no migration or simulation replay. Next day and logical outcomes for equal tick/day counts remain unchanged. Original PC timer fidelity is explicitly outside the requested live pacing policy.
+
+## V24: all supplied crops
+
+Expanded browser farms write v24 with24 filenames/definition blocks/prices/history rows; seed and harvest tables contain24 records each, and crop trade records contain32 (the24 active entries followed by the retained eight unnamed source entries). The original first16 slot identities are stable. V1–23 decoding stays16-slot; browser activation then explicitly appends missing crops without replaying work. Non-expanded research simulations continue writing v23. Full policy, native tile ranges, unknown-record retention and market RNG handling are documented in [all-crops.md](all-crops.md).

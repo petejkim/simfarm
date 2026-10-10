@@ -100,9 +100,9 @@ function prepareBuilding(world: Scenario, state: BuildingDemolitionState, slot: 
         }
         a.flags &= ~0x20;
       });
-    } else if ((type >= 168 && type < 184) || (type >= 192 && type < 208) || type === 299 || type === 300) {
-      const i = world.inventory[item.slot], d = type < 184 ? world.harvestDefinitions[type - 168]
-        : type < 208 ? world.seedDefinitions[type - 192] : state.otherDefinitions[type - 288];
+    } else if ((type >= 168 && type < 168 + world.cropFiles.length) || (type >= 192 && type < 192 + world.cropFiles.length) || type === 299 || type === 300) {
+      const i = world.inventory[item.slot], d = type < 168 + world.cropFiles.length ? world.harvestDefinitions[type - 168]
+        : type < 192 + world.cropFiles.length ? world.seedDefinitions[type - 192] : state.otherDefinitions[type - 288];
       if (!item.slot || !i || !d || i.type !== type || !contains(i.x, i.y)) throw new Error('Invalid demolished inventory');
       if (!i.active || removed.has(i)) continue;
       reserve(d, d.count); removed.add(i);

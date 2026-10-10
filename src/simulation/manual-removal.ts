@@ -69,8 +69,8 @@ export function removeManualTarget(world: Scenario, finances: FinancialState, x:
   else {
     const item = result.kind === 'inventory' ? world.inventory[result.slot] : world.chemicals[result.slot], type = item.type;
     const definition = result.kind === 'chemical' ? world.chemicalDefinitions[type - 220]
-      : type >= 168 && type < 184 ? world.harvestDefinitions[type - 168]
-      : type >= 192 && type < 208 ? world.seedDefinitions[type - 192]
+      : type >= 168 && type < 168 + world.cropFiles.length ? world.harvestDefinitions[type - 168]
+      : type >= 192 && type < 192 + world.cropFiles.length ? world.seedDefinitions[type - 192]
       : type === 299 || type === 300 ? finances.accounts.otherDefinitions[type - 288] : undefined;
     if (!definition || definition.type !== type || !definition.count) throw new Error('Invalid loose-item removal definition');
     const cell = world.cells[worldIndex(x, y)], masked = result.kind === 'chemical' || ![175, 176].includes(terrainTile(cell));

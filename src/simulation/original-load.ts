@@ -33,7 +33,7 @@ export function loadOriginalFarmState(prior: SimulationState, bytes: Uint8Array,
     if (!crop) throw new Error(`Missing simulation crop ${file}`);
     return [...crop.rawDefinition];
   });
-  const market = prior.market;
+  const market = { ...prior.market, history: prior.market.history.slice(0, 16) };
   loadMarketCropPrices(market, definitions); // Retains29 samples/mode/raw byte.
   const cropMarketPrices = definitions.map((crop, slot) => {
     const price = crop[34] | crop[35] << 8;

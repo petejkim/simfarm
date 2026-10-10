@@ -1,3 +1,4 @@
+import { cropStageTile, nativeCropBadge } from '../formats/crop-slots';
 import { Binary } from '../formats/binary';
 import type { FieldRecord } from '../formats/field';
 import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
@@ -49,7 +50,7 @@ function finishPlanting(world: Scenario, field: FieldRecord, crop: readonly numb
   updateFieldStatus(field, crop, world.cells);
   for (let x = field.x; x < field.x + field.width; x++) for (let y = field.y; y < field.y + field.height; y++) {
     const cell = world.cells[worldIndex(x, y)], tile = terrainTile(cell);
-    if (tile < 539 || tile >= 635) cell.terrain = (cell.terrain & 0xf800) | (688 + field.cropSlot * 8);
+    if ((tile < 539 || tile >= 635) && !nativeCropBadge(tile)) cell.terrain = (cell.terrain & 0xf800) | (cropStageTile(field.cropSlot));
     cell.terrain &= ~0x0800;
   }
 }
@@ -112,7 +113,7 @@ function finishHarvest(world: Scenario, field: FieldRecord, crop: readonly numbe
     }
     if (!(crop[62] & 1)) for (let x = field.x; x < field.x + field.width; x++) for (let y = field.y; y < field.y + field.height; y++) {
       const cell = world.cells[worldIndex(x, y)], tile = terrainTile(cell);
-      if (tile < 539 || tile >= 635) cell.terrain = (cell.terrain & 0xf824) | 36;
+      if ((tile < 539 || tile >= 635) && !nativeCropBadge(tile)) cell.terrain = (cell.terrain & 0xf824) | 36;
     }
   } else if (step === 7) resetHarvest(field, crop); // Already sold by machinery FSM; never pay twice.
   else if (step === 16) {

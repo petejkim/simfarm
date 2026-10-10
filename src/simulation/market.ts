@@ -20,12 +20,12 @@ const isInteger = (n: number, max: number) => Number.isInteger(n) && n >= 0 && n
 
 export function validateMarketState(market: MarketState): void {
   if (!isInteger(market.mood, 255) || !isInteger(market.rawBC72, 255)) throw new Error('Invalid market byte');
-  if (!Array.isArray(market.history) || market.history.length !== 16 || market.history.some(row =>
+  if (!Array.isArray(market.history) || ![16, 24].includes(market.history.length) || market.history.some(row =>
     !Array.isArray(row) || row.length !== 30 || row.some((price, i) => price === null ? i === 29 : !isInteger(price, 65535)))) throw new Error('Invalid market history');
 }
 
 function validateCrops(crops: readonly (readonly number[])[]): void {
-  if (crops.length !== 16 || crops.some(crop => crop.length !== 128 || crop.some(byte => !isInteger(byte, 255)))) {
+  if (![16, 24].includes(crops.length) || crops.some(crop => crop.length !== 128 || crop.some(byte => !isInteger(byte, 255)))) {
     throw new Error('Invalid market crop definitions');
   }
 }
@@ -39,27 +39,31 @@ export function loadMarketCropPrices(market: MarketState, crops: readonly (reado
 }
 
 /** Weekly0x4aea4, after all five aging phases and before wind0xbe55..0xbe74.
- * Trade prices synchronize here, separately from planting/disaster history. */
-export function updateWeeklyMarket(world: TradeTables, crops: readonly (readonly number[])[], market: MarketState, random: MarketRandom): void {
+ * Trade prices synchronize here, separately from planting/disaster history.
+ * Native extra slots use a forked RNG and cannot change the original shared mood. */
+export function updateWeeklyMarket(world: TradeTables, crops: readonly (readonly number[])[], market: MarketState, random: MarketRandom, extraRandom: MarketRandom = random): void {
   validateMarketState(market); validateCrops(crops);
   if ([world.cropDefinitions, world.harvestDefinitions, world.seedDefinitions].some(table =>
-    table.length < 16 || Array.from({ length: 16 }, (_, i) => table[i]).some(d => !d))) throw new Error('Invalid market trade tables');
+    table.length < crops.length || Array.from({ length: crops.length }, (_, i) => table[i]).some(d => !d))) throw new Error('Invalid market trade tables');
   if ((random.nextSimulation() & 15) >= 13) market.mood = random.below(3);
   if (signedByte(market.rawBC72) > 12) {
     market.mood = (market.mood + 1) & 255;
     if (signedByte(market.mood) > 2) market.mood = 0;
     market.rawBC72 = 0;
   }
-  for (let slot = 0; slot < 16; slot++) {
+  let originalMood = market.mood;
+  for (let slot = 0; slot < crops.length; slot++) {
+    if (slot === 16) originalMood = market.mood;
+    const rng = slot < 16 ? random : extraRandom;
     const history = market.history[slot], crop = crops[slot];
     history.copyWithin(0, 1);
     let price = history[29]!;
     const step = signedWord(price) >> 3; // Before the zero-to-one assignment.
     if (!price) price = 1;
-    const choice = random.nextSimulation() & 7;
+    const choice = rng.nextSimulation() & 7;
     if (market.mood <= 2) {
       const threshold = market.mood === 0 ? 3 : market.mood === 1 ? 1 : 5;
-      const adjustment = (random.nextSimulation() & 3) * step;
+      const adjustment = (rng.nextSimulation() & 3) * step;
       price = (price + (choice <= threshold ? adjustment : -adjustment)) & 65535;
     }
     const base = crop[34] | crop[35] << 8;
@@ -70,12 +74,13 @@ export function updateWeeklyMarket(world: TradeTables, crops: readonly (readonly
     world.cropDefinitions[slot].price = world.harvestDefinitions[slot].price = price;
     world.seedDefinitions[slot].price = Math.max(5, (signedWord(price) >> 2) & 65535);
   }
+  if (crops.length === 24) market.mood = originalMood;
 }
 
 /** Plant callback0x4b066: changes history only, with a signed quarter step. */
 export function adjustMarketForPlanting(market: MarketState, slot: number): void {
   validateMarketState(market);
-  if (!isInteger(slot, 15)) throw new Error('Invalid market crop slot');
+  if (!isInteger(slot, market.history.length - 1)) throw new Error('Invalid market crop slot');
   const price = market.history[slot][29]!;
   market.history[slot][29] = (price - (signedWord(price) >> 2)) & 65535;
 }
@@ -86,7 +91,7 @@ export function adjustMarketForDisaster(market: MarketState, crops: readonly (re
   validateMarketState(market); validateCrops(crops);
   if (![2, 3, 5, 6].includes(mode)) return;
   const sensitivity = mode === 2 ? 71 : mode === 3 ? 70 : 72;
-  for (let slot = 0; slot < 16; slot++) {
+  for (let slot = 0; slot < crops.length; slot++) {
     const crop = crops[slot];
     if (!crop[sensitivity]) continue;
     const shift = crop[sensitivity] & 31, price = market.history[slot][29]!;

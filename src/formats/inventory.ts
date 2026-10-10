@@ -46,11 +46,11 @@ export function readGoodsDefinitions(bytes: Uint8Array, kind: boolean | 'harvest
   return definitions;
 }
 
-export function validateGoodsDefinitions(definitions: GoodsDefinition[], kind: boolean | 'harvest'): void {
+export function validateGoodsDefinitions(definitions: GoodsDefinition[], kind: boolean | 'harvest', cropCount = 16): void {
   const startType = kind === 'harvest' ? 168 : kind ? 192 : 128;
   definitions.forEach((def, i) => {
     // Only sixteen of the twenty-four crop entries are populated.
-    if (i < 16 && (def.type !== startType + i || (kind && (def.width !== 1 || def.height !== 1)))) throw new Error('Invalid goods definition');
+    if (i < cropCount && (def.type !== startType + i || (kind && (def.width !== 1 || def.height !== 1)))) throw new Error('Invalid goods definition');
     if (kind === 'harvest' && def.graphic !== 109 + i) throw new Error('Invalid harvested crop graphic');
   });
 }

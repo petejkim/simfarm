@@ -17,9 +17,10 @@ export const SCENARIO_TABLES = {
 export type ScenarioTableBytes = { -readonly [K in keyof typeof SCENARIO_TABLES]: Uint8Array };
 
 /** No SSM template, startup side effects or rewriting of unknown bytes. */
-export function decodeScenarioRecords(raw: ScenarioTableBytes) {
+export function decodeScenarioRecords(raw: ScenarioTableBytes, cropCount = 16) {
   function table<T>(key: keyof ScenarioTableBytes, create: (bytes: Uint8Array, slot: number) => T): T[] {
-    const [, count, stride] = SCENARIO_TABLES[key], bytes = raw[key];
+    const [, originalCount, stride] = SCENARIO_TABLES[key], bytes = raw[key];
+    const count = key === 'cropDefinitions' ? cropCount + 8 : key === 'seedDefinitions' || key === 'harvestDefinitions' ? cropCount : originalCount;
     if (!(bytes instanceof Uint8Array) || bytes.length !== count * stride) throw new Error(`Invalid native ${key} table`);
     return Array.from({ length: count }, (_, slot) => create(bytes.slice(slot * stride, (slot + 1) * stride), slot));
   }
@@ -37,15 +38,15 @@ export function decodeScenarioRecords(raw: ScenarioTableBytes) {
     harvestDefinitions: table('harvestDefinitions', b => new GoodsDefinition(b)),
     chemicalDefinitions: table('chemicalDefinitions', b => new GoodsDefinition(b)),
   };
-  validateFields(records.fields);
+  validateFields(records.fields, undefined, cropCount);
   validateEquipment(records.equipment, true);
   validateAnimals(records.animals);
   validateBuildingDefinitions(records.buildingDefinitions);
   validateBuildings(records.buildings, records.buildingDefinitions);
   validateInventory(records.inventory);
-  validateGoodsDefinitions(records.seedDefinitions, true);
-  validateGoodsDefinitions(records.cropDefinitions, false);
-  validateGoodsDefinitions(records.harvestDefinitions, 'harvest');
+  validateGoodsDefinitions(records.seedDefinitions, true, cropCount);
+  validateGoodsDefinitions(records.cropDefinitions, false, cropCount);
+  validateGoodsDefinitions(records.harvestDefinitions, 'harvest', cropCount);
   validateChemicals(records.chemicals);
   validateChemicalDefinitions(records.chemicalDefinitions);
   for (const f of records.fields.filter(f => f.active)) {

@@ -1,3 +1,4 @@
+import { cropPlantSlot } from '../formats/crop-slots';
 import type { Scenario } from '../formats/scenario';
 import { SCHEDULE_WEEKS } from '../formats/field-schedule';
 import { buildPlantingPlan } from './field-plan-pattern';
@@ -23,7 +24,7 @@ export function recordFieldPlanOrder(world: Pick<Scenario, 'fields' | 'schedule'
     const code = codes[order.kind];
     if (code === undefined) throw new Error('Invalid plan order');
     const previous = world.schedule.get(start, column);
-    if (order.kind !== 'plow' && ([1, 2, 3, 440, 198, 852].includes(previous) || previous >= 832 && previous <= 847)) return false;
+    if (order.kind !== 'plow' && ([1, 2, 3, 440, 198, 852].includes(previous) || cropPlantSlot(previous, crops.length) >= 0)) return false;
     world.schedule.set(start, column, code);
     return true;
   }

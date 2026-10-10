@@ -1,3 +1,4 @@
+import { originalCatalogForRestart } from './all-crops';
 import { beginTerrainPreview, copyLocatedTerrainPreview, type TerrainPreviewState } from './terrain-preview';
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
 import { climateForSetup, type ClimateSelection } from '../formats/new-farm';
@@ -34,6 +35,7 @@ function prepareRestart(previous: SimulationState, assets: NewFarmAssets) {
   const records: SetupRecords = { ...prior.scenario,
     animalDefinitions: prior.finances.accounts.assets.animalDefinitions, otherDefinitions: prior.finances.accounts.otherDefinitions,
     plannerBuffer: new Uint8Array(3072), marketMood: prior.market.mood };
+  originalCatalogForRestart(prior);
   // Every scratch word is overwritten by4093b; no old unknown byte is assumed0.
   resetSetupRecords(records);
   const runtime = { farm: prior.scenario.farm, finances: prior.finances,

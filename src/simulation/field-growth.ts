@@ -1,3 +1,4 @@
+import { cropStageTile, isCropStageTile } from '../formats/crop-slots';
 import { Binary } from '../formats/binary';
 import type { FieldRecord } from '../formats/field';
 import { terrainTile, worldIndex, type WorldCell } from '../formats/scenario';
@@ -54,12 +55,12 @@ export function growField(field: FieldRecord, definition: readonly number[], con
   const delay = delayByte << 24 >> 24;
   const age = b[34] << 24 >> 24;
   const stage = Math.trunc((age - delay + (weeksPerStage >> 1)) / weeksPerStage);
-  const tile = 688 + field.cropSlot * 8 + stage;
+  const tile = cropStageTile(field.cropSlot, stage);
   f.view.setUint16(16, tile & 65535, true);
   for (let x = field.x; x < field.x + field.width; x++) for (let y = field.y; y < field.y + field.height; y++) {
     const cell = context.cells[worldIndex(x, y)], previousTile = terrainTile(cell);
     // Preserve badges, non-crop tiles and upper terrain flags.
-    if (previousTile >= 688 && previousTile <= 815) cell.terrain = (cell.terrain & 0xf800) | (tile & 65535);
+    if (isCropStageTile(previousTile)) cell.terrain = (cell.terrain & 0xf800) | (tile & 65535);
   }
   return { updated: true, expired: false };
 }

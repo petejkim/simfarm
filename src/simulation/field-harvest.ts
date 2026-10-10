@@ -71,7 +71,7 @@ export function updateHarvestField(field: FieldRecord, crop: readonly number[], 
     const truck = machine(field.pendingEquipment);
     if (truck.flags & 2) return false;
     const t = new Binary(truck.bytes), slot = t.u16(34) - 168;
-    if (slot < 0 || slot >= 16 || slot !== field.cropSlot) throw new Error('Invalid harvest truck cargo');
+    if (slot < 0 || slot >= world.cropFiles.length || slot !== field.cropSlot) throw new Error('Invalid harvest truck cargo');
     const stored = deliverStoredHarvest(world, f.u16(64), slot, c.u16(32), t.u16(32));
     if (!stored) {
       sell();

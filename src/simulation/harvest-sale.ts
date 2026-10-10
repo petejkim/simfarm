@@ -11,7 +11,7 @@ export type HarvestSaleResult = { ok: true; slot: number; value: number }
  * Price comes from the crop trade table, not the stored-goods definition. */
 export function storedHarvestValue(item: InventoryRecord, world: Scenario): number {
   const cropSlot = item.type - 168;
-  if (!item.active || cropSlot < 0 || cropSlot >= 16) throw new Error('Invalid harvested inventory');
+  if (!item.active || cropSlot < 0 || cropSlot >= world.cropFiles.length) throw new Error('Invalid harvested inventory');
   return harvestValue(item.quantity, item.loss, Math.floor(world.cropDefinitions[cropSlot].price / 10));
 }
 
@@ -19,7 +19,7 @@ export function storedHarvestValue(item: InventoryRecord, world: Scenario): numb
  * SF-027: validate removal before payment. SF-026: retain duplicate income posting. */
 export function sellStoredHarvest(world: Scenario, slot: number, soilMoisture: number): HarvestSaleResult {
   const item = world.inventory[slot];
-  if (!Number.isInteger(slot) || slot <= 0 || !item?.active || item.type < 168 || item.type >= 184) {
+  if (!Number.isInteger(slot) || slot <= 0 || !item?.active || item.type < 168 || item.type >= 168 + world.cropFiles.length) {
     return { ok: false, reason: 'invalid-item' };
   }
   const definition = world.harvestDefinitions[item.type - 168];

@@ -5,7 +5,7 @@ export type SeedResult = { ok: true; source: 'stored' | 'purchased'; cost: numbe
 
 /** 0x152d6. Consume the first matching seed item, otherwise buy with the original 20-unit surcharge. */
 export function consumeSeed(world: Scenario, cropSlot: number, soilMoisture: number): SeedResult {
-  if (!Number.isInteger(cropSlot) || cropSlot < 0 || cropSlot >= 16) throw new Error('Invalid seed crop slot');
+  if (!Number.isInteger(cropSlot) || cropSlot < 0 || cropSlot >= world.cropFiles.length) throw new Error('Invalid seed crop slot');
   const definition = world.seedDefinitions[cropSlot];
   const item = world.inventory.find(i => i.slot && i.active && i.type === 192 + cropSlot);
   if (item) {

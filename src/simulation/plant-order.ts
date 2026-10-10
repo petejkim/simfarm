@@ -16,7 +16,7 @@ export type NewFieldResult = (Extract<SeedResult, { ok: true }> & { slot: number
  * Preflight placement and acquire seed before construction (native SF-018 correction). */
 export function plantNewField(world: Scenario, x: number, y: number, cropSlot: number, crops: readonly (readonly number[])[],
   market: MarketState, random: FarmRandom, soilMoisture: number): NewFieldResult {
-  if (!Number.isInteger(cropSlot) || cropSlot < 0 || cropSlot >= 16 || crops[cropSlot]?.length !== 128) return { ok: false, reason: 'invalid-crop' };
+  if (!Number.isInteger(cropSlot) || cropSlot < 0 || cropSlot >= crops.length || crops[cropSlot]?.length !== 128) return { ok: false, reason: 'invalid-crop' };
   const placement = checkFieldPlacement(world, x, y);
   if (!placement.ok) return placement;
   const seed = consumeSeed(world, cropSlot, soilMoisture);
@@ -35,7 +35,7 @@ export function plantField(world: Scenario, slot: number, cropSlot: number, crop
   market: MarketState, random: FarmRandom, soilMoisture: number, scheduled = false): PlantResult {
   const field = world.fields[slot];
   if (!Number.isInteger(slot) || !slot || !field?.active) return { ok: false, reason: 'invalid-field' };
-  if (!Number.isInteger(cropSlot) || cropSlot < 0 || cropSlot >= 16 || crops[cropSlot]?.length !== 128) return { ok: false, reason: 'invalid-crop' };
+  if (!Number.isInteger(cropSlot) || cropSlot < 0 || cropSlot >= crops.length || crops[cropSlot]?.length !== 128) return { ok: false, reason: 'invalid-crop' };
   // Cancellation/return of an in-flight field job is not yet ported; don't strand its machines.
   if ((!scheduled && ![0, 2, 4].includes(field.state)) || field.equipment || field.pendingEquipment) return { ok: false, reason: 'field-busy' };
   const seed = consumeSeed(world, cropSlot, soilMoisture);
@@ -60,7 +60,7 @@ function startPlanting(world: Scenario, field: FieldRecord, cropSlot: number, cr
   const b = field.bytes;
   b[2] = 3; b[3] = 0;
   adjustMarketForPlanting(market, cropSlot); // History changes; trade prices wait for the weekly updater.
-  b[14] = cropSlot; writeFieldBadge(field, world.cells, 0, cropSlot);
+  b[14] = cropSlot; writeFieldBadge(field, world.cells, 0, cropSlot, true);
   for (const [target, resistance] of [[61, 59], [60, 58], [62, 60]]) {
     b[target] = Math.max(0, Math.min(64, Math.max(1, random.nextSimulation() & 255) - crop[resistance]));
   }

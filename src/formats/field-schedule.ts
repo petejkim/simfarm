@@ -10,8 +10,10 @@ export type ScheduleEntry = { kind: 'plant'; cropSlot: number } | { kind: 'crop-
   | { kind: 'unknown'; code: number };
 
 /** Dispatcher 0x2f66a..0x2fb12. Preserve unrecognized words, including zero, without inventing an action. */
-export function describeScheduleEntry(code: number): ScheduleEntry {
+export function describeScheduleEntry(code: number, cropCount = 16): ScheduleEntry {
   word(code);
+  if (cropCount === 24 && code >= 1384 && code < 1392) return { kind: 'plant', cropSlot: code - 1384 + 16 };
+  if (cropCount === 24 && code >= 1280 && code < 1344) return { kind: 'crop-stage', cropSlot: ((code - 1280) >> 3) + 16, stage: (code - 1280) & 7 };
   if (code >= 832 && code < 848) return { kind: 'plant', cropSlot: code - 832 };
   if (code >= 688 && code < 816) return { kind: 'crop-stage', cropSlot: (code - 688) >> 3, stage: (code - 688) & 7 };
   switch (code) {

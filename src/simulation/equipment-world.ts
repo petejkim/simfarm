@@ -1,3 +1,4 @@
+import { nativeCropBadge } from '../formats/crop-slots';
 import { EQUIPMENT_FLAGS as F, type EquipmentRecord } from '../formats/equipment';
 import type { FieldRecord } from '../formats/field';
 import { terrainTile, worldIndex, type Scenario, type WorldCell } from '../formats/scenario';
@@ -162,7 +163,7 @@ export function traverseEquipmentField(e: EquipmentRecord, field: FieldRecord, t
   eraseEquipment(e, world);
   const cell = inMap(e.x, e.y) ? world.cells[worldIndex(e.x, e.y)] : undefined;
   const current = cell ? terrainTile(cell) : -1;
-  if (cell && tile >= 0 && !(current >= 539 && current < 666) && (cell.overlay & 0x1000)) {
+  if (cell && tile >= 0 && !(current >= 539 && current < 666) && !nativeCropBadge(current) && (cell.overlay & 0x1000)) {
     cell.terrain = ((cell.terrain & 0xf800) | tile) & 0xffff;
   }
   const left = s8(field.x), right = s8(field.x + field.width), bottom = s8(field.y + field.height);

@@ -1,3 +1,4 @@
+import { cropPlantSlot } from '../formats/crop-slots';
 import { Binary } from '../formats/binary';
 import type { Scenario } from '../formats/scenario';
 import { SCHEDULE_WEEKS } from '../formats/field-schedule';
@@ -52,7 +53,7 @@ export function editFieldPlan(world: Pick<Scenario, 'fields' | 'farm' | 'schedul
     if (!(crop[62] & 1)) for (let row = week + 1; row < SCHEDULE_WEEKS; row++) {
       const code = world.schedule.get(row, column);
       // SF-039: include crop slot 15; original strict comparison accidentally erases 847.
-      if (code >= 832 && code <= 847) break;
+      if (cropPlantSlot(code, crops.length) >= 0) break;
       world.schedule.set(row, column, 209);
     }
     return success;
@@ -62,7 +63,7 @@ export function editFieldPlan(world: Pick<Scenario, 'fields' | 'farm' | 'schedul
   if (code === undefined) return { ok: false, reason: 'invalid-action' };
   const previous = world.schedule.get(week, column);
   // Editor guards are narrower than the immediate-order recorder (0x2e2a8..0x2e303).
-  if (action.kind !== 'plow' && (previous === 198 || previous === 440 || previous >= 832 && previous <= 847)) {
+  if (action.kind !== 'plow' && (previous === 198 || previous === 440 || cropPlantSlot(previous, crops.length) >= 0)) {
     return { ok: false, reason: 'protected-order' };
   }
   world.schedule.set(week, column, code);

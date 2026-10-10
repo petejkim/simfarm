@@ -1,3 +1,4 @@
+import { nativeCropTile } from '../formats/crop-slots';
 import type { BuildingRecord } from '../formats/building';
 import { EQUIPMENT_FLAGS as F, type EquipmentRecord } from '../formats/equipment';
 import { worldIndex, type Scenario } from '../formats/scenario';
@@ -34,7 +35,7 @@ export function toggleBuildingInterior(b: BuildingRecord, world: BuildingWorld):
       const item = b.content(dx * 3 + dy);
       cell.terrain = 217;
       if (item.type === -1 || item.type === -2) continue;
-      if (item.graphic >= 848) { cell.terrain = 0x08d9; cell.overlay = (cell.overlay & 0xf800) | item.graphic; }
+      if (item.graphic >= 848 && !nativeCropTile(item.graphic)) { cell.terrain = 0x08d9; cell.overlay = (cell.overlay & 0xf800) | item.graphic; }
       else cell.terrain = item.graphic;
     }
   } else if (b.type === 72) {

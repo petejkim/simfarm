@@ -1,3 +1,4 @@
+import { expandCropCatalog } from './all-crops';
 import { createOriginalSaveStartup, restartOriginalSaveStartup, type OriginalStartupOptions } from './original-startup';
 import { calendarDayDue, ticksUntilCalendarDay } from './calendar-clock';
 import { initialOriginalPause, type OriginalPauseState } from './original-pause';
@@ -334,6 +335,14 @@ export class GameSimulation {
     this.publish();
   }
 
+  /** Apply the browser catalog policy to a detached restored state, without replay. */
+  withAllCrops(catalog: readonly CropDefinition[]): GameSimulation {
+    if (this.scenario.cropFiles.length === 24) return this;
+    const state = readNativeSave(this.save(null)).state;
+    expandCropCatalog(state, catalog);
+    return GameSimulation.load(writeNativeSave(state, null), catalog, this.townLayouts).simulation;
+  }
+
   /** Loaded-preset finalization phase. Full geographic entry additionally uses
    * openGeographicRegion for preliminary generation and cold retained clocks. */
   static openRegion(scenario: Scenario, crops: readonly CropDefinition[], townLayouts: TownLayouts, climate: ClimateTables): GameSimulation {
@@ -668,8 +677,8 @@ export class GameSimulation {
       this.requestAnimalVocals(aging.sounds);
       this.animalLifecycleNotices = [...this.animalLifecycleNotices, ...aging.notices].slice(-20);
       ageInventoryAndRefillTroughs(s);
-      updateWeeklyMarket(s, this.crops, this.market, this.random); // 0xbe55, before wind and scheduled planting.
-      for (let i = 0; i < 16; i++) this.cropMarketPrices[i] = s.cropDefinitions[i].price;
+      updateWeeklyMarket(s, this.crops, this.market, this.random, new FarmRandom(this.random.snapshot())); // 0xbe55, before wind and scheduled planting.
+      for (let i = 0; i < this.crops.length; i++) this.cropMarketPrices[i] = s.cropDefinitions[i].price;
       // Weekly dispatcher0xbdbe updates old week's wind and field water before the calendar rolls.
       const wind = updateWeeklyWind(w, s.climate, before);
       if (wind.storm) this.startWind();
@@ -876,7 +885,7 @@ export class GameSimulation {
       lastTreatmentResult: this.lastTreatmentResult ? { ...this.lastTreatmentResult } : null,
       lastScheduleResult: this.lastScheduleResult ? { ...this.lastScheduleResult } : null,
       lastPlanEditResult: this.lastPlanEditResult ? { ...this.lastPlanEditResult } : null,
-      storedHarvestValues: this.scenario.inventory.map(i => i.active && i.type >= 168 && i.type < 184
+      storedHarvestValues: this.scenario.inventory.map(i => i.active && i.type >= 168 && i.type < 168 + this.crops.length
         ? storedHarvestValue(i, this.scenario) : null),
       fieldHarvestEstimates: this.scenario.fields.map(f => {
         if (!f.active) return null;

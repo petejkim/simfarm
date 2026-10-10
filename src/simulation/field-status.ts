@@ -1,14 +1,15 @@
+import { cropBadgeTile } from '../formats/crop-slots';
 import { Binary } from '../formats/binary';
 import type { FieldRecord } from '../formats/field';
 import { terrainTile, worldIndex, type WorldCell } from '../formats/scenario';
 
 /** Original 2×2 field badge writer, file 0x196b8..0x19845. Position is a badge column. */
-export function writeFieldBadge(field: FieldRecord, cells: WorldCell[], position: number, badge: number): void {
+export function writeFieldBadge(field: FieldRecord, cells: WorldCell[], position: number, badge: number, cropBadge = false): void {
   const x = field.x + position * 2, y = field.y;
   for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
     const cell = cells[worldIndex(x + dx, y + dy)];
     // Erasure copies the two rows immediately below the badge, retaining destination flags.
-    const tile = badge === -1 ? terrainTile(cells[worldIndex(x + dx, y + dy + 2)]) : 539 + badge * 4 + dy * 2 + dx;
+    const tile = badge === -1 ? terrainTile(cells[worldIndex(x + dx, y + dy + 2)]) : cropBadge ? cropBadgeTile(badge, dy * 2 + dx) : 539 + badge * 4 + dy * 2 + dx;
     cell.terrain = (cell.terrain & 0xf800) | tile;
   }
 }

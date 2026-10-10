@@ -1,3 +1,4 @@
+import { cropHarvestTile } from '../formats/crop-slots';
 import { Binary } from '../formats/binary';
 import type { InventoryRecord } from '../formats/inventory';
 import type { Scenario } from '../formats/scenario';
@@ -57,7 +58,7 @@ export function createInventoryItem(world: Scenario, type: number, quantity: num
 /** 0x15f9a..0x1602f -> 0x15234/0x1b278. Fill the first reserved cell, as in DOS.
  * SF-021: reject a slot that cannot fit the building's byte reference before mutation. */
 export function deliverStoredHarvest(world: Scenario, buildingSlot: number, cropSlot: number, quantity: number, loss: number): InventoryRecord | undefined {
-  if (!Number.isInteger(cropSlot) || cropSlot < 0 || cropSlot >= 16) throw new Error('Invalid harvest crop slot');
+  if (!Number.isInteger(cropSlot) || cropSlot < 0 || cropSlot >= world.cropFiles.length) throw new Error('Invalid harvest crop slot');
   const b = world.buildings[buildingSlot];
   const index = storageCells(world, buildingSlot).find(i => b.content(i).type === -2);
   const free = world.inventory.find(i => i.slot && !i.active);
@@ -66,7 +67,7 @@ export function deliverStoredHarvest(world: Scenario, buildingSlot: number, crop
   const item = createInventoryItem(world, def.type, quantity, loss, b.x + Math.floor(index / 3), b.y + index % 3)!;
   def.count++;
   // Tile-base table file 0x4f4be, entries 109..124, gives 816..831.
-  b.setContent(index, 816 + cropSlot, def.type, item.slot);
+  b.setContent(index, cropHarvestTile(cropSlot), def.type, item.slot);
   toggleBuildingInterior(b, world); toggleBuildingInterior(b, world);
   return item;
 }

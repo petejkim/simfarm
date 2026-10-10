@@ -1,3 +1,4 @@
+import { isCropStageTile } from '../formats/crop-slots';
 import { Binary } from '../formats/binary';
 import type { FieldRecord } from '../formats/field';
 import { terrainTile, worldIndex, type WorldCell } from '../formats/scenario';
@@ -14,7 +15,7 @@ export function clearFieldCrop(field: FieldRecord, crop: readonly number[], regi
   updateFieldStatus(field, crop, cells);
   for (let x = field.x; x < field.x + field.width; x++) for (let y = field.y; y < field.y + field.height; y++) {
     const cell = cells[worldIndex(x, y)], tile = terrainTile(cell);
-    if (tile >= 688 && tile <= 815) cell.terrain = (cell.terrain & 0xf822) | 0x22;
+    if (isCropStageTile(tile)) cell.terrain = (cell.terrain & 0xf822) | 0x22;
   }
 }
 
