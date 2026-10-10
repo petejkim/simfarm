@@ -28,7 +28,7 @@ function Game({ assets }: { assets: GameAssets }) {
     if (event.type === 'music') music.requestTrack(event.track);
     else sound.play(event.sound);
   }, [music.requestTrack, sound.play]);
-  return <WindowDesktop>
+  return <WindowDesktop artwork={assets.windowArtwork}>
     <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded}
       onScenarioChange={id => setFarm(previous => ({ id, serial: previous.serial + 1 }))}
       audioControls={<header>

@@ -16,7 +16,7 @@ test('Bank terminal preserves source geometry and HTML captions; keypad, clear, 
   expect(await bank.boundingBox()).toMatchObject({ x: 176, y: 96, width: 288, height: 240 });
   expect(await page.locator('.bank-terminal > img').boundingBox()).toEqual({ x: 176, y: 112, width: 288, height: 224 });
   const keys = bank.getByRole('button');
-  await expect(keys).toHaveText(['×','C','0','?','1','2','3','4','5','6','7','8','9','OK','CLOSE','REPAY']);
+  await expect(keys).toHaveText(['','C','0','?','1','2','3','4','5','6','7','8','9','OK','CLOSE','REPAY']);
   await keys.getByText('1', { exact: true }).click(); // Visible captions are real text.
   await bank.getByRole('button', { name: '0', exact: true }).click();
   await expect(page.locator('#loan-amount')).toHaveValue('10');

@@ -19,7 +19,7 @@ test('crop and masked pixels match source assets at original world coordinates; 
   for (let p = 0; p < base.length; p += 4) if (overlay[p + 3]) base.set(overlay.subarray(p, p + 4), p);
   await page.goto('/');
   await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
-  const pixels = (x: number, y: number) => page.locator('canvas').evaluate((canvas: HTMLCanvasElement, point) =>
+  const pixels = (x: number, y: number) => page.locator('#world').evaluate((canvas: HTMLCanvasElement, point) =>
     Array.from(canvas.getContext('2d')!.getImageData(point.x * 16, point.y * 16, 16, 16).data), { x, y });
   expect(await pixels(41, 31)).toEqual(Array.from(grapes));
   expect(await pixels(59, 85)).toEqual(Array.from(base));
@@ -62,7 +62,7 @@ test('original scenario maps, crop selection, navigation and audible MIDI', asyn
   });
   await page.goto('/');
   await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
-  const colors = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => {
+  const colors = await page.locator('#world').evaluate((canvas: HTMLCanvasElement) => {
     const data = canvas.getContext('2d')!.getImageData(0, 0, 1536, 1536).data, colors = new Set<number>();
     for (let p = 0; p < data.length; p += 4) colors.add((data[p] << 16) | (data[p + 1] << 8) | data[p + 2]);
     return colors.size;
@@ -79,7 +79,7 @@ test('original scenario maps, crop selection, navigation and audible MIDI', asyn
     await expect(page.locator('#map-status')).toHaveText(`Scenario ${i + 1} · original terrain`);
   }
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
-  await expect(page.locator('canvas')).toHaveCSS('width', '768px');
+  await expect(page.locator('#world')).toHaveCSS('width', '768px');
   await openWindow(page, 'options'); await page.getByRole('button', { name: 'Play music' }).click();
   await expect(page.locator('#audio-status')).toContainText('Playing amain');
   await expect.poll(() => page.evaluate(() => {
@@ -125,11 +125,11 @@ test('scenario changes cancel pending loads and recover after missing farm asset
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2');
   await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('2');
   await expect(page.locator('#map-status')).toContainText('Cannot load scenario2.tiles.png');
-  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.locator('#world')).toHaveCount(0);
   await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('3');
   await expect(page.locator('#map-status')).toHaveText('Scenario 4 · original terrain');
   await expect(page.locator('#field option')).toHaveCount(4);
-  await expect(page.locator('canvas')).toHaveCSS('width', '3072px');
+  await expect(page.locator('#world')).toHaveCSS('width', '3072px');
 });
 
 test('time controls advance the simulation, render crop changes, pause, and reset on scenario changes', async ({ page }) => {
@@ -143,11 +143,11 @@ test('time controls advance the simulation, render crop changes, pause, and rese
   await reveal(page, '#field'); await page.locator('#field').selectOption('1');
   await expect(page.locator('#farm-date')).toHaveText('April 28, 1993');
   await expect(page.locator('#field-growth')).toContainText('Crop age: 0 weeks');
-  const before = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
+  const before = await page.locator('#world').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
   await reveal(page, '#next-day'); await page.locator('#next-day').click();
   await expect(page.locator('#farm-date')).toHaveText('May 1, 1993');
   await expect(page.locator('#field-growth')).toContainText('Crop age: 1 weeks');
-  const after = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
+  const after = await page.locator('#world').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
   expect(after).not.toBe(before);
   await reveal(page, '#play-pause'); await page.locator('#play-pause').click();
   await expect(page.locator('#next-day')).toBeDisabled();
@@ -196,7 +196,7 @@ test('planting from React buys seed, rents machinery and renders a newly planted
   await expect(page.locator('#field-status')).toContainText('Growing');
   await expect(page.locator('#farm-cash')).toHaveText(`$${(40000 - cost - 400).toLocaleString('en-US')}`);
   await expect(page.locator('#plant-field')).toBeEnabled();
-  const actual = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement, point) =>
+  const actual = await page.locator('#world').evaluate((canvas: HTMLCanvasElement, point) =>
     Array.from(canvas.getContext('2d')!.getImageData(point.x * 16, point.y * 16, 16, 16).data), { x: field.x + 3, y: field.y + 4 });
   expect(actual).toEqual(Array.from(expected));
   await page.screenshot({ path: 'artifacts/browser-planting.png', fullPage: true });

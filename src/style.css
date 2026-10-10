@@ -125,8 +125,7 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 /* Permanent desktop workspace. No phone breakpoint rearranges this frame. */
 .game-desktop{position:relative;min-width:640px;width:100%;height:max(480px,100dvh);overflow:hidden;background:#c2c2c2;color:#000;color-scheme:light}
 .game-desktop [hidden]{display:none!important}
-.game-desktop .edit-workspace{position:absolute;inset:48px 0 0;display:grid;grid-template-columns:50px minmax(0,1fr);grid-template-rows:14px minmax(0,1fr);gap:0;margin:0;padding:0;border:2px ridge #eee;background:#c2c2c2}
-.edit-title{grid-column:1 / -1;background:#0000a6;color:#fff;text-align:center;font:bold 12px/14px Arial,sans-serif;user-select:text}
+.game-desktop .edit-workspace{position:absolute;inset:48px 0 0;display:grid;grid-template-columns:50px minmax(0,1fr);grid-template-rows:16px minmax(0,1fr);gap:0;margin:0;padding:0;border:2px ridge #eee;border-top:0;background:#c2c2c2}
 .edit-palette{position:relative;width:48px;height:208px;margin:1px 0}
 .edit-palette>img{display:block;image-rendering:pixelated;pointer-events:none}
 .edit-palette>button{position:absolute;padding:0;border:0;border-radius:0;background:transparent;color:#000}
@@ -139,8 +138,6 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .game-desktop .map-footer{flex-shrink:0;align-items:center;min-height:24px;padding:3px 8px;background:#c2c2c2;color:#000;font:12px Arial,sans-serif}
 .game-desktop .map-footer button{padding:2px 6px;font-size:12px}
 .game-window{position:absolute;z-index:30;top:80px;right:16px;width:520px;max-height:calc(100% - 104px);display:flex;flex-direction:column;box-shadow:4px 4px #0008;border:3px ridge #eee;background:#c2c2c2;color:#000;font:14px Arial,sans-serif}
-.game-window-title{display:flex;flex-shrink:0;align-items:center;justify-content:space-between;background:#0000a6;color:#fff;min-height:28px;padding-left:10px;font:bold 16px Arial,sans-serif}
-.game-window-title button{border:2px outset #eee;background:#c2c2c2;color:#000;width:26px;height:24px;padding:0;border-radius:0;font:20px/18px Arial,sans-serif}
 .game-window-body{padding:12px;overflow:auto;min-height:0;line-height:1.4}
 .game-window[data-window=newgame]{width:1040px;right:20px;top:64px;max-height:calc(100% - 80px)}
 .game-window[data-window=town],.game-window:has(.default-panel){z-index:35}
@@ -170,8 +167,6 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 
 /* Original Bank terminal: DS:b32a window at176,96 with288×224 client art. */
 .game-window[data-window=bank]:not(:has(.default-panel)){left:176px;right:auto;top:96px;width:288px;border:0;max-height:calc(100% - 112px)}
-.game-window[data-window=bank] .game-window-title{height:16px;min-height:16px;padding-left:4px;font:bold 12px/16px Arial,sans-serif}
-.game-window[data-window=bank] .game-window-title button{width:16px;height:16px;padding:0;font:12px/12px Arial,sans-serif}
 .game-window[data-window=bank] .game-window-body{padding:0}
 .bank-terminal{position:relative;width:288px;height:224px;flex-shrink:0;color:#00aa04}
 .bank-terminal>img{display:block;image-rendering:pixelated;pointer-events:none}
@@ -192,8 +187,6 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 
 /* Original Buy descriptor DSb4a6 and its256×224 client bitmap. */
 .game-window[data-window=buy]{left:128px;right:auto;top:96px;width:256px;border:0;max-height:calc(100% - 112px)}
-.game-window[data-window=buy] .game-window-title{height:16px;min-height:16px;padding-left:4px;font:bold 12px/16px Arial,sans-serif}
-.game-window[data-window=buy] .game-window-title button{width:16px;height:16px;padding:0;font:12px/12px Arial,sans-serif}
 .game-window[data-window=buy] .game-window-body{padding:0;overflow:visible}
 .buy-window{position:relative;width:256px;height:224px}
 .buy-window>img{display:block;image-rendering:pixelated;pointer-events:none}
@@ -210,3 +203,15 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .game-window .buy-window .buy-label{position:absolute;left:168px;font:bold 10px/12px monospace;color:#000}
 .game-window .buy-window output{position:absolute;left:176px;width:64px;height:10px;font:10px/10px Arial,sans-serif;color:#000}
 #buy-result:empty{display:none}
+
+/* Source2b09a: repeated16px wooden title tiles, with real centered text. */
+.edit-title,.game-window-title{position:relative;flex-shrink:0;height:16px;min-height:16px;background-color:#824104;background-image:var(--window-title);background-repeat:repeat-x;image-rendering:pixelated;color:#fff;text-align:center;text-transform:uppercase;font:bold 12px/16px monospace;white-space:nowrap}
+.edit-title{grid-column:1 / -1;user-select:text}
+.game-desktop:has(.game-window:not([hidden])) .edit-title{background-image:var(--window-inactive)}
+.game-window-title{display:flex;align-items:center;justify-content:center;padding:0 20px;cursor:grab;touch-action:none}
+.game-window-title:active{cursor:grabbing}
+.game-window-title>span{overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.game-window>.game-window-title>button{position:absolute;left:0;top:0;width:16px;height:16px;padding:0;border:0;border-radius:0;background:var(--window-close) no-repeat;opacity:1;cursor:pointer}
+.game-window>.game-window-title>button:disabled{visibility:hidden}
+.game-window>.game-window-title>button:hover:not(:disabled){background:var(--window-close) no-repeat;filter:brightness(1.2)}
+.game-window-title:focus-visible{outline:1px dotted #fff;outline-offset:-2px}
