@@ -48,7 +48,7 @@ test('legacy market migration keeps unknown samples through browser save/load an
   const old = JSON.parse(f.load().save(4)); old.version = 15; delete old.runtime.market;
   const game = GameSimulation.load(JSON.stringify(old), f.crops).simulation;
   await page.goto('/'); await load(page, JSON.stringify(old));
-  const migrated = await save(page, 'migrated'); expect(migrated.version).toBe(22);
+  const migrated = await save(page, 'migrated'); expect(migrated.version).toBe(23);
   expect(migrated.runtime.dayTicks).toBe(old.runtime.dayTicks);
   expect(migrated.runtime.random).toEqual(old.runtime.random);
   expect(migrated.runtime.market.history[0]).toEqual([...Array(29).fill(null), old.runtime.cropMarketPrices[0]]);

@@ -19,6 +19,7 @@ import { initializeStartingMarket } from './starting-market';
 import { initializeStartupWeather } from './weather';
 import { initializeStartingTraffic } from './starting-traffic';
 import { loadOriginalFarmState } from './original-load';
+import { resetOriginalSpeedChecks } from './original-pause';
 
 export type RestartFarmOptions = Omit<NewFarmOptions, 'seeds'>;
 
@@ -39,6 +40,7 @@ function prepareRestart(previous: SimulationState, assets: NewFarmAssets) {
     raw: structuredClone((prior.newFarm ?? prior.retainedSetup)?.raw ?? assets.runtime.raw) };
   // Every raw member is reset here except Fedd, overwritten by town setup below.
   resetSetupRuntime(runtime, activity.weather);
+  resetOriginalSpeedChecks(prior.originalPause);
   const regions = Uint8Array.from(prior.scenario.regionalConditions);
   for (let i = 0; i < 144; i++) { regions[i * 7] = 255; regions[i * 7 + 1] = 0; }
   prior.scenario.cells = activity.cells; prior.scenario.irrigation = activity.irrigation;

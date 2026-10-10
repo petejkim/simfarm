@@ -118,6 +118,7 @@ test('loaded pause depth decides original resume pacing for both running and pau
     expect(actual.scenario.irrigation.delay).toBe(resumes ? 2 : 13);
     expect(actual.runtime.traffic.delay).toBe(resumes ? 16 : 29);
     expect(actual.runtime.disasters.frameDelay).toBe(resumes ? 4 : 47);
+    expect(actual.runtime.originalPause).toEqual({ depth: Math.max(0, depth - 1), speedChecks: resumes ? [0, 0, 1, 0, 0] : [0, 0, 0, 0, 1] });
     expect(actual.runtime.random).toEqual(prior.runtime.random);
     expect(actual.scenario.source).toBe(bytes.toString('hex'));
     await expect(page.locator('#time-status')).toContainText('Paused');
@@ -136,8 +137,9 @@ test('equipment pacing bytes survive browser checkpoints; v21 keeps unknown iden
   const legacy = structuredClone(current); legacy.version = 21; delete legacy.scenario.farm.equipmentPacingByte;
   await load(page, Buffer.from(JSON.stringify(legacy)), 'legacy.json');
   const migrated = (await save(page, 'byte-migrated')).data;
-  expect(migrated.version).toBe(22);
-  expect(migrated).toEqual({ ...current, scenario: { ...current.scenario, farm: { ...current.scenario.farm, equipmentPacingByte: null } } });
+  expect(migrated.version).toBe(23);
+  expect(migrated).toEqual({ ...current, scenario: { ...current.scenario, farm: { ...current.scenario.farm, equipmentPacingByte: null } },
+    runtime: { ...current.runtime, originalPause: { depth: null, speedChecks: [null, null, null, null, null] } } });
   await page.locator('#next-day').click();
   const advanced = (await save(page, 'byte-advanced')).data; expect(advanced.scenario.farm.equipmentPacingByte).toBeNull();
   for (const byte of [undefined, -1, 256, 0.5, '2']) {
@@ -154,4 +156,30 @@ test('equipment pacing bytes survive browser checkpoints; v21 keeps unknown iden
     await load(page, Buffer.from(JSON.stringify(imported)), 'checkpoint.json');
     expect((await save(page, 'byte-restored')).data).toEqual(imported);
   }
+});
+
+test('original pause ownership survives checkpoints; v22 migrates to unknown and malformed v23 rejection is atomic', async ({ page }) => {
+  await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const base = (await save(page, 'owner-base')).data;
+  const legacy = structuredClone(base); legacy.version = 22; delete legacy.runtime.originalPause;
+  await load(page, Buffer.from(JSON.stringify(legacy)), 'v22.json');
+  const unknown = (await save(page, 'owner-unknown')).data;
+  expect(unknown.version).toBe(23);
+  expect(unknown).toEqual({ ...base, runtime: { ...base.runtime, originalPause: { depth: null, speedChecks: [null, null, null, null, null] } } });
+  for (const owner of [undefined, { depth: 256, speedChecks: [0, 0, 1, 0, 0] }, { depth: 0, speedChecks: [0, 0, -1, 0, 0] }]) {
+    const bad = structuredClone(unknown); bad.runtime.originalPause = owner;
+    await page.locator('#load-farm-file').setInputFiles({ name: 'bad-owner.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
+    await expect(page.locator('#save-status')).toContainText('Could not load farm');
+    expect((await save(page, 'owner-rejected')).data).toEqual(unknown);
+  }
+  const raw = structuredClone(base); raw.runtime.originalPause = { depth: 255, speedChecks: [128, 3, 254, 1, 255] };
+  await load(page, Buffer.from(JSON.stringify(raw)), 'raw-owner.json'); expect((await save(page, 'owner-raw')).data).toEqual(raw);
+  await load(page, source('SCEN4.SSM'), 'wrap.SSM');
+  const wrapped = (await save(page, 'owner-wrapped')).data;
+  expect(wrapped.runtime.originalPause).toEqual({ depth: 0, speedChecks: raw.runtime.originalPause.speedChecks });
+  await page.reload(); await load(page, Buffer.from(JSON.stringify(wrapped)), 'checkpoint.json');
+  expect((await save(page, 'owner-restored')).data).toEqual(wrapped);
+  const one = Buffer.from(source('SCEN4.SSM')); one[0x21719] = 1;
+  await load(page, one, 'resume.SSM');
+  expect((await save(page, 'owner-normal')).data.runtime.originalPause).toEqual({ depth: 0, speedChecks: [0, 0, 1, 0, 0] });
 });

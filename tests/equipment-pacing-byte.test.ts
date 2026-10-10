@@ -38,7 +38,7 @@ test('original import retains every represented speed byte except the verified d
     for (const depth of [0, 1, 2, 255]) {
       const input = Buffer.from(source('SCEN4.SSM')); input[0x21718] = byte; input[0x21719] = depth;
       const original = Buffer.from(input), game = prior.importOriginal(input, assets.crops).simulation;
-      const value = parsed(game); assert.equal(value.version, 22);
+      const value = parsed(game); assert.equal(value.version, 23);
       assert.equal(value.scenario.farm.equipmentPacingByte, depth === 1 ? 2 : byte);
       assert.equal(value.scenario.farm.paceEquipment, depth === 1 || byte !== 0);
       const loaded = restore(value); assert.deepEqual(parsed(loaded), value);

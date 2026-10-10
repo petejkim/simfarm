@@ -22,6 +22,7 @@ import { createMovingDisasters } from './moving-disasters';
 import { createWaterDisasters } from './water-disasters';
 import { createAnimalFrameState } from './animal-world';
 import { createAircraftServiceState } from './aircraft';
+import { initialOriginalPause } from './original-pause';
 
 /** Geographic result3: preliminary generation, second generation with retained
  * soil/water, then sites/property/finalization. No custom controls or reroll. */
@@ -69,7 +70,7 @@ export function createGeographicRegion(bytes: Uint8Array, selection: ClimateSele
     townLayoutBytes: [...assets.townLayouts.bytes],
     // Calendar timestamp DS1f8e is initialized0 and not loaded;13a0 is loaded.
     dayTicks: scenario.farm.animationTicks, equipmentAnimationTick: scenario.farm.animationTicks,
-    daysAdvanced: 0, paused: true, speed: 1, elapsed: 0, grassTravelCount: 0,
+    daysAdvanced: 0, paused: true, originalPause: { ...initialOriginalPause(), depth: bytes[0x21719] }, speed: 1, elapsed: 0, grassTravelCount: 0,
     disasters: createMovingDisasters(), waterDisasters: createWaterDisasters(), animalFrame: createAnimalFrameState(),
     aircraftService: createAircraftServiceState(), aircraftFlight: null, pendingTown: null };
 }

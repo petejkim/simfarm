@@ -23,6 +23,7 @@ import { createMovingDisasters } from './moving-disasters';
 import { createWaterDisasters } from './water-disasters';
 import { createAircraftServiceState } from './aircraft';
 import { createAnimalFrameState } from './animal-world';
+import { initialOriginalPause } from './original-pause';
 
 export interface NewFarmAssets {
   records: NewFarmRecordDefaults;
@@ -78,7 +79,7 @@ export function createNewFarmState(options: NewFarmOptions, assets: NewFarmAsset
     newFarm: { provenance: { kind: 'cold-start', version: 1, options: structuredClone(options) }, raw: runtime.raw,
       terrainHistory: terrainRandom.snapshot(), plannerBuffer: [...records.plannerBuffer] },
     traffic: snapshotTraffic(traffic),
-    daysAdvanced: 0, paused: true, speed: 1, elapsed: 0, dayTicks: 0,
+    daysAdvanced: 0, paused: true, originalPause: initialOriginalPause(), speed: 1, elapsed: 0, dayTicks: 0,
     disasters: createMovingDisasters(), waterDisasters: createWaterDisasters(),
     grassTravelCount: 0, equipmentAnimationTick: 0, animalFrame: createAnimalFrameState(),
     aircraftService: createAircraftServiceState(), aircraftFlight: null, cropMarketPrices,

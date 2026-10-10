@@ -6,23 +6,20 @@ import { readNativeSave, writeNativeSave } from '../formats/native-save';
 import { loadMarketCropPrices } from './market';
 import type { SimulationState } from './save-state';
 import { transferCalendarPhase } from './calendar-clock';
-import { setEquipmentPacingByte } from '../formats/scenario-state';
+import { enterOriginalPause, leaveOriginalPause } from './original-pause';
 
 /** In-game SSM transfer4543c..4644c and successful menu return43284.
  * Does not rerun chooser setup, weather generation or traffic allocation.
  * Native import dismisses UI/modal continuations and starts paused. */
 export function transferOriginalFarm(previous: SimulationState, bytes: Uint8Array, crops: readonly CropDefinition[]): SimulationState {
   const prior = readNativeSave(writeNativeSave(previous, null)).state;
+  //3ed67 joins3ecd0; chooser result1 uses3fa42. Both pause before4543c.
+  enterOriginalPause(prior.originalPause);
   const state = loadOriginalFarmState(prior, bytes, crops);
   //461a8..461b3 replaces DS0187 from SSM21719 before43284 resumes.
   //Only loaded depth1 reaches the1->0 pacing writes at3f505; the old
   //browser pause state cannot decide this branch. Native play stays paused.
-  if (bytes[0x21719] === 1) {
-    setEquipmentPacingByte(state.scenario.farm, 2); //0x3f505 writes2 to DSa8a0.
-    state.disasters.frameDelay = 4;
-    state.scenario.farm.dayDelayTicks = 256; state.scenario.farm.speed = 1;
-    state.traffic.delay = 16; state.scenario.irrigation.delay = 2;
-  }
+  leaveOriginalPause(state);
   return state;
 }
 
@@ -48,6 +45,7 @@ export function loadOriginalFarmState(prior: SimulationState, bytes: Uint8Array,
   // Native modal callbacks reference the replaced world and must not resume on it.
   finances.defaultDecision = null;
   const state: SimulationState = { ...prior, scenario, finances, crops: definitions, cropMarketPrices, market,
+    originalPause: { depth: bytes[0x21719], speedChecks: [...prior.originalPause.speedChecks] },
     newFarm: null, retainedSetup: prior.newFarm ?? prior.retainedSetup,
     weather: { ...prior.weather, precipitationDays: scenario.farm.precipitationDays },
     traffic: { ...prior.traffic, delay: new Binary(bytes).u16(0x2171e) },

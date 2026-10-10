@@ -1,5 +1,6 @@
 import { createOriginalSaveStartup, restartOriginalSaveStartup, type OriginalStartupOptions } from './original-startup';
 import { calendarDayDue, ticksUntilCalendarDay } from './calendar-clock';
+import { initialOriginalPause, type OriginalPauseState } from './original-pause';
 import { restartGeneratedFarm, restartRegionFarm, type RestartFarmOptions } from './restart-farm';
 import { createGeographicFarm, createGeographicRegion, restartGeographicFarm } from './geographic-setup';
 import type { ClimateSelection } from '../formats/new-farm';
@@ -101,6 +102,7 @@ export interface FieldHarvestEstimate {
 }
 
 export interface GameSnapshot {
+  originalPause: OriginalPauseState;
   setup: SessionSetup;
   newFarm: NewFarmState | null;
   retainedSetup: NewFarmState | null;
@@ -231,6 +233,7 @@ export class GameSimulation {
   private snapshot!: GameSnapshot;
   private daysAdvanced = 0;
   private paused = true;
+  private readonly originalPause: OriginalPauseState;
   private speed = 1;
   private elapsed = 0;
   private disasters = createMovingDisasters();
@@ -282,6 +285,7 @@ export class GameSimulation {
     seeds: RandomState = { visual: 27, simulation: 9029, bounded: 51 }, restored?: SimulationState, regionClimate?: ClimateTables) {
     if (!restored && scenario.origin !== 'original') throw new Error('Generated farms require initialized state');
     this.scenario = copyScenario(scenario);
+    this.originalPause = restored ? structuredClone(restored.originalPause) : { ...initialOriginalPause(), depth: scenario.sourceBytes![0x21719] };
     this.setup = restored ? structuredClone(restored.setup) : createSessionSetup(seeds.simulation);
     this.newFarm = restored?.newFarm ? structuredClone(restored.newFarm) : null;
     this.retainedSetup = restored?.retainedSetup ? structuredClone(restored.retainedSetup) : null;
@@ -338,7 +342,7 @@ export class GameSimulation {
 
   /** Exact native checkpoint, including partial ticks. Does not mutate or advance the farm. */
   save(scenarioId: number | null): string {
-    return writeNativeSave({ scenario: this.scenario, setup: this.setup, newFarm: this.newFarm, retainedSetup: this.retainedSetup, crops: this.crops, random: this.random.snapshot(), weather: this.weather,
+    return writeNativeSave({ scenario: this.scenario, setup: this.setup, originalPause: this.originalPause, newFarm: this.newFarm, retainedSetup: this.retainedSetup, crops: this.crops, random: this.random.snapshot(), weather: this.weather,
       daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
       disasters: this.disasters, waterDisasters: this.waterDisasters, grassTravelCount: this.equipmentRuntime.grassTravelCount,
       equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices, market: this.market, traffic: snapshotTraffic(this.traffic),
@@ -852,7 +856,7 @@ export class GameSimulation {
       animalLifecycleNotices: this.animalLifecycleNotices.map(n => ({ ...n })),
       equipmentAgingNotices: this.equipmentAgingNotices.map(n => ({ ...n })),
       weather: { ...this.weather, forecast: [...this.weather.forecast], nextForecast: [...this.weather.nextForecast] },
-      daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, cropMarketPrices: [...this.cropMarketPrices], market: structuredClone(this.market),
+      daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, originalPause: structuredClone(this.originalPause), cropMarketPrices: [...this.cropMarketPrices], market: structuredClone(this.market),
       lastPlantResult: this.lastPlantResult ? { ...this.lastPlantResult } : null,
       lastHarvestResult: this.lastHarvestResult ? { ...this.lastHarvestResult } : null,
       lastSaleResult: this.lastSaleResult ? { ...this.lastSaleResult } : null,

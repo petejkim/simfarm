@@ -66,7 +66,7 @@ test('live town declines on signed negative receipts and scheduled loan receipts
 
 test('current town checkpoints require matching layout bytes and valid active district; legacy versions adopt the provided original layouts once', () => {
   const { game, crops, save } = fixture(), text = game.save(4);
-  assert.equal(save.version, 22);
+  assert.equal(save.version, 23);
   assert.deepEqual(save.runtime.townLayoutBytes, [...originalTownLayouts.bytes]);
   const changed = new TownLayouts(originalTownLayouts.bytes); changed.bytes[0] ^= 1;
   assert.throws(() => NativeGame.load(text, crops, changed), /different town layouts/);

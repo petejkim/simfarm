@@ -1,4 +1,5 @@
 import type { SessionSetup } from '../simulation/session-setup';
+import { unknownOriginalPause, type OriginalPauseState } from '../simulation/original-pause';
 import { validateMarketState, type MarketState } from '../simulation/market';
 import type { NewFarmState } from '../simulation/new-farm-state';
 import { coldTrafficDefaults, createTrafficState, type TrafficDefaults } from './traffic';
@@ -41,6 +42,12 @@ function boolean(value: unknown, label: string): boolean {
 function numbers(value: unknown, length: number, min: number, max: number, label: string): number[] {
   if (!Array.isArray(value) || value.length !== length) fail(label);
   return value.map(n => number(n, min, max, label));
+}
+function decodeOriginalPause(value: unknown): OriginalPauseState {
+  const p = object(value, 'original pause'), checks = p.speedChecks;
+  if (!Array.isArray(checks) || checks.length !== 5) fail('original speed checks');
+  return { depth: p.depth === null ? null : number(p.depth, 0, 255, 'original pause depth'),
+    speedChecks: checks.map(value => value === null ? null : number(value, 0, 255, 'original speed checks')) as OriginalPauseState['speedChecks'] };
 }
 const hex = (bytes: Uint8Array): string => Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
 function bytes(value: unknown, length: number, label: string): Uint8Array {
@@ -163,7 +170,7 @@ export function writeNativeSave(state: SimulationState, scenarioId: number | nul
     if (state.scenario.origin !== 'original' || !state.scenario.sourceBytes || state.newFarm !== null) fail('original provenance');
   }
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 22, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 23, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, setup: { ...state.setup, sourceArchive: state.setup.sourceArchive ? hex(state.setup.sourceArchive) : null }, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -173,7 +180,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].includes(save.version)) fail('unsupported format or version');
   const s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const scenarioId = s.origin === 'generated' || (save.version >= 18 && save.scenarioId === null) ? null : number(save.scenarioId, 0, 7, 'scenario ID');
   if (s.origin === 'generated' && save.scenarioId !== null) fail('generated scenario ID');
@@ -201,6 +208,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   const setup = save.version >= 19 ? decodeSessionSetup(r.setup, save.version) : { terrainHistory: (newFarm ?? retainedSetup)?.terrainHistory ? [...(newFarm ?? retainedSetup)!.terrainHistory] as SessionSetup['terrainHistory'] : null, sourceArchive: null, previewRaw: null, climateSelection: null };
   if (s.origin === 'generated' && setup.terrainHistory === null) fail('missing generated terrain history');
   const state: SimulationState = { scenario: s, setup, newFarm, retainedSetup, crops: r.crops.map(c => numbers(c, 128, 0, 255, 'crop bytes')),
+    originalPause: save.version >= 23 ? decodeOriginalPause(r.originalPause) : unknownOriginalPause(),
     townLayoutBytes: save.version >= 5 ? numbers(r.townLayoutBytes, TOWN_LAYOUT_BYTES, 0, 255, 'town layout bytes') : null,
     pendingTown: save.version >= 6 ? decodePendingTown(r.pendingTown) : null,
     random: rng.snapshot(), weather: decodeWeather(r.weather), daysAdvanced: number(r.daysAdvanced, 0, Number.MAX_SAFE_INTEGER, 'days advanced'),
