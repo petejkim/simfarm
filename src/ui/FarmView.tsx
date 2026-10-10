@@ -1,3 +1,4 @@
+import {BalanceWindow} from './BalanceWindow';
 import {EvaluationWindow} from './EvaluationWindow';
 import { MarketWindow } from './MarketWindow';
 import { WeatherWindow } from './WeatherWindow';
@@ -43,7 +44,6 @@ import { checkFieldPlacement } from '../simulation/field-placement';
 import { quoteLand } from '../simulation/land';
 import { LoanPanel } from './LoanPanel';
 import { TaxPanel } from './TaxPanel';
-import { FarmReport } from './FarmReport';
 import { LivestockPanel } from './LivestockPanel';
 import { EquipmentShop } from './EquipmentShop';
 import { checkEquipmentPurchase } from '../simulation/equipment-purchase';
@@ -127,8 +127,8 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   });
   const [mapTool, setMapTool] = useState<MapTool>('inspect');
   const [navigation, setNavigation] = useState<{ target: FarmDestination | WindowCommand } | null>(null);
-  const [reportOpen, setReportOpen] = useState(false), [taxOpen, setTaxOpen] = useState(false);
-  const evaluationRef = useRef<HTMLElement>(null), reportRef = useRef<HTMLElement>(null), weatherRef = useRef<HTMLElement>(null);
+  const [taxOpen, setTaxOpen] = useState(false);
+  const evaluationRef = useRef<HTMLElement>(null), balanceRef = useRef<HTMLElement>(null), weatherRef = useRef<HTMLElement>(null);
   const sellRef = useRef<HTMLElement>(null), expertRef = useRef<HTMLElement>(null);
   const plannerRef = useRef<HTMLElement>(null), loansRef = useRef<HTMLElement>(null);
   const networkRef = useRef<HTMLHeadingElement>(null);
@@ -138,7 +138,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     if (!navigation) return;
     const target = navigation.target === 'planner' ? plannerRef.current : navigation.target === 'loans' ? loansRef.current
       : navigation.target === 'network' ? networkRef.current : navigation.target === 'crop-supplies' ? supplyRef.current : navigation.target === 'map' || navigation.target === 'edit' ? viewportRef.current
-      : navigation.target === 'evaluation' ? evaluationRef.current : navigation.target === 'balance' ? reportRef.current
+      : navigation.target === 'evaluation' ? evaluationRef.current : navigation.target === 'balance' ? balanceRef.current
       : navigation.target === 'sell' ? sellRef.current : navigation.target === 'weather' ? weatherRef.current
       : navigation.target === 'expert' ? expertRef.current : landRef.current;
     target?.scrollIntoView({ block: 'start', inline: 'nearest' });
@@ -158,7 +158,6 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     if (window === 'buy') { setNavigation(null); return; }
     if (window === 'bank') { navigate('loans'); return; }
     if (window === 'map' || window === 'market') { setNavigation(null); return; }
-    if (window === 'balance') { setReportOpen(true); setTaxOpen(true); }
     setNavigation({ target: window });
   }
   const [buildingType, setBuildingType] = useState(64);
@@ -388,9 +387,8 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
       onRestart={() => setNewFarmOpen(true)} artwork={assets.bankArtwork} onClose={() => windows.show(null)} panelRef={loansRef} />}
     </GameWindow>
-    <GameWindow windowKey="balance" title="Balance Sheet">
+    <GameWindow windowKey="taxes" title="Tax details">
     {snapshot && <TaxPanel snapshot={snapshot} open={taxOpen} onOpenChange={setTaxOpen} />}
-    {snapshot && <FarmReport snapshot={snapshot} open={reportOpen} onOpenChange={setReportOpen} summaryRef={reportRef} />}
     </GameWindow>
     <GameWindow windowKey="livestock" title="Livestock">
     {snapshot && <LivestockPanel snapshot={snapshot} onMoveSupplies={() => { chooseTool('supply-move'); setSelection(null); }} onShop={() => chooseTool('livestock')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
@@ -407,6 +405,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
       onSelect={slot=>{setSelection(null);selectField(slot,true);}} onNewField={()=>navigate('field')} onCommand={command=>simulation?.dispatch(command)}/>}
     {data && <ExpertWindow assets={assets} cropFiles={data.scenario.cropFiles} tiles={data.tiles} focusRef={expertRef} onEvent={onGameEvent}/>}
     {data && snapshot && <MarketWindow assets={assets} snapshot={snapshot} tiles={data.tiles}/>}
+    {snapshot && <BalanceWindow assets={assets} snapshot={snapshot} focusRef={balanceRef} onEvent={onGameEvent} onTaxes={()=>{setTaxOpen(true);windows.show('taxes');}}/>}
     {data && snapshot && <EvaluationWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={evaluationRef} onEvent={onGameEvent}/>}
     {data && snapshot && <WeatherWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={weatherRef} onEvent={onGameEvent}/>}
     {data && snapshot && <MapWindow assets={assets} snapshot={snapshot} onCommand={command=>simulation?.dispatch(command)} viewportRef={viewportRef} zoom={zoom}

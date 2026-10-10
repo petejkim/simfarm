@@ -25,7 +25,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(file(yearEnd()));
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await reveal(page, '#tax-panel summary'); await page.locator('#tax-panel summary').click(); await expect(page.locator('#tax-estimate')).toHaveText('$4,715');
+  await reveal(page, '#tax-estimate'); await expect(page.locator('#tax-estimate')).toHaveText('$4,715');
   await reveal(page, '#next-day'); await page.locator('#next-day').click();
   await reveal(page, '#town-choice'); await expect(page.locator('#town-choice')).toBeVisible(); await expect(page.locator('#farm-cash')).toHaveText('$35,285');
   await expect(page.locator('#tax-result')).toHaveText('Paid $4,715 in annual tax.');
@@ -56,7 +56,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   await expect(page.locator('#town-choice')).toHaveCount(0); await expect(page.locator('#next-day')).toBeEnabled();
   await expect(page.locator('#time-status')).toContainText('Paused · 1 days advanced');
   await expect(page.locator('#farm-cash')).toHaveText('$35,285');
-  await reveal(page, '#tax-panel summary'); await page.locator('#tax-panel summary').click(); await expect(page.locator('#tax-prior')).toHaveText('$4,715');
+  await reveal(page, '#tax-estimate'); await expect(page.locator('#tax-prior')).toHaveText('$4,715');
   const completedDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const completedPath = 'artifacts/browser-annual-statistics.simfarm.json'; await (await completedDownload).saveAs(completedPath);
   const completed = JSON.parse(readFileSync(completedPath, 'utf8')), statistics = completed.runtime.finances.statistics;
@@ -77,13 +77,13 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
 test('unpaid annual taxes show the original penalty, persist and retry at the next month boundary', async ({ page }) => {
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(file(yearEnd(0)));
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await reveal(page, '#next-day'); await page.locator('#next-day').click();
-  await expect(page.locator('#town-choice')).toHaveCount(0); await reveal(page, '#tax-panel summary'); await page.locator('#tax-panel summary').click();
+  await expect(page.locator('#town-choice')).toHaveCount(0); await reveal(page, '#tax-estimate');
   await expect(page.locator('#tax-result')).toHaveText('Unable to pay $4,715 in annual tax.');
   await expect(page.locator('#tax-debt')).toHaveText('$5,893'); await expect(page.locator('#tax-retries')).toContainText('3 monthly retries');
   const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = 'artifacts/browser-tax-debt.simfarm.json'; await (await download).saveAs(path);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);
-  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await reveal(page, '#tax-panel summary'); await page.locator('#tax-panel summary').click();
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await reveal(page, '#tax-estimate');
   await expect(page.locator('#tax-debt')).toHaveText('$5,893');
   for (let day = 0; day < 28; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
   await expect(page.locator('#farm-date')).toContainText('February 1, 1994');

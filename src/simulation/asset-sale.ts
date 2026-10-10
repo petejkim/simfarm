@@ -24,11 +24,17 @@ export function equipmentSaleQuote(e: EquipmentRecord, definitions: readonly Equ
  * unsigned dword addition/shift, then a word returned to the signed sale caller.
  * Only the five loaded definitions are accepted natively (SF-056). */
 export function animalSaleQuote(a: AnimalRecord, definitions: readonly GoodsDefinition[]): AssetQuote {
+  const quote=animalFullQuote(a,definitions);
+  return {...quote,value:quote.value&65535};
+}
+/** Same0x12958 helper's full DX:AX return, used by Balance Sheet0x1366a.
+ * Sale callers intentionally discard the high word; valuation does not. */
+export function animalFullQuote(a: AnimalRecord, definitions: readonly GoodsDefinition[]): AssetQuote {
   const definition = definitions[a.type - 160];
   if (!a.active || a.type < 160 || a.type > 164 || !definition) throw new Error('Invalid animal quote');
   const multiplier = [3, 5, 3, 2, 0][a.type - 160], band = a.conditionByte >>> 6;
   const increment = (a.valuationWord * multiplier) & 65535;
-  return { value: ((definition.price + increment) >>> (3 - band)) & 65535, conditionBand: band };
+  return { value: (definition.price + increment) >>> (3 - band), conditionBand: band };
 }
 
 type PreparedSale = Exclude<AssetSaleResult, { ok: true }> | (Extract<AssetSaleResult, { ok: true }> & { remove: () => void });

@@ -48,7 +48,7 @@ test('Evaluation restores source geometry, gauges, problems, all24 suggested cro
   await win.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');await page.keyboard.press('Shift+ArrowDown');expect(await win.boundingBox()).toMatchObject({x:138,y:129});
   await client.getByRole('button',{name:'CLOSE',exact:true}).click();await expect(win).toBeHidden();await open(page);expect(await win.boundingBox()).toMatchObject({x:138,y:129});
   await expect(client.locator('.evaluation-pages>span')).toHaveText('2/3');expect(await page.locator('#viewport').boundingBox()).toEqual(edit);expect(await save(page)).toEqual(before);
-  await openWindow(page,'balance');await expect(page.getByRole('dialog',{name:'Balance Sheet',exact:true})).toBeVisible();await expect(page.locator('#tax-panel')).toHaveAttribute('open','');
+  await openWindow(page,'balance');await expect(page.getByRole('dialog',{name:'Balance Sheet',exact:true})).toBeVisible();await expect(page.getByRole('region',{name:'Farm balance sheet',exact:true})).toBeFocused();
 });
 
 test('Evaluation follows season/year rollover, clears resolved problems and suggestions, and preserves exact simulation continuation',async({page})=>{
