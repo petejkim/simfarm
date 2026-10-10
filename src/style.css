@@ -311,3 +311,20 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .field-tool-menu>button:hover:not(:disabled),.field-tool-menu>button:focus-visible{outline:1px solid #000;outline-offset:-1px;background:#ffff0033}
 .field-tool-menu>.field-tool-page{top:0;width:16px;height:16px;font:14px/16px monospace;text-align:center}
 #field-tool-result:empty{display:none}
+
+
+/* Overlay12 Examine: source208×208 frame; HTML replaces every dynamic label. */
+.game-window[data-window=examine]{left:32px;right:auto;top:64px;width:208px;border:0}
+.game-window[data-window=examine] .game-window-body{padding:0}
+.examine-window{position:relative;width:208px;height:192px;font:10px/10px monospace;color:#000}
+.examine-window>canvas{position:absolute;inset:0;width:208px;height:192px;image-rendering:pixelated}
+.examine-window p{position:absolute;top:80px;margin:0;font:10px/10px monospace;color:#000;white-space:pre-line}
+.examine-description{left:16px;width:160px}
+.examine-name{left:24px;width:168px}
+.examine-damage{position:absolute;left:24px;top:90px}
+.examine-condition{position:absolute;left:56px;top:88px;width:32px;height:32px;font:8px/8px monospace}
+.examine-condition .condition-letter{position:absolute;left:8px;top:4px;font:bold 16px/16px monospace}
+.examine-condition .condition-word{position:absolute;left:0;top:24px;width:32px;text-align:center;font:8px/8px monospace}
+#examine-value{position:absolute;left:96px;top:100px}
+.examine-actions{padding:3px;display:flex;gap:3px;flex-wrap:wrap}
+.examine-actions button{font:10px/12px Arial,sans-serif;padding:2px 4px}

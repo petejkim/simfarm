@@ -1382,3 +1382,11 @@ Native Schedule preserves those steps and signed/wrapped thresholds; it changes 
 Maturity helper1c1aa caps its word result at65535. Schedule2d8cd..2d8db takes AH, shifts right4 and multiplies by5, giving a maximum75. The following cap against80 cannot raise it. At2d8e6..2d8fd the caller supplies total width80 to helpera0c8, which draws an8-pixel-high strip using palette6 for progress and12 for the remainder. Thus even a fully mature returned value leaves five background pixels. This does not establish a maturity/harvest simulation defect; that arithmetic and known hazards are documented separately.
 
 Native renders the same75/80 maximum and retains the underlying maturity/quality/value functions. Boundary tests establish the maximum and quality transitions. Consider a deliberate fully-filled visual enhancement later, rather than silently changing the recovered display formula. No security issue is claimed.
+
+## SF-161 — Examine's residential caption branch cannot be selected
+
+**Status:** verified unreachable display branch in the pinned executable; intended presentation is uncertain. Native preserves the classification result; a deliberate caption correction is deferred.
+
+Examine classifier398bc recognizes residential tile ranges254..279 and294..319 at398df..398f6, but both jump to39a48, which returns zero. Its other branches return2..15 for3×3/3×2 town-building atlas footprints; none returns1. Caller396b7..39716 draws a dedicated town card only for nonzero results and selects DS6bf4 `Town Residential` only for result1. Thus that particular caption path is unreachable through this helper, even though residential tile values exist. Those tiles continue through the generic fallback description path, subject to earlier object/town-bit precedence. Static evidence proves the control-flow omission; it does not establish that ordinary players necessarily see missing text, since earlier branches can identify the town area.
+
+Native preserves the0 result for residential ranges and the recognized town-building footprints. A bounded source test pins both the residential jump and zero-return instructions and exercises the tile ranges. Revisit intended residential wording and earlier town-overlay precedence before choosing a visual enhancement. No simulation or security defect is claimed; retain this entry after any future correction.

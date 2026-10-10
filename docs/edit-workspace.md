@@ -6,7 +6,7 @@ The user's current UI policy is the original desktop arrangement, with Edit alwa
 
 Source offsets, decoding confidence and caption masks are recorded in [edit-palette.md](edit-palette.md).
 
-The visible icon order is Move object/View object, paved/dirt road, fence/gate, ditch/valve, hay/trough, trees/bulldoze. The matching archived `edithelp.bmp` also supplies the tool grouping labels. The live palette routes these icons to existing native tool commands. Trees remains disabled because tree planting has not been reconstructed. Plant opens the original crop popup and arms new-field placement; Spray opens the original four-treatment popup and arms an existing-field click. See [field-tools.md](field-tools.md). Object clicks open the currently selected tool's action window. Source-exact one-click/drag operations, selection cursors, complete field-functions dispatch and original dialog interiors remain unfinished.
+The visible icon order is Move object/View object, paved/dirt road, fence/gate, ditch/valve, hay/trough, trees/bulldoze. The matching archived `edithelp.bmp` also supplies the tool grouping labels. The live palette routes these icons to existing native tool commands. Trees remains disabled because tree planting has not been reconstructed. Plant opens the original crop popup and arms new-field placement; Spray opens the original four-treatment popup and arms an existing-field click. See [field-tools.md](field-tools.md). View object clicks open Schedule for fields and Examine for other tiles; other tools retain their action windows. Source-exact one-click/drag operations, selection cursors, complete field-functions dispatch and original dialog interiors remain unfinished.
 
 ## React window ownership and remaining adaptations
 
@@ -25,3 +25,5 @@ Bank now uses its source terminal artwork, control rectangles and window positio
 Schedule opens from Crop planner or View object on an active field; it replaces the provisional planner disclosure. Other Edit tool forms remain transitional until their original immediate gestures are reconstructed. See [schedule-window.md](schedule-window.md) for the source layout and supported controls.
 
 Plant/Spray now use their original popup geometry and map command routes. Immediate existing-field replant/harvest remain accessible through **? → Field orders** until their original object interactions are reconstructed. Other Edit tool forms remain transitional.
+
+View object now uses the original208×208 Examine card for non-field objects, with photographs, item names/descriptions, building contents/damage and original condition/value views. Its persistent draggable frame and compact action footer are native adaptations; source evidence is in [examine-window.md](examine-window.md).
