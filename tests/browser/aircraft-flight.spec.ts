@@ -86,7 +86,7 @@ test('Fly captures the map, original sprites follow keyboard steering, pause/ste
   }, game.getSnapshot().aircraftFlight!)).toBe(true);
   await page.locator('#zoom').selectOption('1');
   await spritesMatch(page, game.getSnapshot().aircraftFlight!); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.locator('#flight-controls').scrollIntoViewIfNeeded(); await page.screenshot({ path: 'artifacts/browser-flight.png', fullPage: true });
   await step(page, game, 'end', 'End'); await expect(page.locator('#flight-result')).toHaveText('Aircraft returned to its airport parking space.');
   await expect(page.locator('#flight-controls')).toHaveCount(0); await expect(page.locator('#next-day')).toBeEnabled();

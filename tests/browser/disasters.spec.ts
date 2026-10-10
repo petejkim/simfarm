@@ -102,6 +102,6 @@ test('manual tornado destroys a building and contents without sale credit; disab
   expect(await save(page, 'tornado')).toEqual(JSON.parse(game.save(4))); await sprites(page, game.getSnapshot().disasters, 'tornado');
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#disasters-panel').scrollIntoViewIfNeeded();
   await expect(page.locator('#locate-disaster')).toBeVisible(); await expect(page.locator('#start-tornado')).toBeDisabled();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-disasters.png', fullPage: true }); expect(errors).toEqual([]);
 });

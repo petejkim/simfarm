@@ -1,20 +1,19 @@
+import type { Ref } from 'react';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
 import { SIMULATION_SPEEDS } from '../simulation/game';
 import { calendarDayPeriod } from '../simulation/calendar-clock';
 
-const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const skies = ['Clear', 'Partly cloudy', 'Cloudy', 'Rain', 'Snow'];
-export function TimeControls({ snapshot, onCommand }: { snapshot: GameSnapshot; onCommand: (command: GameCommand) => void }) {
-  const { scenario, weather, paused } = snapshot, date = scenario.farm.calendar;
+export function TimeControls({ snapshot, onCommand, weatherRef }: { weatherRef?: Ref<HTMLSpanElement>; snapshot: GameSnapshot; onCommand: (command: GameCommand) => void }) {
+  const { scenario, weather, paused } = snapshot;
   const scheduleResult = snapshot.lastScheduleResult;
   const calendarBlocked = calendarDayPeriod(scenario.farm.dayDelayTicks) === null;
   const scheduleFailures = { 'no-seeds': 'no seed in stock and automatic seed buying is disabled',
     'insufficient-funds': 'not enough cash for seed', 'invalid-field': 'field unavailable',
     'invalid-crop': 'crop unavailable', 'field-busy': 'equipment is still assigned' };
   return <section className="toolbar time-controls" aria-label="Farm time">
-    <div><strong id="farm-date">{months[date.month]} {date.week * 7 + date.day + 1}, {date.year}</strong>
-      <span id="farm-weather">{skies[weather.current]} · {weather.displayTemperature}°F · wind {weather.wind} mph</span>
-      <span id="farm-cash">${scenario.farm.cash.toLocaleString('en-US')}</span>
+    <div>
+      <span ref={weatherRef} tabIndex={-1} id="farm-weather">{skies[weather.current]} · {weather.displayTemperature}°F · wind {weather.wind} mph</span>
       <span id="schedule-status" role="status">{scheduleResult && !scheduleResult.ok
         ? `Weekly orders stopped at field ${scenario.fields[scheduleResult.fieldSlot].number}: ${scheduleFailures[scheduleResult.reason]}.`
         : 'Field plans run automatically each week.'}</span></div>

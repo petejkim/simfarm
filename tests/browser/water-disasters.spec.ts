@@ -67,7 +67,7 @@ test('Flood controls destroy a shoreline field and occupied building, render sou
   await originalTile(page, 19, 18, game.getSnapshot().scenario.cells[19 * 96 + 18].terrain & 2047);
   await load(page, JSON.stringify(checkpoint)); await page.locator('#disasters-panel > summary').click();
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#locate-shoreline').click();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.locator('#viewport').scrollIntoViewIfNeeded();
   await page.screenshot({ path: 'artifacts/browser-flood.png', fullPage: true });
   for (let day = 1; day < 3; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }

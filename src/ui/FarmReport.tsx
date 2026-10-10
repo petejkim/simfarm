@@ -1,9 +1,10 @@
+import type { Ref } from 'react';
 import type { GameSnapshot } from '../simulation/game';
 const money = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-export function FarmReport({ snapshot }: { snapshot: GameSnapshot }) {
+export function FarmReport({ snapshot, open, onOpenChange, summaryRef }: { snapshot: GameSnapshot; open: boolean; onOpenChange: (open: boolean) => void; summaryRef: Ref<HTMLElement> }) {
   const { farmReport: r, finances: f, scenario: { farm } } = snapshot, fields = r.fields;
-  return <details id="farm-report" className="loan-panel">
-    <summary>Farm report</summary>
+  return <details open={open} onToggle={event => onOpenChange(event.currentTarget.open)} id="farm-report" className="loan-panel">
+    <summary ref={summaryRef}>Farm report</summary>
     <dl>
       <div><dt>Reported income</dt><dd id="report-income">{money(r.income)}</dd></div>
       <div><dt>Reported expenses</dt><dd id="report-expenses">{money(r.expenses)}</dd></div>

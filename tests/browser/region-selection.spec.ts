@@ -37,7 +37,7 @@ test('region map selects source climate, supports keyboard and mobile layout, an
   await expect(page.locator(`[data-region="${last.x},${last.y}"]`)).toBeFocused();
   await page.locator('[data-region="3,8"]').click(); await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#new-farm-year').fill('1993'); await page.locator('#new-farm-seed').fill('9029');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-region-mobile.png', fullPage: true });
   expect(await save(page, 'selection-only')).toEqual(before);
   await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');

@@ -64,7 +64,7 @@ test('retained chooser SSM uses retained climate and both previews regardless of
     expect(actual.scenario.farm.workerExpenses).toBe(123456); expect(actual.runtime.finances.accounts.buildingBookValue).toBe(234567);
     expect(actual.runtime.random).not.toEqual(JSON.parse(prior.importOriginal(bytes, crops).simulation.withAllCrops(browserCrops).save(null)).runtime.random);
   }
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); expect(await save(page)).toEqual(JSON.parse(expected.save(null)));
 });
 

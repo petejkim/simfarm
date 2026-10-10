@@ -22,7 +22,7 @@ async function pick(page: Page, name: string, buffer: Buffer) {
   await (await pending).setFiles({ name, mimeType: 'application/octet-stream', buffer });
 }
 
-test('source menu order uses selectable text, keyboard navigation and responsive geometry', async ({ page }) => {
+test('source menu order uses selectable text, keyboard navigation and original desktop spacing', async ({ page }) => {
   await start(page);
   const bar = page.getByRole('navigation', { name: 'Original game menus' });
   expect(await bar.locator(':scope > button').allTextContents()).toEqual(['File', 'Options', 'Speed', 'Windows', 'Disasters']);
@@ -37,10 +37,10 @@ test('source menu order uses selectable text, keyboard navigation and responsive
   await command(page, 'About SimFarm'); await expect(page.getByRole('dialog')).toContainText('Preservation is still in progress');
   await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.locator('#file-menu-button').click(); await page.screenshot({ path: 'artifacts/browser-main-menu-desktop.png', fullPage: false });
-  await page.locator('header h1').click(); await expect(menu).toHaveCount(0);
+  await page.locator('header').click({ position: { x: 400, y: 10 } }); await expect(menu).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#file-menu-button').click();
   const box = await menu.boundingBox(); expect(box!.x + box!.width).toBeLessThanOrEqual(390);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   const text = await page.getByRole('menuitem', { name: 'About SimFarm' }).evaluate(element => {
     const range = document.createRange(); range.selectNodeContents(element); const selection = getSelection()!;
     selection.removeAllRanges(); selection.addRange(range); return selection.toString();

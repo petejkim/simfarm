@@ -5,9 +5,9 @@ const notices: Record<number, string> = {
   161: 'Your estimated annual tax exceeds your available cash.',
   162: 'Taxes remain unpaid.', 163: 'The overdue tax has been paid.', 165: 'Assets were sold to pay overdue tax.',
 };
-export function TaxPanel({ snapshot }: { snapshot: GameSnapshot }) {
+export function TaxPanel({ snapshot, open, onOpenChange }: { snapshot: GameSnapshot; open: boolean; onOpenChange: (open: boolean) => void }) {
   const { finances: f, taxAssessment: quote, lastTaxSettlement: last } = snapshot;
-  return <details id="tax-panel" className="loan-panel">
+  return <details open={open} onToggle={event => onOpenChange(event.currentTarget.open)} id="tax-panel" className="loan-panel">
     <summary>Taxes</summary>
     <dl>
       <div><dt>Estimated next annual tax</dt><dd id="tax-estimate">{money(quote.total)}</dd></div>

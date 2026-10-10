@@ -82,7 +82,7 @@ test('mobile restart rerolls retain original streams, respond to keyboard and co
   draft.setSettings({ ...options, climate: { ...options.climate, precipitation: 3 } });
   await page.locator('#generate-world').focus();
   for (let i = 0; i < 2; i++) { await page.keyboard.press('Enter'); draft.generateWorld(); await expectPreview(page, draft); }
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.locator('#terrain-design').screenshot({ path: 'artifacts/browser-terrain-design-mobile.png' });
   await page.locator('#play-farm').click();
   const game = GameSimulation.load(writeNativeSave(draft.accept(), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);

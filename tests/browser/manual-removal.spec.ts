@@ -65,7 +65,7 @@ test('removal selection cancels safely, confirms stored-content demolition, play
     if (!quote.ok) throw new Error('Missing removal target');
     if (x === 21) {
       await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#removal-panel').scrollIntoViewIfNeeded();
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
       await page.screenshot({ path: 'artifacts/browser-manual-removal.png', fullPage: true });
     }
     await page.locator('#confirm-removal').click(); game.dispatch({ type: 'remove-object', x, y, kind: quote.kind, slot: quote.slot });

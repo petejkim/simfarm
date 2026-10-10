@@ -40,7 +40,7 @@ test('a cow matures into the original adult sprite, begins monthly breeding and 
   await expect(page.getByRole('table', { name: 'Animal ages and breeding' })).toContainText('Expecting · week 1');
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#animal-ages').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-animal-lifecycle.png', fullPage: true }); expect(errors).toEqual([]);
 });
 

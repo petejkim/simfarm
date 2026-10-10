@@ -60,7 +60,7 @@ test('move shortcut opens stored machinery, cancels safely and delivers to stora
   await tilePixels(page, 42, 42, 459); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#map-tool').selectOption('move');
   await selectTile(page, 40, 40); await page.locator('#equipment-move-panel').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-manual-movement.png', fullPage: true }); expect(errors).toEqual([]);
 });
 

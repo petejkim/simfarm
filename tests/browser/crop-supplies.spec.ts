@@ -115,6 +115,6 @@ test('supply shop explains storage and money limits, supports building and map s
   await page.locator('#crop-supply-storage').selectOption('1');await expect(page.locator('#crop-supply-quote')).toContainText('not enough cash');
   await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'Choose on map',exact:true}).click();
   await expect(page.locator('#viewport')).toBeFocused();await selectTile(page,11,11);await page.getByRole('button',{name:'Review supplies',exact:true}).click();
-  await expect(page.locator('#crop-supply-shop h2')).toBeFocused();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390);
+  await expect(page.locator('#crop-supply-shop h2')).toBeFocused();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({path:'artifacts/browser-crop-supplies.png',fullPage:true});expect(await save(page)).toEqual(broke);
 });

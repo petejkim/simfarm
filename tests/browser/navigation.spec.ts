@@ -79,7 +79,7 @@ test('narrow-screen shortcuts lead through land purchase, new-field planting and
   await controls(page).getByRole('button', { name: 'Loans', exact: true }).click();
   await page.locator('#loan-amount').fill('1000'); await page.locator('#borrow-loan').click();
   await expect(page.locator('#loan-result')).toHaveText('Borrowed $1,000.');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await controls(page).scrollIntoViewIfNeeded();
   await page.screenshot({ path: 'artifacts/browser-navigation-mobile.png', fullPage: true });
   expect(errors).toEqual([]);

@@ -11,6 +11,7 @@ import { readNewFarmRecordDefaults } from '../src/formats/new-farm-records';
 import { readNewFarmRuntimeDefaults } from '../src/formats/new-farm-runtime';
 import { readTrafficDefaults } from '../src/formats/traffic';
 import { readOriginalMainMenus } from '../src/formats/main-menus';
+import { readControlBar } from '../src/formats/control-bar';
 import { readPalette, readBitmap, tileAtlas, miniTileAtlas, decodePlanar, readInterleavedScreen, type Raster } from '../src/formats/graphics';
 import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
 import { readCrop, type CropDefinition } from '../src/formats/crop';
@@ -41,6 +42,7 @@ for (const e of entries) {
   await writeFile(join(output, 'raw', e.name), e.bytes);
   if (e.name.endsWith('.bmp')) await png(`${e.name}.png`, readBitmap(e.bytes, palette));
 }
+await png('control-bar.png', readControlBar(asset('cntlbtnh.bmp'), palette));
 await png('tiles.png', tileAtlas(asset('ega16til.til'), palette));
 for (const name of ['airplane', 'apshadow', 'cropdust', 'tornado', 'swarm']) await png(`${name}.sprites.png`, spriteAtlas(asset(`${name}.spr`), palette));
 await png('masked-tiles.png', tileAtlas(asset('mskdtile.til'), palette, 32, 7));

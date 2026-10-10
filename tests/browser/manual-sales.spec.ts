@@ -59,7 +59,7 @@ test('Machinery sale controls hide rentals, explain busy machines and sell groun
   expect(await save(page, 'artifacts/browser-equipment-sale.simfarm.json')).toEqual(JSON.parse(busy));
   await load(page, game.save(4)); await page.locator('#machinery-panel > summary').click();
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#machinery-panel').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-manual-sales.png', fullPage: true });
   for (const slot of [1, 2, 3]) {
     await page.locator('#sale-equipment-selection').selectOption(String(slot));

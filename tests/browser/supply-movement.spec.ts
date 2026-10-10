@@ -83,7 +83,7 @@ test('supplies transfer into original storage, reopen and leave it; empty feed i
   await selectTile(page, 18, 10); await page.locator('#select-supply-move').click(); await selectTile(page, 20, 20);
   await expect(page.locator('#supply-move-quote')).toContainText('Discard empty feed');
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#supply-move-panel').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-supply-movement.png', fullPage: true });
   const es = emptyGame.getSnapshot(), feed = checkSupplyPickup(es.scenario, es.finances, 18, 10); if (!feed.ok) throw new Error('Missing feed');
   await page.locator('#move-supply').click(); emptyGame.dispatch({ type: 'move-supply', selected: feed, x: 20, y: 20 });

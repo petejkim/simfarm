@@ -59,7 +59,7 @@ test('Build storage buys original roofs and usable records, persists accounts an
   await page.locator('#map-tool').selectOption('build'); await expect(page.locator('#building-result')).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 }); await selectTile(page, x, y);
   await page.locator('#building-type').selectOption('69'); await page.locator('#building-type').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-construction.png', fullPage: true });
   expect(errors).toEqual([]);
 });

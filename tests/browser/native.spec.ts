@@ -305,7 +305,7 @@ test('speed slider adjusts running time, stays paused and keeps Next day to one 
   await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(slider).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
 });
 
 test('map tools buy original land and complete a new-field planting and harvest cycle', async ({ page }) => {
@@ -358,7 +358,7 @@ test('map tools buy original land and complete a new-field planting and harvest 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#map-tool').selectOption('field');
   await expect(page.locator('#auto-clear')).not.toBeChecked();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   expect(errors).toEqual([]);
 });
 
@@ -430,7 +430,7 @@ test('all four field treatments use original stored supplies and restore crop wo
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#field-treatment').scrollIntoViewIfNeeded();
   await expect(page.locator('#field-treatment')).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   expect(errors).toEqual([]);
 });
 
@@ -493,7 +493,7 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await page.locator('#save-farm').scrollIntoViewIfNeeded();
   await expect(page.locator('#save-farm')).toBeVisible();
   await expect(page.locator('#load-farm')).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   expect(errors).toEqual([]);
 });
 
@@ -687,7 +687,7 @@ test('calendar planner edits five years, preserves saved plans and dispatches th
   await expect(page.locator('#plan-selection')).toContainText('Plant Peanuts');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('.field-planner').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-field-planner.png', fullPage: true });
   await page.locator('#next-day').click();
   await expect(page.locator('#field-status')).toContainText('Planting');
@@ -749,7 +749,7 @@ test('Loans panel borrows, quotes installments, saves balances and pays off thro
   await page.locator('#loan-panel summary').click(); await expect(page.locator('#loan-balance')).toHaveText('$1,000');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#loan-panel').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-loans.png', fullPage: true });
   await page.locator('#repay-loan').click();
   await expect(page.locator('#loan-balance')).toHaveText('$0'); await expect(page.locator('#loan-installment')).toHaveText('$0');

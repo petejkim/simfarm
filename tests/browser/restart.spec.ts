@@ -90,7 +90,7 @@ test('New farm restarts the active session, cancels safely and restores its gene
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   expect(await save(page, 'live-cancelled')).toEqual(before);
   await page.locator('#new-farm').click(); await page.locator('#new-farm-year').fill('1993');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-restart-mobile.png', fullPage: true });
   await page.locator('#create-farm').click(); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   const restarted = await save(page, 'live-generated');

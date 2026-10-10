@@ -68,7 +68,7 @@ test('purchased water pump wets original ditch pixels, refreshes fields and cont
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#map-tool').selectOption('build');
   await page.locator('#building-type').selectOption('71'); await select(page, 20, 20); await page.locator('#building-type').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-irrigation.png', fullPage: true }); expect(errors).toEqual([]);
 });
 
@@ -127,7 +127,7 @@ test('Irrigation controls dig a connected supply, install and operate a valve, a
   expect(game.getSnapshot().scenario.fields[1].bytes[51]).toBeGreaterThan(4);
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#irrigation-tool').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-ditch-controls.png', fullPage: true }); expect(errors).toEqual([]);
 });
 

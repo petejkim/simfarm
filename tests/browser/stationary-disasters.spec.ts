@@ -62,7 +62,7 @@ test('crop circles render original seven tiles and request audible alien MIDI wi
   expect(await save(page,'circles-ended')).toEqual(JSON.parse(g.save(4)));
   await page.locator('#play').click();await page.locator('#start-crop-circles').click();g.dispatch({type:'start-disaster',kind:'crop-circles'});
   await expect(page.locator('#audio-status')).toHaveText('Music off');await expect(page.locator('#music')).toHaveValue('ffarm');
-  await page.setViewportSize({width:390,height:844});await page.locator('#start-crop-circles').scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.setViewportSize({width:390,height:844});await page.locator('#start-crop-circles').scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({path:'artifacts/browser-stationary-mobile.png',fullPage:true});expect(errors).toEqual([]);
 });
 

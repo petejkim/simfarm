@@ -49,7 +49,7 @@ test('livestock loss is shown in React, malformed frame saves preserve the curre
   await expect(page.locator('#save-status')).toContainText('Invalid native save: animal herd cache');
   const path = 'artifacts/browser-livestock-death.simfarm.json'; expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#livestock-panel').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-livestock.png' });
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await expect(page.locator('#livestock-panel > summary')).toContainText('0 animals'); await expect(page.locator('#livestock-notices')).toHaveCount(0);

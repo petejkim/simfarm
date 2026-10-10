@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { MainMenus } from '../formats/main-menus';
+import { GAME_WINDOWS, windowAvailable, type GameWindow } from './ControlBar';
 
 function MenuDialog({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -9,21 +10,21 @@ function MenuDialog({ title, children, onClose }: { title: string; children: Rea
   </dialog>;
 }
 
-/** The recovered File chain; file-system/exit operations use explicit browser policies. */
-export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad, onNewGame, onQuit }: {
+/** Recovered File/Windows chains; file-system/exit operations use browser policies. */
+export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad, onNewGame, onQuit, onWindow }: {
   data: MainMenus; palette: number[][]; busy: boolean; filename: string; error: string | null;
-  onSave: (filename?: string) => boolean; onLoad: () => void; onNewGame: () => void; onQuit: () => void;
+  onSave: (filename?: string) => boolean; onLoad: () => void; onNewGame: () => void; onQuit: () => void; onWindow: (window: GameWindow) => void;
 }) {
-  const [open, setOpen] = useState(false), [dialog, setDialog] = useState<'about' | 'save-as' | 'quit' | null>(null);
+  const [open, setOpen] = useState<number | null>(null), [dialog, setDialog] = useState<'about' | 'save-as' | 'quit' | null>(null);
   const [name, setName] = useState(filename);
   const button = useRef<HTMLButtonElement>(null), menu = useRef<HTMLDivElement>(null), root = useRef<HTMLElement>(null);
-  const file = data.menus[0];
-  function closeMenu(focus = true) { setOpen(false); if (focus) button.current?.focus(); }
+  const file = data.menus[0], active = open === null ? null : data.menus[open];
+  function closeMenu(focus = true) { if (focus && active) root.current?.querySelector<HTMLButtonElement>(`#${active.title.toLowerCase()}-menu-button`)?.focus(); setOpen(null); }
   function closeDialog() { setDialog(null); button.current?.focus(); }
   useEffect(() => {
-    if (!open) return;
+    if (open === null) return;
     menu.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
-    const outside = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false); };
+    const outside = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(null); };
     document.addEventListener('pointerdown', outside);
     return () => document.removeEventListener('pointerdown', outside);
   }, [open]);
@@ -40,22 +41,22 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
   return <>
     <nav ref={root} className="original-menu-bar" aria-label="Original game menus"
       style={{ backgroundColor: color(data.background), color: color(data.foreground) }}
-      onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}>
+      onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
       {data.menus.map((entry, index) => <button key={entry.offset} ref={index === 0 ? button : undefined}
-        id={index === 0 ? 'file-menu-button' : undefined} disabled={index !== 0 || busy}
-        style={{ left: `${entry.header.x / 4}%`, width: `${entry.header.width / 4}%`, paddingLeft: index === 0 ? '2%' : 0 }}
-        title={index === 0 ? undefined : 'This original menu is still being reconstructed; use the farm controls below.'}
-        aria-haspopup={index === 0 ? 'menu' : undefined} aria-expanded={index === 0 ? open : undefined}
-        aria-controls={index === 0 ? 'original-file-menu' : undefined}
-        onClick={() => setOpen(value => !value)} onKeyDown={event => {
-          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); setOpen(true); }
+        id={`${entry.title.toLowerCase()}-menu-button`} disabled={(index !== 0 && index !== 3) || busy}
+        style={{ left: entry.header.x * 2, width: entry.header.width * 2, paddingLeft: index === 0 ? 16 : 0 }}
+        title={index === 0 || index === 3 ? undefined : 'This original menu is still being reconstructed; use the farm controls below.'}
+        aria-haspopup={index === 0 || index === 3 ? 'menu' : undefined} aria-expanded={index === 0 || index === 3 ? open === index : undefined}
+        aria-controls={index === 0 || index === 3 ? `original-${entry.title.toLowerCase()}-menu` : undefined}
+        onClick={() => setOpen(value => value === index ? null : index)} onKeyDown={event => {
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); setOpen(index); }
         }}>{entry.title}</button>)}
-      {open && <div ref={menu} id="original-file-menu" role="menu" aria-label={file.title}
-        style={{ width: `${file.popup.width * 2}px` }} onKeyDown={event => {
+      {active && <div ref={menu} id={`original-${active.title.toLowerCase()}-menu`} className="original-menu-popup" role="menu" aria-label={active.title}
+        style={{ left: active.popup.x * 2, width: active.popup.width * 2 }} onKeyDown={event => {
           const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
           const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
           if (event.key === 'Escape') { event.preventDefault(); closeMenu(); }
-          else if (event.key === 'Tab') setOpen(false);
+          else if (event.key === 'Tab') setOpen(null);
           else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
             event.preventDefault();
             const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1
@@ -63,9 +64,10 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
             buttons[next]?.focus();
           }
         }}>
-        {file.items.map((item, index) => index === 5 ? null : <button key={item.offset} role="menuitem" tabIndex={-1}
-          disabled={busy}
-          onClick={() => select(index)}>{item.label}</button>)}
+        {active.items.map((item, index) => open === 0 && index === 5 ? null : <button key={item.offset} role="menuitem" tabIndex={-1}
+          disabled={busy || (open === 3 && !windowAvailable(GAME_WINDOWS[index]))}
+          title={open === 3 && !windowAvailable(GAME_WINDOWS[index]) ? 'This window is still being reconstructed.' : undefined}
+          onClick={() => { if (open === 0) select(index); else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{item.label}</button>)}
       </div>}
     </nav>
     {dialog === 'about' && <MenuDialog title={file.items[0].label} onClose={closeDialog}>

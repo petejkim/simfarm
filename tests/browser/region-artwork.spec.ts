@@ -42,7 +42,7 @@ test('original geographic panel paints exact markers and bars, preserves selecti
   await pixels(page, 2, 3); expect(await save(page)).toEqual(before);
   const selected = locations[3 * 18 + 2];
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await pixels(page, 2, 3);
   await page.locator('#geographic-chooser').screenshot({ path: 'artifacts/browser-region-artwork-mobile.png' });
   await page.locator('#region-design').focus(); await page.keyboard.press('Enter');

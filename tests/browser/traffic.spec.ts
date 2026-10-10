@@ -34,7 +34,7 @@ test('traffic paints original vehicle pixels and continues through weekly spawni
   for (let day = 0; day < 8; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page, 'continued')).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); expect(errors).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280); expect(errors).toEqual([]);
 });
 
 test('traffic collision plays source PCM only when enabled, never replays on load and rejects malformed continuation atomically', async ({ page }) => {

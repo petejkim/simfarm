@@ -3,13 +3,14 @@ import { loadSavedFarmTiles, type GameAssets } from '../assets/game-assets';
 import { MAX_SAVE_BYTES } from '../formats/native-save';
 import { GameSimulation } from '../simulation/game';
 import { FileMenu } from './FileMenu';
+import { ControlBar, type GameWindow } from './ControlBar';
 
 export interface LoadedFarm { scenarioId: number | null; simulation: GameSimulation; tiles: HTMLImageElement }
 
-export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, onNewGame }: {
+export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, onNewGame, onWindow }: {
   simulation: GameSimulation; scenarioId: number | null; assets: GameAssets; loaded: boolean;
   onLoad: (farm: LoadedFarm) => void;
-  onNewGame: () => void;
+  onNewGame: () => void; onWindow: (window: GameWindow) => void;
 }) {
   const input = useRef<HTMLInputElement>(null), pending = useRef<AbortController | null>(null);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(loaded ? 'Farm loaded.' : '');
@@ -53,9 +54,12 @@ export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, o
     }
   }
   return <div className="farm-file-controls">
-    <FileMenu data={assets.mainMenus} palette={assets.catalog.palette} busy={busy} filename={filename} error={message.startsWith('Could not save') ? message : null} onSave={save}
-      onLoad={() => input.current?.click()} onNewGame={onNewGame}
-      onQuit={() => { simulation.dispatch({ type: 'set-paused', paused: true }); setMessage('Farm paused. Save before closing this tab.'); }} />
+    <div className="original-controls">
+      <FileMenu data={assets.mainMenus} palette={assets.catalog.palette} busy={busy} filename={filename} error={message.startsWith('Could not save') ? message : null} onSave={save}
+        onLoad={() => input.current?.click()} onNewGame={onNewGame} onWindow={onWindow}
+        onQuit={() => { simulation.dispatch({ type: 'set-paused', paused: true }); setMessage('Farm paused. Save before closing this tab.'); }} />
+      <ControlBar artwork={assets.controlBar} menus={assets.mainMenus} snapshot={simulation.getSnapshot()} onWindow={onWindow} />
+    </div>
     <div className="save-controls"><div><button id="save-farm" disabled={busy} onClick={() => save()}>Save farm</button>
       <button id="load-farm" disabled={busy} onClick={() => input.current?.click()}>Load farm</button>
       <input ref={input} id="load-farm-file" type="file" accept=".ssm,.SSM,.simfarm.json,.json,application/json" hidden

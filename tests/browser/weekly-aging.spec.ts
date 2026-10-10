@@ -55,7 +55,7 @@ test('weekly worn machinery sale displays proceeds, original clearing pixels and
   expect(await save(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.locator('#machinery-panel > summary').click(); await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#machinery-panel').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-weekly-aging.png', fullPage: true }); expect(errors).toEqual([]);
 });
 

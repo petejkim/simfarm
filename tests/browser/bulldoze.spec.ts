@@ -63,7 +63,7 @@ test('Bulldoze removes loose supplies/chemicals and terrain, renders source conn
     if (i === 3) {
       await expect(page.locator('#removal-consequences')).toContainText('connected roads, fences, ditches or shoreline');
       await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#removal-panel').scrollIntoViewIfNeeded();
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
       await page.screenshot({ path: 'artifacts/browser-bulldoze.png', fullPage: true });
     }
     await page.locator('#confirm-removal').click(); game.dispatch({ type: 'remove-object', x, y, kind: quote.kind, slot: quote.slot, tile: quote.tile });

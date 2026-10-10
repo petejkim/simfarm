@@ -1,3 +1,4 @@
+import type { GameWindow } from './ControlBar';
 import { NetworkPanel } from './NetworkPanel';
 import { NewFarmControls } from './NewFarmControls';
 import { checkNetworkPlacement, type NetworkAction } from '../simulation/network-placement';
@@ -8,7 +9,7 @@ import { FarmNavigation, type FarmDestination } from './FarmNavigation';
 import { SupplyMovePanel } from './SupplyMovePanel';
 import { EquipmentMovePanel, BuildingInteriorControls } from './EquipmentMovePanel';
 import { FlightControls } from './FlightControls';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
 import { terrainTile, worldPosition, worldIndex } from '../formats/scenario';
 import { CropGuide } from './CropGuide';
@@ -46,6 +47,7 @@ const subscribeEmpty = () => () => {};
 const emptySnapshot = () => null;
 
 interface Props {
+  audioControls: ReactNode;
   id: number | null;
   loaded?: LoadedFarm;
   onLoad: (farm: LoadedFarm) => void;
@@ -59,7 +61,7 @@ interface Props {
   onFlightRunning: (running: boolean) => void;
 }
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
-export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange, onGameEvent, onFlightRunning }: Props) {
+export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange, onGameEvent, onFlightRunning }: Props) {
   const [newFarmOpen, setNewFarmOpen] = useState(false);
   const load = useCallback(async (signal: AbortSignal) => {
     if (loaded) return { ...loaded, simulation: loaded.simulation.withAllCrops(assets.catalog.crops) };
@@ -95,7 +97,10 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   });
   const [mapTool, setMapTool] = useState<MapTool>('inspect');
   const [plannerOpen, setPlannerOpen] = useState(false), [loansOpen, setLoansOpen] = useState(false);
-  const [navigation, setNavigation] = useState<{ target: FarmDestination } | null>(null);
+  const [navigation, setNavigation] = useState<{ target: FarmDestination | GameWindow } | null>(null);
+  const [reportOpen, setReportOpen] = useState(false), [taxOpen, setTaxOpen] = useState(false);
+  const reportRef = useRef<HTMLElement>(null), weatherRef = useRef<HTMLSpanElement>(null);
+  const sellRef = useRef<HTMLElement>(null), expertRef = useRef<HTMLElement>(null);
   const plannerRef = useRef<HTMLElement>(null), loansRef = useRef<HTMLElement>(null);
   const networkRef = useRef<HTMLHeadingElement>(null);
   const supplyRef = useRef<HTMLHeadingElement>(null);
@@ -103,7 +108,10 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
   useLayoutEffect(() => {
     if (!navigation) return;
     const target = navigation.target === 'planner' ? plannerRef.current : navigation.target === 'loans' ? loansRef.current
-      : navigation.target === 'network' ? networkRef.current : navigation.target === 'crop-supplies' ? supplyRef.current : navigation.target === 'map' ? viewportRef.current : landRef.current;
+      : navigation.target === 'network' ? networkRef.current : navigation.target === 'crop-supplies' ? supplyRef.current : navigation.target === 'map' || navigation.target === 'edit' ? viewportRef.current
+      : navigation.target === 'evaluation' || navigation.target === 'balance' ? reportRef.current
+      : navigation.target === 'sell' ? sellRef.current : navigation.target === 'weather' ? weatherRef.current
+      : navigation.target === 'expert' ? expertRef.current : landRef.current;
     target?.scrollIntoView({ block: 'start', inline: 'nearest' });
     target?.focus({ preventScroll: true });
   }, [navigation]);
@@ -112,6 +120,14 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     if (target === 'loans') setLoansOpen(true);
     if (target === 'land' || target === 'field' || target === 'crop-supplies' || target === 'network') setMapTool(target);
     setNavigation({ target });
+  }
+  function openWindow(window: GameWindow) {
+    if (window === 'buy') { navigate('crop-supplies'); return; }
+    if (window === 'bank') { navigate('loans'); return; }
+    if (window === 'map') { navigate('land'); return; }
+    if (window === 'evaluation' || window === 'balance') setReportOpen(true);
+    if (window === 'balance') setTaxOpen(true);
+    setNavigation({ target: window });
   }
   const [buildingType, setBuildingType] = useState(64);
   const [networkTool, setNetworkTool] = useState<NetworkAction>('road-161');
@@ -162,7 +178,8 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     }
   }
   return <>
-    {simulation && <SaveControls simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} />}
+    {simulation && <SaveControls simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
+    {audioControls}
     {simulation && <NewFarmControls assets={assets} simulation={simulation} open={newFarmOpen} onOpenChange={setNewFarmOpen} onCreate={onLoad} />}
     <section className="toolbar">
       <div><label>Original farm <select id="scenario" value={id ?? 'generated'} onChange={e => onScenarioChange(Number(e.target.value))}>
@@ -184,7 +201,7 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
       </select></label><button id="center" disabled={!data || Boolean(snapshot?.aircraftFlight)} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
     </section>
-    {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
+    {simulation && snapshot && <TimeControls weatherRef={weatherRef} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     {data && snapshot && <FarmNavigation tool={mapTool} blocked={Boolean(snapshot.pendingTown || snapshot.finances.defaultDecision || snapshot.aircraftFlight)} onNavigate={navigate} />}
     {snapshot?.lastHomesteadChange?.notice && <div id="homestead-notice" className="homestead-notice" role="status">
       <span>{snapshot.lastHomesteadChange.notice === 'improved'
@@ -194,8 +211,8 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
     {simulation && snapshot && <TownChoicePanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
       onRestart={() => setNewFarmOpen(true)} open={loansOpen} onOpenChange={setLoansOpen} summaryRef={loansRef} />}
-    {snapshot && <TaxPanel snapshot={snapshot} />}
-    {snapshot && <FarmReport snapshot={snapshot} />}
+    {snapshot && <TaxPanel snapshot={snapshot} open={taxOpen} onOpenChange={setTaxOpen} />}
+    {snapshot && <FarmReport snapshot={snapshot} open={reportOpen} onOpenChange={setReportOpen} summaryRef={reportRef} />}
     {snapshot && <LivestockPanel snapshot={snapshot} onMoveSupplies={() => { setMapTool('supply-move'); setSelection(null); }} onShop={() => setMapTool('livestock')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     {snapshot && simulation && <AircraftPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
       onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
@@ -265,10 +282,14 @@ export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, o
           onSelect={slot => { setSelection(null); selectField(slot, true); }} onNewField={() => navigate('field')}
           scenario={data.scenario} crops={assets.catalog.crops} field={field} result={snapshot.lastPlanEditResult}
           onEdit={(fieldSlot, week, action) => simulation?.dispatch({ type: 'edit-field-plan', fieldSlot, week, action })} />}
+        <section ref={sellRef} tabIndex={-1} aria-label="Sell harvest">
         <HarvestInventory scenario={data.scenario} crops={assets.catalog.crops} values={snapshot?.storedHarvestValues ?? []}
           result={snapshot?.lastSaleResult ?? null} onSell={inventorySlot => simulation?.dispatch({ type: 'sell-harvest', inventorySlot })} />
+        </section>
         </fieldset>
+        <section ref={expertRef} tabIndex={-1} aria-label="Farm Expert">
         <CropGuide crops={assets.catalog.crops} cropId={cropId} onChange={onCropChange} />
+        </section>
         <details><summary>Tile details</summary><pre id="tile-details">{cell && position
           ? `Position: ${position.x}, ${position.y}\nTerrain: 0x${cell.terrain.toString(16).padStart(4, '0')}\nSecond word: 0x${cell.overlay.toString(16).padStart(4, '0')}\nAttribute: ${cell.attribute}`
           : 'Select a tile on the map.'}</pre></details>

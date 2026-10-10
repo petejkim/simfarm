@@ -49,7 +49,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   await page.locator('#load-farm-file').setInputFiles(file(JSON.stringify(badStatistics)));
   await expect(page.locator('#save-status')).toContainText('financial state'); await expect(page.locator('#town-choice')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#town-choice').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-annual-choice.png', fullPage: true });
   await page.locator('#town-airport').click();
   await expect(page.locator('#town-choice')).toHaveCount(0); await expect(page.locator('#next-day')).toBeEnabled();

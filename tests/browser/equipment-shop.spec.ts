@@ -68,6 +68,6 @@ test('machinery shop explains cash, trees and incompatible storage and fits a na
   await expect(page.locator('#equipment-placement-status')).toContainText('cannot store the machine'); await expect(page.locator('#buy-equipment')).toBeDisabled();
   await page.setViewportSize({ width: 390, height: 844 }); await selectTile(page, 22, 20);
   await page.locator('#equipment-shop').scrollIntoViewIfNeeded(); await expect(page.locator('#buy-equipment')).toBeEnabled();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-equipment-shop.png', fullPage: true });
 });

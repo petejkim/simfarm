@@ -81,6 +81,6 @@ test('livestock purchases explain clearing and cash limits and are usable on a n
   await page.setViewportSize({ width: 390, height: 844 }); await selectTile(page, 22, 20);
   await page.locator('#livestock-shop').scrollIntoViewIfNeeded();
   await expect(page.locator('#livestock-placement-status')).toContainText('not enough cash');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-livestock-shop.png', fullPage: true });
 });

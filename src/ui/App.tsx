@@ -28,13 +28,12 @@ function Game({ assets }: { assets: GameAssets }) {
     else sound.play(event.sound);
   }, [music.requestTrack, sound.play]);
   return <>
-    <header>
-      <div><span className="eyebrow">NATIVE PRESERVATION PROJECT</span><h1>SimFarm<span>1993</span></h1></div>
-      <MusicControls tracks={assets.catalog.music} music={music} />
-      <button id="sound-toggle" aria-pressed={sound.enabled} onClick={() => void sound.toggle()}>{sound.enabled ? 'Mute sounds' : 'Enable sounds'}</button>
-    </header>
     <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded}
       onScenarioChange={id => setFarm(previous => ({ id, serial: previous.serial + 1 }))}
+      audioControls={<header>
+        <MusicControls tracks={assets.catalog.music} music={music} />
+        <button id="sound-toggle" aria-pressed={sound.enabled} onClick={() => void sound.toggle()}>{sound.enabled ? 'Mute sounds' : 'Enable sounds'}</button>
+      </header>}
       onLoad={onLoad} assets={assets}
       zoom={zoom} onZoomChange={setZoom} cropId={cropId} onCropChange={setCropId} onGameEvent={onGameEvent} onFlightRunning={sound.setFlightRunning} />
     <footer><strong>Reconstruction in progress</strong>

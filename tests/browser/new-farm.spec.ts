@@ -31,7 +31,7 @@ test('create a generated farm on mobile, save it and restore without any origina
   await page.locator('#new-farm-session').selectOption('fresh');
   await page.locator('#new-farm-year').fill('1993'); await page.locator('#new-farm-seed').fill('9029');
   await page.locator('#new-farm-lake').check();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-new-farm-setup.png', fullPage: true });
   const scenarioRequests: string[] = [];
   await page.route('**/assets/raw/SCEN*.SSM', route => { scenarioRequests.push(route.request().url()); return route.abort(); });

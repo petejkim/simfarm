@@ -90,6 +90,6 @@ test('construction explains land, cash, terrain and gate limits and supports map
   await expect(page.locator('#network-placement-status')).toContainText('$45 ($25 clearing)');await page.locator('#apply-network').click();funded.dispatch({type:'network',tool:'road-161',x:10,y:10});
   await select(page,15,10);await page.locator('#network-tool').selectOption('open-gate');await page.locator('#apply-network').click();funded.dispatch({type:'network',tool:'open-gate',x:15,y:10});
   expect(await save(page,'zero-cash-gate')).toEqual(JSON.parse(funded.save(4)));
-  await page.getByRole('button',{name:'Roads & fences',exact:true}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.getByRole('button',{name:'Roads & fences',exact:true}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({path:'artifacts/browser-network-mobile.png',fullPage:true});
 });

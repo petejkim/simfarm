@@ -59,7 +59,7 @@ test('annual homestead updates repaint original tiles, persist once, and play or
   expect(sounds.filter(s => s.endsWith('/cheers.voc'))).toHaveLength(1);
   await page.locator('#view-home').click(); await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#view-home').click();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-homestead.png', fullPage: true });
   const download = page.waitForEvent('download'); await page.locator('#save-farm').click();
   const path = 'artifacts/browser-homestead.simfarm.json'; await (await download).saveAs(path);

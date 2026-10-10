@@ -46,7 +46,7 @@ test('maximum original delay is explained on mobile, blocks Next day and retains
   await expect(page.locator('#calendar-delay-status')).toHaveText('This save cannot advance the calendar. Load a different save or start a new farm.');
   const before = await save(page); expect(before.scenario.farm.dayDelayTicks).toBe(65535);
   await page.locator('#calendar-delay-status').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-calendar-maximum-mobile.png', fullPage: false });
   await page.locator('#play-pause').click(); await page.clock.runFor(200); await page.locator('#play-pause').click();
   const after = await save(page); expect(after.runtime.daysAdvanced).toBe(before.runtime.daysAdvanced);

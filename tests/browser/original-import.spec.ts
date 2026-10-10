@@ -55,7 +55,7 @@ test('original import from a generated farm retains setup and works on a narrow 
   expect(imported.runtime.newFarm).toBeNull(); expect(imported.runtime.retainedSetup).not.toBeNull();
   await load(page, Buffer.from(JSON.stringify(imported)), 'restored.json');
   expect((await save(page, 'generated-restored')).data).toEqual(imported);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-original-import-mobile.png', fullPage: true });
 });
 

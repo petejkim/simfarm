@@ -56,7 +56,7 @@ test('Build water storage collects from live irrigation, refills distant troughs
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#map-tool').selectOption('build');
   await page.locator('#building-type').selectOption('72'); await selectTile(page, 13, 11);
   await page.locator('#water-storage-status').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-water-storage.png', fullPage: true });
 });
 

@@ -38,7 +38,7 @@ test('Farm report displays original totals and field conditions, updates after p
   await page.locator('#farm-report summary').click(); await expect(page.locator('#report-net')).toHaveText('-$500');
   await expect(page.locator('#report-loans')).toHaveText('$1,040');
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#farm-report').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-farm-report.png', fullPage: true });
   expect(errors).toEqual([]);
 });

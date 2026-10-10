@@ -95,3 +95,8 @@ V23 retains original pause depth and raw Speed check bytes through represented s
 User direction (2026-10-09) supersedes the original timing work above: **skip original timing rules**. The current0.25× feels like an appropriate1×. Finish validation of the already implemented pause-state preservation, then make one day per four seconds the native1× baseline in a separate commit, retaining the slider and bounded Next day. Do not pursue original PC timer rates or require DS151e/interrupt reconstruction before restoring usable menus. Continue remaining UI with actual text and explicitly native pacing; preserve recovered source timing as reference documentation rather than a required live timing policy.
 
 Native1× now takes four seconds per day; the0.25×–16× slider and saved selections remain, and Next day stays independent. After final verification/commit, continue the remaining menus and dialogs around working game systems. Any restored Speed menu must use this native policy rather than reinstating DOS delay presets. Original timing notes remain preservation evidence, not a required implementation backlog.
+
+
+## Current UI increment: original main control strip
+
+The source toolbar and Windows menu are restored at fixed2× desktop coordinates, with React captions/live values and source art stripped of lettering. Window launchers currently target existing native panels; this is not full dialog reconstruction. See [control-bar.md](control-bar.md). Next replace the dashboard with the always-visible, maximized, non-resizable Edit workspace and restore its original tools/window interactions. Original Buy/Sell, Bank, Map/land and field/planner dialogs follow. Mobile rearrangement remains deferred.
