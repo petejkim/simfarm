@@ -1,3 +1,4 @@
+import { readAircraftArtwork } from '../src/formats/aircraft-window';
 import { readMessageButton } from '../src/formats/message-dialog';
 import { readExamineData, readExamineArtwork } from '../src/formats/examine';
 import { readScheduleArtwork, readFieldGauges } from '../src/formats/schedule-window';
@@ -55,6 +56,7 @@ await json('examine.json', readExamineData(exe));
 await png('examine-window.png', readExamineArtwork(asset('examine.bmp'), palette));
 await json('buy-catalog.json', readBuyCatalog(exe));
 await png('buy-cards.png', readBuyCards(asset('alltiles.btl'), palette));
+await png('aircraft-window.png', readAircraftArtwork(asset('airpwndo.bmp'), palette));
 await png('schedule-window.png', readScheduleArtwork(asset('fdstatus.bmp'), palette));
 await png('field-gauges.png', readFieldGauges(asset('fldgrph.til'), palette));
 await png('map-window.png', readMapArtwork(asset('mapwndo.bmp'), palette));

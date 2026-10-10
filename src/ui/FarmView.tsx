@@ -43,7 +43,8 @@ import { FarmReport } from './FarmReport';
 import { LivestockPanel } from './LivestockPanel';
 import { EquipmentShop } from './EquipmentShop';
 import { checkEquipmentPurchase } from '../simulation/equipment-purchase';
-import { AircraftPanel } from './AircraftPanel';
+import { AircraftWindow } from './AircraftWindow';
+import { aircraftMapEntry } from '../simulation/aircraft-view';
 import { MachineryPanel } from './MachineryPanel';
 import { TownChoicePanel } from './TownChoicePanel';
 import type { GameEvent } from '../simulation/events';
@@ -89,6 +90,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   const [fieldMenu,setFieldMenu]=useState<'plant'|'spray'|null>(null),[fieldMapTool,setFieldMapTool]=useState<FieldMapTool|null>(null);
   const [fieldToolMessage,setFieldToolMessage]=useState('');
   const [interactionMessage,setInteractionMessage]=useState('');
+  const [aircraftSlot,setAircraftSlot]=useState<number|null>(null);
   const [buyPlacement, setBuyPlacement] = useState<Pick<ShopProduct, 'type' | 'name'> | null>(null);
   const [toolPointer, setToolPointer] = useState<MapFocus | null>(null), [buyMessage, setBuyMessage] = useState('');
   const snapshot = useSyncExternalStore(simulation?.subscribe ?? subscribeEmpty, simulation?.getSnapshot ?? emptySnapshot);
@@ -286,7 +288,17 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     return()=>window.removeEventListener('keydown',cancel);
   },[objectMove.active,cancelObjectMove,construction.tool,cancelConstruction,bulldoze.active,cancelBulldoze]);
   function cancelPurchase() { setBuyPlacement(null); setToolPointer(null); setMapTool('inspect'); setBuyMessage(''); }
+  function enterAircraft(index:number){
+    if(!simulation)return false;
+    const current=simulation.getSnapshot();
+    if(current.pendingTown||current.finances.defaultDecision||current.aircraftFlight)return false;
+    const {x,y}=worldPosition(index),entry=aircraftMapEntry(current.scenario,x,y);
+    if(!entry)return false;
+    if(entry.slot!==null){setAircraftSlot(entry.slot);windows.show('aircraft');}
+    return true;
+  }
   function interactWithMap(index:number){
+    if(enterAircraft(index))return;
     if(!simulation)return;
     const current=simulation.getSnapshot();
     if(current.pendingTown||current.finances.defaultDecision||current.aircraftFlight)return;
@@ -384,10 +396,8 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     <GameWindow windowKey="livestock" title="Livestock">
     {snapshot && <LivestockPanel snapshot={snapshot} onMoveSupplies={() => { chooseTool('supply-move'); setSelection(null); }} onShop={() => chooseTool('livestock')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     </GameWindow>
-    <GameWindow windowKey="aircraft" title="Aircraft">
-    {snapshot && simulation && <AircraftPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
+    {snapshot && simulation && <AircraftWindow assets={assets} selectedSlot={aircraftSlot} onSelect={setAircraftSlot} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
       onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); if (simulation.getSnapshot().aircraftFlight) windows.show(null); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
-    </GameWindow>
     <GameWindow windowKey="machinery" title="Machinery">
     {snapshot && <MachineryPanel snapshot={snapshot} onMove={() => { chooseTool('move'); setSelection(null); }} onShop={() => chooseTool('equipment')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     </GameWindow>
@@ -414,10 +424,11 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
         <FarmMap viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
-          stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{setInteractionMessage('');const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
+          stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterAircraft(index))return false;setInteractionMessage('');const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
           field={field} selection={selection} preview={preview} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {
             setInteractionMessage('');
             if(construction.tool||bulldoze.active)return;
+            if(enterAircraft(index))return;
             setSelection(index);
             const { x, y } = worldPosition(index);
             if(objectMove.active){objectMove.click(x,y);return;}

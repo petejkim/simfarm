@@ -37,3 +37,6 @@ Tests pin the mouse registration/queue/event mapping, source valve writes and bu
 
 
 The six direct construction tools now apply the initial primary-button gate/valve branches before entering their held construction stroke. Other-tool interception and town/aircraft entry remain follow-ups. See [direct-construction.md](direct-construction.md) for exact branch ordering and tests.
+
+
+Parked aircraft entry is now connected for primary/secondary presses and initial construction presses, with the primary Bulldoze bypass preserved. See [aircraft-window.md](aircraft-window.md). Town-building window routes and remaining original interiors still follow; earlier historical gaps above are not claims that those completed construction/aircraft increments remain absent.

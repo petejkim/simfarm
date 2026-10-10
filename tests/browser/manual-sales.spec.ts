@@ -1,3 +1,4 @@
+import { aircraftCatalog } from '../support/aircraft-browser';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -81,5 +82,6 @@ test('Machinery sale controls hide rentals, explain busy machines and sell groun
     expect(actual).toEqual(Array.from(expected));
   }
   await expect(page.locator('#machinery-panel')).toContainText('No owned machines available to sell.');
-  await reveal(page, '#aircraft-panel > summary'); await page.locator('#aircraft-panel > summary').click(); await expect(page.locator('#buy-aircraft')).toBeEnabled();
+  await aircraftCatalog(page); await page.locator('#catalog-buy').click(); game.dispatch({type:'buy-aircraft'});
+  await expect(page.locator('#buy-result')).toHaveText('Crop Duster purchased.'); expect(await save(page,'artifacts/browser-manual-aircraft-repurchase.json')).toEqual(JSON.parse(game.save(4)));
 });

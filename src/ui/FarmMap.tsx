@@ -137,7 +137,7 @@ export function FarmMap({ viewportRef, scenario, tiles, maskedTiles, zoom, focus
       if (offset) { event.preventDefault(); event.currentTarget.scrollBy(...offset); }
     }}>
     <canvas id="world" ref={canvasRef} width={1536} height={1536} data-paint-tool={paintTool??undefined} style={{ width: 1536 * zoom, height: 1536 * zoom,touchAction:paintTool?'none':undefined }}
-      aria-label="Original scenario terrain" title="Right-click buildings, gates or valves to open or close them."
+      aria-label="Original scenario terrain" title="Click parked aircraft for service. Right-click buildings, gates or valves to open or close them."
       onClick={event=>{if(suppressClick.current){suppressClick.current=false;return;}if(!paintTool)selectTile(event);}}
       onPointerDown={event=>{
         if(!event.isPrimary)return;

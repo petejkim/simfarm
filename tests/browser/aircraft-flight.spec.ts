@@ -1,3 +1,4 @@
+import { aircraftCatalog } from '../support/aircraft-browser';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -28,7 +29,7 @@ async function freeze(page: Page) {
   await page.clock.install(); await page.clock.pauseAt(new Date(Date.now() + 1000));
 }
 async function launch(page: Page, game: ReturnType<typeof prepared>['game']) {
-  await reveal(page, '#aircraft-panel > summary'); await page.locator('#aircraft-panel > summary').click();
+  await openWindow(page, 'aircraft');
   const dimensions = await page.locator('#viewport').evaluate(v => {
     const z = Number((document.querySelector('#zoom') as HTMLSelectElement).value);
     const cells = (p: number) => Math.max(8, Math.min(80, Math.floor(p / (16 * z))));
@@ -109,7 +110,8 @@ test('browser spraying changes actual crop bytes, mid-flight save/load resumes q
   await step(page, game); await spritesMatch(page, game.getSnapshot().aircraftFlight!);
   await step(page, game, 'end'); await expect(page.locator('#flight-result')).toContainText('crashed');
   expect(game.getSnapshot().scenario.equipment[1].active).toBe(false); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  await reveal(page, '#aircraft-panel > summary'); await page.locator('#aircraft-panel > summary').click(); await expect(page.locator('#buy-aircraft')).toBeEnabled();
+  await aircraftCatalog(page); await page.locator('#catalog-buy').click(); game.dispatch({type:'buy-aircraft'});
+  await expect(page.locator('#buy-result')).toHaveText('Crop Duster purchased.'); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
 });
 
 test('original engine PCM plays without frame restarts, caches between clips, and stops on pause, mute and farm replacement', async ({ page }) => {
@@ -138,7 +140,7 @@ test('original engine PCM plays without frame restarts, caches between clips, an
     };
   });
   await page.goto('/'); const f = prepared(); await load(page, f.game.save(4)); await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2');
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await reveal(page, '#aircraft-panel > summary'); await page.locator('#aircraft-panel > summary').click(); await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click();
+  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await openWindow(page, 'aircraft'); await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click();
   const voices = () => page.evaluate(() => (window as unknown as { __flightVoices: { length: number; time: number; duration: number; stopped: boolean }[] }).__flightVoices
     .filter(v => v.length === 12848).map(({ length, time, duration, stopped }) => ({ length, time, duration, stopped })));
   await expect.poll(() => page.evaluate(() => {
@@ -165,7 +167,7 @@ test('missing engine audio reports once per flight attempt and can recover witho
   let requests = 0; const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.route('**/plane.voc', route => { requests++; return route.fulfill({ status: 404, body: 'Missing engine' }); });
   await page.goto('/'); const f = prepared(); await load(page, f.game.save(4)); await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2');
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await reveal(page, '#aircraft-panel > summary'); await page.locator('#aircraft-panel > summary').click(); await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click();
+  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await openWindow(page, 'aircraft'); await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click();
   await expect(page.locator('#sound-error')).toContainText('plane.voc');
   await reveal(page, '#flight-pause'); await page.locator('#flight-pause').click(); const snapshot = await save(page);
   expect(snapshot.runtime.aircraftFlight).not.toBeNull(); expect(requests).toBe(1);

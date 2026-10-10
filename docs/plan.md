@@ -158,3 +158,7 @@ Restore the three remaining mode4 one-cell tools through the shared Edit paintin
 ## 2026-10-10 — direct Bulldoze and original confirmation popup
 
 Restore palette mode15 held input, its primary fixture-interception bypass, direct terrain/supply removal and original MESSAGE confirmation for fields/buildings. Recover popup.bmp, portrait74, events46/47 and YES/CANCEL/OK button geometry with real HTML text and native modal input/time suspension. Existing canonical cleanup rules and SF-112 cancellation protection remain. See [direct-bulldoze.md](direct-bulldoze.md). Complete full regression, commit locally, then restore town/aircraft map entry and remaining original window interiors. Keep fixed Edit,1× source layout, native slower pacing and all24 crops.
+
+## Next increment: original Aircraft service window and map entry
+
+Replace the temporary aircraft form with the256×176 AIRPLANE client, original service/chemical buttons and48×24 gauges, real HTML text and1× artwork. Purchase through the existing Buy catalog; parked-plane map clicks select the original service window. Preserve canonical service/flight commands, shared chemicals, native saves and source primary Bulldoze bypass. Correct the displayed payload quote width while retaining original evidence as SF-163. See [aircraft-window.md](aircraft-window.md). Complete full regression and commit locally, then restore remaining town-building entry and original Market/Farm Expert/dialog interiors. The full preservation goal is still incomplete.

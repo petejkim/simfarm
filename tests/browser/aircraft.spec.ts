@@ -1,3 +1,4 @@
+import { aircraftCatalog } from '../support/aircraft-browser';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -15,25 +16,26 @@ async function save(page: Page, path: string) {
   await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
 }
 
-test('Aircraft panel buys at the original airport pad, refuels, changes and loads payload, and continues current saves', async ({ page }) => {
+test('Aircraft catalog buys at the original airport pad, refuels, changes and loads payload, and continues current saves', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = aircraftFixture(), game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
-  await reveal(page, '#aircraft-panel > summary'); await page.locator('#aircraft-panel > summary').click();
-  await expect(page.locator('#aircraft-purchase-status')).toHaveText('Aircraft: $6,000 · Parking at 21, 22.');
-  await reveal(page, '#buy-aircraft'); await page.locator('#buy-aircraft').click(); game.dispatch({ type: 'buy-aircraft' });
-  await expect(page.locator('#aircraft-purchase-result')).toContainText('Aircraft 1 purchased for $6,000 at 21, 22');
-  await expect(page.locator('#buy-aircraft')).toBeDisabled(); await expect(page.locator('#aircraft-purchase-status')).toContainText('No airport parking');
+  await aircraftCatalog(page); await expect(page.locator('#buy-price')).toHaveText('$6,000');
+  await page.locator('#catalog-buy').click(); game.dispatch({type:'buy-aircraft'});
+  await expect(page.locator('#buy-result')).toHaveText('Crop Duster purchased.');
+  await expect(page.locator('#buy-owned')).toHaveText('1');
+  await page.locator('#catalog-buy').click(); await expect(page.locator('#buy-result')).toHaveText('No airport parking space is available.');
+  await openWindow(page,'aircraft');
   await expect(page.locator('#aircraft-status')).toHaveText('Fuel: 0 / 255 · Payload: 0 / 255 · Wear: 0%');
   await reveal(page, '#aircraft-fuel'); await page.locator('#aircraft-fuel').click(); game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind: 'fuel' } });
   await expect(page.locator('#aircraft-fuel')).toBeDisabled();
   await reveal(page, '#aircraft-load'); await page.locator('#aircraft-load').click(); game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind: 'load' } });
   await expect(page.locator('#aircraft-status')).toContainText('Payload: 255 / 255 (Pesticide)');
-  await reveal(page, '#aircraft-chemical'); await page.locator('#aircraft-chemical').selectOption('223'); game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind: 'chemical', chemicalType: 223 } });
+  await page.locator('[data-aircraft-chemical="223"]').click(); game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind: 'chemical', chemicalType: 223 } });
   await expect(page.locator('#aircraft-service-result')).toContainText('Payload sold for $5,100');
   await expect(page.locator('#aircraft-status')).toContainText('Payload: 0 / 255');
   const path = 'artifacts/browser-aircraft.simfarm.json'; expect(await save(page, path)).toEqual(JSON.parse(game.save(4)));
-  await page.reload(); await load(page, game.save(4)); await reveal(page, '#aircraft-panel > summary'); await page.locator('#aircraft-panel > summary').click();
-  await expect(page.locator('#aircraft-chemical')).toHaveValue('223'); await expect(page.locator('#aircraft-service-result')).toHaveCount(0);
+  await page.reload(); await load(page, game.save(4)); await openWindow(page, 'aircraft');
+  await expect(page.locator('[data-aircraft-chemical="223"]')).toHaveAttribute('aria-pressed','true'); await expect(page.locator('#aircraft-service-result')).toHaveCount(0);
   await reveal(page, '#aircraft-load'); await page.locator('#aircraft-load').click(); game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind: 'load' } });
   await expect(page.locator('#aircraft-status')).toContainText('Payload: 255 / 255 (Fungicide)');
   await reveal(page, '#locate-aircraft'); await page.locator('#locate-aircraft').click();
@@ -52,9 +54,9 @@ test('Aircraft panel buys at the original airport pad, refuels, changes and load
 test('Aircraft repairs preserve saved age, cash failures explain disabled services, invalid selections preserve the farm and narrow controls fit', async ({ page }) => {
   const f = aircraftFixture(), purchased = purchaseAircraft(f.state.scenario, f.state.finances); expect(purchased.ok).toBe(true);
   const e = f.state.scenario.equipment[1]; e.bytes[17] = 10; e.bytes[18] = 4; f.state.scenario.farm.cash = 100;
-  const game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4)); await reveal(page, '#aircraft-panel > summary'); await page.locator('#aircraft-panel > summary').click();
+  const game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4)); await openWindow(page, 'aircraft');
   await expect(page.locator('#aircraft-fuel')).toBeDisabled(); await expect(page.locator('#aircraft-load')).toBeDisabled();
-  await expect(page.locator('#aircraft-panel')).toContainText('There is not enough cash.'); await expect(page.locator('#aircraft-repair')).toHaveText('Repair · $100');
+  await expect(page.locator('#aircraft-panel')).toContainText('There is not enough cash.'); await expect(page.locator('#aircraft-repair')).toHaveAccessibleName('Repair · $100'); await expect(page.locator('#aircraft-repair-price')).toHaveText('100');
   await reveal(page, '#aircraft-repair'); await page.locator('#aircraft-repair').click(); game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind: 'repair' } });
   await expect(page.locator('#aircraft-status')).toContainText('Wear: 0%'); await expect(page.locator('#farm-cash')).toHaveText('$0');
   await expect(page.locator('#aircraft-service-result')).toHaveText('Service completed for $100.');
@@ -66,6 +68,6 @@ test('Aircraft repairs preserve saved age, cash failures explain disabled servic
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-aircraft.png', fullPage: true });
   f.state.finances.town.airportCount = 0; await load(page, f.load().withAllCrops(browserCrops).save(4));
-  await reveal(page, '#aircraft-panel > summary'); await page.locator('#aircraft-panel > summary').click(); await expect(page.locator('#buy-aircraft')).toBeDisabled();
-  await expect(page.locator('#aircraft-purchase-status')).toContainText('An airport is needed');
+  await aircraftCatalog(page); await page.locator('#catalog-buy').click();
+  await expect(page.locator('#buy-result')).toContainText('An airport is needed');
 });
