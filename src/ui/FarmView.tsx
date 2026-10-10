@@ -1,5 +1,6 @@
 import {BalanceWindow} from './BalanceWindow';
 import {FinanceMessage} from './FinanceMessage';
+import {DefaultDialog} from './DefaultDialog';
 import type {FinanceNoticeId} from '../simulation/events';
 import {EvaluationWindow} from './EvaluationWindow';
 import { MarketWindow } from './MarketWindow';
@@ -392,9 +393,9 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     <GameWindow windowKey="town" title="Town development" titleArtwork={assets.townChoiceArtwork.src} forced={Boolean(snapshot?.pendingTown)}>
     {simulation && snapshot && <TownChoicePanel assets={assets} onEvent={onGameEvent} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     </GameWindow>
-    <GameWindow windowKey="bank" title="Bank" forced={Boolean(snapshot?.finances.defaultDecision)}>
+    <GameWindow windowKey="bank" title="Bank">
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
-      onRestart={() => setNewFarmOpen(true)} artwork={assets.bankArtwork} onClose={() => windows.show(null)} panelRef={loansRef} />}
+      artwork={assets.bankArtwork} onClose={() => windows.show(null)} panelRef={loansRef} />}
     </GameWindow>
     <GameWindow windowKey="taxes" title="Tax details">
     {snapshot && <TaxPanel snapshot={snapshot} open={taxOpen} onOpenChange={setTaxOpen} />}
@@ -424,6 +425,9 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     {data && snapshot && <BuyWindow assets={assets} snapshot={snapshot} tiles={data.tiles} onBuy={beginPurchase} />}
     {resource.status !== 'ready' && <div className="loading"><p role="status">{resource.status === 'error' ? resource.error : 'Loading farm…'}</p>
       <button aria-label="Edit tools and help" onClick={() => windows.show('tools')}>Choose another farm</button></div>}
+      {simulation&&snapshot?.finances.defaultDecision&&!financeMessages.length&&!newFarmOpen&&<DefaultDialog
+        decision={snapshot.finances.defaultDecision} assets={assets} onCommand={command=>simulation.dispatch(command)} onEvent={onGameEvent}
+        onRestart={()=>setNewFarmOpen(true)}/>}
     {data && <main className="edit-workspace" aria-label="Edit" onKeyDown={event => { if(objectMove.active&&event.key==='Escape'){event.preventDefault();cancelObjectMove();} if ((fieldMenu||fieldMapTool) && event.key==='Escape') {event.preventDefault();cancelFieldTool();} if (buyPlacement && event.key === 'Escape') { event.preventDefault(); cancelPurchase(); } }}>
       <div className="edit-title">Edit</div>
       <EditPalette artwork={assets.editPalette} disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}

@@ -6,9 +6,8 @@
 .field-panel p,.harvest-inventory{font-size:12px;line-height:1.6;color:#c2cbb4}.harvest-controls{border-bottom:1px solid #48563f;padding-bottom:4px}.harvest-inventory{border-bottom:1px solid #48563f;margin-bottom:20px;padding-bottom:12px}#harvest-items{padding-left:18px}#harvest-items li{margin:8px 0}
 .time-controls{border-top:1px solid #44503b;font-size:12px;flex-wrap:wrap}.time-controls>div{flex-wrap:wrap}#farm-date{color:#ead6a1}#farm-weather,#time-status,#field-growth{color:#c2cbb4;font-size:12px}#field-growth{line-height:1.6}#viewport{height:calc(100vh - 308px)}aside{max-height:calc(100vh - 268px)}@media(max-width:800px){#viewport{height:55vh}aside{max-height:none}}
 .toolbar{flex-wrap:wrap}.toolbar>.save-controls{flex-direction:column;align-items:flex-start;gap:4px;max-width:100%}.save-controls>div{display:flex;gap:8px}#save-status{font-size:12px;color:#c2cbb4;overflow-wrap:anywhere}
-.loan-panel,.default-panel{margin:0 0 16px;padding:12px 16px;border:1px solid #48563f;background:#20291d;color:#c2cbb4;line-height:1.5}.loan-panel summary{cursor:pointer;color:#ead6a1;font-weight:bold}.loan-panel dl{display:flex;gap:12px 30px;flex-wrap:wrap}.loan-panel dt{font-size:12px;color:#a8b598}.loan-panel dd{margin:0;color:#ead6a1}.loan-panel form{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.loan-panel input{width:125px;max-width:100%;padding:7px;color:#f3ecd9;background:#111b11;border:1px solid #7a8964}.loan-panel p{font-size:13px}.default-panel{border-color:#b99258}.default-panel h2{font-size:18px;margin-top:0}.default-panel button{margin-right:10px}
+.loan-panel{margin:0 0 16px;padding:12px 16px;border:1px solid #48563f;background:#20291d;color:#c2cbb4;line-height:1.5}.loan-panel summary{cursor:pointer;color:#ead6a1;font-weight:bold}.loan-panel dl{display:flex;gap:12px 30px;flex-wrap:wrap}.loan-panel dt{font-size:12px;color:#a8b598}.loan-panel dd{margin:0;color:#ead6a1}.loan-panel form{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.loan-panel input{width:125px;max-width:100%;padding:7px;color:#f3ecd9;background:#111b11;border:1px solid #7a8964}.loan-panel p{font-size:13px}
 
-.town-choices{display:flex;flex-wrap:wrap;gap:10px}.town-choices button{margin:0}
 .farm-actions{border:0;padding:0;margin:0;min-width:0}
 .homestead-notice { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 1rem; border: 1px solid #48563f; }
 
@@ -139,10 +138,10 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .game-window{position:absolute;z-index:30;top:80px;right:16px;width:520px;max-height:calc(100% - 104px);display:flex;flex-direction:column;box-shadow:4px 4px #0008;border:3px ridge #eee;background:#c2c2c2;color:#000;font:14px Arial,sans-serif}
 .game-window-body{padding:12px;overflow:auto;min-height:0;line-height:1.4}
 .game-window[data-window=newgame]{width:1040px;right:20px;top:64px;max-height:calc(100% - 80px)}
-.game-window[data-window=town],.game-window:has(.default-panel){z-index:35}
+.game-window[data-window=town]{z-index:35}
 .game-window .toolbar,.game-window header,.game-window footer,.game-window .farm-navigation{padding:8px 0;margin:0;background:transparent;color:#000;border:0;display:flex;flex-wrap:wrap;gap:8px}
 .game-window .toolbar>div{flex-wrap:wrap}
-.game-window .loan-panel,.game-window .default-panel,.game-window .new-farm-panel,.game-window .land-panel,.game-window .field-panel,.game-window .harvest-inventory{background:transparent;color:#000;margin:0 0 10px;padding:8px 0;border-color:#888;border-radius:0}
+.game-window .loan-panel,.game-window .new-farm-panel,.game-window .land-panel,.game-window .field-panel,.game-window .harvest-inventory{background:transparent;color:#000;margin:0 0 10px;padding:8px 0;border-color:#888;border-radius:0}
 .game-window :is(p,h2,h3,summary,dt,dd,pre,label,span,strong,output){color:inherit}
 .game-window :is(button,input,select){background:#eee;color:#000;border:2px outset #ddd;border-radius:0;padding:5px;font:14px Arial,sans-serif}
 .game-window input[type=range]{padding:0}
@@ -165,7 +164,7 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .game-window .terrain-design .terrain-hit,.game-window .terrain-design .terrain-range{padding:0}
 
 /* Original Bank terminal: DS:b32a window at176,96 with288×224 client art. */
-.game-window[data-window=bank]:not(:has(.default-panel)){left:176px;right:auto;top:96px;width:288px;border:0;max-height:calc(100% - 112px)}
+.game-window[data-window=bank]{left:176px;right:auto;top:96px;width:288px;border:0;max-height:calc(100% - 112px)}
 .game-window[data-window=bank] .game-window-body{padding:0}
 .bank-terminal{position:relative;width:288px;height:224px;flex-shrink:0;color:#00aa04}
 .bank-terminal>img{display:block;image-rendering:pixelated;pointer-events:none}
@@ -405,15 +404,16 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .map-panel[data-object-move=drop] #world{cursor:grabbing}
 
 /* Source9654 message popup, with its original frame and HTML captions. */
-.game-window:is([data-window=bulldoze-message],[data-window=finance-message]){left:192px;top:150px;right:auto;width:256px;height:192px;max-width:none;max-height:none;margin:0;padding:0;border:0;background:var(--message-artwork);overflow:hidden}
-.game-window:is([data-window=bulldoze-message],[data-window=finance-message])::backdrop{background:transparent}
-.game-window:is([data-window=bulldoze-message],[data-window=finance-message]) .game-window-title{background:var(--message-artwork);border:0;height:16px;min-height:16px}
-.game-window:is([data-window=bulldoze-message],[data-window=finance-message]) .game-window-title button{display:none}
-.game-window:is([data-window=bulldoze-message],[data-window=finance-message]) .game-window-body{padding:0;overflow:hidden}
+.game-window:is([data-window=bulldoze-message],[data-window=finance-message],[data-window=default]){left:192px;top:150px;right:auto;width:256px;height:192px;max-width:none;max-height:none;margin:0;padding:0;border:0;background:var(--message-artwork);overflow:hidden}
+.game-window:is([data-window=bulldoze-message],[data-window=finance-message],[data-window=default])::backdrop{background:transparent}
+.game-window:is([data-window=bulldoze-message],[data-window=finance-message],[data-window=default]) .game-window-title{background:var(--message-artwork);border:0;height:16px;min-height:16px}
+.game-window:is([data-window=bulldoze-message],[data-window=finance-message],[data-window=default]) .game-window-title button{display:none}
+.game-window:is([data-window=bulldoze-message],[data-window=finance-message],[data-window=default]) .game-window-body{padding:0;overflow:hidden}
+.game-window[data-window=default]{z-index:35}
 .original-message-body{position:relative;width:256px;height:176px}
 .message-portrait{position:absolute;left:72px;top:8px;width:112px;height:64px;overflow:hidden}
 .message-portrait img{position:absolute;width:896px;height:640px;max-width:none;image-rendering:pixelated}
-#finance-message-text{position:absolute;left:16px;top:80px;width:224px;height:56px;margin:0;font:bold 11px/9px monospace;white-space:normal;color:#000}
+#finance-message-text,#default-message-text{position:absolute;left:16px;top:80px;width:224px;height:56px;margin:0;font:bold 11px/9px monospace;white-space:normal;color:#000}
 #bulldoze-message-text{position:absolute;left:16px;top:80px;width:224px;margin:0;font:12px/14px 'Courier New',monospace;white-space:pre-line;color:#000}
 .game-window .original-message-body button{position:absolute;top:140px;width:48px;height:24px;border:0;padding:0;background:var(--message-button);font:bold 10px Arial,sans-serif;color:#000}
 .game-window .original-message-body button:hover{background:var(--message-button);filter:brightness(1.08)}

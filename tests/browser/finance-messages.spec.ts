@@ -39,7 +39,7 @@ test('paid and forced-sale notices follow original balance-before-tax order and 
     const game=financeMessageFixture(kind);await load(page,game.save(4));await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});
     for(const id of ids)await message(page,id);
     await expect(page.locator('#finance-message-ok')).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-    if(kind==='default'){await expect(page.getByRole('heading',{name:'Unable to pay debts'})).toBeVisible();await page.locator('#default-exit').click();game.dispatch({type:'resolve-default',choice:'exit'});expect(await save(page)).toEqual(JSON.parse(game.save(4)));}
+    if(kind==='default'){await expect(page.getByRole('region',{name:'Financial default',exact:true})).toBeVisible();await page.locator('#default-exit').click();game.dispatch({type:'resolve-default',choice:'exit'});expect(await save(page)).toEqual(JSON.parse(game.save(4)));}
   }
 });
 

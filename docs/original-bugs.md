@@ -568,9 +568,9 @@ Native forced-sale arithmetic retains this behavior with bounded scans, and a te
 
 ## SF-068 — terminal default text claims the protected homestead was sold
 
-**Status:** confirmed text/control-flow mismatch; native world protection preserved; UI wording deferred.
+**Status:** confirmed text/control-flow mismatch; native world protection preserved and restored-dialog wording corrected.
 
-Terminal text at `6190:3efa` says the homestead was sold to pay debts. The preceding land scan explicitly skips the saved pair (`0x1db1a..0x1db2d`) and contains no final home sale before showing that text at `0x1db56`. Native exhaustion preserves the home plot on all eight farms and returns a pending decision. The future UI should describe inability to pay without inventing a home sale. Original text remains documented rather than silently used as simulation evidence.
+Terminal text at `6190:3efa` says the homestead was sold to pay debts. The preceding land scan explicitly skips the saved pair (`0x1db1a..0x1db2d`) and contains no final home sale before showing that text at `0x1db56`. Native exhaustion preserves the home plot on all eight farms and returns a pending decision. The restored [default dialog](default-dialog.md) says the player cannot pay their debts and the homestead remains theirs, while retaining the original new-game question and YES/NO choices. Browser tests verify this text, protected saved world and unchanged debt after NO. Original wording is retained in source-pinning tests and documentation rather than used as simulation evidence.
 
 ## SF-069 — declining restart can be mistaken for successful default payment
 

@@ -42,10 +42,21 @@ test('message button preserves the original frame and removes all bitmap caption
   for(let y=0;y<24;y++)for(let x=0;x<48;x++){
     const offset=(y*48+x)*4;assert.deepEqual([...r.rgba.subarray(offset,offset+4)],x>=2&&x<46&&y>=4&&y<20?[...p[12],255]:[...original.rgba.subarray(offset,offset+4)]);
   }
-  for(const index of [3,10]){
+  for(const index of [3,10,11]){
     const frame=decodePlanar(bytes.subarray(index*576,(index+1)*576),48,24,p);
     for(let y=0;y<24;y++)for(let x=0;x<48;x++)if(x<2||x>=46||y<4||y>=20){const o=(y*48+x)*4;assert.deepEqual(frame.rgba.subarray(o,o+4),original.rgba.subarray(o,o+4));}
   }
   const imported=PNG.sync.read(readFileSync(new URL('../public/assets/message-button.png',import.meta.url)));assert.deepEqual([...imported.data],[...r.rgba]);
   assert.throws(()=>readMessageButton(bytes.subarray(1),p),/atlas/);
+});
+
+test('terminal default uses the original Message geometry, portrait74, YES/NO and distinct restart/exit main states',()=>{
+  const exe=source('SIMFARM.EXE'),hash=(a:number,b:number)=>createHash('sha256').update(exe.subarray(a,b)).digest('hex');
+  assert.equal(hash(0x1db42,0x1db7f),'12e1bf7c3e80d57069f76a0d46f2dd753d0ac8e0c43f6a2fbc190ebf09be8126');
+  assert.equal(hash(0x2694,0x26c0),'c6ff3dc8b6059604c13e709d777062de5f552ae492a637e1990b454d6e6351f4');
+  assert.equal(exe.subarray(0x1db42,0x1db5b).toString('hex'),'6a016a0068960068c0006a0c6a0b6a4a1e68fa3e9af4103606');
+  assert.equal(exe.subarray(0x846f0+0x3efa,0x846f0+0x3efa+100).toString().split('\0')[0],
+    'You have had to sell your homestead to pay your debts.  Would you like to start a new game?');
+  assert.equal(exe.subarray(0x1db69,0x1db6f).toString('hex'),'26c606940102');
+  assert.equal(exe.subarray(0x1db76,0x1db7c).toString('hex'),'26c606940101');
 });

@@ -9,8 +9,8 @@ const failures = { 'invalid-amount': 'Enter a positive whole-dollar amount.', 'n
 const notices: Record<number, string> = { 166: 'The scheduled installment is overdue.', 168: 'Assets were sold to pay the overdue installment.',
   169: 'The overdue installment is still unpaid.', 170: 'The overdue installment has been paid.' };
 
-export function LoanPanel({ snapshot, onCommand, onRestart, artwork, onClose, panelRef }: {
-  snapshot: GameSnapshot; onCommand: (command: GameCommand) => void; onRestart: () => void;
+export function LoanPanel({ snapshot, onCommand, artwork, onClose, panelRef }: {
+  snapshot: GameSnapshot; onCommand: (command: GameCommand) => void;
   artwork: HTMLImageElement; onClose: () => void; panelRef: Ref<HTMLElement>;
 }) {
   const [amount, setAmount] = useState(String(snapshot.finances.loan.selectedAmount)), [help, setHelp] = useState(false);
@@ -36,15 +36,6 @@ export function LoanPanel({ snapshot, onCommand, onRestart, artwork, onClose, pa
   }
   const installment = valid ? loanInstallment(requested, f.loanRate) : null;
   return <>
-    {decision && <section className="default-panel" role="alert" aria-label="Financial default">
-      <h2>{decision.status === 'pending' ? 'Unable to pay debts' : 'Farm session ended'}</h2>
-      <p>Available assets could not cover the debt. Your homestead remains yours. Time and farm actions are stopped.</p>
-      {decision.status === 'pending' ? <div>
-        <button id="default-restart" onClick={() => { onCommand({ type: 'resolve-default', choice: 'restart' }); onRestart(); }}>Choose another farm</button>
-        <button id="default-exit" onClick={() => onCommand({ type: 'resolve-default', choice: 'exit' })}>End session</button>
-      </div> : <button onClick={onRestart}>Choose another farm</button>}
-      <p>You can also load a saved farm or choose another scenario above.</p>
-    </section>}
     <section id="loan-panel" className="bank-terminal" ref={panelRef} tabIndex={-1} aria-label="Loans"
       onKeyDown={event => {
         if (blocked || event.altKey || event.ctrlKey || event.metaKey || event.target instanceof HTMLInputElement) return;
