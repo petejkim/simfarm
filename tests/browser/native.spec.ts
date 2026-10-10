@@ -740,7 +740,7 @@ test('Loans panel borrows, quotes installments, saves balances and pays off thro
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('original terrain');
   const cash = await page.locator('#farm-cash').textContent();
   await openWindow(page, 'bank');
-  await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('0'); await expect(page.locator('#borrow-loan')).toBeDisabled();
+  await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('0'); await expect(page.locator('#borrow-loan')).toBeEnabled();
   await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('1000'); await expect(page.locator('#loan-quote')).toContainText('$57');
   await reveal(page, '#borrow-loan'); await page.locator('#borrow-loan').click();
   await expect(page.locator('#loan-balance')).toHaveText('$1,000'); await expect(page.locator('#loan-installment')).toHaveText('$57');

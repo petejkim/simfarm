@@ -59,8 +59,8 @@ test('Windows menu and toolbar route to the same controls; Edit focuses the map 
   await page.keyboard.press('Escape'); await expect(page.locator('#windows-menu-button')).toBeFocused();
   for (const viaMenu of [false, true]) {
     const open = (key: string, label: string) => viaMenu ? windowMenu(page, label) : page.locator(`#window-${key}`).click();
-    await open('bank', 'Bank'); await expect(page.locator('#loan-panel')).toHaveAttribute('open', '');
-    await expect(page.locator('#loan-panel > summary')).toBeFocused();
+    await open('bank', 'Bank'); await expect(page.locator('#loan-panel')).toBeVisible();
+    await expect(page.locator('#loan-panel')).toBeFocused();
     await open('buy', 'Buy'); await expect(page.locator('#map-tool')).toHaveValue('crop-supplies');
     await reveal(page, '#crop-supply-shop'); await expect(page.locator('#crop-supply-shop')).toBeVisible();
     await open('map', 'Map'); await expect(page.locator('#map-tool')).toHaveValue('land');

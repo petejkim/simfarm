@@ -100,7 +100,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     return home ? { x: home.x + 2, y: home.y + 2 } : { x: 48, y: 48 };
   });
   const [mapTool, setMapTool] = useState<MapTool>('inspect');
-  const [plannerOpen, setPlannerOpen] = useState(false), [loansOpen, setLoansOpen] = useState(false);
+  const [plannerOpen, setPlannerOpen] = useState(false);
   const [navigation, setNavigation] = useState<{ target: FarmDestination | WindowCommand } | null>(null);
   const [reportOpen, setReportOpen] = useState(false), [taxOpen, setTaxOpen] = useState(false);
   const reportRef = useRef<HTMLElement>(null), weatherRef = useRef<HTMLSpanElement>(null);
@@ -121,7 +121,6 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   }, [navigation]);
   function navigate(target: FarmDestination) {
     if (target === 'planner') { setPlannerOpen(true); setMapTool('inspect'); }
-    if (target === 'loans') setLoansOpen(true);
     if (target === 'land' || target === 'field' || target === 'crop-supplies' || target === 'network') setMapTool(target);
     windows.show(target === 'map' ? null : target === 'loans' ? 'bank' : 'actions');
     setNavigation({ target });
@@ -246,7 +245,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     </GameWindow>
     <GameWindow windowKey="bank" title="Bank" forced={Boolean(snapshot?.finances.defaultDecision)}>
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
-      onRestart={() => setNewFarmOpen(true)} open={loansOpen} onOpenChange={setLoansOpen} summaryRef={loansRef} />}
+      onRestart={() => setNewFarmOpen(true)} artwork={assets.bankArtwork} onClose={() => windows.show(null)} panelRef={loansRef} />}
     </GameWindow>
     <GameWindow windowKey="evaluation" title="Evaluation and balance sheet">
     {snapshot && <TaxPanel snapshot={snapshot} open={taxOpen} onOpenChange={setTaxOpen} />}

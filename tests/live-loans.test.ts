@@ -111,3 +111,26 @@ test('version-three migration retains finance balances; current terminal decisio
   original.runtime.finances.defaultDecision = { status: 'pending', originalExitCode: 0 }; original.runtime.paused = false;
   assert.throws(() => GameSimulation.load(JSON.stringify(original), crops), /unpaused terminal default/);
 });
+
+
+test('Bank reports collateral credit independently from cash capacity without mutating cached source accounts', () => {
+  const { game, crops } = restored(s => {
+    s.scenario.farm.cash = 9000000;
+    s.runtime.finances.accounts.buildingBookValue = 3000000;
+    s.runtime.finances.loan.availableCredit = 123;
+    s.runtime.finances.loan.selectedAmount = 456;
+  });
+  const before = game.save(4), snapshot = game.getSnapshot();
+  assert.ok(snapshot.loanCreditLimit > 1000000);
+  assert.equal(snapshot.availableLoan, 999999);
+  assert.equal(snapshot.finances.loan.availableCredit, 123);
+  assert.equal(snapshot.finances.loan.selectedAmount, 456);
+  assert.equal(game.save(4), before);
+  const copy = GameSimulation.load(before, crops).simulation;
+  assert.equal(copy.getSnapshot().loanCreditLimit, snapshot.loanCreditLimit);
+  game.dispatch({ type: 'borrow', amount: 1000000 });
+  assert.equal(game.getSnapshot().scenario.farm.cash, 9999999);
+  assert.equal(game.getSnapshot().finances.loan.principal, 999999);
+  assert.equal(game.getSnapshot().availableLoan, 0);
+  assert.ok(game.getSnapshot().loanCreditLimit > 0);
+});

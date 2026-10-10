@@ -125,6 +125,7 @@ export interface GameSnapshot {
   lastHomesteadChange: HomesteadChange | null;
   taxAssessment: TaxAssessment;
   lastTaxSettlement: TaxSettlement | null;
+  loanCreditLimit: number;
   availableLoan: number;
   lastLoanResult: ({ kind: 'borrow' } & BorrowResult) | ({ kind: 'repay' } & RepayResult) | null;
   financeNotices: number[];
@@ -840,6 +841,7 @@ export class GameSimulation {
     // until all of its annual consumers and lifecycle are reconstructed.
     const report = { ...this.finances.annual };
     updateAnnualReport(this.scenario.farm, this.finances.accounts, report);
+    const creditLimit = loanCreditLimit(this.scenario, this.finances.accounts.buildingBookValue, this.finances.loan.principal, this.weather.soilMoisture);
     this.snapshot = { setup: structuredClone(this.setup), retainedSetup: this.retainedSetup ? structuredClone(this.retainedSetup) : null, newFarm: this.newFarm ? structuredClone(this.newFarm) : null, traffic: snapshotTraffic(this.traffic), disasters: structuredClone(this.disasters), waterDisasters: { ...this.waterDisasters }, lastDisasterResult: this.lastDisasterResult ? structuredClone(this.lastDisasterResult) : null,
       disasterNotices: [...this.disasterNotices], revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
       farmReport: { income: report.reportIncome, expenses: report.reportExpenses, net: report.reportNet,
@@ -851,8 +853,8 @@ export class GameSimulation {
       lastHomesteadChange: this.lastHomesteadChange ? { ...this.lastHomesteadChange } : null,
       taxAssessment: assessAnnualTax(this.scenario, this.weather.soilMoisture, this.finances.debt.unpaidTaxes),
       lastTaxSettlement: this.lastTaxSettlement ? { ...this.lastTaxSettlement, assessment: { ...this.lastTaxSettlement.assessment } } : null,
-      availableLoan: Math.min(Math.max(0, 9999999 - this.scenario.farm.cash),
-        loanCreditLimit(this.scenario, this.finances.accounts.buildingBookValue, this.finances.loan.principal, this.weather.soilMoisture)),
+      loanCreditLimit: creditLimit,
+      availableLoan: Math.min(Math.max(0, 9999999 - this.scenario.farm.cash), creditLimit),
       lastLoanResult: this.lastLoanResult ? { ...this.lastLoanResult } : null, financeNotices: [...this.financeNotices],
       aircraftService: { ...this.aircraftService },
       aircraftFlight: this.aircraftFlight ? { ...this.aircraftFlight, inputs: [...this.aircraftFlight.inputs] } : null,
