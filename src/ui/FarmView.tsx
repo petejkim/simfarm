@@ -24,7 +24,7 @@ import { useResource } from './useResource';
 import { GameSimulation, type GameCommand } from '../simulation/game';
 import { TimeControls } from './TimeControls';
 import { SaveControls, type LoadedFarm } from './SaveControls';
-import { HarvestInventory } from './HarvestInventory';
+import { SellWindow } from './SellWindow';
 import { LandPanel, type MapTool } from './LandPanel';
 import { checkFieldPlacement } from '../simulation/field-placement';
 import { quoteLand } from '../simulation/land';
@@ -309,6 +309,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     <GameWindow windowKey="disasters" title="Disasters">
     {snapshot && <DisasterPanel snapshot={snapshot} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     </GameWindow>
+    {data && snapshot && <SellWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={sellRef} onCommand={command=>simulation?.dispatch(command)} />}
     {data && snapshot && <BuyWindow assets={assets} snapshot={snapshot} tiles={data.tiles} onBuy={beginPurchase} />}
     {resource.status !== 'ready' && <div className="loading"><p role="status">{resource.status === 'error' ? resource.error : 'Loading farm…'}</p>
       <button aria-label="Edit tools and help" onClick={() => windows.show('tools')}>Choose another farm</button></div>}
@@ -388,12 +389,6 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
           scenario={data.scenario} crops={assets.catalog.crops} field={field} result={snapshot.lastPlanEditResult}
           onEdit={(fieldSlot, week, action) => simulation?.dispatch({ type: 'edit-field-plan', fieldSlot, week, action })} />}
         </fieldset>
-      </GameWindow>
-      <GameWindow windowKey="sell" title="Sell">
-        <section ref={sellRef} tabIndex={-1} aria-label="Sell harvest">
-        <HarvestInventory scenario={data.scenario} crops={assets.catalog.crops} values={snapshot?.storedHarvestValues ?? []}
-          result={snapshot?.lastSaleResult ?? null} onSell={inventorySlot => simulation?.dispatch({ type: 'sell-harvest', inventorySlot })} />
-        </section>
       </GameWindow>
       <GameWindow windowKey="expert" title="Farm Expert">
         <section ref={expertRef} tabIndex={-1} aria-label="Farm Expert">

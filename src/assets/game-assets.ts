@@ -44,7 +44,7 @@ export interface Catalog {
   palette: number[][];
 }
 export interface WindowArtwork { title: HTMLImageElement; inactive: HTMLImageElement; close: HTMLImageElement }
-export interface GameAssets { catalog: Catalog; mainMenus: MainMenus; controlBar: HTMLImageElement; editPalette: HTMLImageElement; bankArtwork: HTMLImageElement; buyArtwork: HTMLImageElement; buyCards: HTMLImageElement; buyCatalog: BuyCatalog; itemText: Uint8Array; windowArtwork: WindowArtwork; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
+export interface GameAssets { catalog: Catalog; mainMenus: MainMenus; controlBar: HTMLImageElement; editPalette: HTMLImageElement; bankArtwork: HTMLImageElement; sellArtwork: HTMLImageElement; sellConditions: HTMLImageElement; buyArtwork: HTMLImageElement; buyCards: HTMLImageElement; buyCatalog: BuyCatalog; itemText: Uint8Array; windowArtwork: WindowArtwork; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
 export const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}assets/${path}`;
 
 async function response(path: string, signal?: AbortSignal): Promise<Response> {
@@ -67,7 +67,7 @@ function image(path: string, signal: AbortSignal): Promise<HTMLImageElement> {
   });
 }
 export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
-  const [catalog, maskedTiles, townLayouts, airplane, shadow, dust, tornado, swarm, mainMenus, controlBar, editPalette, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, windowTitle, windowInactive, windowClose] = await Promise.all([
+  const [catalog, maskedTiles, townLayouts, airplane, shadow, dust, tornado, swarm, mainMenus, controlBar, editPalette, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, sellArtwork, sellConditions, windowTitle, windowInactive, windowClose] = await Promise.all([
     response('catalog.json', signal).then(r => r.json()) as Promise<Catalog>, image('masked-tiles.png', signal),
     response('raw/townly0.cmp', signal).then(r => r.arrayBuffer()).then(b => new TownLayouts(new Uint8Array(b))),
     image('airplane.sprites.png', signal), image('apshadow.sprites.png', signal), image('cropdust.sprites.png', signal), image('tornado.sprites.png', signal), image('swarm.sprites.png', signal),
@@ -75,14 +75,15 @@ export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
     image('control-bar.png', signal), image('edit-palette.png', signal), image('bank-terminal.png', signal), image('buy-window.png', signal), image('buy-cards.png', signal),
     response('buy-catalog.json', signal).then(r => r.json()).then(readBuyCatalogData),
     response('raw/itemtext.dat', signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b)),
-    image('window-title.png', signal), image('window-title-inactive.png', signal), image('window-close.png', signal),
+    image('sell-window.png', signal), image('sell-conditions.png', signal), image('window-title.png', signal), image('window-title-inactive.png', signal), image('window-close.png', signal),
   ]);
   if (controlBar.naturalWidth !== 640 || controlBar.naturalHeight !== 32) throw new Error('Invalid control-bar artwork');
   if (editPalette.naturalWidth !== 48 || editPalette.naturalHeight !== 208) throw new Error('Invalid edit-palette artwork');
   if (bankArtwork.naturalWidth !== 288 || bankArtwork.naturalHeight !== 224) throw new Error('Invalid Bank artwork');
   if (buyArtwork.naturalWidth !== 256 || buyArtwork.naturalHeight !== 224 || buyCards.naturalWidth !== 896 || buyCards.naturalHeight !== 640 || itemText.length !== 18929) throw new Error('Invalid Buy artwork or text');
   if ([windowTitle, windowInactive, windowClose].some(img => img.naturalWidth !== 16 || img.naturalHeight !== 16)) throw new Error('Invalid window title artwork');
-  return { catalog, mainMenus, controlBar, editPalette, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, windowArtwork: { title: windowTitle, inactive: windowInactive, close: windowClose }, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
+  if (sellArtwork.naturalWidth !== 192 || sellArtwork.naturalHeight !== 256 || sellConditions.naturalWidth !== 128 || sellConditions.naturalHeight !== 32) throw new Error('Invalid Sell artwork');
+  return { sellArtwork, sellConditions, catalog, mainMenus, controlBar, editPalette, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, windowArtwork: { title: windowTitle, inactive: windowInactive, close: windowClose }, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
 }
 export async function loadScenarioAssets(id: number, signal: AbortSignal) {
   const [buffer, tiles] = await Promise.all([

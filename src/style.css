@@ -215,3 +215,33 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .game-window>.game-window-title>button:disabled{visibility:hidden}
 .game-window>.game-window-title>button:hover:not(:disabled){background:var(--window-close) no-repeat;filter:brightness(1.2)}
 .game-window-title:focus-visible{outline:1px dotted #fff;outline-offset:-2px}
+
+/* Original Sell descriptor DSbdbe:192×256 client below16px title. */
+.game-window[data-window=sell]{left:128px;top:80px;right:auto;width:192px;border:0;max-height:calc(100% - 96px)}
+.game-window[data-window=sell] .game-window-body{padding:0}
+.sell-window{position:relative;width:192px;height:256px;flex-shrink:0}
+.sell-window>img{display:block;image-rendering:pixelated;pointer-events:none}
+.sell-card{position:absolute;left:56px;top:8px;width:112px;height:64px;overflow:hidden}
+.sell-card>img{position:absolute;image-rendering:pixelated;max-width:none}
+.sell-preview{position:absolute;inset:0;width:192px;height:256px;pointer-events:none}
+.game-window .sell-window button{position:absolute;padding:0;border:0;border-radius:0;background:transparent;color:#000}
+.sell-category{left:16px;width:28px;height:28px}
+.sell-category[aria-pressed=true]{box-shadow:inset 1px 1px #000,inset -1px -1px #fff}
+.sell-scroll{left:16px;width:16px;height:16px}
+.game-window .sell-window button:hover:not(:disabled){background:#fff2}
+.game-window .sell-window .sell-scrollbar{position:absolute;left:16px;top:112px;width:16px;height:64px;margin:0;padding:0;border:0;writing-mode:vertical-lr;direction:ltr;accent-color:#828282}
+.game-window #sell-item-name{position:absolute;left:48px;top:80px;width:124px;height:12px;margin:0;overflow:hidden;white-space:nowrap;font:10px/12px monospace}
+.game-window .sell-window .sell-row{left:40px;width:136px;height:32px;border:1px solid #000;overflow:hidden}
+.game-window .sell-window .sell-row[aria-selected=true]{border:2px solid #fff304}
+.sell-condition{position:absolute;left:39px;top:-1px;width:32px;height:32px;image-rendering:pixelated}
+.sell-row[aria-selected=true] .sell-condition{left:38px;top:-2px}
+.condition-letter{position:absolute;left:10px;top:7px;width:12px;height:13px;color:#c20404!important;font:bold 14px/13px monospace}
+.condition-word{position:absolute;left:2px;top:22px;width:28px;height:9px;font:9px/9px Arial,sans-serif}
+.sell-price{position:absolute;left:71px;top:11px;font:10px/10px monospace;white-space:nowrap}
+.sell-row[aria-selected=true] .sell-price{left:70px;top:10px}
+.game-window .sell-empty{position:absolute;left:40px;top:96px;margin:0;font:10px/10px monospace}
+.game-window #sell-position{position:absolute;left:40px;top:200px;width:136px;height:12px;margin:0;font:10px/12px monospace}
+.game-window .sell-window .sell-caption{top:216px;height:24px;font:bold 10px Arial,sans-serif}
+.sale-accessible-detail{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.sell-feedback{padding:4px;font:11px Arial,sans-serif}
+.sell-feedback p{margin:2px 0}

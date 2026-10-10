@@ -11,6 +11,7 @@ import { readNewFarmRecordDefaults } from '../src/formats/new-farm-records';
 import { readNewFarmRuntimeDefaults } from '../src/formats/new-farm-runtime';
 import { readTrafficDefaults } from '../src/formats/traffic';
 import { readOriginalMainMenus } from '../src/formats/main-menus';
+import { readSellArtwork, readSellConditions } from '../src/formats/sell-window';
 import { readBuyArtwork, readBuyCards, readBuyCatalog } from '../src/formats/buy-window';
 import { readBankArtwork } from '../src/formats/bank-artwork';
 import { readEditPalette } from '../src/formats/edit-palette';
@@ -47,6 +48,8 @@ for (const e of entries) {
 }
 await json('buy-catalog.json', readBuyCatalog(exe));
 await png('buy-cards.png', readBuyCards(asset('alltiles.btl'), palette));
+await png('sell-window.png', readSellArtwork(asset('sellwndo.bmp'), palette));
+await png('sell-conditions.png', readSellConditions(asset('ega16til.til'), palette));
 await png('buy-window.png', readBuyArtwork(asset('buywndo.bmp'), palette));
 await png('bank-terminal.png', readBankArtwork(asset('bankterm.bmp'), palette));
 await png('edit-palette.png', readEditPalette(asset('editeasy.lzs'), palette));
