@@ -23,7 +23,7 @@ test('Farm report displays original totals and field conditions, updates after p
   await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'report.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(save)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await openWindow(page, 'evaluation');
+  await openWindow(page, 'balance');
   await expect(page.locator('#report-income')).toHaveText('$500'); await expect(page.locator('#report-expenses')).toHaveText('$1,000');
   await expect(page.locator('#report-net')).toHaveText('-$500'); await expect(page.locator('#report-workers')).toHaveText('$20');
   await expect(page.locator('#report-chemicals')).toHaveText('$30'); await expect(page.locator('#report-loans')).toHaveText('$40');
@@ -36,7 +36,7 @@ test('Farm report displays original totals and field conditions, updates after p
   const path = 'artifacts/browser-report.simfarm.json'; await (await download).saveAs(path);
   const saved = JSON.parse(readFileSync(path, 'utf8')); expect(saved.runtime.finances.annual).toEqual(f.annual);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await openWindow(page, 'evaluation'); await expect(page.locator('#report-net')).toHaveText('-$500');
+  await openWindow(page, 'balance'); await expect(page.locator('#report-net')).toHaveText('-$500');
   await expect(page.locator('#report-loans')).toHaveText('$1,040');
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#farm-report'); await page.locator('#farm-report').scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);

@@ -1,3 +1,4 @@
+import {readEvaluationArtwork} from '../src/formats/evaluation-window';
 import { readMarketArtwork } from '../src/formats/market-window';
 import { readWeatherArtwork,readWeatherScenes,readWeatherVane } from '../src/formats/weather-window';
 import { readExpertDeck,readExpertPortrait } from '../src/formats/expert-cards';
@@ -45,6 +46,7 @@ const assets = new Map(entries.map(e => [e.name, e.bytes]));
 function asset(name: string) { const bytes = assets.get(name); if (!bytes) throw new Error(`Missing ${name}`); return bytes; }
 readExpertDeck(id=>asset(`card${id}.hc`));
 const palette = readPalette(asset('simfarm.pal'));
+await png('evaluation-window.png',readEvaluationArtwork(asset('evaluate.bmp'),palette));
 await png('weather-window.png',readWeatherArtwork(asset('weather.bmp'),palette));
 await png('weather-sky.png',readWeatherScenes(asset('wethsky.btl'),palette));
 await png('weather-ground.png',readWeatherScenes(asset('wethgrnd.btl'),palette));
