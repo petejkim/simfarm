@@ -6,7 +6,7 @@ import type { NewFarmAssets } from '../simulation/create-farm';
 import type { DisasterSprites } from '../render/disaster-renderer';
 import type { FlightSprites } from '../render/aircraft-renderer';
 import type { CropDefinition } from '../formats/crop';
-import { readScenario } from '../formats/scenario';
+import { readScenario, type Scenario } from '../formats/scenario';
 import type { MidiSequence } from '../formats/xmidi';
 import { TownLayouts } from '../formats/town';
 import { decodeVoc } from '../formats/voc';
@@ -88,6 +88,14 @@ export async function loadGeneratedTiles(cropFiles: readonly string[], signal: A
   const binary = (path: string) => response(path, signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b));
   const [tiles, palette, ...crops] = await Promise.all([binary('raw/ega16til.til'), binary('raw/simfarm.pal'), ...cropFiles.map(file => binary(`raw/crops/${file}`))]);
   return rasterImage(tileAtlas(patchCropGraphics(tiles, crops), readPalette(palette)), signal);
+}
+/** Native checkpoints may require either bundled or recomposed original tiles. */
+export async function loadSavedFarmTiles(world: Scenario, scenarioId: number | null, signal: AbortSignal): Promise<HTMLImageElement> {
+  if (scenarioId === null) return loadGeneratedTiles(world.cropFiles, signal);
+  const original = await loadScenarioAssets(scenarioId, signal);
+  if (!world.sourceBytes || world.sourceBytes.some((byte, i) => byte !== original.scenario.sourceBytes[i]))
+    throw new Error('This farm needs different original scenario assets.');
+  return original.tiles;
 }
 export async function loadNewFarmAssets(assets: GameAssets, signal: AbortSignal): Promise<NewFarmAssets> {
   const [records, runtime, traffic, setup] = await Promise.all(['new-farm-records.json', 'new-farm-runtime.json', 'traffic-defaults.json', 'new-farm-setup.json']

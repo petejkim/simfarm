@@ -56,7 +56,7 @@ test('original geographic panel paints exact markers and bars, preserves selecti
   await page.getByRole('button', { name: 'Cancel', exact: true }).click(); expect(await save(page)).toEqual(before); expect(errors).toEqual([]);
 });
 
-test('original Load opens the browser picker for exact checkpoint restoration and Quit pauses without losing the farm', async ({ page }) => {
+test('chooser Load opens its file picker for exact checkpoint restoration and Quit pauses without losing the farm', async ({ page }) => {
   await start(page); const before = await save(page); await chooser(page);
   const picker = page.waitForEvent('filechooser'); await page.locator('#region-load').click();
   await (await picker).setFiles({ name: 'chooser-checkpoint.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(before)) });
@@ -68,7 +68,7 @@ test('original Load opens the browser picker for exact checkpoint restoration an
   expect(await save(page)).toEqual(before);
   await chooser(page); const bad = page.waitForEvent('filechooser'); await page.locator('#region-load').click();
   await (await bad).setFiles({ name: 'broken.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
-  await expect(page.locator('#save-status')).toContainText('Could not load farm'); expect(await save(page)).toEqual(before);
+  await expect(page.locator('#new-farm-error')).toContainText('Could not open farm'); expect(await save(page)).toEqual(before);
 });
 
 test('truncated original artwork and palette fail atomically and original Quit cancels a pending region load', async ({ page }) => {

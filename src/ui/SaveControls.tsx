@@ -1,16 +1,15 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
-import { loadScenarioAssets, loadGeneratedTiles, type GameAssets } from '../assets/game-assets';
+import { useEffect, useRef, useState } from 'react';
+import { loadSavedFarmTiles, type GameAssets } from '../assets/game-assets';
 import { MAX_SAVE_BYTES } from '../formats/native-save';
 import { GameSimulation } from '../simulation/game';
 
 export interface LoadedFarm { scenarioId: number | null; simulation: GameSimulation; tiles: HTMLImageElement }
 
-export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, fileInput }: {
+export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad }: {
   simulation: GameSimulation; scenarioId: number | null; assets: GameAssets; loaded: boolean;
-  onLoad: (farm: LoadedFarm) => void; fileInput?: RefObject<HTMLInputElement | null>;
+  onLoad: (farm: LoadedFarm) => void;
 }) {
-  const localInput = useRef<HTMLInputElement>(null), pending = useRef<AbortController | null>(null);
-  const input = fileInput ?? localInput;
+  const input = useRef<HTMLInputElement>(null), pending = useRef<AbortController | null>(null);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(loaded ? 'Farm loaded.' : '');
   useEffect(() => () => pending.current?.abort(), []);
   function save() {
@@ -36,15 +35,7 @@ export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, f
       const restored = originalFile ? simulation.importOriginal(buffer, assets.catalog.crops)
         : GameSimulation.load(new TextDecoder().decode(buffer), assets.catalog.crops, assets.townLayouts);
       const world = restored.simulation.getSnapshot().scenario;
-      let tiles: HTMLImageElement;
-      if (restored.scenarioId === null) tiles = await loadGeneratedTiles(world.cropFiles, controller.signal);
-      else {
-        const original = await loadScenarioAssets(restored.scenarioId, controller.signal);
-        if (!world.sourceBytes || world.sourceBytes.some((byte, i) => byte !== original.scenario.sourceBytes[i])) {
-          throw new Error('This farm needs different original scenario assets.');
-        }
-        tiles = original.tiles;
-      }
+      const tiles = await loadSavedFarmTiles(world, restored.scenarioId, controller.signal);
       if (!controller.signal.aborted) onLoad({ ...restored, tiles });
     } catch (error) {
       if (!controller.signal.aborted) setMessage(`Could not load farm: ${error instanceof Error ? error.message : String(error)}`);

@@ -1,3 +1,4 @@
+import { createOriginalSaveStartup, restartOriginalSaveStartup, type OriginalStartupOptions } from './original-startup';
 import { restartGeneratedFarm, restartRegionFarm, type RestartFarmOptions } from './restart-farm';
 import { createGeographicFarm, createGeographicRegion, restartGeographicFarm } from './geographic-setup';
 import type { ClimateSelection } from '../formats/new-farm';
@@ -372,6 +373,16 @@ export class GameSimulation {
 
   static openGeographicRegion(bytes: Uint8Array, climate: ClimateSelection, seeds: RandomState, assets: NewFarmAssets): GameSimulation {
     return GameSimulation.load(writeNativeSave(createGeographicRegion(bytes, climate, seeds, assets), null), assets.crops, assets.townLayouts).simulation;
+  }
+
+  /** Geographic Load/result1, after temporary generated-farm startup. */
+  static openOriginalSave(bytes: Uint8Array, options: OriginalStartupOptions, assets: NewFarmAssets): GameSimulation {
+    return GameSimulation.load(writeNativeSave(createOriginalSaveStartup(bytes, options, assets), null), assets.crops, assets.townLayouts).simulation;
+  }
+
+  restartOriginalSave(bytes: Uint8Array, date: NewFarmOptions['date'], assets: NewFarmAssets): GameSimulation {
+    const state = restartOriginalSaveStartup(readNativeSave(this.save(null)).state, bytes, date, assets);
+    return GameSimulation.load(writeNativeSave(state, null), assets.crops, assets.townLayouts).simulation;
   }
 
   /** Import an original SSM into the retained native session, atomically. */

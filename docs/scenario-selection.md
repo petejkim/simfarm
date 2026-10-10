@@ -88,3 +88,8 @@ Three new unit cases pin source opcodes/hash, marker and XOR primitives, fill ar
 ## HTML text presentation (2026-10-08)
 
 The live geographic chooser follows the user's text policy: SELECT A REGION, climate labels, Low/High and all four action captions are HTML/React text. Opaque source-gray surfaces cover the bitmap lettering and CSS supplies button bevels at the recovered rectangles. The original source canvas remains an exact reference beneath those surfaces; whole-canvas pixel tests verify that reference, not the final composited text. Desktop/mobile screenshots verify the composite. Browser checks also verify copyable title text, visible captions, fitting text bounds and existing keyboard, load/cancel and setup behavior. Map pixels, XOR/scenario markers and climate bars are unchanged; browser typography is a deliberate presentation adaptation. Future restored interfaces must also use actual text elements.
+
+
+## Saved-game branch integration (2026-10-09)
+
+Load a Saved Game now handles original SSMs through the source result1 startup, using the selected session mode but retaining prior climate-choice bytes rather than the highlighted map climate. Native JSON checkpoints restore directly. The file picker belongs to New farm; errors keep the chooser open and cancellation retains the current farm. Quit still closes/pauses the old farm, including during pending loading. Ordinary Load farm remains a separate in-game import. Source phases, retained owners, tests and the explicit browser cancellation/time policy are documented in original-load-startup.md. No bitmap text or new source assets were introduced.
