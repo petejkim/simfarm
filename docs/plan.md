@@ -153,3 +153,8 @@ Restore mode4's six road/fence/gate/ditch/valve tools through the original palet
 ## 2026-10-10 — Trees and direct animal supplies
 
 Restore the three remaining mode4 one-cell tools through the shared Edit painting path. Trees now uses recovered grass/ownership, live price/count and visual RNG rules; Hay/Trough reuse canonical supply purchases with original quantities and placement audio. See [tree-placement.md](tree-placement.md). Complete regression and commit locally. Next restore direct Bulldoze, then remaining town/aircraft map routes and original dialog interiors. No pacing, crop availability, layout, save-schema or MIDI-policy change.
+
+
+## 2026-10-10 — direct Bulldoze and original confirmation popup
+
+Restore palette mode15 held input, its primary fixture-interception bypass, direct terrain/supply removal and original MESSAGE confirmation for fields/buildings. Recover popup.bmp, portrait74, events46/47 and YES/CANCEL/OK button geometry with real HTML text and native modal input/time suspension. Existing canonical cleanup rules and SF-112 cancellation protection remain. See [direct-bulldoze.md](direct-bulldoze.md). Complete full regression, commit locally, then restore town/aircraft map entry and remaining original window interiors. Keep fixed Edit,1× source layout, native slower pacing and all24 crops.

@@ -1,3 +1,4 @@
+import { readMessageButton } from '../src/formats/message-dialog';
 import { readExamineData, readExamineArtwork } from '../src/formats/examine';
 import { readScheduleArtwork, readFieldGauges } from '../src/formats/schedule-window';
 import { readMapArtwork } from '../src/formats/map-window';
@@ -49,6 +50,7 @@ for (const e of entries) {
   await writeFile(join(output, 'raw', e.name), e.bytes);
   if (e.name.endsWith('.bmp')) await png(`${e.name}.png`, readBitmap(e.bytes, palette));
 }
+await png('message-button.png', readMessageButton(asset('buttons.til'), palette));
 await json('examine.json', readExamineData(exe));
 await png('examine-window.png', readExamineArtwork(asset('examine.bmp'), palette));
 await json('buy-catalog.json', readBuyCatalog(exe));

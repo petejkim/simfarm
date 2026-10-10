@@ -1,10 +1,10 @@
 # Manual bulldozing
 
-Source: untouched SIMFARM.EXE, SHA256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`. Addresses below are file offsets. Static tracing only; no DOS execution. Confidence is high on the directly traced map-removal branches. Buildings, fields, loose inventory, chemicals, terrain networks and shoreline cleanup are reconstructed; exact held-button/modal/audio behavior remains incomplete.
+Source: untouched SIMFARM.EXE, SHA256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`. Addresses below are file offsets. Static tracing only; no DOS execution. Confidence is high on the directly traced map-removal branches. Buildings, fields, loose inventory, chemicals, terrain networks and shoreline cleanup are reconstructed; direct held-button input and the original MESSAGE popup are now connected; exact DOS modal/audio timing remains incomplete. See [direct-bulldoze.md](direct-bulldoze.md).
 
 ## Original entry and transaction
 
-Map-window callers0x20880 and0x20d11 invoke233c:035c, file0x2591c. This is a mouse-held loop: transform client coordinates to16-pixel map cells, reject outside the window, ignore repeated coordinates, and stop on button release. Native selection and explicit confirmation replace the held-button dialog sequence.
+Map-window callers0x20880 and0x20d11 invoke233c:035c, file0x2591c. This is a mouse-held loop: transform client coordinates to16-pixel map cells, reject outside the window, ignore repeated coordinates, and stop on button release. The original palette now uses direct captured input, with confirmation only for buildings/fields; the older all-target confirmation panel remains secondary access.
 
 At0x259c0 the secondary map word's town bit0x4000 prevents removal. There is no player-ownership0x0800 requirement; this matters for water pumps built off-farm. At0x259cf..0x259dd unsigned cash must be at least25, including equality. Insufficient cash requests uhoh.voc and notice42. An accepted cell requests bulldoze.voc before object lookup. Sound strings are in initialized DS, file0x846f0 + offsets59e4/59ed, not the tile-table segment.
 
@@ -28,7 +28,7 @@ GameSimulation owns the complete mutation and emits the existing original explod
 
 Three live tests verify actual creation→planting→Growing→removal→clearing→replanting, expense reports, raw records/plan retention, stored cow/tractor destruction, pump source removal,35-day saved continuation, detached feedback and modal blocking. Two Chromium flows exercise actual map clicks, cancellation without mutation, busy feedback, successful demolition, audible original PCM, every pixel of clearing tile664, current saves/reload, replanted crops and390px layout. The initial town-modal fixture failed strict save validation because it lacked the required town ownership marker; corrected the fixture, with no product rule change.
 
-The original mouse-held interface is replaced by selection and confirmation for every target, including terrain. Source pre-action bulldoze/uhoh request timing and exact modal pause behavior remain gaps. Trace manual relocation independently; usable bulldozing does not complete the preservation goal.
+The original palette now restores held input and building/field confirmation; the legacy panel below still confirms every target. Source pre-action bulldoze/uhoh request timing and exact modal pause behavior remain gaps. Trace manual relocation independently; usable bulldozing does not complete the preservation goal.
 
 ## Loose-item and terrain branch evidence
 
@@ -55,4 +55,4 @@ Successful terrain commands request original bulldoze.voc instead of the object 
 Four loose-item tests cover source call pins, all eight farms' definitions, all supported loose record types, ground/masked restoration, quantities and unknown bytes, sparse last-slot lookup, definition-count failure, chemical lookup precedence and stale terrain rejection. Two live tests exercise bought supplies, retained original chemicals, mixed networks, exact shoreline RNG,35-day continuation, accounting and silent rejected commands. Two new Chromium flows click every target type, compare every saved state, verify actual bulldozer PCM and all original pixels for changed tiles/neighbors, exercise town/cash/equality/cancel gates and inspect390px layout. The existing field/building browser flows remain passing.
 
 
-Next investigation: nearby map caller0x20898 invokes stub24e6:1136, whose descriptor atfile0x28196 selects overlay12, offset0 (file0x38790). It enters mouse-held handler0x38868 and draws context information using source lookups/quotes, alltiles.btl and text such as “Empty Storage Spot”; proximity to bulldoze is not evidence of relocation. Caller0x20d3b instead reaches233c:16a4/file0x26c64 and dispatches selected field operations. Continue tracing actual selection/drag dispatch before adding an invented manual machinery destination command.
+Historical investigation (subsequently recovered in examine-window.md and manual-movement.md): nearby map caller0x20898 invokes stub24e6:1136, whose descriptor atfile0x28196 selects overlay12, offset0 (file0x38790). It enters mouse-held handler0x38868 and draws context information using source lookups/quotes, alltiles.btl and text such as “Empty Storage Spot”; proximity to bulldoze is not evidence of relocation. Caller0x20d3b instead reaches233c:16a4/file0x26c64 and dispatches selected field operations. Continue tracing actual selection/drag dispatch before adding an invented manual machinery destination command.

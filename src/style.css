@@ -331,3 +331,17 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 
 .map-panel[data-object-move=pick] #world{cursor:grab}
 .map-panel[data-object-move=drop] #world{cursor:grabbing}
+
+/* Source9654 message popup, with its original frame and HTML captions. */
+.game-window[data-window=bulldoze-message]{left:192px;top:150px;right:auto;width:256px;height:192px;max-width:none;max-height:none;margin:0;padding:0;border:0;background:var(--message-artwork);overflow:hidden}
+.game-window[data-window=bulldoze-message]::backdrop{background:transparent}
+.game-window[data-window=bulldoze-message] .game-window-title{background:var(--message-artwork);border:0;height:16px;min-height:16px}
+.game-window[data-window=bulldoze-message] .game-window-title button{display:none}
+.game-window[data-window=bulldoze-message] .game-window-body{padding:0;overflow:hidden}
+.original-message-body{position:relative;width:256px;height:176px}
+.message-portrait{position:absolute;left:72px;top:8px;width:112px;height:64px;overflow:hidden}
+.message-portrait img{position:absolute;width:896px;height:640px;max-width:none;image-rendering:pixelated}
+#bulldoze-message-text{position:absolute;left:16px;top:80px;width:224px;margin:0;font:12px/14px 'Courier New',monospace;white-space:pre-line;color:#000}
+.game-window .original-message-body button{position:absolute;top:140px;width:48px;height:24px;border:0;padding:0;background:var(--message-button);font:bold 10px Arial,sans-serif;color:#000}
+.game-window .original-message-body button:hover{background:var(--message-button);filter:brightness(1.08)}
+.message-yes{left:40px}.message-cancel{left:168px}.message-ok{left:104px}

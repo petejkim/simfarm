@@ -11,9 +11,9 @@ export function WindowDesktop({ children, artwork }: { children: ReactNode; artw
   } as CSSProperties}>{children}</div></Context>;
 }
 interface Position { left: number; top: number }
-/** Nonmodal windows leave the permanent Edit canvas mounted and running. */
-export function GameWindow({ windowKey, title, children, forced = false, onClose }: {
-  windowKey: string; title: string; children: ReactNode; forced?: boolean; onClose?: () => void;
+/** Shared movable frame; optional native modal dialog keeps Edit mounted. */
+export function GameWindow({ windowKey, title, children, forced = false, modal = false, descriptionId, onClose }: {
+  windowKey: string; title: string; children: ReactNode; forced?: boolean; modal?: boolean; descriptionId?: string; onClose?: () => void;
 }) {
   const { active, show } = useWindows(), open = forced || active === windowKey;
   const ref = useRef<HTMLDivElement>(null);
@@ -49,7 +49,9 @@ export function GameWindow({ windowKey, title, children, forced = false, onClose
   }
   useLayoutEffect(() => {
     if (!open) return;
-    const previous = document.activeElement; ref.current?.focus({ preventScroll: true });
+    const previous = document.activeElement;
+    if(modal)(frame.current as HTMLDialogElement).showModal();
+    ref.current?.focus({ preventScroll: true });
     const observer = new ResizeObserver(() => setPosition(old => {
       if (!old) return old;
       const next = bounded(old); return next.left === old.left && next.top === old.top ? old : next;
@@ -57,13 +59,16 @@ export function GameWindow({ windowKey, title, children, forced = false, onClose
     observer.observe(frame.current!); observer.observe(frame.current!.closest('.game-desktop')!);
     return () => {
       observer.disconnect(); drag.current = null;
+      if(modal)(frame.current as HTMLDialogElement)?.close();
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus({ preventScroll: true });
     };
-  }, [open]);
+  }, [open,modal]);
   function close() { if (onClose) onClose(); else if (!forced) show(null); }
-  return <section ref={frame} data-window={windowKey} hidden={!open} role="dialog" aria-label={title} className="game-window"
+  const Frame = modal ? 'dialog' : 'section';
+  return <Frame ref={element=>{frame.current=element;}} data-window={windowKey} hidden={!open} role="dialog" aria-modal={modal||undefined} aria-label={title} aria-describedby={descriptionId} className="game-window"
     style={position ? { left: position.left, top: position.top, right: 'auto' } : undefined}
-    onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); close(); } }}>
+    onCancel={event=>{event.preventDefault();event.stopPropagation();close();}}
+    onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); } }}>
     <div className="game-window-title" tabIndex={0} ref={ref} aria-label={`${title} window titlebar`}
       title="Drag to move; arrow keys move a focused titlebar (Shift for one pixel)"
       onPointerDown={startDrag} onPointerMove={event => {
@@ -79,5 +84,5 @@ export function GameWindow({ windowKey, title, children, forced = false, onClose
       }}><span>{title}</span>
       <button aria-label={`Close ${title}`} title={`Close ${title}`} disabled={forced && !onClose} onClick={close} /></div>
     <div className="game-window-body">{children}</div>
-  </section>;
+  </Frame>;
 }

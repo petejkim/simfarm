@@ -28,6 +28,7 @@ interface Props {
   onSelect: (index: number) => void;
   onSecondarySelect: (index: number) => void;
   paintTool?: string | null;
+  stopPaintingOutside?: boolean;
   onPaint: (index:number,initial:boolean)=>boolean;
   onPointer: (pointer: MapFocus | null) => void;
 }
@@ -39,7 +40,7 @@ const directions: Record<string, [number, number]> = {
   ArrowLeft: [-64, 0], ArrowRight: [64, 0], ArrowUp: [0, -64], ArrowDown: [0, 64],
 };
 
-export function FarmMap({ viewportRef, scenario, tiles, maskedTiles, zoom, focus, field, selection, preview, onSelect,onSecondarySelect,paintTool,onPaint, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
+export function FarmMap({ viewportRef, scenario, tiles, maskedTiles, zoom, focus, field, selection, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stroke=useRef<{pointer:number;last:number|null}|null>(null),suppressClick=useRef(false);
   const stopPainting=useCallback(()=>{
@@ -122,7 +123,7 @@ export function FarmMap({ viewportRef, scenario, tiles, maskedTiles, zoom, focus
     const active=stroke.current;if(!active||!paintTool||flight)return;
     const viewport=viewportRef.current!,bounds=viewport.getBoundingClientRect(),rect=event.currentTarget.getBoundingClientRect();
     // Captured pointers can leave the canvas/viewport; never paint beneath controls.
-    if(event.clientX<bounds.left||event.clientY<bounds.top||event.clientX>=bounds.left+viewport.clientWidth||event.clientY>=bounds.top+viewport.clientHeight)return;
+    if(event.clientX<bounds.left||event.clientY<bounds.top||event.clientX>=bounds.left+viewport.clientWidth||event.clientY>=bounds.top+viewport.clientHeight){if(stopPaintingOutside)stopPainting();return;}
     const x=Math.floor((event.clientX-rect.left)/(16*zoom)),y=Math.floor((event.clientY-rect.top)/(16*zoom));
     if(x<0||y<0||x>=WORLD_SIZE||y>=WORLD_SIZE)return;
     const index=worldIndex(x,y);if(active.last===index)return;

@@ -989,6 +989,8 @@ Building confirmation0x25a6e..0x25a72 and field confirmation0x25b74..0x25b78 jum
 Native field/building removal requires an explicit confirmation command against the selected object; deselection/cancellation leaves cash, records and terrain untouched. The original branch evidence remains documented. Revisit this when reconstructing building interiors and the remaining terrain-removal branches, rather than treating the potential desynchronization as a proven ordinary-game exploit.
 
 
+Direct-input follow-up (2026-10-10): restored the source MESSAGE artwork and YES/CANCEL prompt with canonical target revalidation. CANCEL and Escape terminate the current stroke and leave the checkpoint unchanged; browser tests cover both. The native correction remains in effect rather than reproducing the potential fallthrough. Ordinary original-game incidence remains unproven.
+
 ## SF-113 — terrain removal preserves isolated connection images and skips gate-neighbor repair
 
 Status: verified original visual quirks, retained natively; no security implication. Confidence high on branch conditions, with no claim that an isolated straight tile must have a different intended image.
