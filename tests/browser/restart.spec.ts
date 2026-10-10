@@ -1,3 +1,4 @@
+import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
 import { GameSimulation } from '../../src/simulation/game';
@@ -27,12 +28,12 @@ async function save(page: Page, name: string) {
 
 test('accepted custom preview survives browser import and retains exact continuation and wrapper bytes', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const old = new GameSimulation(readScenario(source('SCEN4.SSM')), crops, assets.townLayouts);
+  const old = new GameSimulation(readScenario(source('SCEN4.SSM')), crops, assets.townLayouts).withAllCrops(browserCrops);
   const draft = CustomFarmSetup.restart(readNativeSave(old.save(null)).state, options, assets);
   draft.generateWorld(); draft.generateWorld();
   draft.setSettings({ ...options, climate: { precipitation: 0, temperature: 3, wind: 0 }, river: false, lake: true });
   const preview = draft.getSnapshot().preview;
-  const game = GameSimulation.load(writeNativeSave(draft.accept(), null), crops, assets.townLayouts).simulation;
+  const game = GameSimulation.load(writeNativeSave(draft.accept(), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   await load(page, game.save(null));
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
@@ -46,7 +47,7 @@ test('accepted custom preview survives browser import and retains exact continua
   for (let day = 0; day < 7; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   const advanced = await save(page, 'preview-advanced'); expect(advanced).toEqual(JSON.parse(game.save(null)));
   await load(page, JSON.stringify(advanced)); expect(await save(page, 'preview-restored')).toEqual(advanced);
-  const imported = game.importOriginal(source('SCEN4.SSM'), crops).simulation;
+  const imported = game.importOriginal(source('SCEN4.SSM'), crops).simulation.withAllCrops(browserCrops);
   await page.locator('#load-farm-file').setInputFiles({ name: 'SCEN4.SSM', mimeType: 'application/octet-stream', buffer: source('SCEN4.SSM') });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   expect(await save(page, 'preview-original-import')).toEqual(JSON.parse(imported.save(null)));
@@ -57,9 +58,9 @@ test('accepted custom preview survives browser import and retains exact continua
 
 test('a generated restart checkpoint preserves its original archive and continues exactly through browser save/load', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const original = new GameSimulation(readScenario(source('SCEN4.SSM')), crops, assets.townLayouts);
+  const original = new GameSimulation(readScenario(source('SCEN4.SSM')), crops, assets.townLayouts).withAllCrops(browserCrops);
   original.dispatch({ type: 'advance-day' });
-  const game = original.restartGenerated(options, assets);
+  const game = original.restartGenerated(options, assets).withAllCrops(browserCrops);
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   const requests: string[] = [];
   await page.route('**/assets/raw/SCEN*.SSM', route => { requests.push(route.request().url()); return route.abort(); });
@@ -67,7 +68,7 @@ test('a generated restart checkpoint preserves its original archive and continue
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   await expect(page.locator('#farm-cash')).toHaveText('$40,000');
   const initial = await save(page, 'initial');
-  expect(initial.version).toBe(23); expect(initial.runtime.newFarm.provenance.kind).toBe('restart');
+  expect(initial.version).toBe(24); expect(initial.runtime.newFarm.provenance.kind).toBe('restart');
   expect(initial.runtime.setup.sourceArchive).toBe(source('SCEN4.SSM').toString('hex'));
   expect(initial).toEqual(JSON.parse(game.save(null)));
   for (let day = 0; day < 7; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
@@ -94,7 +95,7 @@ test('New farm restarts the active session, cancels safely and restores its gene
   await page.locator('#create-farm').click(); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   const restarted = await save(page, 'live-generated');
   const draft = CustomFarmSetup.restart(readNativeSave(JSON.stringify(before)).state, restarted.runtime.newFarm.provenance.options, assets);
-  const expected = GameSimulation.load(writeNativeSave(draft.accept(), null), crops, assets.townLayouts).simulation;
+  const expected = GameSimulation.load(writeNativeSave(draft.accept(), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
   expect(restarted).toEqual(JSON.parse(expected.save(null)));
   expect(restarted.runtime.newFarm.provenance.kind).toBe('restart');
   await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
@@ -107,8 +108,8 @@ test('all eight live restart markers retain session history and continue after o
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   for (const [id, x, y] of [[0,0,8],[1,1,11],[2,1,3],[3,3,6],[4,9,7],[5,11,6],[6,13,11],[7,15,8]]) {
     const before = await save(page, `live-region-before-${id}`);
-    const expected = GameSimulation.load(JSON.stringify(before), crops, assets.townLayouts).simulation
-      .restartRegion(source(`SCEN${id}.SSM`), locations[y * 18 + x], assets);
+    const expected = GameSimulation.load(JSON.stringify(before), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops)
+      .restartRegion(source(`SCEN${id}.SSM`), locations[y * 18 + x], assets).withAllCrops(browserCrops);
     await page.locator('#new-farm').click(); await page.locator('#choose-region').click();
     await page.locator(`[data-region="${x},${y}"]`).click(); await page.locator('#create-farm').click();
     await expect(page.locator('#map-status')).toHaveText(`Scenario ${id + 1} · original terrain`);
@@ -121,7 +122,7 @@ test('all eight live restart markers retain session history and continue after o
 
 test('older original saves explain missing restart history and allow an explicit fresh farm', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  const legacy = await save(page, 'live-legacy-before'); legacy.version = 18; delete legacy.runtime.setup;
+  const legacy = await save(page, 'live-legacy-before'); useOriginalCatalog(legacy); legacy.version = 18; delete legacy.runtime.setup;
   await load(page, JSON.stringify(legacy)); await page.locator('#new-farm').click();
   await expect(page.locator('#restart-unavailable')).toContainText('older save');
   await expect(page.locator('#create-farm')).toBeDisabled();
@@ -144,8 +145,8 @@ test('invalid setup state leaves the browser farm intact and legacy original sav
     await expect(page.locator('#save-status')).toContainText('Could not load farm');
     expect(await save(page, 'after-failure')).toEqual(before);
   }
-  const legacy = structuredClone(before); legacy.version = 18; delete legacy.runtime.setup;
-  const expected = GameSimulation.load(JSON.stringify(legacy), crops, assets.townLayouts).simulation;
+  const legacy = structuredClone(before); useOriginalCatalog(legacy); legacy.version = 18; delete legacy.runtime.setup;
+  const expected = GameSimulation.load(JSON.stringify(legacy), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
   await load(page, JSON.stringify(legacy));
   const migrated = await save(page, 'legacy');
   expect(migrated.runtime.setup).toEqual({ terrainHistory: null, sourceArchive: null, previewRaw: null, climateSelection: null });
@@ -160,12 +161,12 @@ test('v20 climate selection stays unknown through browser import until an explic
   await page.clock.install({ time: new Date('1993-04-05T12:00:00Z') });
   await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  const game = GameSimulation.createNew(newFarmOptions, assets), legacy = JSON.parse(game.save(null));
-  legacy.version = 20; delete legacy.runtime.setup.climateSelection;
+  const game = GameSimulation.createNew(newFarmOptions, assets).withAllCrops(browserCrops), legacy = JSON.parse(game.save(null));
+  useOriginalCatalog(legacy); legacy.version = 20; delete legacy.runtime.setup.climateSelection;
   await load(page, JSON.stringify(legacy));
   const migrated = await save(page, 'v20-climate');
-  expect(migrated.version).toBe(23); expect(migrated.runtime.setup.climateSelection).toBeNull();
-  expect(migrated.scenario).toEqual({ ...legacy.scenario, farm: { ...legacy.scenario.farm, equipmentPacingByte: null } }); expect(migrated.runtime.random).toEqual(legacy.runtime.random);
+  expect(migrated.version).toBe(24); expect(migrated.runtime.setup.climateSelection).toBeNull();
+  expect(migrated.scenario).toEqual({ ...JSON.parse(game.save(null)).scenario, farm: { ...legacy.scenario.farm, equipmentPacingByte: null } }); expect(migrated.runtime.random).toEqual(legacy.runtime.random);
   // SSM tables are unrelated to the retained chooser level bytes.
   await page.locator('#load-farm-file').setInputFiles({ name: 'SCEN4.SSM', mimeType: 'application/octet-stream', buffer: source('SCEN4.SSM') });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');

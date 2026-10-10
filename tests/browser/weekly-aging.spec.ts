@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { weeklyAgingFixture } from '../support/weekly-aging';
@@ -33,7 +34,7 @@ test('weekly worn machinery sale displays proceeds, original clearing pixels and
   });
   const f = weeklyAgingFixture(), rented = f.state.scenario.equipment[2];
   rented.bytes.fill(0); rented.flags = 96; rented.bytes[5] = rented.bytes[6] = 15;
-  const game = f.load(); await page.goto('/'); await load(page, game.save(4));
+  const game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
   await page.locator('#machinery-panel > summary').click();
   await expect(page.locator('#machinery-summary')).toContainText('Owned: 1 · Rented: 1');
   await expect(page.getByRole('table', { name: 'Machinery wear' }).getByRole('row', { name: 'Machine 1 99% Owned', exact: true })).toBeVisible();
@@ -59,7 +60,7 @@ test('weekly worn machinery sale displays proceeds, original clearing pixels and
 });
 
 test('busy worn machinery reports a deferred sale and remains owned through a browser checkpoint', async ({ page }) => {
-  const f = weeklyAgingFixture(); f.equipment.flags |= 1; const game = f.load();
+  const f = weeklyAgingFixture(); f.equipment.flags |= 1; const game = f.load().withAllCrops(browserCrops);
   await page.goto('/'); await load(page, game.save(4)); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   await page.locator('#machinery-panel > summary').click();
   await expect(page.locator('#machinery-notices')).toContainText('Machine 1 is worn out and could not be sold while in use.');

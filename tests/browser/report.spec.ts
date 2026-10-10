@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readScenario } from '../../src/formats/scenario';
@@ -11,7 +12,7 @@ test('Farm report displays original totals and field conditions, updates after p
   for (const f of scenario.fields) { f.bytes[54] = 0; f.bytes[55] = 0; }
   scenario.fields[1].bytes[54] = 0x84; scenario.fields[2].bytes[54] = 4;
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
-  const save = JSON.parse(new GameSimulation(scenario, crops).save(4)), f = save.runtime.finances;
+  const save = JSON.parse(new GameSimulation(scenario, crops).withAllCrops(browserCrops).save(4)), f = save.runtime.finances;
   Object.assign(save.scenario.farm, { cropIncome: 500, contractGains: 0, seedExpenses: 1000, rentalExpenses: 0,
     landExpenses: 0, contractLosses: 0, workerExpenses: 20, chemicalExpenses: 30 });
   Object.assign(f.accounts, { landIncome: 0, equipmentExpenses: 0, taxExpenses: 0, balancePayments: 40 });

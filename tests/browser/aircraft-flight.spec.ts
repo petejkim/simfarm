@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { aircraftFixture } from '../support/aircraft';
@@ -18,7 +19,7 @@ async function save(page: Page) {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 function prepared() {
-  const f = aircraftFixture(), game = f.load(); game.dispatch({ type: 'buy-aircraft' });
+  const f = aircraftFixture(), game = f.load().withAllCrops(browserCrops); game.dispatch({ type: 'buy-aircraft' });
   for (const kind of ['fuel', 'load'] as const) game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind } });
   return { ...f, game };
 }
@@ -96,7 +97,7 @@ test('browser spraying changes actual crop bytes, mid-flight save/load resumes q
   await freeze(page); await page.goto('/'); const f = prepared(), state = readNativeSave(f.game.save(4)).state, field = state.scenario.fields[1];
   field.bytes.fill(0); field.bytes[7] = 1; field.bytes[10] = 8; field.bytes[11] = 16; field.bytes[12] = 8; field.bytes[13] = 8;
   field.bytes[20] = 100; field.bytes[32] = 10; field.bytes[60] = 101;
-  const game = GameSimulation.load(writeNativeSave(state, 4), f.crops).simulation;
+  const game = GameSimulation.load(writeNativeSave(state, 4), browserCrops).simulation.withAllCrops(browserCrops);
   await load(page, game.save(4)); await page.locator('#zoom').selectOption('2'); await launch(page, game);
   await step(page, game, 'spray-toggle'); for (let i = 0; i < 7; i++) await step(page, game);
   expect(game.getSnapshot().scenario.fields[1].bytes[20]).toBe(0); expect(game.getSnapshot().scenario.fields[1].bytes[32]).toBe(12);
@@ -167,7 +168,7 @@ test('missing engine audio reports once per flight attempt and can recover witho
   await expect(page.locator('#sound-error')).toContainText('plane.voc');
   await page.locator('#flight-pause').click(); const snapshot = await save(page);
   expect(snapshot.runtime.aircraftFlight).not.toBeNull(); expect(requests).toBe(1);
-  const expected = GameSimulation.load(JSON.stringify(snapshot), f.crops).simulation;
+  const expected = GameSimulation.load(JSON.stringify(snapshot), browserCrops).simulation.withAllCrops(browserCrops);
   await step(page, expected, 'right'); expect(await save(page)).toEqual(JSON.parse(expected.save(4)));
   await page.unroute('**/plane.voc'); await page.locator('#flight-pause').click();
   await expect(page.locator('#sound-error')).toHaveCount(0); await page.locator('#flight-pause').click();

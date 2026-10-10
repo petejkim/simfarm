@@ -1,3 +1,4 @@
+import { allCropFiles } from '../formats/crop-slots';
 import { readRegionArtwork, type RegionArtwork } from '../formats/region-artwork';
 import { rasterImage } from '../render/raster-image';
 import { tileAtlas, miniTileAtlas, readPalette, type Raster } from '../formats/graphics';
@@ -76,7 +77,8 @@ export async function loadScenarioAssets(id: number, signal: AbortSignal) {
   const [buffer, tiles] = await Promise.all([
     response(`raw/SCEN${id}.SSM`, signal).then(r => r.arrayBuffer()), image(`scenario${id}.tiles.png`, signal),
   ]);
-  return { scenario: readScenario(new Uint8Array(buffer)), tiles };
+  const scenario = readScenario(new Uint8Array(buffer));
+  return { scenario, tiles: await loadGeneratedTiles(scenario.cropFiles, signal) };
 }
 export async function loadMusic(id: string, signal: AbortSignal): Promise<MidiSequence> {
   return (await response(`${id}.music.json`, signal)).json();
@@ -85,9 +87,10 @@ export async function loadSound(id: GameSound, signal: AbortSignal) {
   return decodeVoc(new Uint8Array(await (await response(`raw/${id}.voc`, signal)).arrayBuffer()));
 }
 
-/** Assemble the sixteen crop slots from original resources, without a SCEN file. */
+/** Assemble all supplied crop slots from original resources, without a SCEN file. */
 export async function loadGeneratedTiles(cropFiles: readonly string[], signal: AbortSignal): Promise<HTMLImageElement> {
-  if (cropFiles.length !== 16 || cropFiles.some(n => !/^[a-z0-9_]{1,8}\.crp$/.test(n))) throw new Error('Invalid crop filenames');
+  cropFiles = allCropFiles(cropFiles);
+  if (cropFiles.length !== 24 || cropFiles.some(n => !/^[a-z0-9_]{1,8}\.crp$/.test(n))) throw new Error('Invalid crop filenames');
   const binary = (path: string) => response(path, signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b));
   const [tiles, palette, ...crops] = await Promise.all([binary('raw/ega16til.til'), binary('raw/simfarm.pal'), ...cropFiles.map(file => binary(`raw/crops/${file}`))]);
   return rasterImage(tileAtlas(patchCropGraphics(tiles, crops), readPalette(palette)), signal);
@@ -98,7 +101,7 @@ export async function loadSavedFarmTiles(world: Scenario, scenarioId: number | n
   const original = await loadScenarioAssets(scenarioId, signal);
   if (!world.sourceBytes || world.sourceBytes.some((byte, i) => byte !== original.scenario.sourceBytes[i]))
     throw new Error('This farm needs different original scenario assets.');
-  return original.tiles;
+  return world.cropFiles.length === 24 ? loadGeneratedTiles(world.cropFiles, signal) : original.tiles;
 }
 export async function loadNewFarmAssets(assets: GameAssets, signal: AbortSignal): Promise<NewFarmAssets> {
   const [records, runtime, traffic, setup] = await Promise.all(['new-farm-records.json', 'new-farm-runtime.json', 'traffic-defaults.json', 'new-farm-setup.json']

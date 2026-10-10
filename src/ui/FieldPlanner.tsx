@@ -50,7 +50,7 @@ function PlannerEditor({ scenario, crops, field, result, onEdit }: EditorProps) 
   const cropName = (slot: number) => crop(slot)?.name ?? 'Unknown crop';
   const date = (row: number) => `${months[Math.floor(row % 48 / 4)]} ${(row % 4) * 7 + 1}–${(row % 4 + 1) * 7}, ${(scenario.farm.calendar.year + Math.floor(row / 48)) & 65535}`;
   const description = (row: number) => {
-    const entry = describeScheduleEntry(scenario.schedule.get(row, field.slot - 1));
+    const entry = describeScheduleEntry(scenario.schedule.get(row, field.slot - 1), scenario.cropFiles.length);
     switch (entry.kind) {
       case 'plant': return `Plant ${cropName(entry.cropSlot)}`;
       case 'crop-stage': return `${cropName(entry.cropSlot)} growing`;

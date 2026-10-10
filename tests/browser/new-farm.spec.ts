@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { GameSimulation } from '../../src/simulation/game';
@@ -38,9 +39,9 @@ test('create a generated farm on mobile, save it and restore without any origina
   await expect(page.locator('.new-farm-panel')).toHaveCount(0); await expect(page.locator('#new-farm')).toHaveCount(1);
   await expect(page.locator('#farm-cash')).toHaveText('$40,000'); await expect(page.locator('#scenario')).toHaveValue('generated');
   const first = await save(page, 'browser-created-farm'); expect(first.filename).toContain('simfarm-new-farm-1993-4-');
-  expect(first.data.version).toBe(23); expect(first.data.scenarioId).toBeNull(); expect(first.data.scenario.source).toBeNull();
+  expect(first.data.version).toBe(24); expect(first.data.scenarioId).toBeNull(); expect(first.data.scenario.source).toBeNull();
   const draft = CustomFarmSetup.fresh(first.data.runtime.newFarm.provenance.options, newFarmAssets);
-  const original = GameSimulation.load(writeNativeSave(draft.accept(), null), newFarmAssets.crops, newFarmAssets.townLayouts).simulation;
+  const original = GameSimulation.load(writeNativeSave(draft.accept(), null), browserCrops, newFarmAssets.townLayouts).simulation.withAllCrops(browserCrops);
   expect(first.data).toEqual(JSON.parse(original.save(null)));
   await page.locator('#next-day').click(); original.dispatch({ type: 'advance-day' });
   expect((await save(page, 'browser-created-farm-day')).data).toEqual(JSON.parse(original.save(null)));
@@ -54,7 +55,7 @@ test('create a generated farm on mobile, save it and restore without any origina
 });
 
 test('generated load rejects corrupt startup state and unavailable crop assets without replacing the active farm', async ({ page }) => {
-  const generated = GameSimulation.createNew(newFarmOptions, newFarmAssets), text = generated.save(null);
+  const generated = GameSimulation.createNew(newFarmOptions, newFarmAssets).withAllCrops(browserCrops), text = generated.save(null);
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   const before = (await save(page, 'browser-generated-failure-before')).data;
   const invalid = JSON.parse(text); invalid.runtime.traffic.activeCount++;
@@ -71,7 +72,7 @@ test('generated load rejects corrupt startup state and unavailable crop assets w
 
 test('a previewed farm plants on its starting land and delivers harvest into newly built storage through React', async ({ page }) => {
   const draft = CustomFarmSetup.fresh(newFarmOptions, newFarmAssets);
-  const generated = GameSimulation.load(writeNativeSave(draft.accept(), null), newFarmAssets.crops, newFarmAssets.townLayouts).simulation;
+  const generated = GameSimulation.load(writeNativeSave(draft.accept(), null), browserCrops, newFarmAssets.townLayouts).simulation.withAllCrops(browserCrops);
   generated.dispatch({ type: 'set-disasters-enabled', enabled: false });
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1'); await load(page, generated.save(null));
   generated.dispatch({ type: 'set-auto-clear', enabled: true });

@@ -2,6 +2,14 @@
 
 The end state is the original SimFarm running as native browser code, with MIDI music and replaceable graphics/audio/UI. A data viewer or invented farming simulation is an intermediate artifact, not completion.
 
+## Current user priorities (2026-10-10)
+
+All24 shipped crops are now available simultaneously without file loading or slot swapping, with native saves, plans, goods and artwork extended while retaining original16-slot decoding. Crop-file loading is intentionally removed from the reconstruction backlog.
+
+Next prioritize original UI, dialogs and gameplay interactions: replace the interim control/dashboard presentation with the original game interaction model and source artwork/layout using actual React text. Keep the edit window permanently visible and maximized, with no visibility toggle or resize handles. Closely match the original layout. The user clarified that small-screen sizing, rearrangement and touch adaptations are future work; do not alter the layout for them now. Retain the requested native pacing and all-crops enhancements.
+
+## Reconstruction sequence and prior increments
+
 1. Establish a reproducible TypeScript/React/Vite project using repository-local Bun and a source fingerprint. Decode archives, graphics, crop definitions, scenarios, and music with byte-level evidence and tests.
 2. Map the 16-bit executable, overlays, data references, and key routines. Reconstruct world layout, initialization, action dispatch, and the simulation clock. Maintain an address-to-TypeScript evidence trail.
 3. Connect a native world renderer and input to recovered land/field operations. Reach a complete plant → grow → harvest → store → sell loop using original rules as soon as evidence allows. Save/load deterministically.
@@ -74,7 +82,7 @@ Original geographic saved-game result1 is now connected: temporary cold/retained
 Main-menu research starting points in the unchanged EXE: literal File/Options/Speed/Windows strings at8a1bb/8a1c0/8a1c8/8a1ce, Pause/Slow/Normal/Fast at8ec37/8ec3d/8ec42/8ec49, and Load Game/New Game at8ecaf/8ecc6. These are verified ASCII locations only; menu descriptor geometry, item ordering, command dispatch and enabled-state ownership still need tracing before UI reconstruction.
 
 
-The original main-menu descriptor and item chains are recovered, including source order, geometry, initial checks and File dispatch targets. Restore the File menu first using React text and the existing canonical file/new-game actions, with documented browser download/quit policies; Load Crop stays explicitly unavailable until its separate descriptor/callback is reconstructed. Other menu headers are retained for subsequent integration. Next audit Speed's independent delays and pause ownership (including SF-153's Slow omission), then connect remaining Options/Windows/Disasters callbacks and restore their original dialogs/artwork. Existing enhancement controls and speed slider remain usable. Original About/file-picker layout, title lifecycle, nested-window timing and broader fidelity remain unfinished; this menu increment does not complete the port.
+The original main-menu descriptor and item chains are recovered, including source order, geometry, initial checks and File dispatch targets. The File menu uses React text and the existing canonical file/new-game actions, with documented browser download/quit policies. Load Crop is intentionally omitted; all24 supplied crops are available without loading or swapping files. Other menu headers are retained for subsequent integration. Next audit Speed's independent delays and pause ownership (including SF-153's Slow omission), then connect remaining Options/Windows/Disasters callbacks and restore their original dialogs/artwork. Existing enhancement controls and speed slider remain usable. Original About/file-picker layout, title lifecycle, nested-window timing and broader fidelity remain unfinished; this menu increment does not complete the port.
 
 
 Speed-menu prerequisite: v22 now retains the complete equipment pacing byteDSa8a0/SSM21718, including unknown nonzero values; old checkpoints retain their gate with unknown byte identity. Verified reset/resume stores establish2 without guessing from delays or browser pause. Next correct the calendar's strict unsigned `>` gate and maximum-delay boundary (SF-154), audit the source interrupt/divisor and native clock normalization, then persist original pause/check owners and connect Ultra/Fast/Normal/Slow/Pause. Speed presets alter multiple independent delays; the enhancement slider stays separate. Original UI/callback/timing preservation remains incomplete.

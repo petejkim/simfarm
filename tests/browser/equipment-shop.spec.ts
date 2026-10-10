@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { shopFixture } from '../support/livestock';
@@ -23,7 +24,7 @@ async function load(page: Page, text: string) {
 
 test('machinery shortcut buys original ground sprites and stored machines with exact saved continuation', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const f = shopFixture(), game = f.load();
+  const f = shopFixture(), game = f.load().withAllCrops(browserCrops);
   game.dispatch({ type: 'build', buildingType: 66, x: 20, y: 20 });
   await page.goto('/'); await load(page, game.save(4));
   await page.locator('#machinery-panel > summary').click(); await page.locator('#open-equipment-shop').click();
@@ -52,7 +53,7 @@ test('machinery shortcut buys original ground sprites and stored machines with e
 
 test('machinery shop explains cash, trees and incompatible storage and fits a narrow screen', async ({ page }) => {
   const f = shopFixture(); f.state.scenario.farm.cash = 425; f.state.scenario.cells[worldIndex(10, 10)].terrain = 535;
-  const game = f.load(); await page.goto('/'); await load(page, game.save(4));
+  const game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
   await page.locator('#map-tool').selectOption('equipment'); await selectTile(page, 10, 10);
   await expect(page.locator('#equipment-placement-status')).toContainText('Choose clear grass'); await expect(page.locator('#buy-equipment')).toBeDisabled();
   await page.locator('#equipment-auto-clear').check(); game.dispatch({ type: 'set-auto-clear', enabled: true });
@@ -62,7 +63,7 @@ test('machinery shop explains cash, trees and incompatible storage and fits a na
   game.dispatch({ type: 'buy-equipment', equipmentType: 0, x: 10, y: 10 });
   await expect(page.locator('#farm-cash')).toHaveText('$0');
   expect(await save(page, 'artifacts/browser-equipment-shop-clearing.simfarm.json')).toEqual(JSON.parse(game.save(4)));
-  const storage = shopFixture(), stored = storage.load(); stored.dispatch({ type: 'build', buildingType: 64, x: 20, y: 20 });
+  const storage = shopFixture(), stored = storage.load().withAllCrops(browserCrops); stored.dispatch({ type: 'build', buildingType: 64, x: 20, y: 20 });
   await load(page, stored.save(4)); await page.locator('#map-tool').selectOption('equipment'); await selectTile(page, 20, 20);
   await expect(page.locator('#equipment-placement-status')).toContainText('cannot store the machine'); await expect(page.locator('#buy-equipment')).toBeDisabled();
   await page.setViewportSize({ width: 390, height: 844 }); await selectTile(page, 22, 20);

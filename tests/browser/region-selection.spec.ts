@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { GameSimulation } from '../../src/simulation/game';
@@ -42,7 +43,7 @@ test('region map selects source climate, supports keyboard and mobile layout, an
   await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   const generated = await save(page, 'generated'), options = generated.runtime.newFarm.provenance.options;
   expect(options.climate).toEqual({ precipitation: p.precipitation, temperature: p.temperature, wind: p.wind });
-  const game = GameSimulation.createGeographic(options, newFarmAssets); expect(generated).toEqual(JSON.parse(game.save(null)));
+  const game = GameSimulation.createGeographic(options, newFarmAssets).withAllCrops(browserCrops); expect(generated).toEqual(JSON.parse(game.save(null)));
   await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   expect(await save(page, 'next-day')).toEqual(JSON.parse(game.save(null))); expect(errors).toEqual([]);
 });
@@ -56,7 +57,7 @@ test('all eight map markers apply original post-load climate and town setup whil
     await page.locator('#region-use').click(); await expect(page.locator('#map-status')).toHaveText(`Scenario ${id + 1} · original terrain`);
     const world = readScenario(source(`SCEN${id}.SSM`));
     const crops = world.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
-    const expected = GameSimulation.openGeographicRegion(world.sourceBytes!, locations[y * 18 + x], { visual: 9029, simulation: 9029, bounded: 9029 }, { ...newFarmAssets, crops });
+    const expected = GameSimulation.openGeographicRegion(world.sourceBytes!, locations[y * 18 + x], { visual: 9029, simulation: 9029, bounded: 9029 }, { ...newFarmAssets, crops }).withAllCrops(browserCrops);
     expect(await save(page, `preset-${id}`)).toEqual(JSON.parse(expected.save(id)));
   }
 });
@@ -122,8 +123,8 @@ test('unmarked retained geography keeps soil and source water flags while applyi
   const oldWorld = readNativeSave(JSON.stringify(before)).state.scenario;
   const catalog = [...newFarmAssets.crops];
   for (const file of oldWorld.cropFiles) if (!catalog.some(c => `${c.id}.crp` === file)) catalog.push(readCrop(file.slice(0, -4), source(`CROPS/${file.toUpperCase()}`)));
-  const expected = GameSimulation.load(JSON.stringify(before), catalog, newFarmAssets.townLayouts).simulation
-    .restartGeographic(actual.runtime.newFarm.provenance.options, { ...newFarmAssets, crops: catalog });
+  const expected = GameSimulation.load(JSON.stringify(before), browserCrops, newFarmAssets.townLayouts).simulation.withAllCrops(browserCrops)
+    .restartGeographic(actual.runtime.newFarm.provenance.options, { ...newFarmAssets, crops: catalog }).withAllCrops(browserCrops);
   expect(actual).toEqual(JSON.parse(expected.save(null)));
   await page.locator('#load-farm-file').setInputFiles({ name: 'geography.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(actual)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
@@ -142,7 +143,7 @@ test('fresh numbered farms honor the explicit seed for discarded terrain and ret
     await expect(page.locator('#new-farm-year')).toBeDisabled();
     await page.locator('#create-farm').click(); await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
     const actual = await save(page, `fresh-seed-${seed}`);
-    const expected = GameSimulation.openGeographicRegion(bytes, locations[7 * 18 + 9], { visual: seed, simulation: seed, bounded: seed }, { ...newFarmAssets, crops });
+    const expected = GameSimulation.openGeographicRegion(bytes, locations[7 * 18 + 9], { visual: seed, simulation: seed, bounded: seed }, { ...newFarmAssets, crops }).withAllCrops(browserCrops);
     expect(actual).toEqual(JSON.parse(expected.save(4)));
     expect(actual.runtime.dayTicks).toBe(world.farm.animationTicks);
     expect(actual.scenario.farm.calendar).toEqual(world.farm.calendar);

@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { PNG } from 'pngjs';
@@ -21,7 +22,7 @@ async function download(page: Page, path: string) {
 }
 
 test('Build water storage collects from live irrigation, refills distant troughs weekly and saves the original building pixels and state', async ({ page }) => {
-  const f = waterStorageFixture(), game = f.load(), errors: string[] = [];
+  const f = waterStorageFixture(), game = f.load().withAllCrops(browserCrops), errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message)); await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'water-store.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
@@ -60,11 +61,11 @@ test('Build water storage collects from live irrigation, refills distant troughs
 });
 
 test('water storage wear is visible and removes its supply before weekly refills', async ({ page }) => {
-  const f = waterStorageFixture(), initial = f.load(); initial.dispatch({ type: 'build', buildingType: 72, x: 13, y: 11 });
+  const f = waterStorageFixture(), initial = f.load().withAllCrops(browserCrops); initial.dispatch({ type: 'build', buildingType: 72, x: 13, y: 11 });
   const { state } = readNativeSave(initial.save(4)), store = state.scenario.buildings[2], v = new Binary(store.bytes).view;
   v.setUint16(8, 480, true); state.scenario.cells[worldIndex(13, 10)].terrain = 99;
   state.scenario.farm.calendar.day = 6; state.dayTicks = 15; state.random.visual = 10; // Weekly traffic draws1792, then wear draws7.
-  const game = GameSimulation.load(writeNativeSave(state, 4), f.crops).simulation;
+  const game = GameSimulation.load(writeNativeSave(state, 4), browserCrops).simulation.withAllCrops(browserCrops);
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'worn-water-store.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });

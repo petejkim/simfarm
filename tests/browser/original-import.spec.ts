@@ -1,3 +1,4 @@
+import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
 import { GameSimulation } from '../../src/simulation/game';
@@ -21,9 +22,9 @@ test('original SSM import retains the active session, continues and restores wit
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   await page.locator('#next-day').click();
   const before = (await save(page, 'before')).data;
-  const original = GameSimulation.load(JSON.stringify(before), crops, newFarmAssets.townLayouts).simulation;
+  const original = GameSimulation.load(JSON.stringify(before), browserCrops, newFarmAssets.townLayouts).simulation.withAllCrops(browserCrops);
   const bytes = source('SCEN6.SSM');
-  const expected = original.importOriginal(bytes, crops).simulation;
+  const expected = original.importOriginal(bytes, crops).simulation.withAllCrops(browserCrops);
   const requests: string[] = [];
   await page.route('**/assets/raw/SCEN*.SSM', route => { requests.push(route.request().url()); return route.abort(); });
   await load(page, bytes, 'MYFARM.SSM');
@@ -45,9 +46,9 @@ test('original SSM import retains the active session, continues and restores wit
 test('original import from a generated farm retains setup and works on a narrow screen', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  const generated = GameSimulation.createNew(newFarmOptions, { ...newFarmAssets, crops });
+  const generated = GameSimulation.createNew(newFarmOptions, { ...newFarmAssets, crops }).withAllCrops(browserCrops);
   await load(page, Buffer.from(generated.save(null)), 'generated.json');
-  const bytes = source('SCEN7.SSM'), expected = generated.importOriginal(bytes, crops).simulation;
+  const bytes = source('SCEN7.SSM'), expected = generated.importOriginal(bytes, crops).simulation.withAllCrops(browserCrops);
   await load(page, bytes, 'farm.ssm');
   const imported = (await save(page, 'generated-session')).data;
   expect(imported).toEqual(JSON.parse(expected.save(null)));
@@ -122,7 +123,7 @@ test('loaded pause depth decides original resume pacing for both running and pau
     expect(actual.runtime.random).toEqual(prior.runtime.random);
     expect(actual.scenario.source).toBe(bytes.toString('hex'));
     await expect(page.locator('#time-status')).toContainText('Paused');
-    const expected = GameSimulation.load(JSON.stringify(prior), crops, newFarmAssets.townLayouts).simulation.importOriginal(bytes, crops).simulation;
+    const expected = GameSimulation.load(JSON.stringify(prior), browserCrops, newFarmAssets.townLayouts).simulation.withAllCrops(browserCrops).importOriginal(bytes, crops).simulation.withAllCrops(browserCrops);
     expect(actual).toEqual(JSON.parse(expected.save(null)));
     await load(page, Buffer.from(JSON.stringify(actual)), 'pause-restored.json');
     expect((await save(page, 'pause-restored')).data).toEqual(actual);
@@ -134,10 +135,10 @@ test('loaded pause depth decides original resume pacing for both running and pau
 test('equipment pacing bytes survive browser checkpoints; v21 keeps unknown identity and rejects malformed v22 atomically', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   const current = (await save(page, 'byte-before')).data;
-  const legacy = structuredClone(current); legacy.version = 21; delete legacy.scenario.farm.equipmentPacingByte;
+  const legacy = structuredClone(current); useOriginalCatalog(legacy); legacy.version = 21; delete legacy.scenario.farm.equipmentPacingByte;
   await load(page, Buffer.from(JSON.stringify(legacy)), 'legacy.json');
   const migrated = (await save(page, 'byte-migrated')).data;
-  expect(migrated.version).toBe(23);
+  expect(migrated.version).toBe(24);
   expect(migrated).toEqual({ ...current, scenario: { ...current.scenario, farm: { ...current.scenario.farm, equipmentPacingByte: null } },
     runtime: { ...current.runtime, originalPause: { depth: null, speedChecks: [null, null, null, null, null] } } });
   await page.locator('#next-day').click();
@@ -161,10 +162,10 @@ test('equipment pacing bytes survive browser checkpoints; v21 keeps unknown iden
 test('original pause ownership survives checkpoints; v22 migrates to unknown and malformed v23 rejection is atomic', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   const base = (await save(page, 'owner-base')).data;
-  const legacy = structuredClone(base); legacy.version = 22; delete legacy.runtime.originalPause;
+  const legacy = structuredClone(base); useOriginalCatalog(legacy); legacy.version = 22; delete legacy.runtime.originalPause;
   await load(page, Buffer.from(JSON.stringify(legacy)), 'v22.json');
   const unknown = (await save(page, 'owner-unknown')).data;
-  expect(unknown.version).toBe(23);
+  expect(unknown.version).toBe(24);
   expect(unknown).toEqual({ ...base, runtime: { ...base.runtime, originalPause: { depth: null, speedChecks: [null, null, null, null, null] } } });
   for (const owner of [undefined, { depth: 256, speedChecks: [0, 0, 1, 0, 0] }, { depth: 0, speedChecks: [0, 0, -1, 0, 0] }]) {
     const bad = structuredClone(unknown); bad.runtime.originalPause = owner;

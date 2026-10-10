@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readScenario } from '../../src/formats/scenario';
@@ -11,7 +12,7 @@ function yearEnd(cash = 40000) {
   scenario.schedule.bytes.fill(0);
   Object.assign(scenario.farm.calendar, { day: 6, week: 3, month: 11 });
   Object.assign(scenario.farm, { cash, salesAccumulator: 1000 });
-  const save = JSON.parse(new GameSimulation(scenario, crops).save(4));
+  const save = JSON.parse(new GameSimulation(scenario, crops).withAllCrops(browserCrops).save(4));
   save.runtime.finances.town.townRevenue = 50000; save.runtime.finances.town.recreationCount = 7;
   save.runtime.finances.statistics.words = Array.from({ length: 14 }, (_, i) => 100 + i);
   save.runtime.finances.statistics.regions = [3, 4, 5, 6];
@@ -35,7 +36,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   const path = 'artifacts/browser-pending-town.simfarm.json'; await (await download).saveAs(path);
   const checkpoint = JSON.parse(readFileSync(path, 'utf8'));
   expect(checkpoint.runtime.pendingTown.phase).toBe('annual-reset'); expect(checkpoint.runtime.daysAdvanced).toBe(0);
-  expect(checkpoint.version).toBe(23);
+  expect(checkpoint.version).toBe(24);
   expect(checkpoint.runtime.finances.statistics.words).toEqual(Array.from({ length: 14 }, (_, i) => 100 + i));
   expect(checkpoint.runtime.finances.statistics.regions).toEqual([3, 4, 5, 6]);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);

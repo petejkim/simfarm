@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function HarvestInventory({ scenario, crops, values, result, onSell }: Props) {
-  const items = scenario.inventory.filter(i => i.active && i.type >= 168 && i.type < 184);
+  const items = scenario.inventory.filter(i => i.active && i.type >= 168 && i.type < 168 + scenario.cropFiles.length);
   return <section className="harvest-inventory">
     <span className="eyebrow">HARVEST IN STORAGE</span>
     <p id="harvest-stock">{items.length ? `${items.length} stored harvest${items.length === 1 ? '' : 's'}` : 'No stored harvests.'}</p>

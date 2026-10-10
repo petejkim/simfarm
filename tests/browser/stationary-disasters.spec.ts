@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test,expect,type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { disasterFixture } from '../support/disasters';
@@ -28,7 +29,7 @@ const audio=(page:Page)=>page.evaluate(()=>(window as unknown as {stationaryAudi
 
 test('frost controls cancel locusts, play original wind PCM and retain cooling/loss through active save and ending',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await observeAudio(page);await page.goto('/');
-  const f=disasterFixture();f.state.weather.temperature=50;f.state.weather.temperatureAnomaly=0;const g=f.load();await load(page,g.save(4));
+  const f=disasterFixture();f.state.weather.temperature=50;f.state.weather.temperatureAnomaly=0;const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));
   await page.locator('#disasters-panel > summary').click();await page.locator('#sound-toggle').click();
   await page.locator('#start-swarm').click();g.dispatch({type:'start-disaster',kind:'swarm'});
   await page.locator('#start-frost').click();g.dispatch({type:'start-disaster',kind:'frost'});
@@ -45,7 +46,7 @@ test('frost controls cancel locusts, play original wind PCM and retain cooling/l
 
 test('crop circles render original seven tiles and request audible alien MIDI without replaying the event on load',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await observeAudio(page);await page.goto('/');
-  const f=disasterFixture();f.state.scenario.fields[1].bytes[14]=1;const g=f.load();await load(page,g.save(4));
+  const f=disasterFixture();f.state.scenario.fields[1].bytes[14]=1;const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));
   await page.locator('#play').click();await expect(page.locator('#audio-status')).toContainText('Playing amain');
   await page.locator('#disasters-panel > summary').click();const response=page.waitForResponse(r=>r.url().endsWith('/alien.music.json'));
   await page.locator('#start-crop-circles').click();g.dispatch({type:'start-disaster',kind:'crop-circles'});
@@ -66,7 +67,7 @@ test('crop circles render original seven tiles and request audible alien MIDI wi
 });
 
 test('ineligible crop-circle attempts explain rejection and toxic warnings remain saved without invented damage or sound',async({page})=>{
-  await observeAudio(page);await page.goto('/');const f=disasterFixture();f.state.scenario.fields[1].bytes[14]=0;const g=f.load();await load(page,g.save(4));
+  await observeAudio(page);await page.goto('/');const f=disasterFixture();f.state.scenario.fields[1].bytes[14]=0;const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));
   await page.locator('#disasters-panel > summary').click();await page.locator('#sound-toggle').click();
   await page.locator('#disasters-enabled').uncheck();g.dispatch({type:'set-disasters-enabled',enabled:false});
   for(const id of ['start-frost','start-crop-circles','start-toxic-land','start-wind'])await expect(page.locator('#'+id)).toBeDisabled();

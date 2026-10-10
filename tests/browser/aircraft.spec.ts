@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { aircraftFixture } from '../support/aircraft';
@@ -15,7 +16,7 @@ async function save(page: Page, path: string) {
 
 test('Aircraft panel buys at the original airport pad, refuels, changes and loads payload, and continues current saves', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const f = aircraftFixture(), game = f.load(); await page.goto('/'); await load(page, game.save(4));
+  const f = aircraftFixture(), game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
   await page.locator('#aircraft-panel > summary').click();
   await expect(page.locator('#aircraft-purchase-status')).toHaveText('Aircraft: $6,000 · Parking at 21, 22.');
   await page.locator('#buy-aircraft').click(); game.dispatch({ type: 'buy-aircraft' });
@@ -50,7 +51,7 @@ test('Aircraft panel buys at the original airport pad, refuels, changes and load
 test('Aircraft repairs preserve saved age, cash failures explain disabled services, invalid selections preserve the farm and narrow controls fit', async ({ page }) => {
   const f = aircraftFixture(), purchased = purchaseAircraft(f.state.scenario, f.state.finances); expect(purchased.ok).toBe(true);
   const e = f.state.scenario.equipment[1]; e.bytes[17] = 10; e.bytes[18] = 4; f.state.scenario.farm.cash = 100;
-  const game = f.load(); await page.goto('/'); await load(page, game.save(4)); await page.locator('#aircraft-panel > summary').click();
+  const game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4)); await page.locator('#aircraft-panel > summary').click();
   await expect(page.locator('#aircraft-fuel')).toBeDisabled(); await expect(page.locator('#aircraft-load')).toBeDisabled();
   await expect(page.locator('#aircraft-panel')).toContainText('There is not enough cash.'); await expect(page.locator('#aircraft-repair')).toHaveText('Repair · $100');
   await page.locator('#aircraft-repair').click(); game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind: 'repair' } });
@@ -63,7 +64,7 @@ test('Aircraft repairs preserve saved age, cash failures explain disabled servic
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#aircraft-panel').scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'artifacts/browser-aircraft.png', fullPage: true });
-  f.state.finances.town.airportCount = 0; await load(page, f.load().save(4));
+  f.state.finances.town.airportCount = 0; await load(page, f.load().withAllCrops(browserCrops).save(4));
   await page.locator('#aircraft-panel > summary').click(); await expect(page.locator('#buy-aircraft')).toBeDisabled();
   await expect(page.locator('#aircraft-purchase-status')).toContainText('An airport is needed');
 });

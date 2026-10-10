@@ -62,10 +62,10 @@ interface Props {
 export function FarmView({ id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange, onGameEvent, onFlightRunning }: Props) {
   const [newFarmOpen, setNewFarmOpen] = useState(false);
   const load = useCallback(async (signal: AbortSignal) => {
-    if (loaded) return loaded;
+    if (loaded) return { ...loaded, simulation: loaded.simulation.withAllCrops(assets.catalog.crops) };
     if (id === null) throw new Error('Missing generated farm state');
     const data = await loadScenarioAssets(id, signal);
-    return { tiles: data.tiles, simulation: new GameSimulation(data.scenario, assets.catalog.crops, assets.townLayouts) };
+    return { tiles: data.tiles, simulation: new GameSimulation(data.scenario, assets.catalog.crops, assets.townLayouts).withAllCrops(assets.catalog.crops) };
   }, [id, loaded, assets.catalog.crops, assets.townLayouts]);
   const resource = useResource(load);
   const simulation = resource.status === 'ready' ? resource.value.simulation : null;

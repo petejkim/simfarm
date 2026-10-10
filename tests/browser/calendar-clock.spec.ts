@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { GameSimulation } from '../support/game';
@@ -21,7 +22,7 @@ test('a checkpoint at calendar equality advances on the next tick and native1x t
   await start(page);
   const world = readScenario(source('SCEN4.SSM'));
   const crops = world.cropFiles.map(file => readCrop(file.slice(0, -4), source('CROPS/' + file.toUpperCase())));
-  const game = new GameSimulation(world, crops), checkpoint = JSON.parse(game.save(4));
+  const game = new GameSimulation(world, crops).withAllCrops(browserCrops), checkpoint = JSON.parse(game.save(4));
   checkpoint.scenario.farm.dayDelayTicks = 64; checkpoint.scenario.farm.timerTicks = 500; checkpoint.scenario.farm.animationTicks = 600;
   checkpoint.runtime.dayTicks = 64;
   await load(page, 'equal.json', Buffer.from(JSON.stringify(checkpoint))); expect(await save(page)).toEqual(checkpoint);

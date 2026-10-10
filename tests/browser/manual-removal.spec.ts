@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { breedingFixture } from '../support/animal-lifecycle';
@@ -49,7 +50,7 @@ test('removal selection cancels safely, confirms stored-content demolition, play
       }
     };
   });
-  const f = breedingFixture(), game = f.load();
+  const f = breedingFixture(), game = f.load().withAllCrops(browserCrops);
   game.dispatch({ type: 'build', buildingType: 67, x: 40, y: 40 });
   game.dispatch({ type: 'buy-equipment', equipmentType: 0, x: 40, y: 40 });
   await page.goto('/'); await load(page, game.save(4)); await page.locator('#map-tool').selectOption('remove');
@@ -86,7 +87,7 @@ test('removal selection cancels safely, confirms stored-content demolition, play
 
 test('field removal explains active machinery, destroys a growing crop after confirmation and permits replanting after saved clearing', async ({ page }) => {
   const w = readScenario(source('SCEN4.SSM')), crops = w.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
-  w.farm.cash = 100000; const game = new GameSimulation(w, crops);
+  w.farm.cash = 100000; const game = new GameSimulation(w, crops).withAllCrops(browserCrops);
   game.dispatch({ type: 'buy-land', regionX: 0, regionY: 2 }); game.dispatch({ type: 'set-auto-clear', enabled: true });
   game.dispatch({ type: 'create-field', x: 0, y: 16, cropSlot: 0 });
   const result = game.getSnapshot().lastNewFieldResult; expect(result?.ok).toBe(true); if (!result?.ok) throw new Error('Missing field');

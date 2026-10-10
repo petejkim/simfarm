@@ -63,8 +63,8 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
             buttons[next]?.focus();
           }
         }}>
-        {file.items.map((item, index) => <button key={item.offset} role="menuitem" tabIndex={-1}
-          disabled={busy || index === 5} title={index === 5 ? 'Original crop-file loading is not reconstructed yet.' : undefined}
+        {file.items.map((item, index) => index === 5 ? null : <button key={item.offset} role="menuitem" tabIndex={-1}
+          disabled={busy}
           onClick={() => select(index)}>{item.label}</button>)}
       </div>}
     </nav>

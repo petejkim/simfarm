@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { shopFixture } from '../support/livestock';
@@ -85,7 +86,7 @@ test('narrow-screen shortcuts lead through land purchase, new-field planting and
 });
 
 test('an empty farm offers a path from the planner to creating a field and resets navigation on load', async ({ page }) => {
-  await page.goto('/'); const f = shopFixture(), text = f.load().save(4);
+  await page.goto('/'); const f = shopFixture(), text = f.load().withAllCrops(browserCrops).save(4);
   const load = async () => {
     await page.locator('#load-farm-file').setInputFiles({ name: 'empty.json', mimeType: 'application/json', buffer: Buffer.from(text) });
     await expect(page.locator('#save-status')).toHaveText('Farm loaded.');

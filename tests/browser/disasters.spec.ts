@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { disasterFixture } from '../support/disasters';
@@ -63,7 +64,7 @@ async function observeAudio(page: Page) {
 
 test('Disasters controls start real locust damage, render every source sprite pixel, play original PCM and preserve an active checkpoint', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await observeAudio(page);
-  await page.goto('/'); const f = disasterFixture(), game = f.load(); await load(page, game.save(4));
+  await page.goto('/'); const f = disasterFixture(), game = f.load().withAllCrops(browserCrops); await load(page, game.save(4));
   await page.locator('#disasters-panel > summary').click(); await page.locator('#disasters-enabled').uncheck();
   game.dispatch({ type: 'set-disasters-enabled', enabled: false }); await expect(page.locator('#start-swarm')).toBeDisabled();
   await page.locator('#disasters-enabled').check(); game.dispatch({ type: 'set-disasters-enabled', enabled: true });
@@ -89,7 +90,7 @@ test('manual tornado destroys a building and contents without sale credit; disab
   const x = d.tornado.x + d.tornado.dx + 1, y = d.tornado.y + d.tornado.dy + 2;
   expect(purchaseBuilding(f.state.scenario, f.state.finances, 67, x, y, 0).ok).toBe(true);
   expect(purchaseEquipment(f.state.scenario, f.state.finances, 0, x, y, 0).ok).toBe(true);
-  const game = f.load(), cash = game.getSnapshot().scenario.farm.cash; await load(page, game.save(4));
+  const game = f.load().withAllCrops(browserCrops), cash = game.getSnapshot().scenario.farm.cash; await load(page, game.save(4));
   await page.locator('#disasters-panel > summary').click(); await page.locator('#sound-toggle').click();
   await page.locator('#start-tornado').click(); game.dispatch({ type: 'start-disaster', kind: 'tornado' });
   await sprites(page, game.getSnapshot().disasters, 'tornado'); await page.locator('#locate-disaster').click();

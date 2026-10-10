@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { PNG } from 'pngjs';
@@ -25,7 +26,7 @@ test('Build storage buys original roofs and usable records, persists accounts an
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const scenario = readScenario(source('SCEN4.SSM'));
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
-  const expected = new GameSimulation(scenario, crops), initial = expected.getSnapshot();
+  const expected = new GameSimulation(scenario, crops).withAllCrops(browserCrops), initial = expected.getSnapshot();
   let point: { x: number; y: number } | undefined;
   for (let x = 0; x < 95 && !point; x++) for (let y = 0; y < 95 && !point; y++) {
     if (checkBuildingPlacement(scenario, 65, x, y, initial.weather.soilMoisture).ok) point = { x, y };
@@ -69,7 +70,7 @@ test('construction UI explains tree clearing and cash limits, rejects without ch
   Object.assign(scenario.farm, { cash: 2450, autoClear: false });
   for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) scenario.cells[worldIndex(x, y)] = { terrain: 15, overlay: 0x800, attribute: 0 };
   scenario.cells[0].terrain = 535; scenario.cells[worldIndex(1, 0)].terrain = 131;
-  const expected = new GameSimulation(scenario, crops);
+  const expected = new GameSimulation(scenario, crops).withAllCrops(browserCrops);
   await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'trees.json', mimeType: 'application/json', buffer: Buffer.from(expected.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');

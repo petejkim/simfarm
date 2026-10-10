@@ -1,3 +1,4 @@
+import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
 import { GameSimulation } from '../../src/simulation/game';
@@ -34,7 +35,7 @@ async function restore(page: Page, value: unknown) {
 test('fresh chooser SSM runs original startup and native checkpoints bypass it even with different setup choices', async ({ page }) => {
   await start(page); await chooser(page, true); await page.locator('[data-region="1,3"]').click();
   const bytes = Buffer.from(source('SCEN6.SSM')); bytes[0x21719] = 1;
-  const expected = GameSimulation.openOriginalSave(bytes, { date, seeds }, assets);
+  const expected = GameSimulation.openOriginalSave(bytes, { date, seeds }, assets).withAllCrops(browserCrops);
   await pick(page, 'SCEN6.SSM', bytes); await expect(page.locator('#map-status')).toHaveText('Imported farm · original terrain');
   const actual = await save(page); expect(actual).toEqual(JSON.parse(expected.save(null)));
   expect(actual.runtime.setup.climateSelection).toEqual({ precipitation: 0, temperature: 0, wind: 0 });
@@ -50,25 +51,25 @@ test('fresh chooser SSM runs original startup and native checkpoints bypass it e
 
 test('retained chooser SSM uses retained climate and both previews regardless of highlighted region on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await start(page);
-  const generated = GameSimulation.createNew({ ...newFarmOptions, climate: { precipitation: 3, temperature: 0, wind: 2 } }, assets);
+  const generated = GameSimulation.createNew({ ...newFarmOptions, climate: { precipitation: 3, temperature: 0, wind: 2 } }, assets).withAllCrops(browserCrops);
   const state = readNativeSave(generated.save(null)).state; state.weather.soilMoisture = 5; state.weather.moistureBalance = 0;
   state.scenario.farm.workerExpenses = 123456; state.finances.accounts.buildingBookValue = 234567;
-  const prior = GameSimulation.load(writeNativeSave(state, null), crops, assets.townLayouts).simulation;
-  const bytes = source('SCEN4.SSM'), expected = prior.restartOriginalSave(bytes, date, assets);
+  const prior = GameSimulation.load(writeNativeSave(state, null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
+  const bytes = source('SCEN4.SSM'), expected = prior.restartOriginalSave(bytes, date, assets).withAllCrops(browserCrops);
   for (const region of ['1,3', '15,8']) {
     await restore(page, JSON.parse(prior.save(null))); await chooser(page); await page.locator(`[data-region="${region}"]`).click();
     await pick(page, 'SCEN4.SSM', bytes); await expect(page.locator('#map-status')).toHaveText('Imported farm · original terrain');
     const actual = await save(page); expect(actual).toEqual(JSON.parse(expected.save(null)));
     expect(actual.runtime.setup.climateSelection).toEqual({ precipitation: 3, temperature: 0, wind: 2 });
     expect(actual.scenario.farm.workerExpenses).toBe(123456); expect(actual.runtime.finances.accounts.buildingBookValue).toBe(234567);
-    expect(actual.runtime.random).not.toEqual(JSON.parse(prior.importOriginal(bytes, crops).simulation.save(null)).runtime.random);
+    expect(actual.runtime.random).not.toEqual(JSON.parse(prior.importOriginal(bytes, crops).simulation.withAllCrops(browserCrops).save(null)).runtime.random);
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); expect(await save(page)).toEqual(JSON.parse(expected.save(null)));
 });
 
 test('unknown retained climate rejects startup atomically, exact legacy checkpoints still restore, and fresh startup recovers', async ({ page }) => {
-  await start(page); const legacy = await save(page); legacy.version = 20; delete legacy.runtime.setup.climateSelection;
+  await start(page); const legacy = await save(page); useOriginalCatalog(legacy); legacy.version = 20; delete legacy.runtime.setup.climateSelection;
   await chooser(page); await pick(page, 'legacy.json', Buffer.from(JSON.stringify(legacy)));
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   const before = await save(page); expect(before.runtime.setup.climateSelection).toBeNull();
@@ -76,7 +77,7 @@ test('unknown retained climate rejects startup atomically, exact legacy checkpoi
   await expect(page.locator('#new-farm-error')).toContainText('no retained climate selection'); expect(await save(page)).toEqual(before);
   await page.locator('#new-farm-session').selectOption('fresh'); await pick(page, 'SCEN4.SSM', source('SCEN4.SSM'));
   await expect(page.locator('#map-status')).toHaveText('Imported farm · original terrain');
-  expect(await save(page)).toEqual(JSON.parse(GameSimulation.openOriginalSave(source('SCEN4.SSM'), { date, seeds }, assets).save(null)));
+  expect(await save(page)).toEqual(JSON.parse(GameSimulation.openOriginalSave(source('SCEN4.SSM'), { date, seeds }, assets).withAllCrops(browserCrops).save(null)));
 });
 
 test('malformed saves, picker cancellation and cancellation during startup or tile loading preserve the current farm', async ({ page }) => {

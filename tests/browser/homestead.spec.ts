@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readScenario } from '../../src/formats/scenario';
@@ -10,7 +11,7 @@ function checkpoint(cash = 800000, rank = 0, weekly = false) {
   scenario.schedule.bytes.fill(0); Object.assign(scenario.farm.calendar, { day: 6, week: weekly ? 0 : 3, month: weekly ? 0 : 11 });
   Object.assign(scenario.farm, { cash, salesAccumulator: 1000 });
   if (weekly) for (const field of scenario.fields) { field.bytes[2] = 0; field.bytes[54] = 0; field.bytes[55] = 0; }
-  const save = JSON.parse(new GameSimulation(scenario, crops).save(4));
+  const save = JSON.parse(new GameSimulation(scenario, crops).withAllCrops(browserCrops).save(4));
   save.runtime.finances.homestead.rank = rank; save.runtime.finances.town.townRevenue = 50000;
   return { name: 'home.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(save)) };
 }
@@ -62,7 +63,7 @@ test('annual homestead updates repaint original tiles, persist once, and play or
   await page.screenshot({ path: 'artifacts/browser-homestead.png', fullPage: true });
   const download = page.waitForEvent('download'); await page.locator('#save-farm').click();
   const path = 'artifacts/browser-homestead.simfarm.json'; await (await download).saveAs(path);
-  const saved = JSON.parse(readFileSync(path, 'utf8')); expect(saved.version).toBe(23);
+  const saved = JSON.parse(readFileSync(path, 'utf8')); expect(saved.version).toBe(24);
   expect(saved.runtime.finances.homestead).toEqual({ x: 56, y: 48, rank: 5 });
   const world = Buffer.from(saved.scenario.world, 'hex');
   expect(world.readUInt16LE(((59 * 96) + 51) * 5)).toBe(524);

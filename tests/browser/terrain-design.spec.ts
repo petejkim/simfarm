@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
 import { readCrop } from '../../src/formats/crop';
@@ -65,7 +66,7 @@ test('custom screen uses HTML text over exact terrain pixels and Play accepts it
   await page.locator('#terrain-design').screenshot({ path: 'artifacts/browser-terrain-design-desktop.png' });
   await page.locator('#play-farm').focus(); await page.keyboard.press('Enter');
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
-  const expected = GameSimulation.load(writeNativeSave(draft.accept(), null), crops, assets.townLayouts).simulation;
+  const expected = GameSimulation.load(writeNativeSave(draft.accept(), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
   expect(await save(page)).toEqual(JSON.parse(expected.save(null)));
   await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
   expect(await save(page)).toEqual(JSON.parse(expected.save(null)));
@@ -84,7 +85,7 @@ test('mobile restart rerolls retain original streams, respond to keyboard and co
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.locator('#terrain-design').screenshot({ path: 'artifacts/browser-terrain-design-mobile.png' });
   await page.locator('#play-farm').click();
-  const game = GameSimulation.load(writeNativeSave(draft.accept(), null), crops, assets.townLayouts).simulation;
+  const game = GameSimulation.load(writeNativeSave(draft.accept(), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
   const accepted = await save(page); expect(accepted).toEqual(JSON.parse(game.save(null)));
   await page.locator('#load-farm-file').setInputFiles({ name: 'preview.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(accepted)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');

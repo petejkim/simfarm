@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { waterDisasterFixture } from '../support/water-disasters';
@@ -48,7 +49,7 @@ const played = (page: Page) => page.evaluate(() => (window as unknown as { water
 
 test('Flood controls destroy a shoreline field and occupied building, render source water, play PCM and resume saved scanning through drainage', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await audio(page); await page.goto('/');
-  const f = waterDisasterFixture(), game = f.load(); await load(page, game.save(4));
+  const f = waterDisasterFixture(), game = f.load().withAllCrops(browserCrops); await load(page, game.save(4));
   await page.locator('#disasters-panel > summary').click(); await page.locator('#sound-toggle').click();
   await page.locator('#start-flood').click(); game.dispatch({ type: 'start-disaster', kind: 'flood' });
   await expect(page.locator('#water-disaster-state')).toContainText('Flood active · Water is spreading. Paused.');
@@ -62,7 +63,7 @@ test('Flood controls destroy a shoreline field and occupied building, render sou
   await expect(page.locator('#disaster-notices')).toContainText('destroyed a building at 40, 40');
   await expect.poll(async () => (await played(page)).some(s => s.length === 12736 && s.peak > 0.01)).toBe(true);
   const checkpoint = await save(page, 'scanning'); expect(checkpoint).toEqual(JSON.parse(game.save(4)));
-  expect(checkpoint.version).toBe(23); expect(checkpoint.runtime.waterDisasters.scanning).toBe(true);
+  expect(checkpoint.version).toBe(24); expect(checkpoint.runtime.waterDisasters.scanning).toBe(true);
   await originalTile(page, 19, 18, game.getSnapshot().scenario.cells[19 * 96 + 18].terrain & 2047);
   await load(page, JSON.stringify(checkpoint)); await page.locator('#disasters-panel > summary').click();
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#locate-shoreline').click();
@@ -81,7 +82,7 @@ test('Flood controls destroy a shoreline field and occupied building, render sou
 
 test('Drought controls dry and restore source shoreline pixels without start audio; invalid v14 flood state leaves the farm intact', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await audio(page); await page.goto('/');
-  const f = waterDisasterFixture(), game = f.load(); await load(page, game.save(4));
+  const f = waterDisasterFixture(), game = f.load().withAllCrops(browserCrops); await load(page, game.save(4));
   await page.locator('#disasters-panel > summary').click(); await page.locator('#sound-toggle').click();
   await page.locator('#start-drought').click(); game.dispatch({ type: 'start-disaster', kind: 'drought' });
   await expect(page.locator('#water-disaster-state')).toContainText('Drought active.'); await expect(page.locator('#start-drought')).toBeDisabled();

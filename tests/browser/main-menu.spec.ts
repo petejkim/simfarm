@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
 import { GameSimulation } from '../../src/simulation/game';
@@ -27,9 +28,9 @@ test('source menu order uses selectable text, keyboard navigation and responsive
   expect(await bar.locator(':scope > button').allTextContents()).toEqual(['File', 'Options', 'Speed', 'Windows', 'Disasters']);
   await page.locator('#file-menu-button').focus(); await page.keyboard.press('ArrowDown');
   const menu = page.getByRole('menu', { name: 'File' });
-  expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['About SimFarm', 'New Game', 'Save', 'Save As', 'Load Game', 'Load Crop', 'Quit']);
+  expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['About SimFarm', 'New Game', 'Save', 'Save As', 'Load Game', 'Quit']);
   await expect(page.getByRole('menuitem', { name: 'About SimFarm' })).toBeFocused();
-  await expect(page.getByRole('menuitem', { name: 'Load Crop' })).toBeDisabled();
+  await expect(page.getByRole('menuitem', { name: 'Load Crop' })).toHaveCount(0);
   await page.keyboard.press('End'); await expect(page.getByRole('menuitem', { name: 'Quit' })).toBeFocused();
   await page.keyboard.press('ArrowUp'); await expect(page.getByRole('menuitem', { name: 'Load Game' })).toBeFocused();
   await page.keyboard.press('Escape'); await expect(menu).toHaveCount(0); await expect(page.locator('#file-menu-button')).toBeFocused();
@@ -67,8 +68,8 @@ test('File Save As names downloads, Save retains that name, and Load Game restor
 test('File Load Game follows ordinary original import without replaying chooser generation', async ({ page }) => {
   await start(page); await page.locator('#next-day').click();
   const before = (await save(page)).data, bytes = source('SCEN6.SSM');
-  const prior = GameSimulation.load(JSON.stringify(before), crops, newFarmAssets.townLayouts).simulation;
-  const expected = prior.importOriginal(bytes, crops).simulation;
+  const prior = GameSimulation.load(JSON.stringify(before), browserCrops, newFarmAssets.townLayouts).simulation.withAllCrops(browserCrops);
+  const expected = prior.importOriginal(bytes, crops).simulation.withAllCrops(browserCrops);
   await page.route('**/assets/new-farm-runtime.json', route => route.abort());
   await pick(page, 'SCEN6.SSM', bytes); await expect(page.locator('#map-status')).toHaveText('Imported farm · original terrain');
   expect((await save(page)).data).toEqual(JSON.parse(expected.save(null)));

@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { shopFixture } from '../support/livestock';
@@ -29,7 +30,7 @@ async function tilePixels(page: Page, x: number, y: number, tile: number) {
 
 test('move shortcut opens stored machinery, cancels safely and delivers to storage with exact saves and original interior pixels', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const f = shopFixture(), game = f.load();
+  const f = shopFixture(), game = f.load().withAllCrops(browserCrops);
   game.dispatch({ type: 'build', buildingType: 67, x: 20, y: 20 }); game.dispatch({ type: 'build', buildingType: 67, x: 40, y: 40 });
   game.dispatch({ type: 'buy-equipment', equipmentType: 4, x: 20, y: 20 });
   await page.goto('/'); await load(page, game.save(4));
@@ -64,7 +65,7 @@ test('move shortcut opens stored machinery, cancels safely and delivers to stora
 });
 
 test('move controls explain busy and unowned targets, then tow an implement and return its tractor', async ({ page }) => {
-  const f = shopFixture(), game = f.load();
+  const f = shopFixture(), game = f.load().withAllCrops(browserCrops);
   game.dispatch({ type: 'buy-equipment', equipmentType: 0, x: 10, y: 10 }); game.dispatch({ type: 'buy-equipment', equipmentType: 1, x: 11, y: 10 });
   const state = readNativeSave(game.save(4)).state; state.scenario.equipment[1].flags |= 1;
   await page.goto('/'); await load(page, writeNativeSave(state, 4)); await page.locator('#map-tool').selectOption('move');

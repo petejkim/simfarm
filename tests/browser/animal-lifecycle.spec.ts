@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { Binary } from '../../src/formats/binary';
@@ -16,7 +17,7 @@ async function download(page: Page, path: string) {
 test('a cow matures into the original adult sprite, begins monthly breeding and shows saved age and gestation in React', async ({ page }) => {
   const f = livestockFixture(16); new Binary(f.state.scenario.animals[1].bytes).view.setUint16(10, 80, true);
   f.state.scenario.farm.calendar.day = 6; f.state.scenario.farm.calendar.week = 3;
-  const game = f.load(), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  const game = f.load().withAllCrops(browserCrops), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'adult-cow.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
@@ -44,7 +45,7 @@ test('a cow matures into the original adult sprite, begins monthly breeding and 
 });
 
 test('birth and old-age notices retain species when a slot is reused, and a full herd explains a failed birth', async ({ page }) => {
-  const f = replacementBirthFixture(), game = f.load(); await page.goto('/');
+  const f = replacementBirthFixture(), game = f.load().withAllCrops(browserCrops); await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'birth.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
@@ -61,7 +62,7 @@ test('birth and old-age notices retain species when a slot is reused, and a full
   for (let slot = 1; slot <= 255; slot++) allocateAnimal(full.state.scenario, full.state.finances, random, 163, 10 + slot % 16, 10 + Math.floor(slot / 16));
   full.state.random = random.snapshot(); full.state.scenario.farm.calendar.day = 6;
   const parent = full.state.scenario.animals[255]; parent.flags |= 3; parent.bytes[28] = 24;
-  const capacityGame = full.load();
+  const capacityGame = full.load().withAllCrops(browserCrops);
   await page.locator('#load-farm-file').setInputFiles({ name: 'full-herd.json', mimeType: 'application/json', buffer: Buffer.from(capacityGame.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await page.locator('#next-day').click(); capacityGame.dispatch({ type: 'advance-day' });

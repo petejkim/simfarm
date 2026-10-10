@@ -1,3 +1,4 @@
+import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readArchive } from '../../src/formats/archive';
@@ -528,12 +529,12 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
   await page.locator('#load-farm-file').setInputFiles(file);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   expect(JSON.parse(await saved())).toEqual(expected);
-  const legacy = JSON.parse(text); legacy.version = 1; delete legacy.scenario.schedule; delete legacy.scenario.irrigation;
+  const legacy = JSON.parse(text); useOriginalCatalog(legacy); legacy.version = 1; delete legacy.scenario.schedule; delete legacy.scenario.irrigation;
   delete legacy.runtime.animalFrame; delete legacy.runtime.market; delete legacy.runtime.traffic; delete legacy.runtime.setup;
   const crops = expected.scenario.cropFiles.map((file: string) => readCrop(file.replace('.crp', ''),
     readFileSync(new URL('../../../simfarm-dos/CROPS/' + file.toUpperCase(), import.meta.url))));
   // V1 also lacked finance state, including species counts changed by live births.
-  const originalFinance = JSON.parse(new GameSimulation(readScenario(Buffer.from(expected.scenario.source, 'hex')), crops).save(0)).runtime.finances;
+  const originalFinance = JSON.parse(new GameSimulation(readScenario(Buffer.from(expected.scenario.source, 'hex')), crops).withAllCrops(browserCrops).save(0)).runtime.finances;
   await page.locator('#load-farm-file').setInputFiles({ name: 'old-farm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(legacy)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   // Pre-v9 saves lacked water waves; pre-v10 saves lacked animal frame state.
@@ -587,7 +588,7 @@ test('a farm saved while a harvest truck drives to storage loads and completes d
   const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${name}`, import.meta.url));
   const scenario = readScenario(source('SCEN1.SSM'));
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
-  const game = new GameSimulation(scenario, crops);
+  const game = new GameSimulation(scenario, crops).withAllCrops(browserCrops);
   game.dispatch({ type: 'harvest-field', fieldSlot: 1 }); game.dispatch({ type: 'set-paused', paused: false });
   for (let tick = 0; tick < 2048 && game.getSnapshot().scenario.fields[1].step !== 15; tick++) game.tick(4000 / (scenario.farm.dayDelayTicks + 1));
   expect(game.getSnapshot().scenario.fields[1].step).toBe(15);
@@ -633,7 +634,7 @@ test('weekly seed failure is reported without replacing crops or spending cash',
   scenario.farm.cash = 0;
   Object.assign(scenario.farm.calendar, { month: 0, week: 0, day: 6 });
   scenario.schedule.set(1, 0, 832);
-  const game = new GameSimulation(scenario, crops);
+  const game = new GameSimulation(scenario, crops).withAllCrops(browserCrops);
   await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'no-seed-cash.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
@@ -760,7 +761,7 @@ test('loaded loans collect the March installment at the month boundary', async (
   const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${name}`, import.meta.url));
   const scenario = readScenario(source('SCEN4.SSM')); scenario.schedule.bytes.fill(0);
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
-  const game = new GameSimulation(scenario, crops); game.dispatch({ type: 'borrow', amount: 1000 });
+  const game = new GameSimulation(scenario, crops).withAllCrops(browserCrops); game.dispatch({ type: 'borrow', amount: 1000 });
   const save = JSON.parse(game.save(4));
   Object.assign(save.scenario.farm.calendar, { day: 6, week: 3, month: 1 }); save.scenario.farm.cash = 4000;
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'loan.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(save)) });
@@ -774,10 +775,10 @@ test('saved financial default stops time and actions, supports ending or restart
   const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${name}`, import.meta.url));
   const scenario = readScenario(source('SCEN4.SSM')); scenario.schedule.bytes.fill(0);
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
-  const initial = new GameSimulation(scenario, crops), save = JSON.parse(initial.save(4));
+  const initial = new GameSimulation(scenario, crops).withAllCrops(browserCrops), save = JSON.parse(initial.save(4));
   Object.assign(save.scenario.farm.calendar, { day: 6, week: 3, month: 0 }); save.scenario.farm.cash = 0;
   Object.assign(save.runtime.finances.debt, { balanceDue: 0xffffffff, balanceCountdown: 1 });
-  const game = GameSimulation.load(JSON.stringify(save), crops).simulation; game.dispatch({ type: 'advance-day' });
+  const game = GameSimulation.load(JSON.stringify(save), browserCrops).simulation.withAllCrops(browserCrops); game.dispatch({ type: 'advance-day' });
   expect(game.getSnapshot().finances.defaultDecision?.status).toBe('pending');
   const file = { name: 'default.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) };
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(file);

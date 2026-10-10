@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { breedingFixture } from '../support/animal-lifecycle';
@@ -20,7 +21,7 @@ test('Livestock controls sell a live newborn and stored parent, show original qu
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = breedingFixture(); f.state.random.visual = 10; // Newborn moves NW onto free ground after the traffic draw.
   f.state.scenario.animals[1].flags |= 3; f.state.scenario.animals[1].bytes[28] = 40;
-  const game = f.load(); await page.goto('/'); await load(page, game.save(4));
+  const game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
   await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   await page.locator('#livestock-panel > summary').click(); await expect(page.locator('#livestock-panel > summary')).toContainText('2 animals');
   for (const slot of [2, 1]) {
@@ -45,7 +46,7 @@ test('Livestock controls sell a live newborn and stored parent, show original qu
 });
 
 test('Machinery sale controls hide rentals, explain busy machines and sell ground/storage/aircraft with exact map and ledger cleanup', async ({ page }) => {
-  const f = aircraftFixture(), game = f.load();
+  const f = aircraftFixture(), game = f.load().withAllCrops(browserCrops);
   game.dispatch({ type: 'build', buildingType: 67, x: 40, y: 40 });
   game.dispatch({ type: 'buy-equipment', equipmentType: 0, x: 10, y: 10 });
   game.dispatch({ type: 'buy-equipment', equipmentType: 4, x: 40, y: 40 });

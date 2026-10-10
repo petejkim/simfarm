@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readScenario, worldIndex } from '../../src/formats/scenario';
@@ -16,7 +17,7 @@ test('weekly town construction repaints the map and resumes exactly after a brow
   for (let x = 24; x < 32; x++) for (let y = 0; y < 8; y++) {
     scenario.cells[worldIndex(x, y)].terrain = 15; scenario.cells[worldIndex(x, y)].overlay = 0;
   }
-  const initial = new GameSimulation(scenario, crops).save(4), expected = GameSimulation.load(initial, crops).simulation;
+  const initial = new GameSimulation(scenario, crops).withAllCrops(browserCrops).save(4), expected = GameSimulation.load(initial, browserCrops).simulation.withAllCrops(browserCrops);
   await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'town.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(initial) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');

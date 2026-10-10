@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readScenario } from '../../src/formats/scenario';
@@ -12,12 +13,12 @@ test('saved field clearing advances original animation tiles, pauses and reloads
   const scenario = readScenario(source('SCEN4.SSM'));
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
   scenario.schedule.bytes.fill(0); Object.assign(scenario.farm.calendar, { day: 0, week: 0, month: 0 });
-  const { state } = readNativeSave(new GameSimulation(scenario, crops).save(4));
+  const { state } = readNativeSave(new GameSimulation(scenario, crops).withAllCrops(browserCrops).save(4));
   state.scenario.farm.animationTicks = state.equipmentAnimationTick = state.finances.clearing.lastTick = 0;
   state.scenario.farm.dayDelayTicks = 16;
   const { x, y, width, height } = state.scenario.fields[1];
   expect(removeField(state.scenario, 1, state.finances.clearing, state.weather.soilMoisture)).toBe(true);
-  const text = writeNativeSave(state, 4), expected = GameSimulation.load(text, crops).simulation;
+  const text = writeNativeSave(state, 4), expected = GameSimulation.load(text, browserCrops).simulation.withAllCrops(browserCrops);
   await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'clearing.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(text) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');

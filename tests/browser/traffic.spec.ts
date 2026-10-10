@@ -1,3 +1,4 @@
+import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { trafficFixture } from '../support/traffic';
@@ -15,7 +16,7 @@ async function save(page: Page, name: string) {
 }
 
 test('traffic paints original vehicle pixels and continues through weekly spawning and browser save/load', async ({ page }) => {
-  const f = trafficFixture(), game = f.load(), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  const f = trafficFixture(), game = f.load().withAllCrops(browserCrops), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/'); await load(page, game.save(4));
   await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   const state = game.getSnapshot(), record = state.traffic.records[0]; expect(record[2]).toBe(21);
@@ -26,7 +27,7 @@ test('traffic paints original vehicle pixels and continues through weekly spawni
   const vehicle = decodePlanar(asset('mskdtile.til').subarray(image * 128, (image + 1) * 128), 16, 16, palette, 7).rgba;
   for (let p = 0; p < ground.length; p += 4) if (vehicle[p + 3]) ground.set(vehicle.subarray(p, p + 4), p);
   expect(await page.locator('#world').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(21 * 16, 20 * 16, 16, 16).data))).toEqual(Array.from(ground));
-  const checkpoint = await save(page, 'painted'); expect(checkpoint.version).toBe(23); expect(checkpoint).toEqual(JSON.parse(game.save(4)));
+  const checkpoint = await save(page, 'painted'); expect(checkpoint.version).toBe(24); expect(checkpoint).toEqual(JSON.parse(game.save(4)));
   await page.locator('#viewport').evaluate(e => e.scrollTo(160, 160));
   await page.screenshot({ path: 'artifacts/browser-traffic.png', fullPage: true });
   await load(page, JSON.stringify(checkpoint)); expect(await save(page, 'restored')).toEqual(checkpoint);
@@ -50,18 +51,18 @@ test('traffic collision plays source PCM only when enabled, never replays on loa
       }
     };
   });
-  const f = trafficFixture(true), game = f.load(); await page.goto('/'); await load(page, game.save(4));
+  const f = trafficFixture(true), game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
   await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   expect(requests).toEqual([]); expect(await save(page, 'muted-hit')).toEqual(JSON.parse(game.save(4)));
-  await load(page, f.load().save(4)); await page.locator('#sound-toggle').click(); await page.locator('#next-day').click();
+  await load(page, f.load().withAllCrops(browserCrops).save(4)); await page.locator('#sound-toggle').click(); await page.locator('#next-day').click();
   await expect.poll(() => page.evaluate(() => (window as unknown as { __trafficPlayed: { length: number; peak: number }[] }).__trafficPlayed.some(p => p.length === 1467 && p.peak > 0.1))).toBe(true);
   const checkpoint = await save(page, 'audible-hit'); expect(checkpoint).toEqual(JSON.parse(game.save(4)));
   const count = requests.length; await load(page, JSON.stringify(checkpoint)); expect(await save(page, 'hit-restored')).toEqual(checkpoint); expect(requests).toHaveLength(count);
   const bad = structuredClone(checkpoint); bad.runtime.traffic.activeCount = 16;
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
   await expect(page.locator('#save-status')).toContainText('Could not load farm'); expect(await save(page, 'rejected')).toEqual(checkpoint);
-  const old = structuredClone(checkpoint); old.version = 16; delete old.runtime.traffic;
-  const migrated = GameSimulation.load(JSON.stringify(old), f.crops).simulation; await load(page, JSON.stringify(old));
+  const old = structuredClone(checkpoint); useOriginalCatalog(old); old.version = 16; delete old.runtime.traffic;
+  const migrated = GameSimulation.load(JSON.stringify(old), browserCrops).simulation.withAllCrops(browserCrops); await load(page, JSON.stringify(old));
   expect(await save(page, 'legacy')).toEqual(JSON.parse(migrated.save(4))); expect(migrated.getSnapshot().traffic.activeCount).toBe(0);
   expect(requests).toHaveLength(count);
 });

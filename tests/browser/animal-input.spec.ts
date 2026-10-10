@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { livestockFixture } from '../support/livestock';
@@ -17,7 +18,7 @@ test('map hover steers original livestock through zoom and scrolling, and clears
   for (const [zoom, action] of [[0.5, 'hover'], [1, 'hover'], [2, 'scroll'], [1, 'leave'], [1, 'blur']] as const) {
     const f = livestockFixture(16); f.state.scenario.animals[1].bytes[13] = f.state.scenario.animals[1].bytes[14] = 0;
     f.state.scenario.farm.calendar.day = 1; // Even day has no new needs before the first move.
-    const game = f.load(); await load(page, game.save(4));
+    const game = f.load().withAllCrops(browserCrops); await load(page, game.save(4));
     await page.locator('#zoom').selectOption(String(zoom)); await page.locator('#next-day').focus();
     await page.locator('#viewport').scrollIntoViewIfNeeded();
     await page.locator('#viewport').evaluate(v => { v.scrollLeft = v.scrollTop = 0; });
@@ -62,10 +63,10 @@ test('original animal voices are audible when enabled, mute does not alter state
   });
   await page.goto('/');
   const weekly = livestockFixture(16); weekly.state.scenario.farm.calendar.day = 6; weekly.state.random.simulation = 300;
-  const muted = weekly.load(); await load(page, muted.save(4));
+  const muted = weekly.load().withAllCrops(browserCrops); await load(page, muted.save(4));
   await page.locator('#next-day').click(); muted.dispatch({ type: 'advance-day' }); expect(requests).toEqual([]);
   expect(await save(page)).toEqual(JSON.parse(muted.save(4)));
-  await load(page, weekly.load().save(4)); await page.locator('#sound-toggle').click(); await page.locator('#next-day').click();
+  await load(page, weekly.load().withAllCrops(browserCrops).save(4)); await page.locator('#sound-toggle').click(); await page.locator('#next-day').click();
   await expect.poll(() => page.evaluate(() => {
     const voices = (window as unknown as { __animalVoices: { length: number; analyser: AnalyserNode }[] }).__animalVoices;
     const voice = voices.find(v => v.length === 8210), values = new Float32Array(2048);
@@ -82,15 +83,15 @@ test('original animal voices are audible when enabled, mute does not alter state
     f.state.scenario.farm.animationTicks = f.state.scenario.farm.timerTicks = f.state.animalFrame.lastMoveTick = 640;
     f.state.animalFrame.lastCentreTick = f.state.traffic.lastTick = 640; f.state.random.visual = visual;
     for (const d of f.state.finances.accounts.assets.animalDefinitions) d.count = Number(d.type === type);
-    const game = f.load(); await load(page, game.save(4)); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+    const game = f.load().withAllCrops(browserCrops); await load(page, game.save(4)); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
     await expect.poll(() => page.evaluate(n => (window as unknown as { __animalVoices: { length: number }[] }).__animalVoices.some(v => v.length === n), length)).toBe(true);
     expect(requests.some(r => r.endsWith(`/${name}.voc`))).toBe(true);
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   }
-  await page.locator('#sound-toggle').click(); await load(page, weekly.load().save(4));
+  await page.locator('#sound-toggle').click(); await load(page, weekly.load().withAllCrops(browserCrops).save(4));
   const count = requests.length; await page.locator('#next-day').click(); expect(requests).toHaveLength(count);
   await page.route('**/cow2.voc', route => route.fulfill({ status: 404, body: 'Missing voice' }));
-  await load(page, weekly.load().save(4)); await page.locator('#sound-toggle').click(); await page.locator('#next-day').click();
+  await load(page, weekly.load().withAllCrops(browserCrops).save(4)); await page.locator('#sound-toggle').click(); await page.locator('#next-day').click();
   await expect(page.locator('#sound-error')).toContainText('cow2.voc'); await expect(page.locator('#next-day')).toBeEnabled();
   expect(await save(page)).toEqual(JSON.parse(muted.save(4))); expect(errors).toEqual([]);
 });

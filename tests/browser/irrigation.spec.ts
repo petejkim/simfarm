@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { PNG } from 'pngjs';
@@ -17,8 +18,8 @@ function fixture(wind = 10, dig = false) {
   Object.assign(scenario.farm.calendar, { day: 0, week: 0, month: 0 }); scenario.schedule.bytes.fill(0);
   const field = scenario.fields[1]; field.bytes[10] = field.bytes[11] = 11; field.bytes[2] = 4;
   field.equipment = field.pendingEquipment = 0; field.bytes[51] = field.bytes[52] = 0;
-  const checkpoint = JSON.parse(new GameSimulation(scenario, crops).save(4)); checkpoint.runtime.weather.wind = wind;
-  return { game: GameSimulation.load(JSON.stringify(checkpoint), crops).simulation, crops };
+  const checkpoint = JSON.parse(new GameSimulation(scenario, crops).withAllCrops(browserCrops).save(4)); checkpoint.runtime.weather.wind = wind;
+  return { game: GameSimulation.load(JSON.stringify(checkpoint), browserCrops).simulation.withAllCrops(browserCrops), crops };
 }
 async function select(page: Page, x: number, y: number) {
   await page.locator('#viewport').evaluate((el, p) => el.scrollTo(p.x * 16, p.y * 16), { x, y });
@@ -135,7 +136,7 @@ test('Irrigation placement shows blocked terrain and insufficient cash without c
   save.scenario.farm.cash = 104; save.scenario.farm.autoClear = true;
   const world = Buffer.from(save.scenario.world, 'hex'); world.writeUInt16LE(535, worldIndex(20, 20) * 5);
   save.scenario.world = world.toString('hex'); save.runtime.weather.soilMoisture = 0;
-  const sim = GameSimulation.load(JSON.stringify(save), crops).simulation, before = JSON.parse(sim.save(4));
+  const sim = GameSimulation.load(JSON.stringify(save), browserCrops).simulation.withAllCrops(browserCrops), before = JSON.parse(sim.save(4));
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'low-cash.json', mimeType: 'application/json', buffer: Buffer.from(sim.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await page.locator('#map-tool').selectOption('irrigation');
   await select(page, 20, 20); await expect(page.locator('#irrigation-placement-status')).toContainText('not enough cash');

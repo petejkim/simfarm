@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { supplyMovementFixture } from '../support/supply-movement';
@@ -39,7 +40,7 @@ async function originalPixels(page: Page, x: number, y: number, tile: number, ov
 test('supplies shortcut moves all five categories with exact original pixels, safe cancellation and browser checkpoints', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = supplyMovementFixture(); f.state.scenario.cells[worldIndex(5, 5)].overlay = 0;
-  const game = f.load(); await page.goto('/'); await load(page, game.save(4));
+  const game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
   await page.locator('#livestock-panel > summary').click(); await page.locator('#open-supply-move').click();
   await expect(page.locator('#map-tool')).toHaveValue('supply-move');
   await selectTile(page, 16, 10); await page.locator('#select-supply-move').click(); await selectTile(page, 5, 5);
@@ -62,7 +63,7 @@ test('supplies shortcut moves all five categories with exact original pixels, sa
 });
 
 test('supplies transfer into original storage, reopen and leave it; empty feed is discarded and controls fit a narrow viewport', async ({ page }) => {
-  const f = supplyMovementFixture(), game = f.load(); await page.goto('/'); await load(page, game.save(4));
+  const f = supplyMovementFixture(), game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
   await page.locator('#map-tool').selectOption('supply-move');
   for (const [sx, x, y] of [[10, 30, 30], [12, 40, 40], [14, 40, 40]]) {
     const s = game.getSnapshot(), selected = checkSupplyPickup(s.scenario, s.finances, sx, 10); if (!selected.ok) throw new Error('Missing supply');
@@ -78,7 +79,7 @@ test('supplies transfer into original storage, reopen and leave it; empty feed i
   game.dispatch({ type: 'move-supply', selected, x: 25, y: 25 }); await originalPixels(page, 40, 40, 217); await originalPixels(page, 25, 25, 816);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   const empty = supplyMovementFixture(); empty.state.scenario.inventory[4].bytes[2] = empty.state.scenario.inventory[4].bytes[3] = 0;
-  const emptyGame = empty.load(); await load(page, emptyGame.save(4)); await page.locator('#map-tool').selectOption('supply-move');
+  const emptyGame = empty.load().withAllCrops(browserCrops); await load(page, emptyGame.save(4)); await page.locator('#map-tool').selectOption('supply-move');
   await selectTile(page, 18, 10); await page.locator('#select-supply-move').click(); await selectTile(page, 20, 20);
   await expect(page.locator('#supply-move-quote')).toContainText('Discard empty feed');
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#supply-move-panel').scrollIntoViewIfNeeded();

@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { shopFixture } from '../support/livestock';
@@ -43,7 +44,7 @@ const played=(page:Page)=>page.evaluate(()=>(window as unknown as {networkAudio:
 
 test('Roads & fences shortcut constructs original networks, operates gates, plays placement PCM and restores exact saves',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await audio(page);await page.goto('/');
-  const f=shopFixture();f.state.scenario.cells[worldIndex(12,10)].terrain=0x2000|98;const g=f.load();
+  const f=shopFixture();f.state.scenario.cells[worldIndex(12,10)].terrain=0x2000|98;const g=f.load().withAllCrops(browserCrops);
   await load(page,g.save(4));await page.locator('#sound-toggle').click();
   await page.getByRole('button',{name:'Roads & fences',exact:true}).click();await expect(page.locator('#network-panel h2')).toBeFocused();
   await expect(page.locator('#apply-network')).toBeDisabled();
@@ -77,14 +78,14 @@ test('construction explains land, cash, terrain and gate limits and supports map
   w.cells[worldIndex(10,10)].terrain=535;w.cells[worldIndex(11,10)].overlay=0x4800;
   w.cells[worldIndex(12,10)].overlay=0;w.cells[worldIndex(13,10)].terrain=0x800|15;
   w.cells[worldIndex(14,10)].terrain=179;w.cells[worldIndex(15,10)].terrain=188;
-  const g=f.load();await load(page,g.save(4));await page.getByRole('button',{name:'Roads & fences',exact:true}).click();
+  const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));await page.getByRole('button',{name:'Roads & fences',exact:true}).click();
   for(const [tool,x,message] of [['road-161',10,'not enough cash'],['fence',11,'Town land'],['fence',12,'Buy this land'],['road-150',13,'clear grass'],['gate',14,'straight fence'],['open-gate',14,'existing gate']] as const){
     await page.locator('#network-tool').selectOption(tool);await page.getByRole('button',{name:'Choose on map',exact:true}).click();await select(page,x,10);
     await page.getByRole('button',{name:'Review construction',exact:true}).click();await expect(page.locator('#network-panel h2')).toBeFocused();
     await expect(page.locator('#network-placement-status')).toContainText(message);await expect(page.locator('#apply-network')).toBeDisabled();
   }
   expect(await save(page,'rejected')).toEqual(JSON.parse(g.save(4)));
-  w.farm.cash=45;const funded=f.load();await load(page,funded.save(4));await page.getByRole('button',{name:'Roads & fences',exact:true}).click();
+  w.farm.cash=45;const funded=f.load().withAllCrops(browserCrops);await load(page,funded.save(4));await page.getByRole('button',{name:'Roads & fences',exact:true}).click();
   await select(page,10,10);await page.getByRole('button',{name:'Review construction',exact:true}).click();
   await expect(page.locator('#network-placement-status')).toContainText('$45 ($25 clearing)');await page.locator('#apply-network').click();funded.dispatch({type:'network',tool:'road-161',x:10,y:10});
   await select(page,15,10);await page.locator('#network-tool').selectOption('open-gate');await page.locator('#apply-network').click();funded.dispatch({type:'network',tool:'open-gate',x:15,y:10});

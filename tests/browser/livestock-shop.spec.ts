@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { PNG } from 'pngjs';
@@ -19,7 +20,7 @@ async function download(page: Page, path: string) {
 
 test('the livestock panel opens the shop, buys a cow and usable supplies and saves their live continuation', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const f = shopFixture(), game = f.load(); await page.goto('/');
+  const f = shopFixture(), game = f.load().withAllCrops(browserCrops); await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'shop.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await page.locator('#livestock-panel > summary').click(); await page.locator('#open-livestock-shop').click();
@@ -60,7 +61,7 @@ test('the livestock panel opens the shop, buys a cow and usable supplies and sav
 test('livestock purchases explain clearing and cash limits and are usable on a narrow screen', async ({ page }) => {
   const f = shopFixture(); f.state.scenario.farm.cash = 40;
   f.state.scenario.cells[worldIndex(20, 20)].terrain = 535;
-  const game = f.load(); await page.goto('/');
+  const game = f.load().withAllCrops(browserCrops); await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'shop-trees.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await page.locator('#map-tool').selectOption('livestock'); await page.locator('#livestock-product').selectOption('299');

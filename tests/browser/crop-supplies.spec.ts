@@ -1,3 +1,4 @@
+import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { disasterFixture } from '../support/disasters';
@@ -65,7 +66,7 @@ const played = (page: Page) => page.evaluate(() => (window as unknown as { suppl
 
 test('Seeds & chemicals shortcut buys original stock, plays feedback, preserves checkpoints and supplies live planting and care', async ({ page }) => {
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await audio(page);await page.goto('/');
-  const f=disasterFixture();f.state.scenario.farm.autoBuySeeds=false;const g=f.load();
+  const f=disasterFixture();f.state.scenario.farm.autoBuySeeds=false;const g=f.load().withAllCrops(browserCrops);
   g.dispatch({type:'build',buildingType:67,x:10,y:10});g.dispatch({type:'toggle-building-interior',slot:1,x:10,y:10});
   await load(page,g.save(4));await page.locator('#sound-toggle').click();
   await page.getByRole('button',{name:'Seeds & chemicals',exact:true}).click();
@@ -93,7 +94,7 @@ test('Seeds & chemicals shortcut buys original stock, plays feedback, preserves 
 });
 
 test('supply shop explains storage and money limits, supports building and map selection, and fits390px', async ({ page })=>{
-  const f=shopFixture(),g=f.load();await page.goto('/');await load(page,g.save(4));
+  const f=shopFixture(),g=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,g.save(4));
   const before=g.save(4);await page.getByRole('button',{name:'Seeds & chemicals',exact:true}).click();
   await expect(page.locator('#crop-supply-shop')).toContainText('No compatible storage yet');
   expect(await save(page)).toEqual(JSON.parse(before));await page.getByRole('button',{name:'Build storage',exact:true}).click();
@@ -104,12 +105,12 @@ test('supply shop explains storage and money limits, supports building and map s
   for(let n=0;n<6;n++){await page.locator('#buy-crop-supply').click();g.dispatch({type:'buy-crop-supply',productType:192,x:10,y:10});}
   await expect(page.locator('#crop-supply-quote')).toContainText('full');await expect(page.locator('#buy-crop-supply')).toBeDisabled();
   expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  const other=shopFixture();other.state.scenario.farm.cash=2000;const fresh=other.load();fresh.dispatch({type:'build',buildingType:64,x:20,y:20});
+  const other=shopFixture();other.state.scenario.farm.cash=2000;const fresh=other.load().withAllCrops(browserCrops);fresh.dispatch({type:'build',buildingType:64,x:20,y:20});
   await load(page,fresh.save(4));await page.locator('#map-tool').selectOption('crop-supplies');await page.locator('#crop-supply-type').selectOption('220');
   await selectTile(page,20,20);await expect(page.locator('#crop-supply-quote')).toContainText('Chemicals need equipment storage');
   await selectTile(page,21,20);await expect(page.locator('#crop-supply-quote')).toContainText('must be delivered into storage');
   // Use a newly built store with free room to exercise cash rejection, not capacity.
-  const ready=shopFixture().load();ready.dispatch({type:'build',buildingType:67,x:10,y:10});const broke=JSON.parse(ready.save(4));broke.scenario.farm.cash=0;
+  const ready=shopFixture().load().withAllCrops(browserCrops);ready.dispatch({type:'build',buildingType:67,x:10,y:10});const broke=JSON.parse(ready.save(4));broke.scenario.farm.cash=0;
   await load(page,JSON.stringify(broke));await page.getByRole('button',{name:'Seeds & chemicals',exact:true}).click();
   await page.locator('#crop-supply-storage').selectOption('1');await expect(page.locator('#crop-supply-quote')).toContainText('not enough cash');
   await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'Choose on map',exact:true}).click();

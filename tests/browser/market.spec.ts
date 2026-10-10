@@ -1,3 +1,4 @@
+import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { disasterFixture } from '../support/disasters';
@@ -16,7 +17,7 @@ test('planting keeps trade quotes until the weekly market updates seed purchases
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = disasterFixture(); f.state.scenario.farm.calendar.day = 6; f.state.dayTicks = 64;
   f.state.disasters.enabled = false; f.state.random.simulation = 9029;
-  const game = f.load(); game.dispatch({ type: 'build', buildingType: 66, x: 10, y: 10 });
+  const game = f.load().withAllCrops(browserCrops); game.dispatch({ type: 'build', buildingType: 66, x: 10, y: 10 });
   const before = game.getSnapshot();
   await page.goto('/'); await load(page, game.save(4));
   await page.locator('#field').selectOption('1'); await page.locator('#plant-crop').selectOption('0'); await page.locator('#plant-field').click();
@@ -45,10 +46,10 @@ test('planting keeps trade quotes until the weekly market updates seed purchases
 test('legacy market migration keeps unknown samples through browser save/load and malformed market rejection is atomic', async ({ page }) => {
   // v15 requires phase < delay; the migrated game then uses the strict gate.
   const f = disasterFixture(); f.state.scenario.farm.calendar.day = 6; f.state.dayTicks = 63; f.state.disasters.enabled = false;
-  const old = JSON.parse(f.load().save(4)); old.version = 15; delete old.runtime.market;
-  const game = GameSimulation.load(JSON.stringify(old), f.crops).simulation;
+  const old = JSON.parse(f.load().withAllCrops(browserCrops).save(4)); useOriginalCatalog(old); old.version = 15; delete old.runtime.market;
+  const game = GameSimulation.load(JSON.stringify(old), browserCrops).simulation.withAllCrops(browserCrops);
   await page.goto('/'); await load(page, JSON.stringify(old));
-  const migrated = await save(page, 'migrated'); expect(migrated.version).toBe(23);
+  const migrated = await save(page, 'migrated'); expect(migrated.version).toBe(24);
   expect(migrated.runtime.dayTicks).toBe(old.runtime.dayTicks);
   expect(migrated.runtime.random).toEqual(old.runtime.random);
   expect(migrated.runtime.market.history[0]).toEqual([...Array(29).fill(null), old.runtime.cropMarketPrices[0]]);

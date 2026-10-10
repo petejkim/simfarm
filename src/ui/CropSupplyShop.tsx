@@ -1,7 +1,7 @@
 import type { Ref } from 'react';
 import type { CropDefinition } from '../formats/crop';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
-import { checkCropSupplyPurchase, CROP_SUPPLY_TYPES } from '../simulation/crop-supply-purchase';
+import { checkCropSupplyPurchase } from '../simulation/crop-supply-purchase';
 import { findBuilding } from '../simulation/building-storage';
 import { worldIndex } from '../formats/scenario';
 
@@ -34,7 +34,7 @@ export function CropSupplyShop({ snapshot: s, crops, position, productType, onTy
     <h2 ref={headingRef} tabIndex={-1}>Seeds &amp; chemicals</h2>
     <p>Buy supplies in advance and deliver them into storage. Planting and field treatments use your stock automatically.</p>
     <label className="crop-label">Supply <select id="crop-supply-type" value={productType} onChange={e => onTypeChange(Number(e.target.value))}>
-      {CROP_SUPPLY_TYPES.map(type => <option key={type} value={type}>{name(type)} · {money(price(type))}</option>)}
+      {[...w.cropFiles.map((_, i) => 192 + i), 220, 221, 222, 223].map(type => <option key={type} value={type}>{name(type)} · {money(price(type))}</option>)}
     </select></label>
     <p id="crop-supply-stock">In stock: {stock} · {money(price(productType))} per purchase.</p>
     <p>{chemical ? 'Chemicals need equipment storage.' : 'Seeds fit in crop or equipment storage.'} One purchase supplies one planting or treatment application. Stored supplies can deteriorate over time.</p>
