@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 /** Existing subsystem flows use the real launchers before accessing a window.
  * Workspace/layout tests exercise discovery and window behavior directly. */
 export async function openWindow(page: Page, key: string) {
-  if (key === 'schedule') { if (!await page.locator('[data-window="schedule"]').isVisible()) await page.getByRole('button', { name: 'Plant', exact: true }).click(); return; }
+  if (key === 'schedule') { if (!await page.locator('[data-window="schedule"]').isVisible()) {await openWindow(page,'navigation');await page.getByRole('button',{name:'Crop planner',exact:true}).click();} return; }
   if (key === 'edit') { await page.locator('#window-edit').click(); return; }
   if (await page.locator(`[data-window="${key}"]`).isVisible()) return;
   if (['options', 'speed', 'disasters'].includes(key)) { await page.locator(`#${key}-menu-button`).click(); return; }

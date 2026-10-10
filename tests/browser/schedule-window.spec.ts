@@ -1,3 +1,4 @@
+import { openWindow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readScenario } from '../../src/formats/scenario';
@@ -12,7 +13,7 @@ test('Schedule restores source geometry, field artwork, gauges, all24 crops and 
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');const before=await save(page);
   const world=readScenario(source('SCEN0.SSM')),field=world.fields[1],firstWeek=world.farm.calendar.month*4;
-  await page.getByRole('button',{name:'Plant',exact:true}).click();await page.locator('#planner-field').selectOption('1');
+  await openWindow(page,'schedule');await page.locator('#planner-field').selectOption('1');
   const dialog=page.getByRole('dialog',{name:'Schedule',exact:true});
   expect(await dialog.locator('.game-window-title').boundingBox()).toEqual({x:160,y:80,width:336,height:16});
   expect(await page.locator('.schedule-window').boundingBox()).toEqual({x:160,y:96,width:336,height:224});
