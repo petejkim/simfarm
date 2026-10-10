@@ -26,11 +26,11 @@ test('weekly equipment sale and chemical aging compose with live clearing, origi
 
 test('paused and financial-choice farms do not age; a busy worn machine remains eligible for later source retries', () => {
   const f = weeklyAgingFixture(); f.equipment.flags |= 1;
-  const game = f.load(), before = game.save(4); game.tick(10000); assert.equal(game.save(4), before);
+  const game = f.load(), before = game.save(4); game.tick(40000); assert.equal(game.save(4), before);
   game.dispatch({ type: 'advance-day' }); const s = game.getSnapshot();
   assert.equal(s.scenario.equipment[1].active, true); assert.equal(s.scenario.equipment[1].condition, 255);
   assert.equal(s.equipmentAgingNotices[0].kind, 'deferred'); assert.equal(s.scenario.farm.cash, f.state.scenario.farm.cash);
   f.state.finances.defaultDecision = { status: 'pending', originalExitCode: 0 };
-  const blocked = f.load(), frozen = blocked.save(4); blocked.dispatch({ type: 'advance-day' }); blocked.tick(1000);
+  const blocked = f.load(), frozen = blocked.save(4); blocked.dispatch({ type: 'advance-day' }); blocked.tick(4000);
   assert.equal(blocked.save(4), frozen);
 });

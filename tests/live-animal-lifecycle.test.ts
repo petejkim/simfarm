@@ -25,7 +25,7 @@ test('a source-stored cow matures at month end, starts pregnancy and gives birth
 
 test('weekly old-age removal frees capacity before births, retains notice identity and freezes under financial decisions', () => {
   const f = replacementBirthFixture(), game = f.load(), before = game.getSnapshot();
-  game.tick(1000); assert.equal(game.getSnapshot().scenario.animals[1].type, 160); // Paused.
+  game.tick(4000); assert.equal(game.getSnapshot().scenario.animals[1].type, 160); // Paused.
   game.dispatch({ type: 'advance-day' }); const s = game.getSnapshot();
   assert.deepEqual(s.animalLifecycleNotices, [{ kind: 'old-age', slot: 1, animalType: 160 }, { kind: 'born', slot: 1, animalType: 161, parentSlot: 2 }]);
   assert.equal(s.scenario.animals[1].type, 161); assert.equal(s.scenario.animals[1].ageWeeks, 0);
@@ -38,5 +38,5 @@ test('weekly old-age removal frees capacity before births, retains notice identi
   assert.deepEqual(JSON.parse(game.save(4)), JSON.parse(restored.save(4)));
   f.state.finances.defaultDecision = { status: 'pending', originalExitCode: 0 };
   const blocked = f.load(), frozen = blocked.save(4);
-  blocked.dispatch({ type: 'advance-day' }); blocked.tick(5000); assert.equal(blocked.save(4), frozen);
+  blocked.dispatch({ type: 'advance-day' }); blocked.tick(20000); assert.equal(blocked.save(4), frozen);
 });

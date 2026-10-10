@@ -25,7 +25,7 @@ export function TimeControls({ snapshot, onCommand }: { snapshot: GameSnapshot; 
           aria-labelledby="simulation-speed-label"
           value={SIMULATION_SPEEDS.findIndex(speed => speed === snapshot.speed)} aria-valuetext={`${snapshot.speed}× simulation speed`}
           onChange={event => onCommand({ type: 'set-speed', speed: SIMULATION_SPEEDS[Number(event.target.value)] })} />
-        <output id="simulation-speed-value" htmlFor="simulation-speed" title={calendarBlocked ? 'This save’s calendar cannot advance.' : 'At 1×, one real second advances one full game day.'}>{snapshot.speed}×</output>
+        <output id="simulation-speed-value" htmlFor="simulation-speed" title={calendarBlocked ? 'This save’s calendar cannot advance.' : 'At 1×, one full game day takes four real seconds.'}>{snapshot.speed}×</output>
       </label>
       <button id="play-pause" disabled={Boolean(snapshot.finances.defaultDecision || snapshot.pendingTown)} onClick={() => onCommand({ type: 'set-paused', paused: !paused })}>{paused ? 'Play' : 'Pause'}</button>
       <button id="next-day" disabled={calendarBlocked || !paused || Boolean(snapshot.finances.defaultDecision || snapshot.pendingTown || snapshot.aircraftFlight)} onClick={() => onCommand({ type: 'advance-day' })}>Next day</button>

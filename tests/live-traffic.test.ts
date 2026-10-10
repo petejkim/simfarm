@@ -37,12 +37,12 @@ test('canonical traffic updates original map pixels and RNG once at the frame bo
   const f = trafficFixture(), expected = readNativeSave(writeNativeSave(f.state, 4)).state;
   const t = createTrafficState(expected.traffic), random = new FarmRandom(expected.random);
   advanceTraffic(expected.scenario, t, random, { animationTick: 16, notices: [] });
-  const game = f.load(), initial = game.save(4); game.tick(1000); assert.equal(game.save(4), initial);
+  const game = f.load(), initial = game.save(4); game.tick(4000); assert.equal(game.save(4), initial);
   game.dispatch({ type: 'advance-day' }); const after = game.getSnapshot();
   assert.deepEqual(after.traffic, snapshotTraffic(t)); assert.equal(after.traffic.records[0][2], 21);
   assert.deepEqual(after.scenario.cells[worldIndex(21, 20)], expected.scenario.cells[worldIndex(21, 20)]);
   assert.deepEqual(parsed(game).runtime.random.visual, random.snapshot().visual);
-  game.dispatch({ type: 'set-paused', paused: false }); game.tick(0.375);
+  game.dispatch({ type: 'set-paused', paused: false }); game.tick(1.5);
   const copy = GameSimulation.load(game.save(4), f.crops).simulation;
   for (let day = 0; day < 35; day++) for (const g of [game, copy]) g.dispatch({ type: 'advance-day' });
   assert.deepEqual(parsed(game), parsed(copy));
@@ -65,7 +65,7 @@ test('weekly spawning uses current town coordinates, heading0 and the first free
 test('traffic collision follows the animal phase, preserves breeding, emits both source smack requests and never replays on restore', () => {
   const moving = trafficFixture(true); moving.state.dayTicks = 0; moving.state.animalFrame.lastMoveTick = 0;
   const departing = moving.load(), silent: unknown[] = []; departing.subscribeEvents(e => silent.push(e));
-  departing.dispatch({ type: 'set-paused', paused: false }); departing.tick(62.5); // One tick at16 ticks/day.
+  departing.dispatch({ type: 'set-paused', paused: false }); departing.tick(250); // One tick at16 ticks/day.
   const escaped = departing.getSnapshot();
   assert.deepEqual([escaped.scenario.animals[1].x, escaped.scenario.animals[1].y, escaped.scenario.animals[1].flags], [20, 19, 0x22]);
   assert.equal(escaped.traffic.records[0][0], 0x83); assert.equal(escaped.traffic.records[0][2], 21);

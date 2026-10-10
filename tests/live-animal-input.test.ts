@@ -17,17 +17,17 @@ test('live pointer input follows source distance/direction, stays external to ch
     assert.throws(() => game.dispatch({ type: 'set-map-pointer', pointer: p }), /pointer/);
   const restored = GameSimulation.load(before, f.crops).simulation;
   restored.dispatch({ type: 'set-map-pointer', pointer: { x: 9, y: 10 } });
-  for (const g of [game, restored]) { g.dispatch({ type: 'set-paused', paused: false }); g.tick(16); }
+  for (const g of [game, restored]) { g.dispatch({ type: 'set-paused', paused: false }); g.tick(64); }
   assert.deepEqual([game.getSnapshot().scenario.animals[1].x, game.getSnapshot().scenario.animals[1].y], [11, 10]);
   assert.equal(game.save(4), restored.save(4));
   game.dispatch({ type: 'set-map-pointer', pointer: null });
   const coldInput = GameSimulation.load(game.save(4), f.crops).simulation;
-  for (let i = 0; i < 4; i++) { game.tick(16); coldInput.tick(16); }
+  for (let i = 0; i < 4; i++) { game.tick(64); coldInput.tick(64); }
   assert.equal(game.save(4), coldInput.save(4));
   // Resource seeking keeps priority over avoidance.
   animal.bytes[14] = 4; const thirsty = f.load();
   thirsty.dispatch({ type: 'set-map-pointer', pointer: { x: 11, y: 10 } });
-  thirsty.dispatch({ type: 'set-paused', paused: false }); thirsty.tick(16);
+  thirsty.dispatch({ type: 'set-paused', paused: false }); thirsty.tick(64);
   assert.equal(thirsty.getSnapshot().scenario.animals[1].x, 11);
 });
 
@@ -41,10 +41,10 @@ test('live collision and weekly vocal events preserve source filenames/RNG, deta
     const game = f.load(), muted = f.load(), seen: GameEvent[] = [], second: GameEvent[] = [];
     const unsubscribe = game.subscribeEvents(event => { seen.push({ ...event }); if (event.type === 'sound') event.sound = 'boos'; });
     game.subscribeEvents(event => second.push(event));
-    for (const g of [game, muted]) { g.dispatch({ type: 'set-paused', paused: false }); g.tick(16); }
+    for (const g of [game, muted]) { g.dispatch({ type: 'set-paused', paused: false }); g.tick(64); }
     const sound = ['horse1', 'cow1', 'pig', 'sheep1'][type - 160];
     assert.deepEqual(seen, [{ type: 'sound', sound }]); assert.deepEqual(second, seen);
-    assert.equal(game.save(4), muted.save(4)); unsubscribe(); game.tick(16); muted.tick(16);
+    assert.equal(game.save(4), muted.save(4)); unsubscribe(); game.tick(64); muted.tick(64);
     assert.equal(game.save(4), muted.save(4)); assert.equal(second.length, 1);
   }
   // A16-tick day keeps weekly vocals before the first animal frame on that tick.

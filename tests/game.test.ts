@@ -25,7 +25,7 @@ test('treatment commands own detached chemical stock and complete with determini
       game.dispatch({ type: 'set-paused', paused: false });
     }
     const view = a.getSnapshot(); view.scenario.chemicals[1].bytes.fill(255); view.scenario.chemicalDefinitions[0].count = 500;
-    a.tick(12000); for (let n = 0; n < 120; n++) b.tick(100);
+    a.tick(48000); for (let n = 0; n < 120; n++) b.tick(400);
     assert.deepEqual(a.getSnapshot().scenario, b.getSnapshot().scenario);
     assert.deepEqual(a.getSnapshot().weather, b.getSnapshot().weather);
     assert.equal(a.getSnapshot().scenario.fields[1].state, 4);
@@ -46,7 +46,7 @@ test('fertilizer makes a newly purchased original plot produce a valuable stored
   assert.deepEqual(game.getSnapshot().lastTreatmentResult,
     { ok: true, source: 'purchased', cost: 275, fieldSlot: result.slot, treatment: 'fertilizer' });
   const ordered = game.getSnapshot();
-  game.tick(3000); assert.equal(game.getSnapshot(), ordered); // Paused work stays paused.
+  game.tick(12000); assert.equal(game.getSnapshot(), ordered); // Paused work stays paused.
   for (let day = 2; day < 84; day++) game.dispatch({ type: 'advance-day' });
   const grown = game.getSnapshot();
   assert.equal(grown.scenario.fields[result.slot].state, 4);
@@ -147,7 +147,7 @@ test('simulation owns game state, publishes stable detached snapshots, and pause
   input.scenario.buildings[1].flags = 0; initial.scenario.buildings[1].flags = 0;
   input.scenario.buildingDefinitions[0].bytes[8] = 0; initial.scenario.buildingDefinitions[0].bytes[8] = 0;
   input.scenario.animals[1].flags = 0x20; initial.scenario.animals[1].flags = 0x20;
-  simulation.tick(5000); assert.equal(notifications, 0);
+  simulation.tick(20000); assert.equal(notifications, 0);
   simulation.dispatch({ type: 'set-paused', paused: false });
   assert.equal(simulation.getSnapshot().scenario.farm.cash, cash);
   assert.equal(simulation.getSnapshot().scenario.fields[1].bytes[34], 0);
@@ -156,12 +156,12 @@ test('simulation owns game state, publishes stable detached snapshots, and pause
   assert.equal(simulation.getSnapshot().scenario.buildings[1].flags, buildingFlags);
   assert.equal(simulation.getSnapshot().scenario.buildingDefinitions[0].width, 1);
   assert.equal(simulation.getSnapshot().scenario.animals[1].active, false);
-  simulation.tick(900); assert.equal(simulation.getSnapshot().daysAdvanced, 0);
-  simulation.tick(100); assert.equal(simulation.getSnapshot().daysAdvanced, 1);
+  simulation.tick(3600); assert.equal(simulation.getSnapshot().daysAdvanced, 0);
+  simulation.tick(400); assert.equal(simulation.getSnapshot().daysAdvanced, 1);
   assert.equal(simulation.getSnapshot().scenario.fields[1].bytes[34], 1); // Sunday-to-Monday month boundary.
   simulation.dispatch({ type: 'set-paused', paused: true });
   const paused = simulation.getSnapshot();
-  simulation.tick(5000); assert.equal(simulation.getSnapshot(), paused);
+  simulation.tick(20000); assert.equal(simulation.getSnapshot(), paused);
   unsubscribe(); const count = notifications;
   simulation.dispatch({ type: 'advance-day' }); assert.equal(notifications, count);
   assert.equal(simulation.getSnapshot().daysAdvanced, 2);
@@ -171,7 +171,7 @@ test('simulation owns game state, publishes stable detached snapshots, and pause
 test('manual and timed schedules produce the same crop, climate and calendar state', () => {
   const input = farm(), manual = new GameSimulation(input.scenario, input.crops), timed = new GameSimulation(input.scenario, input.crops);
   for (let i = 0; i < 100; i++) manual.dispatch({ type: 'advance-day' });
-  timed.dispatch({ type: 'set-paused', paused: false }); timed.tick(100000);
+  timed.dispatch({ type: 'set-paused', paused: false }); timed.tick(400000);
   const a = manual.getSnapshot(), b = timed.getSnapshot();
   assert.deepEqual(a.scenario, b.scenario); assert.deepEqual(a.weather, b.weather);
   assert.equal(a.scenario.fields[1].state, 4); // The original plan has harvested and replanted corn.
@@ -190,7 +190,7 @@ test('player planting commands charge seed, run machinery and grow the crop on a
     assert.equal(ordered.lastPlantResult?.ok, true);
     assert.equal(ordered.scenario.cropDefinitions[0].price, ordered.cropMarketPrices[0]);
     assert.equal(ordered.market.history[0][29], Math.ceil((input.crops[0].rawDefinition[34] | input.crops[0].rawDefinition[35] << 8) * 0.75));
-    game.tick(10000); assert.equal(game.getSnapshot(), ordered); // Paused machinery stays paused too.
+    game.tick(40000); assert.equal(game.getSnapshot(), ordered); // Paused machinery stays paused too.
     for (let n = 0; n < 12; n++) game.dispatch({ type: 'advance-day' });
     const result = game.getSnapshot();
     assert.equal(result.scenario.fields[slot].state, 4, `farm ${id}`);
@@ -212,8 +212,8 @@ test('planting is deterministic across browser frame partitions, and rejects dup
     assert.equal(game.getSnapshot().scenario.farm.cash, cash);
     game.dispatch({ type: 'set-paused', paused: false });
   }
-  a.tick(5000);
-  for (let i = 0; i < 300; i++) b.tick(1000 / 60);
+  a.tick(20000);
+  for (let i = 0; i < 300; i++) b.tick(4000 / 60);
   assert.deepEqual(a.getSnapshot().scenario, b.getSnapshot().scenario);
   assert.deepEqual(a.getSnapshot().cropMarketPrices, b.getSnapshot().cropMarketPrices);
   const detached = a.getSnapshot(); detached.scenario.seedDefinitions[0].count = 999; detached.scenario.inventory[1].bytes.fill(255);
@@ -244,7 +244,7 @@ test('all eight original farms advance a year without invalid terrain or missing
     assert.ok(snapshot.scenario.cells.every(c => Number.isInteger(c.terrain) && c.terrain >= 0 && c.terrain <= 65535));
     assert.ok(Number.isFinite(snapshot.weather.temperature));
   }
-}, 15000);
+}, 30000); //Full eight-farm year matrix; wall duration is not a game-speed assertion.
 
 test('the fifth year-end retains the original temperature-table overread into wind (SF-007)', () => {
   const input = farm();
@@ -270,7 +270,7 @@ test('player harvest commands complete on all original farms, publish inventory 
     assert.deepEqual(game.getSnapshot().lastHarvestResult, { ok: true });
     const ordered = game.getSnapshot();
     assert.equal(ordered.scenario.fields[slot].state, 5);
-    game.tick(10000); assert.equal(game.getSnapshot(), ordered);
+    game.tick(40000); assert.equal(game.getSnapshot(), ordered);
     game.dispatch({ type: 'harvest-field', fieldSlot: slot });
     assert.deepEqual(game.getSnapshot().lastHarvestResult, { ok: false, reason: 'not-growing' });
     assert.deepEqual(game.getSnapshot().scenario, ordered.scenario);
@@ -302,8 +302,8 @@ test('harvesting with growing weather and machinery is deterministic across fram
       game.dispatch({ type: 'harvest-field', fieldSlot: 1 });
       game.dispatch({ type: 'set-paused', paused: false });
     }
-    a.tick(12000);
-    for (let frame = 0; frame < 720; frame++) b.tick(1000 / 60);
+    a.tick(48000);
+    for (let frame = 0; frame < 720; frame++) b.tick(4000 / 60);
     assert.deepEqual(a.getSnapshot().scenario, b.getSnapshot().scenario);
     assert.deepEqual(a.getSnapshot().weather, b.getSnapshot().weather);
     assert.deepEqual(a.getSnapshot().fieldHarvestEstimates, b.getSnapshot().fieldHarvestEstimates);
@@ -359,18 +359,18 @@ test('original corn completes a positive-value plant-grow-harvest-store-sell cyc
 test('speed changes preserve fractional ticks, pause, and single-day manual advancement', () => {
   const input = farm(), game = new GameSimulation(input.scenario, input.crops);
   assert.equal(game.getSnapshot().speed, 1);
-  game.dispatch({ type: 'set-speed', speed: 16 }); game.tick(1000);
+  game.dispatch({ type: 'set-speed', speed: 16 }); game.tick(4000);
   assert.equal(game.getSnapshot().daysAdvanced, 0);
   game.dispatch({ type: 'advance-day' }); assert.equal(game.getSnapshot().daysAdvanced, 1);
   game.dispatch({ type: 'set-speed', speed: 0.25 });
   game.dispatch({ type: 'set-paused', paused: false });
-  game.tick(2001); // Half a day plus part of one logical tick.
+  game.tick(8004); // Half a day plus part of one logical tick.
   assert.equal(game.getSnapshot().daysAdvanced, 1);
-  game.dispatch({ type: 'set-speed', speed: 4 }); game.tick(124.9375);
+  game.dispatch({ type: 'set-speed', speed: 4 }); game.tick(499.75);
   assert.equal(game.getSnapshot().daysAdvanced, 2);
   game.dispatch({ type: 'set-paused', paused: true });
   game.dispatch({ type: 'set-speed', speed: 0.5 });
-  const paused = game.getSnapshot(); game.tick(100000); assert.equal(game.getSnapshot(), paused);
+  const paused = game.getSnapshot(); game.tick(400000); assert.equal(game.getSnapshot(), paused);
   for (const speed of [0, -1, 0.3, 17, NaN, Infinity]) {
     assert.throws(() => game.dispatch({ type: 'set-speed', speed }), /Invalid simulation speed/);
     assert.equal(game.getSnapshot(), paused);
@@ -384,8 +384,8 @@ test('speed scaling keeps machinery and weather identical to the same logical ti
     game.dispatch({ type: 'set-paused', paused: false });
   }
   fast.dispatch({ type: 'set-speed', speed: 16 });
-  for (let frame = 0; frame < 60; frame++) fast.tick(1000 / 60);
-  normal.tick(16000);
+  for (let frame = 0; frame < 60; frame++) fast.tick(4000 / 60);
+  normal.tick(64000);
   assert.deepEqual(fast.getSnapshot().scenario, normal.getSnapshot().scenario);
   assert.deepEqual(fast.getSnapshot().weather, normal.getSnapshot().weather);
   assert.equal(fast.getSnapshot().daysAdvanced, 16);

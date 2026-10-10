@@ -31,7 +31,7 @@ test('purchased pumps drive original ditches and refresh field water then status
   const { scenario, crops } = fixture(), game = new GameSimulation(scenario, crops);
   game.dispatch({ type: 'build', buildingType: 70, x: 10, y: 10 }); assert.ok(game.getSnapshot().lastBuildingResult?.ok);
   assert.deepEqual(Array.from(game.getSnapshot().scenario.irrigation.sources.slice(0, 3)), [10, 10, 64]);
-  game.dispatch({ type: 'set-paused', paused: false }); game.tick(3);
+  game.dispatch({ type: 'set-paused', paused: false }); game.tick(12);
   let s = game.getSnapshot(); assert.equal(s.scenario.irrigation.phase, 1); assert.equal(s.scenario.irrigation.active, true);
   assert.deepEqual(s.scenario.irrigation.flow, [{ x: 14, y: 10, strength: 60 }]);
   assert.equal(s.scenario.fields[1].bytes[51], 0); assert.equal(s.scenario.fields[1].bytes[28], 1);
@@ -39,15 +39,15 @@ test('purchased pumps drive original ditches and refresh field water then status
   // Exposed snapshots own neither source registry nor queued packet objects.
   s.scenario.irrigation.sources.fill(0); s.scenario.irrigation.flow[0].strength = 1;
   assert.equal(game.save(4), text);
-  for (const sim of [game, restored]) sim.tick(6);
+  for (const sim of [game, restored]) sim.tick(24);
   assert.deepEqual(JSON.parse(game.save(4)), JSON.parse(restored.save(4)));
   s = game.getSnapshot(); assert.equal(s.scenario.irrigation.active, false);
   assert.equal(s.scenario.fields[1].bytes[51], 9); assert.equal(s.scenario.fields[1].bytes[28], 1); // Wet completion refreshes water only.
-  for (const sim of [game, restored]) sim.tick(3);
+  for (const sim of [game, restored]) sim.tick(12);
   assert.deepEqual(JSON.parse(game.save(4)), JSON.parse(restored.save(4)));
   s = game.getSnapshot(); assert.equal(s.scenario.irrigation.phase, 0);
   assert.equal(s.scenario.fields[1].bytes[51], 9); assert.equal(s.scenario.fields[1].bytes[28], 200); // Before dry traversal, status copies nutrient29.
-  game.dispatch({ type: 'set-paused', paused: true }); const paused = game.save(4); game.tick(10000); assert.equal(game.save(4), paused);
+  game.dispatch({ type: 'set-paused', paused: true }); const paused = game.save(4); game.tick(40000); assert.equal(game.save(4), paused);
 });
 
 test('special building purchases preserve source capacity, pump ownership exception and masked windmill pixels', () => {
@@ -104,16 +104,16 @@ test('player-dug ditches, road crossings and valves supply a field and preserve 
   let s = game.getSnapshot(); assert.equal(s.scenario.cells[worldIndex(15, 10)].terrain & 0x7ff, 123);
   assert.equal(s.scenario.farm.cash, before.scenario.farm.cash - 1000 - 8 * 80 - 40 - 35);
   assert.equal(s.finances.annual.otherExpenses, before.finances.annual.otherExpenses + 715);
-  game.dispatch({ type: 'set-paused', paused: false }); game.tick(3);
+  game.dispatch({ type: 'set-paused', paused: false }); game.tick(12);
   const saved = game.save(4), restored = GameSimulation.load(saved, crops).simulation;
   assert.equal(restored.getSnapshot().lastIrrigationResult, null); // Presentation feedback is not game state.
-  for (const sim of [game, restored]) sim.tick(6);
+  for (const sim of [game, restored]) sim.tick(24);
   assert.deepEqual(JSON.parse(game.save(4)), JSON.parse(restored.save(4)));
   s = game.getSnapshot(); assert.equal(s.scenario.cells[worldIndex(16, 10)].terrain & 0x7ff, 88);
   assert.equal(s.scenario.fields[1].bytes[51], 4);
   for (const sim of [game, restored]) {
     sim.dispatch({ type: 'irrigation', tool: 'open-valve', x: 15, y: 10 });
-    sim.tick(36);
+    sim.tick(144);
   }
   assert.deepEqual(JSON.parse(game.save(4)), JSON.parse(restored.save(4)));
   assert.ok(game.getSnapshot().scenario.fields[1].bytes[51] > 4);

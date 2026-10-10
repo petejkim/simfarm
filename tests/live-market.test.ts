@@ -38,7 +38,7 @@ test('manual new-field and replanting commands change only history; failed order
     const after = g.getSnapshot(); assert.ok(newField ? after.lastNewFieldResult?.ok : after.lastPlantResult?.ok);
     assert.equal(after.market.history[0][29], 113); assert.deepEqual(after.cropMarketPrices, before.cropMarketPrices);
     assert.deepEqual(after.scenario.seedDefinitions.map(d => d.price), before.scenario.seedDefinitions.map(d => d.price));
-    const checkpoint = g.save(4); g.tick(5000); assert.equal(g.save(4), checkpoint);
+    const checkpoint = g.save(4); g.tick(20000); assert.equal(g.save(4), checkpoint);
     g.dispatch({ type: 'plant-field', fieldSlot: newField ? (after.lastNewFieldResult as { slot: number }).slot : 1, cropSlot: 0 });
     assert.equal(g.save(4), checkpoint);
   }
@@ -130,7 +130,7 @@ test('v15 generated migration retains existing histories/mode without startup re
   for (const rawBC72 of [0, 12, 13, 127, 128, 255]) {
     const s = readNativeSave(valid).state; s.market.rawBC72 = rawBC72;
     const a = GameSimulation.load(writeNativeSave(s, null), newFarmAssets.crops).simulation;
-    a.dispatch({ type: 'set-disasters-enabled', enabled: false }); a.dispatch({ type: 'set-paused', paused: false }); a.tick(123.456);
+    a.dispatch({ type: 'set-disasters-enabled', enabled: false }); a.dispatch({ type: 'set-paused', paused: false }); a.tick(493.824);
     const b = GameSimulation.load(a.save(null), newFarmAssets.crops).simulation;
     for (let day = 0; day < 35; day++) for (const game of [a, b]) game.dispatch({ type: 'advance-day' });
     assert.deepEqual(parsed(a, null), parsed(b, null));

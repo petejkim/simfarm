@@ -17,16 +17,16 @@ test('live locusts damage a real field, checkpoint every clock/RNG phase, pause,
   const f = disasterFixture(), game = f.load(), events: GameEvent[] = []; game.subscribeEvents(e => events.push(e));
   game.dispatch({ type: 'start-disaster', kind: 'swarm' });
   assert.deepEqual(events, [{ type: 'sound', sound: 'swarm' }]); assert.equal(game.getSnapshot().disasters.flags, 32);
-  const before = game.save(4); game.tick(5000); assert.equal(game.save(4), before);
-  game.dispatch({ type: 'set-paused', paused: false }); game.tick(320.125);
+  const before = game.save(4); game.tick(20000); assert.equal(game.save(4), before);
+  game.dispatch({ type: 'set-paused', paused: false }); game.tick(1280.5);
   assert.ok(loss(game.getSnapshot().scenario.fields[1].bytes) >= 1024);
   const checkpoint = game.save(4), restored = GameSimulation.load(checkpoint, f.crops).simulation;
   assert.equal(saved(game).version, 23); const restoredEvents: GameEvent[] = []; restored.subscribeEvents(e => restoredEvents.push(e));
   game.getSnapshot().disasters.swarm.x = 90; game.getSnapshot().disasterNotices.push('changed'); assert.equal(game.save(4), checkpoint);
-  game.tick(300.25); restored.tick(100); restored.tick(200.25); assert.deepEqual(saved(game), saved(restored));
+  game.tick(1201); restored.tick(400); restored.tick(801); assert.deepEqual(saved(game), saved(restored));
   for (const g of [game, restored]) {
     g.dispatch({ type: 'set-disasters-enabled', enabled: false }); assert.equal(g.getSnapshot().disasters.flags & 32, 32);
-    g.dispatch({ type: 'set-speed', speed: 4 }); g.tick(2500);
+    g.dispatch({ type: 'set-speed', speed: 4 }); g.tick(10000);
   }
   assert.equal(game.getSnapshot().disasters.flags & 32, 0); assert.deepEqual(saved(game), saved(restored));
   assert.equal(restoredEvents.filter(e => e.type === 'sound' && e.sound === 'swarm').length, 0);
@@ -84,10 +84,10 @@ test('tornado continues during modal flight and feeds the original turbulence/cr
   const state = readNativeSave(game.save(4)).state; Object.assign(state.disasters.tornado, { x: 60, y: 60 });
   const g = GameSimulation.load(writeNativeSave(state, 4), f.crops).simulation, before = g.save(4), days = g.getSnapshot().daysAdvanced;
   g.dispatch({ type: 'start-disaster', kind: 'swarm' }); g.dispatch({ type: 'set-disasters-enabled', enabled: false }); assert.equal(g.save(4), before);
-  g.tick(400); assert.ok(g.getSnapshot().disasters.tornado.lastTick > 0); assert.equal(g.getSnapshot().daysAdvanced, days);
+  g.tick(1600); assert.ok(g.getSnapshot().disasters.tornado.lastTick > 0); assert.equal(g.getSnapshot().daysAdvanced, days);
   const near = readNativeSave(g.save(4)).state, p = flightPosition(near.aircraftFlight!);
   Object.assign(near.disasters.tornado, { x: p.x, y: p.y });
-  const crash = GameSimulation.load(writeNativeSave(near, 4), f.crops).simulation; crash.tick(125);
+  const crash = GameSimulation.load(writeNativeSave(near, 4), f.crops).simulation; crash.tick(500);
   assert.equal(crash.getSnapshot().lastFlightEnd?.cause, 'tornado'); assert.equal(crash.getSnapshot().aircraftFlight, null);
   assert.equal(crash.getSnapshot().daysAdvanced, days); GameSimulation.load(crash.save(4), f.crops);
 });

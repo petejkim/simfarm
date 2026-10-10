@@ -79,7 +79,7 @@ test('unpayable live default freezes the entire frame, preserves home and debt, 
     boundary(s, 0); s.scenario.farm.cash = 0;
     Object.assign(s.runtime.finances.debt, { balanceDue: 0xffffffff, balanceCountdown: 1 });
   });
-  game.dispatch({ type: 'set-paused', paused: false }); game.tick(30000);
+  game.dispatch({ type: 'set-paused', paused: false }); game.tick(120000);
   const state = game.getSnapshot(), f = state.finances;
   assert.deepEqual(f.defaultDecision, { status: 'pending', originalExitCode: 0 }); assert.equal(state.paused, true);
   assert.equal(state.daysAdvanced, 1); assert.equal(f.debt.balanceDue, 0xffffffff);
@@ -87,7 +87,7 @@ test('unpayable live default freezes the entire frame, preserves home and debt, 
   const saved = game.save(4), loaded = GameSimulation.load(saved, crops).simulation;
   for (const g of [game, loaded]) {
     for (const command of [{ type: 'advance-day' }, { type: 'set-paused', paused: false }, { type: 'borrow', amount: 100 }, { type: 'repay-loan' }] as const) g.dispatch(command);
-    g.tick(30000); assert.deepEqual(JSON.parse(g.save(4)), JSON.parse(saved));
+    g.tick(120000); assert.deepEqual(JSON.parse(g.save(4)), JSON.parse(saved));
   }
   loaded.dispatch({ type: 'resolve-default', choice: 'exit' });
   assert.deepEqual(loaded.getSnapshot().finances.defaultDecision, { status: 'exit', originalExitCode: 1 });

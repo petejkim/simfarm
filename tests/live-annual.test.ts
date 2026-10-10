@@ -52,7 +52,7 @@ test('annual tax and reservation precede a saved modal choice; choice resumes re
   const expected = new FarmRandom(saved.runtime.random), district = Math.min(3, (expected.nextSimulation() & 3) + 1), rate = (expected.nextSimulation() & 7) + 8;
   pending.pendingTown!.site.regionX = 99;
   for (const command of [{ type: 'advance-day' }, { type: 'borrow', amount: 1 }, { type: 'set-speed', speed: 16 }, { type: 'set-paused', paused: false }] as const) game.dispatch(command);
-  game.tick(100000); assert.equal(game.save(4), text);
+  game.tick(400000); assert.equal(game.save(4), text);
   for (const sim of [game, restored]) sim.dispatch({ type: 'choose-town', choice: 'commercial' });
   assert.equal(restored.save(4), game.save(4));
   const after = game.getSnapshot(); assert.equal(after.pendingTown, null); assert.equal(after.paused, true);
@@ -75,7 +75,7 @@ test('annual tax and reservation precede a saved modal choice; choice resumes re
 
 test('failed recreation and random recreation keep the reserved plot pending; running sessions drop the interrupted frame and resume after a valid choice', () => {
   const { game, crops } = fixture(s => { s.runtime.finances.town.recreationCount = 7; s.runtime.random.bounded = 6; });
-  game.dispatch({ type: 'set-paused', paused: false }); game.tick(100000);
+  game.dispatch({ type: 'set-paused', paused: false }); game.tick(400000);
   assert.ok(game.getSnapshot().pendingTown?.resumeRunning); assert.equal(game.getSnapshot().daysAdvanced, 0);
   const text = game.save(4);
   game.dispatch({ type: 'choose-town', choice: 'recreational' });
@@ -86,7 +86,7 @@ test('failed recreation and random recreation keep the reserved plot pending; ru
   const restored = GameSimulation.load(game.save(4), crops).simulation;
   for (const sim of [game, restored]) sim.dispatch({ type: 'choose-town', choice: 'airport' });
   assert.equal(restored.save(4), game.save(4)); assert.equal(game.getSnapshot().daysAdvanced, 1);
-  assert.equal(game.getSnapshot().paused, false); game.tick(1000); assert.equal(game.getSnapshot().daysAdvanced, 2);
+  assert.equal(game.getSnapshot().paused, false); game.tick(4000); assert.equal(game.getSnapshot().daysAdvanced, 2);
 });
 
 test('failed annual tax creates penalties and a three-month countdown without replaying a retry or skipping reset', () => {

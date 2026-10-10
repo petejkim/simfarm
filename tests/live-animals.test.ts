@@ -8,9 +8,9 @@ import { livestockFixture } from './support/livestock';
 
 test('live clock moves animals after irrigation, consumes original supplies, pauses and resumes exact native state', () => {
   const f = livestockFixture(), game = f.load();
-  game.tick(16); assert.equal(game.getSnapshot().scenario.animals[1].x, 10);
-  game.dispatch({ type: 'set-paused', paused: false }); game.tick(15); assert.equal(game.getSnapshot().scenario.animals[1].x, 10);
-  game.tick(1); const snapshot = game.getSnapshot(); assert.equal(snapshot.scenario.animals[1].x, 11);
+  game.tick(64); assert.equal(game.getSnapshot().scenario.animals[1].x, 10);
+  game.dispatch({ type: 'set-paused', paused: false }); game.tick(60); assert.equal(game.getSnapshot().scenario.animals[1].x, 10);
+  game.tick(4); const snapshot = game.getSnapshot(); assert.equal(snapshot.scenario.animals[1].x, 11);
   assert.equal(snapshot.scenario.animals[1].y, 10); assert.equal(snapshot.scenario.animals[1].bytes[14], 0);
   assert.equal(snapshot.scenario.inventory[1].quantity, 508); assert.equal(snapshot.animalFrame.lastMoveTick, 16);
   assert.equal(snapshot.scenario.cells[worldIndex(10, 10)].terrain, 15);
@@ -18,9 +18,9 @@ test('live clock moves animals after irrigation, consumes original supplies, pau
   const saved = game.save(4), restored = GameSimulation.load(saved, f.crops).simulation;
   snapshot.animalFrame.herd.fill(255); snapshot.scenario.animals[1].bytes[14] = 255;
   assert.equal(game.save(4), saved); // React snapshots cannot change canonical records or cache.
-  for (const duration of [305, 17, 678, 1049]) { game.tick(duration); restored.tick(duration); }
+  for (const duration of [305, 17, 678, 1049]) { game.tick(4 * duration); restored.tick(4 * duration); }
   assert.deepEqual(JSON.parse(game.save(4)), JSON.parse(restored.save(4)));
-  game.dispatch({ type: 'set-paused', paused: true }); const paused = game.save(4); game.tick(10000); assert.equal(game.save(4), paused);
+  game.dispatch({ type: 'set-paused', paused: true }); const paused = game.save(4); game.tick(40000); assert.equal(game.save(4), paused);
 });
 
 test('odd-day needs use the prior signed display temperature before daily weather and animal frame work', () => {
@@ -61,14 +61,14 @@ test('all original farms preserve live animal motion and generators across saved
   for (let id = 0; id < 8; id++) {
     const world = readScenario(source(`SCEN${id}.SSM`)); world.farm.dayDelayTicks = 999;
     const crops = world.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
-    const game = new GameSimulation(world, crops); game.dispatch({ type: 'set-paused', paused: false }); game.tick(333);
+    const game = new GameSimulation(world, crops); game.dispatch({ type: 'set-paused', paused: false }); game.tick(1332);
     const copy = GameSimulation.load(game.save(id), crops).simulation;
-    for (const duration of [17, 321, 100]) { game.tick(duration); copy.tick(duration); }
+    for (const duration of [17, 321, 100]) { game.tick(4 * duration); copy.tick(4 * duration); }
     assert.deepEqual(JSON.parse(game.save(id)), JSON.parse(copy.save(id)));
   }
   const f = livestockFixture(); f.state.scenario.inventory[1].bytes[10] &= ~32;
   f.state.scenario.cells[worldIndex(12, 10)].terrain = 15; f.state.scenario.animals[1].bytes[14] = 255;
-  const game = f.load(); game.dispatch({ type: 'set-paused', paused: false }); game.tick(16);
+  const game = f.load(); game.dispatch({ type: 'set-paused', paused: false }); game.tick(64);
   assert.equal(game.getSnapshot().scenario.animals[1].active, false);
   assert.deepEqual(game.getSnapshot().animalNotices, [{ slot: 1, id: 58, animalType: 161 }]);
   assert.deepEqual(GameSimulation.load(game.save(4), f.crops).simulation.getSnapshot().animalNotices, []);

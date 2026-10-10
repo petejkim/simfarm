@@ -10,7 +10,7 @@ const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${na
 /** A source-backed animal with a visible full trough. Field/equipment records
  * are inactive so movement/consumption assertions have no unrelated traffic.
  * The synthetic period is in ticks, not the source delay word. The default
- * gives one logical tick/ms; short periods align weekly work with animal frames. */
+ * gives one logical tick per4ms; short periods align weekly work with animal frames. */
 export function livestockFixture(ticksPerDay = 1000) {
   const world = readScenario(source('SCEN4.SSM'));
   const crops = world.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));

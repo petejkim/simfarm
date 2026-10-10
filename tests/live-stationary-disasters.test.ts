@@ -22,7 +22,7 @@ test('live frost cancels locusts, posts original loss/prices/sound and resumes d
   assert.deepEqual(events,[{type:'sound',sound:'swarm'},{type:'sound',sound:'wind'}]);assert.deepEqual(saved(g).runtime.random,rng);
   const checkpoint=g.save(4),result=s.lastDisasterResult;
   if(result?.ok&&'fields'in result)result.fields.push(97);s.disasters.flags=0;assert.equal(g.save(4),checkpoint);
-  g.tick(10000);assert.equal(g.save(4),checkpoint);
+  g.tick(40000);assert.equal(g.save(4),checkpoint);
   const copy=GameSimulation.load(checkpoint,f.crops).simulation,replayed:GameEvent[]=[];copy.subscribeEvents(e=>replayed.push(e));
   assert.equal(copy.getSnapshot().lastDisasterResult,null);assert.equal(replayed.length,0);
   for(const game of [g,copy]){game.dispatch({type:'set-disasters-enabled',enabled:false});game.dispatch({type:'advance-day'});}
@@ -40,7 +40,7 @@ test('crop circles request only original alien MIDI, preserve seven tiles throug
   assert.deepEqual(events,[{type:'music',track:'alien'}]);
   const checkpoint=g.save(4),copy=GameSimulation.load(checkpoint,f.crops).simulation;
   for(const game of [g,copy]){
-    game.dispatch({type:'set-disasters-enabled',enabled:false});game.dispatch({type:'set-paused',paused:false});game.tick(1000 / 64);
+    game.dispatch({type:'set-disasters-enabled',enabled:false});game.dispatch({type:'set-paused',paused:false});game.tick(4000 / 64);
     assert.equal(game.getSnapshot().disasters.flags&64,0);
     for(const [dx,dy,t]of [[2,4,211],[3,4,212],[4,4,213],[5,4,214],[6,4,215],[4,3,210],[4,5,216]])assert.equal(game.getSnapshot().scenario.cells[worldIndex(20+dx,20+dy)].terrain&2047,t);
     for(let day=0;day<35;day++)game.dispatch({type:'advance-day'});
@@ -65,7 +65,7 @@ test('disabled and ineligible starts preserve source eligibility/RNG while toxic
 test('frost stop boundaries run both daily and per frame, with original tornado-gated dispatcher during flight',()=>{
   for(const [anomaly,immediate]of [[0,true],[1,false],[-1,false],[2,false]] as const){
     const f=disasterFixture();f.state.disasters.flags=16;f.state.weather.temperatureAnomaly=anomaly;
-    const g=f.load();g.dispatch({type:'set-paused',paused:false});g.tick(1000 / 64);
+    const g=f.load();g.dispatch({type:'set-paused',paused:false});g.tick(4000 / 64);
     assert.equal(Boolean(g.getSnapshot().disasters.flags&16),!immediate);
     g.dispatch({type:'advance-day'});assert.equal(g.getSnapshot().disasters.flags&16,0);
   }
@@ -74,7 +74,7 @@ test('frost stop boundaries run both daily and per frame, with original tornado-
   const state=readNativeSave(base.save(4)).state;state.weather.temperatureAnomaly=0;
   for(const tornado of [false,true]){
     state.disasters.flags=16|64|(tornado?1:0);Object.assign(state.disasters.tornado,{x:60,y:60});
-    const g=GameSimulation.load(writeNativeSave(state,4),f.crops).simulation;g.tick(400);
+    const g=GameSimulation.load(writeNativeSave(state,4),f.crops).simulation;g.tick(1600);
     assert.equal(g.getSnapshot().disasters.flags&80,tornado?0:80);assert.equal(g.getSnapshot().daysAdvanced,state.daysAdvanced);
   }
 });

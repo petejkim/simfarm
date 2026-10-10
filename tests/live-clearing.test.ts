@@ -23,7 +23,7 @@ function fixture(field = false) {
   const tile = () => terrainTile(game.getSnapshot().scenario.cells[worldIndex(x, y)]);
   return { state, game, crops, tile, x, y };
 }
-const ticks = (game: GameSimulation, count: number) => game.tick(count * 1000 / 257);
+const ticks = (game: GameSimulation, count: number) => game.tick(count * 4000 / 257);
 
 test('live clearing uses the original animation word and wrapped sixteen-tick threshold; paused farms preserve pending work', () => {
   const exe = source('SIMFARM.EXE');
@@ -78,11 +78,11 @@ test('saved terminal and town modal decisions freeze clearing as well as the res
   const { state, crops } = fixture();
   state.finances.defaultDecision = { status: 'pending', originalExitCode: 0 };
   const stopped = GameSimulation.load(writeNativeSave(state, 4), crops).simulation, text = stopped.save(4);
-  stopped.tick(10000); stopped.dispatch({ type: 'advance-day' }); assert.equal(stopped.save(4), text);
+  stopped.tick(40000); stopped.dispatch({ type: 'advance-day' }); assert.equal(stopped.save(4), text);
   state.finances.defaultDecision = null;
   Object.assign(state.scenario.farm.calendar, { day: 0, week: 0, month: 0 });
   state.scenario.farm.salesAccumulator = 0;
   state.pendingTown = { phase: 'annual-reset', resumeRunning: false, site: { ...state.finances.town.activeSite } };
   const pending = GameSimulation.load(writeNativeSave(state, 4), crops).simulation, paused = pending.save(4);
-  pending.tick(10000); pending.dispatch({ type: 'advance-day' }); assert.equal(pending.save(4), paused);
+  pending.tick(40000); pending.dispatch({ type: 'advance-day' }); assert.equal(pending.save(4), paused);
 });

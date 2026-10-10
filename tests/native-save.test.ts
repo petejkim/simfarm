@@ -23,14 +23,14 @@ test('native saves retain unknown source/record bytes, all eight farms and detac
     scenario.fields[97].bytes[67] = 173; // Unknown inactive byte must survive, including after startup.
     const game = new GameSimulation(scenario, crops);
     game.dispatch({ type: 'set-speed', speed: 0.5 });
-    game.dispatch({ type: 'set-paused', paused: false }); game.tick(273.125);
+    game.dispatch({ type: 'set-paused', paused: false }); game.tick(1092.5);
     const text = game.save(id), restored = GameSimulation.load(text, crops);
     assert.equal(restored.scenarioId, id); same(game, restored.simulation, id);
     assert.deepEqual(restored.simulation.getSnapshot().scenario.sourceBytes, Uint8Array.from(source(`SCEN${id}.SSM`)));
     const view = restored.simulation.getSnapshot();
     view.scenario.sourceBytes!.fill(0); view.scenario.fields[97].bytes.fill(0); view.weather.forecast.fill(4);
     same(game, restored.simulation, id);
-    game.tick(18000.125); restored.simulation.tick(18000.125); same(game, restored.simulation, id);
+    game.tick(72000.5); restored.simulation.tick(72000.5); same(game, restored.simulation, id);
     assert.equal(restored.simulation.getSnapshot().scenario.fields[97].bytes[67], 173);
   }
 }, 15000);
@@ -43,16 +43,16 @@ test('save midway through new-field work and treatments continues through valuab
   original.dispatch({ type: 'set-auto-clear', enabled: true });
   original.dispatch({ type: 'create-field', x: 0, y: 16, cropSlot: 0 });
   const result = original.getSnapshot().lastNewFieldResult; assert.ok(result?.ok);
-  original.dispatch({ type: 'set-paused', paused: false }); original.tick(12.345);
+  original.dispatch({ type: 'set-paused', paused: false }); original.tick(49.38);
   let restored = GameSimulation.load(original.save(4), crops).simulation;
   // Sample every stage, including wrapped border coordinates on the new edge field.
   for (let n = 0; n < 20; n++) {
-    original.tick(100); restored.tick(100); same(original, restored, 4);
+    original.tick(400); restored.tick(400); same(original, restored, 4);
     restored = GameSimulation.load(restored.save(4), crops).simulation;
   }
   for (const game of [original, restored]) game.dispatch({ type: 'treat-field', fieldSlot: result.slot, treatment: 'fertilizer' });
   for (let n = 0; n < 12; n++) {
-    original.tick(250); restored.tick(250); same(original, restored, 4);
+    original.tick(1000); restored.tick(1000); same(original, restored, 4);
     restored = GameSimulation.load(restored.save(4), crops).simulation;
   }
   for (const game of [original, restored]) {
@@ -77,9 +77,9 @@ test('all four treatments, tick rollover and fifth-year weather retain exact con
     scenario.farm.timerTicks = 65530; scenario.farm.animationTicks = 65530;
     const game = new GameSimulation(scenario, crops);
     game.dispatch({ type: 'treat-field', fieldSlot: 1, treatment });
-    game.dispatch({ type: 'set-paused', paused: false }); game.tick(250.125);
+    game.dispatch({ type: 'set-paused', paused: false }); game.tick(1000.5);
     const restored = GameSimulation.load(game.save(0), crops).simulation;
-    game.tick(12000); restored.tick(12000); same(game, restored, 0);
+    game.tick(48000); restored.tick(48000); same(game, restored, 0);
   }
   const { scenario, crops } = farm(4), game = new GameSimulation(scenario, crops);
   // Native checkpoint at the otherwise slow-to-reach fifth-year boundary, with a partial day.
@@ -89,7 +89,7 @@ test('all four treatments, tick rollover and fifth-year weather retain exact con
   save.runtime.dayTicks = 3; save.runtime.elapsed = 0.75; save.runtime.paused = false;
   const a = GameSimulation.load(JSON.stringify(save), crops).simulation;
   const b = GameSimulation.load(a.save(4), crops).simulation;
-  a.tick(8000.125); b.tick(8000.125); same(a, b, 4);
+  a.tick(32000.5); b.tick(32000.5); same(a, b, 4);
   assert.ok(a.getSnapshot().pendingTown);
   for (const sim of [a, b]) sim.dispatch({ type: 'choose-town', choice: 'residential' });
   same(a, b, 4);
@@ -155,7 +155,7 @@ test('harvest truck storage indices survive checkpoints during delivery and the 
   game.dispatch({ type: 'set-paused', paused: false });
   let delivering = false;
   for (let tick = 0; tick < 2048; tick++) {
-    game.tick(1000 / (scenario.farm.dayDelayTicks + 1));
+    game.tick(4000 / (scenario.farm.dayDelayTicks + 1));
     const field = game.getSnapshot().scenario.fields[1];
     if (field.state === 5 && field.step === 15) { delivering = true; break; }
   }
@@ -166,12 +166,12 @@ test('harvest truck storage indices survive checkpoints during delivery and the 
   same(game, restored, 1);
   let returned = false;
   for (let tick = 0; tick < 2048; tick++) {
-    game.tick(1000 / (scenario.farm.dayDelayTicks + 1)); restored.tick(1000 / (scenario.farm.dayDelayTicks + 1));
+    game.tick(4000 / (scenario.farm.dayDelayTicks + 1)); restored.tick(4000 / (scenario.farm.dayDelayTicks + 1));
     const next = restored.getSnapshot().scenario.equipment[truck.slot];
     if (next.flags & 0x200) {
       same(game, restored, 1);
       const returning = GameSimulation.load(restored.save(1), crops).simulation;
-      restored.tick(8000); returning.tick(8000); same(restored, returning, 1); returned = true; break;
+      restored.tick(32000); returning.tick(32000); same(restored, returning, 1); returned = true; break;
     }
   }
   assert.ok(returned);

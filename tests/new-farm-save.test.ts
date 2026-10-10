@@ -44,13 +44,13 @@ test('v17 preserves raw setup bytes, market history, traffic clocks and detached
   state.traffic.records[15].fill(255); state.traffic.records[15][0] &= ~1; state.traffic.delay = 65535; state.traffic.lastTick = 65534;
   state.scenario.fields[97].bytes[67] = 173; state.scenario.irrigation.sources[191] = 207;
   const a = restore(writeNativeSave(state, null));
-  a.dispatch({ type: 'set-disasters-enabled', enabled: false }); a.dispatch({ type: 'set-paused', paused: false }); a.tick(123.456);
+  a.dispatch({ type: 'set-disasters-enabled', enabled: false }); a.dispatch({ type: 'set-paused', paused: false }); a.tick(493.824);
   const text = a.save(null), b = restore(text), events: unknown[] = []; b.subscribeEvents(e => events.push(e));
   assert.ok(parsed(a).runtime.elapsed > 0); assert.ok(parsed(a).runtime.dayTicks > 0);
   const view = b.getSnapshot(); view.newFarm!.raw.ds4468.fill(0); view.market.history[0].fill(0);
   view.traffic.records[0].fill(0); view.newFarm!.provenance.options.climate.precipitation = 0;
   view.scenario.fields[97].bytes[67] = 0; assert.equal(b.save(null), text); assert.deepEqual(events, []);
-  for (let i = 0; i < 35; i++) { a.tick(1000); b.tick(1000); }
+  for (let i = 0; i < 35; i++) { a.tick(4000); b.tick(4000); }
   assert.deepEqual(parsed(a), parsed(b)); assert.deepEqual(b.getSnapshot().newFarm, n);
   assert.equal(b.getSnapshot().scenario.fields[97].bytes[67], 173);
   assert.equal(b.getSnapshot().scenario.irrigation.sources[191], 207);
@@ -106,7 +106,7 @@ test('generated farms plant, grow, harvest into purchased storage and sell with 
   a.dispatch({ type: 'create-field', ...field, cropSlot: 0 }); assert.ok(a.getSnapshot().lastNewFieldResult?.ok);
   view = a.getSnapshot(); const storage = position((x, y) => checkBuildingPlacement(view.scenario, 65, x, y, view.weather.soilMoisture).ok);
   a.dispatch({ type: 'build', ...storage, buildingType: 65 }); assert.ok(a.getSnapshot().lastBuildingResult?.ok);
-  a.dispatch({ type: 'set-paused', paused: false }); a.tick(12.345);
+  a.dispatch({ type: 'set-paused', paused: false }); a.tick(49.38);
   let b = restore(a.save(null));
   let treated = false;
   // Source-paced equipment changes field completion and subsequent RNG timing.

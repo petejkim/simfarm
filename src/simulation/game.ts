@@ -563,13 +563,13 @@ export class GameSimulation {
     this.publish();
   }
 
-  /** Browser pacing only: at1x an advancing calendar takes one second per full
+  /** Native pacing: at1x an advancing calendar takes four seconds per full
    * day. The maximum delay still runs logical ticks but cannot advance a day.
    * Original interrupt frequency/menu timing is not claimed here. */
   tick(milliseconds: number): void {
     if (!Number.isFinite(milliseconds) || milliseconds < 0) throw new Error('Invalid elapsed time');
     if (this.paused) return;
-    this.elapsed += milliseconds * this.speed * (this.scenario.farm.dayDelayTicks + 1) / 1000;
+    this.elapsed += milliseconds * this.speed * (this.scenario.farm.dayDelayTicks + 1) / 4000;
     const ticks = Math.floor(this.elapsed + 1e-9);
     if (!ticks) return;
     this.elapsed = Math.max(0, this.elapsed - ticks);

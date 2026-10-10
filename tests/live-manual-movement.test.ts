@@ -20,7 +20,7 @@ test('live opening and equipment orders preserve full in-transit and in-storage 
   assert.ok(game.getSnapshot().lastEquipmentMoveResult?.ok); assert.deepEqual(events, []);
   const s = game.getSnapshot(); assert.equal(s.scenario.equipment[1].timestamp, s.scenario.farm.timerTicks);
   assert.equal(s.scenario.buildings[1].content(0).slot, 0); assert.equal(s.scenario.farm.cash, cash);
-  game.dispatch({ type: 'set-paused', paused: false }); game.tick(250); game.dispatch({ type: 'set-paused', paused: true });
+  game.dispatch({ type: 'set-paused', paused: false }); game.tick(1000); game.dispatch({ type: 'set-paused', paused: true });
   assert.equal(game.getSnapshot().scenario.equipment[1].flags & 2, 2);
   const saved = game.save(4), copy = GameSimulation.load(saved, f.crops).simulation;
   assert.equal(copy.save(4), saved); assert.equal(copy.getSnapshot().lastEquipmentMoveResult, null);

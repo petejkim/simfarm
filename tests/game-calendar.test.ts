@@ -37,10 +37,10 @@ test('month boundary force-completes work before new orders and pays scheduled t
   assert.equal(ordered.scenario.fields[1].state, 6); assert.equal(ordered.scenario.fields[1].step, 0);
   assert.equal(ordered.scenario.farm.chemicalExpenses, cost);
   assert.deepEqual(ordered.lastScheduleResult, { ok: true });
-  game.dispatch({ type: 'set-paused', paused: false }); game.tick(1000 / (scenario.farm.dayDelayTicks + 1));
+  game.dispatch({ type: 'set-paused', paused: false }); game.tick(4000 / (scenario.farm.dayDelayTicks + 1));
   assert.equal(game.getSnapshot().scenario.fields[1].step, 1);
   assert.equal(game.getSnapshot().scenario.farm.chemicalExpenses, cost + 275);
-  game.tick(1000 / (scenario.farm.dayDelayTicks + 1));
+  game.tick(4000 / (scenario.farm.dayDelayTicks + 1));
   assert.equal(game.getSnapshot().scenario.farm.chemicalExpenses, cost + 275);
 });
 

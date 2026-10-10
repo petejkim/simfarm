@@ -11,7 +11,7 @@ test('purchased water storage collects from a real pumped ditch, refills a dista
   const f = waterStorageFixture(), game = f.load();
   game.dispatch({ type: 'build', buildingType: 72, x: 13, y: 11 }); assert.ok(game.getSnapshot().lastBuildingResult?.ok);
   assert.equal(storedWater(game.getSnapshot().scenario.buildings[2]), 217);
-  const paused = game.save(4); game.tick(5000); assert.equal(game.save(4), paused);
+  const paused = game.save(4); game.tick(20000); assert.equal(game.save(4), paused);
   game.dispatch({ type: 'advance-day' }); let s = game.getSnapshot();
   assert.equal(s.scenario.cells[worldIndex(13, 10)].terrain & 2047, 99);
   assert.equal(storedWater(s.scenario.buildings[2]), 255); assert.equal(s.scenario.inventory[1].quantity, 0);
@@ -54,7 +54,7 @@ test('day-seven collection precedes weekly wear and refill; decisions suspend co
       else { state.pendingTown = null; state.finances.defaultDecision = { status: 'pending', originalExitCode: 0 }; }
       const blocked = GameSimulation.load(writeNativeSave(state, 4), f.crops).simulation, saved = blocked.save(4);
       blocked.dispatch({ type: 'advance-day' }); blocked.dispatch({ type: 'build', buildingType: 72, x: 20, y: 20 });
-      blocked.tick(5000); assert.equal(blocked.save(4), saved);
+      blocked.tick(20000); assert.equal(blocked.save(4), saved);
     }
   }
 });

@@ -42,7 +42,7 @@ test('original import retains runtime history, RNG, weather, traffic and timers 
 });
 
 test('loaded depth one applies source pacing and imported overdue day phase advances and checkpoints exactly', () => {
-  const old = cold(); old.dispatch({ type: 'set-paused', paused: false }); old.tick(50);
+  const old = cold(); old.dispatch({ type: 'set-paused', paused: false }); old.tick(200);
   const bytes = Buffer.from(source('SCEN6.SSM')); bytes[0x21718] = 0; bytes[0x21719] = 1;
   const imported = old.importOriginal(bytes, crops).simulation;
   let s = parsed(imported);

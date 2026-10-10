@@ -17,7 +17,7 @@ async function load(page: Page, name: string, buffer: Buffer) {
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
 }
 
-test('a checkpoint at calendar equality advances on the next tick and slider pacing still advances one full day per second', async ({ page }) => {
+test('a checkpoint at calendar equality advances on the next tick and native1x takes four seconds per full day', async ({ page }) => {
   await start(page);
   const world = readScenario(source('SCEN4.SSM'));
   const crops = world.cropFiles.map(file => readCrop(file.slice(0, -4), source('CROPS/' + file.toUpperCase())));
@@ -29,7 +29,10 @@ test('a checkpoint at calendar equality advances on the next tick and slider pac
   const next = await save(page); expect(next.runtime.daysAdvanced).toBe(checkpoint.runtime.daysAdvanced + 1);
   expect(next.runtime.dayTicks).toBe(0); expect(next.scenario.farm.timerTicks).toBe(501); expect(next.scenario.farm.animationTicks).toBe(601);
   await load(page, 'next.json', Buffer.from(JSON.stringify(next))); expect(await save(page)).toEqual(next);
-  await page.locator('#play-pause').click(); await page.clock.runFor(1100); await page.locator('#play-pause').click();
+  await expect(page.locator('#simulation-speed-value')).toHaveAttribute('title', 'At 1×, one full game day takes four real seconds.');
+  await page.locator('#play-pause').click(); await page.clock.runFor(3000);
+  expect((await save(page)).runtime.daysAdvanced).toBe(next.runtime.daysAdvanced);
+  await page.clock.runFor(1400); await page.locator('#play-pause').click();
   expect((await save(page)).runtime.daysAdvanced).toBe(next.runtime.daysAdvanced + 1);
   await expect(page.locator('#calendar-delay-status')).toHaveCount(0);
 });
@@ -44,7 +47,7 @@ test('maximum original delay is explained on mobile, blocks Next day and retains
   await page.locator('#calendar-delay-status').scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.screenshot({ path: 'artifacts/browser-calendar-maximum-mobile.png', fullPage: false });
-  await page.locator('#play-pause').click(); await page.clock.runFor(50); await page.locator('#play-pause').click();
+  await page.locator('#play-pause').click(); await page.clock.runFor(200); await page.locator('#play-pause').click();
   const after = await save(page); expect(after.runtime.daysAdvanced).toBe(before.runtime.daysAdvanced);
   expect(after.scenario.farm.calendar).toEqual(before.scenario.farm.calendar);
   expect(after.scenario.farm.animationTicks).not.toBe(before.scenario.farm.animationTicks);

@@ -149,7 +149,7 @@ test('time controls advance the simulation, render crop changes, pause, and rese
   expect(after).not.toBe(before);
   await page.locator('#play-pause').click();
   await expect(page.locator('#next-day')).toBeDisabled();
-  await page.clock.runFor(3100);
+  await page.clock.runFor(12400);
   await expect(page.locator('#time-status')).toHaveText('Running · 4 days advanced');
   await page.locator('#play-pause').click();
   await page.clock.runFor(3100);
@@ -188,7 +188,7 @@ test('planting from React buys seed, rents machinery and renders a newly planted
   await page.clock.runFor(1200);
   await expect(page.locator('#plant-progress')).toHaveText('Preparing machinery…');
   await page.locator('#play-pause').click();
-  await page.clock.runFor(4000);
+  await page.clock.runFor(16000);
   await page.locator('#play-pause').click();
   await expect(page.locator('#field-status')).toContainText('Growing');
   await expect(page.locator('#farm-cash')).toHaveText(`$${(40000 - cost - 400).toLocaleString('en-US')}`);
@@ -290,10 +290,10 @@ test('speed slider adjusts running time, stays paused and keeps Next day to one 
   await slider.focus(); await slider.press('Home');
   await expect(page.locator('#simulation-speed-value')).toHaveText('0.25×');
   await page.locator('#play-pause').click();
-  await page.clock.runFor(4100);
+  await page.clock.runFor(16400);
   await expect(page.locator('#time-status')).toHaveText('Running · 2 days advanced');
   await slider.focus(); await slider.press('End');
-  await page.clock.runFor(1000);
+  await page.clock.runFor(4000);
   await expect(page.locator('#time-status')).toHaveText('Running · 18 days advanced');
   await page.locator('#play-pause').click();
   await page.clock.runFor(1000);
@@ -502,7 +502,7 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
   await page.goto('/');
   await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
   await page.getByRole('slider', { name: 'Speed', exact: true }).fill('4'); // 4×
-  await page.locator('#play-pause').click(); await page.clock.runFor(437);
+  await page.locator('#play-pause').click(); await page.clock.runFor(1748);
   async function saved() {
     const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
     const file = await pending; return readFileSync((await file.path())!, 'utf8');
@@ -548,7 +548,7 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
     scenario: { ...expected.scenario,
     farm: { ...expected.scenario.farm, equipmentPacingByte: null },
     irrigation: { ...expected.scenario.irrigation, phase: 0, lastTick: 0, active: false, flow: [] } } });
-  await page.clock.runFor(1100);
+  await page.clock.runFor(4400);
   await expect(page.locator('#time-status')).toContainText('Running · 6 days advanced');
 });
 
@@ -589,7 +589,7 @@ test('a farm saved while a harvest truck drives to storage loads and completes d
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
   const game = new GameSimulation(scenario, crops);
   game.dispatch({ type: 'harvest-field', fieldSlot: 1 }); game.dispatch({ type: 'set-paused', paused: false });
-  for (let tick = 0; tick < 2048 && game.getSnapshot().scenario.fields[1].step !== 15; tick++) game.tick(1000 / (scenario.farm.dayDelayTicks + 1));
+  for (let tick = 0; tick < 2048 && game.getSnapshot().scenario.fields[1].step !== 15; tick++) game.tick(4000 / (scenario.farm.dayDelayTicks + 1));
   expect(game.getSnapshot().scenario.fields[1].step).toBe(15);
   game.dispatch({ type: 'set-paused', paused: true });
   await page.goto('/'); await expect(page.locator('#save-farm')).toBeEnabled();

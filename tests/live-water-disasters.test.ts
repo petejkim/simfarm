@@ -19,8 +19,8 @@ test('live flood saves mid-scan, destroys fields and storage, retains unknown wo
   g.dispatch({ type: 'start-disaster', kind: 'flood' });
   assert.deepEqual(events, [{ type: 'sound', sound: 'flood' }]);
   assert.equal(g.getSnapshot().waterDisasters.scanning, true); assert.equal(g.getSnapshot().weather.precipitationBonus, 4);
-  const paused = g.save(4); g.tick(5000); assert.equal(g.save(4), paused);
-  g.dispatch({ type: 'set-paused', paused: false }); g.tick(500.125);
+  const paused = g.save(4); g.tick(20000); assert.equal(g.save(4), paused);
+  g.dispatch({ type: 'set-paused', paused: false }); g.tick(2000.5);
   const snap = g.getSnapshot(); assert.equal(snap.scenario.fields[1].active, false); assert.equal(snap.scenario.buildings[1].active, true);
   assert.deepEqual([snap.waterDisasters.scanX, snap.waterDisasters.scanY], [21, 74]);
   assert.equal(snap.scenario.farm.cash, cash); assert.equal(events.filter(e => e.type === 'sound' && e.sound === 'explode').length, 1);
@@ -30,11 +30,11 @@ test('live flood saves mid-scan, destroys fields and storage, retains unknown wo
   const checkpoint = a.save(4), b = GameSimulation.load(checkpoint, f.crops).simulation;
   const restoredEvents: GameEvent[] = []; b.subscribeEvents(e => restoredEvents.push(e));
   assert.equal(saved(a).version, 23); assert.equal(b.save(4), checkpoint);
-  a.tick(300.25); b.tick(100); b.tick(200.25); assert.deepEqual(saved(a), saved(b));
+  a.tick(1201); b.tick(400); b.tick(801); assert.deepEqual(saved(a), saved(b));
   for (const game of [a, b]) {
     game.dispatch({ type: 'set-disasters-enabled', enabled: false });
     const before = game.save(4); game.dispatch({ type: 'start-disaster', kind: 'drought' }); assert.equal(game.save(4), before);
-    game.dispatch({ type: 'set-speed', speed: 4 }); game.tick(100);
+    game.dispatch({ type: 'set-speed', speed: 4 }); game.tick(400);
     assert.equal(game.getSnapshot().scenario.buildings[1].active, false); assert.equal(game.getSnapshot().scenario.equipment[1].active, false);
     assert.equal(game.getSnapshot().scenario.farm.cash, cash);
     game.dispatch({ type: 'set-paused', paused: true });
