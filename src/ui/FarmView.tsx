@@ -27,7 +27,7 @@ import { FlightControls } from './FlightControls';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
 import { terrainTile, worldPosition, worldIndex } from '../formats/scenario';
-import { CropGuide } from './CropGuide';
+import { ExpertWindow } from './ExpertWindow';
 import { FieldPanel } from './FieldPanel';
 import { ScheduleWindow } from './ScheduleWindow';
 import { FarmMap, type MapFocus } from './FarmMap';
@@ -71,13 +71,11 @@ interface Props {
   assets: GameAssets;
   zoom: number;
   onZoomChange: (zoom: number) => void;
-  cropId: string;
-  onCropChange: (id: string) => void;
   onGameEvent: (event: GameEvent) => void;
   onFlightRunning: (running: boolean) => void;
 }
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
-export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange, onGameEvent, onFlightRunning }: Props) {
+export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, onGameEvent, onFlightRunning }: Props) {
   const windows = useWindows();
   useEffect(() => windows.show(null), [windows.show]);
   const [newFarmOpen, setNewFarmOpen] = useState(false);
@@ -265,7 +263,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     if(!result)return;
     if(result.ok){
       const slot=fieldMapTool.kind==='plant'&&'slot' in result?result.slot:selected?.slot;
-      if(slot!==undefined){setFieldSlot(slot);onCropChange(next.scenario.cropFiles[next.scenario.fields[slot].cropSlot].replace('.crp',''));}
+      if(slot!==undefined)setFieldSlot(slot);
       setFieldToolMessage(fieldMapTool.kind==='plant'?`Field planted. ${result.source==='stored'?'Used seed in stock.':`Seed cost: $${result.cost}.`}`:'Treatment ordered.');
       setFieldMapTool(null);setToolPointer(null);setMapTool('inspect');
     } else {
@@ -328,14 +326,12 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     if (command.type === 'create-field' && next.lastNewFieldResult?.ok) {
       setFieldSlot(next.lastNewFieldResult.slot); setSelection(null); setMapTool('inspect');
       setFocus({ x: command.x + 4, y: command.y + 4 });
-      onCropChange(next.scenario.cropFiles[command.cropSlot].replace('.crp', ''));
     }
   }
   function selectField(slot: number | null, navigate: boolean) {
     const selected = data?.scenario.fields.find(f => f.slot === slot && f.active);
     setFieldSlot(selected?.slot ?? null);
     if (selected) {
-      onCropChange(data!.scenario.cropFiles[selected.cropSlot].replace('.crp', ''));
       if (navigate) setFocus({ x: selected.x + selected.width / 2, y: selected.y + selected.height / 2 });
     }
   }
@@ -409,6 +405,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     </GameWindow>
     {data && snapshot && <ScheduleWindow assets={assets} snapshot={snapshot} tiles={data.tiles} field={field} focusRef={plannerRef}
       onSelect={slot=>{setSelection(null);selectField(slot,true);}} onNewField={()=>navigate('field')} onCommand={command=>simulation?.dispatch(command)}/>}
+    {data && <ExpertWindow assets={assets} cropFiles={data.scenario.cropFiles} tiles={data.tiles} focusRef={expertRef} onEvent={onGameEvent}/>}
     {data && snapshot && <MarketWindow assets={assets} snapshot={snapshot} tiles={data.tiles}/>}
     {data && snapshot && <MapWindow assets={assets} snapshot={snapshot} onCommand={command=>simulation?.dispatch(command)} viewportRef={viewportRef} zoom={zoom}
       onLocate={(x,y)=>setFocus({x:x+(viewportRef.current?.clientWidth??0)/(32*zoom),y:y+(viewportRef.current?.clientHeight??0)/(32*zoom)})} />}
@@ -501,14 +498,6 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
           onSelect={slot => { setSelection(null); selectField(slot, true); }} />}
         {mapTool === 'inspect' && <button onClick={()=>navigate('planner')}>Crop planner</button>}
         </fieldset>
-      </GameWindow>
-      <GameWindow windowKey="expert" title="Farm Expert">
-        <section ref={expertRef} tabIndex={-1} aria-label="Farm Expert">
-        <CropGuide crops={assets.catalog.crops} cropId={cropId} onChange={onCropChange} />
-        </section>
-        <details><summary>Tile details</summary><pre id="tile-details">{cell && position
-          ? `Position: ${position.x}, ${position.y}\nTerrain: 0x${cell.terrain.toString(16).padStart(4, '0')}\nSecond word: 0x${cell.overlay.toString(16).padStart(4, '0')}\nAttribute: ${cell.attribute}`
-          : 'Select a tile on the map.'}</pre></details>
       </GameWindow>
     </main>}
   </>;

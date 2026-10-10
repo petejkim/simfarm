@@ -1,4 +1,5 @@
 import { readExamineDataJson, type ExamineData } from '../formats/examine';
+import { EXPERT_CARD_IDS, readExpertDeck, type ExpertDeck } from '../formats/expert-cards';
 import { readMapMiniature, type MapMiniature } from '../formats/map-window';
 import { readBuyCatalogData, type BuyCatalog } from '../formats/buy-window';
 import { allCropFiles } from '../formats/crop-slots';
@@ -46,7 +47,7 @@ export interface Catalog {
   palette: number[][];
 }
 export interface WindowArtwork { title: HTMLImageElement; inactive: HTMLImageElement; close: HTMLImageElement }
-export interface GameAssets { marketArtwork:HTMLImageElement; aircraftArtwork:HTMLImageElement; messageArtwork:HTMLImageElement; messageButton:HTMLImageElement; eventText:Uint8Array; examineArtwork: HTMLImageElement; examineData: ExamineData; scheduleArtwork: HTMLImageElement; fieldGauges: HTMLImageElement; mapArtwork: HTMLImageElement; miniature: MapMiniature; catalog: Catalog; mainMenus: MainMenus; controlBar: HTMLImageElement; editPalette: HTMLImageElement; bankArtwork: HTMLImageElement; sellArtwork: HTMLImageElement; sellConditions: HTMLImageElement; buyArtwork: HTMLImageElement; buyCards: HTMLImageElement; buyCatalog: BuyCatalog; itemText: Uint8Array; windowArtwork: WindowArtwork; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
+export interface GameAssets { expertPortrait:HTMLImageElement; expertArtwork:HTMLImageElement; expertDeck:ExpertDeck; marketArtwork:HTMLImageElement; aircraftArtwork:HTMLImageElement; messageArtwork:HTMLImageElement; messageButton:HTMLImageElement; eventText:Uint8Array; examineArtwork: HTMLImageElement; examineData: ExamineData; scheduleArtwork: HTMLImageElement; fieldGauges: HTMLImageElement; mapArtwork: HTMLImageElement; miniature: MapMiniature; catalog: Catalog; mainMenus: MainMenus; controlBar: HTMLImageElement; editPalette: HTMLImageElement; bankArtwork: HTMLImageElement; sellArtwork: HTMLImageElement; sellConditions: HTMLImageElement; buyArtwork: HTMLImageElement; buyCards: HTMLImageElement; buyCatalog: BuyCatalog; itemText: Uint8Array; windowArtwork: WindowArtwork; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
 export const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}assets/${path}`;
 
 async function response(path: string, signal?: AbortSignal): Promise<Response> {
@@ -69,6 +70,13 @@ function image(path: string, signal: AbortSignal): Promise<HTMLImageElement> {
   });
 }
 export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
+  const expert=await Promise.all([
+    image('farmburo.bmp.png',signal),
+    Promise.all(EXPERT_CARD_IDS.map(id=>response(`raw/card${id}.hc`,signal).then(r=>r.arrayBuffer()).then(b=>new Uint8Array(b))))
+      .then(cards=>readExpertDeck(id=>cards[EXPERT_CARD_IDS.indexOf(id)])),
+    image('expert-portrait.png',signal),
+  ]);
+  if(expert[0].naturalWidth!==400||expert[0].naturalHeight!==224||expert[2].naturalWidth!==112||expert[2].naturalHeight!==64)throw new Error('Invalid Expert artwork');
   const [marketArtwork,aircraftArtwork,messageArtwork,messageButton,eventText,examineArtwork, examineData, scheduleArtwork, fieldGauges, catalog, maskedTiles, townLayouts, airplane, shadow, dust, tornado, swarm, mainMenus, controlBar, editPalette, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, mapArtwork, miniatureBytes, sellArtwork, sellConditions, windowTitle, windowInactive, windowClose] = await Promise.all([
     image('market-window.png',signal),image('aircraft-window.png',signal),image('popup.bmp.png',signal),image('message-button.png',signal),response('raw/events.dat',signal).then(r=>r.arrayBuffer()).then(b=>new Uint8Array(b)),
     image('examine-window.png', signal), response('examine.json', signal).then(r=>r.json()).then(readExamineDataJson),
@@ -85,6 +93,7 @@ export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
     image('sell-window.png', signal), image('sell-conditions.png', signal), image('window-title.png', signal), image('window-title-inactive.png', signal), image('window-close.png', signal),
   ]);
   if(marketArtwork.naturalWidth!==320||marketArtwork.naturalHeight!==208)throw new Error('Invalid Market artwork');
+  if(catalog.crops.some(c=>typeof c.expertDescription!=='string'||!c.expertDescription))throw new Error('Invalid Expert crop text. Run ./tools/bun run import first.');
   if(aircraftArtwork.naturalWidth!==256||aircraftArtwork.naturalHeight!==176)throw new Error('Invalid Aircraft artwork');
   if(messageArtwork.naturalWidth!==256||messageArtwork.naturalHeight!==192||messageButton.naturalWidth!==48||messageButton.naturalHeight!==24||eventText.length!==16282)throw new Error('Invalid message artwork or text');
   if (examineArtwork.naturalWidth !== 208 || examineArtwork.naturalHeight !== 208) throw new Error('Invalid Examine artwork');
@@ -96,7 +105,7 @@ export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
   if (sellArtwork.naturalWidth !== 192 || sellArtwork.naturalHeight !== 256 || sellConditions.naturalWidth !== 128 || sellConditions.naturalHeight !== 32) throw new Error('Invalid Sell artwork');
   if (mapArtwork.naturalWidth !== 288 || mapArtwork.naturalHeight !== 240) throw new Error('Invalid Map artwork');
   if (scheduleArtwork.naturalWidth !== 336 || scheduleArtwork.naturalHeight !== 224 || fieldGauges.naturalWidth !== 960 || fieldGauges.naturalHeight !== 24) throw new Error('Invalid Schedule artwork');
-  return { marketArtwork,aircraftArtwork,messageArtwork,messageButton,eventText,examineArtwork, examineData, scheduleArtwork, fieldGauges, mapArtwork, miniature: readMapMiniature(miniatureBytes, catalog.palette), sellArtwork, sellConditions, catalog, mainMenus, controlBar, editPalette, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, windowArtwork: { title: windowTitle, inactive: windowInactive, close: windowClose }, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
+  return { expertPortrait:expert[2],expertArtwork:expert[0],expertDeck:expert[1],marketArtwork,aircraftArtwork,messageArtwork,messageButton,eventText,examineArtwork, examineData, scheduleArtwork, fieldGauges, mapArtwork, miniature: readMapMiniature(miniatureBytes, catalog.palette), sellArtwork, sellConditions, catalog, mainMenus, controlBar, editPalette, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, windowArtwork: { title: windowTitle, inactive: windowInactive, close: windowClose }, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
 }
 export async function loadScenarioAssets(id: number, signal: AbortSignal) {
   const [buffer, tiles] = await Promise.all([

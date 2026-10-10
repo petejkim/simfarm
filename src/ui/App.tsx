@@ -21,7 +21,7 @@ export function App() {
 function Game({ assets }: { assets: GameAssets }) {
   const [farm, setFarm] = useState<{ id: number | null; serial: number; loaded?: LoadedFarm }>({ id: 0, serial: 0 });
   const onLoad = (loaded: LoadedFarm) => setFarm(previous => ({ id: loaded.scenarioId, serial: previous.serial + 1, loaded }));
-  const [zoom, setZoom] = useState(1), [cropId, setCropId] = useState('wheat');
+  const [zoom, setZoom] = useState(1);
   const music = useMusic();
   const sound = useSound();
   const onGameEvent = useCallback((event: GameEvent) => {
@@ -36,7 +36,7 @@ function Game({ assets }: { assets: GameAssets }) {
         <button id="sound-toggle" aria-pressed={sound.enabled} onClick={() => void sound.toggle()}>{sound.enabled ? 'Mute sounds' : 'Enable sounds'}</button>
       </header>}
       onLoad={onLoad} assets={assets}
-      zoom={zoom} onZoomChange={setZoom} cropId={cropId} onCropChange={setCropId} onGameEvent={onGameEvent} onFlightRunning={sound.setFlightRunning} />
+      zoom={zoom} onZoomChange={setZoom} onGameEvent={onGameEvent} onFlightRunning={sound.setFlightRunning} />
     <GameWindow windowKey="about-project" title="Preservation progress"><footer><strong>Reconstruction in progress</strong>
       <span>Loans, land purchases, field care, the farming cycle and native save/load are running. Other original systems remain in progress.</span>
       <span id="audio-status" role="status">{music.message}</span>

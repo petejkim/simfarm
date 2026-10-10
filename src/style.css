@@ -215,6 +215,22 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .game-window>.game-window-title>button:hover:not(:disabled){background:var(--window-close) no-repeat;filter:brightness(1.2)}
 .game-window-title:focus-visible{outline:1px dotted #fff;outline-offset:-2px}
 
+/* Expert DSbe9c:400×224 client, source card coordinates include16px title. */
+.game-window[data-window=expert]{left:128px;top:96px;right:auto;width:400px;border:0;max-height:calc(100% - 112px)}
+.game-window[data-window=expert] .game-window-body{padding:0}
+.expert-window{position:relative;width:400px;height:224px;color:#000}
+.expert-frame{display:block;image-rendering:pixelated;pointer-events:none}
+.expert-artwork{position:absolute;left:0;top:0;width:400px;height:224px;pointer-events:none;image-rendering:pixelated}
+.expert-crop-picture{position:absolute;image-rendering:pixelated;pointer-events:none}
+.expert-portrait{position:absolute;width:112px;height:64px;pointer-events:none;image-rendering:pixelated}
+.expert-window .expert-cap-text{position:absolute;overflow:hidden;text-align:center;color:#fff;font:5px/5.5px Arial,sans-serif}
+.expert-window .expert-text{position:absolute;overflow:clip;margin:0;white-space:pre-line;font:10px/10px monospace}
+.game-window .expert-window button{position:absolute;border:0;border-radius:0;padding:0;margin:0;min-width:0;min-height:0;color:#000}
+.game-window .expert-window .expert-caption{width:48px;height:24px;background-color:transparent;background-repeat:no-repeat;image-rendering:pixelated;font:bold 10px/24px Arial,sans-serif}
+.game-window .expert-window .expert-hotspot{background:transparent}
+.game-window .expert-window button:hover{filter:brightness(1.15)}
+.game-window .expert-window .expert-hotspot:hover{background:#fff2}
+
 /* Original Sell descriptor DSbdbe:192×256 client below16px title. */
 .game-window[data-window=sell]{left:128px;top:80px;right:auto;width:192px;border:0;max-height:calc(100% - 96px)}
 .game-window[data-window=sell] .game-window-body{padding:0}

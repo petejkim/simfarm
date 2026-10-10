@@ -1,4 +1,5 @@
 import { readMarketArtwork } from '../src/formats/market-window';
+import { readExpertDeck,readExpertPortrait } from '../src/formats/expert-cards';
 import { readAircraftArtwork } from '../src/formats/aircraft-window';
 import { readMessageButton } from '../src/formats/message-dialog';
 import { readExamineData, readExamineArtwork } from '../src/formats/examine';
@@ -41,7 +42,9 @@ const [index, data, exe] = await Promise.all([read('MEGADATA.IDX'), read('MEGADA
 const entries = readArchive(index, data);
 const assets = new Map(entries.map(e => [e.name, e.bytes]));
 function asset(name: string) { const bytes = assets.get(name); if (!bytes) throw new Error(`Missing ${name}`); return bytes; }
+readExpertDeck(id=>asset(`card${id}.hc`));
 const palette = readPalette(asset('simfarm.pal'));
+await png('expert-portrait.png',readExpertPortrait(asset('alltiles.btl'),palette));
 const setupMap = readSetupMap(asset('scenario.odt'));
 await json('new-farm-setup.json', { ...setupMap, ...readScenarioChooser(exe), trailingBytes: Array.from(setupMap.trailingBytes), climate: readClimatePresets(asset) });
 await json('new-farm-records.json', readNewFarmRecordDefaults(exe));

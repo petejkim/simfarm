@@ -28,7 +28,7 @@ test('crop and masked pixels match source assets at original world coordinates; 
   await expect(page.locator('#field option')).toHaveCount(14);
   await reveal(page, '#field'); await page.locator('#field').selectOption('1');
   await expect(page.locator('#field-status')).toHaveText('Field 1 · Growing · 8 × 8 tiles at 39, 29');
-  await expect(page.locator('#crop-name')).toHaveText('Grapes');
+  await expect(page.locator('#field option:checked')).toContainText('Grapes');
   // Selecting a field centers its actual map bounds; the viewport center must hit it.
   await reveal(page, '#viewport'); await page.locator('#viewport').scrollIntoViewIfNeeded();
   const center = await page.locator('#viewport').evaluate(v => ({ x: v.clientWidth / 2 + 1, y: v.clientHeight / 2 + 1 }));
@@ -72,10 +72,10 @@ test('original scenario maps, crop selection, navigation and audible MIDI', asyn
   expect(colors).toBeGreaterThan(8);
   await reveal(page, '#viewport'); await page.locator('#viewport').click({ position: { x: 160, y: 160 } });
   await expect(page.locator('#cell-status')).toContainText('graphic');
-  await reveal(page, '#crop'); await page.locator('#crop').selectOption('corn');
-  await expect(page.locator('#crop-name')).toHaveText('Corn');
-  await expect(page.locator('#crop-description')).toContainText('Removes a lot of nutrients');
-  await expect.poll(() => page.locator('#crop-card').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 112)).toBeTruthy();
+  await openWindow(page,'expert');await page.getByRole('button',{name:'Crops',exact:true}).click();
+  for(let i=0;i<24&&!await page.locator('[data-expert-crop="corn"]').count();i++)await page.getByRole('button',{name:'NEXT',exact:true}).click();
+  await expect(page.locator('[data-expert-crop="corn"]')).toContainText('Temperature: 2000 Degree Days');
+  await expect.poll(() => page.locator('.expert-crop-picture').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 112)).toBeTruthy();
   for (let i = 1; i < 8; i++) {
     await reveal(page, '#scenario'); await page.locator('#scenario').selectOption(String(i));
     await expect(page.locator('#map-status')).toHaveText(`Scenario ${i + 1} · original terrain`);
