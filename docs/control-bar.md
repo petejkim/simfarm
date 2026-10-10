@@ -45,3 +45,6 @@ The original palette asset is `editeasy.lzs`, archive offset1716591, size2225, S
 Workspace follow-up: the dashboard has now been replaced by the permanent Edit frame and source tool palette. These launchers open native windows over the map rather than scrolling to page panels. Original dialog interiors and full tool gestures remain unfinished; [edit-workspace.md](edit-workspace.md) describes current ownership, decoding confidence and remaining adaptations.
 
 Bank follow-up: its launcher now opens the reconstructed original terminal at source dimensions and position, with an HTML numeric keypad and source-supported borrow/payoff controls. Other interim window destinations above remain under reconstruction. See [bank-dialog.md](bank-dialog.md).
+
+
+Market Value is now available from the toolbar and Windows menu, with its original chart/crop grid, real text and all24-crop pages. See [market-window.md](market-window.md). Earlier unavailable/transitional notes above describe the toolbar increment, not the current Market implementation.

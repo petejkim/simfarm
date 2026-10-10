@@ -27,7 +27,7 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
     expect(await button.boundingBox()).toEqual({ x: index * 32, y: 16, width: 32, height: 32 });
   }
   expect(await page.locator('#windows-menu-button').boundingBox()).toMatchObject({ x: 208, y: 0, width: 56, height: 16 });
-  await expect(page.locator('#window-market')).toBeDisabled();
+  await expect(page.locator('#window-market')).toBeEnabled();
   const caption = await page.locator('#window-buy .toolbar-caption').evaluate(el => {
     const range = document.createRange(); range.selectNodeContents(el);
     const selection = getSelection()!; selection.removeAllRanges(); selection.addRange(range); return selection.toString();
@@ -55,7 +55,7 @@ test('Windows menu and toolbar route to the same controls; Edit focuses the map 
     ['Buy', 'Sell', 'Evaluation', 'Map', 'Weather', 'Balance Sheet', 'Bank', 'Edit', 'Market Value', 'Farm Expert']);
   await expect(menu.getByRole('menuitem', { name: 'Buy', exact: true })).toBeFocused();
   await page.keyboard.press('End'); await expect(menu.getByRole('menuitem', { name: 'Farm Expert' })).toBeFocused();
-  await page.keyboard.press('ArrowUp'); await expect(menu.getByRole('menuitem', { name: 'Edit', exact: true })).toBeFocused();
+  await page.keyboard.press('ArrowUp'); await expect(menu.getByRole('menuitem', { name: 'Market Value', exact: true })).toBeFocused();
   await page.keyboard.press('Escape'); await expect(page.locator('#windows-menu-button')).toBeFocused();
   for (const viaMenu of [false, true]) {
     const open = (key: string, label: string) => viaMenu ? windowMenu(page, label) : page.locator(`#window-${key}`).click();
@@ -67,6 +67,7 @@ test('Windows menu and toolbar route to the same controls; Edit focuses the map 
     await open('weather', 'Weather'); await expect(page.locator('#farm-weather')).toBeFocused();
     await open('evaluation', 'Evaluation'); await expect(page.locator('#farm-report')).toHaveAttribute('open', '');
     await open('balance', 'Balance Sheet'); await expect(page.locator('#tax-panel')).toHaveAttribute('open', '');
+    await open('market', 'Market Value'); await expect(page.getByRole('region', { name: 'Crop market' })).toBeVisible();
     await open('edit', 'Edit'); await expect(page.locator('#viewport')).toBeFocused();
     await reveal(page, '#world'); await expect(page.locator('#world')).toBeVisible();
   }

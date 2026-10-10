@@ -1,3 +1,5 @@
+import { MarketWindow } from './MarketWindow';
+import { townWindowAt } from '../simulation/town-window';
 import { useBulldoze } from './useBulldoze';
 import { BulldozeDialog } from './BulldozeDialog';
 import { useConstruction } from './useConstruction';
@@ -155,7 +157,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     if (window !== 'edit') {objectMove.cancel();construction.cancel();bulldoze.cancel();setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);}
     if (window === 'buy') { setNavigation(null); return; }
     if (window === 'bank') { navigate('loans'); return; }
-    if (window === 'map') { setNavigation(null); return; }
+    if (window === 'map' || window === 'market') { setNavigation(null); return; }
     if (window === 'evaluation' || window === 'balance') { setReportOpen(true); windows.show('evaluation'); }
     if (window === 'balance') setTaxOpen(true);
     if (window === 'weather') windows.show('speed');
@@ -288,17 +290,18 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     return()=>window.removeEventListener('keydown',cancel);
   },[objectMove.active,cancelObjectMove,construction.tool,cancelConstruction,bulldoze.active,cancelBulldoze]);
   function cancelPurchase() { setBuyPlacement(null); setToolPointer(null); setMapTool('inspect'); setBuyMessage(''); }
-  function enterAircraft(index:number){
+  function enterMapWindow(index:number){
     if(!simulation)return false;
     const current=simulation.getSnapshot();
     if(current.pendingTown||current.finances.defaultDecision||current.aircraftFlight)return false;
     const {x,y}=worldPosition(index),entry=aircraftMapEntry(current.scenario,x,y);
-    if(!entry)return false;
-    if(entry.slot!==null){setAircraftSlot(entry.slot);windows.show('aircraft');}
-    return true;
+    if(entry){if(entry.slot!==null){setAircraftSlot(entry.slot);windows.show('aircraft');}return true;}
+    const town=townWindowAt(current.scenario,x,y);
+    if(!town)return false;
+    windows.show(town);return true;
   }
   function interactWithMap(index:number){
-    if(enterAircraft(index))return;
+    if(enterMapWindow(index))return;
     if(!simulation)return;
     const current=simulation.getSnapshot();
     if(current.pendingTown||current.finances.defaultDecision||current.aircraftFlight)return;
@@ -406,6 +409,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     </GameWindow>
     {data && snapshot && <ScheduleWindow assets={assets} snapshot={snapshot} tiles={data.tiles} field={field} focusRef={plannerRef}
       onSelect={slot=>{setSelection(null);selectField(slot,true);}} onNewField={()=>navigate('field')} onCommand={command=>simulation?.dispatch(command)}/>}
+    {data && snapshot && <MarketWindow assets={assets} snapshot={snapshot} tiles={data.tiles}/>}
     {data && snapshot && <MapWindow assets={assets} snapshot={snapshot} onCommand={command=>simulation?.dispatch(command)} viewportRef={viewportRef} zoom={zoom}
       onLocate={(x,y)=>setFocus({x:x+(viewportRef.current?.clientWidth??0)/(32*zoom),y:y+(viewportRef.current?.clientHeight??0)/(32*zoom)})} />}
     {data && snapshot && <SellWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={sellRef} onCommand={command=>simulation?.dispatch(command)} />}
@@ -424,11 +428,11 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
         <FarmMap viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
-          stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterAircraft(index))return false;setInteractionMessage('');const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
+          stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;setInteractionMessage('');const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
           field={field} selection={selection} preview={preview} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {
             setInteractionMessage('');
             if(construction.tool||bulldoze.active)return;
-            if(enterAircraft(index))return;
+            if(enterMapWindow(index))return;
             setSelection(index);
             const { x, y } = worldPosition(index);
             if(objectMove.active){objectMove.click(x,y);return;}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { MainMenus } from '../formats/main-menus';
 import { useWindows } from './GameWindow';
-import { GAME_WINDOWS, windowAvailable, type GameWindow } from './ControlBar';
+import { GAME_WINDOWS, type GameWindow } from './ControlBar';
 
 function MenuDialog({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -67,8 +67,7 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
           }
         }}>
         {active.items.map((item, index) => open === 0 && index === 5 ? null : <button key={item.offset} role="menuitem" tabIndex={-1}
-          disabled={busy || (open === 3 && !windowAvailable(GAME_WINDOWS[index]))}
-          title={open === 3 && !windowAvailable(GAME_WINDOWS[index]) ? 'This window is still being reconstructed.' : undefined}
+          disabled={busy}
           onClick={() => { if (open === 0) select(index); else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{item.label}</button>)}
       </div>}
     </nav>

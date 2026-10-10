@@ -40,3 +40,6 @@ The six direct construction tools now apply the initial primary-button gate/valv
 
 
 Parked aircraft entry is now connected for primary/secondary presses and initial construction presses, with the primary Bulldoze bypass preserved. See [aircraft-window.md](aircraft-window.md). Town-building window routes and remaining original interiors still follow; earlier historical gaps above are not claims that those completed construction/aircraft increments remain absent.
+
+
+Town-building image routes are now connected to Market, Sell, Bank, Buy and Farm Expert for primary/secondary and initial construction presses. Market has its reconstructed source chart; Expert still uses the interim crop guide pending its original interior. See [market-window.md](market-window.md). The primary Bulldoze bypass remains in force.
