@@ -58,3 +58,6 @@ Warm-transfer follow-up: `readIrrigation(bytes, retained)` now preserves source 
 
 
 Original map valve interaction is now recovered separately from construction: right-button press toggles122/123 or124/125, bypasses construction-only gates, and updates field byte6 bit0 at the source(x+1,y+1) lookup point. The orientation asymmetry is retained as SF-162 with unproven downstream meaning. See [map-interactions.md](map-interactions.md). Older explicit form controls retain their documented native tile-only policy; full primary-button and held construction gestures remain unfinished.
+
+
+Ditch and Valve in the Edit palette now construct directly by click/drag using the original mode4 one-cell path. Construction requests the original ploptool/uhoh success/failure PCM; free operation stays silent. Initial valve presses toggle and consume that stroke, while dragging across an existing valve uses placement rejection without toggling. See [direct-construction.md](direct-construction.md). Older form controls remain available, and the native four-second day is unchanged.

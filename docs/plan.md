@@ -143,3 +143,8 @@ Restore the shared original pickup/drop gesture behind the Move object palette i
 ## 2026-10-10 — original secondary-button fixture interactions
 
 Recover event7 from the INT33 callback and queued button mask, then connect right-button press to canonical building/gate operations and the newly recovered valve/field-bit command. This removes the need to leave Move object to open storage. Preserve raw field effects and document SF-162 without guessing its broader semantics. See [map-interactions.md](map-interactions.md). Finish regression checks and commit locally. Next restore direct construction gestures and the source primary-button interception, followed by town/aircraft map entry with original remaining window interiors. Market Value still needs its own reconstruction; do not route its town building to another window.
+
+
+## 2026-10-10 — direct construction gestures
+
+Restore mode4's six road/fence/gate/ditch/valve tools through the original palette and native captured click/drag input. Existing simulation commands own per-cell costs and connection rules; recover initial gate/valve interception and shared placement audio. See [direct-construction.md](direct-construction.md). Complete regression and commit locally, then continue remaining Edit interactions (Hay/trough, Trees, direct Bulldoze) and town/aircraft entry with their original dialogs. Keep1× source layout, fixed Edit, real text, native slower pacing and all24 crops.

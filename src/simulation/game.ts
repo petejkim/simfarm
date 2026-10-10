@@ -532,6 +532,8 @@ export class GameSimulation {
         this.events.push({ type: 'sound', sound: this.lastNetworkResult.ok ? 'ploptool' : 'uhoh' });
     } else if (command.type === 'irrigation') {
       this.lastIrrigationResult = placeIrrigation(this.scenario, this.finances, command.tool, command.x, command.y, this.weather.soilMoisture);
+      if(command.tool==='ditch'||command.tool==='valve')
+        this.events.push({type:'sound',sound:this.lastIrrigationResult.ok?'ploptool':'uhoh'});
     } else if (command.type === 'toggle-valve') {
       this.lastIrrigationResult = toggleMapValve(this.scenario,command.x,command.y);
     } else if (command.type === 'buy-aircraft') {

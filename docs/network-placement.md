@@ -41,3 +41,6 @@ Open **Farm controls → Roads & fences** or select the same **Map tool**. Choos
 
 
 Right-button press now toggles gates directly on the map through the canonical free open/close command. The mouse queue proves event7's identity, and release does not retoggle. Valve map interaction has also been recovered, including the orientation-dependent field-flag write retained as SF-162. See [map-interactions.md](map-interactions.md). Direct road/fence/gate placement and source primary-button interception remain next.
+
+
+The Edit palette now provides direct road/fence/gate click-and-drag construction through these canonical rules. Ditch/valve construction shares the pointer lifecycle, and initial primary presses preserve the recovered gate/valve interception. The older forms remain alternate access. See [direct-construction.md](direct-construction.md) for source palette IDs, held-loop evidence, audio and explicit browser input adaptations.
