@@ -135,6 +135,7 @@ test('scenario changes cancel pending loads and recover after missing farm asset
 });
 
 test('time controls advance the simulation, render crop changes, pause, and reset on scenario changes', async ({ page }) => {
+  test.setTimeout(45_000); // Advances17.6s of animation and repaints full maps; isolated run takes25s.
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });

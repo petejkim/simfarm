@@ -1,4 +1,5 @@
 import { MarketWindow } from './MarketWindow';
+import { WeatherWindow } from './WeatherWindow';
 import { townWindowAt } from '../simulation/town-window';
 import { useBulldoze } from './useBulldoze';
 import { BulldozeDialog } from './BulldozeDialog';
@@ -126,7 +127,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   const [mapTool, setMapTool] = useState<MapTool>('inspect');
   const [navigation, setNavigation] = useState<{ target: FarmDestination | WindowCommand } | null>(null);
   const [reportOpen, setReportOpen] = useState(false), [taxOpen, setTaxOpen] = useState(false);
-  const reportRef = useRef<HTMLElement>(null), weatherRef = useRef<HTMLSpanElement>(null);
+  const reportRef = useRef<HTMLElement>(null), weatherRef = useRef<HTMLElement>(null);
   const sellRef = useRef<HTMLElement>(null), expertRef = useRef<HTMLElement>(null);
   const plannerRef = useRef<HTMLElement>(null), loansRef = useRef<HTMLElement>(null);
   const networkRef = useRef<HTMLHeadingElement>(null);
@@ -158,7 +159,6 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     if (window === 'map' || window === 'market') { setNavigation(null); return; }
     if (window === 'evaluation' || window === 'balance') { setReportOpen(true); windows.show('evaluation'); }
     if (window === 'balance') setTaxOpen(true);
-    if (window === 'weather') windows.show('speed');
     setNavigation({ target: window });
   }
   const [buildingType, setBuildingType] = useState(64);
@@ -370,8 +370,8 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     <button id="new-farm" onClick={() => setNewFarmOpen(true)}>New farm</button>
     {(['machinery', 'livestock', 'aircraft'] as const).map(key => <button key={key} onClick={() => windows.show(key)}>{key === 'machinery' ? 'Machinery' : key === 'livestock' ? 'Livestock' : 'Aircraft'}</button>)}
     </GameWindow>
-    <GameWindow windowKey="speed" title="Speed and weather">
-    {simulation && snapshot && <TimeControls weatherRef={weatherRef} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
+    <GameWindow windowKey="speed" title="Speed">
+    {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     </GameWindow>
     <GameWindow windowKey="navigation" title="Farm controls">
     {data && snapshot && <FarmNavigation tool={mapTool} blocked={Boolean(snapshot.pendingTown || snapshot.finances.defaultDecision || snapshot.aircraftFlight)} onNavigate={navigate} />}
@@ -407,6 +407,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
       onSelect={slot=>{setSelection(null);selectField(slot,true);}} onNewField={()=>navigate('field')} onCommand={command=>simulation?.dispatch(command)}/>}
     {data && <ExpertWindow assets={assets} cropFiles={data.scenario.cropFiles} tiles={data.tiles} focusRef={expertRef} onEvent={onGameEvent}/>}
     {data && snapshot && <MarketWindow assets={assets} snapshot={snapshot} tiles={data.tiles}/>}
+    {data && snapshot && <WeatherWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={weatherRef} onEvent={onGameEvent}/>}
     {data && snapshot && <MapWindow assets={assets} snapshot={snapshot} onCommand={command=>simulation?.dispatch(command)} viewportRef={viewportRef} zoom={zoom}
       onLocate={(x,y)=>setFocus({x:x+(viewportRef.current?.clientWidth??0)/(32*zoom),y:y+(viewportRef.current?.clientHeight??0)/(32*zoom)})} />}
     {data && snapshot && <SellWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={sellRef} onCommand={command=>simulation?.dispatch(command)} />}

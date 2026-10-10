@@ -1,10 +1,9 @@
-import type { Ref } from 'react';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
 import { SIMULATION_SPEEDS } from '../simulation/game';
 import { calendarDayPeriod } from '../simulation/calendar-clock';
 
 const skies = ['Clear', 'Partly cloudy', 'Cloudy', 'Rain', 'Snow'];
-export function TimeControls({ snapshot, onCommand, weatherRef }: { weatherRef?: Ref<HTMLSpanElement>; snapshot: GameSnapshot; onCommand: (command: GameCommand) => void }) {
+export function TimeControls({ snapshot, onCommand }: { snapshot: GameSnapshot; onCommand: (command: GameCommand) => void }) {
   const { scenario, weather, paused } = snapshot;
   const scheduleResult = snapshot.lastScheduleResult;
   const calendarBlocked = calendarDayPeriod(scenario.farm.dayDelayTicks) === null;
@@ -13,7 +12,7 @@ export function TimeControls({ snapshot, onCommand, weatherRef }: { weatherRef?:
     'invalid-crop': 'crop unavailable', 'field-busy': 'equipment is still assigned' };
   return <section className="toolbar time-controls" aria-label="Farm time">
     <div>
-      <span ref={weatherRef} tabIndex={-1} id="farm-weather">{skies[weather.current]} · {weather.displayTemperature}°F · wind {weather.wind} mph</span>
+      <span id="farm-weather">{skies[weather.current]} · {weather.displayTemperature}°F · wind {weather.wind} mph</span>
       <span id="schedule-status" role="status">{scheduleResult && !scheduleResult.ok
         ? `Weekly orders stopped at field ${scenario.fields[scheduleResult.fieldSlot].number}: ${scheduleFailures[scheduleResult.reason]}.`
         : 'Field plans run automatically each week.'}</span></div>

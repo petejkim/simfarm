@@ -215,6 +215,15 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .game-window>.game-window-title>button:hover:not(:disabled){background:var(--window-close) no-repeat;filter:brightness(1.2)}
 .game-window-title:focus-visible{outline:1px dotted #fff;outline-offset:-2px}
 
+/* Weather DS436e:336×192 client at source1× scale. */
+.game-window[data-window=weather]{left:160px;top:128px;right:auto;width:336px;border:0;max-height:calc(100% - 144px)}
+.game-window[data-window=weather] .game-window-body{padding:0}
+.weather-window{position:relative;width:336px;height:192px;color:#000}
+.weather-window>img{display:block;image-rendering:pixelated;pointer-events:none}
+.weather-preview{position:absolute;left:0;top:0;width:336px;height:192px;image-rendering:pixelated;pointer-events:none}
+.weather-window .weather-label{position:absolute;white-space:pre-line;overflow:hidden;text-align:center;font:9px/9px monospace}
+.weather-window output{position:absolute;white-space:nowrap;overflow:hidden;height:10px;line-height:10px;font-family:monospace;color:#000}
+
 /* Expert DSbe9c:400×224 client, source card coordinates include16px title. */
 .game-window[data-window=expert]{left:128px;top:96px;right:auto;width:400px;border:0;max-height:calc(100% - 112px)}
 .game-window[data-window=expert] .game-window-body{padding:0}
