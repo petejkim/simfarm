@@ -1,4 +1,6 @@
-import type { GameWindow } from './ControlBar';
+import { GameWindow, useWindows } from './GameWindow';
+import { EditPalette, type EditTool } from './EditPalette';
+import type { GameWindow as WindowCommand } from './ControlBar';
 import { NetworkPanel } from './NetworkPanel';
 import { NewFarmControls } from './NewFarmControls';
 import { checkNetworkPlacement, type NetworkAction } from '../simulation/network-placement';
@@ -62,6 +64,8 @@ interface Props {
 }
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
 export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, cropId, onCropChange, onGameEvent, onFlightRunning }: Props) {
+  const windows = useWindows();
+  useEffect(() => windows.show(null), [windows.show]);
   const [newFarmOpen, setNewFarmOpen] = useState(false);
   const load = useCallback(async (signal: AbortSignal) => {
     if (loaded) return { ...loaded, simulation: loaded.simulation.withAllCrops(assets.catalog.crops) };
@@ -97,7 +101,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   });
   const [mapTool, setMapTool] = useState<MapTool>('inspect');
   const [plannerOpen, setPlannerOpen] = useState(false), [loansOpen, setLoansOpen] = useState(false);
-  const [navigation, setNavigation] = useState<{ target: FarmDestination | GameWindow } | null>(null);
+  const [navigation, setNavigation] = useState<{ target: FarmDestination | WindowCommand } | null>(null);
   const [reportOpen, setReportOpen] = useState(false), [taxOpen, setTaxOpen] = useState(false);
   const reportRef = useRef<HTMLElement>(null), weatherRef = useRef<HTMLSpanElement>(null);
   const sellRef = useRef<HTMLElement>(null), expertRef = useRef<HTMLElement>(null);
@@ -119,14 +123,17 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     if (target === 'planner') { setPlannerOpen(true); setMapTool('inspect'); }
     if (target === 'loans') setLoansOpen(true);
     if (target === 'land' || target === 'field' || target === 'crop-supplies' || target === 'network') setMapTool(target);
+    windows.show(target === 'map' ? null : target === 'loans' ? 'bank' : 'actions');
     setNavigation({ target });
   }
-  function openWindow(window: GameWindow) {
+  function openWindow(window: WindowCommand) {
+    windows.show(window === 'edit' ? null : window);
     if (window === 'buy') { navigate('crop-supplies'); return; }
     if (window === 'bank') { navigate('loans'); return; }
     if (window === 'map') { navigate('land'); return; }
-    if (window === 'evaluation' || window === 'balance') setReportOpen(true);
+    if (window === 'evaluation' || window === 'balance') { setReportOpen(true); windows.show('evaluation'); }
     if (window === 'balance') setTaxOpen(true);
+    if (window === 'weather') windows.show('speed');
     setNavigation({ target: window });
   }
   const [buildingType, setBuildingType] = useState(64);
@@ -135,6 +142,18 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   const [equipmentType, setEquipmentType] = useState(0);
   const [cropSupplyType, setCropSupplyType] = useState(192);
   const [livestockType, setLivestockType] = useState(161);
+  function chooseTool(tool: MapTool) { setMapTool(tool); windows.show('actions'); }
+  function editTool(tool: EditTool) {
+    if (tool === 'View object') { setMapTool('inspect'); windows.show(null); }
+    else if (tool === 'Move object') chooseTool('move');
+    else if (tool === 'Bulldoze') { setMapTool('remove'); windows.show(null); }
+    else if (tool === 'Paved road' || tool === 'Dirt road' || tool === 'Fence' || tool === 'Gate') {
+      setNetworkTool(tool === 'Paved road' ? 'road-150' : tool === 'Dirt road' ? 'road-161' : tool === 'Fence' ? 'fence' : 'gate');
+      setMapTool('network'); windows.show(null);
+    } else if (tool === 'Ditch' || tool === 'Valve') {
+      setIrrigationTool(tool === 'Ditch' ? 'ditch' : 'valve'); setMapTool('irrigation'); windows.show(null);
+    } else if (tool === 'Hay' || tool === 'Trough') { setLivestockType(tool === 'Hay' ? 300 : 299); chooseTool('livestock'); }
+  }
   const data = resource.status === 'ready' && snapshot ? { tiles: resource.value.tiles, scenario: snapshot.scenario } : null;
   const field = data?.scenario.fields.find(f => f.slot === fieldSlot && f.active);
   const cell = selection !== null ? data?.scenario.cells[selection] : undefined;
@@ -179,8 +198,14 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   }
   return <>
     {simulation && <SaveControls simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
-    {audioControls}
+    <GameWindow windowKey="options" title="Options">{audioControls}
+      <button onClick={() => windows.show('session')}>Game files</button> <button onClick={() => windows.show('tools')}>Edit tools</button>
+      <button onClick={() => windows.show('about-project')}>Preservation progress</button>
+    </GameWindow>
+    <GameWindow windowKey="newgame" title="New Game" forced={newFarmOpen} onClose={() => setNewFarmOpen(false)}>
     {simulation && <NewFarmControls assets={assets} simulation={simulation} open={newFarmOpen} onOpenChange={setNewFarmOpen} onCreate={onLoad} />}
+    </GameWindow>
+    <GameWindow windowKey="tools" title="Edit tools">
     <section className="toolbar">
       <div><label>Original farm <select id="scenario" value={id ?? 'generated'} onChange={e => onScenarioChange(Number(e.target.value))}>
         {id === null && <option value="generated" disabled>{snapshot?.scenario.origin === 'original' ? 'Imported farm' : 'Generated farm'}</option>}
@@ -188,7 +213,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
       </select></label>
         <span id="map-status" role="status">{resource.status === 'ready' ? (id === null ? `${snapshot?.scenario.origin === 'original' ? 'Imported' : 'Generated'} farm · original terrain` : `Scenario ${id + 1} · original terrain`)
           : resource.status === 'error' ? resource.error : 'Loading map…'}</span></div>
-      <div><label>Map tool <select id="map-tool" disabled={Boolean(snapshot?.aircraftFlight)} value={mapTool} onChange={e => setMapTool(e.target.value as MapTool)}>
+      <div><label>Map tool <select id="map-tool" disabled={!data || Boolean(snapshot?.aircraftFlight)} value={mapTool} onChange={e => chooseTool(e.target.value as MapTool)}>
         <option value="inspect">Inspect</option><option value="land">Buy land</option><option value="field">New field</option>
         <option value="build">Build</option>
         <option value="remove">Bulldoze</option>
@@ -201,24 +226,51 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
       </select></label><button id="center" disabled={!data || Boolean(snapshot?.aircraftFlight)} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
     </section>
+    <button onClick={() => windows.show('navigation')}>Farm controls</button>
+    <button id="new-farm" onClick={() => setNewFarmOpen(true)}>New farm</button>
+    {(['machinery', 'livestock', 'aircraft'] as const).map(key => <button key={key} onClick={() => windows.show(key)}>{key === 'machinery' ? 'Machinery' : key === 'livestock' ? 'Livestock' : 'Aircraft'}</button>)}
+    </GameWindow>
+    <GameWindow windowKey="speed" title="Speed and weather">
     {simulation && snapshot && <TimeControls weatherRef={weatherRef} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
+    </GameWindow>
+    <GameWindow windowKey="navigation" title="Farm controls">
     {data && snapshot && <FarmNavigation tool={mapTool} blocked={Boolean(snapshot.pendingTown || snapshot.finances.defaultDecision || snapshot.aircraftFlight)} onNavigate={navigate} />}
+    <button onClick={() => windows.show('tools')}>More tools</button></GameWindow>
     {snapshot?.lastHomesteadChange?.notice && <div id="homestead-notice" className="homestead-notice" role="status">
       <span>{snapshot.lastHomesteadChange.notice === 'improved'
         ? 'Your home has been improved after a rise in cash.' : 'Your home has been downgraded after a fall in cash.'}</span>
       <button id="view-home" onClick={() => setFocus({ x: snapshot.finances.homestead.x + 2, y: snapshot.finances.homestead.y + 2 })}>View home</button>
     </div>}
+    <GameWindow windowKey="town" title="Town development" forced={Boolean(snapshot?.pendingTown)}>
     {simulation && snapshot && <TownChoicePanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
+    </GameWindow>
+    <GameWindow windowKey="bank" title="Bank" forced={Boolean(snapshot?.finances.defaultDecision)}>
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
       onRestart={() => setNewFarmOpen(true)} open={loansOpen} onOpenChange={setLoansOpen} summaryRef={loansRef} />}
+    </GameWindow>
+    <GameWindow windowKey="evaluation" title="Evaluation and balance sheet">
     {snapshot && <TaxPanel snapshot={snapshot} open={taxOpen} onOpenChange={setTaxOpen} />}
     {snapshot && <FarmReport snapshot={snapshot} open={reportOpen} onOpenChange={setReportOpen} summaryRef={reportRef} />}
-    {snapshot && <LivestockPanel snapshot={snapshot} onMoveSupplies={() => { setMapTool('supply-move'); setSelection(null); }} onShop={() => setMapTool('livestock')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
+    </GameWindow>
+    <GameWindow windowKey="livestock" title="Livestock">
+    {snapshot && <LivestockPanel snapshot={snapshot} onMoveSupplies={() => { chooseTool('supply-move'); setSelection(null); }} onShop={() => chooseTool('livestock')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
+    </GameWindow>
+    <GameWindow windowKey="aircraft" title="Aircraft">
     {snapshot && simulation && <AircraftPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
-      onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
-    {snapshot && <MachineryPanel snapshot={snapshot} onMove={() => { setMapTool('move'); setSelection(null); }} onShop={() => setMapTool('equipment')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
+      onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); if (simulation.getSnapshot().aircraftFlight) windows.show(null); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
+    </GameWindow>
+    <GameWindow windowKey="machinery" title="Machinery">
+    {snapshot && <MachineryPanel snapshot={snapshot} onMove={() => { chooseTool('move'); setSelection(null); }} onShop={() => chooseTool('equipment')} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
+    </GameWindow>
+    <GameWindow windowKey="disasters" title="Disasters">
     {snapshot && <DisasterPanel snapshot={snapshot} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
-    {data && <main>
+    </GameWindow>
+    {resource.status !== 'ready' && <div className="loading"><p role="status">{resource.status === 'error' ? resource.error : 'Loading farm…'}</p>
+      <button aria-label="Edit tools and help" onClick={() => windows.show('tools')}>Choose another farm</button></div>}
+    {data && <main className="edit-workspace" aria-label="Edit">
+      <div className="edit-title">Edit</div>
+      <EditPalette artwork={assets.editPalette} disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}
+        onField={() => navigate('planner')} onSpray={() => { chooseTool('inspect'); }} onHelp={() => windows.show('tools')} />
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
         <FarmMap viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
@@ -227,6 +279,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
             setSelection(index);
             const { x, y } = worldPosition(index);
             selectField(data.scenario.fields.find(f => f.contains(x, y))?.slot ?? null, false);
+            windows.show('actions');
           }} />
         <div className="map-footer"><span>{snapshot?.aircraftFlight ? 'Following aircraft · farm calendar suspended' : mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
           ? 'Click the top-left corner of a new field' : mapTool === 'build' ? 'Click the top-left corner of a building'
@@ -243,7 +296,13 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
             onClick={() => navigate(mapTool)}>{mapTool === 'network' ? 'Review construction' : mapTool === 'land' ? 'Review plot' : mapTool === 'crop-supplies' ? 'Review supplies' : 'Review field'}</button>}
         </div>
       </section>
-      <aside>
+      <GameWindow windowKey="actions" title={mapTool === 'inspect' ? 'Field information' : mapTool === 'land' ? 'Land purchase' : mapTool === 'field' ? 'New field' : ['build', 'equipment', 'crop-supplies', 'livestock'].includes(mapTool) ? 'Buy' : 'Edit object'}>
+        <div className="window-actions">{!['land', 'field', 'crop-supplies', 'network'].includes(mapTool) && <button onClick={() => { windows.show(null); viewportRef.current?.focus(); }}>Choose on map</button>}
+          <button onClick={() => windows.show('tools')}>Tools</button>
+          {mapTool === 'inspect' && <button onClick={() => navigate('field')}>New field</button>}</div>
+        {['build', 'equipment', 'crop-supplies', 'livestock'].includes(mapTool) && <label>Buy <select aria-label="Purchase category" value={mapTool} onChange={event => setMapTool(event.target.value as MapTool)}>
+          <option value="build">Buildings</option><option value="equipment">Machinery</option><option value="crop-supplies">Seeds and chemicals</option><option value="livestock">Livestock and supplies</option>
+        </select></label>}
         <fieldset className="farm-actions" aria-label="Farm actions" disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)}>
         {snapshot && mapTool === 'supply-move' && <SupplyMovePanel snapshot={snapshot} position={position}
           onCommand={command => simulation?.dispatch(command)} onPicked={() => setSelection(null)} />}
@@ -269,7 +328,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
           onTypeChange={setLivestockType} onCommand={command => simulation?.dispatch(command)} />}
         {snapshot && (mapTool === 'land' || mapTool === 'field') && <LandPanel tool={mapTool} position={position} snapshot={snapshot}
           crops={assets.catalog.crops} onCommand={landCommand} headingRef={landRef} onChooseLocation={() => navigate('map')} />}
-        <FieldPanel scenario={data.scenario} crops={assets.catalog.crops} field={field}
+        {mapTool === 'inspect' && <FieldPanel scenario={data.scenario} crops={assets.catalog.crops} field={field}
           plantResult={snapshot?.lastPlantResult ?? null}
           harvestResult={snapshot?.lastHarvestResult ?? null}
           treatmentResult={snapshot?.lastTreatmentResult ?? null}
@@ -277,23 +336,27 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
           harvestEstimate={field ? snapshot?.fieldHarvestEstimates[field.slot] : null}
           onHarvest={fieldSlot => simulation?.dispatch({ type: 'harvest-field', fieldSlot })}
           onPlant={(fieldSlot, cropSlot) => simulation?.dispatch({ type: 'plant-field', fieldSlot, cropSlot })}
-          onSelect={slot => { setSelection(null); selectField(slot, true); }} />
-        {snapshot && <FieldPlanner open={plannerOpen} onOpenChange={setPlannerOpen} summaryRef={plannerRef}
+          onSelect={slot => { setSelection(null); selectField(slot, true); }} />}
+        {snapshot && mapTool === 'inspect' && <FieldPlanner open={plannerOpen} onOpenChange={setPlannerOpen} summaryRef={plannerRef}
           onSelect={slot => { setSelection(null); selectField(slot, true); }} onNewField={() => navigate('field')}
           scenario={data.scenario} crops={assets.catalog.crops} field={field} result={snapshot.lastPlanEditResult}
           onEdit={(fieldSlot, week, action) => simulation?.dispatch({ type: 'edit-field-plan', fieldSlot, week, action })} />}
+        </fieldset>
+      </GameWindow>
+      <GameWindow windowKey="sell" title="Sell">
         <section ref={sellRef} tabIndex={-1} aria-label="Sell harvest">
         <HarvestInventory scenario={data.scenario} crops={assets.catalog.crops} values={snapshot?.storedHarvestValues ?? []}
           result={snapshot?.lastSaleResult ?? null} onSell={inventorySlot => simulation?.dispatch({ type: 'sell-harvest', inventorySlot })} />
         </section>
-        </fieldset>
+      </GameWindow>
+      <GameWindow windowKey="expert" title="Farm Expert">
         <section ref={expertRef} tabIndex={-1} aria-label="Farm Expert">
         <CropGuide crops={assets.catalog.crops} cropId={cropId} onChange={onCropChange} />
         </section>
         <details><summary>Tile details</summary><pre id="tile-details">{cell && position
           ? `Position: ${position.x}, ${position.y}\nTerrain: 0x${cell.terrain.toString(16).padStart(4, '0')}\nSecond word: 0x${cell.overlay.toString(16).padStart(4, '0')}\nAttribute: ${cell.attribute}`
           : 'Select a tile on the map.'}</pre></details>
-      </aside>
+      </GameWindow>
     </main>}
   </>;
 }

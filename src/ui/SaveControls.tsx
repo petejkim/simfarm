@@ -2,15 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { loadSavedFarmTiles, type GameAssets } from '../assets/game-assets';
 import { MAX_SAVE_BYTES } from '../formats/native-save';
 import { GameSimulation } from '../simulation/game';
+import { GameWindow } from './GameWindow';
 import { FileMenu } from './FileMenu';
-import { ControlBar, type GameWindow } from './ControlBar';
+import { ControlBar, type GameWindow as WindowCommand } from './ControlBar';
 
 export interface LoadedFarm { scenarioId: number | null; simulation: GameSimulation; tiles: HTMLImageElement }
 
 export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, onNewGame, onWindow }: {
   simulation: GameSimulation; scenarioId: number | null; assets: GameAssets; loaded: boolean;
   onLoad: (farm: LoadedFarm) => void;
-  onNewGame: () => void; onWindow: (window: GameWindow) => void;
+  onNewGame: () => void; onWindow: (window: WindowCommand) => void;
 }) {
   const input = useRef<HTMLInputElement>(null), pending = useRef<AbortController | null>(null);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(loaded ? 'Farm loaded.' : '');
@@ -60,6 +61,7 @@ export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, o
         onQuit={() => { simulation.dispatch({ type: 'set-paused', paused: true }); setMessage('Farm paused. Save before closing this tab.'); }} />
       <ControlBar artwork={assets.controlBar} menus={assets.mainMenus} snapshot={simulation.getSnapshot()} onWindow={onWindow} />
     </div>
+    <GameWindow windowKey="session" title="Game files">
     <div className="save-controls"><div><button id="save-farm" disabled={busy} onClick={() => save()}>Save farm</button>
       <button id="load-farm" disabled={busy} onClick={() => input.current?.click()}>Load farm</button>
       <input ref={input} id="load-farm-file" type="file" accept=".ssm,.SSM,.simfarm.json,.json,application/json" hidden
@@ -69,5 +71,6 @@ export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, o
         }} /></div>
     <span id="save-status" role="status">{message}</span>
     </div>
+    </GameWindow>
   </div>;
 }

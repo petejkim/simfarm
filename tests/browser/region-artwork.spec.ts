@@ -1,3 +1,4 @@
+import { reveal, openWindow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readPalette } from '../../src/formats/graphics';
@@ -9,7 +10,7 @@ const exe = readFileSync(new URL('../../../simfarm-dos/SIMFARM.EXE', import.meta
 const { farms } = readScenarioChooser(exe), locations = readSetupMap(raw('scenario.odt')).locations;
 const artwork = readRegionArtwork(raw('scenario.int'), readPalette(raw('scenario.pal')));
 async function save(page: Page) {
-  const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   return JSON.parse(readFileSync((await (await pending).path())!, 'utf8'));
 }
 async function start(page: Page) {
@@ -17,7 +18,7 @@ async function start(page: Page) {
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
 }
 async function chooser(page: Page) {
-  await page.locator('#new-farm').click(); await page.locator('#choose-region').click(); await expect(page.locator('#geographic-chooser')).toBeVisible();
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#choose-region'); await page.locator('#choose-region').click(); await reveal(page, '#geographic-chooser'); await expect(page.locator('#geographic-chooser')).toBeVisible();
 }
 async function pixels(page: Page, x: number, y: number) {
   // The source raster remains an exact reference under opaque HTML text surfaces.
@@ -41,16 +42,16 @@ test('original geographic panel paints exact markers and bars, preserves selecti
   await page.locator('[data-region="1,3"]').focus(); await page.keyboard.press('ArrowRight');
   await pixels(page, 2, 3); expect(await save(page)).toEqual(before);
   const selected = locations[3 * 18 + 2];
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 1280, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await pixels(page, 2, 3);
   await page.locator('#geographic-chooser').screenshot({ path: 'artifacts/browser-region-artwork-mobile.png' });
-  await page.locator('#region-design').focus(); await page.keyboard.press('Enter');
+  await reveal(page, '#region-design'); await page.locator('#region-design').focus(); await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: 'Design your terrain' })).toBeFocused();
   for (const key of ['precipitation', 'temperature', 'wind'] as const)
     await expect(page.locator(`#terrain-${key}`)).toHaveValue(String(selected[key]));
   // The source fill helper truncates both X edges to bytes:27/54 become24/48.
-  await page.locator('#terrain-precipitation').focus(); await page.keyboard.press('Home'); await page.keyboard.press('ArrowRight');
+  await reveal(page, '#terrain-precipitation'); await page.locator('#terrain-precipitation').focus(); await page.keyboard.press('Home'); await page.keyboard.press('ArrowRight');
   const ratio = await page.locator('.terrain-level-precipitation').evaluate(el => el.getBoundingClientRect().width / el.closest('.terrain-design')!.getBoundingClientRect().width);
   expect(ratio).toBeCloseTo(24 / 352, 3);
   await page.getByRole('button', { name: 'Cancel', exact: true }).click(); expect(await save(page)).toEqual(before); expect(errors).toEqual([]);
@@ -58,15 +59,15 @@ test('original geographic panel paints exact markers and bars, preserves selecti
 
 test('chooser Load opens its file picker for exact checkpoint restoration and Quit pauses without losing the farm', async ({ page }) => {
   await start(page); const before = await save(page); await chooser(page);
-  const picker = page.waitForEvent('filechooser'); await page.locator('#region-load').click();
+  const picker = page.waitForEvent('filechooser'); await reveal(page, '#region-load'); await page.locator('#region-load').click();
   await (await picker).setFiles({ name: 'chooser-checkpoint.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(before)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); expect(await save(page)).toEqual(before);
   await expect(page.locator('#geographic-chooser')).toHaveCount(0);
-  await page.locator('#play-pause').click(); await expect(page.locator('#time-status')).toContainText('Running');
-  await chooser(page); await page.locator('#region-quit').focus(); await page.keyboard.press('Enter');
-  await expect(page.locator('#time-status')).toContainText('Paused'); await expect(page.locator('#new-farm')).toBeVisible();
+  await reveal(page, '#play-pause'); await page.locator('#play-pause').click(); await expect(page.locator('#time-status')).toContainText('Running');
+  await chooser(page); await reveal(page, '#region-quit'); await page.locator('#region-quit').focus(); await page.keyboard.press('Enter');
+  await expect(page.locator('#time-status')).toContainText('Paused'); await reveal(page, '#new-farm'); await expect(page.locator('#new-farm')).toBeVisible();
   expect(await save(page)).toEqual(before);
-  await chooser(page); const bad = page.waitForEvent('filechooser'); await page.locator('#region-load').click();
+  await chooser(page); const bad = page.waitForEvent('filechooser'); await reveal(page, '#region-load'); await page.locator('#region-load').click();
   await (await bad).setFiles({ name: 'broken.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
   await expect(page.locator('#new-farm-error')).toContainText('Could not open farm'); expect(await save(page)).toEqual(before);
 });
@@ -75,8 +76,8 @@ test('truncated original artwork and palette fail atomically and original Quit c
   await start(page); const before = await save(page);
   for (const [file, length] of [['scenario.int', 153599], ['scenario.pal', 47]] as const) {
     await page.route(`**/assets/raw/${file}`, route => route.fulfill({ body: raw(file).subarray(0, length), contentType: 'application/octet-stream' }));
-    await page.locator('#new-farm').click(); await page.locator('#choose-region').click();
-    await expect(page.locator('#region-error')).toBeVisible(); await expect(page.locator('#create-farm')).toBeDisabled();
+    await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#choose-region'); await page.locator('#choose-region').click();
+    await reveal(page, '#region-error'); await expect(page.locator('#region-error')).toBeVisible(); await expect(page.locator('#create-farm')).toBeDisabled();
     await page.getByRole('button', { name: 'Cancel', exact: true }).click(); expect(await save(page)).toEqual(before);
     await page.unroute(`**/assets/raw/${file}`);
   }
@@ -84,9 +85,9 @@ test('truncated original artwork and palette fail atomically and original Quit c
   let requested!: () => void, finish!: () => void;
   const started = new Promise<void>(resolve => { requested = resolve; }), release = new Promise<void>(resolve => { finish = resolve; });
   await page.route('**/assets/raw/SCEN7.SSM', async route => { requested(); await release; await route.continue().catch(() => {}); });
-  await page.locator('#region-use').click(); await started;
+  await reveal(page, '#region-use'); await page.locator('#region-use').click(); await started;
   await expect(page.locator('#region-design')).toBeDisabled(); await expect(page.locator('#region-load')).toBeDisabled();
-  await page.locator('#region-quit').click(); finish();
+  await reveal(page, '#region-quit'); await page.locator('#region-quit').click(); finish();
   await page.unroute('**/assets/raw/SCEN7.SSM'); expect(await save(page)).toEqual(before);
   await chooser(page); await pixels(page, 2, 8);
 });

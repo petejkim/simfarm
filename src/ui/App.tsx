@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { GameEvent } from '../simulation/events';
 import { loadGameAssets, type GameAssets } from '../assets/game-assets';
+import { WindowDesktop, GameWindow } from './GameWindow';
 import { FarmView } from './FarmView';
 import type { LoadedFarm } from './SaveControls';
 import { MusicControls } from './MusicControls';
@@ -27,7 +28,7 @@ function Game({ assets }: { assets: GameAssets }) {
     if (event.type === 'music') music.requestTrack(event.track);
     else sound.play(event.sound);
   }, [music.requestTrack, sound.play]);
-  return <>
+  return <WindowDesktop>
     <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded}
       onScenarioChange={id => setFarm(previous => ({ id, serial: previous.serial + 1 }))}
       audioControls={<header>
@@ -36,10 +37,10 @@ function Game({ assets }: { assets: GameAssets }) {
       </header>}
       onLoad={onLoad} assets={assets}
       zoom={zoom} onZoomChange={setZoom} cropId={cropId} onCropChange={setCropId} onGameEvent={onGameEvent} onFlightRunning={sound.setFlightRunning} />
-    <footer><strong>Reconstruction in progress</strong>
+    <GameWindow windowKey="about-project" title="Preservation progress"><footer><strong>Reconstruction in progress</strong>
       <span>Loans, land purchases, field care, the farming cycle and native save/load are running. Other original systems remain in progress.</span>
       <span id="audio-status" role="status">{music.message}</span>
       {sound.error && <span id="sound-error" role="status">Sound unavailable: {sound.error}</span>}
-    </footer>
-  </>;
+    </footer></GameWindow>
+  </WindowDesktop>;
 }

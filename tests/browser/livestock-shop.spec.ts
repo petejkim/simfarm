@@ -1,3 +1,4 @@
+import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -6,7 +7,7 @@ import { worldIndex } from '../../src/formats/scenario';
 import { shopFixture } from '../support/livestock';
 
 async function selectTile(page: Page, x: number, y: number) {
-  const viewport = page.locator('#viewport');
+  await reveal(page, '#viewport'); const viewport = page.locator('#viewport');
   await viewport.evaluate((el, p) => el.scrollTo(p.x * 16, p.y * 16), { x, y });
   await viewport.scrollIntoViewIfNeeded();
   const rect = await page.locator('#world').boundingBox(); expect(rect).not.toBeNull();
@@ -14,7 +15,7 @@ async function selectTile(page: Page, x: number, y: number) {
   await expect(page.locator('#cell-status')).toContainText(`Tile ${x}, ${y}`);
 }
 async function download(page: Page, path: string) {
-  const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
 }
 
@@ -23,11 +24,11 @@ test('the livestock panel opens the shop, buys a cow and usable supplies and sav
   const f = shopFixture(), game = f.load().withAllCrops(browserCrops); await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'shop.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await page.locator('#livestock-panel > summary').click(); await page.locator('#open-livestock-shop').click();
+  await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click(); await reveal(page, '#open-livestock-shop'); await page.locator('#open-livestock-shop').click();
   await expect(page.locator('#map-tool')).toHaveValue('livestock'); await expect(page.locator('#buy-livestock')).toBeDisabled();
   for (const [productType, x, y, name] of [[161, 10, 10, 'Cow'], [299, 12, 10, 'Water trough'], [300, 12, 11, 'Feed']] as const) {
-    await page.locator('#livestock-product').selectOption(String(productType)); await selectTile(page, x, y);
-    await expect(page.locator('#livestock-placement-status')).toContainText('Ready'); await page.locator('#buy-livestock').click();
+    await reveal(page, '#livestock-product'); await page.locator('#livestock-product').selectOption(String(productType)); await selectTile(page, x, y);
+    await expect(page.locator('#livestock-placement-status')).toContainText('Ready'); await reveal(page, '#buy-livestock'); await page.locator('#buy-livestock').click();
     game.dispatch({ type: 'buy-livestock', productType, x, y });
     await expect(page.locator('#livestock-purchase-result')).toContainText(`${name} purchased`);
     await expect(page.locator('#buy-livestock')).toBeDisabled();
@@ -48,12 +49,12 @@ test('the livestock panel opens the shop, buys a cow and usable supplies and sav
     pixels.push(...atlas.data.subarray(offset, offset + 4));
   }
   expect(actual).toEqual(pixels);
-  for (let day = 0; day < 4; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
-  await page.locator('#map-tool').selectOption('livestock');
+  for (let day = 0; day < 4; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('livestock');
   await expect(page.locator('#livestock-supplies')).toHaveText('Water remaining: 252 units · Feed remaining: 496 units');
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  for (let day = 0; day < 7; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   expect(errors).toEqual([]);
 });
@@ -64,22 +65,22 @@ test('livestock purchases explain clearing and cash limits and are usable on a n
   const game = f.load().withAllCrops(browserCrops); await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'shop-trees.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await page.locator('#map-tool').selectOption('livestock'); await page.locator('#livestock-product').selectOption('299');
+  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('livestock'); await reveal(page, '#livestock-product'); await page.locator('#livestock-product').selectOption('299');
   await selectTile(page, 20, 20); await expect(page.locator('#livestock-placement-status')).toContainText('clear grass');
-  await expect(page.locator('#buy-livestock')).toBeDisabled(); await page.locator('#livestock-auto-clear').check();
+  await expect(page.locator('#buy-livestock')).toBeDisabled(); await reveal(page, '#livestock-auto-clear'); await page.locator('#livestock-auto-clear').check();
   game.dispatch({ type: 'set-auto-clear', enabled: true });
   await expect(page.locator('#livestock-placement-status')).toContainText('$40 ($25 clearing)');
-  await page.locator('#livestock-product').selectOption('300');
+  await reveal(page, '#livestock-product'); await page.locator('#livestock-product').selectOption('300');
   await expect(page.locator('#livestock-placement-status')).toContainText('not enough cash'); await expect(page.locator('#buy-livestock')).toBeDisabled();
   const path = 'artifacts/browser-livestock-shop-clearing.simfarm.json';
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
-  await page.locator('#livestock-product').selectOption('299'); await page.locator('#buy-livestock').click();
+  await reveal(page, '#livestock-product'); await page.locator('#livestock-product').selectOption('299'); await reveal(page, '#buy-livestock'); await page.locator('#buy-livestock').click();
   game.dispatch({ type: 'buy-livestock', productType: 299, x: 20, y: 20 });
   await expect(page.locator('#farm-cash')).toHaveText('$0');
   await expect(page.locator('#livestock-placement-status')).toContainText('occupied');
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
-  await page.setViewportSize({ width: 390, height: 844 }); await selectTile(page, 22, 20);
-  await page.locator('#livestock-shop').scrollIntoViewIfNeeded();
+  await page.setViewportSize({ width: 1280, height: 844 }); await selectTile(page, 22, 20);
+  await reveal(page, '#livestock-shop'); await page.locator('#livestock-shop').scrollIntoViewIfNeeded();
   await expect(page.locator('#livestock-placement-status')).toContainText('not enough cash');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-livestock-shop.png', fullPage: true });

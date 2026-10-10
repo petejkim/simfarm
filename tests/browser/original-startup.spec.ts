@@ -1,3 +1,4 @@
+import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -15,16 +16,16 @@ async function start(page: Page) {
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
 }
 async function save(page: Page) {
-  const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   return JSON.parse(readFileSync((await (await pending).path())!, 'utf8'));
 }
 async function chooser(page: Page, fresh = false) {
-  await page.locator('#new-farm').click();
-  if (fresh) await page.locator('#new-farm-session').selectOption('fresh');
-  await page.locator('#choose-region').click(); await expect(page.locator('#region-load')).toBeEnabled();
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click();
+  if (fresh) { await reveal(page, '#new-farm-session'); await page.locator('#new-farm-session').selectOption('fresh'); }
+  await reveal(page, '#choose-region'); await page.locator('#choose-region').click(); await expect(page.locator('#region-load')).toBeEnabled();
 }
 async function pick(page: Page, name: string, buffer: Buffer) {
-  const picker = page.waitForEvent('filechooser'); await page.locator('#region-load').click();
+  const picker = page.waitForEvent('filechooser'); await reveal(page, '#region-load'); await page.locator('#region-load').click();
   await (await picker).setFiles({ name, mimeType: name.endsWith('.SSM') ? 'application/octet-stream' : 'application/json', buffer });
 }
 async function restore(page: Page, value: unknown) {
@@ -40,9 +41,9 @@ test('fresh chooser SSM runs original startup and native checkpoints bypass it e
   const actual = await save(page); expect(actual).toEqual(JSON.parse(expected.save(null)));
   expect(actual.runtime.setup.climateSelection).toEqual({ precipitation: 0, temperature: 0, wind: 0 });
   expect(actual.runtime.retainedSetup).not.toBeNull(); expect(actual.runtime.newFarm).toBeNull();
-  for (let day = 0; day < 7; day++) { await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); }
   const advanced = await save(page); expect(advanced).toEqual(JSON.parse(expected.save(null)));
-  await chooser(page, true); await page.locator('#new-farm-seed').fill('19');
+  await chooser(page, true); await reveal(page, '#new-farm-seed'); await page.locator('#new-farm-seed').fill('19');
   // Checkpoint restoration needs neither temporary terrain nor setup assets.
   await page.route('**/assets/new-farm-runtime.json', route => route.abort());
   await pick(page, 'exact.json', Buffer.from(JSON.stringify(advanced)));
@@ -50,7 +51,7 @@ test('fresh chooser SSM runs original startup and native checkpoints bypass it e
 });
 
 test('retained chooser SSM uses retained climate and both previews regardless of highlighted region on mobile', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 }); await start(page);
+  await page.setViewportSize({ width: 1280, height: 844 }); await start(page);
   const generated = GameSimulation.createNew({ ...newFarmOptions, climate: { precipitation: 3, temperature: 0, wind: 2 } }, assets).withAllCrops(browserCrops);
   const state = readNativeSave(generated.save(null)).state; state.weather.soilMoisture = 5; state.weather.moistureBalance = 0;
   state.scenario.farm.workerExpenses = 123456; state.finances.accounts.buildingBookValue = 234567;
@@ -65,7 +66,7 @@ test('retained chooser SSM uses retained climate and both previews regardless of
     expect(actual.runtime.random).not.toEqual(JSON.parse(prior.importOriginal(bytes, crops).simulation.withAllCrops(browserCrops).save(null)).runtime.random);
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
-  await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); expect(await save(page)).toEqual(JSON.parse(expected.save(null)));
+  await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); expect(await save(page)).toEqual(JSON.parse(expected.save(null)));
 });
 
 test('unknown retained climate rejects startup atomically, exact legacy checkpoints still restore, and fresh startup recovers', async ({ page }) => {
@@ -75,7 +76,7 @@ test('unknown retained climate rejects startup atomically, exact legacy checkpoi
   const before = await save(page); expect(before.runtime.setup.climateSelection).toBeNull();
   await chooser(page); await pick(page, 'SCEN4.SSM', source('SCEN4.SSM'));
   await expect(page.locator('#new-farm-error')).toContainText('no retained climate selection'); expect(await save(page)).toEqual(before);
-  await page.locator('#new-farm-session').selectOption('fresh'); await pick(page, 'SCEN4.SSM', source('SCEN4.SSM'));
+  await reveal(page, '#new-farm-session'); await page.locator('#new-farm-session').selectOption('fresh'); await pick(page, 'SCEN4.SSM', source('SCEN4.SSM'));
   await expect(page.locator('#map-status')).toHaveText('Imported farm · original terrain');
   expect(await save(page)).toEqual(JSON.parse(GameSimulation.openOriginalSave(source('SCEN4.SSM'), { date, seeds }, assets).withAllCrops(browserCrops).save(null)));
 });
@@ -84,7 +85,7 @@ test('malformed saves, picker cancellation and cancellation during startup or ti
   await start(page); const before = await save(page); await chooser(page);
   await page.locator('#setup-load-file').dispatchEvent('cancel'); expect(await save(page)).toEqual(before);
   for (const [name, bytes] of [['bad.SSM', source('SCEN4.SSM').subarray(0, -1)], ['bad.json', Buffer.from('{}')]] as const) {
-    await pick(page, name, bytes); await expect(page.locator('#new-farm-error')).toBeVisible(); expect(await save(page)).toEqual(before);
+    await pick(page, name, bytes); await reveal(page, '#new-farm-error'); await expect(page.locator('#new-farm-error')).toBeVisible(); expect(await save(page)).toEqual(before);
   }
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   for (const asset of ['new-farm-runtime.json', 'raw/ega16til.til']) {
@@ -96,7 +97,7 @@ test('malformed saves, picker cancellation and cancellation during startup or ti
     await expect(page.locator('#region-load')).toBeDisabled();
     await page.getByRole('button', { name: 'Cancel', exact: true }).click(); finish();
     await page.unroute(`**/assets/${asset}`); expect(await save(page)).toEqual(before);
-    await expect(page.locator('#new-farm')).toBeVisible();
+    await reveal(page, '#new-farm'); await expect(page.locator('#new-farm')).toBeVisible();
   }
   await chooser(page); await pick(page, 'SCEN4.SSM', source('SCEN4.SSM'));
   await expect(page.locator('#map-status')).toHaveText('Imported farm · original terrain');

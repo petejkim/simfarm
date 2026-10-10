@@ -1,3 +1,4 @@
+import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -9,7 +10,7 @@ import { GameSimulation } from '../support/game';
 import { waterStorageFixture } from '../support/water-storage';
 
 async function selectTile(page: Page, x: number, y: number) {
-  const viewport = page.locator('#viewport');
+  await reveal(page, '#viewport'); const viewport = page.locator('#viewport');
   await viewport.evaluate((el, p) => el.scrollTo(p.x * 16, p.y * 16), { x, y });
   await viewport.scrollIntoViewIfNeeded();
   const rect = await page.locator('#world').boundingBox(); expect(rect).not.toBeNull();
@@ -17,7 +18,7 @@ async function selectTile(page: Page, x: number, y: number) {
   await expect(page.locator('#cell-status')).toContainText(`Tile ${x}, ${y}`);
 }
 async function download(page: Page, path: string) {
-  const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
 }
 
@@ -26,9 +27,9 @@ test('Build water storage collects from live irrigation, refills distant troughs
   page.on('pageerror', e => errors.push(e.message)); await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'water-store.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await page.locator('#map-tool').selectOption('build'); await page.locator('#building-type').selectOption('72');
+  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('build'); await reveal(page, '#building-type'); await page.locator('#building-type').selectOption('72');
   await expect(page.locator('#building-type option:checked')).toHaveText('Water storage · $200');
-  await selectTile(page, 13, 11); await page.locator('#build-building').click();
+  await selectTile(page, 13, 11); await reveal(page, '#build-building'); await page.locator('#build-building').click();
   game.dispatch({ type: 'build', buildingType: 72, x: 13, y: 11 });
   await expect(page.locator('#building-result')).toHaveText('Built for $200.');
   await expect(page.locator('#water-storage-status')).toContainText('217 / 255 units');
@@ -43,19 +44,19 @@ test('Build water storage collects from live irrigation, refills distant troughs
     pixels.push(...atlas.data.subarray(offset, offset + 4));
   }
   expect(actual).toEqual(pixels);
-  await page.locator('#livestock-panel > summary').click();
-  await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click();
+  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   await expect(page.locator('#livestock-stored-water')).toContainText('255 units');
-  for (let day = 1; day < 7; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 1; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   await expect(page.locator('#livestock-stored-water')).toContainText('191 units');
-  await page.locator('#map-tool').selectOption('livestock'); await expect(page.locator('#livestock-supplies')).toContainText('Water remaining: 128 units');
+  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('livestock'); await expect(page.locator('#livestock-supplies')).toContainText('Water remaining: 128 units');
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  for (let day = 0; day < 7; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
-  await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#map-tool').selectOption('build');
-  await page.locator('#building-type').selectOption('72'); await selectTile(page, 13, 11);
-  await page.locator('#water-storage-status').scrollIntoViewIfNeeded();
+  await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('build');
+  await reveal(page, '#building-type'); await page.locator('#building-type').selectOption('72'); await selectTile(page, 13, 11);
+  await reveal(page, '#water-storage-status'); await page.locator('#water-storage-status').scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-water-storage.png', fullPage: true });
 });
@@ -68,12 +69,12 @@ test('water storage wear is visible and removes its supply before weekly refills
   const game = GameSimulation.load(writeNativeSave(state, 4), browserCrops).simulation.withAllCrops(browserCrops);
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'worn-water-store.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
-  await page.locator('#livestock-panel > summary').click();
+  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click();
   await expect(page.locator('#water-storage-worn')).toContainText('Water storage worn out at 13, 11');
   await expect(page.locator('#livestock-stored-water')).toContainText('0 units');
-  await page.locator('#map-tool').selectOption('build'); await page.locator('#building-type').selectOption('72');
+  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('build'); await reveal(page, '#building-type'); await page.locator('#building-type').selectOption('72');
   await selectTile(page, 13, 11); await expect(page.locator('#water-storage-status')).toContainText('Worn out');
-  await page.locator('#map-tool').selectOption('livestock'); await expect(page.locator('#livestock-supplies')).toContainText('Water remaining: 0 units');
+  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('livestock'); await expect(page.locator('#livestock-supplies')).toContainText('Water remaining: 0 units');
   expect(await download(page, 'artifacts/browser-worn-water-storage.simfarm.json')).toEqual(JSON.parse(game.save(4)));
 });

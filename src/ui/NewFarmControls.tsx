@@ -99,7 +99,7 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
       if (!controller.signal.aborted) { pending.current = null; setBusy(false); }
     }
   }
-  if (!open) return <div className="new-farm-action"><button id="new-farm" onClick={() => { setBusy(false); setError(''); onOpenChange(true); }}>New farm</button></div>;
+  if (!open) return null;
   if (draft) return <section className="new-farm-panel" aria-label="New farm">
     <TerrainDesign draft={draft.setup} assets={draft.artwork} error={error}
       onCancel={() => { if (draft.setup.getSnapshot().phase === 'preview') draft.setup.cancel(); setDraft(null); onOpenChange(false); }}

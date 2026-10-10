@@ -1,3 +1,4 @@
+import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -14,7 +15,7 @@ async function load(page: Page, text: string) {
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
 }
 async function save(page: Page) {
-  const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = 'artifacts/browser-flight.simfarm.json'; await (await pending).saveAs(path);
   return JSON.parse(readFileSync(path, 'utf8'));
 }
@@ -27,22 +28,22 @@ async function freeze(page: Page) {
   await page.clock.install(); await page.clock.pauseAt(new Date(Date.now() + 1000));
 }
 async function launch(page: Page, game: ReturnType<typeof prepared>['game']) {
-  await page.locator('#aircraft-panel > summary').click();
+  await reveal(page, '#aircraft-panel > summary'); await page.locator('#aircraft-panel > summary').click();
   const dimensions = await page.locator('#viewport').evaluate(v => {
     const z = Number((document.querySelector('#zoom') as HTMLSelectElement).value);
     const cells = (p: number) => Math.max(8, Math.min(80, Math.floor(p / (16 * z))));
     return { columns: cells(v.clientWidth), rows: cells(v.clientHeight) };
   });
-  await page.locator('#fly-aircraft').click(); game.dispatch({ type: 'start-flight', slot: 1, ...dimensions });
-  await expect(page.locator('#flight-controls')).toBeVisible();
-  await page.locator('#flight-pause').click(); game.dispatch({ type: 'set-paused', paused: true });
+  await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click(); game.dispatch({ type: 'start-flight', slot: 1, ...dimensions });
+  await reveal(page, '#flight-controls'); await expect(page.locator('#flight-controls')).toBeVisible();
+  await reveal(page, '#flight-pause'); await page.locator('#flight-pause').click(); game.dispatch({ type: 'set-paused', paused: true });
 }
 async function step(page: Page, game: ReturnType<typeof prepared>['game'], control?: FlightControl, key?: string) {
   if (control) {
     if (key) await page.locator('#viewport').press(key); else await page.locator(`#flight-${control}`).click();
     game.dispatch({ type: 'flight-control', control });
   }
-  await page.locator('#flight-step').click(); game.dispatch({ type: 'step-flight' });
+  await reveal(page, '#flight-step'); await page.locator('#flight-step').click(); game.dispatch({ type: 'step-flight' });
 }
 async function spritesMatch(page: Page, f: AircraftFlight) {
   const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
@@ -69,7 +70,7 @@ async function spritesMatch(page: Page, f: AircraftFlight) {
 
 test('Fly captures the map, original sprites follow keyboard steering, pause/step and resize preserve the flight, and End lands at the airport', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await freeze(page); await page.goto('/');
-  const { game } = prepared(); await load(page, game.save(4)); await page.locator('#zoom').selectOption('2'); await launch(page, game);
+  const { game } = prepared(); await load(page, game.save(4)); await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2'); await launch(page, game);
   await expect(page.locator('#next-day')).toBeDisabled(); await expect(page.locator('#map-tool')).toBeDisabled();
   await spritesMatch(page, game.getSnapshot().aircraftFlight!);
   await step(page, game, 'spray-toggle', 'Home'); await step(page, game, 'right', 'ArrowRight'); await step(page, game, 'climb', 'PageUp');
@@ -77,17 +78,17 @@ test('Fly captures the map, original sprites follow keyboard steering, pause/ste
   await expect(page.locator('#flight-status')).toContainText('Heading: NW · Altitude: 11');
   await expect(page.locator('#flight-spray-toggle')).toHaveAttribute('aria-pressed', 'true');
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 1280, height: 844 });
   await expect.poll(() => page.locator('#viewport').evaluate((v, f) => {
     const canvas = document.querySelector('#world')!.getBoundingClientRect(), bounds = v.getBoundingClientRect();
     const x = canvas.left + ((f.cameraX + f.columns / 2 + f.offsetX) * 16 + 16) * 2;
     const y = canvas.top + ((f.cameraY + f.rows / 2 + f.offsetY) * 16 + 16) * 2;
     return x >= bounds.left && x < bounds.right && y >= bounds.top && y < bounds.bottom;
   }, game.getSnapshot().aircraftFlight!)).toBe(true);
-  await page.locator('#zoom').selectOption('1');
+  await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('1');
   await spritesMatch(page, game.getSnapshot().aircraftFlight!); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
-  await page.locator('#flight-controls').scrollIntoViewIfNeeded(); await page.screenshot({ path: 'artifacts/browser-flight.png', fullPage: true });
+  await reveal(page, '#flight-controls'); await page.locator('#flight-controls').scrollIntoViewIfNeeded(); await page.screenshot({ path: 'artifacts/browser-flight.png', fullPage: true });
   await step(page, game, 'end', 'End'); await expect(page.locator('#flight-result')).toHaveText('Aircraft returned to its airport parking space.');
   await expect(page.locator('#flight-controls')).toHaveCount(0); await expect(page.locator('#next-day')).toBeEnabled();
   expect(await save(page)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
@@ -98,17 +99,17 @@ test('browser spraying changes actual crop bytes, mid-flight save/load resumes q
   field.bytes.fill(0); field.bytes[7] = 1; field.bytes[10] = 8; field.bytes[11] = 16; field.bytes[12] = 8; field.bytes[13] = 8;
   field.bytes[20] = 100; field.bytes[32] = 10; field.bytes[60] = 101;
   const game = GameSimulation.load(writeNativeSave(state, 4), browserCrops).simulation.withAllCrops(browserCrops);
-  await load(page, game.save(4)); await page.locator('#zoom').selectOption('2'); await launch(page, game);
+  await load(page, game.save(4)); await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2'); await launch(page, game);
   await step(page, game, 'spray-toggle'); for (let i = 0; i < 7; i++) await step(page, game);
   expect(game.getSnapshot().scenario.fields[1].bytes[20]).toBe(0); expect(game.getSnapshot().scenario.fields[1].bytes[32]).toBe(12);
-  await page.locator('#flight-right').click(); game.dispatch({ type: 'flight-control', control: 'right' });
+  await reveal(page, '#flight-right'); await page.locator('#flight-right').click(); game.dispatch({ type: 'flight-control', control: 'right' });
   const checkpoint = await save(page); expect(checkpoint).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await load(page, JSON.stringify(checkpoint));
   await expect(page.locator('#flight-input-status')).toContainText('Paused · Spraying · 1 queued controls');
   await step(page, game); await spritesMatch(page, game.getSnapshot().aircraftFlight!);
   await step(page, game, 'end'); await expect(page.locator('#flight-result')).toContainText('crashed');
   expect(game.getSnapshot().scenario.equipment[1].active).toBe(false); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  await page.locator('#aircraft-panel > summary').click(); await expect(page.locator('#buy-aircraft')).toBeEnabled();
+  await reveal(page, '#aircraft-panel > summary'); await page.locator('#aircraft-panel > summary').click(); await expect(page.locator('#buy-aircraft')).toBeEnabled();
 });
 
 test('original engine PCM plays without frame restarts, caches between clips, and stops on pause, mute and farm replacement', async ({ page }) => {
@@ -136,8 +137,8 @@ test('original engine PCM plays without frame restarts, caches between clips, an
       }
     };
   });
-  await page.goto('/'); const f = prepared(); await load(page, f.game.save(4)); await page.locator('#zoom').selectOption('2');
-  await page.locator('#sound-toggle').click(); await page.locator('#aircraft-panel > summary').click(); await page.locator('#fly-aircraft').click();
+  await page.goto('/'); const f = prepared(); await load(page, f.game.save(4)); await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2');
+  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await reveal(page, '#aircraft-panel > summary'); await page.locator('#aircraft-panel > summary').click(); await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click();
   const voices = () => page.evaluate(() => (window as unknown as { __flightVoices: { length: number; time: number; duration: number; stopped: boolean }[] }).__flightVoices
     .filter(v => v.length === 12848).map(({ length, time, duration, stopped }) => ({ length, time, duration, stopped })));
   await expect.poll(() => page.evaluate(() => {
@@ -148,13 +149,13 @@ test('original engine PCM plays without frame restarts, caches between clips, an
   await expect.poll(async () => (await voices()).length).toBeGreaterThanOrEqual(2);
   const initial = await voices(); expect(initial[1].time - initial[0].time).toBeGreaterThanOrEqual(initial[0].duration - 0.02);
   expect(initial[0].stopped).toBe(false); expect(requests).toHaveLength(1);
-  await page.locator('#flight-pause').click(); await expect.poll(async () => (await voices()).at(-1)!.stopped).toBe(true);
+  await reveal(page, '#flight-pause'); await page.locator('#flight-pause').click(); await expect.poll(async () => (await voices()).at(-1)!.stopped).toBe(true);
   const checkpoint = await save(page), count = (await voices()).length;
-  await page.locator('#flight-step').click(); expect((await voices()).length).toBe(count); // Paused steps are silent.
-  await page.locator('#sound-toggle').click(); await page.locator('#flight-pause').click();
+  await reveal(page, '#flight-step'); await page.locator('#flight-step').click(); expect((await voices()).length).toBe(count); // Paused steps are silent.
+  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await reveal(page, '#flight-pause'); await page.locator('#flight-pause').click();
   await expect(page.locator('#flight-input-status')).toContainText('Flying');
   expect(requests).toHaveLength(1); expect((await voices()).length).toBe(count);
-  await page.locator('#sound-toggle').click(); await expect.poll(async () => (await voices()).length).toBeGreaterThan(count);
+  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await expect.poll(async () => (await voices()).length).toBeGreaterThan(count);
   await load(page, JSON.stringify(checkpoint)); await expect(page.locator('#flight-input-status')).toContainText('Paused');
   await expect.poll(async () => (await voices()).at(-1)!.stopped).toBe(true);
   expect(await save(page)).toEqual(checkpoint); expect(errors).toEqual([]);
@@ -163,14 +164,14 @@ test('original engine PCM plays without frame restarts, caches between clips, an
 test('missing engine audio reports once per flight attempt and can recover without changing flight rules', async ({ page }) => {
   let requests = 0; const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.route('**/plane.voc', route => { requests++; return route.fulfill({ status: 404, body: 'Missing engine' }); });
-  await page.goto('/'); const f = prepared(); await load(page, f.game.save(4)); await page.locator('#zoom').selectOption('2');
-  await page.locator('#sound-toggle').click(); await page.locator('#aircraft-panel > summary').click(); await page.locator('#fly-aircraft').click();
+  await page.goto('/'); const f = prepared(); await load(page, f.game.save(4)); await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2');
+  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await reveal(page, '#aircraft-panel > summary'); await page.locator('#aircraft-panel > summary').click(); await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click();
   await expect(page.locator('#sound-error')).toContainText('plane.voc');
-  await page.locator('#flight-pause').click(); const snapshot = await save(page);
+  await reveal(page, '#flight-pause'); await page.locator('#flight-pause').click(); const snapshot = await save(page);
   expect(snapshot.runtime.aircraftFlight).not.toBeNull(); expect(requests).toBe(1);
   const expected = GameSimulation.load(JSON.stringify(snapshot), browserCrops).simulation.withAllCrops(browserCrops);
   await step(page, expected, 'right'); expect(await save(page)).toEqual(JSON.parse(expected.save(4)));
-  await page.unroute('**/plane.voc'); await page.locator('#flight-pause').click();
-  await expect(page.locator('#sound-error')).toHaveCount(0); await page.locator('#flight-pause').click();
+  await page.unroute('**/plane.voc'); await reveal(page, '#flight-pause'); await page.locator('#flight-pause').click();
+  await expect(page.locator('#sound-error')).toHaveCount(0); await reveal(page, '#flight-pause'); await page.locator('#flight-pause').click();
   expect(errors).toEqual([]);
 });

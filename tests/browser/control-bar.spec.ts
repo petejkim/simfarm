@@ -1,3 +1,4 @@
+import { reveal, openWindow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
@@ -7,11 +8,11 @@ async function start(page: Page) {
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
 }
 async function save(page: Page) {
-  const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   return JSON.parse(readFileSync((await (await pending).path())!, 'utf8'));
 }
 async function windowMenu(page: Page, name: string) {
-  await page.locator('#windows-menu-button').click();
+  await reveal(page, '#windows-menu-button'); await page.locator('#windows-menu-button').click();
   await page.getByRole('menuitem', { name, exact: true }).click();
 }
 
@@ -33,9 +34,9 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
   });
   expect(caption).toBe('BUY');
   const date = await page.locator('#farm-date').textContent();
-  await page.locator('#next-day').click(); await expect(page.locator('#farm-date')).not.toHaveText(date!);
-  await page.locator('#window-bank').click(); await page.locator('#loan-amount').fill('1000');
-  const cash = Number((await page.locator('#farm-cash').textContent())!.replace(/[^\d-]/g, '')); await page.locator('#borrow-loan').click();
+  await reveal(page, '#next-day'); await page.locator('#next-day').click(); await expect(page.locator('#farm-date')).not.toHaveText(date!);
+  await reveal(page, '#window-bank'); await page.locator('#window-bank').click(); await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('1000');
+  const cash = Number((await page.locator('#farm-cash').textContent())!.replace(/[^\d-]/g, '')); await reveal(page, '#borrow-loan'); await page.locator('#borrow-loan').click();
   await expect(page.locator('#loan-result')).toContainText('Borrowed');
   await expect(page.locator('#farm-cash')).toHaveText(`$${(cash + 1000).toLocaleString('en-US')}`);
   await page.evaluate(() => scrollTo(0, 0));
@@ -48,7 +49,7 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
 
 test('Windows menu and toolbar route to the same controls; Edit focuses the map without changing the farm', async ({ page }) => {
   await start(page); const before = await save(page);
-  await page.locator('#windows-menu-button').focus(); await page.keyboard.press('ArrowDown');
+  await reveal(page, '#windows-menu-button'); await page.locator('#windows-menu-button').focus(); await page.keyboard.press('ArrowDown');
   const menu = page.getByRole('menu', { name: 'Windows' });
   expect(await menu.getByRole('menuitem').allTextContents()).toEqual(
     ['Buy', 'Sell', 'Evaluation', 'Map', 'Weather', 'Balance Sheet', 'Bank', 'Edit', 'Market Value', 'Farm Expert']);
@@ -61,14 +62,14 @@ test('Windows menu and toolbar route to the same controls; Edit focuses the map 
     await open('bank', 'Bank'); await expect(page.locator('#loan-panel')).toHaveAttribute('open', '');
     await expect(page.locator('#loan-panel > summary')).toBeFocused();
     await open('buy', 'Buy'); await expect(page.locator('#map-tool')).toHaveValue('crop-supplies');
-    await expect(page.locator('#crop-supply-shop')).toBeVisible();
+    await reveal(page, '#crop-supply-shop'); await expect(page.locator('#crop-supply-shop')).toBeVisible();
     await open('map', 'Map'); await expect(page.locator('#map-tool')).toHaveValue('land');
     await open('sell', 'Sell'); await expect(page.getByRole('region', { name: 'Sell harvest' })).toBeFocused();
     await open('weather', 'Weather'); await expect(page.locator('#farm-weather')).toBeFocused();
     await open('evaluation', 'Evaluation'); await expect(page.locator('#farm-report')).toHaveAttribute('open', '');
     await open('balance', 'Balance Sheet'); await expect(page.locator('#tax-panel')).toHaveAttribute('open', '');
     await open('edit', 'Edit'); await expect(page.locator('#viewport')).toBeFocused();
-    await expect(page.locator('#world')).toBeVisible();
+    await reveal(page, '#world'); await expect(page.locator('#world')).toBeVisible();
   }
   await windowMenu(page, 'Farm Expert'); await expect(page.getByRole('region', { name: 'Farm Expert' })).toBeFocused();
   expect(await save(page)).toEqual(before);

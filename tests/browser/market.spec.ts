@@ -1,3 +1,4 @@
+import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -8,7 +9,7 @@ async function load(page: Page, text: string) {
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
 }
 async function save(page: Page, name: string) {
-  const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = `artifacts/browser-market-${name}.json`; await (await pending).saveAs(path);
   return JSON.parse(readFileSync(path, 'utf8'));
 }
@@ -20,23 +21,23 @@ test('planting keeps trade quotes until the weekly market updates seed purchases
   const game = f.load().withAllCrops(browserCrops); game.dispatch({ type: 'build', buildingType: 66, x: 10, y: 10 });
   const before = game.getSnapshot();
   await page.goto('/'); await load(page, game.save(4));
-  await page.locator('#field').selectOption('1'); await page.locator('#plant-crop').selectOption('0'); await page.locator('#plant-field').click();
+  await reveal(page, '#field'); await page.locator('#field').selectOption('1'); await reveal(page, '#plant-crop'); await page.locator('#plant-crop').selectOption('0'); await reveal(page, '#plant-field'); await page.locator('#plant-field').click();
   game.dispatch({ type: 'plant-field', fieldSlot: 1, cropSlot: 0 });
   const planted = await save(page, 'planted');
   expect(planted.runtime.market.history[0][29]).toBe(113);
   expect(planted.runtime.cropMarketPrices).toEqual(before.cropMarketPrices);
   expect(planted).toEqual(JSON.parse(game.save(4)));
-  await page.getByRole('button', { name: 'Seeds & chemicals', exact: true }).click();
-  await page.locator('#crop-supply-type').selectOption('192'); await page.locator('#crop-supply-storage').selectOption('1');
+  await openWindow(page, 'navigation'); await page.getByRole('button', { name: 'Seeds & chemicals', exact: true }).click();
+  await reveal(page, '#crop-supply-type'); await page.locator('#crop-supply-type').selectOption('192'); await reveal(page, '#crop-supply-storage'); await page.locator('#crop-supply-storage').selectOption('1');
   await expect(page.locator('#crop-supply-quote')).toContainText('$32 total');
-  await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   const price = game.getSnapshot().scenario.seedDefinitions[0].price; expect(price).not.toBe(32);
   await expect(page.locator('#crop-supply-quote')).toContainText(`$${price} total`);
   const week = await save(page, 'weekly'); expect(week).toEqual(JSON.parse(game.save(4)));
   expect(week.runtime.market.history.map((h: number[]) => h[29])).toEqual(week.runtime.cropMarketPrices);
   await load(page, JSON.stringify(week));
-  await page.getByRole('button', { name: 'Seeds & chemicals', exact: true }).click();
-  await page.locator('#crop-supply-storage').selectOption('1'); await page.locator('#buy-crop-supply').click();
+  await openWindow(page, 'navigation'); await page.getByRole('button', { name: 'Seeds & chemicals', exact: true }).click();
+  await reveal(page, '#crop-supply-storage'); await page.locator('#crop-supply-storage').selectOption('1'); await reveal(page, '#buy-crop-supply'); await page.locator('#buy-crop-supply').click();
   game.dispatch({ type: 'buy-crop-supply', productType: 192, x: 10, y: 10 });
   await expect(page.locator('#crop-supply-result')).toContainText(`purchased for $${price}`);
   expect(await save(page, 'purchase')).toEqual(JSON.parse(game.save(4)));
@@ -57,7 +58,7 @@ test('legacy market migration keeps unknown samples through browser save/load an
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
   await expect(page.locator('#save-status')).toContainText('Could not load farm');
   expect(await save(page, 'rejected')).toEqual(migrated);
-  await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   const next = await save(page, 'migrated-week'); expect(next).toEqual(JSON.parse(game.save(4)));
   expect(next.runtime.market.history[0].filter((p: number | null) => p === null)).toHaveLength(28);
   await load(page, JSON.stringify(next)); expect(await save(page, 'migrated-restored')).toEqual(next);

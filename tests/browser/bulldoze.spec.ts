@@ -1,3 +1,4 @@
+import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -11,11 +12,11 @@ async function load(page: Page, text: string) {
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
 }
 async function save(page: Page) {
-  const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const file = 'artifacts/browser-bulldoze.simfarm.json'; await (await pending).saveAs(file); return JSON.parse(readFileSync(file, 'utf8'));
 }
 async function select(page: Page, x: number, y: number) {
-  const viewport = page.locator('#viewport'); await viewport.evaluate((el, p) => el.scrollTo(p.x * 16, p.y * 16), { x, y });
+  await reveal(page, '#viewport'); const viewport = page.locator('#viewport'); await viewport.evaluate((el, p) => el.scrollTo(p.x * 16, p.y * 16), { x, y });
   await viewport.scrollIntoViewIfNeeded(); const rect = await page.locator('#world').boundingBox(); expect(rect).not.toBeNull();
   await page.mouse.click(rect!.x + x * 16 + 8, rect!.y + y * 16 + 8); await expect(page.locator('#cell-status')).toContainText(`Tile ${x}, ${y}`);
 }
@@ -55,40 +56,40 @@ test('Bulldoze removes loose supplies/chemicals and terrain, renders source conn
     };
   });
   const f = bulldozeFixture(), game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
-  await page.locator('#map-tool').selectOption({ label: 'Bulldoze' }); await page.locator('#sound-toggle').click();
+  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption({ label: 'Bulldoze' }); await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
   for (const [i, [x, y]] of bulldozeTargets.entries()) {
     await select(page, x, y); const quote = checkManualRemoval(game.getSnapshot().scenario, x, y); expect(quote.ok).toBe(true);
     if (!quote.ok) throw new Error('Missing target');
     if (i < 3) await expect(page.locator('#removal-consequences')).toContainText('all its remaining contents');
     if (i === 3) {
       await expect(page.locator('#removal-consequences')).toContainText('connected roads, fences, ditches or shoreline');
-      await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#removal-panel').scrollIntoViewIfNeeded();
+      await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#removal-panel'); await page.locator('#removal-panel').scrollIntoViewIfNeeded();
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
       await page.screenshot({ path: 'artifacts/browser-bulldoze.png', fullPage: true });
     }
-    await page.locator('#confirm-removal').click(); game.dispatch({ type: 'remove-object', x, y, kind: quote.kind, slot: quote.slot, tile: quote.tile });
+    await reveal(page, '#confirm-removal'); await page.locator('#confirm-removal').click(); game.dispatch({ type: 'remove-object', x, y, kind: quote.kind, slot: quote.slot, tile: quote.tile });
     await expect(page.locator('#removal-result')).toContainText('removed for $25.');
     if (i === 3) await expect.poll(() => page.evaluate(() => (window as unknown as { __bulldozePeak?: number }).__bulldozePeak ?? 0)).toBeGreaterThan(0.01);
-    await page.locator('#cancel-removal').click();
+    await reveal(page, '#cancel-removal'); await page.locator('#cancel-removal').click();
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   }
   await pixels(page, game.getSnapshot().scenario);
-  await page.reload(); await load(page, game.save(4)); await page.locator('#map-tool').selectOption('remove');
+  await page.reload(); await load(page, game.save(4)); await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('remove');
   await expect(page.locator('#removal-result')).toHaveCount(0);
-  for (let d = 0; d < 14; d++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let d = 0; d < 14; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
 
 test('Bulldoze explains town and cash gates, permits exact25 payment, and cancellation never removes a terrain tile', async ({ page }) => {
   const f = bulldozeFixture(); f.state.scenario.farm.cash = 24; let game = f.load().withAllCrops(browserCrops);
-  await page.goto('/'); await load(page, game.save(4)); await page.locator('#map-tool').selectOption('remove');
+  await page.goto('/'); await load(page, game.save(4)); await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('remove');
   await select(page, 50, 50); await expect(page.locator('#removal-selection')).toContainText('Town-owned land'); await expect(page.locator('#confirm-removal')).toBeDisabled();
   await select(page, 95, 95); await expect(page.locator('#removal-selection')).toContainText('You need $25'); await expect(page.locator('#confirm-removal')).toBeDisabled();
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  f.state.scenario.farm.cash = 25; game = f.load().withAllCrops(browserCrops); await load(page, game.save(4)); await page.locator('#map-tool').selectOption('remove');
-  await select(page, 95, 95); await expect(page.locator('#confirm-removal')).toBeEnabled(); await page.locator('#cancel-removal').click();
+  f.state.scenario.farm.cash = 25; game = f.load().withAllCrops(browserCrops); await load(page, game.save(4)); await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('remove');
+  await select(page, 95, 95); await expect(page.locator('#confirm-removal')).toBeEnabled(); await reveal(page, '#cancel-removal'); await page.locator('#cancel-removal').click();
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await select(page, 95, 95); const quote = checkManualRemoval(game.getSnapshot().scenario, 95, 95); if (!quote.ok) throw new Error('Missing tree');
-  await page.locator('#confirm-removal').click(); game.dispatch({ type: 'remove-object', x: 95, y: 95, kind: quote.kind, slot: quote.slot, tile: quote.tile });
+  await reveal(page, '#confirm-removal'); await page.locator('#confirm-removal').click(); game.dispatch({ type: 'remove-object', x: 95, y: 95, kind: quote.kind, slot: quote.slot, tile: quote.tile });
   await expect(page.locator('#farm-cash')).toHaveText('$0'); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
 });

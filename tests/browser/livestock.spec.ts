@@ -1,3 +1,4 @@
+import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -7,7 +8,7 @@ import { worldIndex } from '../../src/formats/scenario';
 import { livestockFixture } from '../support/livestock';
 
 async function download(page: Page, path: string) {
-  const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
 }
 
@@ -16,9 +17,9 @@ test('live livestock moves with original pixels, drinks and preserves frame stat
   const f = livestockFixture(16), game = f.load().withAllCrops(browserCrops);
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'animals.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await page.locator('#livestock-panel > summary').click(); await expect(page.locator('#livestock-panel > summary')).toContainText('1 animal');
+  await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click(); await expect(page.locator('#livestock-panel > summary')).toContainText('1 animal');
   await expect(page.getByRole('table', { name: 'Livestock counts' }).getByRole('row', { name: 'Cow 1', exact: true })).toBeVisible();
-  await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   const a = game.getSnapshot().scenario.animals[1]; expect([a.x, a.y]).toEqual([11, 10]);
   expect(game.getSnapshot().scenario.inventory[1].quantity).toBe(506);
   const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
@@ -31,7 +32,7 @@ test('live livestock moves with original pixels, drinks and preserves frame stat
   const path = 'artifacts/browser-livestock.simfarm.json', saved = await download(page, path);
   expect(saved.version).toBe(24); expect(saved.runtime.animalFrame.lastMoveTick).toBe(16); expect(saved).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  for (let day = 0; day < 21; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 21; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4))); expect(game.getSnapshot().animalFrame.lastCentreTick).toBeGreaterThan(320);
   expect(errors).toEqual([]);
 });
@@ -41,14 +42,14 @@ test('livestock loss is shown in React, malformed frame saves preserve the curre
   f.state.scenario.cells[worldIndex(12, 10)].terrain = 15; f.state.scenario.animals[1].bytes[14] = 255;
   const game = f.load().withAllCrops(browserCrops); await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'thirst.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
-  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
-  await page.locator('#livestock-panel > summary').click(); await expect(page.locator('#livestock-panel > summary')).toContainText('0 animals');
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click(); await expect(page.locator('#livestock-panel > summary')).toContainText('0 animals');
   await expect(page.locator('#livestock-notices')).toContainText('Cow 1 died from lack of water.');
   const bad = JSON.parse(game.save(4)); bad.runtime.animalFrame.herd = '00';
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
   await expect(page.locator('#save-status')).toContainText('Invalid native save: animal herd cache');
   const path = 'artifacts/browser-livestock-death.simfarm.json'; expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
-  await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#livestock-panel').scrollIntoViewIfNeeded();
+  await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#livestock-panel'); await page.locator('#livestock-panel').scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-livestock.png' });
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');

@@ -1,3 +1,4 @@
+import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -9,7 +10,7 @@ import { CustomFarmSetup } from '../../src/simulation/custom-farm-setup';
 import { readNativeSave, writeNativeSave } from '../../src/formats/native-save';
 
 async function save(page: Page, name: string) {
-  const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const download = await pending, path = `artifacts/${name}.simfarm.json`; await download.saveAs(path);
   return { data: JSON.parse(readFileSync(path, 'utf8')), path, filename: download.suggestedFilename() };
 }
@@ -19,7 +20,7 @@ async function load(page: Page, text: string) {
 }
 async function selectTile(page: Page, x: number, y: number) {
   await page.locator('#viewport').evaluate((el, p) => el.scrollTo(p.x * 16, p.y * 16), { x, y });
-  await page.locator('#viewport').scrollIntoViewIfNeeded(); const rect = await page.locator('#world').boundingBox();
+  await reveal(page, '#viewport'); await page.locator('#viewport').scrollIntoViewIfNeeded(); const rect = await page.locator('#world').boundingBox();
   await page.mouse.click(rect!.x + x * 16 + 8, rect!.y + y * 16 + 8);
   await expect(page.locator('#cell-status')).toContainText(`Tile ${x}, ${y}`);
 }
@@ -27,15 +28,15 @@ async function selectTile(page: Page, x: number, y: number) {
 test('create a generated farm on mobile, save it and restore without any original scenario request', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#new-farm').click();
-  await page.locator('#new-farm-session').selectOption('fresh');
-  await page.locator('#new-farm-year').fill('1993'); await page.locator('#new-farm-seed').fill('9029');
-  await page.locator('#new-farm-lake').check();
+  await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#new-farm'); await page.locator('#new-farm').click();
+  await reveal(page, '#new-farm-session'); await page.locator('#new-farm-session').selectOption('fresh');
+  await reveal(page, '#new-farm-year'); await page.locator('#new-farm-year').fill('1993'); await reveal(page, '#new-farm-seed'); await page.locator('#new-farm-seed').fill('9029');
+  await reveal(page, '#new-farm-lake'); await page.locator('#new-farm-lake').check();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-new-farm-setup.png', fullPage: true });
   const scenarioRequests: string[] = [];
   await page.route('**/assets/raw/SCEN*.SSM', route => { scenarioRequests.push(route.request().url()); return route.abort(); });
-  await page.locator('#create-farm').click(); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
+  await reveal(page, '#create-farm'); await page.locator('#create-farm').click(); await reveal(page, '#play-farm'); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   await expect(page.locator('.new-farm-panel')).toHaveCount(0); await expect(page.locator('#new-farm')).toHaveCount(1);
   await expect(page.locator('#farm-cash')).toHaveText('$40,000'); await expect(page.locator('#scenario')).toHaveValue('generated');
   const first = await save(page, 'browser-created-farm'); expect(first.filename).toContain('simfarm-new-farm-1993-4-');
@@ -43,14 +44,14 @@ test('create a generated farm on mobile, save it and restore without any origina
   const draft = CustomFarmSetup.fresh(first.data.runtime.newFarm.provenance.options, newFarmAssets);
   const original = GameSimulation.load(writeNativeSave(draft.accept(), null), browserCrops, newFarmAssets.townLayouts).simulation.withAllCrops(browserCrops);
   expect(first.data).toEqual(JSON.parse(original.save(null)));
-  await page.locator('#next-day').click(); original.dispatch({ type: 'advance-day' });
+  await reveal(page, '#next-day'); await page.locator('#next-day').click(); original.dispatch({ type: 'advance-day' });
   expect((await save(page, 'browser-created-farm-day')).data).toEqual(JSON.parse(original.save(null)));
   await load(page, JSON.stringify(first.data));
   await expect(page.locator('.new-farm-panel')).toHaveCount(0); await expect(page.locator('#new-farm')).toHaveCount(1);
   expect((await save(page, 'browser-created-farm-restored')).data).toEqual(first.data);
   await page.screenshot({ path: 'artifacts/browser-new-farm-map.png', fullPage: true });
   expect(scenarioRequests).toEqual([]); expect(errors).toEqual([]);
-  await page.unroute('**/assets/raw/SCEN*.SSM'); await page.locator('#scenario').selectOption('4');
+  await page.unroute('**/assets/raw/SCEN*.SSM'); await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
 });
 
@@ -82,23 +83,23 @@ test('a previewed farm plants on its starting land and delivers harvest into new
     throw new Error('Missing test location');
   };
   const field = find((x, y) => checkFieldPlacement(view.scenario, x, y).ok);
-  await page.locator('#map-tool').selectOption('field'); await page.locator('#auto-clear').check(); await selectTile(page, field.x, field.y);
-  await expect(page.locator('#create-field')).toBeEnabled(); await page.locator('#create-field').click();
+  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('field'); await reveal(page, '#auto-clear'); await page.locator('#auto-clear').check(); await selectTile(page, field.x, field.y);
+  await expect(page.locator('#create-field')).toBeEnabled(); await reveal(page, '#create-field'); await page.locator('#create-field').click();
   generated.dispatch({ type: 'create-field', ...field, cropSlot: 0 });
   await expect(page.locator('#field-status')).toContainText('Planting');
   view = generated.getSnapshot(); const storage = find((x, y) => checkBuildingPlacement(view.scenario, 65, x, y, view.weather.soilMoisture).ok);
-  await page.locator('#map-tool').selectOption('build'); await page.locator('#building-type').selectOption('65'); await selectTile(page, storage.x, storage.y);
-  await page.locator('#build-building').click(); generated.dispatch({ type: 'build', ...storage, buildingType: 65 });
-  for (let i = 0; i < 12; i++) { await page.locator('#next-day').click(); generated.dispatch({ type: 'advance-day' }); }
-  await page.locator('#field').selectOption('1');
+  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('build'); await reveal(page, '#building-type'); await page.locator('#building-type').selectOption('65'); await selectTile(page, storage.x, storage.y);
+  await reveal(page, '#build-building'); await page.locator('#build-building').click(); generated.dispatch({ type: 'build', ...storage, buildingType: 65 });
+  for (let i = 0; i < 12; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); generated.dispatch({ type: 'advance-day' }); }
+  await page.getByRole('button', { name: 'View object', exact: true }).click(); await reveal(page, '#field'); await page.locator('#field').selectOption('1');
   await expect(page.locator('#field-status')).toContainText('Growing');
   const midpoint = await save(page, 'browser-generated-growing'); expect(midpoint.data).toEqual(JSON.parse(generated.save(null)));
-  await load(page, JSON.stringify(midpoint.data)); await page.locator('#field').selectOption('1');
-  await page.locator('#harvest-field').click(); generated.dispatch({ type: 'harvest-field', fieldSlot: 1 });
-  for (let i = 0; i < 12; i++) { await page.locator('#next-day').click(); generated.dispatch({ type: 'advance-day' }); }
+  await load(page, JSON.stringify(midpoint.data)); await reveal(page, '#field'); await page.locator('#field').selectOption('1');
+  await reveal(page, '#harvest-field'); await page.locator('#harvest-field').click(); generated.dispatch({ type: 'harvest-field', fieldSlot: 1 });
+  for (let i = 0; i < 12; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); generated.dispatch({ type: 'advance-day' }); }
   await expect(page.locator('#harvest-stock')).toHaveText('1 stored harvest');
   const slot = generated.getSnapshot().scenario.inventory.find(i => i.active && i.type === 168)!.slot;
-  await page.locator('.sell-harvest').click(); generated.dispatch({ type: 'sell-harvest', inventorySlot: slot });
+  await reveal(page, '.sell-harvest'); await page.locator('.sell-harvest').click(); generated.dispatch({ type: 'sell-harvest', inventorySlot: slot });
   await expect(page.locator('#harvest-stock')).toHaveText('No stored harvests.');
   const final = await save(page, 'browser-generated-farming'); expect(final.data).toEqual(JSON.parse(generated.save(null)));
   expect(readNativeSave(JSON.stringify(final.data)).state.scenario.sourceBytes).toBeNull();
@@ -108,11 +109,11 @@ test('a failed creation keeps the current session, and Cancel followed by anothe
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   const before = (await save(page, 'browser-create-failure-before')).data;
   await page.route('**/assets/new-farm-runtime.json', route => route.fulfill({ status: 404, body: '' }));
-  await page.locator('#new-farm').click(); await page.locator('#create-farm').click();
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#create-farm'); await page.locator('#create-farm').click();
   await expect(page.locator('#new-farm-error')).toContainText('Missing game asset');
   expect((await save(page, 'browser-create-failure-after')).data).toEqual(before);
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await page.unroute('**/assets/new-farm-runtime.json'); await page.locator('#new-farm').click();
+  await page.unroute('**/assets/new-farm-runtime.json'); await reveal(page, '#new-farm'); await page.locator('#new-farm').click();
   await expect(page.locator('#create-farm')).toBeEnabled(); await expect(page.locator('#new-farm-error')).toHaveCount(0);
-  await page.locator('#create-farm').click(); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
+  await reveal(page, '#create-farm'); await page.locator('#create-farm').click(); await reveal(page, '#play-farm'); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
 });

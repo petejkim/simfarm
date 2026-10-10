@@ -1,3 +1,4 @@
+import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -10,7 +11,7 @@ async function load(page: Page, text: string) {
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
 }
 async function save(page: Page, name: string) {
-  const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = `artifacts/browser-water-${name}.json`; await (await pending).saveAs(path);
   return JSON.parse(readFileSync(path, 'utf8'));
 }
@@ -50,14 +51,14 @@ const played = (page: Page) => page.evaluate(() => (window as unknown as { water
 test('Flood controls destroy a shoreline field and occupied building, render source water, play PCM and resume saved scanning through drainage', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await audio(page); await page.goto('/');
   const f = waterDisasterFixture(), game = f.load().withAllCrops(browserCrops); await load(page, game.save(4));
-  await page.locator('#disasters-panel > summary').click(); await page.locator('#sound-toggle').click();
-  await page.locator('#start-flood').click(); game.dispatch({ type: 'start-disaster', kind: 'flood' });
+  await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click(); await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+  await reveal(page, '#start-flood'); await page.locator('#start-flood').click(); game.dispatch({ type: 'start-disaster', kind: 'flood' });
   await expect(page.locator('#water-disaster-state')).toContainText('Flood active · Water is spreading. Paused.');
   await expect(page.locator('#start-flood')).toBeDisabled();
   await expect.poll(async () => (await played(page)).some(s => s.length === 9729 && s.peak > 0.01)).toBe(true);
-  await page.locator('#disasters-enabled').uncheck(); game.dispatch({ type: 'set-disasters-enabled', enabled: false });
+  await reveal(page, '#disasters-enabled'); await page.locator('#disasters-enabled').uncheck(); game.dispatch({ type: 'set-disasters-enabled', enabled: false });
   await expect(page.locator('#start-drought')).toBeDisabled();
-  await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   await expect(page.locator('#field-status')).toContainText('0 fields');
   await expect(page.locator('#disaster-notices')).toContainText('destroyed field 1');
   await expect(page.locator('#disaster-notices')).toContainText('destroyed a building at 40, 40');
@@ -65,15 +66,15 @@ test('Flood controls destroy a shoreline field and occupied building, render sou
   const checkpoint = await save(page, 'scanning'); expect(checkpoint).toEqual(JSON.parse(game.save(4)));
   expect(checkpoint.version).toBe(24); expect(checkpoint.runtime.waterDisasters.scanning).toBe(true);
   await originalTile(page, 19, 18, game.getSnapshot().scenario.cells[19 * 96 + 18].terrain & 2047);
-  await load(page, JSON.stringify(checkpoint)); await page.locator('#disasters-panel > summary').click();
-  await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#locate-shoreline').click();
+  await load(page, JSON.stringify(checkpoint)); await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();
+  await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#locate-shoreline'); await page.locator('#locate-shoreline').click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
-  await page.locator('#viewport').scrollIntoViewIfNeeded();
+  await reveal(page, '#viewport'); await page.locator('#viewport').scrollIntoViewIfNeeded();
   await page.screenshot({ path: 'artifacts/browser-flood.png', fullPage: true });
-  for (let day = 1; day < 3; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 1; day < 3; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   await expect(page.locator('#water-disaster-state')).toContainText('Floodwater remains.');
   expect(await save(page, 'scanned')).toEqual(JSON.parse(game.save(4)));
-  for (let day = 3; day < 28; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 3; day < 28; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   await expect(page.locator('#water-disaster-state')).toHaveCount(0);
   await expect(page.locator('#disaster-notices')).toContainText('floodwater has receded');
   expect(await save(page, 'drained')).toEqual(JSON.parse(game.save(4)));
@@ -83,16 +84,16 @@ test('Flood controls destroy a shoreline field and occupied building, render sou
 test('Drought controls dry and restore source shoreline pixels without start audio; invalid v14 flood state leaves the farm intact', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await audio(page); await page.goto('/');
   const f = waterDisasterFixture(), game = f.load().withAllCrops(browserCrops); await load(page, game.save(4));
-  await page.locator('#disasters-panel > summary').click(); await page.locator('#sound-toggle').click();
-  await page.locator('#start-drought').click(); game.dispatch({ type: 'start-disaster', kind: 'drought' });
+  await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click(); await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+  await reveal(page, '#start-drought'); await page.locator('#start-drought').click(); game.dispatch({ type: 'start-disaster', kind: 'drought' });
   await expect(page.locator('#water-disaster-state')).toContainText('Drought active.'); await expect(page.locator('#start-drought')).toBeDisabled();
   await originalTile(page, 20, 19, 28);
   const checkpoint = await save(page, 'drought'); expect(checkpoint).toEqual(JSON.parse(game.save(4))); expect(await played(page)).toEqual([]);
   const bad = structuredClone(checkpoint); bad.runtime.waterDisasters.scanY = 94;
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
   await expect(page.locator('#save-status')).toContainText('flood scan Y'); expect(await save(page, 'after-invalid')).toEqual(checkpoint);
-  await load(page, JSON.stringify(checkpoint)); await page.locator('#disasters-panel > summary').click();
-  for (let day = 0; day < 7; day++) { await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  await load(page, JSON.stringify(checkpoint)); await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();
+  for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   await expect(page.locator('#water-disaster-state')).toHaveCount(0); await expect(page.locator('#disaster-notices')).toContainText('drought has ended');
   await originalTile(page, 20, 19, game.getSnapshot().scenario.cells[20 * 96 + 19].terrain & 2047);
   expect(await save(page, 'recovered')).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);

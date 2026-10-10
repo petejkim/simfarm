@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { MainMenus } from '../formats/main-menus';
+import { useWindows } from './GameWindow';
 import { GAME_WINDOWS, windowAvailable, type GameWindow } from './ControlBar';
 
 function MenuDialog({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
@@ -15,6 +16,7 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
   data: MainMenus; palette: number[][]; busy: boolean; filename: string; error: string | null;
   onSave: (filename?: string) => boolean; onLoad: () => void; onNewGame: () => void; onQuit: () => void; onWindow: (window: GameWindow) => void;
 }) {
+  const windows = useWindows();
   const [open, setOpen] = useState<number | null>(null), [dialog, setDialog] = useState<'about' | 'save-as' | 'quit' | null>(null);
   const [name, setName] = useState(filename);
   const button = useRef<HTMLButtonElement>(null), menu = useRef<HTMLDivElement>(null), root = useRef<HTMLElement>(null);
@@ -43,13 +45,13 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
       style={{ backgroundColor: color(data.background), color: color(data.foreground) }}
       onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
       {data.menus.map((entry, index) => <button key={entry.offset} ref={index === 0 ? button : undefined}
-        id={`${entry.title.toLowerCase()}-menu-button`} disabled={(index !== 0 && index !== 3) || busy}
+        id={`${entry.title.toLowerCase()}-menu-button`} disabled={busy}
         style={{ left: entry.header.x * 2, width: entry.header.width * 2, paddingLeft: index === 0 ? 16 : 0 }}
-        title={index === 0 || index === 3 ? undefined : 'This original menu is still being reconstructed; use the farm controls below.'}
+        title={undefined}
         aria-haspopup={index === 0 || index === 3 ? 'menu' : undefined} aria-expanded={index === 0 || index === 3 ? open === index : undefined}
         aria-controls={index === 0 || index === 3 ? `original-${entry.title.toLowerCase()}-menu` : undefined}
-        onClick={() => setOpen(value => value === index ? null : index)} onKeyDown={event => {
-          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); setOpen(index); }
+        onClick={() => { if (index === 0 || index === 3) setOpen(value => value === index ? null : index); else { setOpen(null); windows.show(index === 1 ? 'options' : index === 2 ? 'speed' : 'disasters'); } }} onKeyDown={event => {
+          if ((index === 0 || index === 3) && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) { event.preventDefault(); setOpen(index); }
         }}>{entry.title}</button>)}
       {active && <div ref={menu} id={`original-${active.title.toLowerCase()}-menu`} className="original-menu-popup" role="menu" aria-label={active.title}
         style={{ left: active.popup.x * 2, width: active.popup.width * 2 }} onKeyDown={event => {

@@ -1,3 +1,4 @@
+import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -24,9 +25,9 @@ test('weekly town construction repaints the map and resumes exactly after a brow
   const pixels = () => page.locator('#world').evaluate((canvas: HTMLCanvasElement) =>
     Array.from(canvas.getContext('2d')!.getImageData(24 * 16, 0, 128, 128).data));
   const before = await pixels();
-  await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
+  await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
   expect(await pixels()).not.toEqual(before);
-  const pending = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const download = await pending, path = 'artifacts/browser-town.simfarm.json'; await download.saveAs(path);
   const saved = JSON.parse(readFileSync(path, 'utf8'));
   expect(saved).toEqual(JSON.parse(expected.save(4)));
@@ -34,8 +35,8 @@ test('weekly town construction repaints the map and resumes exactly after a brow
   expect(saved.runtime.finances.town.townRevenue).toBe(4700);
   const grown = await pixels(); await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); expect(await pixels()).toEqual(grown);
-  for (let day = 0; day < 7; day++) { await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); }
-  const nextDownload = page.waitForEvent('download'); await page.locator('#save-farm').click();
+  for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); }
+  const nextDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   await (await nextDownload).saveAs(path);
   expect(JSON.parse(readFileSync(path, 'utf8'))).toEqual(JSON.parse(expected.save(4)));
   await page.locator('#viewport').evaluate(el => el.scrollTo(24 * 16, 0));
