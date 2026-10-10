@@ -328,3 +328,6 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 #examine-value{position:absolute;left:96px;top:100px}
 .examine-actions{padding:3px;display:flex;gap:3px;flex-wrap:wrap}
 .examine-actions button{font:10px/12px Arial,sans-serif;padding:2px 4px}
+
+.map-panel[data-object-move=pick] #world{cursor:grab}
+.map-panel[data-object-move=drop] #world{cursor:grabbing}

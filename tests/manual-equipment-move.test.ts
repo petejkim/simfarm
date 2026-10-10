@@ -16,6 +16,10 @@ const runtime = (): EquipmentRuntime => ({ grassTravelCount: 0, animationTick: 0
 
 test('manual movement pins original map calls, pickup/drop gates, timer clock, manual flag and aircraft dispatcher exclusion', () => {
   const exe = source('SIMFARM.EXE'), exact = (o: number, h: string) => assert.equal(exe.subarray(o, o + h.length / 2).toString('hex'), h);
+  assert.equal(0x1f950+exe.readUInt16LE(0x22352+25*2),0x21726); // Move palette ID26.
+  exact(0x2172f,'26c747020b00');exact(0x2173e,'26c747582e1a');
+  assert.equal(0x1f950+exe.readUInt16LE(0x20d9c+10*2),0x20d42); // Edit mode11.
+  exact(0x137e5,'b8ea19');exact(0x14510,'b82e1a'); // Pickup/drop/pickup cursor cycle.
   exact(0x20d61, '9a06004c11'); exact(0x136f4, '9a0e005f0d'); exact(0x13712, '26f687bca603');
   exact(0x13766, '26f6870284017561'); exact(0x13c19, '26f687254c08'); exact(0x13c7e, '26f687bca603');
   exact(0x13cfd, '9a700fd417'); exact(0x13d09, '2680a4bca6fb'); exact(0x13d5a, '9af4015f0d');

@@ -1,3 +1,4 @@
+import { useObjectMove } from './useObjectMove';
 import { ExamineWindow } from './ExamineWindow';
 import { FieldToolMenu } from './FieldToolMenu';
 import { SPRAY_TOOLS, type FieldMapTool } from '../formats/field-tool-menu';
@@ -85,11 +86,12 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   const [fieldToolMessage,setFieldToolMessage]=useState('');
   const [buyPlacement, setBuyPlacement] = useState<Pick<ShopProduct, 'type' | 'name'> | null>(null);
   const [toolPointer, setToolPointer] = useState<MapFocus | null>(null), [buyMessage, setBuyMessage] = useState('');
+  const snapshot = useSyncExternalStore(simulation?.subscribe ?? subscribeEmpty, simulation?.getSnapshot ?? emptySnapshot);
+  const objectMove=useObjectMove(simulation,snapshot);
   const onMapPointer = useCallback((pointer: MapFocus | null) => {
     simulation?.dispatch({ type: 'set-map-pointer', pointer });
-    if (buyPlacement || fieldMapTool) setToolPointer(old => old?.x === pointer?.x && old?.y === pointer?.y ? old : pointer);
-  }, [simulation, buyPlacement, fieldMapTool]);
-  const snapshot = useSyncExternalStore(simulation?.subscribe ?? subscribeEmpty, simulation?.getSnapshot ?? emptySnapshot);
+    if (buyPlacement || fieldMapTool || objectMove.active) setToolPointer(old => old?.x === pointer?.x && old?.y === pointer?.y ? old : pointer);
+  }, [simulation, buyPlacement, fieldMapTool, objectMove.active]);
   useEffect(() => simulation?.subscribeEvents(onGameEvent), [simulation, onGameEvent]);
   const flightRunning = Boolean(snapshot?.aircraftFlight && !snapshot.paused);
   useEffect(() => { onFlightRunning(flightRunning); return () => onFlightRunning(false); }, [flightRunning, onFlightRunning]);
@@ -132,6 +134,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     target?.focus({ preventScroll: true });
   }, [navigation]);
   function navigate(target: FarmDestination) {
+    objectMove.cancel();
     setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null);
     if (target === 'planner') setMapTool('inspect');
     if (target === 'land' || target === 'field' || target === 'crop-supplies' || target === 'network') setMapTool(target);
@@ -140,7 +143,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   }
   function openWindow(window: WindowCommand) {
     windows.show(window === 'edit' ? null : window);
-    if (window !== 'edit') {setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);}
+    if (window !== 'edit') {objectMove.cancel();setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);}
     if (window === 'buy') { setNavigation(null); return; }
     if (window === 'bank') { navigate('loans'); return; }
     if (window === 'map') { setNavigation(null); return; }
@@ -155,11 +158,12 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   const [equipmentType, setEquipmentType] = useState(0);
   const [cropSupplyType, setCropSupplyType] = useState(192);
   const [livestockType, setLivestockType] = useState(161);
-  function chooseTool(tool: MapTool) { setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null); setMapTool(tool); windows.show('actions'); }
+  function chooseTool(tool: MapTool) { objectMove.cancel();setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null); setMapTool(tool); windows.show('actions'); }
   function editTool(tool: EditTool) {
+    objectMove.cancel();
     setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null);
     if (tool === 'View object') { setMapTool('inspect'); windows.show(null); }
-    else if (tool === 'Move object') chooseTool('move');
+    else if (tool === 'Move object') { objectMove.start();setMapTool('move');setSelection(null);setToolPointer(null);setBuyMessage('');setFieldToolMessage('');windows.show(null);viewportRef.current?.focus({preventScroll:true}); }
     else if (tool === 'Bulldoze') { setMapTool('remove'); windows.show(null); }
     else if (tool === 'Paved road' || tool === 'Dirt road' || tool === 'Fence' || tool === 'Gate') {
       setNetworkTool(tool === 'Paved road' ? 'road-150' : tool === 'Dirt road' ? 'road-161' : tool === 'Fence' ? 'fence' : 'gate');
@@ -171,10 +175,10 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
   const data = resource.status === 'ready' && snapshot ? { tiles: resource.value.tiles, scenario: snapshot.scenario } : null;
   const field = data?.scenario.fields.find(f => f.slot === fieldSlot && f.active);
   const cell = selection !== null ? data?.scenario.cells[selection] : undefined;
-  const position = buyPlacement || fieldMapTool ? toolPointer : selection !== null ? worldPosition(selection) : null;
+  const position = buyPlacement || fieldMapTool || objectMove.active ? toolPointer : selection !== null ? worldPosition(selection) : null;
   const removal = position && data && mapTool === 'remove' ? checkManualRemoval(data.scenario, position.x, position.y) : null;
   const hoveredField=position?data?.scenario.fields.find(f=>f.contains(position.x,position.y)):undefined;
-  const preview = fieldMapTool && position && data ? fieldMapTool.kind==='plant'
+  const preview = objectMove.active ? objectMove.preview(position) : fieldMapTool && position && data ? fieldMapTool.kind==='plant'
     ? {...position,width:8,height:8,valid:checkFieldPlacement(data.scenario,position.x,position.y).ok}
     : hoveredField ? {x:hoveredField.x,y:hoveredField.y,width:hoveredField.width,height:hoveredField.height,valid:true}: {...position,width:1,height:1,valid:false}
     : mapTool === 'move' || mapTool === 'supply-move' ? position ? { ...position, width: 1, height: 1, valid: true } : undefined
@@ -204,6 +208,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     setBuyMessage(result.ok ? `${name} purchased.` : reasons[result.reason ?? ''] ?? `Cannot buy here: ${result.reason?.replaceAll('-', ' ') ?? 'unavailable'}.`);
   }
   function beginPurchase(product: ShopProduct) {
+    objectMove.cancel();
     setFieldMenu(null);setFieldMapTool(null);
     if (!simulation || !snapshot || snapshot.pendingTown || snapshot.finances.defaultDecision || snapshot.aircraftFlight) return;
     setBuyMessage('');
@@ -229,6 +234,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     purchaseFeedback(type < 8 ? next.lastEquipmentPurchaseResult : type < 128 ? next.lastBuildingResult : type < 192 ? next.lastLivestockResult : next.lastCropSupplyPurchaseResult,buyPlacement.name);
   }
   function openFieldMenu(kind:'plant'|'spray') {
+    objectMove.cancel();
     setBuyPlacement(null);setFieldMapTool(null);setToolPointer(null);setFieldToolMessage('');setNavigation(null);
     windows.show(null);setFieldMenu(kind);
   }
@@ -254,6 +260,16 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
       setFieldToolMessage(messages[result.reason]??`Cannot apply this tool: ${result.reason.replaceAll('-',' ')}.`);
     }
   }
+  const cancelObjectMove=useCallback(()=>{objectMove.cancel();setToolPointer(null);setMapTool('inspect');},[objectMove.cancel]);
+  useEffect(()=>{
+    if(!objectMove.active)return;
+    // File Save can leave focus outside Edit. Respect Escape handled by menus/dialogs.
+    const cancel=(event:KeyboardEvent)=>{
+      if(event.key==='Escape'&&!event.defaultPrevented){event.preventDefault();cancelObjectMove();}
+    };
+    window.addEventListener('keydown',cancel);
+    return()=>window.removeEventListener('keydown',cancel);
+  },[objectMove.active,cancelObjectMove]);
   function cancelPurchase() { setBuyPlacement(null); setToolPointer(null); setMapTool('inspect'); setBuyMessage(''); }
   function landCommand(command: GameCommand) {
     if (!simulation) return;
@@ -355,27 +371,28 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     {data && snapshot && <BuyWindow assets={assets} snapshot={snapshot} tiles={data.tiles} onBuy={beginPurchase} />}
     {resource.status !== 'ready' && <div className="loading"><p role="status">{resource.status === 'error' ? resource.error : 'Loading farm…'}</p>
       <button aria-label="Edit tools and help" onClick={() => windows.show('tools')}>Choose another farm</button></div>}
-    {data && <main className="edit-workspace" aria-label="Edit" onKeyDown={event => { if ((fieldMenu||fieldMapTool) && event.key==='Escape') {event.preventDefault();cancelFieldTool();} if (buyPlacement && event.key === 'Escape') { event.preventDefault(); cancelPurchase(); } }}>
+    {data && <main className="edit-workspace" aria-label="Edit" onKeyDown={event => { if(objectMove.active&&event.key==='Escape'){event.preventDefault();cancelObjectMove();} if ((fieldMenu||fieldMapTool) && event.key==='Escape') {event.preventDefault();cancelFieldTool();} if (buyPlacement && event.key === 'Escape') { event.preventDefault(); cancelPurchase(); } }}>
       <div className="edit-title">Edit</div>
       <EditPalette artwork={assets.editPalette} disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}
         onField={() => openFieldMenu('plant')} onSpray={() => openFieldMenu('spray')} onHelp={() => windows.show('tools')} />
       {fieldMenu&&snapshot&&<FieldToolMenu kind={fieldMenu} assets={assets} world={data.scenario} tiles={data.tiles}
         onClose={()=>{setFieldMenu(null);viewportRef.current?.focus({preventScroll:true});}}
         onChoose={tool=>{setFieldMenu(null);setFieldMapTool(tool);setMapTool(tool.kind==='plant'?'field':'inspect');setSelection(null);viewportRef.current?.focus({preventScroll:true});}}/>}
-      <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`}>
+      <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
         <FarmMap viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           field={field} selection={selection} preview={preview} onPointer={onMapPointer} onSelect={index => {
             setSelection(index);
             const { x, y } = worldPosition(index);
+            if(objectMove.active){objectMove.click(x,y);return;}
             if (buyPlacement) { placePurchase(x,y); return; }
             if (fieldMapTool) {applyFieldTool(x,y);return;}
             const selected=data.scenario.fields.find(f => f.contains(x,y));
             selectField(selected?.slot ?? null,false);
             windows.show(mapTool==='inspect'?(selected?'schedule':'examine'):'actions');
           }} />
-        <div className="map-footer"><span id="field-tool-result" role="status">{fieldToolMessage}</span>{fieldMapTool&&<button id="cancel-field-tool" onClick={cancelFieldTool}>Cancel field tool</button>}{buyPlacement && <button id="cancel-buy-placement" onClick={cancelPurchase}>Cancel purchase</button>}<span id="buy-result" role="status">{buyMessage}</span><span id="map-tool-hint">{fieldMapTool ? fieldMapTool.kind==='plant' ? `Plant ${assets.catalog.crops.find(c=>`${c.id}.crp`===data.scenario.cropFiles[fieldMapTool.cropSlot])?.name}: click the top-left corner of a new field · Escape cancels` : `${SPRAY_TOOLS.find(t=>t.kind===fieldMapTool.kind)?.label}: click an existing field · Escape cancels` : buyPlacement ? `${buyPlacement.name}: click to place · Escape cancels` : snapshot?.aircraftFlight ? 'Following aircraft · farm calendar suspended' : mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
+        <div className="map-footer">{objectMove.active&&<><button id="cancel-object-move" onClick={cancelObjectMove}>Cancel move</button><span id="object-move-result" role="status">{objectMove.message}</span></>}<span id="field-tool-result" role="status">{fieldToolMessage}</span>{fieldMapTool&&<button id="cancel-field-tool" onClick={cancelFieldTool}>Cancel field tool</button>}{buyPlacement && <button id="cancel-buy-placement" onClick={cancelPurchase}>Cancel purchase</button>}<span id="buy-result" role="status">{buyMessage}</span><span id="map-tool-hint">{objectMove.active?objectMove.hint:fieldMapTool ? fieldMapTool.kind==='plant' ? `Plant ${assets.catalog.crops.find(c=>`${c.id}.crp`===data.scenario.cropFiles[fieldMapTool.cropSlot])?.name}: click the top-left corner of a new field · Escape cancels` : `${SPRAY_TOOLS.find(t=>t.kind===fieldMapTool.kind)?.label}: click an existing field · Escape cancels` : buyPlacement ? `${buyPlacement.name}: click to place · Escape cancels` : snapshot?.aircraftFlight ? 'Following aircraft · farm calendar suspended' : mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'
           ? 'Click the top-left corner of a new field' : mapTool === 'build' ? 'Click the top-left corner of a building'
           : mapTool === 'supply-move' ? 'Select a supply, then choose its destination in the movement panel'
           : mapTool === 'move' ? 'Select a machine, then choose its destination in the movement panel'
