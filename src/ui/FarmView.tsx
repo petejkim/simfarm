@@ -175,7 +175,11 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
       construction.start(tool==='Paved road'?'road-150':tool==='Dirt road'?'road-161':tool==='Fence'?'fence':'gate');setSelection(null);setToolPointer(null);setMapTool('network'); windows.show(null);viewportRef.current?.focus({preventScroll:true});
     } else if (tool === 'Ditch' || tool === 'Valve') {
       setIrrigationTool(tool === 'Ditch' ? 'ditch' : 'valve');construction.start(tool==='Ditch'?'ditch':'valve');setSelection(null);setToolPointer(null);setMapTool('irrigation'); windows.show(null);viewportRef.current?.focus({preventScroll:true});
-    } else if (tool === 'Hay' || tool === 'Trough') { setLivestockType(tool === 'Hay' ? 300 : 299); chooseTool('livestock'); }
+    } else if (tool === 'Hay' || tool === 'Trough' || tool === 'Trees') {
+      if(tool !== 'Trees')setLivestockType(tool === 'Hay' ? 300 : 299);
+      construction.start(tool === 'Hay' ? 'hay' : tool === 'Trough' ? 'trough' : 'trees');
+      setSelection(null);setToolPointer(null);setMapTool(tool === 'Trees' ? 'inspect' : 'livestock');windows.show(null);viewportRef.current?.focus({preventScroll:true});
+    }
   }
   const data = resource.status === 'ready' && snapshot ? { tiles: resource.value.tiles, scenario: snapshot.scenario } : null;
   const field = data?.scenario.fields.find(f => f.slot === fieldSlot && f.active);

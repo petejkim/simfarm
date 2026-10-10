@@ -5,7 +5,7 @@ export function EditPalette({ artwork, onTool, onField, onSpray, onHelp, disable
 }) {
   return <div className="edit-palette" role="toolbar" aria-label="Edit tools">
     <img src={artwork.src} width="48" height="208" alt="" draggable={false} />
-    {EDIT_TOOLS.map((tool, i) => <button key={tool} title={tool} aria-label={tool} disabled={disabled || tool === 'Trees'}
+    {EDIT_TOOLS.map((tool, i) => <button key={tool} title={tool} aria-label={tool} disabled={disabled}
       style={{ left: (i % 2) * 24, top: Math.floor(i / 2) * 24, width: 24, height: 24 }} onClick={() => onTool(tool)} />)}
     <button className="edit-caption" style={{ top: 144, height: 24 }} disabled={disabled} onClick={onField}>Plant</button>
     <button className="edit-caption" style={{ top: 168, height: 22 }} disabled={disabled} onClick={onSpray}>Spray</button>

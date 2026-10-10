@@ -883,6 +883,8 @@ Implementation follow-up: native `withdrawStoredWater` subtracts only the actual
 
 The ground feed/water handlers call generic purchase0x1cb42 with definition type300/299. Debit0x1c88e subtracts cash and dispatches expense categories at0x1c900..0x1ca20; neither type matches any category. Allocation0x3a468..0x3a4c8 increments goods counts without another expense posting. Successful supplies therefore reduce cash without directly increasing annual expenses in this transaction. This is not proof of an unintended original bug: later lifecycle/report treatment remains incomplete. Native purchase preserves the verified behavior and tests unchanged annual/statistical ledgers. Any accounting correction is deferred pending that wider evidence.
 
+Trees follow-up (2026-10-10): palette type291 also calls1cb42 and matches no debit expense category. Generic add3a518 increments only its goods count, and paint1d07f consumes visual RNG; neither posts an expense. Native tree placement preserves this cash-only behavior and tests unchanged annual ledgers. This extends the verified accounting quirk, without establishing unintended harm or a vulnerability; correction remains deferred. See [tree-placement.md](tree-placement.md).
+
 ## SF-103 — water storage probes neighbors without map bounds
 
 **Status:** verified coordinate alias/out-of-map reads; native ignores absent neighbors.

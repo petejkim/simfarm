@@ -148,3 +148,8 @@ Recover event7 from the INT33 callback and queued button mask, then connect righ
 ## 2026-10-10 — direct construction gestures
 
 Restore mode4's six road/fence/gate/ditch/valve tools through the original palette and native captured click/drag input. Existing simulation commands own per-cell costs and connection rules; recover initial gate/valve interception and shared placement audio. See [direct-construction.md](direct-construction.md). Complete regression and commit locally, then continue remaining Edit interactions (Hay/trough, Trees, direct Bulldoze) and town/aircraft entry with their original dialogs. Keep1× source layout, fixed Edit, real text, native slower pacing and all24 crops.
+
+
+## 2026-10-10 — Trees and direct animal supplies
+
+Restore the three remaining mode4 one-cell tools through the shared Edit painting path. Trees now uses recovered grass/ownership, live price/count and visual RNG rules; Hay/Trough reuse canonical supply purchases with original quantities and placement audio. See [tree-placement.md](tree-placement.md). Complete regression and commit locally. Next restore direct Bulldoze, then remaining town/aircraft map routes and original dialog interiors. No pacing, crop availability, layout, save-schema or MIDI-policy change.

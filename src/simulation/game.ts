@@ -18,6 +18,7 @@ import { advanceTraffic } from './traffic';
 import type { NewFarmOptions, NewFarmState } from './new-farm-state';
 import { beginStationaryDisaster, advanceFrostDay, advanceStationaryDisasters,
   type StationaryDisasterKind, type StationaryDisasterStart } from './stationary-disasters';
+import { placeTree, type TreePlacementResult } from './tree-placement';
 import { placeNetwork, type NetworkAction, type NetworkPlacementResult } from './network-placement';
 import { purchaseCropSupply, type CropSupplyPurchaseResult } from './crop-supply-purchase';
 import { createMovingDisasters, beginMovingDisaster, stopMovingDisaster, advanceMovingDisasters,
@@ -157,6 +158,7 @@ export interface GameSnapshot {
   lastBuildingResult: BuildingPlacementResult | null;
   lastCropSupplyPurchaseResult: (CropSupplyPurchaseResult & { productType: number }) | null;
   lastEquipmentPurchaseResult: (EquipmentPurchaseResult & { equipmentType: number }) | null;
+  lastTreeResult: TreePlacementResult | null;
   lastNetworkResult: (NetworkPlacementResult & { tool: NetworkAction }) | null;
   lastIrrigationResult: IrrigationPlacementResult | null;
   lastLivestockResult: (LivestockPurchaseResult & { productType: number }) | null;
@@ -181,6 +183,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'move-equipment'; selected: EquipmentMoveTarget; x: number; y: number }
   | { type: 'toggle-building-interior'; x: number; y: number; slot: number }
   | { type: 'remove-object'; x: number; y: number; kind: RemovalTarget['kind']; slot: number; tile?: number }
+  | { type: 'plant-tree'; x: number; y: number }
   | { type: 'network'; tool: NetworkAction; x: number; y: number }
   | { type: 'irrigation'; tool: IrrigationTool; x: number; y: number }
   | { type: 'toggle-valve'; x: number; y: number }
@@ -273,6 +276,7 @@ export class GameSimulation {
   private lastCropSupplyPurchaseResult: GameSnapshot['lastCropSupplyPurchaseResult'] = null;
   private lastEquipmentPurchaseResult: GameSnapshot['lastEquipmentPurchaseResult'] = null;
   private lastBuildingResult: BuildingPlacementResult | null = null;
+  private lastTreeResult: TreePlacementResult | null = null;
   private lastNetworkResult: GameSnapshot['lastNetworkResult'] = null;
   private lastIrrigationResult: IrrigationPlacementResult | null = null;
   private lastLivestockResult: GameSnapshot['lastLivestockResult'] = null;
@@ -526,6 +530,10 @@ export class GameSimulation {
     } else if (command.type === 'remove-object') {
       this.lastRemovalResult = removeManualTarget(this.scenario, this.finances, command.x, command.y, command, this.weather.soilMoisture, this.random);
       if (this.lastRemovalResult.ok) this.events.push({ type: 'sound', sound: this.lastRemovalResult.kind === 'terrain' ? 'bulldoze' : 'explode' });
+    } else if (command.type === 'plant-tree') {
+      this.lastTreeResult = placeTree(this.scenario, this.finances, this.random, command.x, command.y, this.weather.soilMoisture);
+      if (this.lastTreeResult.ok) this.events.push({ type: 'sound', sound: 'plopitem' }, { type: 'sound', sound: 'ploptool' });
+      else this.events.push({ type: 'sound', sound: 'uhoh' });
     } else if (command.type === 'network') {
       this.lastNetworkResult = { tool: command.tool, ...placeNetwork(this.scenario, this.finances, command.tool, command.x, command.y, this.weather.soilMoisture) };
       if (command.tool !== 'open-gate' && command.tool !== 'close-gate')
@@ -552,6 +560,10 @@ export class GameSimulation {
     } else if (command.type === 'buy-livestock') {
       this.lastLivestockResult = { productType: command.productType,
         ...purchaseLivestock(this.scenario, this.finances, this.random, command.productType, command.x, command.y, this.weather.soilMoisture) };
+      if (command.productType === 299 || command.productType === 300) {
+        if (this.lastLivestockResult.ok) this.events.push({ type: 'sound', sound: 'plopitem' }, { type: 'sound', sound: 'ploptool' });
+        else this.events.push({ type: 'sound', sound: 'uhoh' });
+      }
     } else if (command.type === 'create-field') {
       this.lastPlantResult = null; this.lastHarvestResult = null;
       this.lastNewFieldResult = plantNewField(this.scenario, command.x, command.y, command.cropSlot, this.crops,
@@ -891,6 +903,7 @@ export class GameSimulation {
       lastCropSupplyPurchaseResult: this.lastCropSupplyPurchaseResult ? { ...this.lastCropSupplyPurchaseResult } : null,
       lastEquipmentPurchaseResult: this.lastEquipmentPurchaseResult ? { ...this.lastEquipmentPurchaseResult } : null,
       lastBuildingResult: this.lastBuildingResult ? { ...this.lastBuildingResult } : null,
+      lastTreeResult: this.lastTreeResult ? { ...this.lastTreeResult } : null,
       lastNetworkResult: this.lastNetworkResult ? { ...this.lastNetworkResult } : null,
       lastIrrigationResult: this.lastIrrigationResult ? { ...this.lastIrrigationResult } : null,
       lastLivestockResult: this.lastLivestockResult ? { ...this.lastLivestockResult } : null,

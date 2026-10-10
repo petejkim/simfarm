@@ -2,14 +2,17 @@ import { useCallback,useState } from 'react';
 import type { GameSimulation,GameSnapshot } from '../simulation/game';
 import { checkNetworkPlacement,type NetworkTool } from '../simulation/network-placement';
 import { checkIrrigationPlacement } from '../simulation/irrigation-placement';
+import { checkTreePlacement } from '../simulation/tree-placement';
+import { checkSupplyPurchase } from '../simulation/livestock-purchase';
 import { mapObjectInteraction } from '../simulation/map-interaction';
 
-export type ConstructionTool=NetworkTool|'ditch'|'valve';
-const labels:Record<ConstructionTool,string>={'road-150':'Paved road','road-161':'Dirt road',fence:'Fence',gate:'Gate',ditch:'Ditch',valve:'Valve'};
+export type ConstructionTool=NetworkTool|'ditch'|'valve'|'trees'|'hay'|'trough';
+const labels:Record<ConstructionTool,string>={'road-150':'Paved road','road-161':'Dirt road',fence:'Fence',gate:'Gate',ditch:'Ditch',valve:'Valve',trees:'Trees',hay:'Hay',trough:'Trough'};
 const reasons:Record<string,string>={
   'outside-map':'Choose a tile inside the map.','town-land':'Town land cannot be built on.',
-  'blocked-terrain':'Terrain blocks this work.','not-owned':'Buy this land before building a fence.',
+  'blocked-terrain':'Terrain blocks this work.','not-owned':'Buy this land before placing this item.',
   'straight-fence-required':'Place a gate on a straight fence.','straight-ditch-required':'Place a valve on a straight ditch.',
+  'occupied':'This tile is occupied.','no-inventory-slots':'There is no room for another supply item.',
   'insufficient-cash':'There is not enough cash for this work.',
 };
 const blocked=(s:GameSnapshot)=>Boolean(s.pendingTown||s.finances.defaultDecision||s.aircraftFlight);
@@ -19,6 +22,8 @@ export function useConstruction(simulation:GameSimulation|null,snapshot:GameSnap
   const cancel=useCallback(()=>{setTool(null);setMessage('');},[]);
   function quote(x:number,y:number){
     if(!tool||!snapshot)return null;
+    if(tool==='trees')return checkTreePlacement(snapshot.scenario,snapshot.finances,x,y,snapshot.weather.soilMoisture);
+    if(tool==='hay'||tool==='trough')return checkSupplyPurchase(snapshot.scenario,snapshot.finances,tool==='hay'?300:299,x,y,snapshot.weather.soilMoisture);
     return tool==='ditch'||tool==='valve'
       ?checkIrrigationPlacement(snapshot.scenario,snapshot.finances,tool,x,y,snapshot.weather.soilMoisture)
       :checkNetworkPlacement(snapshot.scenario,snapshot.finances,tool,x,y,snapshot.weather.soilMoisture);
@@ -37,9 +42,11 @@ export function useConstruction(simulation:GameSimulation|null,snapshot:GameSnap
       if(action?.type==='network')simulation.dispatch(action);
     }
     const irrigation=tool==='ditch'||tool==='valve';
-    if(irrigation)simulation.dispatch({type:'irrigation',tool,x,y});
+    if(tool==='trees')simulation.dispatch({type:'plant-tree',x,y});
+    else if(tool==='hay'||tool==='trough')simulation.dispatch({type:'buy-livestock',productType:tool==='hay'?300:299,x,y});
+    else if(irrigation)simulation.dispatch({type:'irrigation',tool,x,y});
     else simulation.dispatch({type:'network',tool,x,y});
-    const next=simulation.getSnapshot(),result=irrigation?next.lastIrrigationResult:next.lastNetworkResult;
+    const next=simulation.getSnapshot(),result=tool==='trees'?next.lastTreeResult:tool==='hay'||tool==='trough'?next.lastLivestockResult:irrigation?next.lastIrrigationResult:next.lastNetworkResult;
     if(result)setMessage(result.ok?`${labels[tool]} placed for $${result.price+result.clearingCost}.`:reasons[result.reason]??'Cannot build here.');
     return true;
   }

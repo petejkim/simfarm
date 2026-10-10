@@ -41,4 +41,4 @@ Source tests pin all six palette dispatches, definition IDs, mode4 routing, one-
 
 Five new browser flows exercise all six direct tools, connected lines, water/road crossings, exact source pixels, no mutation from hover, atomic cash/clearing rejection, same-cell suppression, outside release, cancellation/blur/Escape, tool changes, initial versus dragged-over valve behavior, captured touch at2×, save/reload and continued simulation. Preview colors and readable feedback are native additions. No new original-game defect is established; SF-094/095/113/135/162 and other prior rule notes remain in original-bugs.md.
 
-Hay/trough quick placement, Trees, direct Bulldoze and the remaining town/aircraft/window interactions still need reconstruction. This increment does not complete the original Edit tool system or the preservation goal.
+Hay/trough quick placement and Trees now use the same gesture path; see [tree-placement.md](tree-placement.md). Direct Bulldoze and the remaining town/aircraft/window interactions still need reconstruction. This increment does not complete the original Edit tool system or the preservation goal.
