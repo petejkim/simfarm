@@ -45,6 +45,10 @@ test('livestock loss is shown in React, malformed frame saves preserve the curre
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click(); await expect(page.locator('#livestock-panel > summary')).toContainText('0 animals');
   await expect(page.locator('#livestock-notices')).toContainText('Cow 1 died from lack of water.');
+  const status=page.getByRole('button',{name:'Edit message history'});
+  await expect(status).toHaveText('Livestock are dying!');await status.click();
+  await expect(page.getByRole('list',{name:'Recent Edit messages'}).locator('li')).toHaveText(['Livestock are dying!']);
+  await page.keyboard.press('Escape');await expect(page.getByRole('dialog',{name:'Message',exact:true})).toHaveCount(0);
   const bad = JSON.parse(game.save(4)); bad.runtime.animalFrame.herd = '00';
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
   await expect(page.locator('#save-status')).toContainText('Invalid native save: animal herd cache');
@@ -54,4 +58,5 @@ test('livestock loss is shown in React, malformed frame saves preserve the curre
   await page.screenshot({ path: 'artifacts/browser-livestock.png' });
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await expect(page.locator('#livestock-panel > summary')).toContainText('0 animals'); await expect(page.locator('#livestock-notices')).toHaveCount(0);
+  await expect(status).toHaveCount(0);
 });

@@ -690,6 +690,9 @@ export class GameSimulation {
       const notices = animals.flatMap(a => [...(a.movement?.notices ?? []), ...(a.care?.notices ?? [])]
         .map(id => ({ slot: a.slot, id, animalType: s.animals[a.slot].type })));
       if (notices.length) this.animalNotices = notices.slice(-20);
+      // Original animal movement/care calls22504 for codes56..59 and67.
+      // Preserve per-animal movement-before-care order and adjacent deduplication.
+      for(const notice of notices)appendEditStatus(this.editStatus,notice.id);
       advanceTraffic(s, this.traffic, this.random, this.equipmentRuntime); // Main0xbd73, after animals and before disasters.
       this.requestCollisionSounds();
       this.advanceDisasters(); // Main-loop0xbd85.

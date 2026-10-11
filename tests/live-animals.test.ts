@@ -6,6 +6,21 @@ import { readCrop } from '../src/formats/crop';
 import { GameSimulation } from './support/game';
 import { livestockFixture } from './support/livestock';
 
+test('animal care and fence notices call original quick history, not modal messages',()=>{
+  const exe=readFileSync(new URL('../../simfarm-dos/SIMFARM.EXE',import.meta.url));
+  for(const [offset,code] of [[0x12b11,57],[0x12b70,58],[0x12bce,59],[0x12779,67]])
+    assert.equal(exe.subarray(offset,offset+7).toString('hex'),`6a${code.toString(16)}9ab42b751d`);
+  assert.equal(exe.subarray(0x12c2f,0x12c34).toString('hex'),'6a38e93eff'); //56 rejoins58's call.
+  for(const [water,feed,expected] of [[20,0,[57]],[255,0,[58]],[0,90,[59]],[0,255,[56,59]]] as const){
+    const f=livestockFixture();f.state.scenario.inventory[1].bytes[10]&=~32;
+    f.state.scenario.cells[worldIndex(12,10)].terrain=15;
+    const animal=f.state.scenario.animals[1];animal.bytes[14]=water;animal.bytes[13]=feed;
+    const game=f.load();game.dispatch({type:'set-paused',paused:false});game.tick(64);
+    assert.deepEqual(game.getSnapshot().editStatuses,expected);
+    assert.deepEqual(GameSimulation.load(game.save(4),f.crops).simulation.getSnapshot().editStatuses,[]);
+  }
+});
+
 test('live clock moves animals after irrigation, consumes original supplies, pauses and resumes exact native state', () => {
   const f = livestockFixture(), game = f.load();
   game.tick(64); assert.equal(game.getSnapshot().scenario.animals[1].x, 10);

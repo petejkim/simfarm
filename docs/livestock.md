@@ -129,3 +129,19 @@ Native statistics/save validation now accepts the full byte range0..255 for this
 Weekly0xbf02 starts with equipment: active records increment word+18 at0xbf2f. Above4,0xbf43 invokes the existing wear helper0x11972 with amount1, then resets that word to0. Condition255 and rental flag64 clear lead to generic action2 at0xbf8c; resident stub0x28042 selects overlay27 entry0x0fcc (file0x4c41c), the already-recovered asset-sale routine. Its failure result skips the remaining destruction presentation. Successful outside-building removal also obtains the footprint, requests per-cell clearing and notice73. Before integration, verify stored/linked/busy equipment, financial credit and clearing order rather than assuming this is a free deletion.
 
 Building aging follows at0xc03a. Chemical records then run0xc110..0xc13d: active flag32 at record+2, word+10 increment at0xc120, byte+9 increment at0xc125, both wrapping. Segment pointerDS:c674 initializes2d9f, confirming the20-byte record baseedbe. Animal age follows at0xc14c. The chemical byte's consumers still need tracing before naming it. These equipment/chemical phases remain unimplemented; existing native v10 already retains their record bytes.
+
+## Original livestock quick messages restored (2026-10-11)
+
+Retirement audit found that care/fence events reached only the native Livestock panel. Verified caller bytes `6aNN 9ab42b751d` at12b11(code57),12b70(58),12bce(59),12779(67);12c2f pushes56 then jumps to12b72's same call. Destination1d75:2bb4 is file22504, the ten-entry Edit history writer, not a modal Message. High confidence: source call instructions and existing movement/care ordering agree. GameSimulation now appends each returned code in per-animal movement-before-care order; existing adjacent duplicate suppression applies. Canonical animal state, clocks, RNG, accounting and saves are unchanged. These were native presentation omissions, not original defects.
+
+The following archived qmessage.dat64-byte records are rendered as actual HTML text. Hashes cover the entire record; offsets are code×64.
+
+|Code|Original text|SHA256|
+|---|---|---|
+|56|Livestock are hungry.|6aaa4715ed43cf506ae6c008e3dce04184e56460cd3555c818642c5448fa9cc9|
+|57|Livestock are thirsty.|419f56bf23ed80acf3560d5965737c37a7d5b06380e24ec97cb49b3dda1c1498|
+|58|Livestock are dying!|236ac0466851b0658516a41b823412e0715b8a7c285fc1b2314684ef939dfa04|
+|59|Livestock cannot reach food.|362d4fba4a77936ffbf5330c757ade442ebcefe1a9d56122fdc74999c388594b|
+|67|A section of fence has broken!|5ccf8a7bacbbe3d4ad0ac704fd96a4e7a3a573cd0405639629d998a2f2adb821|
+
+Preserve these actual source captions even though code56 follows feed death and code59 is the feed warning. Native species-specific diagnostic prose is not the original text. Live tests verify57,58,59 and feed-warning→56 history order, source tests pin all five callers, and movement tests retain fence-break/RNG checks. Browser verifies source death text/history, no popup, save/reset and original movement/supply pixels. Birth/old-age/capacity diagnostic notices remain explicitly native; no original IDs are invented for them.
