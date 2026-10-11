@@ -46,7 +46,7 @@ test('YES persists restart without marking debt paid; cancellation retains the f
   await expect(page.locator('[data-window=default]')).toHaveCount(0);await expect(page.locator('.new-farm-panel')).toBeVisible();
   await page.getByRole('button',{name:'Cancel',exact:true}).click();const ended=await save(page);expect(ended).toEqual(JSON.parse(game.save(4)));expect(ended.runtime.finances.defaultDecision).toEqual({status:'restart',originalExitCode:2});
   const restored=GameSimulation.load(JSON.stringify(ended),browserCrops).simulation;await page.reload();await load(page,restored.save(4));await expect(page.locator('#default-new-game')).toBeVisible();
-  await page.locator('#default-new-game').click();await page.locator('#create-farm').click();await expect(page.locator('#play-farm')).toBeVisible();
+  await page.locator('#default-new-game').click();await page.locator('#region-design').click();await expect(page.locator('#play-farm')).toBeVisible();
   await expect(page.locator('#next-day')).toBeDisabled();await page.locator('#play-farm').click();await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');await expect(page.locator('[data-window=default]')).toHaveCount(0);
   await reveal(page,'#next-day');await expect(page.locator('#next-day')).toBeEnabled();
 });

@@ -19,7 +19,7 @@ async function start(page: Page) {
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
 }
 async function chooser(page: Page) {
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#choose-region'); await page.locator('#choose-region').click(); await reveal(page, '#geographic-chooser'); await expect(page.locator('#geographic-chooser')).toBeVisible();
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click();  await reveal(page, '#geographic-chooser'); await expect(page.locator('#geographic-chooser')).toBeVisible();
 }
 async function pixels(page: Page, x: number, y: number) {
   // The source raster remains an exact reference under opaque HTML text surfaces.
@@ -87,8 +87,8 @@ test('truncated original artwork and palette fail atomically and original Quit c
   await start(page); const before = await save(page);
   for (const [file, length] of [['scenario.int', 153599], ['scenario.pal', 47]] as const) {
     await page.route(`**/assets/raw/${file}`, route => route.fulfill({ body: raw(file).subarray(0, length), contentType: 'application/octet-stream' }));
-    await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#choose-region'); await page.locator('#choose-region').click();
-    await reveal(page, '#region-error'); await expect(page.locator('#region-error')).toBeVisible(); await expect(page.locator('#create-farm')).toBeDisabled();
+    await reveal(page, '#new-farm'); await page.locator('#new-farm').click();
+    await reveal(page, '#region-error'); await expect(page.locator('#region-error')).toBeVisible(); await expect(page.locator('#region-use')).toHaveCount(0);
     await page.getByRole('button', { name: 'Cancel', exact: true }).click(); expect(await save(page)).toEqual(before);
     await page.unroute(`**/assets/raw/${file}`);
   }

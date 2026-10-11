@@ -13,7 +13,8 @@ export function RegionMap({ assets, selected, disabled, unavailable, onSelect, o
   assets: RegionAssets; selected: number; disabled: boolean; unavailable: boolean; onSelect: (index: number) => void;
   onDesign: () => void; onLoad: () => void; onQuit: () => void;
 }) {
-  const canvas = useRef<HTMLCanvasElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null), heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { heading.current?.focus(); }, []);
   const raster = useMemo(() => renderRegionChooser(assets.artwork, assets.farms, assets.locations[selected]), [assets, selected]);
   useEffect(() => { if (canvas.current) paintRegionChooser(canvas.current, raster); }, [raster]);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
@@ -37,7 +38,7 @@ export function RegionMap({ assets, selected, disabled, unavailable, onSelect, o
   }
   return <div className="geographic-chooser" id="geographic-chooser" role="group" aria-label="Select a region" aria-describedby="region-map-help">
     <canvas ref={canvas} id="region-artwork" width={REGION_PANEL.width} height={REGION_PANEL.height} aria-hidden="true" />
-    <span className="setup-text setup-title" style={position(102, 28, 136, 48)}>SELECT<br />A REGION</span>
+    <h2 ref={heading} tabIndex={-1} className="setup-text setup-title" style={position(102, 28, 136, 48)}>SELECT<br />A REGION</h2>
     {['Rainfall', 'Temperature', 'Wind Speed'].map((label, i) => <div key={label}>
       <span className="setup-text" style={position(112, 84 + i * 48, 112, 15)}>{label}</span>
       <span className="setup-text" style={position(90, 113 + i * 48, 29, 13)}>Low</span>

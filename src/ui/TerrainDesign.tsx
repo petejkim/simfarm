@@ -29,11 +29,9 @@ export function TerrainDesign({ draft, assets, onPlay, onCancel, error }: {
   }
   const closed = state.phase !== 'preview';
   return <>
-    <h2 ref={heading} tabIndex={-1}>Design your terrain</h2>
-    <p id="terrain-design-help">Choose your climate and water options, then Generate World to make a new map. Play accepts the displayed map. H marks your home; T marks the town.</p>
     <div className="terrain-design" id="terrain-design" role="group" aria-label="Original terrain design" aria-describedby="terrain-design-help">
       <img src={assets.screen.src} alt="" draggable={false} />
-      <span className="setup-text setup-title" style={position(176, 44, 260, 24)}>DESIGN YOUR TERRAIN</span>
+      <h2 ref={heading} tabIndex={-1} className="setup-text setup-title" style={position(176, 44, 260, 24)}>Design your terrain</h2>
       <canvas ref={canvas} id="terrain-preview" width={192} height={192} style={position(264, 72, 192, 192)} role="img" aria-label="Terrain preview with home and town markers" hidden={!rendered.raster} />
       {rendered.raster && preview.locations && ([['T', preview.locations.town], ['H', preview.locations.player]] as const).map(([letter, site]) =>
         <span key={letter} className="terrain-marker" style={position(264 + site.regionX * 16, 72 + site.regionY * 16, 8, 8)} aria-label={letter === 'H' ? 'Home' : 'Town'}>{letter}</span>)}
@@ -61,10 +59,15 @@ export function TerrainDesign({ draft, assets, onPlay, onCancel, error }: {
         onClick={() => run(() => draft.generateWorld())}>Generate World</button>
       <button id="play-farm" type="button" className="terrain-hit setup-button" style={position(401, 285, 49, 25)} aria-label="Play" disabled={closed || !rendered.raster} onClick={onPlay}>Play</button>
     </div>
-    <p id="terrain-settings" role="status">Rainfall: {levels[settings.climate.precipitation]} · Temperature: {levels[settings.climate.temperature]} · Wind: {levels[settings.climate.wind]} · River: {settings.river ? 'on' : 'off'} · Lake: {settings.lake ? 'on' : 'off'}</p>
-    <p>Water and rainfall changes affect the terrain when you Generate World. Your farm starts in April {settings.date.year} with $40,000.</p>
-    {preview.locations && <p id="terrain-sites">Home: region {preview.locations.player.regionX + 1}, {preview.locations.player.regionY + 1} · Town: region {preview.locations.town.regionX + 1}, {preview.locations.town.regionY + 1}</p>}
-    <button type="button" onClick={onCancel}>Cancel</button>
+    <div className="setup-footer terrain-footer">
+      <span>April {settings.date.year} · $40,000</span>
+      <details><summary>Help</summary><div>
+        <p id="terrain-design-help">Choose climate and water options. Generate World makes a new map; Play accepts the displayed map. H marks your home; T marks the town. Water and rainfall changes affect terrain when you Generate World.</p>
+        <p id="terrain-settings" role="status">Rainfall: {levels[settings.climate.precipitation]} · Temperature: {levels[settings.climate.temperature]} · Wind: {levels[settings.climate.wind]} · River: {settings.river ? 'on' : 'off'} · Lake: {settings.lake ? 'on' : 'off'}</p>
+        {preview.locations && <p id="terrain-sites">Home: region {preview.locations.player.regionX + 1}, {preview.locations.player.regionY + 1} · Town: region {preview.locations.town.regionX + 1}, {preview.locations.town.regionY + 1}</p>}
+      </div></details>
+      <button type="button" onClick={onCancel}>Cancel</button>
+    </div>
     {(error || actionError || rendered.error) && <p id="new-farm-error" role="alert">Could not create farm: {error || actionError || rendered.error}</p>}
   </>;
 }

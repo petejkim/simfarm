@@ -22,7 +22,7 @@ async function save(page: Page) {
 async function chooser(page: Page, fresh = false) {
   await reveal(page, '#new-farm'); await page.locator('#new-farm').click();
   if (fresh) { await reveal(page, '#new-farm-session'); await page.locator('#new-farm-session').selectOption('fresh'); }
-  await reveal(page, '#choose-region'); await page.locator('#choose-region').click(); await expect(page.locator('#region-load')).toBeEnabled();
+  await expect(page.locator('#region-map')).toBeVisible(); await expect(page.locator('#region-load')).toBeEnabled();
 }
 async function pick(page: Page, name: string, buffer: Buffer) {
   const picker = page.waitForEvent('filechooser'); await reveal(page, '#region-load'); await page.locator('#region-load').click();

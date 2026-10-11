@@ -790,7 +790,7 @@ test('saved financial default stops time and actions, supports ending or restart
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Farm session ended', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Choose another farm', exact: true }).click();
-  await reveal(page, '#create-farm'); await page.locator('#create-farm').click(); await reveal(page, '#play-farm'); await page.locator('#play-farm').click();
+  await reveal(page, '#region-design'); await page.locator('#region-design').click(); await reveal(page, '#play-farm'); await page.locator('#play-farm').click();
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   await expect(page.locator('#next-day')).toBeEnabled(); await expect(page.locator('#time-status')).toContainText('0 days advanced');
   await openWindow(page, 'bank'); await expect(page.locator('#loan-overdue')).toHaveCount(0);

@@ -473,3 +473,23 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 /* Source2b180: decorative right end, part of the draggable title (ed0f..ed34). */
 .game-window-title[data-title-artwork=false]::after{content:"";position:absolute;right:0;top:0;width:16px;height:16px;background:var(--window-title-end) no-repeat;pointer-events:none}
 .game-window[data-front=false]>.game-window-title[data-title-artwork=false]::after{background-image:var(--window-title-end-inactive)}
+
+/* Setup is led by the original 1× panels, with a compact native options strip. */
+.game-window[data-window=newgame]{left:80px;right:auto;top:48px;width:472px;max-height:calc(100% - 48px);border:0}
+.game-window[data-window=newgame]:has(.terrain-design){width:352px;left:128px}
+.game-window[data-window=newgame] .game-window-body{padding:0}
+.game-window .new-farm-panel{margin:0;padding:0;border:0}
+.new-farm-panel .setup-title{margin:0;text-transform:uppercase;letter-spacing:normal}
+.new-farm-panel .setup-title:focus{outline:none}
+.new-farm-panel .setup-options{display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px;margin:0;padding:6px 8px;border:0;border-top:2px groove #eee}
+.new-farm-panel .setup-options label{display:grid;gap:3px;color:#000;font:10px/12px Arial,sans-serif}
+.new-farm-panel .setup-options select,.new-farm-panel .setup-options input[type=number]{width:112px;height:22px;margin:0;padding:2px 4px;border:2px inset #eee;border-radius:0;background:#fff;color:#000;font:12px Arial,sans-serif}
+.new-farm-panel .setup-options :disabled{color:#666;background:#d2d2d2;opacity:1}
+.new-farm-panel .setup-footer{display:flex;align-items:center;gap:8px;min-height:28px;padding:2px 8px;font:10px Arial,sans-serif}
+.new-farm-panel .setup-footer>span{flex:1}
+.new-farm-panel .setup-footer details{border:0;padding:0;font:10px Arial,sans-serif}
+.new-farm-panel .setup-footer details>div{position:absolute;left:8px;right:8px;bottom:32px;z-index:2;padding:8px;background:#ffffd0;border:1px solid #000;box-shadow:3px 3px #0006;font:12px/1.4 Arial,sans-serif}
+.new-farm-panel .setup-footer p{margin:4px 0;color:#000}
+.new-farm-panel .setup-footer button{padding:3px 8px;font-size:11px}
+.new-farm-panel .setup-loading{padding:16px;min-height:160px}
+.new-farm-panel :is(#new-farm-error,#restart-unavailable){margin:0;padding:8px;font:12px/1.4 Arial,sans-serif}
