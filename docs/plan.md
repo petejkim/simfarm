@@ -422,3 +422,5 @@ After the current field-interaction audit, before other preservation work: (1) m
 About clarification: omit the entire “This copy is registered to: <name>” line. Preserve the remaining original presentation with actual text elements.
 
 Startup/About queue: amain now plays first and once before genfarm (1c437c1,5674528), with saved mute and later situational music retained. Original About frame, artwork and credit pages are restored with HTML text; registered-owner text is omitted. See about-dialog.md for static evidence and native timing/font adaptations. After validation/commit, resume the remaining-interaction audit; the full preservation goal remains incomplete.
+
+Field-selector follow-up: action26 is confirmed as the already-ported Move object control, not an unresolved field action. Full linked palette/action table is pinned by audit-field-interactions.py. Selected field tool018a=1 reachability remains unproven; do not add a speculative Plow button. Next recover/display the original Move pickup/drop cursors, keeping its existing canonical commands; continue broader interaction and MIDI sequence audits thereafter.
