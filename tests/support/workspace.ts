@@ -35,8 +35,8 @@ export async function openWindow(page: Page, key: string) {
     // A covered Expert is still open; its menu item closes it before reopening.
     if(alreadyOpen){await page.locator('#windows-menu-button').click();await item.click();}return;
   }
-  if (key === 'session' || key === 'about-project') {
-    await openWindow(page, 'options'); await page.getByRole('button', { name: key === 'session' ? 'Game files' : 'Preservation progress', exact: true }).click(); return;
+  if (key === 'about-project') {
+    await openWindow(page, 'options'); await page.getByRole('button', { name: 'Preservation progress', exact: true }).click(); return;
   }
   await page.getByRole('button', { name: 'Edit tools and help', exact: true }).click();
   if(!await page.locator('[data-window=tools]').isVisible())await page.getByRole('button', { name: 'Advanced controls', exact: true }).click();

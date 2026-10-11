@@ -487,9 +487,7 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   const cash=Number((await page.locator('#farm-cash').textContent())!.replace(/[^0-9]/g,''));
   await sale.click();await expect(page.locator('#farm-cash')).toHaveText(`$${(cash+price).toLocaleString('en-US')}`);
   await page.setViewportSize({ width: 1280, height: 844 });
-  await reveal(page, '#save-farm'); await page.locator('#save-farm').scrollIntoViewIfNeeded();
-  await reveal(page, '#save-farm'); await expect(page.locator('#save-farm')).toBeVisible();
-  await reveal(page, '#load-farm'); await expect(page.locator('#load-farm')).toBeVisible();
+  await page.locator('#file-menu-button').click();await expect(page.getByRole('menuitem',{name:'Save',exact:true})).toBeVisible();await expect(page.getByRole('menuitem',{name:'Load Game',exact:true})).toBeVisible();await page.keyboard.press('Escape');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   expect(errors).toEqual([]);
 });
@@ -592,7 +590,7 @@ test('a farm saved while a harvest truck drives to storage loads and completes d
   for (let tick = 0; tick < 2048 && game.getSnapshot().scenario.fields[1].step !== 15; tick++) game.tick(4000 / (scenario.farm.dayDelayTicks + 1));
   expect(game.getSnapshot().scenario.fields[1].step).toBe(15);
   game.dispatch({ type: 'set-paused', paused: true });
-  await page.goto('/'); await expect(page.locator('#save-farm')).toBeEnabled();
+  await page.goto('/'); await expect(page.locator('#file-menu-button')).toBeEnabled();
   await page.locator('#load-farm-file').setInputFiles({ name: 'truck.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(game.save(1)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await reveal(page, '#planner-field'); await page.locator('#planner-field').selectOption('1');

@@ -341,7 +341,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       },
     }} simulation={simulation} scenarioId={id} tiles={data?.tiles??null} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
     <GameWindow windowKey="options" title="Audio and tools">{audioControls}
-      <button onClick={() => windows.show('session')}>Game files</button> <button onClick={() => windows.show('tools')}>Edit tools</button>
+      <button onClick={() => windows.show('tools')}>Edit tools</button>
       <button onClick={() => windows.show('about-project')}>Preservation progress</button>
     </GameWindow>
     <GameWindow windowKey="newgame" title="New Game" forced={newFarmOpen} onClose={() => setNewFarmOpen(false)}>

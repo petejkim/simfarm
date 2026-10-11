@@ -79,3 +79,7 @@ User direction supersedes the proposed timing prerequisites: skip original timin
 ## User-directed crop/UI policy, 2026-10-09/10
 
 Load Crop is intentionally omitted from the live File menu: all24 supplied crops are available simultaneously. Its decoded source descriptor remains in preservation metadata. Do not reconstruct its file-loading/swap interaction. After this increment, prioritize original UI/dialogs/gameplay interactions. Keep the edit window visible, maximized and not resizable/toggleable. Closely preserve the original layout with actual React text; mobile layout adaptations are explicitly deferred.
+
+## Native file feedback after utility-window retirement
+
+The duplicated Game files window and Save farm/Load farm buttons are removed. File→Save, Save As and Load Game are the sole ordinary entry points; the hidden file input remains the browser picker target. Successful/loading status is announced through a visually hidden role=status output, while failed loads and direct Save failures open a dismissible File error window. It uses the existing movable titlebar and HTML error text; this is native browser feedback, not a claim to have recovered a DOS file-error dialog. Save As retains its inline validation error. Error dismissal does not edit/pause/replace the farm; a new file operation clears the prior error, and failed/aborted loads preserve the current simulation. Existing maximum-size, decoder, asset-loading and cancellation guards are unchanged.

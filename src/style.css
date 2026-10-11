@@ -4,7 +4,7 @@
 .land-panel{border-bottom:1px solid #48563f;margin-bottom:20px;padding-bottom:16px;font-size:12px;line-height:1.6;color:#c2cbb4}.clearing{align-items:flex-start}.clearing input{margin-top:4px}.land-panel select{max-width:100%}input:focus-visible{outline:2px solid #e4ce83;outline-offset:2px}
 .harvest-inventory{font-size:12px;line-height:1.6;color:#c2cbb4}.harvest-inventory{border-bottom:1px solid #48563f;margin-bottom:20px;padding-bottom:12px}#harvest-items{padding-left:18px}#harvest-items li{margin:8px 0}
 .time-controls{border-top:1px solid #44503b;font-size:12px;flex-wrap:wrap}.time-controls>div{flex-wrap:wrap}#farm-date{color:#ead6a1}#farm-weather,#time-status,#field-growth{color:#c2cbb4;font-size:12px}#field-growth{line-height:1.6}#viewport{height:calc(100vh - 308px)}aside{max-height:calc(100vh - 268px)}@media(max-width:800px){#viewport{height:55vh}aside{max-height:none}}
-.toolbar{flex-wrap:wrap}.toolbar>.save-controls{flex-direction:column;align-items:flex-start;gap:4px;max-width:100%}.save-controls>div{display:flex;gap:8px}#save-status{font-size:12px;color:#c2cbb4;overflow-wrap:anywhere}
+.toolbar{flex-wrap:wrap}
 .loan-panel{margin:0 0 16px;padding:12px 16px;border:1px solid #48563f;background:#20291d;color:#c2cbb4;line-height:1.5}.loan-panel summary{cursor:pointer;color:#ead6a1;font-weight:bold}.loan-panel dl{display:flex;gap:12px 30px;flex-wrap:wrap}.loan-panel dt{font-size:12px;color:#a8b598}.loan-panel dd{margin:0;color:#ead6a1}.loan-panel form{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.loan-panel input{width:125px;max-width:100%;padding:7px;color:#f3ecd9;background:#111b11;border:1px solid #7a8964}.loan-panel p{font-size:13px}
 
 .farm-actions{border:0;padding:0;margin:0;min-width:0}
@@ -80,7 +80,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .original-menu-bar>button{position:absolute;top:0;height:16px;padding:0;text-align:left;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;white-space:nowrap}
 .original-menu-bar>button:disabled{opacity:.65;cursor:default}
 .original-menu-bar>button:not(:disabled):hover,.original-menu-bar>button[aria-expanded=true]{background:#000;color:#fff}
-.farm-file-controls .save-controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:8px 28px;font-size:12px}
 .file-dialog{max-width:min(500px,calc(100% - 24px));color:#000;background:#c2c2c2;border:2px solid #000;box-shadow:4px 4px #0008;padding:20px;line-height:1.5}
 .file-dialog::backdrop{background:#0007}
 .file-dialog h2{color:#000;font:700 20px Arial,sans-serif;margin:0 0 16px}
@@ -88,7 +87,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .file-dialog label{display:flex;flex-wrap:wrap;font-size:16px}
 .file-dialog input{min-width:0;max-width:100%;flex:1}
 .file-dialog button:focus-visible,.file-dialog input:focus-visible{outline:2px solid #000;outline-offset:2px}
-@media(max-width:600px){.farm-file-controls .save-controls{padding:8px 16px}}
 
 /* Original desktop coordinates at a fixed 1× display scale. Mobile redesign is
    deferred; retain the full control strip instead of compressing its spacing. */
@@ -481,3 +479,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .new-farm-panel .setup-footer button{padding:3px 8px;font-size:11px}
 .new-farm-panel .setup-loading{padding:16px;min-height:160px}
 .new-farm-panel :is(#new-farm-error,#restart-unavailable){margin:0;padding:8px;font:12px/1.4 Arial,sans-serif}
+
+/* File progress remains accessible without a duplicate file-management window. */
+.file-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
