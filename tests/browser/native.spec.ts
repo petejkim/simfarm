@@ -274,6 +274,7 @@ test('a planted original corn crop grows, is harvested and sold through browser 
 });
 
 test('speed slider adjusts running time, stays paused and keeps Next day to one day', async ({ page }) => {
+  test.setTimeout(45_000); // Full-map clock/frame progression takes ~24s alone; retain headroom under suite load.
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.goto('/');

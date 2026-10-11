@@ -54,7 +54,7 @@ test('original import retains every represented speed byte except the verified d
   const restarted = legacy.restartGenerated(options, assets);
   assert.equal(restarted.getSnapshot().scenario.farm.equipmentPacingByte, 2);
   assert.equal(GameSimulation.createNew(options, assets).getSnapshot().scenario.farm.equipmentPacingByte, 2);
-});
+}, 15000); // 32 complete import/save/advance pairs: ~4.3s alone, ~7.8s under concurrent regression load.
 
 test('v22 bounds and gate consistency reject malformed saves; old formats keep the byte unknown without guessing from source or delays', () => {
   const before = parsed(cold());
