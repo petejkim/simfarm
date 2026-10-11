@@ -27,7 +27,7 @@ test('Map ordinary sale source gates protect home, every field cell and other ow
   assert.ok(check().ok);
   for(const owner of [0,2,3,255]){w.regionalConditions[92]=owner;assert.deepEqual(check(),{ok:false,reason:'not-owned'});}
   for(const [x,y] of [[-1,0],[12,0],[0,12],[1.5,0],[NaN,0]])assert.deepEqual(checkManualLandSale(w,f,x,y,0),{ok:false,reason:'outside-map'});
-});
+}, 15000); //64 complete before/after farm comparisons, matching other exhaustive source sweeps.
 
 test('ordinary buy/sell commands credit taxable land income, retain home and survive exact checkpoint continuation',()=>{
   const {state}=shopFixture();state.scenario.regionalConditions.fill(0);

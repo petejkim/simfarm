@@ -3,13 +3,13 @@ import { loadSavedFarmTiles, type GameAssets } from '../assets/game-assets';
 import { MAX_SAVE_BYTES } from '../formats/native-save';
 import { GameSimulation } from '../simulation/game';
 import { GameWindow } from './GameWindow';
-import { FileMenu, type MenuOptions } from './FileMenu';
+import { FileMenu, type MenuChoices } from './FileMenu';
 import { ControlBar, type GameWindow as WindowCommand } from './ControlBar';
 
 export interface LoadedFarm { scenarioId: number | null; simulation: GameSimulation; tiles: HTMLImageElement }
 
-export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, onNewGame, onWindow, options }: {
-  options: MenuOptions;
+export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, onNewGame, onWindow, options, disasters }: {
+  options: MenuChoices; disasters: MenuChoices;
   simulation: GameSimulation; scenarioId: number | null; assets: GameAssets; loaded: boolean;
   onLoad: (farm: LoadedFarm) => void;
   onNewGame: () => void; onWindow: (window: WindowCommand) => void;
@@ -57,7 +57,7 @@ export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, o
   }
   return <div className="farm-file-controls">
     <div className="original-controls">
-      <FileMenu options={options} data={assets.mainMenus} palette={assets.catalog.palette} busy={busy} filename={filename} error={message.startsWith('Could not save') ? message : null} onSave={save}
+      <FileMenu options={options} disasters={disasters} data={assets.mainMenus} palette={assets.catalog.palette} busy={busy} filename={filename} error={message.startsWith('Could not save') ? message : null} onSave={save}
         onLoad={() => input.current?.click()} onNewGame={onNewGame} onWindow={onWindow}
         onQuit={() => { simulation.dispatch({ type: 'set-paused', paused: true }); setMessage('Farm paused. Save before closing this tab.'); }} />
       <ControlBar artwork={assets.controlBar} menus={assets.mainMenus} snapshot={simulation.getSnapshot()} onWindow={onWindow} />

@@ -1,3 +1,4 @@
+import { DISASTER_MENU_KINDS, type DisasterMenuAction } from './disaster-menu';
 import { sellManualLand, type ManualLandSaleResult } from './manual-land-sale';
 import { expandCropCatalog } from './all-crops';
 import { createOriginalSaveStartup, restartOriginalSaveStartup, type OriginalStartupOptions } from './original-startup';
@@ -176,6 +177,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'set-speed'; speed: number }
   | { type: 'start-disaster'; kind: MovingDisasterKind | WaterDisasterKind | StationaryDisasterKind | 'wind' }
   | { type: 'set-disasters-enabled'; enabled: boolean }
+  | { type: 'disaster-menu'; action: DisasterMenuAction }
   | { type: 'set-auto-clear'; enabled: boolean }
   | { type: 'set-option'; option: 'autoBuySeeds' | 'autoRent' | 'autoClear' | 'autoScroll' | 'autoGoto' | 'messages'; enabled: boolean }
   | { type: 'buy-land' | 'sell-land'; regionX: number; regionY: number }
@@ -512,10 +514,21 @@ export class GameSimulation {
     } else if (command.type === 'edit-field-plan') {
       this.lastPlanEditResult = { ...editFieldPlan(this.scenario, this.crops, command.fieldSlot, command.week, command.action),
         fieldSlot: command.fieldSlot, week: command.week };
+    } else if (command.type === 'disaster-menu') {
+      if (command.action === 'disable') this.disasters.enabled = !this.disasters.enabled;
+      else {
+        if (!(DISASTER_MENU_KINDS as readonly string[]).includes(command.action)) throw new Error('Invalid disaster menu action');
+        const enabled = this.disasters.enabled;
+        // SF-171: the original enables after the guarded call, producing phantom
+        // checks. An explicit native menu request enables before starting.
+        this.disasters.enabled = true;
+        this.lastDisasterResult = this.startRequestedDisaster(command.action);
+        // Source Locusts alone leaves enable/check state alone after failure.
+        if (command.action === 'swarm' && !this.lastDisasterResult.ok) this.disasters.enabled = enabled;
+      }
     } else if (command.type === 'start-disaster') {
       if (!['tornado', 'swarm', 'drought', 'flood', 'frost', 'crop-circles', 'toxic-land', 'wind'].includes(command.kind)) throw new Error('Invalid disaster kind');
-      this.lastDisasterResult = command.kind === 'wind' ? this.startWind() : command.kind === 'drought' || command.kind === 'flood' ? this.startWaterDisaster(command.kind)
-        : command.kind === 'tornado' || command.kind === 'swarm' ? this.startDisaster(command.kind) : this.startStationaryDisaster(command.kind);
+      this.lastDisasterResult = this.startRequestedDisaster(command.kind);
     } else if (command.type === 'set-disasters-enabled') {
       this.disasters.enabled = command.enabled;
     } else if (command.type === 'set-auto-clear') {
@@ -776,6 +789,11 @@ export class GameSimulation {
   }
 
   private disasterNotice(text: string): void { if (!this.scenario.farm.messages) return; this.disasterNotices = [...this.disasterNotices, text].slice(-8); }
+
+  private startRequestedDisaster(kind: Extract<GameCommand, {type:'start-disaster'}>['kind']) {
+    return kind === 'wind' ? this.startWind() : kind === 'drought' || kind === 'flood' ? this.startWaterDisaster(kind)
+      : kind === 'tornado' || kind === 'swarm' ? this.startDisaster(kind) : this.startStationaryDisaster(kind);
+  }
 
   private startDisaster(kind: MovingDisasterKind): MovingDisasterStart {
     const result = beginMovingDisaster(this.scenario, this.disasters, kind, this.scenario.farm.animationTicks, this.random);

@@ -62,6 +62,7 @@ import { checkBuildingPlacement } from '../simulation/building-placement';
 import { IrrigationPanel } from './IrrigationPanel';
 import { checkIrrigationPlacement, type IrrigationTool } from '../simulation/irrigation-placement';
 import { LivestockShop } from './LivestockShop';
+import { DISASTER_MENU_KINDS, disasterMenuChecks } from '../simulation/disaster-menu';
 import { checkLivestockPurchase } from '../simulation/livestock-purchase';
 
 const subscribeEmpty = () => () => {};
@@ -349,9 +350,19 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
   return <>
     {simulation && <SaveControls options={{
       checked: [audioOptions.music, audioOptions.sound, ...(['autoBuySeeds','autoScroll','autoClear','autoGoto','messages','autoRent'] as const).map(key=>simulation.getSnapshot().scenario.farm[key])],
-      toggle: index=>{
+      choose: index=>{
         if(index===0)audioOptions.toggleMusic();else if(index===1)audioOptions.toggleSound();
         else {const option=(['autoBuySeeds','autoScroll','autoClear','autoGoto','messages','autoRent'] as const)[index-2];if(option)simulation.dispatch({type:'set-option',option,enabled:!simulation.getSnapshot().scenario.farm[option]});}
+      },
+    }} disasters={{
+      checked: disasterMenuChecks(simulation.getSnapshot().disasters),
+      disabled: Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight),
+      choose: index=>{
+        const action=index===6?'disable':DISASTER_MENU_KINDS[index]; if(!action)return;
+        simulation.dispatch({type:'disaster-menu',action});
+        if(action==='disable'){setInteractionMessage(simulation.getSnapshot().disasters.enabled?'New disasters enabled.':'New disasters disabled; active events continue.');return;}
+        const result=simulation.getSnapshot().lastDisasterResult;
+        setInteractionMessage(result?.ok?'':result?.reason==='no-fields'?'Create a field before starting locusts.':result?.reason==='tornado-active'?'Locusts cannot start during a tornado.':'That disaster is already active.');
       },
     }} simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
     <GameWindow windowKey="options" title="Audio and tools">{audioControls}
@@ -383,6 +394,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       </select></label><button id="center" disabled={!data || Boolean(snapshot?.aircraftFlight)} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
     </section>
     <button onClick={() => windows.show('options')}>Audio and tools</button>
+    <button onClick={() => windows.show('disasters')}>Disaster details</button>
     <button onClick={() => windows.show('navigation')}>Farm controls</button>
     <button onClick={()=>chooseTool('inspect')}>Field orders</button>
     <button id="new-farm" onClick={() => setNewFarmOpen(true)}>New farm</button>

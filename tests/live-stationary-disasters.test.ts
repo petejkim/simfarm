@@ -88,6 +88,7 @@ test('new disaster commands remain silent and unchanged through town/default/fli
   for(const g of [debt,flight,town]){
     const before=g.save(4),events:GameEvent[]=[];g.subscribeEvents(e=>events.push(e));
     for(const kind of ['frost','crop-circles','toxic-land','wind']as const)g.dispatch({type:'start-disaster',kind});
+    for(const action of ['tornado','swarm','drought','flood','frost','wind','disable'] as const)g.dispatch({type:'disaster-menu',action});
     assert.equal(g.save(4),before);assert.deepEqual(events,[]);assert.equal(g.getSnapshot().lastDisasterResult,null);
   }
 });
