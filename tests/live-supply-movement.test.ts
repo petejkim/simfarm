@@ -1,3 +1,4 @@
+import {createInventoryItem} from '../src/simulation/harvest-storage';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { GameSimulation } from './support/game';
@@ -63,4 +64,37 @@ test('flight, town and default states block supply movement without feedback or 
     const before = g.save(4); g.dispatch({ type: 'move-supply', selected, x: 20, y: 20 });
     assert.equal(g.save(4), before); assert.equal(g.getSnapshot().lastSupplyMoveResult, null);
   }
+});
+
+test('source supply drop failures warn once, preserve saves and keep native-only guards silent',()=>{
+  for(const x of [10,12,14,16,18])for(const failure of ['not-owned','blocked-terrain','native-occupied'] as const){
+    const f=supplyMovementFixture(),cell=f.state.scenario.cells[worldIndex(60,60)];
+    if(failure==='not-owned')cell.overlay&=~0x800;
+    else if(failure==='blocked-terrain')cell.terrain=150;
+    else cell.terrain=0x800|15;
+    const game=f.load(),s=game.getSnapshot(),selected=checkSupplyPickup(s.scenario,s.finances,x,10);assert.ok(selected.ok);
+    const before=game.save(4),events:unknown[]=[];game.subscribeEvents(e=>events.push(e));
+    game.dispatch({type:'move-supply',selected,x:60,y:60});
+    assert.equal(game.save(4),before);assert.equal(game.getSnapshot().lastSupplyMoveResult?.ok,false);
+    assert.deepEqual(events,failure==='native-occupied'&&x===16?[]:[{type:'sound',sound:'uhoh'}]);
+    const loaded=GameSimulation.load(before,f.crops).simulation;assert.equal(loaded.getSnapshot().lastSupplyMoveResult,null);
+  }
+  const f=supplyMovementFixture(),game=f.load(),s=game.getSnapshot(),selected=checkSupplyPickup(s.scenario,s.finances,18,10);assert.ok(selected.ok);
+  const before=game.save(4),events:unknown[]=[];game.subscribeEvents(e=>events.push(e));
+  game.dispatch({type:'move-supply',selected,x:30,y:30});assert.deepEqual(events,[{type:'sound',sound:'uhoh'}]);assert.equal(game.save(4),before);
+  events.length=0;game.dispatch({type:'move-supply',selected,x:-1,y:30});assert.deepEqual(events,[]);assert.equal(game.save(4),before);
+});
+
+
+test('full source storage rejects supply delivery with sound and no withdrawal',()=>{
+  const f=supplyMovementFixture(),w=f.state.scenario,b=w.buildings[1];
+  for(let x=0;x<3;x++)for(let y=0;y<3;y++){
+    const item=createInventoryItem(w,192,40,9,b.x+x,b.y+y);assert.ok(item);
+    w.seedDefinitions[0].count++;b.setContent(x*3+y,832,192,item.slot);
+  }
+  const game=f.load(),s=game.getSnapshot(),selected=checkSupplyPickup(s.scenario,s.finances,10,10);assert.ok(selected.ok);
+  const before=game.save(4),events:unknown[]=[];game.subscribeEvents(e=>events.push(e));
+  game.dispatch({type:'move-supply',selected,x:30,y:30});
+  assert.deepEqual(game.getSnapshot().lastSupplyMoveResult,{ok:false,reason:'no-storage-space'});
+  assert.equal(game.save(4),before);assert.deepEqual(events,[{type:'sound',sound:'uhoh'}]);
 });

@@ -34,7 +34,7 @@ import { createMovingDisasters, beginMovingDisaster, stopMovingDisaster, advance
 import { beginWindDisaster, advanceWindDisaster } from './wind-disaster';
 import { createWaterDisasters, beginWaterDisaster, stopWaterDisaster, advanceFloodCounter, advanceFlood,
   type WaterDisasterKind, type WaterDisasterState } from './water-disasters';
-import { moveManualSupply, type SupplyMoveTarget, type SupplyMoveResult } from './manual-supply-move';
+import { supplyMoveHasSourceWarning, moveManualSupply, type SupplyMoveTarget, type SupplyMoveResult } from './manual-supply-move';
 import { moveManualEquipment, toggleManualBuildingInterior, type EquipmentMoveTarget, type EquipmentMoveResult, type BuildingInteriorResult } from './manual-equipment-move';
 import { removeManualTarget, type RemovalTarget, type ManualRemovalResult } from './manual-removal';
 import { sellManualAsset, type AssetSaleKind, type ManualAssetSaleResult } from './manual-asset-sale';
@@ -577,11 +577,15 @@ export class GameSimulation {
       this.lastBuildingResult = purchaseBuilding(this.scenario, this.finances, command.buildingType, command.x, command.y, this.weather.soilMoisture);
     } else if (command.type === 'move-supply') {
       this.lastSupplyMoveResult = moveManualSupply(this.scenario, this.finances, command.selected, command.x, command.y, this.weather.soilMoisture);
+      if(supplyMoveHasSourceWarning(this.scenario,command.selected,command.x,command.y,this.lastSupplyMoveResult))this.events.push({type:'sound',sound:'uhoh'});
     } else if (command.type === 'move-equipment') {
       this.lastEquipmentMoveResult = moveManualEquipment(this.scenario, command.selected, command.x, command.y, this.scenario.farm.timerTicks);
       // Original13c86 uses the wrong text index62; SF-173 retains evidence.
       if(!this.lastEquipmentMoveResult.ok&&this.lastEquipmentMoveResult.reason==='equipment-busy'){
-        appendEditStatus(this.editStatus,61);this.events.push({type:'sound',sound:'uhoh'});
+        appendEditStatus(this.editStatus,61);
+      }
+      if(!this.lastEquipmentMoveResult.ok&&['equipment-busy','not-owned'].includes(this.lastEquipmentMoveResult.reason)){
+        this.events.push({type:'sound',sound:'uhoh'});
       }
     } else if (command.type === 'toggle-building-interior') {
       this.lastBuildingInteriorResult = toggleManualBuildingInterior(this.scenario, command.x, command.y, command.slot);

@@ -183,3 +183,17 @@ test('unsupported saved storage graphics fail before insertion or withdrawal cha
   assert.deepEqual(moveManualSupply(w, a, stored, 30, 30, 0), { ok: false, reason: 'inconsistent-supply' });
   assert.equal(JSON.stringify(f), before);
 });
+
+test('original supply warning branches use the shared uhoh helper',()=>{
+  const exe=source('SIMFARM.EXE');
+  for(const [address,offset] of [[0x13c22,0x2379],[0x13e4d,0x238b],[0x13f99,0x2394],[0x14055,0x239d],[0x14181,0x23a6],[0x1429b,0x23af],[0x142af,0x23b8],[0x144f1,0x23c1]]){
+    assert.equal(exe[address],0x68);assert.equal(exe.readUInt16LE(address+1),offset);
+    assert.equal(exe.subarray(0x846f0+offset,0x846f0+offset+9).toString(),'uhoh.voc\0');
+    assert.equal(exe[address+3],0xe9);assert.equal(address+6+exe.readInt16LE(address+4),0x13728);
+  }
+  assert.equal(exe.subarray(0x13728,0x1372d).toString('hex'),'9ab6082a21');
+  // Chemical and inventory insertion rejection, and explicit feed/storage gate.
+  assert.equal(exe.subarray(0x13da7,0x13dae).toString('hex'),'0bc07503e99e00');
+  assert.equal(exe.subarray(0x13fd7,0x13fdb).toString('hex'),'0bc07479');
+  assert.equal(exe.subarray(0x142a6,0x142ae).toString('hex'),'26833ec0f7007408');
+});

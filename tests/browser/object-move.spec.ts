@@ -36,12 +36,13 @@ test('Move object picks stored machinery directly, cancels without withdrawal, r
 });
 
 test('one Move object tool transfers every supply category, retains rejected/cancelled state and discards empty feed',async({page})=>{
+  const warnings:string[]=[];page.on('request',r=>{if(r.url().endsWith('/uhoh.voc'))warnings.push(r.url());});
   const f=supplyMovementFixture();f.state.disasters.enabled=false;f.state.scenario.cells[worldIndex(60,60)].overlay=0;
   const g=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,g.save(4));await move(page);
   for(const x of [10,12,14,16,18]){
     const selected=checkSupplyPickup(g.getSnapshot().scenario,g.getSnapshot().finances,x,10);if(!selected.ok)throw new Error('Missing supply');
     await point(page,x,10);await expect(page.locator('#map-tool-hint')).toContainText(`Move ${selected.kind}`);await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Choose a destination.');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-    await point(page,60,60);await expect(page.locator('#object-move-result')).toHaveText('Choose a destination on your land.');
+    await point(page,60,60);await expect(page.locator('#object-move-result')).toHaveText('Choose a destination on your land.');await expect.poll(()=>warnings.length).toBe((x-10)/2+1);
     await point(page,x,20);g.dispatch({type:'move-supply',selected,x,y:20});await expect(page.locator('#object-move-result')).toHaveText('Supply moved.');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   }
   await point(page,10,20);await page.getByRole('button',{name:'Cancel move',exact:true}).click();expect(await save(page)).toEqual(JSON.parse(g.save(4)));

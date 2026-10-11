@@ -144,3 +144,15 @@ export function moveManualSupply(world: Scenario, finances: FinancialState, sele
   if (!prepared.ok) return prepared;
   prepared.apply(); return prepared.result;
 }
+
+/** Rejected source drop branches converge on136c6's uhoh.voc call13728.
+ * Native consistency/overflow guards have no invented original sound. */
+export function supplyMoveHasSourceWarning(world:Scenario,selected:SupplyMoveTarget,x:number,y:number,result:SupplyMoveResult):boolean {
+  if(result.ok)return false;
+  if(['not-owned','incompatible-storage','no-storage-space'].includes(result.reason))return true;
+  if(result.reason!=='blocked-terrain')return false;
+  // Original trough branch14188 lacks the occupied-bit test (SF-116).
+  // Preserve that distinction for the native-only safe rejection.
+  const tile=terrainTile(world.cells[worldIndex(x,y)]);
+  return selected.kind!=='trough'||tile<15||tile>31;
+}
