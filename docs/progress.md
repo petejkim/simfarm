@@ -2164,3 +2164,11 @@ Previous goal turn completeda81dfce; verified the clean tree and original execut
 Build/type checking,10 focused purchase/live/catalog tests(3.25s) and all six affected Buy/equipment/sales browser cases(9.2s) pass first run. Coverage includes original ground sprites, storage/ground purchases, repeat rejection, blocked terrain/cash/storage with exact nonmutation, AutoDoze costs, zero remaining cash, seven-day continuation, source catalog browsing and existing asset sales. Logs: artifacts/retire-equipment-shop-{build,unit,browser}.log. Diff checks pass; no full-suite repetition.
 
 Continue remaining crop-supply/livestock shops and Field information audit. Full preservation remains incomplete; no push, installation or supplied-source changes.
+
+## 2026-10-11 — retire interim livestock shop
+
+Previous goal turn completed0369183; verified the clean worktree and audited all six shop actions. Original Buy contains species161/162/163/160; source palette callbacks21920/219dc supply Hay300/Trough299. Removed LivestockShop, selected-product state, category/launcher and duplicate AutoDoze control. Buy animal previews now read the active product; palette tools use Inspect as their neutral interim mode. Preserved existing feed/water totals in the remaining livestock overview beside stored water, explicitly native presentation. Source purchase/consumption/refill rules and saves are unchanged; no new original defect.
+
+Build/type checking,14 focused source/purchase/live/palette tests(4.57s), and all nine affected browser cases(13.5s) pass first run. Coverage includes original Buy browsing, animal/supply purchases, occupied/terrain/cash rejection, exact clearing charges and zero cash, actual feeding/watering, original trough/ditch pixels, weekly refills/wear, held-input boundaries/touch cancellation, inventory exhaustion and exact saved continuation. Logs: artifacts/retire-livestock-shop-{build,unit,browser}.log. Diff checks pass; no full-suite repetition.
+
+Next retire CropSupplyShop and continue the separate Field information immediate-order/calendar audit and remaining diagnostic windows. Full preservation remains incomplete; no push, installation or supplied-DOS changes.

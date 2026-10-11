@@ -323,3 +323,5 @@ Machinery movement form retired: original Move object now provides queued machin
 Duplicate interior controls retired: use original right-click or Examine. Before removing EquipmentShop, resolve its provisional type6 purchase exposure against the original catalog omission; preserve source evidence rather than assuming all interim actions were original. Continue remaining shops and Field information audit.
 
 EquipmentShop retired: original catalog byte audit confirms omission of type6; retain its records/rules without the provisional purchase entry. Machinery buys now use original Buy exclusively, with Options AutoDoze. Continue crop-supply/livestock shop retirement and Field information; type6 exact purpose remains research, not a blocker or claimed defect.
+
+LivestockShop retired: use original Buy for animals and Hay/Trough palette tools for supplies. Quantity totals remain in the still-interim livestock overview; no new catalog products. Next retire crop-supply shopping and audit Field information's immediate-order adapters against original interactions.

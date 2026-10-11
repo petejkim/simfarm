@@ -39,7 +39,7 @@ test('Build water storage collects from live irrigation, refills distant troughs
   await expect(page.locator('#livestock-stored-water')).toContainText('255 units');
   for (let day = 1; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   await expect(page.locator('#livestock-stored-water')).toContainText('191 units');
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('livestock'); await expect(page.locator('#livestock-supplies')).toContainText('Water remaining: 128 units');
+  await reveal(page,'#livestock-supplies'); await expect(page.locator('#livestock-supplies')).toContainText('Water remaining: 128 units');
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
@@ -61,6 +61,6 @@ test('water storage wear is visible and removes its supply before weekly refills
   await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click();
   await expect(page.locator('#water-storage-worn')).toContainText('Water storage worn out at 13, 11');
   await expect(page.locator('#livestock-stored-water')).toContainText('0 units');
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('livestock'); await expect(page.locator('#livestock-supplies')).toContainText('Water remaining: 0 units');
+  await reveal(page,'#livestock-supplies'); await expect(page.locator('#livestock-supplies')).toContainText('Water remaining: 0 units');
   expect(await download(page, 'artifacts/browser-worn-water-storage.simfarm.json')).toEqual(JSON.parse(game.save(4)));
 });
