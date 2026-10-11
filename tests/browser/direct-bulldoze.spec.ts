@@ -67,3 +67,21 @@ test('drag clearing stops on leaving Edit or cancellation; primary Bulldoze remo
   await click(page,13,10);remove(g,13,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));await click(page,15,10);await expect(page.locator('#bulldoze-result')).toContainText('need $25');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await page.locator('#window-buy').click();await expect(page.locator('#cancel-bulldoze')).toHaveCount(0);
 });
+
+
+test('Bulldoze cash warning is an original status, respects town priority and stops at the25 boundary',async({page})=>{
+  for(const cash of [24,25]){
+    const f=shopFixture(),w=f.state.scenario;w.farm.cash=cash;
+    w.cells[worldIndex(40,40)].terrain=161;w.cells[worldIndex(41,40)].overlay=0x4800;
+    const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));await tool(page);
+    const status=page.getByRole('button',{name:'Edit message history'}),p=await point(page,40,40);
+    await page.mouse.move(p.x,p.y);await expect(status).toHaveText('Bulldoze');
+    await click(page,41,40);await expect(status).toHaveText('Bulldoze');await expect(page.locator('#bulldoze-result')).toContainText('Town-owned');
+    await click(page,40,40);
+    if(cash===25){remove(g,40,40);await expect(status).toHaveText('Bulldoze');await click(page,42,40);}
+    await expect(status).toHaveText('Not enough money.');await expect(page.getByRole('dialog',{name:'Message',exact:true})).toHaveCount(0);
+    await click(page,42,40);await status.click();await expect(page.getByRole('list',{name:'Recent Edit messages'}).locator('li')).toHaveText(['Not enough money.','Bulldoze']);
+    await page.keyboard.press('Escape');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  }
+  await page.screenshot({path:'artifacts/browser-bulldoze-status.png'});
+});

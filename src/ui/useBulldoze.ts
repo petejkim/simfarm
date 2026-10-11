@@ -25,7 +25,7 @@ export function useBulldoze(simulation:GameSimulation|null,snapshot:GameSnapshot
     if(!active||pending||!simulation)return false;
     const current=simulation.getSnapshot();if(blocked(current))return false;
     const q=checkManualRemoval(current.scenario,x,y);
-    if(!q.ok){setMessage(messages[q.reason]);if(q.reason==='field-busy')setPending({kind:'busy'});return q.reason!=='field-busy'&&q.reason!=='insufficient-cash';}
+    if(!q.ok){if(q.reason==='insufficient-cash')simulation.dispatch({type:'edit-status',code:42});setMessage(messages[q.reason]);if(q.reason==='field-busy')setPending({kind:'busy'});return q.reason!=='field-busy'&&q.reason!=='insufficient-cash';}
     if(q.kind==='building'||q.kind==='field'){setPending({kind:'confirm',target:q,click:{x,y}});setMessage('');return false;}
     remove(q,{x,y});return true;
   }

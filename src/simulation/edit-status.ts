@@ -17,8 +17,8 @@ export const EDIT_TOOL_STATUSES={
   'Ditch':40,'Valve':25,'Hay':41,'Trough':34,'Trees':37,'Bulldoze':63,
 } as const;
 export const SPRAY_STATUSES={fertilizer:14,pesticide:15,herbicide:31,fungicide:16} as const;
-/** Includes Move pickup7 and SF-173 corrected busy feedback61. */
-export type EditToolStatusCode=7|61|17|typeof EDIT_TOOL_STATUSES[keyof typeof EDIT_TOOL_STATUSES]|typeof SPRAY_STATUSES[keyof typeof SPRAY_STATUSES];
+/** Includes Move pickup7, Bulldoze cash42 and SF-173 corrected busy feedback61. */
+export type EditToolStatusCode=7|42|61|17|typeof EDIT_TOOL_STATUSES[keyof typeof EDIT_TOOL_STATUSES]|typeof SPRAY_STATUSES[keyof typeof SPRAY_STATUSES];
 export function isEditToolStatus(code:number):code is EditToolStatusCode {
-  return code===7||code===61||code===17||Object.values(EDIT_TOOL_STATUSES).some(n=>n===code)||Object.values(SPRAY_STATUSES).some(n=>n===code);
+  return code===42||code===7||code===61||code===17||Object.values(EDIT_TOOL_STATUSES).some(n=>n===code)||Object.values(SPRAY_STATUSES).some(n=>n===code);
 }

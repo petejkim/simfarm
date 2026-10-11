@@ -558,6 +558,7 @@ export class GameSimulation {
     } else if (command.type === 'remove-object') {
       this.lastRemovalResult = removeManualTarget(this.scenario, this.finances, command.x, command.y, command, this.weather.soilMoisture, this.random);
       if (this.lastRemovalResult.ok) this.events.push({ type: 'sound', sound: this.lastRemovalResult.kind === 'terrain' ? 'bulldoze' : 'explode' });
+      else if(this.lastRemovalResult.reason==='insufficient-cash')appendEditStatus(this.editStatus,42); // Original259eb.
     } else if (command.type === 'plant-tree') {
       this.lastTreeResult = placeTree(this.scenario, this.finances, this.random, command.x, command.y, this.weather.soilMoisture);
       if (this.lastTreeResult.ok) this.events.push({ type: 'sound', sound: 'plopitem' }, { type: 'sound', sound: 'ploptool' });
