@@ -11,7 +11,7 @@ export async function acknowledgeFinanceMessages(page:Page){
  * Workspace/layout tests exercise discovery and window behavior directly. */
 export async function openWindow(page: Page, key: string) {
   await acknowledgeFinanceMessages(page);
-  if (key === 'schedule') { if (!await page.locator('[data-window="schedule"]').isVisible()) {await openWindow(page,'navigation');await page.locator('[data-window=navigation]').getByRole('button',{name:'Crop planner',exact:true}).click();} return; }
+  if (key === 'schedule') { if (!await page.locator('[data-window="schedule"]').isVisible()) {await openWindow(page,'tools');await page.getByRole('button',{name:'Field orders',exact:true}).click();await page.locator('[data-window=actions]').getByRole('button',{name:'Crop planner',exact:true}).click();} return; }
   if (key === 'taxes') { await openWindow(page,'balance'); await page.getByRole('button',{name:'View tax details',exact:true}).click(); return; }
   if (key === 'edit') { await page.locator('#window-edit').click(); return; }
   if (await page.locator(`[data-window="${key}"]`).isVisible()) {await page.locator(`[data-window="${key}"] .game-window-title`).focus();return;}
@@ -34,7 +34,7 @@ export async function openWindow(page: Page, key: string) {
   await page.locator('[data-window=tools] .game-window-title').focus();
   if (key === 'actions') {
     const tool = await page.locator('#map-tool').inputValue(); await page.locator('#map-tool').selectOption(tool);
-  } else if (key !== 'tools') await page.locator('[data-window=tools]').getByRole('button', { name: key === 'navigation' ? 'Farm controls' : key === 'machinery' ? 'Machinery' : key === 'livestock' ? 'Livestock' : 'Aircraft', exact: true }).click();
+  } else if (key !== 'tools') await page.locator('[data-window=tools]').getByRole('button', { name: key === 'machinery' ? 'Machinery' : key === 'livestock' ? 'Livestock' : 'Aircraft', exact: true }).click();
 }
 async function uncoverMap(page:Page){
   await openWindow(page,'edit');

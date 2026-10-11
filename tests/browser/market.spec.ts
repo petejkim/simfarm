@@ -27,7 +27,7 @@ test('planting keeps trade quotes until the weekly market updates seed purchases
   expect(planted.runtime.market.history[0][29]).toBe(113);
   expect(planted.runtime.cropMarketPrices).toEqual(before.cropMarketPrices);
   expect(planted).toEqual(JSON.parse(game.save(4)));
-  await openWindow(page, 'navigation'); await page.getByRole('button', { name: 'Seeds & chemicals', exact: true }).click();
+  await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('crop-supplies');
   await reveal(page, '#crop-supply-type'); await page.locator('#crop-supply-type').selectOption('192'); await reveal(page, '#crop-supply-storage'); await page.locator('#crop-supply-storage').selectOption('1');
   await expect(page.locator('#crop-supply-quote')).toContainText('$32 total');
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
@@ -36,7 +36,7 @@ test('planting keeps trade quotes until the weekly market updates seed purchases
   const week = await save(page, 'weekly'); expect(week).toEqual(JSON.parse(game.save(4)));
   expect(week.runtime.market.history.map((h: number[]) => h[29])).toEqual(week.runtime.cropMarketPrices);
   await load(page, JSON.stringify(week));
-  await openWindow(page, 'navigation'); await page.getByRole('button', { name: 'Seeds & chemicals', exact: true }).click();
+  await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('crop-supplies');
   await reveal(page, '#crop-supply-storage'); await page.locator('#crop-supply-storage').selectOption('1'); await reveal(page, '#buy-crop-supply'); await page.locator('#buy-crop-supply').click();
   game.dispatch({ type: 'buy-crop-supply', productType: 192, x: 10, y: 10 });
   await expect(page.locator('#crop-supply-result')).toContainText(`purchased for $${price}`);

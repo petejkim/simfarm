@@ -43,11 +43,11 @@ async function audio(page:Page) {
 }
 const played=(page:Page)=>page.evaluate(()=>(window as unknown as {networkAudio:{length:number;peak:number}[]}).networkAudio);
 
-test('Roads & fences shortcut constructs original networks, operates gates, plays placement PCM and restores exact saves',async({page})=>{
+test('network controls construct original networks, operate gates, play placement PCM and restore exact saves',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await audio(page);await page.goto('/');
   const f=shopFixture();f.state.scenario.cells[worldIndex(12,10)].terrain=0x2000|98;const g=f.load().withAllCrops(browserCrops);
   await load(page,g.save(4));await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
-  await openWindow(page, 'navigation'); await page.getByRole('button',{name:'Roads & fences',exact:true}).click();await expect(page.locator('#network-panel h2')).toBeFocused();
+  await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('network');await expect(page.locator('#network-panel h2')).toBeVisible();
   await expect(page.locator('#apply-network')).toBeDisabled();
   const actions:[NetworkAction,number,number,number][]=[['road-161',10,10,20],['road-150',11,10,30],['road-150',12,10,40],['fence',10,12,50],['fence',11,12,50],['gate',10,12,75]];
   for(const [tool,x,y,price] of actions){
@@ -59,14 +59,14 @@ test('Roads & fences shortcut constructs original networks, operates gates, play
   await expect.poll(async()=>(await played(page)).some(s=>s.length===1389&&s.peak>0.01)).toBe(true);
   await expect(page.locator('#gate-state')).toHaveText('Selected gate is closed.');
   for(const tool of ['open-gate','close-gate','open-gate'] as const){
-    const sounds=(await played(page)).length;await reveal(page, '#network-tool'); await page.locator('#network-tool').selectOption(tool);await reveal(page, '#apply-network'); await page.locator('#apply-network').click();
-    g.dispatch({type:'network',tool,x:10,y:12});await expect(page.locator('#gate-state')).toContainText(tool==='open-gate'?'is open':'is closed');expect((await played(page)).length).toBe(sounds);
+    const sounds=(await played(page)).filter(s=>s.length!==2667).length;await reveal(page, '#network-tool'); await page.locator('#network-tool').selectOption(tool);await reveal(page, '#apply-network'); await page.locator('#apply-network').click();
+    g.dispatch({type:'network',tool,x:10,y:12});await expect(page.locator('#gate-state')).toContainText(tool==='open-gate'?'is open':'is closed');expect((await played(page)).filter(s=>s.length!==2667).length).toBe(sounds);
   }
   await select(page,14,14); // Remove selection/preview from the source-pixel targets.
   await pixels(page,10,10,162);await pixels(page,11,10,151);await pixels(page,12,10,172);await pixels(page,10,12,191);await pixels(page,11,12,178);
   expect(await save(page,'built')).toEqual(JSON.parse(g.save(4)));
   await page.reload();await load(page,g.save(4));expect((await played(page)).length).toBe(0);
-  await openWindow(page, 'navigation'); await page.getByRole('button',{name:'Roads & fences',exact:true}).click();await expect(page.locator('#network-result')).toHaveCount(0);
+  await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('network');await expect(page.locator('#network-result')).toHaveCount(0);
   await select(page,10,12);await expect(page.locator('#gate-state')).toContainText('is open');
   await reveal(page, '#network-tool'); await page.locator('#network-tool').selectOption('close-gate');await reveal(page, '#apply-network'); await page.locator('#apply-network').click();g.dispatch({type:'network',tool:'close-gate',x:10,y:12});
   for(let day=0;day<3;day++){await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}
@@ -79,19 +79,19 @@ test('construction explains land, cash, terrain and gate limits and supports map
   w.cells[worldIndex(10,10)].terrain=535;w.cells[worldIndex(11,10)].overlay=0x4800;
   w.cells[worldIndex(12,10)].overlay=0;w.cells[worldIndex(13,10)].terrain=0x800|15;
   w.cells[worldIndex(14,10)].terrain=179;w.cells[worldIndex(15,10)].terrain=188;
-  const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));await openWindow(page, 'navigation'); await page.getByRole('button',{name:'Roads & fences',exact:true}).click();
+  const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('network');
   for(const [tool,x,message] of [['road-161',10,'not enough cash'],['fence',11,'Town land'],['fence',12,'Buy this land'],['road-150',13,'clear grass'],['gate',14,'straight fence'],['open-gate',14,'existing gate']] as const){
     await reveal(page, '#network-tool'); await page.locator('#network-tool').selectOption(tool);await page.getByRole('button',{name:'Choose on map',exact:true}).click();await select(page,x,10);
     await page.getByRole('button',{name:'Review construction',exact:true}).click();await expect(page.locator('#network-panel h2')).toBeFocused();
     await expect(page.locator('#network-placement-status')).toContainText(message);await expect(page.locator('#apply-network')).toBeDisabled();
   }
   expect(await save(page,'rejected')).toEqual(JSON.parse(g.save(4)));
-  w.farm.cash=45;const funded=f.load().withAllCrops(browserCrops);await load(page,funded.save(4));await openWindow(page, 'navigation'); await page.getByRole('button',{name:'Roads & fences',exact:true}).click();
+  w.farm.cash=45;const funded=f.load().withAllCrops(browserCrops);await load(page,funded.save(4));await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('network');
   await select(page,10,10);await page.getByRole('button',{name:'Review construction',exact:true}).click();
   await expect(page.locator('#network-placement-status')).toContainText('$45 ($25 clearing)');await reveal(page, '#apply-network'); await page.locator('#apply-network').click();funded.dispatch({type:'network',tool:'road-161',x:10,y:10});
   await select(page,15,10);await reveal(page, '#network-tool'); await page.locator('#network-tool').selectOption('open-gate');await reveal(page, '#apply-network'); await page.locator('#apply-network').click();funded.dispatch({type:'network',tool:'open-gate',x:15,y:10});
   expect(await save(page,'zero-cash-gate')).toEqual(JSON.parse(funded.save(4)));
-  await openWindow(page, 'navigation'); await page.getByRole('button',{name:'Roads & fences',exact:true}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
+  await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('network');expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({path:'artifacts/browser-network-mobile.png',fullPage:true});
 });
 

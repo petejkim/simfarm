@@ -58,4 +58,4 @@ Browser checks cover source geometry, all overlays, toggle-off, HTML help, actua
 
 The ordinary transaction path also exposes SF-158: occupied-region pricing includes the just-purchased plot, so an immediate qualifying resale quote rises100. Native preserves the source arithmetic and verifies it explicitly; this is an immediate cash result, not a claim about profit after annual tax. A balancing change is deferred and the original evidence remains in original-bugs.md.
 
-Interim UI retirement: the duplicate Land purchase form is removed. The remaining native Buy land shortcut opens this original dialog in Property mode and focuses the map; ordinary Map activation retains its selected overlay. Trading continues through the same source-backed quote/buy/sell commands. This shortcut is not claimed as a recovered DOS control.
+Interim UI retirement: the duplicate Land purchase form is removed. The subsequent Farm controls retirement removes its native Buy land shortcut too. Use the Map toolbar/menu and Property overlay. Map activation retains its selected overlay; trading continues through the same source-backed quote/buy/sell commands.

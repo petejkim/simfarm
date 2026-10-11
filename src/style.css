@@ -23,11 +23,8 @@ header { flex-wrap: wrap; }
 .disasters-panel summary { cursor: pointer; font-weight: bold; }
 .disasters-panel p { margin: 0.6rem 0; }
 
-.farm-navigation{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 28px;border-top:1px solid #44503b;background:#202b22}
-.farm-navigation .eyebrow{margin-right:8px}.farm-navigation button{font-size:13px}.farm-navigation button[aria-pressed=true]{border-color:#ead6a1;background:#53613e}
 .map-footer{align-items:center;flex-wrap:wrap}.map-footer button{font-size:12px}
 summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
-@media(max-width:800px){.farm-navigation{padding:12px 16px}.farm-navigation .eyebrow{width:100%}}
 
 .new-farm-action { padding: 12px 28px; background: #202b22; }
 .new-farm-panel { margin: 0 0 16px; padding: 16px; background: #20291d; color: #c2cbb4; border: 1px solid #48563f; border-radius: 8px; }
@@ -139,7 +136,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window-body{padding:12px;overflow:auto;min-height:0;line-height:1.4}
 .game-window[data-window=newgame]{width:1040px;right:20px;top:64px;max-height:calc(100% - 80px)}
 .game-window[data-window=town]{z-index:35}
-.game-window .toolbar,.game-window header,.game-window footer,.game-window .farm-navigation{padding:8px 0;margin:0;background:transparent;color:#000;border:0;display:flex;flex-wrap:wrap;gap:8px}
+.game-window .toolbar,.game-window header,.game-window footer{padding:8px 0;margin:0;background:transparent;color:#000;border:0;display:flex;flex-wrap:wrap;gap:8px}
 .game-window .toolbar>div{flex-wrap:wrap}
 .game-window .loan-panel,.game-window .new-farm-panel,.game-window .land-panel,.game-window .field-panel,.game-window .harvest-inventory{background:transparent;color:#000;margin:0 0 10px;padding:8px 0;border-color:#888;border-radius:0}
 .game-window :is(p,h2,h3,summary,dt,dd,pre,label,span,strong,output){color:inherit}

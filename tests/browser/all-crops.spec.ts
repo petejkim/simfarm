@@ -46,7 +46,7 @@ test('all crops are immediately plantable and plannable with source artwork and 
   await expect(page.locator('#plan-result')).toContainText('Plan updated');
   await page.screenshot({ path: 'artifacts/browser-all-crops.png', fullPage: true });
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  await openWindow(page, 'navigation'); await page.getByRole('button', { name: 'Seeds & chemicals', exact: true }).click();
+  await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('crop-supplies');
   await expect(page.locator('#crop-supply-type option')).toHaveCount(28);
   await reveal(page, '#crop-supply-type'); await page.locator('#crop-supply-type').selectOption('215'); await expect(page.locator('#crop-supply-stock')).toContainText('In stock: 0');
   const checkpoint = await save(page); await page.reload(); await expect(page.locator('#map-status')).toContainText('Scenario 1');

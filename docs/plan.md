@@ -305,3 +305,5 @@ Schedule handoff increment: empty Schedule now opens the original Plant popup di
 Land/New field retirement complete: removed LandPanel and both interim map-tool modes, migrated shortcuts to Map Property/Plant and checks to real menu/palette interactions. AutoDoze remains in Options. Next user-reported defect: restore the two-frame harvest-worker animation, then continue remaining interim-window retirement.
 
 Harvest worker animation fixed: original1036/1037 frames now alternate through a native presentation clock, pause with play, and clean up after harvest. Source evidence and the read-only rendering adaptation are in harvest-worker-animation.md. Resume remaining interim UI/action retirement; full game preservation remains incomplete.
+
+Farm controls retirement: removed the redundant navigation window, its launcher/style and shortcut-only Map plumbing. Original toolbar/menu/palette routes remain; existing object forms keep their separate Edit tools entry points until their action-specific retirement. Next continue Field information/Edit object audit and replacement, rather than adding new navigation scaffolding.

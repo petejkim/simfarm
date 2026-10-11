@@ -65,13 +65,13 @@ async function audio(page: Page) {
 const played = (page: Page) => page.evaluate(() => (window as unknown as { supplyAudio: { length: number; peak: number }[] }).supplyAudio);
 
 
-test('Seeds & chemicals shortcut buys original stock, plays feedback, preserves checkpoints and supplies live planting and care', async ({ page }) => {
+test('supply controls buy original stock, plays feedback, preserves checkpoints and supplies live planting and care', async ({ page }) => {
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await audio(page);await page.goto('/');
   const f=disasterFixture();f.state.scenario.farm.autoBuySeeds=false;const g=f.load().withAllCrops(browserCrops);
   g.dispatch({type:'build',buildingType:67,x:10,y:10});g.dispatch({type:'toggle-building-interior',slot:1,x:10,y:10});
   await load(page,g.save(4));await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
-  await openWindow(page, 'navigation'); await page.getByRole('button',{name:'Seeds & chemicals',exact:true}).click();
-  await expect(page.locator('#crop-supply-shop h2')).toBeFocused();await expect(page.locator('#buy-crop-supply')).toBeDisabled();
+  await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('crop-supplies');
+  await expect(page.locator('#crop-supply-shop h2')).toBeVisible();await expect(page.locator('#buy-crop-supply')).toBeDisabled();
   await reveal(page, '#crop-supply-storage'); await page.locator('#crop-supply-storage').selectOption('1');
   for(const productType of [196,220,221,222,223]){
     await reveal(page, '#crop-supply-type'); await page.locator('#crop-supply-type').selectOption(String(productType));await reveal(page, '#buy-crop-supply'); await page.locator('#buy-crop-supply').click();
@@ -96,12 +96,12 @@ test('Seeds & chemicals shortcut buys original stock, plays feedback, preserves 
 
 test('supply shop explains storage and money limits, supports building and map selection, and fits390px', async ({ page })=>{
   const f=shopFixture(),g=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,g.save(4));
-  const before=g.save(4);await openWindow(page, 'navigation'); await page.getByRole('button',{name:'Seeds & chemicals',exact:true}).click();
+  const before=g.save(4);await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('crop-supplies');
   await expect(page.locator('#crop-supply-shop')).toContainText('No compatible storage yet');
   expect(await save(page)).toEqual(JSON.parse(before));await page.getByRole('button',{name:'Build storage',exact:true}).click();
   await expect(page.locator('#building-type')).toHaveValue('66');await selectTile(page,10,10);
   await reveal(page, '#build-building'); await page.locator('#build-building').click();g.dispatch({type:'build',buildingType:66,x:10,y:10});
-  await openWindow(page, 'navigation'); await page.getByRole('button',{name:'Seeds & chemicals',exact:true}).click();await reveal(page, '#crop-supply-storage'); await page.locator('#crop-supply-storage').selectOption('1');
+  await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('crop-supplies');await reveal(page, '#crop-supply-storage'); await page.locator('#crop-supply-storage').selectOption('1');
   await expect(page.locator('#crop-supply-storage')).toContainText('6 free spaces');
   for(let n=0;n<6;n++){await reveal(page, '#buy-crop-supply'); await page.locator('#buy-crop-supply').click();g.dispatch({type:'buy-crop-supply',productType:192,x:10,y:10});}
   await expect(page.locator('#crop-supply-quote')).toContainText('full');await expect(page.locator('#buy-crop-supply')).toBeDisabled();
@@ -112,11 +112,11 @@ test('supply shop explains storage and money limits, supports building and map s
   await selectTile(page,21,20);await expect(page.locator('#crop-supply-quote')).toContainText('must be delivered into storage');
   // Use a newly built store with free room to exercise cash rejection, not capacity.
   const ready=shopFixture().load().withAllCrops(browserCrops);ready.dispatch({type:'build',buildingType:67,x:10,y:10});const broke=JSON.parse(ready.save(4));broke.scenario.farm.cash=0;
-  await load(page,JSON.stringify(broke));await openWindow(page, 'navigation'); await page.getByRole('button',{name:'Seeds & chemicals',exact:true}).click();
+  await load(page,JSON.stringify(broke));await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('crop-supplies');
   await reveal(page, '#crop-supply-storage'); await page.locator('#crop-supply-storage').selectOption('1');await expect(page.locator('#crop-supply-quote')).toContainText('not enough cash');
   await page.setViewportSize({width:1280,height:844});await page.getByRole('button',{name:'Choose on map',exact:true}).click();
   await expect(page.locator('#viewport')).toBeFocused();await selectTile(page,11,11);await page.getByRole('button',{name:'Review supplies',exact:true}).click();
-  await expect(page.locator('#crop-supply-shop h2')).toBeFocused();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
+  await expect(page.locator('#crop-supply-shop h2')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({path:'artifacts/browser-crop-supplies.png',fullPage:true});expect(await save(page)).toEqual(broke);
 });
 

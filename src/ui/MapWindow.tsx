@@ -7,8 +7,7 @@ import { paintTerrainPreview } from '../render/terrain-preview';
 import { renderOverview, renderOverviewLegend } from '../render/overview-map';
 import { GameWindow, useWindows } from './GameWindow';
 
-export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLocate, propertyRequest=0 }: {
-  propertyRequest?: number;
+export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLocate }: {
   assets: GameAssets; snapshot: GameSnapshot; onCommand: (command: GameCommand) => void;
   viewportRef: RefObject<HTMLDivElement | null>; zoom: number; onLocate: (x:number,y:number)=>void;
 }) {
@@ -17,10 +16,6 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
   const [mode,setMode]=useState<MapMode>(0),[selected,setSelected]=useState({x:0,y:0}),[help,setHelp]=useState(false);
   const [view,setView]=useState({x:0,y:0,width:40,height:32});
   const [transaction,setTransaction]=useState<'buy'|'sell'|null>(null);
-  useLayoutEffect(()=>{
-    if(!propertyRequest)return;
-    setMode(1);setHelp(false);setTransaction(null);canvas.current?.focus({preventScroll:true});
-  },[propertyRequest]);
   const quote=quoteLand(snapshot.scenario,selected.x,selected.y,snapshot.weather.soilMoisture)!;
   useLayoutEffect(()=>{
     if(!order.includes('map'))return;

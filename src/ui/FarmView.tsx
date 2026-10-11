@@ -32,7 +32,6 @@ import { checkNetworkPlacement, type NetworkAction } from '../simulation/network
 import { CropSupplyShop } from './CropSupplyShop';
 import { checkCropSupplyPurchase } from '../simulation/crop-supply-purchase';
 import { DisasterPanel } from './DisasterPanel';
-import { FarmNavigation, type FarmDestination } from './FarmNavigation';
 import { SupplyMovePanel } from './SupplyMovePanel';
 import { EquipmentMovePanel, BuildingInteriorControls } from './EquipmentMovePanel';
 import { FlightControls } from './FlightControls';
@@ -73,6 +72,7 @@ import { checkLivestockPurchase } from '../simulation/livestock-purchase';
 const subscribeEmpty = () => () => {};
 const emptySnapshot = () => null;
 
+type FarmDestination = 'network' | 'crop-supplies' | 'planner' | 'field' | 'loans' | 'map';
 interface Props {
   audioControls: ReactNode;
   audioOptions: { music: boolean; sound: boolean; buttonClicks:boolean; toggleButtonClicks:()=>void; toggleMusic: () => void; toggleSound: () => void };
@@ -149,7 +149,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     return home ? { x: home.x + 2, y: home.y + 2 } : { x: 48, y: 48 };
   });
   const [mapTool, setMapTool] = useState<MapTool>('inspect');
-  const [propertyRequest,setPropertyRequest]=useState(0);
   const [navigation, setNavigation] = useState<{ target: FarmDestination | WindowCommand } | null>(null);
   const [taxOpen, setTaxOpen] = useState(false);
   const evaluationRef = useRef<HTMLElement>(null), balanceRef = useRef<HTMLElement>(null), weatherRef = useRef<HTMLElement>(null);
@@ -169,10 +168,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     target?.focus({ preventScroll: true });
   }, [navigation]);
   function navigate(target: FarmDestination) {
-    if(target==='field'){windows.close('actions');windows.close('navigation');openFieldMenu('plant');return;}
+    if(target==='field'){windows.close('actions');openFieldMenu('plant');return;}
     objectMove.cancel();construction.cancel();bulldoze.cancel();
     setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null);
-    if(target==='land'){setMapTool('inspect');setPropertyRequest(value=>value+1);windows.show('map');setNavigation(null);return;}
     if (target === 'planner') setMapTool('inspect');
     if (target === 'crop-supplies' || target === 'network') setMapTool(target);
     windows.show(target === 'map' ? null : target === 'loans' ? 'bank' : target === 'planner' ? 'schedule' : 'actions');
@@ -408,24 +406,12 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     </section>
     <button onClick={() => windows.show('options')}>Audio and tools</button>
     <button onClick={() => windows.show('disasters')}>Disaster details</button>
-    <button onClick={() => windows.show('navigation')}>Farm controls</button>
     <button onClick={()=>chooseTool('inspect')}>Field orders</button>
     <button id="new-farm" onClick={() => setNewFarmOpen(true)}>New farm</button>
     {(['machinery', 'livestock', 'aircraft'] as const).map(key => <button key={key} onClick={() => windows.show(key)}>{key === 'machinery' ? 'Machinery' : key === 'livestock' ? 'Livestock' : 'Aircraft'}</button>)}
     </GameWindow>
     <GameWindow windowKey="speed" title="Speed">
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
-    </GameWindow>
-    <GameWindow windowKey="navigation" title="Farm controls">
-    {data && snapshot && <FarmNavigation tool={mapTool} blocked={Boolean(snapshot.pendingTown || snapshot.finances.defaultDecision || snapshot.aircraftFlight)} onNavigate={navigate} />}
-    <button onClick={() => windows.show('tools')}>More tools</button></GameWindow>
-    {snapshot?.lastHomesteadChange?.notice && <div id="homestead-notice" className="homestead-notice" role="status">
-      <span>{snapshot.lastHomesteadChange.notice === 'improved'
-        ? 'Your home has been improved after a rise in cash.' : 'Your home has been downgraded after a fall in cash.'}</span>
-      <button id="view-home" onClick={() => setFocus({ x: snapshot.finances.homestead.x + 2, y: snapshot.finances.homestead.y + 2 })}>View home</button>
-    </div>}
-    <GameWindow windowKey="town" title="Town development" titleArtwork={assets.townChoiceArtwork.src} forced={Boolean(snapshot?.pendingTown)}>
-    {simulation && snapshot && <TownChoicePanel assets={assets} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     </GameWindow>
     <GameWindow windowKey="bank" title="Bank">
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
@@ -452,7 +438,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     {snapshot && <BalanceWindow assets={assets} snapshot={snapshot} focusRef={balanceRef} onTaxes={()=>{setTaxOpen(true);windows.show('taxes');}}/>}
     {data && snapshot && <EvaluationWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={evaluationRef}/>}
     {data && snapshot && <WeatherWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={weatherRef}/>}
-    {data && snapshot && <MapWindow propertyRequest={propertyRequest} assets={assets} snapshot={snapshot} onCommand={command=>simulation?.dispatch(command)} viewportRef={viewportRef} zoom={zoom}
+    {data && snapshot && <MapWindow assets={assets} snapshot={snapshot} onCommand={command=>simulation?.dispatch(command)} viewportRef={viewportRef} zoom={zoom}
       onLocate={(x,y)=>setFocus({x:x+(viewportRef.current?.clientWidth??0)/(32*zoom),y:y+(viewportRef.current?.clientHeight??0)/(32*zoom)})} />}
     {data && snapshot && <SellWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={sellRef} onCommand={command=>simulation?.dispatch(command)} />}
     {data && snapshot && simulation && <ExamineWindow assets={assets} snapshot={snapshot} tiles={data.tiles} position={position} onCommand={command=>simulation.dispatch(command)}/>}
