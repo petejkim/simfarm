@@ -1,3 +1,5 @@
+import { storedWater } from '../../src/simulation/water-storage';
+import { farmSnapshot } from '../support/field-checkpoint';
 import { buyBuilding } from '../support/building-actions';
 import { reveal } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -22,7 +24,7 @@ test('Build water storage collects from live irrigation, refills distant troughs
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await buyBuilding(page,72,13,11);
   game.dispatch({ type: 'build', buildingType: 72, x: 13, y: 11 });
-  await reveal(page, '#livestock-stored-water'); await expect(page.locator('#livestock-stored-water')).toContainText('217 units');
+  expect(storedWater((await farmSnapshot(page)).scenario.buildings[2])).toBe(217);
   const path = 'artifacts/browser-water-storage.simfarm.json';
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
@@ -34,17 +36,16 @@ test('Build water storage collects from live irrigation, refills distant troughs
     pixels.push(...atlas.data.subarray(offset, offset + 4));
   }
   expect(actual).toEqual(pixels);
-  await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click();
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
-  await expect(page.locator('#livestock-stored-water')).toContainText('255 units');
+  expect(storedWater((await farmSnapshot(page)).scenario.buildings[2])).toBe(255);
   for (let day = 1; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
-  await expect(page.locator('#livestock-stored-water')).toContainText('191 units');
-  await reveal(page,'#livestock-supplies'); await expect(page.locator('#livestock-supplies')).toContainText('Water remaining: 128 units');
+  expect(storedWater((await farmSnapshot(page)).scenario.buildings[2])).toBe(191);
+  expect((await farmSnapshot(page)).scenario.inventory.filter(i=>i.active&&i.type===299).reduce((sum,i)=>sum+i.quantity,0)).toBe(128);
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
-  await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#livestock-stored-water');
+  await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#viewport');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-water-storage.png', fullPage: true });
 });
@@ -61,9 +62,8 @@ test('water storage wear is visible and removes its supply before weekly refills
   await expect(page.locator('#building-message-text')).toHaveText('A water tower has burst! You may want to bulldoze it and buy another.');
   await expect(page.getByRole('dialog',{name:'Message',exact:true})).toBeVisible();
   await page.locator('#building-message-ok').click();
-  await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click();
-  await expect(page.locator('#water-storage-worn')).toContainText('Water storage worn out at 13, 11');
-  await expect(page.locator('#livestock-stored-water')).toContainText('0 units');
-  await reveal(page,'#livestock-supplies'); await expect(page.locator('#livestock-supplies')).toContainText('Water remaining: 0 units');
+  const worn=(await farmSnapshot(page)).scenario.buildings[2];expect([worn.x,worn.y,worn.bytes[6]]).toEqual([13,11,255]);
+  expect(storedWater((await farmSnapshot(page)).scenario.buildings[2])).toBe(0);
+  expect((await farmSnapshot(page)).scenario.inventory.filter(i=>i.active&&i.type===299).reduce((sum,i)=>sum+i.quantity,0)).toBe(0);
   expect(await download(page, 'artifacts/browser-worn-water-storage.simfarm.json')).toEqual(JSON.parse(game.save(4)));
 });

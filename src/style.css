@@ -11,7 +11,6 @@
 .homestead-notice { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 1rem; border: 1px solid #48563f; }
 
 header { flex-wrap: wrap; }
-.livestock-counts{border-spacing:12px 4px}.livestock-counts th{text-align:left}
 
 .aircraft-selector{display:block;margin-top:16px}.aircraft-actions{display:flex;flex-direction:column;gap:8px;margin:12px 0}.aircraft-actions>span{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.aircraft-actions [role=status]{font-size:13px}
 .flight-controls,.flight-result{background:#263127;border:1px solid #75875b;padding:12px;margin:0 0 10px;font-size:12px;line-height:1.45}.flight-controls p{margin:6px 0}.flight-buttons{display:flex;flex-wrap:wrap;gap:6px}.flight-buttons button{font-size:12px;padding:7px 10px}.flight-controls details{padding-top:6px}.is-flying #viewport{height:50vh;min-height:260px}

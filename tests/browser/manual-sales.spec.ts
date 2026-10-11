@@ -1,3 +1,4 @@
+import { farmSnapshot } from '../support/field-checkpoint';
 import { selectAssetSale } from '../support/sell-window';
 import { aircraftCatalog } from '../support/aircraft-browser';
 import { reveal, openWindow } from '../support/workspace';
@@ -26,7 +27,7 @@ test('Original Sell controls sell a live newborn and stored parent, show origina
   f.state.scenario.animals[1].flags |= 3; f.state.scenario.animals[1].bytes[28] = 40;
   const game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
-  await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click(); await expect(page.locator('#livestock-panel > summary')).toContainText('2 animals');
+  expect((await farmSnapshot(page)).scenario.animals.filter(a=>a.active)).toHaveLength(2);
   for (const slot of [2, 1]) {
     await selectAssetSale(page,'Livestock',slot);
     const s = game.getSnapshot(), quote = checkManualAssetSale(s.scenario, s.finances, 'animal', slot, s.weather.soilMoisture); expect(quote.ok).toBe(true);
@@ -37,11 +38,11 @@ test('Original Sell controls sell a live newborn and stored parent, show origina
     await expect(page.locator('#farm-cash')).toHaveText(money(game.getSnapshot().scenario.farm.cash));
     expect(await save(page, 'artifacts/browser-animal-sale.simfarm.json')).toEqual(JSON.parse(game.save(4)));
     if (slot === 2) {
-      await page.reload(); await load(page, game.save(4)); await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click();
+      await page.reload(); await load(page, game.save(4));
       await expect(page.locator('#catalog-sale-result')).toHaveCount(0);
     }
   }
-  await expect(page.locator('#livestock-panel > summary')).toContainText('0 animals');
+  expect((await farmSnapshot(page)).scenario.animals.filter(a=>a.active)).toHaveLength(0);
   await openWindow(page,'sell');await page.getByRole('region',{name:'Sell catalog'}).getByRole('button',{name:'Livestock',exact:true}).click();await expect(page.locator('#catalog-sell')).toBeDisabled();await expect(page.locator('.sell-empty')).toContainText('FOR SALE');
   for (let d = 0; d < 7; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page, 'artifacts/browser-animal-sale.simfarm.json')).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);

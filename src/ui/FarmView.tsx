@@ -45,7 +45,6 @@ import { SellWindow } from './SellWindow';
 import { checkFieldPlacement } from '../simulation/field-placement';
 import { LoanPanel } from './LoanPanel';
 import { TaxPanel } from './TaxPanel';
-import { LivestockPanel } from './LivestockPanel';
 import { checkEquipmentPurchase } from '../simulation/equipment-purchase';
 import { AircraftWindow } from './AircraftWindow';
 import { aircraftMapEntry } from '../simulation/aircraft-view';
@@ -366,7 +365,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     <button onClick={() => windows.show('options')}>Audio and tools</button>
     <button onClick={() => windows.show('disasters')}>Disaster details</button>
     <button id="new-farm" onClick={() => setNewFarmOpen(true)}>New farm</button>
-    {(['livestock', 'aircraft'] as const).map(key => <button key={key} onClick={() => windows.show(key)}>{key === 'livestock' ? 'Livestock' : 'Aircraft'}</button>)}
+    <button onClick={() => windows.show('aircraft')}>Aircraft</button>
     </GameWindow>
     <GameWindow windowKey="speed" title="Speed">
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
@@ -377,9 +376,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     </GameWindow>
     <GameWindow windowKey="taxes" title="Tax details">
     {snapshot && <TaxPanel snapshot={snapshot} open={taxOpen} onOpenChange={setTaxOpen} />}
-    </GameWindow>
-    <GameWindow windowKey="livestock" title="Livestock">
-    {snapshot && <LivestockPanel snapshot={snapshot} onMoveSupplies={() => { windows.close('livestock'); editTool('Move object'); }} />}
     </GameWindow>
     {snapshot && simulation && <AircraftWindow assets={assets} selectedSlot={aircraftSlot} onSelect={setAircraftSlot} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
       onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); if (simulation.getSnapshot().aircraftFlight) windows.show(null); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}

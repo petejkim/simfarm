@@ -1,3 +1,4 @@
+import { farmSnapshot } from '../support/field-checkpoint';
 import { clickFarmTile, setAutoDoze } from '../support/field-actions';
 import { reveal } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -30,9 +31,8 @@ test('original Buy and palette purchase a cow and usable supplies and save their
     await expect(page.locator(productType<299?'#buy-result':'#construction-result')).toContainText(productType<299?'purchased.':'placed for');
     await clickFarmTile(page,x,y);await expect(page.locator(productType<299?'#buy-result':'#construction-result')).toContainText('occupied');
   }
-  await reveal(page,'#livestock-supplies');
-  await expect(page.locator('#livestock-panel > summary')).toContainText('1 animal');
-  await expect(page.locator('#livestock-supplies')).toHaveText('Water remaining: 256 units · Feed remaining: 512 units');
+  expect((await farmSnapshot(page)).scenario.animals.filter(a=>a.active)).toHaveLength(1);
+  expect((await farmSnapshot(page)).scenario.inventory.filter(i=>i.active&&(i.type===299||i.type===300)).map(i=>[i.type,i.quantity])).toEqual([[299,256],[300,512]]);
   await expect(page.locator('#farm-cash')).toHaveText('$99,405');
   const path = 'artifacts/browser-livestock-shop.simfarm.json';
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
@@ -48,8 +48,7 @@ test('original Buy and palette purchase a cow and usable supplies and save their
   }
   expect(actual).toEqual(pixels);
   for (let day = 0; day < 4; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
-  await reveal(page,'#livestock-supplies');
-  await expect(page.locator('#livestock-supplies')).toHaveText('Water remaining: 252 units · Feed remaining: 496 units');
+  expect((await farmSnapshot(page)).scenario.inventory.filter(i=>i.active&&(i.type===299||i.type===300)).map(i=>[i.type,i.quantity])).toEqual([[299,252],[300,496]]);
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }

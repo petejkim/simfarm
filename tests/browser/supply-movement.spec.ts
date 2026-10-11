@@ -36,11 +36,11 @@ async function originalPixels(page: Page, x: number, y: number, tile: number, ov
   expect(await page.locator('#world').evaluate((c: HTMLCanvasElement, p) => Array.from(c.getContext('2d')!.getImageData(p.x * 16, p.y * 16, 16, 16).data), { x, y })).toEqual(Array.from(expected));
 }
 
-test('supplies shortcut moves all five categories with exact original pixels, safe cancellation and browser checkpoints', async ({ page }) => {
+test('original Move tool moves all five supply categories with exact original pixels, safe cancellation and browser checkpoints', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = supplyMovementFixture(); f.state.scenario.cells[worldIndex(5, 5)].overlay = 0;
   const game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
-  await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click(); await reveal(page, '#open-supply-move'); await page.locator('#open-supply-move').click();
+  await startMove(page);
   await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');
   await clickFarmTile(page, 16, 10); await clickFarmTile(page, 5, 5);
   await expect(page.locator('#object-move-result')).toHaveText('Choose a destination on your land.');
