@@ -18,7 +18,7 @@ async function values(page:Page,v:ReturnType<typeof balanceWindowView>){
   for(const [id,n] of [['assets',v.totalAssets],['income',v.income],['expenses',v.totalExpenses],['net',v.net],['tax',v.tax],['loan',v.loan]])await expect(page.locator('#balance-'+id)).toHaveText(String(n));
 }
 
-test('Balance Sheet restores source geometry, every actual-text row, signed/full values, tax details and movable Close without rewriting caches',async({page})=>{
+test('Balance Sheet restores source geometry, every actual-text row, signed/full values and movable Close without rewriting caches',async({page})=>{
   const f=fixture();f.state.scenario.farm.cash=0x80000000;f.state.finances.annual.priorTaxExpenses=0xffffffff;f.state.finances.loan.scheduledPayment=0xffffffff;
   for(let i=1;i<=2;i++){const e=f.state.scenario.equipment[i];e.bytes.fill(0);e.flags=0x20;word(e.bytes,0,0);}word(f.state.scenario.equipmentDefinitions[0].bytes,6,20000);
   const game=f.load().withAllCrops(browserCrops);await start(page);await load(page,game.save(4));const before=await save(page),edit=await page.locator('#viewport').boundingBox();await open(page);
@@ -29,7 +29,6 @@ test('Balance Sheet restores source geometry, every actual-text row, signed/full
   expect(await client.getByRole('button',{name:'CLOSE',exact:true}).boundingBox()).toEqual({x:456,y:296,width:48,height:24});
   await values(page,balanceWindowView(game.getSnapshot(),browserCrops));await expect(page.locator('#balance-asset-0')).toHaveText('-2147483648');await expect(page.locator('#balance-asset-1')).toHaveText('-25536');await expect(page.locator('#balance-expense-9')).toHaveText('4294967295');await expect(page.locator('#balance-loan')).toHaveText('-1');
   await page.screenshot({path:'artifacts/browser-balance-window.png'});
-  await client.getByRole('button',{name:'View tax details',exact:true}).click();await expect(page.getByRole('dialog',{name:'Tax details',exact:true})).toBeVisible();await expect(page.locator('#tax-prior')).toHaveText('$4,294,967,295');
   await open(page);await win.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');await page.keyboard.press('Shift+ArrowDown');expect(await win.boundingBox()).toMatchObject({x:138,y:97});
   await client.getByRole('button',{name:'CLOSE',exact:true}).click();await expect(win).toBeHidden();await open(page);expect(await win.boundingBox()).toMatchObject({x:138,y:97});
   await page.keyboard.press('Escape');await expect(win).toBeHidden();expect(await page.locator('#viewport').boundingBox()).toEqual(edit);expect(await save(page)).toEqual(before);

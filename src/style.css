@@ -231,7 +231,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .balance-window button:hover{background:#fff4}
 .balance-window button:focus-visible{outline:1px dotted #000;outline-offset:-2px}
 .balance-window .balance-close{left:328px;top:184px;width:48px;height:24px}
-.balance-window .balance-tax-details{left:24px;top:184px;width:232px;height:8px}
 
 /* Evaluation DS44ac:352×192 client, original1× geometry. */
 .game-window[data-window=evaluation]{left:128px;top:128px;right:auto;width:352px;border:0;max-height:calc(100% - 144px)}

@@ -5,7 +5,7 @@ import {balanceWindowView} from '../simulation/balance-view';
 import {BALANCE_LABELS} from '../formats/balance-window';
 import {GameWindow,useWindows} from './GameWindow';
 
-export function BalanceWindow({assets,snapshot,focusRef,onTaxes}:{assets:GameAssets;snapshot:GameSnapshot;focusRef:RefObject<HTMLElement|null>;onTaxes:()=>void}){
+export function BalanceWindow({assets,snapshot,focusRef}:{assets:GameAssets;snapshot:GameSnapshot;focusRef:RefObject<HTMLElement|null>}){
   const windows=useWindows(),v=balanceWindowView(snapshot,assets.catalog.crops),close=()=>{windows.close('balance');};
   const output=(id:string,x:number,y:number,width:number,n:number,label:string)=><output id={`balance-${id}`} aria-label={label} title={String(n)} style={{left:x,top:y,width,fontSize:Math.min(10,width/(String(n).length*.62))}}>{n}</output>;
   return <GameWindow windowKey="balance" title="Balance Sheet" onClose={close}>
@@ -18,7 +18,6 @@ export function BalanceWindow({assets,snapshot,focusRef,onTaxes}:{assets:GameAss
       {v.expenses.map((n,i)=>output(`expense-${i}`,320,24+i*8,56,n,['Seed expenses','Machinery expenses','Land purchases','Futures losses','Structures','Livestock expenses','Chemicals','Loan interest','Leased machines','Taxes','Miscellaneous'][i]))}
       {output('income',136,168,64,v.income,'Total revenue')}{output('expenses',312,152,64,v.totalExpenses,'Total expenses')}{output('net',312,168,64,v.net,'Profit or loss')}
       {output('tax',192,184,64,v.tax,'Estimated taxes')}{output('loan',192,192,56,v.loan,'Quarterly loan payment')}
-      <button className="balance-tax-details" aria-label="View tax details" title="View tax details" onClick={onTaxes}/>
       <button className="balance-close" onClick={close}>CLOSE</button>
     </section>
   </GameWindow>;

@@ -44,7 +44,6 @@ import { SaveControls, type LoadedFarm } from './SaveControls';
 import { SellWindow } from './SellWindow';
 import { checkFieldPlacement } from '../simulation/field-placement';
 import { LoanPanel } from './LoanPanel';
-import { TaxPanel } from './TaxPanel';
 import { checkEquipmentPurchase } from '../simulation/equipment-purchase';
 import { AircraftWindow } from './AircraftWindow';
 import { aircraftMapEntry } from '../simulation/aircraft-view';
@@ -134,7 +133,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     return home ? { x: home.x + 2, y: home.y + 2 } : { x: 48, y: 48 };
   });
   const [navigation, setNavigation] = useState<{ target: FarmDestination | WindowCommand } | null>(null);
-  const [taxOpen, setTaxOpen] = useState(false);
   const evaluationRef = useRef<HTMLElement>(null), balanceRef = useRef<HTMLElement>(null), weatherRef = useRef<HTMLElement>(null);
   const sellRef = useRef<HTMLElement>(null), expertRef = useRef<HTMLElement>(null);
   const plannerRef = useRef<HTMLElement>(null), loansRef = useRef<HTMLElement>(null);
@@ -377,9 +375,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
       artwork={assets.bankArtwork} onClose={() => windows.close('bank')} panelRef={loansRef} />}
     </GameWindow>
-    <GameWindow windowKey="taxes" title="Tax details">
-    {snapshot && <TaxPanel snapshot={snapshot} open={taxOpen} onOpenChange={setTaxOpen} />}
-    </GameWindow>
     {snapshot && simulation && <AircraftWindow assets={assets} selectedSlot={aircraftSlot} onSelect={setAircraftSlot} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
       onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); if (simulation.getSnapshot().aircraftFlight) windows.show(null); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
     <GameWindow windowKey="disasters" title="Disasters">
@@ -389,7 +384,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       onSelect={slot=>{setSelection(null);selectField(slot,true);}} onNewField={()=>{windows.close('schedule');openFieldMenu('plant');}} onCommand={command=>simulation?.dispatch(command)}/>}
     {data && <ExpertWindow assets={assets} cropFiles={data.scenario.cropFiles} tiles={data.tiles} focusRef={expertRef} onEvent={onGameEvent}/>}
     {data && snapshot && <MarketWindow assets={assets} snapshot={snapshot} tiles={data.tiles}/>}
-    {snapshot && <BalanceWindow assets={assets} snapshot={snapshot} focusRef={balanceRef} onTaxes={()=>{setTaxOpen(true);windows.show('taxes');}}/>}
+    {snapshot && <BalanceWindow assets={assets} snapshot={snapshot} focusRef={balanceRef}/>}
     {data && snapshot && <EvaluationWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={evaluationRef}/>}
     {data && snapshot && <WeatherWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={weatherRef}/>}
     {data && snapshot && <MapWindow assets={assets} snapshot={snapshot} onCommand={command=>simulation?.dispatch(command)} viewportRef={viewportRef} zoom={zoom}
