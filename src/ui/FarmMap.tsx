@@ -11,6 +11,7 @@ import { drawWorld, type MapPreview } from '../render/world-renderer';
 
 export interface MapFocus { x: number; y: number }
 interface Props {
+  cursor?:string;
   autoScroll: boolean;
   animateWorkers: boolean;
   viewportRef: RefObject<HTMLDivElement | null>;
@@ -44,7 +45,7 @@ const directions: Record<string, [number, number]> = {
   ArrowLeft: [-64, 0], ArrowRight: [64, 0], ArrowUp: [0, -64], ArrowDown: [0, 64],
 };
 
-export function FarmMap({ animateWorkers, autoScroll, viewportRef, scenario, tiles, townEventTiles, maskedTiles, zoom, focus, field, selection, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
+export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scenario, tiles, townEventTiles, maskedTiles, zoom, focus, field, selection, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stroke=useRef<{pointer:number;last:number|null}|null>(null),suppressClick=useRef(false);
   const stopPainting=useCallback(()=>{
@@ -180,7 +181,7 @@ export function FarmMap({ animateWorkers, autoScroll, viewportRef, scenario, til
       const offset = directions[event.key];
       if (offset) { event.preventDefault(); event.currentTarget.scrollBy(...offset); }
     }}>
-    <canvas id="world" ref={canvasRef} width={1536} height={1536} data-paint-tool={paintTool??undefined} style={{ width: 1536 * zoom, height: 1536 * zoom,touchAction:paintTool?'none':undefined }}
+    <canvas id="world" ref={canvasRef} width={1536} height={1536} data-paint-tool={paintTool??undefined} style={{ cursor, width: 1536 * zoom, height: 1536 * zoom,touchAction:paintTool?'none':undefined }}
       aria-label="Original scenario terrain" title="Click town shops to open their windows or parked aircraft for service. Right-click buildings, gates or valves to open or close them."
       onClick={event=>{if(suppressClick.current){suppressClick.current=false;return;}if(!paintTool)selectTile(event);}}
       onPointerDown={event=>{
