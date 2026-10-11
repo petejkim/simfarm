@@ -1,3 +1,4 @@
+import { clickFarmTile } from '../support/field-actions';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -99,8 +100,8 @@ test('supply shop explains storage and money limits, supports building and map s
   const before=g.save(4);await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('crop-supplies');
   await expect(page.locator('#crop-supply-shop')).toContainText('No compatible storage yet');
   expect(await save(page)).toEqual(JSON.parse(before));await page.getByRole('button',{name:'Build storage',exact:true}).click();
-  await expect(page.locator('#building-type')).toHaveValue('66');await selectTile(page,10,10);
-  await reveal(page, '#build-building'); await page.locator('#build-building').click();g.dispatch({type:'build',buildingType:66,x:10,y:10});
+  await expect(page.locator('#cancel-buy-placement')).toBeVisible();await clickFarmTile(page,10,10);
+  await expect(page.locator('#buy-result')).toContainText('purchased.');g.dispatch({type:'build',buildingType:66,x:10,y:10});
   await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('crop-supplies');await reveal(page, '#crop-supply-storage'); await page.locator('#crop-supply-storage').selectOption('1');
   await expect(page.locator('#crop-supply-storage')).toContainText('6 free spaces');
   for(let n=0;n<6;n++){await reveal(page, '#buy-crop-supply'); await page.locator('#buy-crop-supply').click();g.dispatch({type:'buy-crop-supply',productType:192,x:10,y:10});}

@@ -313,3 +313,5 @@ Irrigation form retired: Ditch/Valve palette placement, direct existing-valve to
 Network form retired: roads/fences/gates now use original palette construction and direct gate toggles exclusively. Removed duplicate category/preview/review plumbing; source-price, rendered-pixel, free gate and save-continuation checks use the original interactions. Continue remaining object forms and Field information audit.
 
 Removal form retired: original Bulldoze and its MESSAGE dialogs now provide removal access. Migrated stored-content demolition, terrain/loose clearing, original PCM, busy-field rejection, cancellation and cleared-field reuse checks to that route. Continue remaining building/movement/shop forms and Field information audit; full preservation remains incomplete.
+
+Building form retired: original Buy now provides building purchases exclusively, including the remaining supply shop storage shortcut. Options AutoDoze and original Examine/interior interactions remain. Source catalog and placement evidence stays in buy-dialog.md/construction.md; continue equipment/supply movement and shops plus Field information retirement.

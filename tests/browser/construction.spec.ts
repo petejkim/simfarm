@@ -1,4 +1,6 @@
-import { reveal, openWindow } from '../support/workspace';
+import { clickFarmTile, setAutoDoze } from '../support/field-actions';
+import { buyBuilding, selectBuilding } from '../support/building-actions';
+import { reveal } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -9,21 +11,12 @@ import { GameSimulation } from '../support/game';
 import { checkBuildingPlacement } from '../../src/simulation/building-placement';
 
 const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
-async function selectTile(page: Page, x: number, y: number) {
-  await reveal(page, '#viewport'); const viewport = page.locator('#viewport');
-  await viewport.evaluate((el, p) => el.scrollTo(p.x * 16, p.y * 16), { x, y });
-  await viewport.scrollIntoViewIfNeeded();
-  // Use a real pointer event at the tile center after viewport scrolling.
-  const rect = await page.locator('#world').boundingBox(); expect(rect).not.toBeNull();
-  await page.mouse.click(rect!.x + x * 16 + 8, rect!.y + y * 16 + 8);
-  await expect(page.locator('#cell-status')).toContainText(`Tile ${x}, ${y}`);
-}
 async function download(page: Page, path: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   await (await pending).saveAs(path); return readFileSync(path, 'utf8');
 }
 
-test('Build storage buys original roofs and usable records, persists accounts and fits a narrow screen', async ({ page }) => {
+test('original Buy purchases storage roofs and usable records and persists accounts', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const scenario = readScenario(source('SCEN4.SSM'));
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
@@ -35,13 +28,9 @@ test('Build storage buys original roofs and usable records, persists accounts an
   expect(point).toBeDefined(); const { x, y } = point!;
   await page.goto('/'); await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('build'); await reveal(page, '#building-type'); await page.locator('#building-type').selectOption('65');
-  await expect(page.locator('#build-building')).toBeDisabled();
-  await selectTile(page, x, y); await expect(page.locator('#building-placement-status')).toContainText('Ready');
-  await reveal(page, '#build-building'); await page.locator('#build-building').click(); expected.dispatch({ type: 'build', buildingType: 65, x, y });
+  await buyBuilding(page,65,x,y); expected.dispatch({ type: 'build', buildingType: 65, x, y });
   const result = expected.getSnapshot().lastBuildingResult; expect(result?.ok).toBe(true);
-  await expect(page.locator('#building-result')).toContainText('Built for');
-  await expect(page.locator('#build-building')).toBeDisabled(); await expect(page.locator('#building-placement-status')).toContainText('Another building');
+  await clickFarmTile(page,x,y); await expect(page.locator('#buy-result')).toHaveText('This location is occupied.');
   await expect(page.locator('#farm-cash')).toHaveText(`$${expected.getSnapshot().scenario.farm.cash.toLocaleString('en-US')}`);
   const text = await download(page, 'artifacts/browser-construction.simfarm.json');
   expect(JSON.parse(text)).toEqual(JSON.parse(expected.save(4)));
@@ -57,15 +46,14 @@ test('Build storage buys original roofs and usable records, persists accounts an
     pixels.push(...atlas.data.subarray(pos, pos + 4));
   }
   expect(actual).toEqual(pixels);
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('build'); await expect(page.locator('#building-result')).toHaveCount(0);
-  await page.setViewportSize({ width: 1280, height: 844 }); await selectTile(page, x, y);
-  await reveal(page, '#building-type'); await page.locator('#building-type').selectOption('69'); await reveal(page, '#building-type'); await page.locator('#building-type').scrollIntoViewIfNeeded();
+  await expect(page.locator('#cancel-buy-placement')).toHaveCount(0);
+  await page.setViewportSize({ width: 1280, height: 844 }); await selectBuilding(page,69);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-construction.png', fullPage: true });
   expect(errors).toEqual([]);
 });
 
-test('construction UI explains tree clearing and cash limits, rejects without charging, and updates its footprint', async ({ page }) => {
+test('original building placement rejects blocked ground and cash limits, and Options AutoDoze clears trees', async ({ page }) => {
   const scenario = readScenario(source('SCEN4.SSM'));
   const crops = scenario.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
   Object.assign(scenario.farm, { cash: 2450, autoClear: false });
@@ -75,16 +63,15 @@ test('construction UI explains tree clearing and cash limits, rejects without ch
   await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'trees.json', mimeType: 'application/json', buffer: Buffer.from(expected.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('build'); await reveal(page, '#building-type'); await page.locator('#building-type').selectOption('65');
-  await selectTile(page, 0, 0); await expect(page.locator('#building-placement-status')).toContainText('blocks');
-  await expect(page.locator('#build-building')).toBeDisabled();
-  await reveal(page, '#building-auto-clear'); await page.locator('#building-auto-clear').check(); expected.dispatch({ type: 'set-auto-clear', enabled: true });
-  await expect(page.locator('#building-placement-status')).toContainText('$2,425 total ($25 clearing)');
-  await reveal(page, '#building-type'); await page.locator('#building-type').selectOption('69'); await expect(page.locator('#building-placement-status')).toContainText('not enough cash');
-  await expect(page.locator('#build-building')).toBeDisabled();
-  await reveal(page, '#building-type'); await page.locator('#building-type').selectOption('65'); await reveal(page, '#build-building'); await page.locator('#build-building').click();
+  await selectBuilding(page,65);await clickFarmTile(page,0,0);
+  await expect(page.locator('#buy-result')).toHaveText('Choose clear ground or compatible storage.');
+  expect(JSON.parse(await download(page,'artifacts/browser-construction-blocked.simfarm.json'))).toEqual(JSON.parse(expected.save(4)));
+  await setAutoDoze(page,true);expected.dispatch({type:'set-auto-clear',enabled:true});
+  await selectBuilding(page,69);await clickFarmTile(page,0,0);await expect(page.locator('#buy-result')).toHaveText('Not enough cash.');
+  expect(JSON.parse(await download(page,'artifacts/browser-construction-cash.simfarm.json'))).toEqual(JSON.parse(expected.save(4)));
+  await buyBuilding(page,65,0,0);
   expected.dispatch({ type: 'build', buildingType: 65, x: 0, y: 0 });
   await expect(page.locator('#farm-cash')).toHaveText('$25');
   expect(JSON.parse(await download(page, 'artifacts/browser-construction-clearing.simfarm.json'))).toEqual(JSON.parse(expected.save(4)));
-  await selectTile(page, 3, 3); await expect(page.locator('#building-placement-status')).toContainText('not enough cash');
+  await selectBuilding(page,65);await clickFarmTile(page,3,3);await expect(page.locator('#buy-result')).toHaveText('Not enough cash.');
 });

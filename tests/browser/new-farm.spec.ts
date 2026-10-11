@@ -1,3 +1,4 @@
+import { buyBuilding } from '../support/building-actions';
 import { setAutoDoze, plantField, clickFarmTile } from '../support/field-actions';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -86,8 +87,7 @@ test('a previewed farm plants on its starting land and delivers harvest into new
   generated.dispatch({ type: 'create-field', ...field, cropSlot: 0 });
   await expect(page.locator('#field-status')).toContainText('Planting');
   view = generated.getSnapshot(); const storage = find((x, y) => checkBuildingPlacement(view.scenario, 65, x, y, view.weather.soilMoisture).ok);
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('build'); await reveal(page, '#building-type'); await page.locator('#building-type').selectOption('65'); await selectTile(page, storage.x, storage.y);
-  await reveal(page, '#build-building'); await page.locator('#build-building').click(); generated.dispatch({ type: 'build', ...storage, buildingType: 65 });
+  await buyBuilding(page,65,storage.x,storage.y); generated.dispatch({ type: 'build', ...storage, buildingType: 65 });
   for (let i = 0; i < 12; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); generated.dispatch({ type: 'advance-day' }); }
   await page.getByRole('button', { name: 'View object', exact: true }).click(); await reveal(page, '#field'); await page.locator('#field').selectOption('1');
   await expect(page.locator('#field-status')).toContainText('Growing');
