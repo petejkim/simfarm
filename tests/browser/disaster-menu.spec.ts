@@ -4,7 +4,7 @@ import {disasterFixture} from '../support/disasters';
 import {financeMessageFixture} from '../support/finance-messages';
 import {browserCrops} from '../support/crop-catalog';
 import {GameSimulation} from '../support/game';
-import {reveal,openWindow,acknowledgeFinanceMessages} from '../support/workspace';
+import {reveal,acknowledgeFinanceMessages} from '../support/workspace';
 const names=['Tornado','Locusts','Drought','Flood','Frost','Windstorm','Disable'];
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'disasters.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
@@ -20,7 +20,7 @@ test('Disasters opens the seven original real-text rows at source scale, with ke
   await expect(items.first()).toBeFocused();await page.keyboard.press('End');await expect(items.last()).toBeFocused();await page.keyboard.press('Enter');await expect(menu).toHaveCount(0);await expect(page.locator('#disasters-menu-button')).toBeFocused();
   const after=await save(page);before.runtime.disasters.enabled=false;expect(after).toEqual(before);await checks(page,[false,false,false,false,false,false,true]);
   await page.locator('#disasters-menu-button').click();await page.screenshot({path:'artifacts/browser-disaster-menu.png'});await page.locator('.original-control-bar').click({position:{x:600,y:8}});await expect(menu).toHaveCount(0);
-  await expect(page.locator('[data-window=disasters]')).toBeHidden();await openWindow(page,'disasters');await expect(page.locator('#disasters-panel')).toBeVisible();
+  await expect(page.locator('[data-window=disasters]')).toHaveCount(0);
 });
 
 test('each source menu choice starts its actual disaster from Disable, restores the correct checks and saves canonical effects',async({page})=>{

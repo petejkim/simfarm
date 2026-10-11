@@ -1,5 +1,6 @@
+import { farmSnapshot } from '../support/field-checkpoint';
 import { chooseDisaster, setDisastersEnabled, expectDisasterChecked } from '../support/disaster-menu';
-import { reveal, openWindow, acknowledgeFinanceMessages } from '../support/workspace';
+import { reveal, acknowledgeFinanceMessages } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -68,21 +69,21 @@ async function observeAudio(page: Page) {
 test('Disasters controls start real locust damage, render every source sprite pixel, play original PCM and preserve an active checkpoint', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await observeAudio(page);
   await page.goto('/'); const f = disasterFixture(), game = f.load().withAllCrops(browserCrops); await load(page, game.save(4));
-  await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click(); await setDisastersEnabled(page,false);
+   await setDisastersEnabled(page,false);
   game.dispatch({ type: 'set-disasters-enabled', enabled: false }); await expectDisasterChecked(page,'disable');
   await setDisastersEnabled(page,true); game.dispatch({ type: 'set-disasters-enabled', enabled: true });
   await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await chooseDisaster(page,'swarm'); game.dispatch({ type:'disaster-menu',action:'swarm' });
-  await expect(page.locator('#disaster-state')).toContainText('Locust swarm at 20, 20 · Paused');
+  const active=await farmSnapshot(page);expect(active.paused).toBe(true);expect([active.disasters.swarm.x,active.disasters.swarm.y]).toEqual([20,20]);
   await expectDisasterChecked(page,'swarm'); await sprites(page, game.getSnapshot().disasters, 'swarm');
   await expect.poll(() => page.evaluate(() => (window as unknown as { disasterAudio: { length: number; peak: number }[] }).disasterAudio.some(a => a.length === 7259 && a.peak > 0.01))).toBe(true);
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   const checkpoint = await save(page, 'swarm'); expect(checkpoint).toEqual(JSON.parse(game.save(4)));
   expect(game.getSnapshot().scenario.fields[1].bytes[19]).toBeGreaterThan(0);
   await load(page, JSON.stringify(checkpoint)); await sprites(page, game.getSnapshot().disasters, 'swarm');
-  await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click(); // Panel expansion is transient UI state.
-  await reveal(page, '#locate-disaster'); await page.locator('#locate-disaster').click();
+
+  await reveal(page,'#viewport');
   for (let i = 0; i < 8; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
-  await expect(page.locator('#disaster-state')).toContainText('No tornado or locust swarm active.');
+  await expectDisasterChecked(page,'swarm',false);await expectDisasterChecked(page,'tornado',false);
   expect(await save(page, 'swarm')).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
 
@@ -94,17 +95,17 @@ test('manual tornado destroys a building and contents without sale credit; disab
   expect(purchaseBuilding(f.state.scenario, f.state.finances, 67, x, y, 0).ok).toBe(true);
   expect(purchaseEquipment(f.state.scenario, f.state.finances, 0, x, y, 0).ok).toBe(true);
   const game = f.load().withAllCrops(browserCrops), cash = game.getSnapshot().scenario.farm.cash; await load(page, game.save(4));
-  await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click(); await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+   await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
   await chooseDisaster(page,'tornado'); game.dispatch({ type:'disaster-menu',action:'tornado' });
-  await sprites(page, game.getSnapshot().disasters, 'tornado'); await reveal(page, '#locate-disaster'); await page.locator('#locate-disaster').click();
+  await sprites(page, game.getSnapshot().disasters, 'tornado'); await reveal(page,'#viewport');
   await expect.poll(() => page.evaluate(() => (window as unknown as { disasterAudio: { length: number; peak: number }[] }).disasterAudio.some(a => a.length === 11549 && a.peak > 0.01))).toBe(true);
   await setDisastersEnabled(page,false); game.dispatch({ type: 'set-disasters-enabled', enabled: false });
   for (let i = 0; i < 2; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(game.getSnapshot().scenario.buildings[1].active).toBe(false); expect(game.getSnapshot().scenario.equipment[1].active).toBe(false);
   expect(game.getSnapshot().scenario.farm.cash).toBe(cash); expect(game.getSnapshot().disasters.flags & 1).toBe(1);
   expect(await save(page, 'tornado')).toEqual(JSON.parse(game.save(4))); await sprites(page, game.getSnapshot().disasters, 'tornado');
-  await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#disasters-panel'); await page.locator('#disasters-panel').scrollIntoViewIfNeeded();
-  await reveal(page, '#locate-disaster'); await expect(page.locator('#locate-disaster')).toBeVisible(); await expectDisasterChecked(page,'tornado');
+  await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page,'#viewport');
+  await expectDisasterChecked(page,'tornado');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-disasters.png', fullPage: true }); expect(errors).toEqual([]);
 });

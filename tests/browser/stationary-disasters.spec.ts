@@ -1,5 +1,6 @@
+import { farmSnapshot } from '../support/field-checkpoint';
 import { chooseDisaster, setDisastersEnabled, expectDisasterChecked } from '../support/disaster-menu';
-import { reveal, openWindow, acknowledgeFinanceMessages } from '../support/workspace';
+import { reveal, acknowledgeFinanceMessages } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test,expect,type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -32,18 +33,18 @@ const audio=(page:Page)=>page.evaluate(()=>(window as unknown as {stationaryAudi
 test('frost controls cancel locusts, play original wind PCM and retain cooling/loss through active save and ending',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await observeAudio(page);await page.goto('/');
   const f=disasterFixture();f.state.weather.temperature=50;f.state.weather.temperatureAnomaly=0;const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));
-  await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
   await chooseDisaster(page,'swarm');g.dispatch({type:'disaster-menu',action:'swarm'});
   await chooseDisaster(page,'frost');g.dispatch({type:'disaster-menu',action:'frost'});
-  await expect(page.locator('#frost-state')).toContainText('Frost active. Paused.');await expect(page.locator('#disaster-state')).toContainText('No tornado or locust swarm active');
-  await expectDisasterChecked(page,'frost');await expect(page.locator('#disaster-notices')).toContainText('damaging 1 sensitive field');
+  await expectDisasterChecked(page,'swarm',false);await expectDisasterChecked(page,'tornado',false);
+  await expectDisasterChecked(page,'frost');const damaged=(await farmSnapshot(page)).scenario.fields[1].bytes;expect(damaged[18]|damaged[19]<<8).toBe(255);
   await expect.poll(async()=>(await audio(page)).some(a=>a.length===12132&&a.peak>0.01)).toBe(true);
   const active=await save(page,'frost-active');expect(active).toEqual(JSON.parse(g.save(4)));const sounds=(await audio(page)).filter(s=>s.length!==2667).map(s=>s.length);
-  await load(page,JSON.stringify(active));await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();expect((await audio(page)).filter(s=>s.length!==2667).map(s=>s.length)).toEqual(sounds);
+  await load(page,JSON.stringify(active));expect((await audio(page)).filter(s=>s.length!==2667).map(s=>s.length)).toEqual(sounds);
   await setDisastersEnabled(page,false);g.dispatch({type:'set-disasters-enabled',enabled:false});
   for(const day of [1,2]){await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});expect(g.getSnapshot().weather.temperature).toBe(day===1?28:8);expect(await save(page,`frost-day${day}`)).toEqual(JSON.parse(g.save(4)));}
   for(let day=2;day<12;day++){await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}
-  await expect(page.locator('#frost-state')).toHaveCount(0);await expect(page.locator('#disaster-notices')).toContainText('The frost has ended');expect(await save(page,'frost-ended')).toEqual(JSON.parse(g.save(4)));expect(errors).toEqual([]);
+  await expectDisasterChecked(page,'frost',false);expect(await save(page,'frost-ended')).toEqual(JSON.parse(g.save(4)));expect(errors).toEqual([]);
 });
 
 test('saved crop circles retain original tiles and event flags; alien MIDI remains audible without replay on load',async({page})=>{
@@ -74,7 +75,7 @@ test('saved toxic warning remains flag-only and ordinary play has no provisional
   expect(active.scenario).toEqual(before.scenario);expect(active.runtime.random).toEqual(before.runtime.random);
   await load(page,JSON.stringify(active));await expect(page.locator('#disaster-message-ok')).toHaveCount(0);
   await reveal(page,'#sound-toggle');await page.locator('#sound-toggle').click();
-  await openWindow(page,'disasters');await expect(page.locator('#start-crop-circles,#start-toxic-land')).toHaveCount(0);
+  await expect(page.locator('#start-crop-circles,#start-toxic-land,[data-window=disasters]')).toHaveCount(0);
   // Uppercase A is source debug input, not an ordinary gameplay shortcut.
   await reveal(page,'#viewport');await page.keyboard.press('Shift+A');expect(await save(page,'warning')).toEqual(active);
   await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});

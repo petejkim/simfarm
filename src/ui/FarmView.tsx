@@ -29,7 +29,6 @@ import { EditPalette, type EditTool } from './EditPalette';
 import type { GameWindow as WindowCommand } from './ControlBar';
 import { NewFarmControls } from './NewFarmControls';
 import { checkCropSupplyPurchase } from '../simulation/crop-supply-purchase';
-import { DisasterPanel } from './DisasterPanel';
 import { FlightControls } from './FlightControls';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
@@ -361,7 +360,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       </select></label><button id="center" disabled={!data || Boolean(snapshot?.aircraftFlight)} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
     </section>
     <button onClick={() => windows.show('options')}>Audio and tools</button>
-    <button onClick={() => windows.show('disasters')}>Disaster details</button>
     <button id="new-farm" onClick={() => setNewFarmOpen(true)}>New farm</button>
     <button onClick={() => windows.show('aircraft')}>Aircraft</button>
     </GameWindow>
@@ -377,9 +375,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     </GameWindow>
     {snapshot && simulation && <AircraftWindow assets={assets} selectedSlot={aircraftSlot} onSelect={setAircraftSlot} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
       onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); if (simulation.getSnapshot().aircraftFlight) windows.show(null); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
-    <GameWindow windowKey="disasters" title="Disasters">
-    {snapshot && <DisasterPanel snapshot={snapshot} onLocate={(x, y) => setFocus({ x, y })} />}
-    </GameWindow>
     {data && snapshot && <ScheduleWindow inspection={fieldInspection} assets={assets} snapshot={snapshot} tiles={data.tiles} field={field} focusRef={plannerRef}
       onSelect={slot=>{setSelection(null);selectField(slot,true);}} onNewField={()=>{windows.close('schedule');openFieldMenu('plant');}} onCommand={command=>simulation?.dispatch(command)}/>}
     {data && <ExpertWindow assets={assets} cropFiles={data.scenario.cropFiles} tiles={data.tiles} focusRef={expertRef} onEvent={onGameEvent}/>}
