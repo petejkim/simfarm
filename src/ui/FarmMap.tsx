@@ -1,3 +1,4 @@
+import { HarvestWorkerAnimation } from '../render/harvest-workers';
 import { drawDisasters, type DisasterSprites } from '../render/disaster-renderer';
 import type { MovingDisasterState } from '../simulation/moving-disasters';
 import { drawAircraft, flightPixelPosition, type FlightSprites } from '../render/aircraft-renderer';
@@ -11,6 +12,7 @@ import { drawWorld, type MapPreview } from '../render/world-renderer';
 export interface MapFocus { x: number; y: number }
 interface Props {
   autoScroll: boolean;
+  animateWorkers: boolean;
   viewportRef: RefObject<HTMLDivElement | null>;
   scenario: Scenario;
   flight: AircraftFlight | null;
@@ -41,7 +43,7 @@ const directions: Record<string, [number, number]> = {
   ArrowLeft: [-64, 0], ArrowRight: [64, 0], ArrowUp: [0, -64], ArrowDown: [0, 64],
 };
 
-export function FarmMap({ autoScroll, viewportRef, scenario, tiles, maskedTiles, zoom, focus, field, selection, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
+export function FarmMap({ animateWorkers, autoScroll, viewportRef, scenario, tiles, maskedTiles, zoom, focus, field, selection, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stroke=useRef<{pointer:number;last:number|null}|null>(null),suppressClick=useRef(false);
   const stopPainting=useCallback(()=>{
@@ -99,12 +101,31 @@ export function FarmMap({ autoScroll, viewportRef, scenario, tiles, maskedTiles,
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
   }, [autoScroll, flight, zoom, updatePointer, viewportRef]);
+  const workerAnimation=useRef(new HarvestWorkerAnimation()),paint=useRef(()=>{});
+  const hasWorkers=scenario.cells.some(cell=>(cell.terrain&0x0800)!==0&&((cell.overlay&0x07ff)===1036||(cell.overlay&0x07ff)===1037));
+  useEffect(()=>{
+    const clock=workerAnimation.current;
+    if(!hasWorkers){clock.reset();return;}
+    if(!animateWorkers)return;
+    let frame:number;
+    const step=(now:number)=>{
+      if(document.hidden)clock.suspend();
+      else if(clock.advance(now))paint.current();
+      frame=requestAnimationFrame(step);
+    };
+    const visibility=()=>clock.suspend();
+    document.addEventListener('visibilitychange',visibility);
+    frame=requestAnimationFrame(step);
+    return()=>{cancelAnimationFrame(frame);clock.suspend();document.removeEventListener('visibilitychange',visibility);};
+  },[hasWorkers,animateWorkers]);
   const previousZoom = useRef(zoom), previousFocus = useRef<MapFocus | null>(null);
   useLayoutEffect(() => {
-    const context = canvasRef.current!.getContext('2d')!;
-    drawWorld(context, scenario, tiles, maskedTiles, flight ? undefined : field, flight ? null : selection, flight ? undefined : preview);
-    if (flight) drawAircraft(context, flight, flightSprites);
-    if (disasters) drawDisasters(context, disasters, disasterSprites);
+    paint.current=()=>{
+      const context = canvasRef.current!.getContext('2d')!;
+      drawWorld(context, scenario, tiles, maskedTiles, flight ? undefined : field, flight ? null : selection, flight ? undefined : preview,workerAnimation.current.phase);
+      if (flight) drawAircraft(context, flight, flightSprites);
+      if (disasters) drawDisasters(context, disasters, disasterSprites);
+    };paint.current();
   }, [scenario, tiles, maskedTiles, field, selection, preview, flight, flightSprites, disasters, disasterSprites]);
   useLayoutEffect(() => {
     const viewport = viewportRef.current!;

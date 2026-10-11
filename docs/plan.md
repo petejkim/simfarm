@@ -303,3 +303,5 @@ Latest priority2026-10-11: after consistent button feedback, its persistent Opti
 Schedule handoff increment: empty Schedule now opens the original Plant popup directly; its obsolete form route is gone. Existing-field immediate orders are native weekly-rule adapters, not evidence of original immediate buttons. See the corrected audit; next migrate remaining Land/New field routes and remove their redundant forms with affected flow checks.
 
 Land/New field retirement complete: removed LandPanel and both interim map-tool modes, migrated shortcuts to Map Property/Plant and checks to real menu/palette interactions. AutoDoze remains in Options. Next user-reported defect: restore the two-frame harvest-worker animation, then continue remaining interim-window retirement.
+
+Harvest worker animation fixed: original1036/1037 frames now alternate through a native presentation clock, pause with play, and clean up after harvest. Source evidence and the read-only rendering adaptation are in harvest-worker-animation.md. Resume remaining interim UI/action retirement; full game preservation remains incomplete.
