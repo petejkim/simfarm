@@ -1,3 +1,4 @@
+import {EditStatus} from './EditStatus';
 import {FieldMessage} from './FieldMessage';
 import {EditHelp} from './EditHelp';
 import {BalanceWindow} from './BalanceWindow';
@@ -458,10 +459,11 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       <div className="edit-title">Edit</div>
       <EditPalette artwork={assets.editPalette} disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}
         onField={() => openFieldMenu('plant')} onSpray={() => openFieldMenu('spray')} onHelp={() => {objectMove.cancel();bulldoze.cancel();construction.cancel();setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);windows.show(null);setEditHelpOpen(open=>!open);}} />
+      {snapshot&&<EditStatus codes={snapshot.editStatuses} text={assets.editStatusText}/>}
       {editHelpOpen&&<EditHelp artwork={assets.editHelp} onClose={()=>setEditHelpOpen(false)} onAdvanced={()=>{setEditHelpOpen(false);windows.show('tools');}}/>}
       {fieldMenu&&snapshot&&<FieldToolMenu kind={fieldMenu} assets={assets} world={data.scenario} tiles={data.tiles}
         onClose={()=>{setFieldMenu(null);viewportRef.current?.focus({preventScroll:true});}}
-        onChoose={tool=>{setFieldMenu(null);setFieldMapTool(tool);setMapTool(tool.kind==='plant'?'field':'inspect');setSelection(null);viewportRef.current?.focus({preventScroll:true});}}/>}
+        onChoose={tool=>{if(tool.kind==='plant')simulation?.dispatch({type:'edit-status',code:17});setFieldMenu(null);setFieldMapTool(tool);setMapTool(tool.kind==='plant'?'field':'inspect');setSelection(null);viewportRef.current?.focus({preventScroll:true});}}/>}
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
         <FarmMap autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !editHelpOpen && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}

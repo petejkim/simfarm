@@ -1,3 +1,4 @@
+import {createEditStatus,appendEditStatus,recentEditStatuses} from './edit-status';
 import {DISASTER_MESSAGES} from '../formats/disaster-message';
 import type {DisasterNoticeId} from './events';
 import { DISASTER_MENU_KINDS, type DisasterMenuAction } from './disaster-menu';
@@ -117,6 +118,7 @@ export interface GameSnapshot {
   waterDisasters: WaterDisasterState;
   lastDisasterResult: StationaryDisasterStart | MovingDisasterStart | { ok: true; kind: WaterDisasterKind | 'wind' } | null;
   disasterNotices: string[];
+  editStatuses:number[];
   farmReport: { income: number; expenses: number; net: number; fields: FieldReport };
   revision: number;
   scenario: Scenario;
@@ -200,6 +202,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'buy-crop-supply'; productType: number; x: number; y: number }
   | { type: 'buy-equipment'; equipmentType: number; x: number; y: number }
   | { type: 'buy-livestock'; productType: number; x: number; y: number }
+  | { type: 'edit-status'; code:17 }
   | { type: 'create-field'; x: number; y: number; cropSlot: number }
   | { type: 'treat-field'; fieldSlot: number; treatment: Treatment }
   | { type: 'plant-field'; fieldSlot: number; cropSlot: number }
@@ -252,6 +255,7 @@ export class GameSimulation {
   private disasters = createMovingDisasters();
   private waterDisasters = createWaterDisasters();
   private lastDisasterResult: GameSnapshot['lastDisasterResult'] = null;
+  private editStatus=createEditStatus();
   private disasterNotices: string[] = [];
   private dayTicks = 0;
   private readonly equipmentRuntime: EquipmentRuntime = { grassTravelCount: 0, animationTick: 0, notices: [] };
@@ -586,6 +590,9 @@ export class GameSimulation {
         if (this.lastLivestockResult.ok) this.events.push({ type: 'sound', sound: 'plopitem' }, { type: 'sound', sound: 'ploptool' });
         else this.events.push({ type: 'sound', sound: 'uhoh' });
       }
+    } else if(command.type==='edit-status'){
+      if(command.code!==17)throw new Error('Invalid Edit tool status');
+      appendEditStatus(this.editStatus,command.code);
     } else if (command.type === 'create-field') {
       this.lastPlantResult = null; this.lastHarvestResult = null;
       this.lastNewFieldResult = plantNewField(this.scenario, command.x, command.y, command.cropSlot, this.crops,
@@ -593,7 +600,7 @@ export class GameSimulation {
       if (this.lastNewFieldResult.ok) {
         this.lastPlantResult = this.lastNewFieldResult;
         recordFieldPlanOrder(this.scenario, this.crops, this.lastNewFieldResult.slot, { kind: 'plant', cropSlot: command.cropSlot });
-      }
+      } else appendEditStatus(this.editStatus,51);
     } else if (command.type === 'treat-field') {
       this.lastTreatmentResult = orderTreatment(this.scenario, command.fieldSlot, command.treatment, this.weather.soilMoisture);
       if (this.lastTreatmentResult.ok) recordFieldPlanOrder(this.scenario, this.crops, command.fieldSlot, { kind: command.treatment });
@@ -911,7 +918,7 @@ export class GameSimulation {
     updateAnnualReport(this.scenario.farm, this.finances.accounts, report);
     const creditLimit = loanCreditLimit(this.scenario, this.finances.accounts.buildingBookValue, this.finances.loan.principal, this.weather.soilMoisture);
     this.snapshot = { setup: structuredClone(this.setup), retainedSetup: this.retainedSetup ? structuredClone(this.retainedSetup) : null, newFarm: this.newFarm ? structuredClone(this.newFarm) : null, traffic: snapshotTraffic(this.traffic), disasters: structuredClone(this.disasters), waterDisasters: { ...this.waterDisasters }, lastDisasterResult: this.lastDisasterResult ? structuredClone(this.lastDisasterResult) : null,
-      disasterNotices: [...this.disasterNotices], revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
+      editStatuses:recentEditStatuses(this.editStatus), disasterNotices: [...this.disasterNotices], revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
       farmReport: { income: report.reportIncome, expenses: report.reportExpenses, net: report.reportNet,
         fields: summarizeFieldStatus(this.scenario.fields, this.scenario.farm.cash) },
       finances: copyFinancialState(this.finances),
