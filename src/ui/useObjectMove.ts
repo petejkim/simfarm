@@ -1,3 +1,4 @@
+import type {GameEvent} from '../simulation/events';
 import { useCallback,useState } from 'react';
 import type { GameSimulation,GameSnapshot } from '../simulation/game';
 import { checkEquipmentPickup,checkEquipmentMove,type EquipmentMoveTarget } from '../simulation/manual-equipment-move';
@@ -16,7 +17,7 @@ const reasons:Record<string,string>={
 };
 /** Presentation-only pickup/drop state. Source136c6 tests pickup/drop cursor identity;
  * canonical preflights/commands own all movement, storage, pricing and saved state. */
-export function useObjectMove(simulation:GameSimulation|null,snapshot:GameSnapshot|null){
+export function useObjectMove(simulation:GameSimulation|null,snapshot:GameSnapshot|null,onEvent:(event:GameEvent)=>void){
   const [active,setActive]=useState(false),[selected,setSelected]=useState<Selection|null>(null),[message,setMessage]=useState('');
   const cancel=useCallback(()=>{setSelected(null);setMessage('');setActive(false);},[]);
   const blocked=!snapshot||Boolean(snapshot.pendingTown||snapshot.finances.defaultDecision||snapshot.aircraftFlight);
@@ -25,7 +26,7 @@ export function useObjectMove(simulation:GameSimulation|null,snapshot:GameSnapsh
     const equipment=checkEquipmentPickup(snapshot.scenario,x,y);
     if(equipment.ok)return {ok:true as const,selection:{kind:'equipment' as const,target:equipment}};
     // Source13706 falls through to supplies only when the equipment finder is empty.
-    if(equipment.reason!=='no-equipment')return equipment;
+    if(equipment.reason!=='no-equipment')return {...equipment,originalWarning:equipment.reason==='equipment-busy'||equipment.reason==='building-closed'};
     const supply=checkSupplyPickup(snapshot.scenario,snapshot.finances,x,y);
     return supply.ok?{ok:true as const,selection:{kind:'supply' as const,target:supply}}:supply;
   }
@@ -40,6 +41,7 @@ export function useObjectMove(simulation:GameSimulation|null,snapshot:GameSnapsh
       const result=pickup(x,y);if(!result)return;
       if(result.ok){setSelected(result.selection);setMessage('');simulation.dispatch({type:'edit-status',code:7});}
       else {
+        if('originalWarning' in result&&result.originalWarning)onEvent({type:'sound',sound:'uhoh'});
         if(result.reason==='equipment-busy')simulation.dispatch({type:'edit-status',code:61}); // SF-173
         setMessage(reasons[result.reason]??'This object cannot be moved.');
       }

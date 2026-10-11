@@ -19,6 +19,9 @@ test('manual movement pins original map calls, pickup/drop gates, timer clock, m
   assert.equal(0x1f950+exe.readUInt16LE(0x22352+25*2),0x21726); // Move palette ID26.
   exact(0x2172f,'26c747020b00');exact(0x2173e,'26c747582e1a');
   assert.equal(0x1f950+exe.readUInt16LE(0x20d9c+10*2),0x20d42); // Edit mode11.
+  exact(0x13725,'684c23');exact(0x1376f,'685523');exact(0x13772,'ebb4');
+  exact(0x13cca,'688223');exact(0x13ccd,'e958fa');exact(0x13728,'9ab6082a21');
+  for(const offset of [0x234c,0x2355,0x2382])assert.equal(exe.subarray(0x846f0+offset,0x846f0+offset+9).toString(),'uhoh.voc\0');
   exact(0x137e5,'b8ea19');exact(0x14510,'b82e1a'); // Pickup/drop/pickup cursor cycle.
   exact(0x20d61, '9a06004c11'); exact(0x136f4, '9a0e005f0d'); exact(0x13712, '26f687bca603');
   exact(0x13766, '26f6870284017561'); exact(0x13c19, '26f687254c08'); exact(0x13c7e, '26f687bca603');

@@ -31,6 +31,9 @@ test('all eight source tracks produce balanced MIDI notes and preserve program c
     const sequence = decodeXmidi(entry.bytes);
     assert.ok(sequence.endTick > 2000 && sequence.endTick < 8000);
     assert.ok(sequence.events.some(e => e.data[0] >> 4 === 12));
+    // Supplied-track audit: no ignored pitch/sustain/pressure messages.
+    assert.deepEqual([...new Set(sequence.events.map(e=>e.data[0]>>4))].sort(),entry.name==='alien.xmi'?[12,8,9]:[11,12,8,9]);
+    assert.ok(sequence.events.filter(e=>e.data[0]>>4===11).every(e=>e.data[1]===7));
     const notes = new Map<string, number>();
     for (const e of sequence.events) {
       const kind = e.data[0] >> 4, key = `${e.data[0] & 15}:${e.data[1]}`;

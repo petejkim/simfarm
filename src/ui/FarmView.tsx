@@ -92,7 +92,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
   const [buyPlacement, setBuyPlacement] = useState<Pick<ShopProduct, 'type' | 'name'> | null>(null);
   const [toolPointer, setToolPointer] = useState<MapFocus | null>(null), [buyMessage, setBuyMessage] = useState('');
   const snapshot = useSyncExternalStore(simulation?.subscribe ?? subscribeEmpty, simulation?.getSnapshot ?? emptySnapshot);
-  const objectMove=useObjectMove(simulation,snapshot);
+  const objectMove=useObjectMove(simulation,snapshot,onGameEvent);
   const construction=useConstruction(simulation,snapshot);
   const bulldoze=useBulldoze(simulation,snapshot);
   const [messages,setMessages]=useState<(Extract<GameEvent,{type:'finance-notice'|'disaster-notice'|'field-notice'|'building-notice'}>&{serial:number})[]>([]);
