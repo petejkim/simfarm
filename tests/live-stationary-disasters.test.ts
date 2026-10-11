@@ -19,7 +19,7 @@ test('live frost cancels locusts, posts original loss/prices/sound and resumes d
   const history = f.state.market.history[4][29]!;
   assert.equal(s.market.history[4][29],Math.min((history+(history>>>f.state.crops[4][72]))&65535,(f.state.crops[4][34]|f.state.crops[4][35]<<8)*4));
   assert.deepEqual(s.cropMarketPrices,f.state.cropMarketPrices);
-  assert.deepEqual(events,[{type:'sound',sound:'swarm'},{type:'map-focus',x:20,y:20},{type:'sound',sound:'wind'}]);assert.deepEqual(saved(g).runtime.random,rng);
+  assert.deepEqual(events,[{type:'disaster-notice',id:'swarm'},{type:'sound',sound:'swarm'},{type:'map-focus',x:20,y:20},{type:'disaster-notice',id:'frost'},{type:'sound',sound:'wind'}]);assert.deepEqual(saved(g).runtime.random,rng);
   const checkpoint=g.save(4),result=s.lastDisasterResult;
   if(result?.ok&&'fields'in result)result.fields.push(97);s.disasters.flags=0;assert.equal(g.save(4),checkpoint);
   g.tick(40000);assert.equal(g.save(4),checkpoint);
@@ -37,7 +37,7 @@ test('crop circles request only original alien MIDI, preserve seven tiles throug
   const f=disasterFixture();f.state.scenario.fields[1].bytes[14]=1;
   const g=f.load(),events:GameEvent[]=[];g.subscribeEvents(e=>events.push(e));g.dispatch({type:'start-disaster',kind:'crop-circles'});
   assert.equal(g.getSnapshot().disasters.flags&64,64);assert.equal(loss(g.getSnapshot().scenario.fields[1].bytes),10);
-  assert.deepEqual(events,[{type:'music',track:'alien'}]);
+  assert.deepEqual(events,[{type:'disaster-notice',id:'crop-circles'},{type:'music',track:'alien'}]);
   const checkpoint=g.save(4),copy=GameSimulation.load(checkpoint,f.crops).simulation;
   for(const game of [g,copy]){
     game.dispatch({type:'set-disasters-enabled',enabled:false});game.dispatch({type:'set-paused',paused:false});game.tick(4000 / 64);
@@ -45,7 +45,7 @@ test('crop circles request only original alien MIDI, preserve seven tiles throug
     for(const [dx,dy,t]of [[2,4,211],[3,4,212],[4,4,213],[5,4,214],[6,4,215],[4,3,210],[4,5,216]])assert.equal(game.getSnapshot().scenario.cells[worldIndex(20+dx,20+dy)].terrain&2047,t);
     for(let day=0;day<35;day++)game.dispatch({type:'advance-day'});
   }
-  assert.deepEqual(saved(g),saved(copy));assert.deepEqual(events,[{type:'music',track:'alien'}]);
+  assert.deepEqual(saved(g),saved(copy));assert.deepEqual(events,[{type:'disaster-notice',id:'crop-circles'},{type:'music',track:'alien'}]);
 });
 
 test('disabled and ineligible starts preserve source eligibility/RNG while toxic warnings retain only their documented persistent effects',()=>{
@@ -59,7 +59,7 @@ test('disabled and ineligible starts preserve source eligibility/RNG while toxic
   assert.deepEqual(warning.scenario,beforeWarning.scenario);assert.deepEqual(warning.runtime.random,beforeWarning.runtime.random);assert.deepEqual(warning.runtime.weather,beforeWarning.runtime.weather);
   assert.equal(g.getSnapshot().disasters.flags&128,128);const checkpoint=g.save(4);g.dispatch({type:'start-disaster',kind:'toxic-land'});assert.equal(g.save(4),checkpoint);
   const copy=GameSimulation.load(checkpoint,f.crops).simulation;for(let day=0;day<35;day++)for(const game of [g,copy])game.dispatch({type:'advance-day'});
-  assert.equal(g.getSnapshot().disasters.flags&128,128);assert.deepEqual(saved(g),saved(copy));assert.deepEqual(events,[]);
+  assert.equal(g.getSnapshot().disasters.flags&128,128);assert.deepEqual(saved(g),saved(copy));assert.deepEqual(events,[{type:'disaster-notice',id:'toxic-land'}]);
 });
 
 test('frost stop boundaries run both daily and per frame, with original tornado-gated dispatcher during flight',()=>{
@@ -98,7 +98,7 @@ test('manual high winds use the existing source start, prices, swarm cancellatio
   const f=disasterFixture();f.state.weather.wind=5;const g=f.load();g.dispatch({type:'start-disaster',kind:'swarm'});
   const events:GameEvent[]=[];g.subscribeEvents(e=>events.push(e));g.dispatch({type:'start-disaster',kind:'wind'});
   assert.deepEqual(g.getSnapshot().lastDisasterResult,{ok:true,kind:'wind'});assert.equal(g.getSnapshot().disasters.flags&40,8);
-  assert.equal(g.getSnapshot().weather.windAnomaly,35);assert.deepEqual(events,[{type:'sound',sound:'wind'}]);
+  assert.equal(g.getSnapshot().weather.windAnomaly,35);assert.deepEqual(events,[{type:'disaster-notice',id:'wind'},{type:'sound',sound:'wind'}]);
   const loaded=GameSimulation.load(g.save(4),f.crops).simulation;
   for(let day=0;day<35;day++)for(const game of [g,loaded])game.dispatch({type:'advance-day'});
   assert.deepEqual(saved(g),saved(loaded));assert.equal(g.getSnapshot().disasters.flags&8,0);

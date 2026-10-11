@@ -4,12 +4,12 @@ import {disasterFixture} from '../support/disasters';
 import {financeMessageFixture} from '../support/finance-messages';
 import {browserCrops} from '../support/crop-catalog';
 import {GameSimulation} from '../support/game';
-import {reveal,openWindow} from '../support/workspace';
+import {reveal,openWindow,acknowledgeFinanceMessages} from '../support/workspace';
 const names=['Tornado','Locusts','Drought','Flood','Frost','Windstorm','Disable'];
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'disasters.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
-async function save(page:Page){const download=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await (await download).path())!,'utf8'));}
-async function choose(page:Page,name:string){await page.locator('#disasters-menu-button').click();await page.getByRole('menuitemcheckbox',{name,exact:true}).click();}
+async function save(page:Page){await acknowledgeFinanceMessages(page);const download=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await (await download).path())!,'utf8'));}
+async function choose(page:Page,name:string){await acknowledgeFinanceMessages(page);await page.locator('#disasters-menu-button').click();await page.getByRole('menuitemcheckbox',{name,exact:true}).click();}
 async function checks(page:Page,expected:boolean[]){await page.locator('#disasters-menu-button').click();for(let i=0;i<7;i++)await expect(page.getByRole('menuitemcheckbox',{name:names[i],exact:true})).toHaveAttribute('aria-checked',String(expected[i]));await page.keyboard.press('Escape');}
 
 test('Disasters opens the seven original real-text rows at source scale, with keyboard controls and live Disable state',async({page})=>{

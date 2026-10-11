@@ -149,3 +149,7 @@ Six live cases cover frost/swarm interaction, loss/current prices, daily and dis
 ## Original menu integration
 
 The seven-entry Disasters dropdown now invokes the canonical events directly, displays active flags and inverse Disable, and preserves ongoing damage when disabled. Explicit native menu starts correct the source enable-after-call/check mismatch (SF-171); general and automatic start guards remain unchanged. See [disasters-menu.md](disasters-menu.md) for source callbacks, input audit, native policy and verification. The original events.dat notification popup interiors remain unfinished.
+
+## Original notification integration
+
+The eight start and four ending Message dialogs are now restored with original artwork, decoded real text and canonical transient events. Tornado, crop-circle and toxic-land starts are mandatory; remaining messages honor Messages. See [disaster-messages.md](disaster-messages.md) for source offsets/hashes, gates, validation and the remaining native phase-end publication adaptation. Original triggers/window lifecycle and full preservation are still incomplete.

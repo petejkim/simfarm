@@ -1,7 +1,7 @@
 import {BalanceWindow} from './BalanceWindow';
+import {DisasterMessage} from './DisasterMessage';
 import {FinanceMessage} from './FinanceMessage';
 import {DefaultDialog} from './DefaultDialog';
-import type {FinanceNoticeId} from '../simulation/events';
 import {EvaluationWindow} from './EvaluationWindow';
 import { MarketWindow } from './MarketWindow';
 import { WeatherWindow } from './WeatherWindow';
@@ -104,16 +104,17 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
   const objectMove=useObjectMove(simulation,snapshot);
   const construction=useConstruction(simulation,snapshot);
   const bulldoze=useBulldoze(simulation,snapshot);
-  const [financeMessages,setFinanceMessages]=useState<{serial:number;id:FinanceNoticeId}[]>([]);
-  const financeMessageSerial=useRef(0);
+  const [messages,setMessages]=useState<(Extract<GameEvent,{type:'finance-notice'|'disaster-notice'}>&{serial:number})[]>([]);
+  const messageSerial=useRef(0);
+  function closeMessage(){onGameEvent({type:'sound',sound:'click'});setMessages(previous=>previous.slice(1));}
   const onMapPointer = useCallback((pointer: MapFocus | null) => {
     simulation?.dispatch({ type: 'set-map-pointer', pointer });
     if (buyPlacement || fieldMapTool || objectMove.active || construction.tool || bulldoze.active) setToolPointer(old => old?.x === pointer?.x && old?.y === pointer?.y ? old : pointer);
   }, [simulation, buyPlacement, fieldMapTool, objectMove.active,construction.tool,bulldoze.active]);
   useEffect(() => simulation?.subscribeEvents(event=>{
-    if(event.type==='finance-notice'){
-      const message={serial:++financeMessageSerial.current,id:event.id};
-      setFinanceMessages(previous=>[...previous,message]);
+    if(event.type==='finance-notice'||event.type==='disaster-notice'){
+      const message={...event,serial:++messageSerial.current};
+      setMessages(previous=>[...previous,message]);
     }else if(event.type==='map-focus')setFocus({x:event.x,y:event.y});
     else onGameEvent(event);
   }), [simulation, onGameEvent]);
@@ -126,13 +127,13 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     let frame: number, previous: number | null = null;
     const tick = (now: number) => {
       // Background tabs do not accumulate days; wall-clock pacing remains outside the simulation rules.
-      if (!document.hidden && previous !== null && !bulldoze.pending && !financeMessages.length) simulation.tick(Math.min(250, Math.max(0, now - previous)));
+      if (!document.hidden && previous !== null && !bulldoze.pending && !messages.length) simulation.tick(Math.min(250, Math.max(0, now - previous)));
       previous = now;
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [simulation,Boolean(bulldoze.pending),Boolean(financeMessages.length)]);
+  }, [simulation,Boolean(bulldoze.pending),Boolean(messages.length)]);
   const [selection, setSelection] = useState<number | null>(null), [fieldSlot, setFieldSlot] = useState<number | null>(null);
   const [focus, setFocus] = useState<MapFocus>(() => {
     const home = id === null ? loaded?.simulation.getSnapshot().finances.homestead : null;
@@ -446,7 +447,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     {data && snapshot && <BuyWindow assets={assets} snapshot={snapshot} tiles={data.tiles} onBuy={beginPurchase} />}
     {resource.status !== 'ready' && <div className="loading"><p role="status">{resource.status === 'error' ? resource.error : 'Loading farm…'}</p>
       <button aria-label="Edit tools and help" onClick={() => windows.show('tools')}>Choose another farm</button></div>}
-      {simulation&&snapshot?.finances.defaultDecision&&!financeMessages.length&&!newFarmOpen&&<DefaultDialog
+      {simulation&&snapshot?.finances.defaultDecision&&!messages.length&&!newFarmOpen&&<DefaultDialog
         decision={snapshot.finances.defaultDecision} assets={assets} onCommand={command=>simulation.dispatch(command)} onEvent={onGameEvent}
         onRestart={()=>setNewFarmOpen(true)}/>}
     {data && <main className="edit-workspace" aria-label="Edit" onKeyDown={event => { if(objectMove.active&&event.key==='Escape'){event.preventDefault();cancelObjectMove();} if ((fieldMenu||fieldMapTool) && event.key==='Escape') {event.preventDefault();cancelFieldTool();} if (buyPlacement && event.key === 'Escape') { event.preventDefault(); cancelPurchase(); } }}>
@@ -458,7 +459,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
         onChoose={tool=>{setFieldMenu(null);setFieldMapTool(tool);setMapTool(tool.kind==='plant'?'field':'inspect');setSelection(null);viewportRef.current?.focus({preventScroll:true});}}/>}
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
-        <FarmMap autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !fieldMenu && !bulldoze.pending && !financeMessages.length && !snapshot.pendingTown && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
+        <FarmMap autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;setInteractionMessage('');const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
           field={field} selection={selection} preview={preview} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {
@@ -490,9 +491,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
         </div>
       </section>
       {bulldoze.pending&&<BulldozeDialog pending={bulldoze.pending} assets={assets} onConfirm={bulldoze.confirm} onCancel={bulldoze.dismiss}/>}
-      {financeMessages[0]&&<FinanceMessage key={financeMessages[0].serial} id={financeMessages[0].id} assets={assets} onClose={()=>{
-        onGameEvent({type:'sound',sound:'click'});setFinanceMessages(previous=>previous.slice(1));
-      }}/>}
+      {messages[0]&&(messages[0].type==='finance-notice'
+        ? <FinanceMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>
+        : <DisasterMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>)}
       <GameWindow windowKey="actions" title={mapTool === 'inspect' ? 'Field information' : mapTool === 'land' ? 'Land purchase' : mapTool === 'field' ? 'New field' : ['build', 'equipment', 'crop-supplies', 'livestock'].includes(mapTool) ? 'Buy' : 'Edit object'}>
         <div className="window-actions">{!['land', 'field', 'crop-supplies', 'network'].includes(mapTool) && <button onClick={() => { windows.show(null); viewportRef.current?.focus(); }}>Choose on map</button>}
           <button onClick={() => windows.show('tools')}>Tools</button>

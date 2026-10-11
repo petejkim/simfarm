@@ -1,4 +1,4 @@
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow, acknowledgeFinanceMessages } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test,expect,type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -8,7 +8,7 @@ import { decodePlanar,readPalette } from '../../src/formats/graphics';
 import { decodeXmidi } from '../../src/formats/xmidi';
 
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'stationary.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
-async function save(page:Page,suffix:string){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();const path=`artifacts/browser-stationary-${suffix}.json`;await(await pending).saveAs(path);return JSON.parse(readFileSync(path,'utf8'));}
+async function save(page:Page,suffix:string){await acknowledgeFinanceMessages(page);const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();const path=`artifacts/browser-stationary-${suffix}.json`;await(await pending).saveAs(path);return JSON.parse(readFileSync(path,'utf8'));}
 const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url));
 async function circles(page:Page){
   const a=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),asset=(n:string)=>a.find(a=>a.name===n)!.bytes,palette=readPalette(asset('simfarm.pal'));
@@ -77,9 +77,11 @@ test('ineligible crop-circle attempts explain rejection and toxic warnings remai
   expect(await save(page,'rejected')).toEqual(JSON.parse(g.save(4)));
   await reveal(page, '#start-toxic-land'); await page.locator('#start-toxic-land').click();g.dispatch({type:'start-disaster',kind:'toxic-land'});
   await expect(page.locator('#toxic-warning-state')).toHaveText('Toxic-land warning recorded.');await expect(page.locator('#start-toxic-land')).toBeDisabled();
-  const active=await save(page,'warning');expect(active).toEqual(JSON.parse(g.save(4)));expect(await audio(page)).toEqual([]);
+  const active=await save(page,'warning');expect(active).toEqual(JSON.parse(g.save(4)));expect((await audio(page)).map(s=>s.length)).toEqual([2667]); // Message OK click, no disaster sound.
+
   await load(page,JSON.stringify(active));await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();await reveal(page, '#toxic-warning-state'); await expect(page.locator('#toxic-warning-state')).toBeVisible();
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});expect(await save(page,'warning-continued')).toEqual(JSON.parse(g.save(4)));expect(await audio(page)).toEqual([]);
+  await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});expect(await save(page,'warning-continued')).toEqual(JSON.parse(g.save(4)));expect((await audio(page)).map(s=>s.length)).toEqual([2667]); // Message OK click, no disaster sound.
+
   await reveal(page, '#start-wind'); await page.locator('#start-wind').click();g.dispatch({type:'start-disaster',kind:'wind'});await expect(page.locator('#disaster-state')).toContainText('High winds active');
   await expect(page.locator('#start-wind')).toBeDisabled();expect(await save(page,'manual-wind')).toEqual(JSON.parse(g.save(4)));
   await expect.poll(async()=>(await audio(page)).some(a=>a.length===12132&&a.peak>0.01)).toBe(true);

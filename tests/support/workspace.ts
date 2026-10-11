@@ -3,7 +3,8 @@ import type { Page } from '@playwright/test';
 /** Existing subsystem tests acknowledge real informational dialogs before
  * continuing their next action. Dedicated message tests assert each notice. */
 export async function acknowledgeFinanceMessages(page:Page){
-  while(await page.locator('#finance-message-ok').isVisible())await page.locator('#finance-message-ok').click();
+  const ok=page.locator('#finance-message-ok,#disaster-message-ok');
+  while(await ok.isVisible())await ok.click();
 }
 
 /** Existing subsystem flows use the real launchers before accessing a window.

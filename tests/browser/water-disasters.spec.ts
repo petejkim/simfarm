@@ -1,4 +1,4 @@
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow, acknowledgeFinanceMessages } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -11,6 +11,7 @@ async function load(page: Page, text: string) {
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
 }
 async function save(page: Page, name: string) {
+  await acknowledgeFinanceMessages(page);
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = `artifacts/browser-water-${name}.json`; await (await pending).saveAs(path);
   return JSON.parse(readFileSync(path, 'utf8'));
@@ -88,7 +89,7 @@ test('Drought controls dry and restore source shoreline pixels without start aud
   await reveal(page, '#start-drought'); await page.locator('#start-drought').click(); game.dispatch({ type: 'start-disaster', kind: 'drought' });
   await expect(page.locator('#water-disaster-state')).toContainText('Drought active.'); await expect(page.locator('#start-drought')).toBeDisabled();
   await originalTile(page, 20, 19, 28);
-  const checkpoint = await save(page, 'drought'); expect(checkpoint).toEqual(JSON.parse(game.save(4))); expect(await played(page)).toEqual([]);
+  const checkpoint = await save(page, 'drought'); expect(checkpoint).toEqual(JSON.parse(game.save(4))); expect((await played(page)).map(s=>s.length)).toEqual([2667]); // Message OK click, no drought sound.
   const bad = structuredClone(checkpoint); bad.runtime.waterDisasters.scanY = 94;
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
   await expect(page.locator('#save-status')).toContainText('flood scan Y'); expect(await save(page, 'after-invalid')).toEqual(checkpoint);

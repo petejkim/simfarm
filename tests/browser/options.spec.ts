@@ -3,10 +3,10 @@ import {readFileSync} from 'node:fs';
 import {GameSimulation} from '../support/game';
 import {browserCrops} from '../support/crop-catalog';
 import {financeMessageFixture} from '../support/finance-messages';
-import {openWindow,reveal} from '../support/workspace';
+import {openWindow,reveal,acknowledgeFinanceMessages} from '../support/workspace';
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
 async function toggle(page:Page,name:string){await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name,exact:true}).click();}
-async function save(page:Page){const download=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await (await download).path())!,'utf8'));}
+async function save(page:Page){await acknowledgeFinanceMessages(page);const download=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await (await download).path())!,'utf8'));}
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'options.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 const position=(page:Page)=>page.locator('#viewport').evaluate(el=>[el.scrollLeft,el.scrollTop]);
 

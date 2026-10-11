@@ -1,3 +1,5 @@
+import {DISASTER_MESSAGES} from '../formats/disaster-message';
+import type {DisasterNoticeId} from './events';
 import { DISASTER_MENU_KINDS, type DisasterMenuAction } from './disaster-menu';
 import { sellManualLand, type ManualLandSaleResult } from './manual-land-sale';
 import { expandCropCatalog } from './all-crops';
@@ -724,9 +726,14 @@ export class GameSimulation {
       const wind = updateWeeklyWind(w, s.climate, before);
       if (wind.storm) this.startWind();
       if (wind.tornado) this.startDisaster('tornado');
-      if (w.wind < 70 && stopMovingDisaster(this.disasters, 'tornado', s.farm.animationTicks))
+      if (w.wind < 70 && stopMovingDisaster(this.disasters, 'tornado', s.farm.animationTicks)) {
+        this.disasterMessage('tornado-ended');
         this.disasterNotice('The tornado has passed.');
-      if (!wind.storm) this.disasters.flags &= ~8;
+      }
+      if (!wind.storm && (this.disasters.flags & 8)) {
+        this.disasters.flags &= ~8;
+        this.disasterMessage('wind-ended');
+      }
       this.animalLifecycleNotices = [...this.animalLifecycleNotices, ...advanceAnimalGestation(s, this.finances, this.random)].slice(-20); // 0xbe81.
       this.requestMusic(updateReportedFieldStatus(s, this.finances.statistics)); // 0xbe8b, before water/status dispatch 0xbea3.
       for (const field of s.fields.filter(f => f.active)) {
@@ -788,6 +795,10 @@ export class GameSimulation {
     w.windYear = (w.windYear + 1) % 5;
   }
 
+  private disasterMessage(id:DisasterNoticeId):void {
+    if(DISASTER_MESSAGES[id].mandatory||this.scenario.farm.messages)this.events.push({type:'disaster-notice',id});
+  }
+
   private disasterNotice(text: string): void { if (!this.scenario.farm.messages) return; this.disasterNotices = [...this.disasterNotices, text].slice(-8); }
 
   private startRequestedDisaster(kind: Extract<GameCommand, {type:'start-disaster'}>['kind']) {
@@ -798,6 +809,7 @@ export class GameSimulation {
   private startDisaster(kind: MovingDisasterKind): MovingDisasterStart {
     const result = beginMovingDisaster(this.scenario, this.disasters, kind, this.scenario.farm.animationTicks, this.random);
     if (result.ok) {
+      this.disasterMessage(kind);
       this.disasterNotice(kind === 'tornado' ? 'A tornado has formed. Buildings and crops are at risk.' : 'Locusts have descended on a field.');
       this.events.push({ type: 'sound', sound: kind });
       if (this.scenario.farm.autoGoto) {
@@ -811,6 +823,7 @@ export class GameSimulation {
     const result = beginStationaryDisaster(this.scenario, this.crops, this.market, this.weather,
       this.disasters, kind, this.scenario.farm.animationTicks, this.random);
     if (result.ok) {
+      this.disasterMessage(kind);
       if (kind === 'frost') {
         if (result.cancelledSwarm) this.disasterNotice('The frost has dispersed the locust swarm.');
         this.disasterNotice(`Frost has begun, damaging ${result.fields.length} sensitive field${result.fields.length === 1 ? '' : 's'}.`);
@@ -824,6 +837,7 @@ export class GameSimulation {
   }
   private startWind(): Exclude<GameSnapshot['lastDisasterResult'], null> {
     if (beginWindDisaster(this.scenario, this.crops, this.market, this.weather, this.disasters, this.scenario.farm.animationTicks)) {
+      this.disasterMessage('wind');
       this.disasterNotice('High winds are stripping nutrients from fields without enough nearby trees.');
       this.events.push({ type: 'sound', sound: 'wind' });
       return { ok: true, kind: 'wind' };
@@ -834,13 +848,16 @@ export class GameSimulation {
     const started = beginWaterDisaster(this.scenario, this.crops, this.market, this.weather,
       this.disasters, this.waterDisasters, kind, this.scenario.farm.animationTicks, this.random);
     if (!started) return { ok: false, reason: this.disasters.enabled ? 'already-active' : 'disabled' };
+    this.disasterMessage(kind);
     this.disasterNotice(kind === 'flood' ? 'Floodwater is spreading beside permanent water. Fields and buildings are at risk.' : 'Drought has dried shallow water along the shoreline.');
     if (kind === 'flood') this.events.push({ type: 'sound', sound: 'flood' });
     return { ok: true, kind };
   }
   private stopWater(kind: WaterDisasterKind): void {
-    if (stopWaterDisaster(this.scenario, this.weather, this.disasters, this.waterDisasters, kind, this.random))
+    if (stopWaterDisaster(this.scenario, this.weather, this.disasters, this.waterDisasters, kind, this.random)) {
+      this.disasterMessage(kind === 'flood' ? 'flood-ended' : 'drought-ended');
       this.disasterNotice(kind === 'flood' ? 'The floodwater has receded.' : 'The drought has ended.');
+    }
   }
   private advanceDisasters(): void {
     const s = this.scenario;
@@ -858,7 +875,7 @@ export class GameSimulation {
       this.disasterNotice(`Floodwater destroyed a building at ${s.buildings[slot].x}, ${s.buildings[slot].y}.`);
       this.events.push({ type: 'sound', sound: 'explode' });
     }
-    if (flood.ended) this.disasterNotice('The floodwater has receded.');
+    if (flood.ended) {this.disasterMessage('flood-ended');this.disasterNotice('The floodwater has receded.');}
   }
 
   private finishWeek(calendar: FarmCalendar, monthEnded: boolean): void {

@@ -17,7 +17,7 @@ test('live flood saves mid-scan, destroys fields and storage, retains unknown wo
   const f = waterDisasterFixture(), g = f.load(), events: GameEvent[] = []; g.subscribeEvents(e => events.push(e));
   const cash = g.getSnapshot().scenario.farm.cash;
   g.dispatch({ type: 'start-disaster', kind: 'flood' });
-  assert.deepEqual(events, [{ type: 'sound', sound: 'flood' }]);
+  assert.deepEqual(events, [{type:'disaster-notice',id:'flood'}, { type: 'sound', sound: 'flood' }]);
   assert.equal(g.getSnapshot().waterDisasters.scanning, true); assert.equal(g.getSnapshot().weather.precipitationBonus, 4);
   const paused = g.save(4); g.tick(20000); assert.equal(g.save(4), paused);
   g.dispatch({ type: 'set-paused', paused: false }); g.tick(2000.5);
@@ -53,7 +53,7 @@ test('live drought changes original shoreline tiles without start audio and resu
   const f = waterDisasterFixture(), g = f.load(), events: GameEvent[] = []; g.subscribeEvents(e => events.push(e));
   const cash = g.getSnapshot().scenario.farm.cash;
   g.dispatch({ type: 'start-disaster', kind: 'drought' });
-  assert.equal(g.getSnapshot().disasters.flags & 2, 2); assert.equal(events.length, 0);
+  assert.equal(g.getSnapshot().disasters.flags & 2, 2); assert.deepEqual(events,[{type:'disaster-notice',id:'drought'}]);
   assert.equal(g.getSnapshot().scenario.cells[worldIndex(20, 19)].terrain, 0x101c);
   const copy = GameSimulation.load(g.save(4), f.crops).simulation;
   for (const game of [g, copy]) for (let day = 0; day < 7; day++) game.dispatch({ type: 'advance-day' });
