@@ -26,7 +26,8 @@ test('About descriptor and credits match the supplied executable and members',()
   for(const b of [new Uint8Array(),new TextEncoder().encode('unterminated'),new TextEncoder().encode('x'.repeat(80)+'\n`'),new Uint8Array([0,96])])expect(()=>readAboutCredits(b)).toThrow();
 });
 
-test('About removes only specified lettering regions and preserves all other artwork',()=>{
+test('About preserves its bitmap logo and removes only specified lettering regions and preserves all other artwork',()=>{
+  expect(ABOUT_TEXT_MASKS).toEqual([{x:96,y:184,width:216,height:24,color:12}]);
   for(const [name,decode,masks] of [
     ['about.bmp',readAboutArtwork,ABOUT_TEXT_MASKS],
     ['lzrdlogo.bmp',readAboutLogo,[{x:0,y:90,width:104,height:22,color:12}]],

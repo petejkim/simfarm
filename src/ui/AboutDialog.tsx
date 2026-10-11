@@ -12,8 +12,7 @@ export function AboutDialog({assets,onClose}:{assets:AboutAssets;onClose:()=>voi
   },[page,assets.credits.length]);
   return <GameWindow windowKey="about" title="ABOUT" forced modal onClose={onClose}>
     <div className="about-window">
-      <img src={assets.frame.src} alt="" draggable={false}/>
-      <h2>SIMFARM</h2>
+      <img src={assets.frame.src} alt="SimFarm" draggable={false}/>
       <div className="about-credits" data-credit-page={page} style={{lineHeight:page===-1?'9px':'8px'}}>
         {(page===-1?ABOUT_INTRO:assets.credits[page]).map((line,i)=><div key={i}>{line||'\u00a0'}</div>)}
       </div>

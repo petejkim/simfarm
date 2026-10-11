@@ -1,6 +1,6 @@
 import { useEffect,useMemo,useRef,useState,type RefObject } from 'react';
 import { assetUrl,type GameAssets } from '../assets/game-assets';
-import { expertPage,EXPERT_CAP_TEXT } from '../formats/expert-cards';
+import { expertPage } from '../formats/expert-cards';
 import { drawExpertArtwork } from '../render/expert-artwork';
 import type { GameEvent } from '../simulation/events';
 import { GameWindow,useWindows } from './GameWindow';
@@ -25,7 +25,6 @@ export function ExpertWindow({assets,cropFiles,tiles,focusRef,onEvent}:{assets:G
         if(c.kind==='crop')return <p className="expert-text" data-expert-crop={crop(c.slot).id} key={i} style={{...style,width:256}}>{crop(c.slot).expertDescription}</p>;
         if(c.kind==='picture'&&c.card===66)return <div className="expert-portrait" key={i} style={style}>
           <img src={assets.expertPortrait.src} width={112} height={64} alt="Farm Bureau expert" draggable={false}/>
-          <span className="expert-cap-text" style={{left:EXPERT_CAP_TEXT.x,top:EXPERT_CAP_TEXT.y,width:EXPERT_CAP_TEXT.width,height:EXPERT_CAP_TEXT.height}}>FARM<br/>BUREAU</span>
         </div>;
         if(c.kind==='picture'&&(c.card<16||c.cropSlot!==undefined)){
           const item=crop(c.cropSlot??c.card);

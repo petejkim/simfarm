@@ -51,7 +51,7 @@ test('Expert restores original home geometry, all static chapters, field icons a
         }
       }
       await expect(client.getByRole('img',{name:'Farm Bureau expert',exact:true})).toBeVisible();
-      await expect(client.locator('.expert-cap-text')).toHaveText('FARMBUREAU');
+      await expect(client.locator('.expert-cap-text')).toHaveCount(0);
       if(id<last)await client.getByRole('button',{name:'NEXT',exact:true}).click();
       else {await expect(client.getByRole('button',{name:'NEXT',exact:true})).toHaveCount(0);await client.getByRole('button',{name:'PREV',exact:true}).click();await expect(client).toHaveAttribute('data-expert-page',String(last-1));}
     }

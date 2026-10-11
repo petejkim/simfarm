@@ -262,7 +262,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .expert-artwork{position:absolute;left:0;top:0;width:400px;height:224px;pointer-events:none;image-rendering:pixelated}
 .expert-crop-picture{position:absolute;image-rendering:pixelated;pointer-events:none}
 .expert-portrait{position:absolute;width:112px;height:64px;pointer-events:none;image-rendering:pixelated}
-.expert-window .expert-cap-text{position:absolute;overflow:hidden;text-align:center;color:#fff;font:5px/5.5px Arial,sans-serif}
 .expert-window .expert-text{position:absolute;overflow:clip;margin:0;white-space:pre-line;font:10px/10px monospace}
 .game-window .expert-window button{position:absolute;border:0;border-radius:0;padding:0;margin:0;min-width:0;min-height:0;color:#000}
 .game-window .expert-window .expert-caption{width:48px;height:24px;background-color:transparent;background-repeat:no-repeat;image-rendering:pixelated;font:bold 10px/24px Arial,sans-serif}
@@ -496,7 +495,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window[data-window=about] .game-window-body{padding:0;overflow:hidden}
 .about-window{position:relative;width:400px;height:224px;color:#000}
 .about-window img{display:block;image-rendering:pixelated;pointer-events:none}
-.about-window h2{position:absolute;left:108px;top:2px;width:180px;height:40px;margin:0;text-align:center;color:#00a800;font:bold 34px/40px Georgia,serif;letter-spacing:-2px}
 .about-credits{position:absolute;left:144px;top:72px;width:224px;height:104px;white-space:pre;font:10px/8px monospace}
 .about-logo{position:absolute;left:264px;top:64px;width:104px;height:112px}
 .about-logo span{position:absolute;left:0;top:90px;width:104px;text-align:center;font:bold 10px/9px monospace;color:#000}

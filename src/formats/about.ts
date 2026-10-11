@@ -3,7 +3,6 @@ import {readBitmap,type Palette,type Raster} from './graphics';
 /** DS a3dd..a43e, drawn at x144/y88 with nine-pixel line pitch. */
 export const ABOUT_INTRO=['    Concept','  Programming','      And','    Design','      By','  Eric Albers','Leaping Lizard','   Software'] as const;
 export const ABOUT_TEXT_MASKS=[
-  {x:108,y:2,width:180,height:40,color:15},
   {x:96,y:184,width:216,height:24,color:12},
 ] as const;
 export function readAboutArtwork(bytes:Uint8Array,palette:Palette):Raster {

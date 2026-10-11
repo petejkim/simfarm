@@ -5,7 +5,7 @@ import {PNG} from 'pngjs';
 import {readArchive} from '../src/formats/archive';
 import {decodePlanar,readBitmap,readPalette} from '../src/formats/graphics';
 import {readMessageButton} from '../src/formats/message-dialog';
-import {EXPERT_CARD_IDS,EXPERT_CAP_TEXT,readExpertPortrait,readExpertCard,readExpertDeck,expertPage,expertText} from '../src/formats/expert-cards';
+import {EXPERT_CARD_IDS,readExpertPortrait,readExpertCard,readExpertDeck,expertPage,expertText} from '../src/formats/expert-cards';
 import {browserCrops} from './support/crop-catalog';
 const source=(n:string)=>readFileSync(new URL('../../simfarm-dos/'+n,import.meta.url));
 const exe=source('SIMFARM.EXE'),entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
@@ -106,13 +106,10 @@ test('all four Expert button frames share the retained caption-free bevel',()=>{
   }
 });
 
-test('Expert portrait removes only the cap lettering for HTML replacement and preserves all other pixels',()=>{
+test('Expert portrait retains every original pixel including the cap logo',()=>{
   const b=asset('alltiles.btl'),palette=readPalette(asset('simfarm.pal')),before=b.slice();
-  const source=decodePlanar(b.subarray(22+66*3586,22+66*3586+3584),112,64,palette),actual=readExpertPortrait(b,palette),m=EXPERT_CAP_TEXT;
-  for(let y=0;y<64;y++)for(let x=0;x<112;x++){
-    const i=(y*112+x)*4,masked=x>=m.x&&x<m.x+m.width&&y>=m.y&&y<m.y+m.height;
-    expect(Array.from(actual.rgba.subarray(i,i+4))).toEqual(masked?[...palette[5],255]:Array.from(source.rgba.subarray(i,i+4)));
-  }
+  const source=decodePlanar(b.subarray(22+66*3586,22+66*3586+3584),112,64,palette),actual=readExpertPortrait(b,palette);
+  expect(actual.rgba).toEqual(source.rgba);
   expect(b).toEqual(before);
   const png=PNG.sync.read(readFileSync(new URL('../public/assets/expert-portrait.png',import.meta.url)));
   expect(Array.from(png.data)).toEqual(Array.from(actual.rgba));

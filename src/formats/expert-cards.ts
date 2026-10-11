@@ -1,15 +1,11 @@
 import { Binary } from './binary';
 import { decodePlanar,type Palette,type Raster } from './graphics';
 
-/** Remove the tiny FARM BUREAU lettering on illustration66's cap. Original
- * covered background is unknown; palette5 supplies a native plain patch. */
-export const EXPERT_CAP_TEXT={x:46,y:4,width:29,height:11};
+/** Original illustration66, including its FARM BUREAU cap logo. */
 export function readExpertPortrait(bytes:Uint8Array,palette:Palette):Raster {
   const b=new Binary(bytes);
   if(b.u16(18)!==80||bytes.length!==20+80*3586)throw new Error('Invalid Expert portrait library');
-  const r=decodePlanar(b.slice(22+66*3586,3584),112,64,palette),m=EXPERT_CAP_TEXT;
-  for(let y=m.y;y<m.y+m.height;y++)for(let x=m.x;x<m.x+m.width;x++)r.rgba.set([...palette[5],255],(y*112+x)*4);
-  return r;
+  return decodePlanar(b.slice(22+66*3586,3584),112,64,palette);
 }
 
 /** Supplied CARD*.HC resources; overlay28 at4c820 interprets this data. */
