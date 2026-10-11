@@ -1,18 +1,17 @@
 import {useEffect,useRef,useState,type RefObject} from 'react';
 import type {GameAssets} from '../assets/game-assets';
 import type {GameSnapshot} from '../simulation/game';
-import type {GameEvent} from '../simulation/events';
 import {evaluationWindowView,EVALUATION_TOPICS,EVALUATION_PROBLEMS} from '../simulation/evaluation-view';
 import {WEATHER_SEASONS} from '../simulation/weather-view';
 import {drawEvaluationPreview} from '../render/evaluation-preview';
 import {EVALUATION_LABELS} from '../formats/evaluation-window';
 import {GameWindow,useWindows} from './GameWindow';
 
-export function EvaluationWindow({assets,snapshot,tiles,focusRef,onEvent}:{assets:GameAssets;snapshot:GameSnapshot;tiles:CanvasImageSource;focusRef:RefObject<HTMLElement|null>;onEvent:(event:GameEvent)=>void}){
+export function EvaluationWindow({assets,snapshot,tiles,focusRef}:{assets:GameAssets;snapshot:GameSnapshot;tiles:CanvasImageSource;focusRef:RefObject<HTMLElement|null>}){
   const windows=useWindows(),canvas=useRef<HTMLCanvasElement>(null),[selectedPage,setPage]=useState(0);
   const view=evaluationWindowView(snapshot,assets.catalog.crops),pages=Math.max(1,Math.ceil(view.suggestions.length/8)),page=Math.min(selectedPage,pages-1);
   useEffect(()=>{if(canvas.current)drawEvaluationPreview(canvas.current.getContext('2d')!,tiles,assets.catalog.palette,view,page);},[assets,tiles,snapshot,page]);
-  const close=()=>{onEvent({type:'sound',sound:'click'});windows.close('evaluation');};
+  const close=()=>{windows.close('evaluation');};
   return <GameWindow windowKey="evaluation" title="Evaluation" onClose={close}>
     <section ref={focusRef} tabIndex={-1} className="evaluation-window" aria-label="Farm evaluation">
       <img src={assets.evaluationArtwork.src} width={352} height={192} alt="" draggable={false}/>

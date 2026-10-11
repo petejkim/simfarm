@@ -13,7 +13,6 @@ export function ExpertWindow({assets,cropFiles,tiles,focusRef,onEvent}:{assets:G
   useEffect(()=>{if(canvas.current)drawExpertArtwork(canvas.current.getContext('2d')!,assets.buyCards,tiles,page);},[assets.buyCards,tiles,page]);
   function close(){setPageId(1);windows.close('expert');}
   function navigate(target:number){
-    onEvent({type:'sound',sound:'click'});
     if(target===255)close();else {focusRef.current?.focus({preventScroll:true});setPageId(target);}
   }
   return <GameWindow windowKey="expert" title="Farm Expert" onClose={close}>

@@ -114,7 +114,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
   const bulldoze=useBulldoze(simulation,snapshot);
   const [messages,setMessages]=useState<(Extract<GameEvent,{type:'finance-notice'|'disaster-notice'|'field-notice'}>&{serial:number})[]>([]);
   const messageSerial=useRef(0);
-  function closeMessage(){onGameEvent({type:'sound',sound:'click'});setMessages(previous=>previous.slice(1));}
+  function closeMessage(){setMessages(previous=>previous.slice(1));}
   const onMapPointer = useCallback((pointer: MapFocus | null) => {
     simulation?.dispatch({ type: 'set-map-pointer', pointer });
     if (buyPlacement || fieldMapTool || objectMove.active || construction.tool || bulldoze.active) setToolPointer(old => old?.x === pointer?.x && old?.y === pointer?.y ? old : pointer);
@@ -435,7 +435,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       <button id="view-home" onClick={() => setFocus({ x: snapshot.finances.homestead.x + 2, y: snapshot.finances.homestead.y + 2 })}>View home</button>
     </div>}
     <GameWindow windowKey="town" title="Town development" titleArtwork={assets.townChoiceArtwork.src} forced={Boolean(snapshot?.pendingTown)}>
-    {simulation && snapshot && <TownChoicePanel assets={assets} onEvent={onGameEvent} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
+    {simulation && snapshot && <TownChoicePanel assets={assets} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     </GameWindow>
     <GameWindow windowKey="bank" title="Bank">
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
@@ -459,9 +459,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       onSelect={slot=>{setSelection(null);selectField(slot,true);}} onNewField={()=>navigate('field')} onCommand={command=>simulation?.dispatch(command)}/>}
     {data && <ExpertWindow assets={assets} cropFiles={data.scenario.cropFiles} tiles={data.tiles} focusRef={expertRef} onEvent={onGameEvent}/>}
     {data && snapshot && <MarketWindow assets={assets} snapshot={snapshot} tiles={data.tiles}/>}
-    {snapshot && <BalanceWindow assets={assets} snapshot={snapshot} focusRef={balanceRef} onEvent={onGameEvent} onTaxes={()=>{setTaxOpen(true);windows.show('taxes');}}/>}
-    {data && snapshot && <EvaluationWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={evaluationRef} onEvent={onGameEvent}/>}
-    {data && snapshot && <WeatherWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={weatherRef} onEvent={onGameEvent}/>}
+    {snapshot && <BalanceWindow assets={assets} snapshot={snapshot} focusRef={balanceRef} onTaxes={()=>{setTaxOpen(true);windows.show('taxes');}}/>}
+    {data && snapshot && <EvaluationWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={evaluationRef}/>}
+    {data && snapshot && <WeatherWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={weatherRef}/>}
     {data && snapshot && <MapWindow assets={assets} snapshot={snapshot} onCommand={command=>simulation?.dispatch(command)} viewportRef={viewportRef} zoom={zoom}
       onLocate={(x,y)=>setFocus({x:x+(viewportRef.current?.clientWidth??0)/(32*zoom),y:y+(viewportRef.current?.clientHeight??0)/(32*zoom)})} />}
     {data && snapshot && <SellWindow assets={assets} snapshot={snapshot} tiles={data.tiles} focusRef={sellRef} onCommand={command=>simulation?.dispatch(command)} />}
@@ -470,7 +470,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     {resource.status !== 'ready' && <div className="loading"><p role="status">{resource.status === 'error' ? resource.error : 'Loading farm…'}</p>
       <button aria-label="Edit tools and help" onClick={() => windows.show('tools')}>Choose another farm</button></div>}
       {simulation&&snapshot?.finances.defaultDecision&&!messages.length&&!newFarmOpen&&<DefaultDialog
-        decision={snapshot.finances.defaultDecision} assets={assets} onCommand={command=>simulation.dispatch(command)} onEvent={onGameEvent}
+        decision={snapshot.finances.defaultDecision} assets={assets} onCommand={command=>simulation.dispatch(command)}
         onRestart={()=>setNewFarmOpen(true)}/>}
     {data && <main className="edit-workspace" aria-label="Edit" onPointerDownCapture={activateEdit} onFocusCapture={activateEdit} onKeyDown={event => { if(objectMove.active&&event.key==='Escape'){event.preventDefault();cancelObjectMove();} if ((fieldMenu||fieldMapTool) && event.key==='Escape') {event.preventDefault();cancelFieldTool();} if (buyPlacement && event.key === 'Escape') { event.preventDefault(); cancelPurchase(); } }}>
       <EditPalette artwork={assets.editPalette} disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}

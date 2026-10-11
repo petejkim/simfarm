@@ -8,7 +8,7 @@ interface Windows {
 }
 const Context = createContext<Windows | null>(null);
 export function useWindows() { const value = useContext(Context); if (!value) throw new Error('Missing game windows'); return value; }
-export function WindowDesktop({ children, artwork }: { children: ReactNode; artwork: WindowArtwork }) {
+export function WindowDesktop({ children, artwork, onButtonClick }: { children: ReactNode; artwork: WindowArtwork; onButtonClick?:()=>void }) {
   const [state,setState]=useState<{order:string[];active:string|null}>({order:[],active:null});
   // null focuses the permanent map; it is never a window or a stack entry.
   const show=useCallback((key:string|null)=>setState(old=>key===null
@@ -21,7 +21,10 @@ export function WindowDesktop({ children, artwork }: { children: ReactNode; artw
     {order:[...old.order.filter(k=>k!==key),key],active:key}),[]);
   const reset=useCallback(()=>setState({order:[],active:null}),[]);
   const {order,active}=state;
-  return <Context value={{ active, order, show, close, raise, reset }}><div className="game-desktop" style={{
+  return <Context value={{ active, order, show, close, raise, reset }}><div className="game-desktop" onClickCapture={event=>{
+    const button=event.target instanceof Element?event.target.closest('button'):null;
+    if(button&&!button.matches(':disabled')&&button.getAttribute('aria-disabled')!=='true')onButtonClick?.();
+  }} style={{
     '--window-title': `url("${artwork.title.src}")`, '--window-inactive': `url("${artwork.inactive.src}")`, '--window-close': `url("${artwork.close.src}")`,
     '--window-title-end': `url("${artwork.end.src}")`, '--window-title-end-inactive': `url("${artwork.endInactive.src}")`,
   } as CSSProperties}>{children}</div></Context>;

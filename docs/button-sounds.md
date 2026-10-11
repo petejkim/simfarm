@@ -1,0 +1,7 @@
+# Button feedback
+
+User correction2026-10-11: button feedback was only wired in a few original dialog callbacks, so toolbar, palette, purchase and other native buttons were silent. The React desktop now handles enabled button activation once in capture phase, including Enter/Space-generated clicks and nested button text. Disabled/aria-disabled buttons, canvas gestures, title dragging and focus/hover do not trigger this feedback. Component-local click requests were removed to avoid duplicates; Expert's rooster and canonical gameplay events remain distinct.
+
+Uses the supplied click.voc,2700 bytes, SHA256 `04264e7398f20199cd1cd982a3d00aeaea9dd24e5e945b6315ff6a32cb694510`, decoded through the existing VOC reader to2667 samples at22222.222222Hz. It is not synthesized FM. Uniform button coverage is a requested native presentation policy, not a claim that every original callback made a click sound.
+
+Click feedback has a separate PCM player so it does not stop gameplay effects (including ongoing flight). Both obey the Sound Effects master switch, browser gesture activation, pagehide and cleanup. The decoded click is cached locally; disabled sound suppresses loading/playback, and pending loads abort on mute. Simulation commands, saved state and MIDI remain separate. Keyboard Escape closing a window is not a button activation and does not invoke this policy. No new original-game defect was established.

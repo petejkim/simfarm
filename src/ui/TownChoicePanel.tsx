@@ -2,15 +2,14 @@ import type {CSSProperties} from 'react';
 import type {GameCommand,GameSnapshot} from '../simulation/game';
 import type {TownChoice} from '../simulation/town-construction';
 import type {GameAssets} from '../assets/game-assets';
-import type {GameEvent} from '../simulation/events';
 import {TOWN_CHOICES,TOWN_INSTRUCTIONS} from '../formats/town-choice';
 
-export function TownChoicePanel({snapshot,onCommand,assets,onEvent}:{
-  snapshot:GameSnapshot;onCommand:(command:GameCommand)=>void;assets:GameAssets;onEvent:(event:GameEvent)=>void;
+export function TownChoicePanel({snapshot,onCommand,assets}:{
+  snapshot:GameSnapshot;onCommand:(command:GameCommand)=>void;assets:GameAssets;
 }){
   if(!snapshot.pendingTown)return null;
   const result=snapshot.lastTownResult;
-  const choose=(choice:TownChoice)=>{onEvent({type:'sound',sound:'click'});onCommand({type:'choose-town',choice});};
+  const choose=(choice:TownChoice)=>{onCommand({type:'choose-town',choice});};
   return <section id="town-choice" aria-label="Town expansion choice" style={{'--town-pressed':`url("${assets.townChoicePressed.src}")`} as CSSProperties}>
     <div className="town-choice-artwork">
       <img src={assets.townChoiceArtwork.src} width={368} height={224} alt="" draggable={false}/>

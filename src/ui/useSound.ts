@@ -7,14 +7,16 @@ import type { PcmSound } from '../formats/voc';
 
 export function useSound() {
   const [player] = useState(() => new PcmPlayer());
+  const [clickPlayer] = useState(() => new PcmPlayer());
+  const clickSample=useRef<PcmSound|null>(null), clickRequest=useRef<AbortController|null>(null);
   const [enabled, setEnabled] = useState(()=>readPreferences().sound??true), [error, setError] = useState('');
   const active = useRef(enabled), activated=useRef(false), flightRunning = useRef(false), planeFailed = useRef(false);
   const planeSample = useRef<PcmSound | null>(null), playing = useRef<GameSound | null>(null);
   const request = useRef<{ id: GameSound; controller: AbortController } | null>(null);
   const stop = useCallback(() => {
     active.current = false; activated.current=false; request.current?.controller.abort(); request.current = null;
-    player.stop(); playing.current = null; planeFailed.current = false; setEnabled(false);
-  }, [player]);
+    player.stop(); clickPlayer.stop(); clickRequest.current?.abort(); playing.current = null; planeFailed.current = false; setEnabled(false);
+  }, [player,clickPlayer]);
   // Presentation lifetime only. Flight rules and timing remain in GameSimulation.
   const setFlightRunning = useCallback((running: boolean) => {
     flightRunning.current = running; planeFailed.current = false;
@@ -25,14 +27,14 @@ export function useSound() {
   }, [player]);
   useEffect(() => {
     active.current=enabled; // Restore intent after React's development effect cleanup.
-    const suspend=()=>{activated.current=false;request.current?.controller.abort();player.stop();};
+    const suspend=()=>{activated.current=false;request.current?.controller.abort();clickRequest.current?.abort();player.stop();clickPlayer.stop();};
     window.addEventListener('pagehide', suspend);
-    return () => { window.removeEventListener('pagehide', suspend); active.current = false; request.current?.controller.abort(); player.dispose(); };
-  }, [player, stop]);
+    return () => { window.removeEventListener('pagehide', suspend); active.current = false; request.current?.controller.abort(); clickRequest.current?.abort(); player.dispose(); clickPlayer.dispose(); };
+  }, [player, clickPlayer, stop]);
   const activate=useCallback(()=>{
     if(!active.current||activated.current)return;
-    activated.current=true;void player.enable().catch(error=>{activated.current=false;setError(String(error));});
-  },[player]);
+    activated.current=true;void Promise.all([player.enable(),clickPlayer.enable()]).catch(error=>{activated.current=false;setError(String(error));});
+  },[player,clickPlayer]);
   useEffect(()=>{
     window.addEventListener('pointerdown',activate);window.addEventListener('keydown',activate);
     return()=>{window.removeEventListener('pointerdown',activate);window.removeEventListener('keydown',activate);};
@@ -40,7 +42,7 @@ export function useSound() {
   const toggle = async () => {
     if (active.current) { rememberPreference('sound',false);stop(); return; }
     rememberPreference('sound',true);active.current = true;activated.current=true;setEnabled(true);setError('');
-    try { await player.enable(); }
+    try { await Promise.all([player.enable(),clickPlayer.enable()]); }
     catch (error) { if (active.current) { stop(); setError(String(error)); } }
   };
   const play = useCallback((id: GameSound) => {
@@ -60,5 +62,17 @@ export function useSound() {
       if (!controller.signal.aborted) { if (id === 'plane') planeFailed.current = true; setError(String(error)); }
     }).finally(() => { if (request.current?.controller === controller) request.current = null; });
   }, [player]);
-  return { enabled, error, toggle, play, setFlightRunning };
+  // UI feedback has its own PCM voice so a button never cancels a disaster,
+  // transaction or flight effect. Cache the original click sample after loading.
+  const click=useCallback(()=>{
+    if(!active.current||!activated.current)return;
+    if(clickSample.current){clickPlayer.play(clickSample.current);return;}
+    clickRequest.current?.abort();const controller=new AbortController();clickRequest.current=controller;
+    void loadSound('click',controller.signal).then(sample=>{
+      if(controller.signal.aborted||!active.current)return;
+      clickSample.current=sample;clickPlayer.play(sample);
+    }).catch(error=>{if(!controller.signal.aborted)setError(String(error));})
+      .finally(()=>{if(clickRequest.current===controller)clickRequest.current=null;});
+  },[clickPlayer]);
+  return { enabled, error, toggle, play, click, setFlightRunning };
 }

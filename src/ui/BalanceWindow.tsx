@@ -1,13 +1,12 @@
 import type {RefObject} from 'react';
 import type {GameAssets} from '../assets/game-assets';
 import type {GameSnapshot} from '../simulation/game';
-import type {GameEvent} from '../simulation/events';
 import {balanceWindowView} from '../simulation/balance-view';
 import {BALANCE_LABELS} from '../formats/balance-window';
 import {GameWindow,useWindows} from './GameWindow';
 
-export function BalanceWindow({assets,snapshot,focusRef,onEvent,onTaxes}:{assets:GameAssets;snapshot:GameSnapshot;focusRef:RefObject<HTMLElement|null>;onEvent:(e:GameEvent)=>void;onTaxes:()=>void}){
-  const windows=useWindows(),v=balanceWindowView(snapshot,assets.catalog.crops),close=()=>{onEvent({type:'sound',sound:'click'});windows.close('balance');};
+export function BalanceWindow({assets,snapshot,focusRef,onTaxes}:{assets:GameAssets;snapshot:GameSnapshot;focusRef:RefObject<HTMLElement|null>;onTaxes:()=>void}){
+  const windows=useWindows(),v=balanceWindowView(snapshot,assets.catalog.crops),close=()=>{windows.close('balance');};
   const output=(id:string,x:number,y:number,width:number,n:number,label:string)=><output id={`balance-${id}`} aria-label={label} title={String(n)} style={{left:x,top:y,width,fontSize:Math.min(10,width/(String(n).length*.62))}}>{n}</output>;
   return <GameWindow windowKey="balance" title="Balance Sheet" onClose={close}>
     <section ref={focusRef} tabIndex={-1} className="balance-window" aria-label="Farm balance sheet">

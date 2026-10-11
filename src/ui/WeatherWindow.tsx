@@ -1,13 +1,12 @@
 import {useEffect,useRef,useState,type RefObject} from 'react';
 import type {GameAssets} from '../assets/game-assets';
 import type {GameSnapshot} from '../simulation/game';
-import type {GameEvent} from '../simulation/events';
 import {weatherWindowView,WEATHER_SEASONS,WEATHER_SKIES} from '../simulation/weather-view';
 import {WEATHER_LABELS} from '../formats/weather-window';
 import {drawWeatherPreview} from '../render/weather-preview';
 import {GameWindow,useWindows} from './GameWindow';
 
-export function WeatherWindow({assets,snapshot,tiles,focusRef,onEvent}:{assets:GameAssets;snapshot:GameSnapshot;tiles:CanvasImageSource;focusRef:RefObject<HTMLElement|null>;onEvent:(event:GameEvent)=>void}){
+export function WeatherWindow({assets,snapshot,tiles,focusRef}:{assets:GameAssets;snapshot:GameSnapshot;tiles:CanvasImageSource;focusRef:RefObject<HTMLElement|null>}){
   const windows=useWindows(),canvas=useRef<HTMLCanvasElement>(null),[frame,setFrame]=useState(0);
   const view=weatherWindowView(snapshot.scenario.farm.calendar,snapshot.weather,snapshot.scenario.climate);
   useEffect(()=>{
@@ -20,7 +19,7 @@ export function WeatherWindow({assets,snapshot,tiles,focusRef,onEvent}:{assets:G
   useEffect(()=>{if(canvas.current)drawWeatherPreview(canvas.current.getContext('2d')!,assets.weatherArtwork,tiles,assets.fieldGauges,assets.catalog.palette,view,frame);},[assets,tiles,snapshot,frame]);
   const value=(id:string,x:number,y:number,width:number,text:string|number,label:string)=><output id={id} aria-label={label} title={String(text)}
     style={{left:x,top:y,width,fontSize:Math.min(10,width/(String(text).length*.62))}}>{text}</output>;
-  return <GameWindow windowKey="weather" title="Weather" onClose={()=>{onEvent({type:'sound',sound:'click'});windows.close('weather');}}>
+  return <GameWindow windowKey="weather" title="Weather" onClose={()=>{windows.close('weather');}}>
     <section ref={focusRef} tabIndex={-1} className="weather-window" aria-label="Weather conditions">
       <img src={assets.weatherArtwork.frame.src} width={336} height={192} alt="" draggable={false}/>
       <canvas ref={canvas} width={336} height={192} className="weather-preview" aria-label="Original seasonal scene, gauges and forecast illustrations"/>
