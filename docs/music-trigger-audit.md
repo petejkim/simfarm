@@ -65,3 +65,20 @@ For each saved recreation origin(x,y), outgoing rodeo clears terrain bit0800 ove
 Animation requires nonzero recreation, mode1/2 and unsigned16-bit elapsed ticks>=8. Rodeo clears its old2×2 overlay visibility, increments the shared phase modulo4 **per district**, draws two simulation RNG bits for X/Y only on phase wrap, then always draws the sprite937+(random&7). It replaces only overlay low11 bits at the selected position, sets terrain0800 and retains other overlay/terrain flags. Fair draws once per district: low bit1 selects526,527,528,528,529,529 at the six positions; low bit0 selects492,484,497,511,494,499. The last two ordinary-frame tiles differ from cleanup; this is preserved source evidence, not assumed to be a defect. Both modes store the current tick after processing every district. No host randomness or browser timer owns this primitive.
 
 Native validation checks all active footprints before writes/RNG, permits at most seven districts as the source constructor does, and ignores unused coordinate pairs. Malformed counts/coordinates cannot index outside the native map; see SF-047 follow-up. Tests pin the complete animation range fingerprint and key source instructions, cover all nine mode transitions, untouched cells/flags, both fair frames, shared multi-district rodeo phase/draw order, unsigned tick wrap, no-op gates and atomic rejection of malformed later districts. Live clock ownership, source transient state initialization/import and browser integration remain next work; no claim of visible event animation yet.
+
+## Saved event state and original invitation
+
+Paired saver44bc4..44c53 and loader45be6..45c75 establish eight bytes immediately after recreation countSSM21673. Both use identical sizes/order, followed by the separately recovered equipment account at2167c:
+
+| SSM offset | Size | Runtime DS | Meaning |
+| --- | --- | --- | --- |
+| 21674 | 1 | 1ed6 | Shared rodeo phase |
+| 21675 | 2 | 1ed4 | Last animation tick |
+| 21677 | 1 | 1ed9 | Selected animal type minus160; ff sentinel |
+| 21678 | 2 | 1ed0 | Participation word; fair1 / rodeo1000 |
+| 2167a | 1 | 1ed2 | Current event mode |
+| 2167b | 1 | 1ed3 | Weekly countdown |
+
+`readTownEvent` decodes raw values without normalizing unexplained bytes or discarding dormant state. All supplied farms have mode/countdown/participation/type zero; SCEN5 alone has phase2 and timestamp49467. This proves that inactive mode does not imply fresh animation state. The initialized EXE data1ed0..1ed9 is zero, but restart stores and ordinary import must still be distinguished from cold data. The position bits1ed7/1ed8 are absent from this event save/load block; broader retained-state audit is still needed before choosing their import policy. In particular, the event fields are **not all transient** as the earlier investigation considered. Native checkpoint integration must persist the complete represented runtime state, including position bits.
+
+`readRodeoInvitation` decodes events.dat record61 into actual text, using the shared source254-text-byte/256-record boundary and removing @ padding for display. It confirms a500-dollar bet with1000 dollars returned on a win, supporting the stake-inclusive credit interpretation. The1000 affordability gate remains a separate source discrepancy(SF-174). Unit tests pin both save/load argument sequences, all eight source farms, noncanonical raw values, byte-order/boundaries/nonmutation and the full invitation. No bitmap text or extra browser control is introduced.
