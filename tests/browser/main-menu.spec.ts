@@ -35,7 +35,7 @@ test('source menu order uses selectable text, keyboard navigation and original d
   await page.keyboard.press('End'); await expect(page.getByRole('menuitem', { name: 'Quit' })).toBeFocused();
   await page.keyboard.press('ArrowUp'); await expect(page.getByRole('menuitem', { name: 'Load Game' })).toBeFocused();
   await page.keyboard.press('Escape'); await expect(menu).toHaveCount(0); await expect(page.locator('#file-menu-button')).toBeFocused();
-  await command(page, 'About SimFarm'); await expect(page.getByRole('dialog')).toContainText('Preservation is still in progress');
+  await command(page, 'About SimFarm'); await expect(page.getByRole('dialog')).toContainText('Eric Albers');
   await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).toHaveCount(0);
   await reveal(page, '#file-menu-button'); await page.locator('#file-menu-button').click(); await page.screenshot({ path: 'artifacts/browser-main-menu-desktop.png', fullPage: false });
   await page.locator('.original-control-bar').click({ position: { x: 600, y: 10 } }); await expect(menu).toHaveCount(0);

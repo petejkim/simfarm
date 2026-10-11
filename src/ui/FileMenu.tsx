@@ -1,3 +1,5 @@
+import {AboutDialog} from './AboutDialog';
+import type {AboutAssets} from '../assets/game-assets';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { MainMenus } from '../formats/main-menus';
 import { useWindows } from './GameWindow';
@@ -14,8 +16,8 @@ function MenuDialog({ title, children, onClose }: { title: string; children: Rea
 export interface MenuChoices { actions?:readonly {label:string;choose:()=>void}[]; extraLabels?:readonly string[]; checked: readonly boolean[]; choose: (index: number) => void; disabled?: boolean }
 
 /** Recovered File/Options/Windows/Disasters chains; file-system/exit operations use browser policies. */
-export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad, onNewGame, onQuit, onWindow, options, disasters }: {
-  options: MenuChoices; disasters: MenuChoices;
+export function FileMenu({ about, data, palette, busy, filename, error, onSave, onLoad, onNewGame, onQuit, onWindow, options, disasters }: {
+  about:AboutAssets; options: MenuChoices; disasters: MenuChoices;
   data: MainMenus; palette: number[][]; busy: boolean; filename: string; error: string | null;
   onSave: (filename?: string) => boolean; onLoad: () => void; onNewGame: () => void; onQuit: () => void; onWindow: (window: GameWindow) => void;
 }) {
@@ -80,11 +82,7 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
           onClick={()=>{closeMenu();action.choose();}}><span className="menu-check" aria-hidden="true" />{action.label}</button>)}
       </div>}
     </nav>
-    {dialog === 'about' && <MenuDialog title={file.items[0].label} onClose={closeDialog}>
-      <p>SimFarm (1993), originally by Maxis.</p>
-      <p>This native browser reconstruction uses the original game assets and recovered rules, with MIDI music and selectable text. Preservation is still in progress.</p>
-      <button onClick={closeDialog}>Close</button>
-    </MenuDialog>}
+    {dialog === 'about' && <AboutDialog assets={about} onClose={closeDialog} />}
     {dialog === 'save-as' && <MenuDialog title={file.items[3].label} onClose={closeDialog}>
       <form onSubmit={event => { event.preventDefault(); if (onSave(name)) closeDialog(); }}>
         <label>Filename <input autoFocus value={name} required maxLength={120} pattern={String.raw`[^\/\\]+`} onChange={event => setName(event.target.value)} /></label>

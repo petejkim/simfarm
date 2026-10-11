@@ -420,3 +420,5 @@ Remaining-interaction audit candidate: plant-order.ts still labels immediate rep
 After the current field-interaction audit, before other preservation work: (1) make amain the first music played at game startup, before any other track; (2) restore the original About dialog. Implement and commit these separately. This explicit startup policy takes priority over further amain lifecycle research. Then return to the remaining-interaction audit.
 
 About clarification: omit the entire “This copy is registered to: <name>” line. Preserve the remaining original presentation with actual text elements.
+
+Startup/About queue: amain now plays first and once before genfarm (1c437c1,5674528), with saved mute and later situational music retained. Original About frame, artwork and credit pages are restored with HTML text; registered-owner text is omitted. See about-dialog.md for static evidence and native timing/font adaptations. After validation/commit, resume the remaining-interaction audit; the full preservation goal remains incomplete.

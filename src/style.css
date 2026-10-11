@@ -489,3 +489,14 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .browser-settings label,.browser-settings .music-controls label:first-child{display:flex;justify-content:space-between;gap:12px}
 .browser-settings .volume{display:flex}
 .browser-settings [role=status]{overflow-wrap:anywhere}
+
+/* About DSa452: original400×240 frame, registration intentionally omitted. */
+.game-window[data-window=about]{left:96px;top:96px;right:auto;width:400px;height:240px;max-width:none;max-height:none;margin:0;padding:0;border:0;overflow:hidden}
+.game-window[data-window=about]::backdrop{background:transparent}
+.game-window[data-window=about] .game-window-body{padding:0;overflow:hidden}
+.about-window{position:relative;width:400px;height:224px;color:#000}
+.about-window img{display:block;image-rendering:pixelated;pointer-events:none}
+.about-window h2{position:absolute;left:108px;top:2px;width:180px;height:40px;margin:0;text-align:center;color:#00a800;font:bold 34px/40px Georgia,serif;letter-spacing:-2px}
+.about-credits{position:absolute;left:144px;top:72px;width:224px;height:104px;white-space:pre;font:10px/8px monospace}
+.about-logo{position:absolute;left:264px;top:64px;width:104px;height:112px}
+.about-logo span{position:absolute;left:0;top:90px;width:104px;text-align:center;font:bold 10px/9px monospace;color:#000}
