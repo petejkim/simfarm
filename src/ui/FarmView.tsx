@@ -63,6 +63,7 @@ interface Props {
   loaded?: LoadedFarm;
   onLoad: (farm: LoadedFarm) => void;
   onScenarioChange: (id: number) => void;
+  onRetry: () => void;
   assets: GameAssets;
   zoom: number;
   onZoomChange: (zoom: number) => void;
@@ -70,7 +71,7 @@ interface Props {
   onFlightRunning: (running: boolean) => void;
 }
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
-export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, onGameEvent, onFlightRunning }: Props) {
+export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onScenarioChange, onRetry, assets, zoom, onZoomChange, onGameEvent, onFlightRunning }: Props) {
   const windows = useWindows();
   useEffect(() => windows.reset(), [windows.reset]);
   const [newFarmOpen, setNewFarmOpen] = useState(false);
@@ -385,6 +386,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     {data && snapshot && simulation && <ExamineWindow assets={assets} snapshot={snapshot} tiles={data.tiles} position={position} onCommand={command=>simulation.dispatch(command)}/>}
     {data && snapshot && <BuyWindow assets={assets} snapshot={snapshot} tiles={data.tiles} onBuy={beginPurchase} />}
     {resource.status !== 'ready' && <div className="loading"><p role="status">{resource.status === 'error' ? resource.error : 'Loading farm…'}</p>
+      {resource.status === 'error' && <button onClick={onRetry}>Retry loading farm</button>}
       <button aria-label="Edit tools and help" onClick={() => windows.show('tools')}>Choose another farm</button></div>}
       {simulation&&snapshot?.finances.defaultDecision&&!messages.length&&!newFarmOpen&&<DefaultDialog
         decision={snapshot.finances.defaultDecision} assets={assets} onCommand={command=>simulation.dispatch(command)}
