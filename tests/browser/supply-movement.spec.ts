@@ -1,4 +1,5 @@
-import { reveal, openWindow } from '../support/workspace';
+import { clickFarmTile } from '../support/field-actions';
+import { reveal } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -16,11 +17,8 @@ async function save(page: Page) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const file = 'artifacts/browser-supply-movement.simfarm.json'; await (await pending).saveAs(file); return JSON.parse(readFileSync(file, 'utf8'));
 }
-async function selectTile(page: Page, x: number, y: number) {
-  await page.locator('#viewport').evaluate((el, p) => el.scrollTo(p.x * 16, p.y * 16), { x, y });
-  await reveal(page, '#viewport'); await page.locator('#viewport').scrollIntoViewIfNeeded(); const rect = await page.locator('#world').boundingBox();
-  await page.mouse.click(rect!.x + x * 16 + 8, rect!.y + y * 16 + 8);
-  await expect(page.locator('#cell-status')).toContainText(`Tile ${x}, ${y}`);
+async function startMove(page:Page){
+  await reveal(page,'#viewport');await page.getByRole('button',{name:'Move object',exact:true}).click();
 }
 async function originalPixels(page: Page, x: number, y: number, tile: number, overlay?: number) {
   const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
@@ -43,50 +41,49 @@ test('supplies shortcut moves all five categories with exact original pixels, sa
   const f = supplyMovementFixture(); f.state.scenario.cells[worldIndex(5, 5)].overlay = 0;
   const game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
   await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click(); await reveal(page, '#open-supply-move'); await page.locator('#open-supply-move').click();
-  await expect(page.locator('#map-tool')).toHaveValue('supply-move');
-  await selectTile(page, 16, 10); await reveal(page, '#select-supply-move'); await page.locator('#select-supply-move').click(); await selectTile(page, 5, 5);
-  await expect(page.locator('#supply-move-quote')).toHaveText('Choose a destination on your land.'); await expect(page.locator('#move-supply')).toBeDisabled();
-  await selectTile(page, 18, 10); await expect(page.locator('#supply-move-quote')).toHaveText('Choose clear grass for this supply.');
-  await reveal(page, '#cancel-supply-move'); await page.locator('#cancel-supply-move').click(); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  for (const [sx, x, tile, overlay, label] of [[10, 20, 832, undefined, 'Seed'], [12, 22, 816, undefined, 'Harvested crop'],
-    [14, 24, 15, 915, 'Chemical'], [16, 26, 176, undefined, 'Water trough'], [18, 28, 15, 1020, 'Feed']] as const) {
+  await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');
+  await clickFarmTile(page, 16, 10); await clickFarmTile(page, 5, 5);
+  await expect(page.locator('#object-move-result')).toHaveText('Choose a destination on your land.');
+  await clickFarmTile(page, 18, 10); await expect(page.locator('#object-move-result')).toHaveText('Choose clear ground or compatible storage.');
+  await page.keyboard.press('Escape');expect(await save(page)).toEqual(JSON.parse(game.save(4)));await startMove(page);
+  for (const [sx, x, tile, overlay] of [[10, 20, 832, undefined], [12, 22, 816, undefined],
+    [14, 24, 15, 915], [16, 26, 176, undefined], [18, 28, 15, 1020]] as const) {
     const s = game.getSnapshot(), selected = checkSupplyPickup(s.scenario, s.finances, sx, 10); if (!selected.ok) throw new Error('Missing supply');
-    await selectTile(page, sx, 10); await reveal(page, '#select-supply-move'); await page.locator('#select-supply-move').click(); await selectTile(page, x, 20);
-    await expect(page.locator('#supply-move-quote')).toContainText('No fee.'); await reveal(page, '#move-supply'); await page.locator('#move-supply').click();
+    await clickFarmTile(page, sx, 10); await clickFarmTile(page, x, 20);
     game.dispatch({ type: 'move-supply', selected, x, y: 20 });
-    await expect(page.locator('#supply-move-result')).toHaveText(`${label} moved to ${x}, 20.`);
+    await expect(page.locator('#object-move-result')).toHaveText('Supply moved.');await page.getByRole('button',{name:'Move object',exact:true}).click();
     await originalPixels(page, x, 20, tile, overlay); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   }
-  await page.reload(); await load(page, game.save(4)); await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('supply-move');
-  await expect(page.locator('#supply-move-result')).toHaveCount(0);
+  await page.reload(); await load(page, game.save(4)); await startMove(page);
+  await expect(page.locator('#object-move-result')).toBeEmpty();
   for (let d = 0; d < 7; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
 
 test('supplies transfer into original storage, reopen and leave it; empty feed is discarded and controls fit a narrow viewport', async ({ page }) => {
   const f = supplyMovementFixture(), game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('supply-move');
+  await startMove(page);
   for (const [sx, x, y] of [[10, 30, 30], [12, 40, 40], [14, 40, 40]]) {
     const s = game.getSnapshot(), selected = checkSupplyPickup(s.scenario, s.finances, sx, 10); if (!selected.ok) throw new Error('Missing supply');
-    await selectTile(page, sx, 10); await reveal(page, '#select-supply-move'); await page.locator('#select-supply-move').click(); await selectTile(page, x, y);
-    await expect(page.locator('#supply-move-quote')).toContainText('in building'); await reveal(page, '#move-supply'); await page.locator('#move-supply').click();
+    await clickFarmTile(page, sx, 10); await clickFarmTile(page, x, y);
+    await expect(page.locator('#object-move-result')).toHaveText('Supply moved.');
     game.dispatch({ type: 'move-supply', selected, x, y }); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   }
-  await selectTile(page, 40, 40); await expect(page.locator('#select-supply-move')).toBeDisabled();
-  await reveal(page, '#toggle-building-interior'); await page.locator('#toggle-building-interior').click(); game.dispatch({ type: 'toggle-building-interior', x: 40, y: 40, slot: 2 });
-  await expect(page.locator('#supply-move-quote')).toHaveText('Harvested crop at 40, 40.');
+  await clickFarmTile(page,40,40);await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');
+  // Original secondary-button building entry keeps Move armed.
+  const box=(await page.locator('#world').boundingBox())!;await page.mouse.click(box.x+40*16+8,box.y+40*16+8,{button:'right'});
+  game.dispatch({type:'toggle-building-interior',x:40,y:40,slot:2});
   const s = game.getSnapshot(), selected = checkSupplyPickup(s.scenario, s.finances, 40, 40); if (!selected.ok) throw new Error('Missing stored harvest');
-  await reveal(page, '#select-supply-move'); await page.locator('#select-supply-move').click(); await selectTile(page, 25, 25); await reveal(page, '#move-supply'); await page.locator('#move-supply').click();
+  await clickFarmTile(page,40,40);await clickFarmTile(page,25,25);await page.getByRole('button',{name:'Move object',exact:true}).click();
   game.dispatch({ type: 'move-supply', selected, x: 25, y: 25 }); await originalPixels(page, 40, 40, 217); await originalPixels(page, 25, 25, 816);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   const empty = supplyMovementFixture(); empty.state.scenario.inventory[4].bytes[2] = empty.state.scenario.inventory[4].bytes[3] = 0;
-  const emptyGame = empty.load().withAllCrops(browserCrops); await load(page, emptyGame.save(4)); await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('supply-move');
-  await selectTile(page, 18, 10); await reveal(page, '#select-supply-move'); await page.locator('#select-supply-move').click(); await selectTile(page, 20, 20);
-  await expect(page.locator('#supply-move-quote')).toContainText('Discard empty feed');
-  await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#supply-move-panel'); await page.locator('#supply-move-panel').scrollIntoViewIfNeeded();
+  const emptyGame = empty.load().withAllCrops(browserCrops); await load(page, emptyGame.save(4)); await startMove(page);
+  await clickFarmTile(page, 18, 10); await clickFarmTile(page, 20, 20);
+  await page.setViewportSize({ width: 1280, height: 844 }); await expect(page.locator('#object-move-result')).toHaveText('Empty feed discarded.');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-supply-movement.png', fullPage: true });
   const es = emptyGame.getSnapshot(), feed = checkSupplyPickup(es.scenario, es.finances, 18, 10); if (!feed.ok) throw new Error('Missing feed');
-  await reveal(page, '#move-supply'); await page.locator('#move-supply').click(); emptyGame.dispatch({ type: 'move-supply', selected: feed, x: 20, y: 20 });
-  await expect(page.locator('#supply-move-result')).toHaveText('Empty feed discarded.'); expect(await save(page)).toEqual(JSON.parse(emptyGame.save(4)));
+  emptyGame.dispatch({ type: 'move-supply', selected: feed, x: 20, y: 20 });
+  await expect(page.locator('#object-move-result')).toHaveText('Empty feed discarded.'); expect(await save(page)).toEqual(JSON.parse(emptyGame.save(4)));
 });

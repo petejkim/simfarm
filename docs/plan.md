@@ -315,3 +315,5 @@ Network form retired: roads/fences/gates now use original palette construction a
 Removal form retired: original Bulldoze and its MESSAGE dialogs now provide removal access. Migrated stored-content demolition, terrain/loose clearing, original PCM, busy-field rejection, cancellation and cleared-field reuse checks to that route. Continue remaining building/movement/shop forms and Field information audit; full preservation remains incomplete.
 
 Building form retired: original Buy now provides building purchases exclusively, including the remaining supply shop storage shortcut. Options AutoDoze and original Examine/interior interactions remain. Source catalog and placement evidence stays in buy-dialog.md/construction.md; continue equipment/supply movement and shops plus Field information retirement.
+
+Supply movement form retired: Move object now handles all five supply families exclusively; the Livestock shortcut arms it directly. Original right-click/Examine provides building entry. Continue machinery movement and remaining shops, preserving source rules and separating native Field information adapters from original calendar interactions.
