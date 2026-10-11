@@ -6,6 +6,7 @@ import { worldIndex } from '../src/formats/scenario';
 import { storedWater } from '../src/simulation/water-storage';
 import { GameSimulation } from './support/game';
 import { waterStorageFixture } from './support/water-storage';
+import type { GameEvent } from '../src/simulation/events';
 
 test('purchased water storage collects from a real pumped ditch, refills a distant trough weekly and resumes exact saved state', () => {
   const f = waterStorageFixture(), game = f.load();
@@ -30,15 +31,18 @@ test('purchased water storage collects from a real pumped ditch, refills a dista
 });
 
 test('day-seven collection precedes weekly wear and refill; decisions suspend construction and water lifecycle', () => {
-  for (const wornOut of [false, true]) {
+  for (const wornOut of [false, true]) for(const messages of [false,true]) {
     const f = waterStorageFixture(), initial = f.load();
     initial.dispatch({ type: 'build', buildingType: 72, x: 13, y: 11 });
     const { state } = readNativeSave(initial.save(4)), store = state.scenario.buildings[2], v = new Binary(store.bytes).view;
     v.setUint16(10, 0, true); v.setUint16(8, wornOut ? 480 : 0, true);
     state.scenario.cells[worldIndex(13, 10)].terrain = 99;
     state.scenario.farm.calendar.day = 6; state.dayTicks = 15; state.random.visual = 10; // Weekly traffic draws1792, then wear draws7.
+    state.scenario.farm.messages=messages;
     const game = GameSimulation.load(writeNativeSave(state, 4), f.crops).simulation;
+    const events:GameEvent[]=[];game.subscribeEvents(event=>events.push(event));
     game.dispatch({ type: 'advance-day' }); const s = game.getSnapshot();
+    assert.deepEqual(events.filter(e=>e.type==='building-notice'),wornOut&&messages?[{type:'building-notice',id:'water-storage-burst'}]:[]);
     assert.equal(s.scenario.inventory[1].quantity, wornOut ? 0 : 100);
     assert.equal(storedWater(s.scenario.buildings[2]), 0);
     assert.equal(s.scenario.buildings[2].flags, wornOut ? 34 : 32);

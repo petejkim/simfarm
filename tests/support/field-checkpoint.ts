@@ -5,7 +5,7 @@ import { browserCrops } from './crop-catalog';
 
 /** Observe real saved simulation records; no debug UI or browser-side state injection. */
 export async function farmSnapshot(page:Page){
-  const notice=page.locator('#finance-message-ok,#disaster-message-ok,#field-message-ok');
+  const notice=page.locator('#finance-message-ok,#disaster-message-ok,#field-message-ok,#building-message-ok');
   while(await notice.isVisible())await notice.click();
   const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();
   await page.getByRole('menuitem',{name:'Save',exact:true}).click();

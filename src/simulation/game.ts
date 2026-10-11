@@ -739,7 +739,9 @@ export class GameSimulation {
         // 0xc00c pushes73 to22504: quick Edit history, not a modal Message.
         if(result.outdoor)appendEditStatus(this.editStatus,73);
       }
-      ageBuildings(s, this.random);
+      const failedWaterStores=ageBuildings(s, this.random);
+      // Original0xc0e3 requests optional Message44 through overlay4.
+      if(s.farm.messages)for(const _slot of failedWaterStores)this.events.push({type:'building-notice',id:'water-storage-burst'});
       ageChemicals(s);
       const aging = ageAnimals(s, this.finances, this.random);
       this.requestAnimalVocals(aging.sounds);

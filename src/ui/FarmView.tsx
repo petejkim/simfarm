@@ -1,3 +1,4 @@
+import { BuildingMessage } from './BuildingMessage';
 import {FARM_OPTIONS,applyPreferredOptions,rememberPreference} from './preferences';
 import {tilesForWeather} from '../assets/weather-tiles';
 import {EDIT_TOOL_STATUSES,SPRAY_STATUSES} from '../simulation/edit-status';
@@ -96,7 +97,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
   const objectMove=useObjectMove(simulation,snapshot);
   const construction=useConstruction(simulation,snapshot);
   const bulldoze=useBulldoze(simulation,snapshot);
-  const [messages,setMessages]=useState<(Extract<GameEvent,{type:'finance-notice'|'disaster-notice'|'field-notice'}>&{serial:number})[]>([]);
+  const [messages,setMessages]=useState<(Extract<GameEvent,{type:'finance-notice'|'disaster-notice'|'field-notice'|'building-notice'}>&{serial:number})[]>([]);
   const messageSerial=useRef(0);
   function closeMessage(){setMessages(previous=>previous.slice(1));}
   const onMapPointer = useCallback((pointer: MapFocus | null) => {
@@ -104,7 +105,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     if (buyPlacement || fieldMapTool || objectMove.active || construction.tool || bulldoze.active) setToolPointer(old => old?.x === pointer?.x && old?.y === pointer?.y ? old : pointer);
   }, [simulation, buyPlacement, fieldMapTool, objectMove.active,construction.tool,bulldoze.active]);
   useEffect(() => simulation?.subscribeEvents(event=>{
-    if(event.type==='finance-notice'||event.type==='disaster-notice'||event.type==='field-notice'){
+    if(event.type==='finance-notice'||event.type==='disaster-notice'||event.type==='field-notice'||event.type==='building-notice'){
       const message={...event,serial:++messageSerial.current};
       setMessages(previous=>[...previous,message]);
     }else if(event.type==='map-focus')setFocus({x:event.x,y:event.y});
@@ -438,6 +439,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       {messages[0]&&(messages[0].type==='finance-notice'
         ? <FinanceMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>
         : messages[0].type==='field-notice' ? <FieldMessage key={messages[0].serial} assets={assets} onClose={closeMessage}/>
+        : messages[0].type==='building-notice' ? <BuildingMessage key={messages[0].serial} assets={assets} onClose={closeMessage}/>
         : <DisasterMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>)}
     </main>}
   </>;

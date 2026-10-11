@@ -58,6 +58,9 @@ test('water storage wear is visible and removes its supply before weekly refills
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'worn-water-store.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await expect(page.locator('#building-message-text')).toHaveText('A water tower has burst! You may want to bulldoze it and buy another.');
+  await expect(page.getByRole('dialog',{name:'Message',exact:true})).toBeVisible();
+  await page.locator('#building-message-ok').click();
   await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click();
   await expect(page.locator('#water-storage-worn')).toContainText('Water storage worn out at 13, 11');
   await expect(page.locator('#livestock-stored-water')).toContainText('0 units');
