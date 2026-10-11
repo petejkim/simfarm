@@ -357,7 +357,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
           : resource.status === 'error' ? resource.error : 'Loading map…'}</span></div>
       <div><label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
-      </select></label><button id="center" disabled={!data || Boolean(snapshot?.aircraftFlight)} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
+      </select></label></div>
     </section>
     <button onClick={() => windows.show('options')}>Audio and tools</button>
     </GameWindow>

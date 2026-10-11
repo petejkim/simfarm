@@ -2370,3 +2370,11 @@ Completed the pending Edit tools shortcut cleanup: New Game is reached through t
 Rechecked the user's message-bar report against the existing a6da121 fix. The empty bar renders from startup and after load, with an explicit16-pixel grid row reserving space above terrain. All three Edit-status browser checks pass(3.3s), including first-row hit testing and fixed map origin across tool and Market/Bank selections. Log: artifacts/message-bar-current-browser.log. No additional runtime change was needed for that already committed fix.
 
 Next audit scenario/zoom/centering/audio controls before removing utility wrappers, then run the planned broader regression milestone. Full preservation remains incomplete. No push or supplied-DOS changes.
+
+## 2026-10-11 — retire duplicate terrain centering shortcut
+
+Previous turn made progress with bf1e787. Revalidated clean files and audited remaining utility controls. Removed Edit tools' fixed Center map button: original Map click/drag (34b5a..34dce, callback35514; map-dialog.md) and terrain scrolling provide navigation. The original gesture moves the viewport's upper-left corner; it is not presented as a recovered center button. Aircraft camera ownership remains unchanged. Removed only the obsolete disabled-button assertion from flight coverage. No simulation/save/source rule or original defect changed.
+
+Build/type checking, ten focused Map decoder/interaction tests(2.37s), and all seven Map/aircraft-flight browser checks(17.7s) pass. Coverage retains source overlays, viewport navigation, land transactions, exact saves, aircraft steering/resize/zoom, spraying/landing/crash and engine PCM/recovery. Logs: artifacts/retire-center-shortcut-{build,unit,browser}.log. Diff checks pass; no full-suite repetition.
+
+Remaining audit: original scenario selector loads supplied checkpoints and is not semantically equivalent to New Game's fresh startup; use original Load Game for checkpoint access before deleting it. Zoom and music volume/track selection are native settings needing an explicit home. Sound/music enable buttons duplicate original Options controls; migrate their browser coverage to Options before removal. Audio failure feedback must remain visible. Next address these remaining controls, then the broader regression milestone. Full preservation remains incomplete. No push or supplied-DOS changes.

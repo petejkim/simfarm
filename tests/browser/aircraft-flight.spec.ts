@@ -72,7 +72,7 @@ async function spritesMatch(page: Page, f: AircraftFlight) {
 test('Fly captures the map, original sprites follow keyboard steering, pause/step and resize preserve the flight, and End lands at the airport', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await freeze(page); await page.goto('/');
   const { game } = prepared(); await load(page, game.save(4)); await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2'); await launch(page, game);
-  await expect(page.locator('#next-day')).toBeDisabled(); await expect(page.locator('#center')).toBeDisabled();
+  await expect(page.locator('#next-day')).toBeDisabled();
   await spritesMatch(page, game.getSnapshot().aircraftFlight!);
   await step(page, game, 'spray-toggle', 'Home'); await step(page, game, 'right', 'ArrowRight'); await step(page, game, 'climb', 'PageUp');
   await spritesMatch(page, game.getSnapshot().aircraftFlight!);
