@@ -21,8 +21,8 @@ export function FieldToolMenu({kind,assets,world,tiles,onChoose,onClose}:{kind:'
     const outside=(event:PointerEvent)=>{if(!root.current?.contains(event.target as Node))onClose();};
     document.addEventListener('pointerdown',outside);return()=>document.removeEventListener('pointerdown',outside);
   },[onClose]);
-  // Source coordinates include the outer Edit origin; CSS has a2px left frame.
-  return <div ref={root} className="field-tool-menu" role="menu" aria-label={geometry.title} style={{left:geometry.x-2,top:geometry.y,width:geometry.width,height:geometry.height}}
+  // Keep source popup coordinates; the permanent map has no outer frame.
+  return <div ref={root} className="field-tool-menu" role="menu" aria-label={geometry.title} style={{left:geometry.x,top:geometry.y,width:geometry.width,height:geometry.height}}
     onKeyDown={event=>{
       if(event.key==='Escape'){event.preventDefault();event.stopPropagation();onClose();return;}
       const buttons=[...root.current!.querySelectorAll<HTMLButtonElement>('[role=menuitem]')],i=buttons.indexOf(document.activeElement as HTMLButtonElement);

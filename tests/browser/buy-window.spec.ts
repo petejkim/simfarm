@@ -44,7 +44,8 @@ test('Buy arms direct map placement, purchases repeatedly, reports blocked cells
   const game = await start(page);
   await page.locator('#window-buy').click(); await page.getByRole('button', { name: 'Machinery', exact: true }).click();
   await page.locator('#catalog-buy').click();
-  await expect(page.getByRole('region', { name: 'Buy catalog' })).toBeHidden();
+  await expect(page.getByRole('region', { name: 'Buy catalog' })).toBeVisible();
+  await page.getByRole('button', { name: 'Close Buy', exact: true }).click();
   await expect(page.locator('#cancel-buy-placement')).toBeVisible();
   await page.locator('#viewport').evaluate(el => el.scrollTo(0, 0));
   const box = (await page.locator('#world').boundingBox())!;

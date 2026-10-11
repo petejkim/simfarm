@@ -19,7 +19,7 @@ test('Disasters opens the seven original real-text rows at source scale, with ke
   expect(await items.evaluateAll(els=>els.map(el=>[...el.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE).map(n=>n.textContent).join('')))).toEqual(names);
   await expect(items.first()).toBeFocused();await page.keyboard.press('End');await expect(items.last()).toBeFocused();await page.keyboard.press('Enter');await expect(menu).toHaveCount(0);await expect(page.locator('#disasters-menu-button')).toBeFocused();
   const after=await save(page);before.runtime.disasters.enabled=false;expect(after).toEqual(before);await checks(page,[false,false,false,false,false,false,true]);
-  await page.locator('#disasters-menu-button').click();await page.screenshot({path:'artifacts/browser-disaster-menu.png'});await page.locator('.edit-title').click({position:{x:700,y:8}});await expect(menu).toHaveCount(0);
+  await page.locator('#disasters-menu-button').click();await page.screenshot({path:'artifacts/browser-disaster-menu.png'});await page.locator('.original-control-bar').click({position:{x:600,y:8}});await expect(menu).toHaveCount(0);
   await expect(page.locator('[data-window=disasters]')).toBeHidden();await openWindow(page,'disasters');await expect(page.locator('#disasters-panel')).toBeVisible();
 });
 

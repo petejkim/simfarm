@@ -45,3 +45,13 @@ test('toolbar weather draws three forecast tiles at original coordinates',()=>{
   expect(b.subarray(0x2a53c,0x2a542).toString('hex')).toBe('c1e004054801');
   expect(b.subarray(0x2a54e,0x2a554).toString('hex')).toBe('837efe037cc9');
 });
+
+test('Edit toolbar column seven resolves its existing descriptor through the common raise path',()=>{
+  const b=readFileSync(new URL('../../simfarm-dos/SIMFARM.EXE',import.meta.url));
+  // Resident code basee630, jump tablee9ce: index7 points to offset0370/filee9a0.
+  expect(b.readUInt16LE(0xe9ce+7*2)).toBe(0x370);
+  expect(b.subarray(0xe9a4,0xe9af).toString('hex')).toBe('26a1ae13268b16b013eb88');
+  expect(b.subarray(0xea0b,0xea16).toString('hex')).toBe('ff76eeff76ec9a1e10e624');
+  // Exposed background-window mouse activation uses the same bring-forward stub.
+  expect(b.subarray(0xec77,0xec80).toString('hex')).toBe('ff76e0539a1e10e624');
+});

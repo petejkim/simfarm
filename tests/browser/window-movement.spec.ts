@@ -23,7 +23,7 @@ test('source wooden titles use HTML text; dragging persists across closing witho
   const bank = page.getByRole('dialog', { name: 'Bank', exact: true }), title = bank.locator('.game-window-title');
   expect(await title.boundingBox()).toEqual({ x:176, y:96, width:288, height:16 });
   expect(await title.evaluate(el => getComputedStyle(el).backgroundImage)).toContain('window-title.png');
-  expect(await page.locator('.edit-title').evaluate(el => getComputedStyle(el).backgroundImage)).toContain('window-title-inactive.png');
+  await expect(page.locator('.edit-title')).toHaveCount(0);
   const text = await title.locator('span').evaluate(el => { const r = document.createRange(); r.selectNodeContents(el); return r.toString(); });
   expect(text).toBe('Bank');
   await drag(page, title, 190, 110);
@@ -38,8 +38,7 @@ test('source wooden titles use HTML text; dragging persists across closing witho
   expect(await bank.boundingBox()).toMatchObject({ x:376,y:207 });
   await page.screenshot({ path: 'artifacts/browser-movable-windows.png' });
   await page.keyboard.press('Escape');
-  expect(await page.locator('.edit-title').evaluate(el => getComputedStyle(el).backgroundImage)).toContain('window-title.png');
-  await drag(page, page.locator('.edit-title'), 80, 80);
+  await page.locator('#window-edit').click();
   expect(await page.locator('#viewport').boundingBox()).toEqual(map);
   await expect(page.getByRole('button', { name: 'Close Edit', exact: true })).toHaveCount(0);
   expect(await save(page)).toEqual(before);

@@ -13,6 +13,7 @@ async function load(page:Page,text:string){await page.locator('#load-farm-file')
 async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await (await p).path())!,'utf8'));}
 async function pixelRegion(page:Page,x:number,y:number,width:number,height:number){return page.locator('.market-preview').evaluate((canvas:HTMLCanvasElement,p)=>Array.from(canvas.getContext('2d')!.getImageData(p.x,p.y,p.width,p.height).data),{x,y,width,height});}
 async function mapClick(page:Page,x:number,y:number,button:'left'|'right'='left'){
+  await reveal(page,'#viewport');
   const zoom=Number(await page.locator('#zoom').inputValue());await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-20)*16*p.zoom,Math.max(0,p.y-15)*16*p.zoom),{x,y,zoom});
   const box=(await page.locator('#world').boundingBox())!;await page.mouse.click(box.x+(x+.5)*16*zoom,box.y+(y+.5)*16*zoom,{button});
 }

@@ -58,7 +58,14 @@ test('Windows menu and toolbar route to the same controls; Edit focuses the map 
   await page.keyboard.press('ArrowUp'); await expect(menu.getByRole('menuitemcheckbox', { name: 'Market Value', exact: true })).toBeFocused();
   await page.keyboard.press('Escape'); await expect(page.locator('#windows-menu-button')).toBeFocused();
   for (const viaMenu of [false, true]) {
-    const open = (key: string, label: string) => viaMenu ? windowMenu(page, label) : page.locator(`#window-${key}`).click();
+    const open = async (key: string, label: string) => {
+      if(!viaMenu){await page.locator(`#window-${key}`).click();return;}
+      await page.locator('#windows-menu-button').click();
+      const item=page.getByRole('menuitemcheckbox',{name:label,exact:true});
+      const alreadyOpen=key!=='edit'&&await item.getAttribute('aria-checked')==='true';
+      await item.click();
+      if(alreadyOpen)await windowMenu(page,label); // Menu closes covered windows before reopening.
+    };
     await open('bank', 'Bank'); await expect(page.locator('#loan-panel')).toBeVisible();
     await expect(page.locator('#loan-panel')).toBeFocused();
     await open('buy', 'Buy'); await expect(page.getByRole('region', { name: 'Buy catalog' })).toBeVisible();

@@ -20,7 +20,7 @@ test('original eight-row Options dropdown has real text, source geometry, live c
   await expect(menu).toHaveCount(0);await expect(page.locator('#options-menu-button')).toBeFocused();
   const after=await save(page);before.scenario.farm.autoBuySeeds=false;expect(after).toEqual(before);
   await page.locator('#options-menu-button').click();await page.screenshot({path:'artifacts/browser-options.png'});await page.keyboard.press('Escape');await expect(menu).toHaveCount(0);
-  await page.locator('#options-menu-button').click();await page.locator('.edit-title').click({position:{x:600,y:8}});await expect(menu).toHaveCount(0);
+  await page.locator('#options-menu-button').click();await page.locator('.original-control-bar').click({position:{x:600,y:8}});await expect(menu).toHaveCount(0);
 });
 
 test('all farm preferences survive downloads and reloads with unchanged canonical simulation',async({page})=>{

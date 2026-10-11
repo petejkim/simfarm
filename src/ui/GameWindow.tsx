@@ -1,16 +1,27 @@
 import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
 import type { WindowArtwork } from '../assets/game-assets';
 
-interface Windows { active: string | null; order: readonly string[]; show: (key: string | null) => void; close:(key:string)=>void; raise:(key:string)=>void }
+interface Windows {
+  active: string | null; order: readonly string[];
+  show: (key: string | null) => void; close:(key:string)=>void; raise:(key:string)=>void;
+  reset:()=>void;
+}
 const Context = createContext<Windows | null>(null);
 export function useWindows() { const value = useContext(Context); if (!value) throw new Error('Missing game windows'); return value; }
 export function WindowDesktop({ children, artwork }: { children: ReactNode; artwork: WindowArtwork }) {
-  const [order,setOrder]=useState<string[]>([]);
-  const show=useCallback((key:string|null)=>setOrder(old=>key===null?[]:old.at(-1)===key?old:[...old.filter(k=>k!==key),key]),[]);
-  const close=useCallback((key:string)=>setOrder(old=>old.filter(k=>k!==key)),[]);
-  const raise=useCallback((key:string)=>setOrder(old=>!old.includes(key)||old.at(-1)===key?old:[...old.filter(k=>k!==key),key]),[]);
-  const active=order.at(-1)??null;
-  return <Context value={{ active, order, show, close, raise }}><div className="game-desktop" style={{
+  const [state,setState]=useState<{order:string[];active:string|null}>({order:[],active:null});
+  // null focuses the permanent map; it is never a window or a stack entry.
+  const show=useCallback((key:string|null)=>setState(old=>key===null
+    ? old.active===null?old:{...old,active:null}
+    : old.active===key?old:{order:[...old.order.filter(k=>k!==key),key],active:key}),[]);
+  const close=useCallback((key:string)=>setState(old=>{
+    const order=old.order.filter(k=>k!==key);return {order,active:old.active===key?order.at(-1)??null:old.active};
+  }),[]);
+  const raise=useCallback((key:string)=>setState(old=>!old.order.includes(key)||old.active===key?old:
+    {order:[...old.order.filter(k=>k!==key),key],active:key}),[]);
+  const reset=useCallback(()=>setState({order:[],active:null}),[]);
+  const {order,active}=state;
+  return <Context value={{ active, order, show, close, raise, reset }}><div className="game-desktop" style={{
     '--window-title': `url("${artwork.title.src}")`, '--window-inactive': `url("${artwork.inactive.src}")`, '--window-close': `url("${artwork.close.src}")`,
     '--window-title-end': `url("${artwork.end.src}")`, '--window-title-end-inactive': `url("${artwork.endInactive.src}")`,
   } as CSSProperties}>{children}</div></Context>;

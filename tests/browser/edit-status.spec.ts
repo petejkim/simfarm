@@ -9,12 +9,12 @@ test('Plant shows original status text and a deduplicated recent history without
   await expect(page.getByRole('button',{name:'Edit message history'})).toHaveCount(0);
   await page.getByRole('button',{name:'Plant',exact:true}).click();await page.locator('[data-field-tool="0"]').click();
   const status=page.getByRole('button',{name:'Edit message history'});await expect(status).toHaveText('Choose a location for your field.');
-  expect(await status.boundingBox()).toMatchObject({x:48,y:64,height:16});
+  expect(await status.boundingBox()).toMatchObject({x:48,y:48,height:16});
   await page.locator('#viewport').evaluate((el,p)=>el.scrollTo(Math.max(0,p.x-10)*16,Math.max(0,p.y-10)*16),{x:field.x,y:field.y});
   const r=(await page.locator('#world').boundingBox())!;for(let i=0;i<2;i++)await page.mouse.click(r.x+(field.x+2)*16+8,r.y+(field.y+2)*16+8);
   await expect(status).toHaveText('Cannot place field there.');await status.click();
   const history=page.getByRole('list',{name:'Recent Edit messages'});await expect(history.locator('li')).toHaveText(['Cannot place field there.','Choose a location for your field.']);
-  expect(await history.boundingBox()).toMatchObject({x:48,y:64,height:96});await page.screenshot({path:'artifacts/browser-edit-status.png'});
+  expect(await history.boundingBox()).toMatchObject({x:48,y:48,height:96});await page.screenshot({path:'artifacts/browser-edit-status.png'});
   await page.keyboard.press('Escape');await expect(history).toHaveCount(0);await expect(status).toBeFocused();await status.click();await history.click({position:{x:120,y:60}});await expect(history).toHaveCount(0);expect(await save()).toEqual(before);
   await page.locator('#load-farm-file').setInputFiles({name:'farm.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(before))});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');await expect(status).toHaveCount(0);
 });

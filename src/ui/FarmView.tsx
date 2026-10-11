@@ -90,7 +90,7 @@ interface Props {
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
 export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, onGameEvent, onFlightRunning }: Props) {
   const windows = useWindows();
-  useEffect(() => windows.show(null), [windows.show]);
+  useEffect(() => windows.reset(), [windows.reset]);
   const [newFarmOpen, setNewFarmOpen] = useState(false);
   const load = useCallback(async (signal: AbortSignal) => {
     if (loaded) return { ...loaded, simulation: loaded.simulation.withAllCrops(assets.catalog.crops) };
@@ -175,6 +175,10 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     if (target === 'land' || target === 'field' || target === 'crop-supplies' || target === 'network') setMapTool(target);
     windows.show(target === 'map' ? null : target === 'loans' ? 'bank' : target === 'planner' ? 'schedule' : 'actions');
     setNavigation({ target });
+  }
+  function activateEdit(event: { target: EventTarget }) {
+    // Some ordinary/forced dialogs are React children of Edit, but own their depth.
+    if (event.target instanceof Element && !event.target.closest('.game-window')) windows.show(null);
   }
   function openWindow(window: WindowCommand, source: 'menu' | 'toolbar') {
     if(fieldMapTool)cancelFieldTool();
@@ -468,8 +472,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       {simulation&&snapshot?.finances.defaultDecision&&!messages.length&&!newFarmOpen&&<DefaultDialog
         decision={snapshot.finances.defaultDecision} assets={assets} onCommand={command=>simulation.dispatch(command)} onEvent={onGameEvent}
         onRestart={()=>setNewFarmOpen(true)}/>}
-    {data && <main className="edit-workspace" aria-label="Edit" onKeyDown={event => { if(objectMove.active&&event.key==='Escape'){event.preventDefault();cancelObjectMove();} if ((fieldMenu||fieldMapTool) && event.key==='Escape') {event.preventDefault();cancelFieldTool();} if (buyPlacement && event.key === 'Escape') { event.preventDefault(); cancelPurchase(); } }}>
-      <div className="edit-title">Edit</div>
+    {data && <main className="edit-workspace" aria-label="Edit" onPointerDownCapture={activateEdit} onFocusCapture={activateEdit} onKeyDown={event => { if(objectMove.active&&event.key==='Escape'){event.preventDefault();cancelObjectMove();} if ((fieldMenu||fieldMapTool) && event.key==='Escape') {event.preventDefault();cancelFieldTool();} if (buyPlacement && event.key === 'Escape') { event.preventDefault(); cancelPurchase(); } }}>
       <EditPalette artwork={assets.editPalette} disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}
         onField={() => openFieldMenu('plant')} onSpray={() => openFieldMenu('spray')} onHelp={() => {objectMove.cancel();bulldoze.cancel();construction.cancel();setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);windows.show(null);setEditHelpOpen(open=>!open);}} />
       {snapshot&&<EditStatus codes={snapshot.editStatuses} text={assets.editStatusText}/>}

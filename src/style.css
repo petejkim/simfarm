@@ -123,7 +123,7 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 /* Permanent desktop workspace. No phone breakpoint rearranges this frame. */
 .game-desktop{position:relative;min-width:640px;width:100%;height:max(480px,100dvh);overflow:hidden;background:#c2c2c2;color:#000;color-scheme:light}
 .game-desktop [hidden]{display:none!important}
-.game-desktop .edit-workspace{position:absolute;inset:48px 0 0;display:grid;grid-template-columns:50px minmax(0,1fr);grid-template-rows:16px minmax(0,1fr);gap:0;margin:0;padding:0;border:2px ridge #eee;border-top:0;background:#c2c2c2}
+.game-desktop .edit-workspace{position:absolute;inset:48px 0 0;display:grid;grid-template-columns:50px minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:0;margin:0;padding:0;border:0;background:#c2c2c2}
 .edit-palette{position:relative;width:48px;height:208px;margin:1px 0}
 .edit-palette>img{display:block;image-rendering:pixelated;pointer-events:none}
 .edit-palette>button{position:absolute;padding:0;border:0;border-radius:0;background:transparent;color:#000}
@@ -203,9 +203,7 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 #buy-result:empty{display:none}
 
 /* Source2b09a: repeated16px wooden title tiles, with real centered text. */
-.edit-title,.game-window-title{position:relative;flex-shrink:0;height:16px;min-height:16px;background-color:#824104;background-image:var(--window-title);background-repeat:repeat-x;image-rendering:pixelated;color:#fff;text-align:center;text-transform:uppercase;font:bold 12px/16px monospace;white-space:nowrap}
-.edit-title{grid-column:1 / -1;user-select:text}
-.game-desktop:has(.game-window:not([hidden])) .edit-title{background-image:var(--window-inactive)}
+.game-window-title{position:relative;flex-shrink:0;height:16px;min-height:16px;background-color:#824104;background-image:var(--window-title);background-repeat:repeat-x;image-rendering:pixelated;color:#fff;text-align:center;text-transform:uppercase;font:bold 12px/16px monospace;white-space:nowrap}
 .game-window-title{display:flex;align-items:center;justify-content:center;padding:0 20px;cursor:grab;touch-action:none}
 .game-window-title:active{cursor:grabbing}
 .game-window-title>span{overflow:hidden;text-overflow:ellipsis;pointer-events:none}
@@ -373,7 +371,7 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .schedule-window .plan-calendar>button{pointer-events:auto}
 
 /* Edit Plant/Spray popups DS545e/54b0, relative to fixed Edit origin. */
-.field-tool-menu{position:absolute;z-index:35;background:#c2c2c2;color:#000;box-shadow:4px 4px #0008;font:10px/10px monospace}
+.field-tool-menu{position:absolute;z-index:80;background:#c2c2c2;color:#000;box-shadow:4px 4px #0008;font:10px/10px monospace}
 .field-tool-menu:after{content:'';position:absolute;inset:0;border:1px solid #000;pointer-events:none}
 .field-tool-menu>canvas{position:absolute;inset:0;width:auto;height:auto;image-rendering:pixelated;pointer-events:none}
 .field-tool-title{position:absolute;left:16px;top:4px;font:10px/10px monospace}
@@ -451,14 +449,14 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .original-menu-popup button[role=menuitemcheckbox]{position:relative;padding-left:20px}
 .menu-check{position:absolute;left:2px;top:0;width:14px;text-align:center}
 
-/* Palette help222cf..222df draws at Edit+48,+16; account for the2px frame. */
-.edit-help{position:absolute;left:46px;top:16px;width:88px;z-index:12;padding:0;margin:0;border:0;border-radius:0;max-height:none;overflow:visible;color:#000;background:#c2c2c2;outline:none}
+/* Palette help uses source x48, without the removed Edit title/frame. */
+.edit-help{position:absolute;left:48px;top:0;width:88px;z-index:80;padding:0;margin:0;border:0;border-radius:0;max-height:none;overflow:visible;color:#000;background:#c2c2c2;outline:none}
 .edit-help-artwork{position:relative;width:88px;height:200px}
 .edit-help-artwork img{display:block;image-rendering:pixelated;pointer-events:none}
 .edit-help-artwork span{position:absolute;left:20px;font:7px/8px monospace;white-space:nowrap}
 .edit-help>button{width:88px;min-height:26px;padding:2px;font:10px/11px Arial,sans-serif}
 
-.edit-status{position:absolute;left:46px;right:0;top:16px;z-index:8;color:#000;font:10px/8px monospace}
+.edit-status{position:absolute;left:48px;right:0;top:0;z-index:8;color:#000;font:10px/8px monospace}
 .edit-status-current{display:block;width:100%;height:16px;text-align:left;padding:2px 0 0 24px;border:0;border-radius:0;color:#000;background:#c2c2c2;font:inherit}
 .edit-status-history{position:absolute;left:0;right:0;top:0;height:96px;margin:0;padding:2px 0 0 23px;border:1px solid #000;list-style:none;background:#c2c2c2;pointer-events:auto}
 .edit-status-history li{height:8px;line-height:8px;white-space:nowrap}
