@@ -319,3 +319,5 @@ Building form retired: original Buy now provides building purchases exclusively,
 Supply movement form retired: Move object now handles all five supply families exclusively; the Livestock shortcut arms it directly. Original right-click/Examine provides building entry. Continue machinery movement and remaining shops, preserving source rules and separating native Field information adapters from original calendar interactions.
 
 Machinery movement form retired: original Move object now provides queued machinery travel exclusively; the Machinery shortcut arms it directly. Both movement forms are gone. Continue the remaining shops and duplicate interior controls, followed by Field information's immediate-order/calendar audit.
+
+Duplicate interior controls retired: use original right-click or Examine. Before removing EquipmentShop, resolve its provisional type6 purchase exposure against the original catalog omission; preserve source evidence rather than assuming all interim actions were original. Continue remaining shops and Field information audit.

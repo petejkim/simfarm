@@ -30,7 +30,6 @@ import { NewFarmControls } from './NewFarmControls';
 import { CropSupplyShop } from './CropSupplyShop';
 import { checkCropSupplyPurchase } from '../simulation/crop-supply-purchase';
 import { DisasterPanel } from './DisasterPanel';
-import { BuildingInteriorControls } from './BuildingInteriorControls';
 import { FlightControls } from './FlightControls';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
@@ -477,8 +476,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
           <option value="equipment">Machinery</option><option value="crop-supplies">Seeds and chemicals</option><option value="livestock">Livestock and supplies</option>
         </select></label>}
         <fieldset className="farm-actions" aria-label="Farm actions" disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)}>
-        {snapshot && (mapTool === 'inspect' || mapTool === 'crop-supplies') && <BuildingInteriorControls snapshot={snapshot} position={position}
-          onCommand={command => simulation?.dispatch(command)} />}
+
         {snapshot && mapTool === 'crop-supplies' && <CropSupplyShop snapshot={snapshot} crops={assets.catalog.crops} position={position} productType={cropSupplyType}
           onTypeChange={setCropSupplyType} onCommand={command => simulation?.dispatch(command)} headingRef={supplyRef}
           onChooseMap={() => navigate('map')} onBuild={() => beginPurchase(shopProduct(snapshot.scenario,snapshot.finances,assets.catalog.crops,assets.buyCatalog,assets.itemText,66))}

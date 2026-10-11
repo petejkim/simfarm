@@ -2148,3 +2148,11 @@ Previous goal turn completed480e389; verified the clean worktree and audited mac
 Build/type checking,10 focused equipment primitive/live tests(3.63s) and all nine movement/map-interaction browser cases(22.4s) pass on their first runs. Coverage includes source interior/roof pixels, closed/busy/stale selection, cancellation without withdrawal, queued storage delivery and in-transit reload, towing/tractor return, original right-button entry, gate/valve flags, zoom/scroll input, every supply family and all24 seed/harvest identities, plus exact saved continuation. Logs: artifacts/retire-machinery-move-{build,unit,browser}.log. Diff checks pass; focused verification only, no full-suite repetition.
 
 Both interim movement forms are gone. Continue remaining shops, duplicate interior controls and Field information's direct-order audit. Full preservation remains incomplete; no push, installations or supplied-DOS changes.
+
+## 2026-10-11 — retire duplicate building-interior controls
+
+Previous goal turn completed6c812b4; verified the clean tree and audited the remaining shared component. BuildingInteriorControls only duplicates open/close, already available through original secondary-button map entry and Examine. Removed its Inspect/supply-shop rendering and component. Existing affected tests already exercise those source-backed routes; no simulation rule, save change or new original defect. Evidence remains in manual-movement.md/map-interactions.md.
+
+Build/type checking, eight focused Examine/map-interaction source tests(4.96s), and all nine affected browser checks(11.7s) pass on the first run. Coverage includes building contents/condition/source graphics, right-press versus release and stale selection, retained Move tool, zoom/scroll coordinates, supply purchase/use/storage workflow, exact saves, and readable/scrollable Examine descriptions. Logs: artifacts/retire-interior-{build,unit,browser}.log. Diff checks pass; no full-suite repetition.
+
+Next audit EquipmentShop: original DSb51e machinery group omits type6 whereas the provisional form exposes all0..7. Resolve that discrepancy before claiming every interim purchase is an original action. Remaining shops and Field information still need retirement; full preservation remains incomplete. No push, installation or supplied-source change.
