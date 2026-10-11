@@ -288,11 +288,11 @@ Native weekly completion credits the pending worker sale once, resets annual/per
 
 ## SF-035 — scheduled plowing enters an inert work state
 
-**Status:** confirmed dispatcher behavior and reachable original toolbar order. Preserved as an original incomplete/no-op path, not a demonstrated gameplay exploit.
+**Status:** confirmed dispatcher/handler behavior; original UI selection reachability remains unproven. Preserved as an original incomplete/no-op path, not a demonstrated gameplay exploit.
 
-Calendar code 852 sets field state 2/step 0 at `0x2f718..0x2f72c`. The main work jump table at `0x18c98` maps states 0, 1 and 2 to the same no-op exit `0x18cb2`; weekly completion's jump table handles only states 3–9. Thus a dispatched 852 order does not perform a plowing pass through either recovered work loop. None of the supplied schedules contains this code. Subsequent toolbar tracing establishes UI reachability: `0x26cb0..0x26ce7` accepts a Waiting field, immediately sets state 2/step 0, and calls the plan recorder with order 1; `0x2fd8e` writes 852 into the current week without an occupied-word guard.
+Calendar code 852 sets field state 2/step 0 at `0x2f718..0x2f72c`. The main work jump table at `0x18c98` maps states 0, 1 and 2 to the same no-op exit `0x18cb2`; weekly completion's jump table handles only states 3–9. Thus a dispatched 852 order does not perform a plowing pass through either recovered work loop. None of the supplied schedules contains this code. Correction after field-interaction audit: the handler establishes behavior when tool1 is selected, but not how the original UI selects it: `0x26cb0..0x26ce7` accepts a Waiting field, immediately sets state 2/step 0, and calls the plan recorder with order 1; `0x2fd8e` writes 852 into the current week without an occupied-word guard.
 
-Native schedule dispatch preserves state 2/step 0 and does not invent an equipment FSM. Static-byte tests verify both the state write and all three no-op table targets; recorder tests verify the order mapping and unconditional plan write. No native plow button has been added. Revisit the intended UI semantics while reconstructing the calendar editor; any added plowing operation should be documented as an enhancement if no other original handler is found.
+Native schedule dispatch preserves state 2/step 0 and does not invent an equipment FSM. Static-byte tests verify both the state write and all three no-op table targets; recorder tests verify the order mapping and unconditional plan write. No native plow button has been added. The calendar editor is now restored, but its six visible action icons do not expose plow. Revisit the tool1 selector and editor action26 reachability; any added plowing operation should be documented as an enhancement if no other original handler is found.
 
 ## SF-036 — year projection scans before its column when no matching marker exists
 

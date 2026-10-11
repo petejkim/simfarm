@@ -36,7 +36,9 @@ export function plantField(world: Scenario, slot: number, cropSlot: number, crop
   const field = world.fields[slot];
   if (!Number.isInteger(slot) || !slot || !field?.active) return { ok: false, reason: 'invalid-field' };
   if (!Number.isInteger(cropSlot) || cropSlot < 0 || cropSlot >= crops.length || crops[cropSlot]?.length !== 128) return { ok: false, reason: 'invalid-crop' };
-  // Cancellation/return of an in-flight field job is not yet ported; don't strand its machines.
+  // The immediate adapter has no verified original replant/cancel gesture.
+  // Weekly dispatch already completes old work; retain the adapter's busy guard.
+  // See docs/field-interaction-audit.md, not an outstanding weekly-cleanup port.
   if ((!scheduled && ![0, 2, 4].includes(field.state)) || field.equipment || field.pendingEquipment) return { ok: false, reason: 'field-busy' };
   const seed = consumeSeed(world, cropSlot, soilMoisture);
   if (!seed.ok) return seed; // SF-018: preserve existing crop and contract when seed acquisition fails.

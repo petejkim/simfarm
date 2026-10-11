@@ -414,3 +414,9 @@ Fair and rodeo now connect original calendar gates, entry/announcement, fees/bet
 Milestone regression now has passing evidence for all916 unit and271 browser cases across full runs and targeted rechecks; type checking/build and source audit pass. The initial failures were legacy scenarios advancing past newly restored dialogs without answering, obsolete event-free RNG expectations, and one unrelated menu timeout that passed unchanged on recheck. Production code stayed fixed. Next resume the remaining-interaction/music audit (including amain lifecycle and XMIDI sequence controls). Passing this event increment will not establish that all original gameplay is ported. Mobile adaptation/enhanced graphics/audio remain excluded.
 
 Remaining-interaction audit candidate: plant-order.ts still labels immediate replacement of an in-flight field job unported, while weekly cleanup now includes equipment returns and cancellation. Trace the original reachable UI caller before treating that old comment as a confirmed missing player action; it may be stale or refer only to the retired immediate-command UI. Do not infer complete interaction coverage from the fair/rodeo milestone.
+
+## Latest user queue
+
+After the current field-interaction audit, before other preservation work: (1) make amain the first music played at game startup, before any other track; (2) restore the original About dialog. Implement and commit these separately. This explicit startup policy takes priority over further amain lifecycle research. Then return to the remaining-interaction audit.
+
+About clarification: omit the entire “This copy is registered to: <name>” line. Preserve the remaining original presentation with actual text elements.
