@@ -65,5 +65,5 @@ export function useMusic() {
   const message = playback.status === 'playing' ? `Playing ${track} · MIDI with temporary synth timbres`
     : playback.status === 'loading' ? `Loading ${track}…`
     : playback.status === 'error' ? `Music unavailable: ${playback.error}` : enabled?'Music enabled · starts on interaction':'Music off';
-  return { enabled, toggleTrack, track, volume, playback, message, toggle, selectTrack, changeVolume, requestTrack };
+  return { enabled, toggleTrack, track, volume, playback, message, selectTrack, changeVolume, requestTrack };
 }

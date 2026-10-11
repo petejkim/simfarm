@@ -55,8 +55,8 @@ test('saved crop circles retain original tiles and event flags; alien MIDI remai
   g.dispatch({type:'start-disaster',kind:'crop-circles'});const active=JSON.parse(g.save(4));await load(page,JSON.stringify(active));
   await circles(page);expect(await save(page,'circles-active')).toEqual(active);
   await expect(page.locator('#disaster-message-ok')).toHaveCount(0);
-  await reveal(page,'#play');await page.locator('#music').selectOption('alien');
-  const response=page.waitForResponse(r=>r.url().endsWith('/alien.music.json'));await page.locator('#play').click();
+  await toggleOption(page,'Music');await reveal(page,'#music');
+  const response=page.waitForResponse(r=>r.url().endsWith('/alien.music.json'));await page.locator('#music').selectOption('alien');
   const a=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
   expect(await(await response).json()).toEqual(decodeXmidi(a.find(e=>e.name==='alien.xmi')!.bytes));
   await expect(page.locator('#audio-status')).toContainText('Playing alien · MIDI');
@@ -65,7 +65,7 @@ test('saved crop circles retain original tiles and event flags; alien MIDI remai
   await load(page,JSON.stringify(active));await expect(page.locator('#audio-status')).toContainText('Playing ffarm');
   await circles(page);await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});
   const ended=await save(page,'circles-ended');expect(ended.runtime.disasters.flags&64).toBe(0);expect(ended).toEqual(JSON.parse(g.save(4)));await circles(page);
-  await reveal(page,'#play');await page.locator('#play').click();await load(page,JSON.stringify(active));
+  await toggleOption(page,'Music');await load(page,JSON.stringify(active));
   await expect(page.locator('#audio-status')).toHaveText('Music off');await expect(page.locator('#music')).toHaveValue('ffarm');
   expect(await save(page,'circles-reloaded-muted')).toEqual(active);expect(errors).toEqual([]);
 });
