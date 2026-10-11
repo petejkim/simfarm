@@ -288,6 +288,8 @@ test('speed slider adjusts running time, stays paused and keeps Next day to one 
   await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.goto('/');
   await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
+  // Optional disaster dialogs pause browser time; their suspension is tested separately.
+  await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Messages',exact:true}).click();
   await openWindow(page, 'speed');
   const slider = page.getByRole('slider', { name: 'Speed', exact: true });
   await expect(page.locator('#simulation-speed-value')).toHaveText('1×');
@@ -558,6 +560,8 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
     scenario: { ...expected.scenario,
     farm: { ...expected.scenario.farm, equipmentPacingByte: null },
     irrigation: { ...expected.scenario.irrigation, phase: 0, lastTick: 0, active: false, flow: [] } } });
+  // Migration restores source Messages=true; isolate clock continuation from optional notices.
+  await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Messages',exact:true}).click();
   await page.clock.runFor(4400);
   await expect(page.locator('#time-status')).toContainText('Running · 6 days advanced');
 });
