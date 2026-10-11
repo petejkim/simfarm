@@ -58,7 +58,7 @@ test('Market retains unknown samples and separate trade/history prices, updates 
   state.market.history[0].fill(null,0,29);state.market.history[0][29]=1;
   const saved=writeNativeSave(state,4); // use the same canonical restore as the page
   const {GameSimulation}=await import('../support/game');const live=GameSimulation.load(saved,browserCrops).simulation;
-  await page.goto('/');await load(page,saved);await page.locator('#windows-menu-button').click();await page.getByRole('menuitem',{name:'Market Value',exact:true}).click();
+  await page.goto('/');await load(page,saved);await page.locator('#windows-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Market Value',exact:true}).click();
   await expect(page.locator('#market-history td').first()).toHaveText('Not recorded');await expect(page.locator('#market-history td').last()).toHaveText('1');
   const def=state.scenario.cropDefinitions[0],crop=browserCrops.find(c=>`${c.id}.crp`===state.scenario.cropFiles[0])!,yieldWord=crop.rawDefinition[32]|crop.rawDefinition[33]<<8;
   await expect(page.locator('#market-price')).toHaveText(String((Math.floor(def.price/10)*yieldWord)&65535));

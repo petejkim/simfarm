@@ -34,7 +34,7 @@ test('original Map has all source overlays, HTML help and titles, source geometr
   await page.screenshot({path:'artifacts/browser-map-property.png'});
   const window=page.getByRole('dialog',{name:'Map',exact:true});await window.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');
   expect(await panel.boundingBox()).toMatchObject({x:90,width:288});
-  await panel.getByRole('button',{name:'CLOSE',exact:true}).click();await page.locator('#windows-menu-button').click();await page.getByRole('menuitem',{name:'Map',exact:true}).click();
+  await panel.getByRole('button',{name:'CLOSE',exact:true}).click();await page.locator('#windows-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Map',exact:true}).click();
   expect(await panel.boundingBox()).toMatchObject({x:90,width:288});expect(await save(page)).toEqual(before);
 });
 

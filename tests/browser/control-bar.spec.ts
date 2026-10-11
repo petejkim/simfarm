@@ -13,7 +13,7 @@ async function save(page: Page) {
 }
 async function windowMenu(page: Page, name: string) {
   await reveal(page, '#windows-menu-button'); await page.locator('#windows-menu-button').click();
-  await page.getByRole('menuitem', { name, exact: true }).click();
+  await page.getByRole('menuitemcheckbox', { name, exact: true }).click();
 }
 
 test('source control strip keeps desktop geometry, replaces bitmap words with selectable text and updates live funds/date', async ({ page }) => {
@@ -51,11 +51,11 @@ test('Windows menu and toolbar route to the same controls; Edit focuses the map 
   await start(page); const before = await save(page);
   await reveal(page, '#windows-menu-button'); await page.locator('#windows-menu-button').focus(); await page.keyboard.press('ArrowDown');
   const menu = page.getByRole('menu', { name: 'Windows' });
-  expect(await menu.getByRole('menuitem').allTextContents()).toEqual(
+  expect(await menu.getByRole('menuitemcheckbox').evaluateAll(els=>els.map(el=>[...el.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE).map(n=>n.textContent).join('')))).toEqual(
     ['Buy', 'Sell', 'Evaluation', 'Map', 'Weather', 'Balance Sheet', 'Bank', 'Edit', 'Market Value', 'Farm Expert']);
-  await expect(menu.getByRole('menuitem', { name: 'Buy', exact: true })).toBeFocused();
-  await page.keyboard.press('End'); await expect(menu.getByRole('menuitem', { name: 'Farm Expert' })).toBeFocused();
-  await page.keyboard.press('ArrowUp'); await expect(menu.getByRole('menuitem', { name: 'Market Value', exact: true })).toBeFocused();
+  await expect(menu.getByRole('menuitemcheckbox', { name: 'Buy', exact: true })).toBeFocused();
+  await page.keyboard.press('End'); await expect(menu.getByRole('menuitemcheckbox', { name: 'Farm Expert' })).toBeFocused();
+  await page.keyboard.press('ArrowUp'); await expect(menu.getByRole('menuitemcheckbox', { name: 'Market Value', exact: true })).toBeFocused();
   await page.keyboard.press('Escape'); await expect(page.locator('#windows-menu-button')).toBeFocused();
   for (const viaMenu of [false, true]) {
     const open = (key: string, label: string) => viaMenu ? windowMenu(page, label) : page.locator(`#window-${key}`).click();

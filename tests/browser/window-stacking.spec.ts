@@ -20,7 +20,7 @@ test('independent windows retain positions and controls, raise on interaction an
 test('original launchers toggle only their own window and Edit remains permanent',async({page})=>{
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
   await page.locator('#window-buy').click();await page.locator('#window-bank').click();
-  await page.locator('#windows-menu-button').click();await page.getByRole('menuitem',{name:'Buy',exact:true}).click();
+  await page.locator('#windows-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Buy',exact:true}).click();
   await expect(page.locator('[data-window=buy]')).toBeHidden();await expect(page.locator('[data-window=bank]')).toBeVisible();
   await page.locator('#window-bank').click();await expect(page.locator('[data-window=bank]')).toBeHidden();
   await page.locator('#window-buy').click();await page.locator('#window-map').click();

@@ -24,7 +24,8 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
   const [name, setName] = useState(filename);
   const button = useRef<HTMLButtonElement>(null), menu = useRef<HTMLDivElement>(null), root = useRef<HTMLElement>(null);
   const file = data.menus[0], active = open === null ? null : data.menus[open];
-  const choices = open === 1 ? options : open === 4 ? disasters : null;
+  const choices:MenuChoices|null = open === 1 ? options : open === 4 ? disasters : open === 3
+    ? {checked:GAME_WINDOWS.map(key=>key==='edit'||windows.order.includes(key)),choose:index=>onWindow(GAME_WINDOWS[index])} : null;
   function closeMenu(focus = true) { if (focus && active) root.current?.querySelector<HTMLButtonElement>(`#${active.title.toLowerCase()}-menu-button`)?.focus(); setOpen(null); }
   function closeDialog() { setDialog(null); button.current?.focus(); }
   useEffect(() => {

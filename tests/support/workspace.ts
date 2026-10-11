@@ -20,7 +20,7 @@ export async function openWindow(page: Page, key: string) {
   if (key === 'speed') { await page.locator(`#${key}-menu-button`).click(); return; }
   if (['bank', 'sell', 'evaluation', 'balance'].includes(key)) { await page.locator(`#window-${key}`).click(); return; }
   if (key === 'expert') {
-    await page.locator('#windows-menu-button').click(); await page.getByRole('menuitem', { name: 'Farm Expert', exact: true }).click(); return;
+    await page.locator('#windows-menu-button').click(); await page.getByRole('menuitemcheckbox', { name: 'Farm Expert', exact: true }).click(); return;
   }
   if (key === 'session' || key === 'about-project') {
     await openWindow(page, 'options'); await page.getByRole('button', { name: key === 'session' ? 'Game files' : 'Preservation progress', exact: true }).click(); return;
