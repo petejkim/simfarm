@@ -37,6 +37,10 @@ export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, on
       return true;
     } catch (error) { const text=`Could not save farm: ${error instanceof Error ? error.message : String(error)}`;setMessage(text);if(name===undefined)setFileError(text);return false; }
   }
+  function cancelLoad() {
+    pending.current?.abort();pending.current=null;
+    setBusy(false);setMessage('Loading cancelled.');
+  }
   async function load(file: File) {
     pending.current?.abort();
     const controller = new AbortController(); pending.current = controller;
@@ -70,6 +74,10 @@ export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, on
         if (file) void load(file);
       }} />
     <span id="save-status" className="file-status" role="status">{message}</span>
+    {busy&&<GameWindow windowKey="file-loading" title="Loading game" forced onClose={cancelLoad}>
+      <p>Loading farm…</p>
+      <button onClick={cancelLoad}>Cancel loading</button>
+    </GameWindow>}
     {fileError&&<GameWindow windowKey="file-error" title="File error" forced descriptionId="file-error-text" onClose={()=>setFileError(null)}>
       <p id="file-error-text">{fileError}</p>
       <button id="file-error-ok" onClick={()=>setFileError(null)}>OK</button>
