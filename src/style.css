@@ -451,3 +451,10 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 
 .original-menu-popup button[role=menuitemcheckbox]{position:relative;padding-left:20px}
 .menu-check{position:absolute;left:2px;top:0;width:14px;text-align:center}
+
+/* Palette help222cf..222df draws at Edit+48,+16; account for the2px frame. */
+.edit-help{position:absolute;left:46px;top:16px;width:88px;z-index:12;padding:0;margin:0;border:0;border-radius:0;max-height:none;overflow:visible;color:#000;background:#c2c2c2;outline:none}
+.edit-help-artwork{position:relative;width:88px;height:200px}
+.edit-help-artwork img{display:block;image-rendering:pixelated;pointer-events:none}
+.edit-help-artwork span{position:absolute;left:20px;font:7px/8px monospace;white-space:nowrap}
+.edit-help>button{width:88px;min-height:26px;padding:2px;font:10px/11px Arial,sans-serif}

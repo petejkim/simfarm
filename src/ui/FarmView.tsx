@@ -1,3 +1,4 @@
+import {EditHelp} from './EditHelp';
 import {BalanceWindow} from './BalanceWindow';
 import {DisasterMessage} from './DisasterMessage';
 import {FinanceMessage} from './FinanceMessage';
@@ -134,6 +135,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [simulation,Boolean(bulldoze.pending),Boolean(messages.length)]);
+  const [editHelpOpen,setEditHelpOpen]=useState(false);
   const [fieldInspection,setFieldInspection]=useState<{month:number}|null>(null);
   const [selection, setSelection] = useState<number | null>(null), [fieldSlot, setFieldSlot] = useState<number | null>(null);
   const [focus, setFocus] = useState<MapFocus>(() => {
@@ -454,13 +456,14 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     {data && <main className="edit-workspace" aria-label="Edit" onKeyDown={event => { if(objectMove.active&&event.key==='Escape'){event.preventDefault();cancelObjectMove();} if ((fieldMenu||fieldMapTool) && event.key==='Escape') {event.preventDefault();cancelFieldTool();} if (buyPlacement && event.key === 'Escape') { event.preventDefault(); cancelPurchase(); } }}>
       <div className="edit-title">Edit</div>
       <EditPalette artwork={assets.editPalette} disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}
-        onField={() => openFieldMenu('plant')} onSpray={() => openFieldMenu('spray')} onHelp={() => {bulldoze.cancel();construction.cancel();windows.show('tools');}} />
+        onField={() => openFieldMenu('plant')} onSpray={() => openFieldMenu('spray')} onHelp={() => {objectMove.cancel();bulldoze.cancel();construction.cancel();setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);windows.show(null);setEditHelpOpen(open=>!open);}} />
+      {editHelpOpen&&<EditHelp artwork={assets.editHelp} onClose={()=>setEditHelpOpen(false)} onAdvanced={()=>{setEditHelpOpen(false);windows.show('tools');}}/>}
       {fieldMenu&&snapshot&&<FieldToolMenu kind={fieldMenu} assets={assets} world={data.scenario} tiles={data.tiles}
         onClose={()=>{setFieldMenu(null);viewportRef.current?.focus({preventScroll:true});}}
         onChoose={tool=>{setFieldMenu(null);setFieldMapTool(tool);setMapTool(tool.kind==='plant'?'field':'inspect');setSelection(null);viewportRef.current?.focus({preventScroll:true});}}/>}
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
-        <FarmMap autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
+        <FarmMap autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !editHelpOpen && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;setInteractionMessage('');const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
           field={field} selection={selection} preview={preview} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {

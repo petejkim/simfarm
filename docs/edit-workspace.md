@@ -30,3 +30,5 @@ View object now uses the original208×208 Examine card for non-field objects, wi
 
 
 Right-click buildings, gates or valves to open/close them without switching tools. This uses the verified original secondary-button press path; current Move object selection stays armed, and ordinary command guards remain. Source evidence, valve side effects and remaining town/aircraft/primary-button routes are in [map-interactions.md](map-interactions.md).
+
+The palette “?” now opens the original attached tool legend with real text; **Advanced controls** beneath it opens the interim Edit tools panel. See [edit-help.md](edit-help.md) for the original held-button branch and native dismissal/accessibility differences. Existing subsystem instructions that begin with “? →” now include this Advanced controls step.

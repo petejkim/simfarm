@@ -40,7 +40,8 @@ test('palette opens field planning and real tools; Speed retains slower pacing a
   await page.locator('#window-edit').click();
   await page.getByRole('button', { name: 'Dirt road', exact: true }).click();
   await page.getByRole('button', { name: 'Edit tools and help', exact: true }).click();
-  await expect(page.locator('#map-tool')).toHaveValue('network');
+  await page.getByRole('button', { name: 'Advanced controls', exact: true }).click();
+  await expect(page.locator('#map-tool')).toHaveValue('network'); // Help cancels painting but retains the advanced category.
   await page.locator('#map-tool').selectOption('network'); await expect(page.locator('#network-tool')).toHaveValue('road-161');
   await page.locator('#speed-menu-button').click(); await expect(page.locator('#simulation-speed-value')).toHaveText('1×');
   await page.locator('#play-pause').click(); await page.clock.runFor(3000); await expect(page.locator('#time-status')).toContainText('0 days advanced');
