@@ -14,7 +14,7 @@ export interface TownEventAnimation {
 type World = Pick<Scenario, 'cells'>;
 type Recreation = Pick<TownConstructionState, 'recreationCount' | 'recreationCoordinates'>;
 const positions = [[3, 2], [2, 1], [1, 3], [1, 5], [3, 3], [5, 2]] as const;
-function validate(world: World, recreation: Recreation, state: TownEventAnimation): void {
+export function validateTownEventMap(world: World, recreation: Recreation, state: TownEventAnimation): void {
   if (world.cells.length !== 96 * 96 || !Number.isInteger(recreation.recreationCount) ||
     recreation.recreationCount < 0 || recreation.recreationCount > 7 || recreation.recreationCoordinates.length !== 16 ||
     ![0, 1, 2].includes(state.mode) || !Number.isInteger(state.lastTick) || state.lastTick < 0 || state.lastTick > 65535 ||
@@ -40,7 +40,7 @@ const restored = [492, 484, 497, 511, 499, 494];
  * Zero recreation returns before any state change. Bank upload is separate. */
 export function changeTownEventMap(world: World, recreation: Recreation, state: TownEventAnimation,
   mode: TownEventMode): boolean {
-  validate(world, recreation, state);
+  validateTownEventMap(world, recreation, state);
   if (![0, 1, 2].includes(mode)) throw new Error('Invalid town event mode');
   if (!recreation.recreationCount) return false;
   eachDistrict(recreation, (x, y) => {
@@ -56,7 +56,7 @@ export function changeTownEventMap(world: World, recreation: Recreation, state: 
  * once per district, and draws from the original simulation RNG stream. */
 export function animateTownEventMap(world: World, recreation: Recreation, state: TownEventAnimation,
   tick: number, random: Pick<FarmRandom, 'nextSimulation'>): boolean {
-  validate(world, recreation, state);
+  validateTownEventMap(world, recreation, state);
   if (!Number.isInteger(tick) || tick < 0 || tick > 65535) throw new Error('Invalid town event tick');
   if (!recreation.recreationCount || state.mode === 0 || ((tick - state.lastTick) & 65535) < 8) return false;
   eachDistrict(recreation, (x, y) => {
