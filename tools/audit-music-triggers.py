@@ -41,6 +41,11 @@ for offset, segment in {0xc664: 0x6190, 0xc666: 0x6190, 0xc6ae: 0x6190,
                         0xc6ec: 0x6190, 0xc6ee: 0x2d9f, 0xc6f0: 0x2d9f}.items():
     pin(ds + offset, struct.pack('<H', segment))
 for address, value in {
+    0x40679: '26a2d21e',                   # Restart mode store.
+    0x406a9: '26a2d61e',                   # Restart phase store.
+    0x406b1: '26a2d91e',                   # Restart species store.
+    0x407ab: '2bc08e061ece26a3d41e',        # Restart timestamp zero.
+    0x40902: '2bc08e065ece26a3d01e',        # Restart participation zero.
     0xc920: '26ff065212',                    # Week increments before event checks.
     0xc9b8: '2d0900c1e002',                 # Fair month term.
     0xcb04: '2d0600c1e002',                 # Rodeo month term.
@@ -58,6 +63,9 @@ for address, value in {
     0xdd34: '6a000ee878fc',                 # Restore recreation mode zero.
 }.items():
     pin(address, bytes.fromhex(value))
+pin(ds + 0x1ed0, bytes(10))
+for pointer in [0xcdde, 0xcdea, 0xcdec, 0xce1e, 0xce5e]:
+    pin(ds + pointer, struct.pack('<H', 0x6190))
 ranges = [(0xc88e, 0xcbb3), (0xd9b2, 0xdbe4), (0xdbe4, 0xdd3e),
           (0x23b22, 0x23b8a), (0x40e07, 0x40e22), (0x1359a, 0x135f8)]
 report = {

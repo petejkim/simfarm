@@ -763,47 +763,63 @@ export class GameSimulation {
       }
       this.animalLifecycleNotices = [...this.animalLifecycleNotices, ...advanceAnimalGestation(s, this.finances, this.random)].slice(-20); // 0xbe81.
       this.requestMusic(updateReportedFieldStatus(s, this.finances.statistics)); // 0xbe8b, before water/status dispatch 0xbea3.
-      for (const field of s.fields.filter(f => f.active)) {
-        updateFieldWater(field, s.cells, w.soilMoisture, this.disasters.flags);
-        updateFieldStatus(field, this.crops[field.cropSlot], s.cells);
-      }
-      // 0xc920 increments week; 0xcbbd dispatches before 0xcc10 normalizes month/week.
-      // At year-end this executes old plan row 48 and completes the final week's work.
-      s.farm.calendar = { ...before, day: 0, week: before.week + 1, season: next.calendar.season };
-      developTown(s, this.finances.town, this.townLayouts, w.soilMoisture, this.random); // 0xcbb3, before field orders.
-      this.lastScheduleResult = dispatchFieldSchedule(s, this.crops, this.market, this.random, this.equipmentRuntime, w.soilMoisture);
-      // 0xcbc6 indexes temperature before month/year rollover. Index 240 aliases DS:4368 (wind).
-      const index = w.temperatureYear * 48 + before.month * 4 + before.week + 1;
-      w.temperature = index === 240 ? w.wind : s.climate.temperature[index];
-      if (next.monthEnded) {
-        this.random.mixMonth(before.month + 1);
-        const retry = retryMonthlyDebts(s, this.finances.accounts, this.finances.debt, this.finances.clearing,
-          w.soilMoisture, before.month + 1, id=>{if(id>=128||this.scenario.farm.messages)this.events.push({type:'finance-notice',id});});
-        this.financeNotices = retry.notices;
-        if (retry.pendingDefault) {
-          this.finances.defaultDecision = retry.pendingDefault.decision;
-          this.paused = true; this.elapsed = 0;
-          // Terminal source flow exits/restarts. Normalize the frozen date for
-          // valid native checkpoints; no later simulation phase can resume it.
-          s.farm.calendar = next.calendar; this.daysAdvanced++; return;
-        }
-      }
-      if (next.yearEnded) {
-        this.lastTaxSettlement = settleAnnualTax(s, w.soilMoisture, taxAccounts(this.finances)); // 0xcdf4.
-        if (!this.lastTaxSettlement.paid) { this.financeNotices.push(159); this.events.push({type:'finance-notice',id:159}); }
-        const site = this.lastTaxSettlement.offerExpansion ? beginTownExpansion(s, this.finances.town) : null;
-        if (site) {
-          this.finances.town.activeSite = { ...site }; // 0x3c03f/0x3c04a, before chooser.
-          this.pendingTown = { phase: 'annual-reset', site, resumeRunning: !this.paused };
-          this.lastTownResult = null;
-          this.paused = true; this.elapsed = 0;
-          s.farm.calendar = next.calendar;
-          return; // Remaining day/annual phases resume exactly once after construction.
-        }
-        this.finishYear();
-      }
-      this.finishWeek(next.calendar, next.monthEnded);
+      this.finishWeeklyWater(before, next);
+      return;
     }
+    this.finishDay(next.calendar);
+  }
+
+  /** Weeklybe96 result-dialog return resumes at field waterbea3. Keep this
+   * boundary explicit so a modal event can preserve the remainder of its day. */
+  private finishWeeklyWater(before: FarmCalendar, next: ReturnType<typeof advanceCalendarDay>): void {
+    const s = this.scenario, w = this.weather;
+    for (const field of s.fields.filter(f => f.active)) {
+      updateFieldWater(field, s.cells, w.soilMoisture, this.disasters.flags);
+      updateFieldStatus(field, this.crops[field.cropSlot], s.cells);
+    }
+    // 0xc920 increments week; 0xcbbd dispatches before 0xcc10 normalizes month/week.
+    // At year-end this executes old plan row 48 and completes the final week's work.
+    s.farm.calendar = { ...before, day: 0, week: before.week + 1, season: next.calendar.season };
+    this.finishWeeklyRollover(before, next);
+  }
+
+  /** Calendar event entry returns atcbb3 before town development/orders.
+   * Existing default/annual-town continuations retain their later ownership. */
+  private finishWeeklyRollover(before: FarmCalendar, next: ReturnType<typeof advanceCalendarDay>): void {
+    const s = this.scenario, w = this.weather;
+    developTown(s, this.finances.town, this.townLayouts, w.soilMoisture, this.random); // 0xcbb3, before field orders.
+    this.lastScheduleResult = dispatchFieldSchedule(s, this.crops, this.market, this.random, this.equipmentRuntime, w.soilMoisture);
+    // 0xcbc6 indexes temperature before month/year rollover. Index 240 aliases DS:4368 (wind).
+    const index = w.temperatureYear * 48 + before.month * 4 + before.week + 1;
+    w.temperature = index === 240 ? w.wind : s.climate.temperature[index];
+    if (next.monthEnded) {
+      this.random.mixMonth(before.month + 1);
+      const retry = retryMonthlyDebts(s, this.finances.accounts, this.finances.debt, this.finances.clearing,
+        w.soilMoisture, before.month + 1, id=>{if(id>=128||this.scenario.farm.messages)this.events.push({type:'finance-notice',id});});
+      this.financeNotices = retry.notices;
+      if (retry.pendingDefault) {
+        this.finances.defaultDecision = retry.pendingDefault.decision;
+        this.paused = true; this.elapsed = 0;
+        // Terminal source flow exits/restarts. Normalize the frozen date for
+        // valid native checkpoints; no later simulation phase can resume it.
+        s.farm.calendar = next.calendar; this.daysAdvanced++; return;
+      }
+    }
+    if (next.yearEnded) {
+      this.lastTaxSettlement = settleAnnualTax(s, w.soilMoisture, taxAccounts(this.finances)); // 0xcdf4.
+      if (!this.lastTaxSettlement.paid) { this.financeNotices.push(159); this.events.push({type:'finance-notice',id:159}); }
+      const site = this.lastTaxSettlement.offerExpansion ? beginTownExpansion(s, this.finances.town) : null;
+      if (site) {
+        this.finances.town.activeSite = { ...site }; // 0x3c03f/0x3c04a, before chooser.
+        this.pendingTown = { phase: 'annual-reset', site, resumeRunning: !this.paused };
+        this.lastTownResult = null;
+        this.paused = true; this.elapsed = 0;
+        s.farm.calendar = next.calendar;
+        return; // Remaining day/annual phases resume exactly once after construction.
+      }
+      this.finishYear();
+    }
+    this.finishWeek(next.calendar, next.monthEnded);
     this.finishDay(next.calendar);
   }
 
