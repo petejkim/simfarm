@@ -50,7 +50,7 @@ test('supplied driver loop slots select the fourth start, ignore overflow and pr
   assert.equal(driver.subarray(0x1a82,0x1a88).toString('hex'),'83786000740d');
   const input=sequence([0xc0,3,0xb0,116,0,0xb1,116,0,0xb2,116,0,2,0xb3,116,0,0xc1,8,3,0xb4,116,0,0x90,60,100,20,5,0xb9,117,100,0xff,0x2f,0]);
   const result=decodeXmidi(input);
-  assert.deepEqual(result.loop,{startTick:2,endTick:10,events:[{tick:2,data:[0xc1,8]},{tick:5,data:[0x90,60,100]},{tick:25,data:[0x80,60,0]}]});
+  assert.deepEqual(result.loop,{startTick:2,endTick:10,initialEvents:[{tick:0,data:[0xc0,3]},{tick:2,data:[0xc1,8]},{tick:5,data:[0x90,60,100],voice:0},{tick:25,data:[0x80,60,0],voice:0}],events:[{tick:2,data:[0xc1,8]},{tick:5,data:[0x90,60,100],voice:0},{tick:25,data:[0x80,60,0],voice:0}]});
   assert.throws(()=>decodeXmidi(sequence([0xb0,116,0,0xb0,117,100,0xff,0x2f,0])),/Nonadvancing/);
   assert.equal(decodeXmidi(sequence([0xb0,116,0,10,0xb0,117,0,0xff,0x2f,0])).loop,undefined);
 });

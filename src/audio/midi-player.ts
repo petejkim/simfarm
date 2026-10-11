@@ -1,5 +1,6 @@
+import {midiLoopWindow} from './midi-loop';
 import type { MidiSequence } from '../formats/xmidi';
-interface Voice { node: AudioScheduledSourceNode; envelope: GainNode; channel: number; note: number; released: boolean }
+interface Voice { voiceKey?:string; node: AudioScheduledSourceNode; envelope: GainNode; channel: number; note: number; released: boolean }
 /** Native MIDI event player. Simple non-FM timbres are temporary pending a GM sample bank. */
 export class MidiPlayer {
   private context?: AudioContext;
@@ -10,6 +11,7 @@ export class MidiPlayer {
   private noise?: AudioBuffer;
   private generation = 0;
   private index = 0;
+  private scheduledTick = 0;
   private origin = 0;
   private sequence?: MidiSequence;
   private volume = 0.25;
@@ -42,6 +44,7 @@ export class MidiPlayer {
     this.resetChannels();
     this.origin = this.context!.currentTime + 0.06;
     this.index = 0;
+    this.scheduledTick = 0;
     this.schedule();
     this.timer = setInterval(() => this.schedule(), 25);
   }
@@ -73,6 +76,18 @@ export class MidiPlayer {
   private schedule(): void {
     const context = this.context!, sequence = this.sequence;
     if (!sequence) return;
+    if(sequence.loop){
+      const now=Math.max(0,(context.currentTime-this.origin)*120),horizon=Math.max(0,(context.currentTime+0.12-this.origin)*120);
+      if(now-this.scheduledTick>24){
+        // Skip missed notes after throttling, retaining the source loop phase.
+        for(const voice of this.voices){try{voice.node.stop();}catch{/* Ended. */}voice.envelope.disconnect();}
+        this.voices.clear();this.scheduledTick=now;
+      }
+      for(const event of midiLoopWindow(sequence.loop,this.scheduledTick,horizon))
+        this.send(event.data,Math.max(context.currentTime,this.origin+event.tick/120),event.voiceKey);
+      this.scheduledTick=horizon;
+      return;
+    }
     // One-shot completion also applies after background-tab throttling.
     if (this.onEnded && context.currentTime >= this.origin + sequence.endTick / 120 + 0.2) {
       const done = this.onEnded; this.stop(); done(); return;
@@ -86,14 +101,14 @@ export class MidiPlayer {
     while (this.index < sequence.events.length) {
       const event = sequence.events[this.index], time = this.origin + event.tick / 120;
       if (time > horizon) break;
-      this.send(event.data, Math.max(time, context.currentTime));
+      this.send(event.data, Math.max(time, context.currentTime),event.voice===undefined?undefined:`0:${event.voice}`);
       this.index++;
     }
     if (this.index === sequence.events.length && context.currentTime >= this.origin + sequence.endTick / 120 + 0.2) {
       this.index = 0; this.origin = context.currentTime + 0.06; this.resetChannels();
     }
   }
-  private send(data: number[], time: number): void {
+  private send(data: number[], time: number,voiceKey?:string): void {
     const [status, key, value = 0] = data, kind = status >> 4, channel = status & 15;
     const c = this.channels[channel], context = this.context!;
     if (kind === 12) { c.program = key; return; }
@@ -103,7 +118,7 @@ export class MidiPlayer {
       return;
     }
     if (kind === 8 || (kind === 9 && !value)) {
-      for (const voice of this.voices) if (!voice.released && voice.channel === channel && voice.note === key) {
+      for (const voice of this.voices) if (!voice.released && voice.channel === channel && voice.note === key && (voiceKey===undefined||voice.voiceKey===voiceKey)) {
         voice.envelope.gain.setTargetAtTime(0, time, 0.03);
         voice.node.stop(time + 0.18);
         // Keep released voices tracked so Stop also silences their release tails.
@@ -136,7 +151,7 @@ export class MidiPlayer {
       oscillator.type = family === 2 || family === 7 ? 'sine' : family === 5 || family === 6 ? 'sawtooth' : 'triangle';
       oscillator.connect(envelope); node = oscillator;
     }
-    const voice = { node, envelope, channel, note: key, released: false };
+    const voice = { node, envelope, channel, note: key, released: false,voiceKey };
     this.voices.add(voice);
     node.onended = () => { this.voices.delete(voice); node.disconnect(); envelope.disconnect(); };
     node.start(time);
