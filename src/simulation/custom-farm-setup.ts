@@ -1,3 +1,4 @@
+import type { StartupWeatherPolicy } from './weather';
 import { climateForSetup } from '../formats/new-farm';
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
 import { TownLayouts } from '../formats/town';
@@ -70,11 +71,11 @@ export class CustomFarmSetup {
 
   /** Play336f0 accepts this landscape/sites, then performs ordinary finalization.
    * Validation failure leaves the draft retryable and the live farm untouched. */
-  accept(): SimulationState {
+  accept(weatherPolicy: StartupWeatherPolicy = 'original'): SimulationState {
     this.requirePreview();
     const candidate = this.prior
-      ? restartGeneratedFarm(this.prior, this.options, this.assets, this.preview)
-      : createNewFarmState(this.options, this.assets, this.preview);
+      ? restartGeneratedFarm(this.prior, this.options, this.assets, this.preview, weatherPolicy)
+      : createNewFarmState(this.options, this.assets, this.preview, weatherPolicy);
     const state = readNativeSave(writeNativeSave(candidate, null)).state;
     this.phase = 'accepted'; this.publish(); return state;
   }

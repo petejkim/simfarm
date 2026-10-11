@@ -16,7 +16,7 @@ import { createSetupRuntime } from './new-farm-runtime';
 import { finalizeRegionFarm } from './starting-environment';
 import { synchronizeSetupIrrigation } from './restart-activity';
 import { createColdMarket, loadMarketCropPrices } from './market';
-import { initializeWeather } from './weather';
+import { initializeWeather, type StartupWeatherPolicy } from './weather';
 import { initializeStartingTraffic } from './starting-traffic';
 import { createMovingDisasters } from './moving-disasters';
 import { createWaterDisasters } from './water-disasters';
@@ -26,22 +26,22 @@ import { initialOriginalPause } from './original-pause';
 
 /** Geographic result3: preliminary generation, second generation with retained
  * soil/water, then sites/property/finalization. No custom controls or reroll. */
-export function createGeographicFarm(options: NewFarmOptions, assets: NewFarmAssets): SimulationState {
+export function createGeographicFarm(options: NewFarmOptions, assets: NewFarmAssets, weatherPolicy: StartupWeatherPolicy = 'original'): SimulationState {
   const preliminary = beginTerrainPreview(new Uint8Array(1008), options.seeds, initialTerrainHistory(options.seeds.simulation), 8, 'cold');
-  return createNewFarmState({ ...options, river: true, lake: false }, assets, generateGeographicTerrain(preliminary));
+  return createNewFarmState({ ...options, river: true, lake: false }, assets, generateGeographicTerrain(preliminary), weatherPolicy);
 }
-export function restartGeographicFarm(previous: SimulationState, options: RestartFarmOptions, assets: NewFarmAssets): SimulationState {
+export function restartGeographicFarm(previous: SimulationState, options: RestartFarmOptions, assets: NewFarmAssets, weatherPolicy: StartupWeatherPolicy = 'original'): SimulationState {
   const prior = readNativeSave(writeNativeSave(previous, null)).state;
   if (!prior.setup.terrainHistory) throw new Error('This older save has no retained terrain history. Start a fresh farm instead.');
   const preliminary = beginTerrainPreview(prior.scenario.regionalConditions, prior.random, prior.setup.terrainHistory, prior.weather.soilMoisture, 'restart');
-  return restartGeneratedFarm(prior, { ...options, river: false, lake: false }, assets, generateGeographicTerrain(preliminary));
+  return restartGeneratedFarm(prior, { ...options, river: false, lake: false }, assets, generateGeographicTerrain(preliminary), weatherPolicy);
 }
 
 /** Cold geographic result2. Do not construct a generated playable farm first:
  * that would draw sites, grant land and initialize random market/weather twice.
  * Cold EXE owners supply the globals omitted by the SSM, then one main startup
  * weather/traffic phase follows loaded climate/cash/town finalization. */
-export function createGeographicRegion(bytes: Uint8Array, selection: ClimateSelection, seeds: RandomState, assets: NewFarmAssets): SimulationState {
+export function createGeographicRegion(bytes: Uint8Array, selection: ClimateSelection, seeds: RandomState, assets: NewFarmAssets, weatherPolicy: StartupWeatherPolicy = 'original'): SimulationState {
   const climate = climateForSetup(assets.climate, selection);
   const preliminary = beginTerrainPreview(new Uint8Array(1008), seeds, initialTerrainHistory(seeds.simulation), 8, 'cold');
   const runtime = createSetupRuntime(assets.runtime, createSetupRecords(assets.records));
@@ -62,7 +62,7 @@ export function createGeographicRegion(bytes: Uint8Array, selection: ClimateSele
   synchronizeSetupIrrigation(scenario.irrigation, scenario.farm.animationTicks);
   finalizeRegionFarm(scenario, finances, assets.townLayouts, climate);
   const random = new FarmRandom(preliminary.random);
-  const weather = initializeWeather(climate, scenario.farm.calendar, scenario.farm.precipitationDays, random, scenario.cells, preliminary.terrain.soilMoisture);
+  const weather = initializeWeather(climate, scenario.farm.calendar, scenario.farm.precipitationDays, random, scenario.cells, preliminary.terrain.soilMoisture, weatherPolicy);
   const traffic = createTrafficState({ ...assets.traffic, delay: new Binary(bytes).u16(0x2171e) });
   initializeStartingTraffic(traffic, finances.town.activeSite, random);
   return { scenario, finances, crops, cropMarketPrices, market, random: random.snapshot(), weather, traffic: snapshotTraffic(traffic),

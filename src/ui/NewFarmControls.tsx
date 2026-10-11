@@ -56,8 +56,8 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
         const [farm, setup] = await Promise.all([loadScenarioAssets(preset.id, controller.signal), loadNewFarmAssets(assets, controller.signal)]);
         controller.signal.throwIfAborted();
         const simulation = session === 'restart'
-          ? current.restartRegion(farm.scenario.sourceBytes!, options.climate, setup)
-          : GameSimulation.openGeographicRegion(farm.scenario.sourceBytes!, options.climate, options.seeds, setup);
+          ? current.restartRegion(farm.scenario.sourceBytes!, options.climate, setup, 'selected-climate')
+          : GameSimulation.openGeographicRegion(farm.scenario.sourceBytes!, options.climate, options.seeds, setup, 'selected-climate');
         if (!controller.signal.aborted) { applyPreferredOptions(simulation);onCreate({ scenarioId: preset.id, simulation, tiles: farm.tiles }); onOpenChange(false); }
         return;
       }
@@ -70,7 +70,7 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
           : CustomFarmSetup.fresh(options, setup);
         setDraft({ setup: preview, artwork, tiles }); return;
       }
-      const simulation = session === 'restart' ? current.restartGeographic(options, setup) : GameSimulation.createGeographic(options, setup);
+      const simulation = session === 'restart' ? current.restartGeographic(options, setup, 'selected-climate') : GameSimulation.createGeographic(options, setup, 'selected-climate');
       if (!controller.signal.aborted) { applyPreferredOptions(simulation);onCreate({ scenarioId: null, simulation, tiles }); onOpenChange(false); }
     } catch (cause) {
       if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : String(cause));
@@ -106,7 +106,7 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
       onCancel={() => { if (draft.setup.getSnapshot().phase === 'preview') draft.setup.cancel(); setDraft(null); onOpenChange(false); }}
       onPlay={() => {
         try {
-          const simulation = GameSimulation.load(writeNativeSave(draft.setup.accept(), null), assets.catalog.crops, assets.townLayouts).simulation;
+          const simulation = GameSimulation.load(writeNativeSave(draft.setup.accept('selected-climate'), null), assets.catalog.crops, assets.townLayouts).simulation;
           applyPreferredOptions(simulation);onCreate({ scenarioId: null, simulation, tiles: draft.tiles }); onOpenChange(false);
         } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
       }} />
@@ -123,7 +123,7 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
       <label>Session <select id="new-farm-session" value={session} disabled={busy} onChange={e => setSession(e.target.value as 'restart' | 'fresh')}>
         <option value="restart">Restart current session</option><option value="fresh">Start fresh session</option>
       </select></label>
-      <p>Restart keeps ongoing weather and financial history, as in the original game. Start fresh resets that history and lets you choose a map seed.</p>
+      <p>Restart keeps financial history. Start fresh resets that history and lets you choose a map seed. Both start weather from the selected climate.</p>
       <div className="region-mode">
         <button id="choose-region" type="button" disabled={busy} aria-pressed={regionMode} onClick={() => void chooseRegion()}>Use region map</button>{' '}
         <button id="design-farm" type="button" disabled={busy} aria-pressed={!regionMode} onClick={designOwn}>Design your own</button>

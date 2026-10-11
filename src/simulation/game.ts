@@ -50,7 +50,7 @@ import { updateGrowingField } from './field-lifecycle';
 import { updateFieldStatus } from './field-status';
 import { updateFieldWater } from './field-water';
 import { FarmRandom, type RandomState } from './random';
-import { applyDailyWeather, advanceForecast, initializeWeather, updateWeeklyWind, type WeatherState } from './weather';
+import { applyDailyWeather, advanceForecast, initializeWeather, updateWeeklyWind, type WeatherState, type StartupWeatherPolicy } from './weather';
 import { updateAnnualStatistics, updateReportedFieldStatus } from './annual-statistics';
 import { plantField, plantNewField, type PlantResult, type NewFieldResult } from './plant-order';
 import { updatePlantingField } from './field-planting';
@@ -389,22 +389,22 @@ export class GameSimulation {
   }
 
   /** Supplied-farm chooser outcome of the retained restart, not in-game Load. */
-  restartRegion(bytes: Uint8Array, climate: ClimateSelection, assets: NewFarmAssets): GameSimulation {
-    const state = restartRegionFarm(readNativeSave(this.save(null)).state, bytes, climate, assets);
+  restartRegion(bytes: Uint8Array, climate: ClimateSelection, assets: NewFarmAssets, weatherPolicy: StartupWeatherPolicy = 'original'): GameSimulation {
+    const state = restartRegionFarm(readNativeSave(this.save(null)).state, bytes, climate, assets, weatherPolicy);
     return GameSimulation.load(writeNativeSave(state, null), assets.crops, assets.townLayouts).simulation;
   }
 
-  restartGeographic(options: RestartFarmOptions, assets: NewFarmAssets): GameSimulation {
-    const state = restartGeographicFarm(readNativeSave(this.save(null)).state, options, assets);
+  restartGeographic(options: RestartFarmOptions, assets: NewFarmAssets, weatherPolicy: StartupWeatherPolicy = 'original'): GameSimulation {
+    const state = restartGeographicFarm(readNativeSave(this.save(null)).state, options, assets, weatherPolicy);
     return GameSimulation.load(writeNativeSave(state, null), assets.crops, assets.townLayouts).simulation;
   }
 
-  static createGeographic(options: NewFarmOptions, assets: NewFarmAssets): GameSimulation {
-    return GameSimulation.load(writeNativeSave(createGeographicFarm(options, assets), null), assets.crops, assets.townLayouts).simulation;
+  static createGeographic(options: NewFarmOptions, assets: NewFarmAssets, weatherPolicy: StartupWeatherPolicy = 'original'): GameSimulation {
+    return GameSimulation.load(writeNativeSave(createGeographicFarm(options, assets, weatherPolicy), null), assets.crops, assets.townLayouts).simulation;
   }
 
-  static openGeographicRegion(bytes: Uint8Array, climate: ClimateSelection, seeds: RandomState, assets: NewFarmAssets): GameSimulation {
-    return GameSimulation.load(writeNativeSave(createGeographicRegion(bytes, climate, seeds, assets), null), assets.crops, assets.townLayouts).simulation;
+  static openGeographicRegion(bytes: Uint8Array, climate: ClimateSelection, seeds: RandomState, assets: NewFarmAssets, weatherPolicy: StartupWeatherPolicy = 'original'): GameSimulation {
+    return GameSimulation.load(writeNativeSave(createGeographicRegion(bytes, climate, seeds, assets, weatherPolicy), null), assets.crops, assets.townLayouts).simulation;
   }
 
   /** Geographic Load/result1, after temporary generated-farm startup. */

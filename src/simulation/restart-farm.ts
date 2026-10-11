@@ -17,7 +17,7 @@ import { TerrainRandom } from './terrain-random';
 import { initializeStartingProperty, selectStartingLocations } from './starting-property';
 import { createStartupCalendar, initializeStartingTown, finalizeRegionFarm } from './starting-environment';
 import { initializeStartingMarket } from './starting-market';
-import { initializeStartupWeather } from './weather';
+import { initializeStartupWeather, type StartupWeatherPolicy } from './weather';
 import { initializeStartingTraffic } from './starting-traffic';
 import { loadOriginalFarmState } from './original-load';
 import { resetOriginalSpeedChecks } from './original-pause';
@@ -26,9 +26,14 @@ export type RestartFarmOptions = Omit<NewFarmOptions, 'seeds'>;
 
 /** Common partial resets before either chooser outcome; intermediate state is
  * detached and intentionally not a playable/native-checkpoint boundary. */
-function prepareRestart(previous: SimulationState, assets: NewFarmAssets) {
+function prepareRestart(previous: SimulationState, assets: NewFarmAssets, weatherPolicy: StartupWeatherPolicy) {
   const prior = readNativeSave(writeNativeSave(previous, null)).state;
   if (prior.townLayoutBytes && prior.townLayoutBytes.some((b, i) => b !== assets.townLayouts.bytes[i])) throw new Error('Restart uses different town layouts');
+  if (weatherPolicy === 'selected-climate') {
+    // Clear weather-driven disasters on farm replacement, without their old-map end effects.
+    prior.disasters.flags &= ~31;
+    Object.assign(prior.waterDisasters, { counter: 0, scanning: false, scanX: 0, scanY: 0 });
+  }
   const oldAnimationTicks = prior.scenario.farm.animationTicks;
   const activity = resetSetupActivity({ cells: prior.scenario.cells, irrigation: prior.scenario.irrigation,
     weather: prior.weather, disasters: prior.disasters, traffic: prior.traffic });
@@ -55,9 +60,9 @@ function prepareRestart(previous: SimulationState, assets: NewFarmAssets) {
 /** Generated chooser outcome of restart402a8 ->4060c ->3f854 -> main2343.
  * Accept a located preview when supplied, otherwise generate one selected map.
  * Elapsed DOS interrupts remain outside the native setup model. No reseeding. */
-export function restartGeneratedFarm(previous: SimulationState, options: RestartFarmOptions, assets: NewFarmAssets, accepted?: TerrainPreviewState): SimulationState {
+export function restartGeneratedFarm(previous: SimulationState, options: RestartFarmOptions, assets: NewFarmAssets, accepted?: TerrainPreviewState, weatherPolicy: StartupWeatherPolicy = 'original'): SimulationState {
   const preview = accepted ? copyLocatedTerrainPreview(accepted) : null;
-  const { prior, activity, records, runtime, regions } = prepareRestart(previous, assets);
+  const { prior, activity, records, runtime, regions } = prepareRestart(previous, assets, weatherPolicy);
   if (!prior.setup.terrainHistory) throw new Error('This older save has no retained terrain history. Start a fresh farm instead.');
   const calendar = createStartupCalendar(options.date), climate = climateForSetup(assets.climate, options.climate);
   if (typeof options.river !== 'boolean' || typeof options.lake !== 'boolean') throw new Error('Invalid terrain water option');
@@ -77,7 +82,7 @@ export function restartGeneratedFarm(previous: SimulationState, options: Restart
   const cropMarketPrices = records.cropDefinitions.slice(0, 16).map(d => d.price);
   const history = initializeStartingMarket(cropMarketPrices, prior.market.mood, random);
   activity.weather.soilMoisture = soilMoisture;
-  initializeStartupWeather(activity.weather, climate, calendar, random, world.cells);
+  initializeStartupWeather(activity.weather, climate, calendar, random, world.cells, weatherPolicy);
   const traffic = createTrafficState(activity.traffic); initializeStartingTraffic(traffic, town, random);
   const terrainHistory = terrainRandom.snapshot();
   return { ...prior,
@@ -101,9 +106,9 @@ export function restartGeneratedFarm(previous: SimulationState, options: Restart
  * weather/traffic. Skip new date, property, default crops and random history.
  * Preliminary generation is discarded by SSM loading but advances its streams. */
 export function restartRegionFarm(previous: SimulationState, bytes: Uint8Array,
-  selection: ClimateSelection, assets: NewFarmAssets): SimulationState {
+  selection: ClimateSelection, assets: NewFarmAssets, weatherPolicy: StartupWeatherPolicy = 'original'): SimulationState {
   const climate = climateForSetup(assets.climate, selection);
-  const { prior } = prepareRestart(previous, assets);
+  const { prior } = prepareRestart(previous, assets, weatherPolicy);
   if (!prior.setup.terrainHistory) throw new Error('This older save has no retained terrain history. Start a fresh farm instead.');
   const preview = beginTerrainPreview(prior.scenario.regionalConditions, prior.random, prior.setup.terrainHistory, prior.weather.soilMoisture, 'restart');
   prior.random = preview.random;
@@ -113,7 +118,7 @@ export function restartRegionFarm(previous: SimulationState, bytes: Uint8Array,
   synchronizeSetupIrrigation(state.scenario.irrigation, state.scenario.farm.animationTicks);
   finalizeRegionFarm(state.scenario, state.finances, assets.townLayouts, climate);
   const random = new FarmRandom(state.random);
-  initializeStartupWeather(state.weather, climate, state.scenario.farm.calendar, random, state.scenario.cells);
+  initializeStartupWeather(state.weather, climate, state.scenario.farm.calendar, random, state.scenario.cells, weatherPolicy);
   const traffic = createTrafficState(state.traffic);
   initializeStartingTraffic(traffic, state.finances.town.activeSite, random);
   return { ...state, random: random.snapshot(), traffic: snapshotTraffic(traffic),

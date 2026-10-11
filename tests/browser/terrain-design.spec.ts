@@ -6,6 +6,7 @@ import { readCrop } from '../../src/formats/crop';
 import { readNativeSave, writeNativeSave } from '../../src/formats/native-save';
 import { miniTileAtlas, readPalette } from '../../src/formats/graphics';
 import { renderTerrainPreview } from '../../src/render/terrain-preview';
+import { PRECIPITATION_PATTERNS } from '../../src/simulation/weather';
 import { GameSimulation } from '../../src/simulation/game';
 import { CustomFarmSetup } from '../../src/simulation/custom-farm-setup';
 import { newFarmAssets, newFarmOptions } from '../support/new-farm';
@@ -67,7 +68,7 @@ test('custom screen uses HTML text over exact terrain pixels and Play accepts it
   await page.locator('#terrain-design').screenshot({ path: 'artifacts/browser-terrain-design-desktop.png' });
   await reveal(page, '#play-farm'); await page.locator('#play-farm').focus(); await page.keyboard.press('Enter');
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
-  const expected = GameSimulation.load(writeNativeSave(draft.accept(), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
+  const expected = GameSimulation.load(writeNativeSave(draft.accept('selected-climate'), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
   expect(await save(page)).toEqual(JSON.parse(expected.save(null)));
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
   expect(await save(page)).toEqual(JSON.parse(expected.save(null)));
@@ -86,7 +87,7 @@ test('mobile restart rerolls retain original streams, respond to keyboard and co
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.locator('#terrain-design').screenshot({ path: 'artifacts/browser-terrain-design-mobile.png' });
   await reveal(page, '#play-farm'); await page.locator('#play-farm').click();
-  const game = GameSimulation.load(writeNativeSave(draft.accept(), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
+  const game = GameSimulation.load(writeNativeSave(draft.accept('selected-climate'), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
   const accepted = await save(page); expect(accepted).toEqual(JSON.parse(game.save(null)));
   await page.locator('#load-farm-file').setInputFiles({ name: 'preview.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(accepted)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
@@ -129,10 +130,16 @@ test('extreme retained soil rejects unplaceable terrain atomically and Start fre
 });
 
 
-test('remembered farm Options apply to accepted custom terrain, and all three climate controls select their source tables',async({page})=>{
+for (const session of ['fresh', 'restart']) test(`${session} custom farms start with the selected climate and remembered Options`,async({page})=>{
   await start(page);
+  const prior = await save(page);
+  Object.assign(prior.runtime.weather, { nextForecast: Array(7).fill(3), forecast: Array(7).fill(3), current: 3,
+    wind: 75, windAnomaly: 60, temperatureAnomaly: 22, moistureBalance: 32, precipitationBonus: 4 });
+  prior.runtime.disasters.flags |= 31; prior.runtime.disasterFlags = prior.runtime.disasters.flags;
+  await page.locator('#load-farm-file').setInputFiles({name:'storm.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(prior))});
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'AutoDoze',exact:true}).click();
-  await reveal(page,'#new-farm');await page.locator('#new-farm').click();await reveal(page,'#new-farm-session');await page.locator('#new-farm-session').selectOption('fresh');
+  await reveal(page,'#new-farm');await page.locator('#new-farm').click();await reveal(page,'#new-farm-session');await page.locator('#new-farm-session').selectOption(session);
   await reveal(page,'#create-farm');await page.locator('#create-farm').click();
   for(const channel of ['precipitation','temperature','wind']){await reveal(page,'#terrain-'+channel);await page.locator('#terrain-'+channel).focus();await page.keyboard.press('Home');}
   await expect(page.locator('#terrain-settings')).toContainText('Rainfall: Low · Temperature: Low · Wind: Low');
@@ -141,4 +148,14 @@ test('remembered farm Options apply to accepted custom terrain, and all three cl
   expect(state.setup.climateSelection).toEqual({precipitation:0,temperature:0,wind:0});
   expect(state.scenario.climate).toEqual({precipitation:assets.climate.precipitation[0],temperature:assets.climate.temperature[0],wind:assets.climate.wind[0]});
   expect(state.scenario.farm.autoClear).toBe(true);
+  const {weather:w,scenario:{climate, farm:{calendar:c}}}=state, index=c.month*4+c.week;
+  expect(w.temperature).toBe(climate.temperature[index]);expect(w.wind).toBe(climate.wind[index]);
+  expect(w.forecast.map(code=>Number(code>=3))).toEqual(PRECIPITATION_PATTERNS[climate.precipitation[index]]);
+  expect(w.nextForecast.map(code=>Number(code>=3))).toEqual(PRECIPITATION_PATTERNS[climate.precipitation[index+1]]);
+  expect(w.current).toBe(w.forecast[c.day]);expect(w.precipitationActive).toBe(w.current>=3);
+  expect([w.windAnomaly,w.temperatureAnomaly,w.moistureBalance,w.precipitationBonus]).toEqual([0,0,0,0]);
+  expect(state.disasters.flags&31).toBe(0);expect(w.soilMoisture).toBe(8);
+  const accepted=await save(page);
+  await page.locator('#load-farm-file').setInputFiles({name:'accepted.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(accepted))});
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');expect(await save(page)).toEqual(accepted);
 });

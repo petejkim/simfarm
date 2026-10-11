@@ -22,6 +22,7 @@ export interface WeatherState {
   displayTemperature: number;
 }
 const signedByte = (value: number) => value << 24 >> 24;
+export type StartupWeatherPolicy = 'original' | 'selected-climate';
 
 // Stack constants at 0x1e648..0x1e7a0; cold and warm tables have identical precipitation positions.
 export const PRECIPITATION_PATTERNS: readonly (readonly number[])[] = [
@@ -79,7 +80,7 @@ export function updateWeeklyWind(weather: WeatherState, tables: ClimateTables, c
 
 /** Fresh-process defaults plus startup0x24ef..0x2532. Setup retains its generated
  * soil moisture; SSM imports use the cold value8 because they omit this global. */
-export function initializeWeather(tables: ClimateTables, calendar: FarmCalendar, precipitationDays: number, random: FarmRandom, cells: WorldCell[], soilMoisture = 8): WeatherState {
+export function initializeWeather(tables: ClimateTables, calendar: FarmCalendar, precipitationDays: number, random: FarmRandom, cells: WorldCell[], soilMoisture = 8, policy: StartupWeatherPolicy = 'original'): WeatherState {
   if (!Number.isInteger(soilMoisture) || soilMoisture < -128 || soilMoisture > 127) throw new Error('Invalid initial soil moisture');
   const weather: WeatherState = {
     current: 0, forecast: [3, 3, 3, 0, 0, 0, 0], nextForecast: [0, 0, 0, 0, 0, 0, 0], wind: 5,
@@ -87,7 +88,7 @@ export function initializeWeather(tables: ClimateTables, calendar: FarmCalendar,
     precipitationYear: 0, temperatureYear: 0, windYear: 0, windAnomaly: 0, temperatureAnomaly: 0,
     temperature: tables.temperature[0], displayTemperature: 0,
   };
-  initializeStartupWeather(weather, tables, calendar, random, cells);
+  initializeStartupWeather(weather, tables, calendar, random, cells, policy);
   return weather;
 }
 
@@ -95,7 +96,29 @@ export function initializeWeather(tables: ClimateTables, calendar: FarmCalendar,
  * Advances retained forecast/moisture before assigning temperature table[0].
  * Does not clear wind, anomalies, forecasts or precipitation state. */
 export function initializeStartupWeather(weather: WeatherState, tables: ClimateTables, calendar: FarmCalendar,
-  random: FarmRandom, cells: WorldCell[]): void {
+  random: FarmRandom, cells: WorldCell[], policy: StartupWeatherPolicy = 'original'): void {
+  if (policy === 'selected-climate') {
+    // Native new-farm policy (SF-150), not a recovered original startup rule.
+    // Keep the accepted terrain's soil and this farm's precipitation history.
+    weather.precipitationYear = weather.temperatureYear = weather.windYear = 0;
+    weather.moistureBalance = weather.precipitationBonus = 0;
+    weather.windAnomaly = weather.temperatureAnomaly = 0;
+    const index = calendar.month * 4 + calendar.week;
+    const forecast = (week: number) => {
+      const pattern = PRECIPITATION_PATTERNS[Math.max(0, tables.precipitation[week])];
+      if (!pattern) throw new Error('Invalid climate precipitation count');
+      const temperature = tables.temperature[week];
+      return pattern.map(rain => rain ? (temperature > 32 ? 3 : 4) : chooseSky(temperature, random));
+    };
+    weather.forecast = forecast(index);
+    weather.nextForecast = forecast(index + 1); // December previews year two, as weekly forecasting does.
+    weather.current = weather.forecast[calendar.day];
+    weather.precipitationActive = weather.current >= 3;
+    weather.wind = tables.wind[index];
+    weather.temperature = tables.temperature[index];
+    weather.displayTemperature = signedByte(weather.temperature + random.below(5));
+    return; // No day elapsed: no rain count, soil update or evaporation.
+  }
   advanceForecast(weather, tables, calendar, random, cells);
   weather.temperature = tables.temperature[0];
   weather.displayTemperature = signedByte(weather.temperature + random.below(5));

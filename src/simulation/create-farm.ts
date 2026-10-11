@@ -18,7 +18,7 @@ import { initializeStartingProperty, selectStartingLocations } from './starting-
 import { createStartupCalendar, initializeStartingTown } from './starting-environment';
 import { initializeStartingMarket } from './starting-market';
 import { initializeStartingTraffic } from './starting-traffic';
-import { initializeWeather } from './weather';
+import { initializeWeather, type StartupWeatherPolicy } from './weather';
 import { createMovingDisasters } from './moving-disasters';
 import { createWaterDisasters } from './water-disasters';
 import { createAircraftServiceState } from './aircraft';
@@ -43,7 +43,7 @@ export function createColdSetupIrrigation(defaults: NewFarmRuntimeDefaults): Irr
 /** Main first-launch sequence, with explicit seeds/date and no SSM input.
  * A supplied preview already owns terrain/sites/RNG; Play must not redraw them.
  * See docs/new-farm.md for each recovered phase and remaining fidelity gaps. */
-export function createNewFarmState(options: NewFarmOptions, assets: NewFarmAssets, accepted?: TerrainPreviewState): SimulationState {
+export function createNewFarmState(options: NewFarmOptions, assets: NewFarmAssets, accepted?: TerrainPreviewState, weatherPolicy: StartupWeatherPolicy = 'original'): SimulationState {
   const preview = accepted ? copyLocatedTerrainPreview(accepted) : null;
   const calendar = createStartupCalendar(options.date), climate = climateForSetup(assets.climate, options.climate);
   if (typeof options.river !== 'boolean' || typeof options.lake !== 'boolean') throw new Error('Invalid terrain water option');
@@ -63,7 +63,7 @@ export function createNewFarmState(options: NewFarmOptions, assets: NewFarmAsset
   const cropMarketPrices = records.cropDefinitions.slice(0, 16).map(d => d.price);
   const marketHistory = initializeStartingMarket(cropMarketPrices, records.marketMood, random);
   const schedule = createSetupSchedule(records.plannerBuffer);
-  const weather = initializeWeather(climate, calendar, runtime.farm.precipitationDays, random, world.cells, soilMoisture);
+  const weather = initializeWeather(climate, calendar, runtime.farm.precipitationDays, random, world.cells, soilMoisture, weatherPolicy);
   const traffic = createTrafficState(assets.traffic); initializeStartingTraffic(traffic, town, random);
   // Cold registry is empty. Setup phase/flow are zero; delay is the EXE's64,
   // not the3 read from supplied saved farms. Original ring aliases are SF-088.

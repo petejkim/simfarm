@@ -285,3 +285,5 @@ User follow-up: after the remaining Plant and region-map corrections, fix new-fa
 Correction6 complete: all24 Plant choices together in three source-spaced columns, no paging. Next7 region graphics; then correct startup climate/forecast carryover in its own commit.
 
 Correction7 complete: transparent region hit areas reveal original geographic artwork, with final-composite pixel coverage. All seven requested corrections are complete. Next implement the promised startup-weather correction; explicit loads preserve weather and original partial-reset evidence remains retained.
+
+Startup-weather follow-up complete: browser new farms initialize current/next forecasts, wind and temperature from the selected climate and clear inherited weather effects before moisture application. Explicit loads preserve their documented semantics. Original policy/evidence remains tested (SF-150). Resume original UI/dialog/gameplay reconstruction; right-titlebar input semantics remain unresolved, followed by remaining interaction gaps. Full port is not complete.

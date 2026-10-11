@@ -34,7 +34,7 @@ test('accepted custom preview survives browser import and retains exact continua
   draft.generateWorld(); draft.generateWorld();
   draft.setSettings({ ...options, climate: { precipitation: 0, temperature: 3, wind: 0 }, river: false, lake: true });
   const preview = draft.getSnapshot().preview;
-  const game = GameSimulation.load(writeNativeSave(draft.accept(), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
+  const game = GameSimulation.load(writeNativeSave(draft.accept('selected-climate'), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   await load(page, game.save(null));
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
@@ -96,7 +96,7 @@ test('New farm restarts the active session, cancels safely and restores its gene
   await reveal(page, '#create-farm'); await page.locator('#create-farm').click(); await reveal(page, '#play-farm'); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   const restarted = await save(page, 'live-generated');
   const draft = CustomFarmSetup.restart(readNativeSave(JSON.stringify(before)).state, restarted.runtime.newFarm.provenance.options, assets);
-  const expected = GameSimulation.load(writeNativeSave(draft.accept(), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
+  const expected = GameSimulation.load(writeNativeSave(draft.accept('selected-climate'), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
   expect(restarted).toEqual(JSON.parse(expected.save(null)));
   expect(restarted.runtime.newFarm.provenance.kind).toBe('restart');
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
@@ -110,7 +110,7 @@ test('all eight live restart markers retain session history and continue after o
   for (const [id, x, y] of [[0,0,8],[1,1,11],[2,1,3],[3,3,6],[4,9,7],[5,11,6],[6,13,11],[7,15,8]]) {
     const before = await save(page, `live-region-before-${id}`);
     const expected = GameSimulation.load(JSON.stringify(before), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops)
-      .restartRegion(source(`SCEN${id}.SSM`), locations[y * 18 + x], assets).withAllCrops(browserCrops);
+      .restartRegion(source(`SCEN${id}.SSM`), locations[y * 18 + x], assets, 'selected-climate').withAllCrops(browserCrops);
     await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#choose-region'); await page.locator('#choose-region').click();
     await page.locator(`[data-region="${x},${y}"]`).click(); await reveal(page, '#create-farm'); await page.locator('#create-farm').click();
     await expect(page.locator('#create-farm')).toHaveCount(0);
