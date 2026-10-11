@@ -605,7 +605,12 @@ export class GameSimulation {
       } else appendEditStatus(this.editStatus,51);
     } else if (command.type === 'treat-field') {
       this.lastTreatmentResult = orderTreatment(this.scenario, command.fieldSlot, command.treatment, this.weather.soilMoisture);
-      if (this.lastTreatmentResult.ok) recordFieldPlanOrder(this.scenario, this.crops, command.fieldSlot, { kind: command.treatment });
+      if (this.lastTreatmentResult.ok) {
+        recordFieldPlanOrder(this.scenario, this.crops, command.fieldSlot, { kind: command.treatment });
+        appendEditStatus(this.editStatus,68); // Original26f8e clears the current prompt.
+      } else if(this.lastTreatmentResult.reason==='field-busy')appendEditStatus(this.editStatus,21);
+      else if(this.lastTreatmentResult.reason==='no-supplies'||this.lastTreatmentResult.reason==='insufficient-funds')appendEditStatus(this.editStatus,75);
+      // Native invalid-input/inconsistent-stock guards have no verified source message.
     } else if (command.type === 'plant-field') {
       this.lastHarvestResult = null;
       this.lastPlantResult = plantField(this.scenario, command.fieldSlot, command.cropSlot, this.crops,

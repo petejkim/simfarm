@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import {disasterFixture} from '../support/disasters';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
 import { reveal, openWindow } from '../support/workspace';
@@ -69,10 +70,10 @@ test('Spray applies all four treatments through canonical supplies and busy guar
     await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:label,exact:true}).click();
     await point(page,30,30);await expect(page.locator('#field-tool-result')).toHaveText('Choose an existing field.');
     await point(page,42,42);game.dispatch({type:'treat-field',fieldSlot:1,treatment:kind});expect(game.getSnapshot().lastTreatmentResult?.ok).toBe(true);
-    await expect(page.locator('#field-tool-result')).toHaveText('Treatment ordered.');
+    await expect(page.locator('#field-tool-result')).toHaveText('Treatment ordered.');await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('');
     const before=await save(page);expect(before).toEqual(JSON.parse(game.save(4)));
     await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:label,exact:true}).click();
-    await point(page,42,42);await expect(page.locator('#field-tool-result')).toHaveText('This field is already being worked.');
+    await point(page,42,42);await expect(page.locator('#field-tool-result')).toHaveText('This field is already being worked.');await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Field is busy.');
     await page.keyboard.press('Escape');expect(await save(page)).toEqual(before);
     for(let i=0;i<7;i++){await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});}
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));await openWindow(page,'edit');
@@ -88,4 +89,22 @@ test('Plant retains failed seed orders without constructing a field or changing 
   await point(page,40,40);await expect(page.locator('#field-tool-result')).toHaveText('No seed in stock. Automatic seed buying is disabled.');
   expect(await save(page)).toEqual(before);await page.getByRole('button',{name:'Cancel field tool'}).click();
   await expect(page.locator('#cancel-field-tool')).toHaveCount(0);
+});
+
+
+test('Spray shortage status covers all four supplies and cash failure without changing the checkpoint',async({page})=>{
+  await page.goto('/');
+  for(const autoBuy of [false,true])for(const label of ['Fertilize','Pesticide','Herbicide','Fungicide']){
+    const f=disasterFixture(),w=f.state.scenario;w.farm.autoBuySeeds=autoBuy;w.farm.cash=274;
+    for(const c of w.chemicals)c.bytes[2]&=~32;
+    for(const d of w.chemicalDefinitions)d.count=0;
+    const g=f.load().withAllCrops(browserCrops),before=g.save(4);await load(page,before);
+    await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:label,exact:true}).click();
+    await point(page,22,22);const status=page.getByRole('button',{name:'Edit message history'});
+    await expect(status).toHaveText('Not enough sprays to spray field.');
+    await point(page,22,22);await status.click();
+    await expect(page.getByRole('list',{name:'Recent Edit messages'}).locator('li')).toHaveCount(2);
+    await page.keyboard.press('Escape');expect(await save(page)).toEqual(JSON.parse(before));
+  }
+  await page.screenshot({path:'artifacts/browser-treatment-status.png'});
 });
