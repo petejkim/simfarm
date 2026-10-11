@@ -15,7 +15,7 @@ export function ExamineWindow({assets,snapshot,tiles,position,onCommand}:{assets
   return <GameWindow windowKey="examine" title="Examine">
     {view&&<section className="examine-window" aria-label="Object information" data-kind={view.kind}>
       <canvas ref={canvas} width={208} height={192} aria-label="Original object illustration"/>
-      <p id="examine-text" className={view.fullText?'examine-description':'examine-name'}>{view.text}</p>
+      <p id="examine-text" tabIndex={view.fullText?0:undefined} className={view.fullText?'examine-description':'examine-name'}>{view.text}</p>
       {view.damage!==undefined&&<span className="examine-damage" aria-label={`Damage ${view.damage} of 64`}>{assets.examineData.strings.damage}</span>}
       {view.quality!==undefined&&<div className="examine-condition" aria-label={`Condition ${['BAD','POOR','FAIR','HIGH'][view.quality]}`}
         style={{backgroundImage:`url("${assets.sellConditions.src}")`,backgroundPosition:`-${view.quality*32}px 0`}}>

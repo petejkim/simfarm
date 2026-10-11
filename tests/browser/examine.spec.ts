@@ -52,3 +52,21 @@ test('missing Examine artwork stops asset loading before play',async({page})=>{
   await page.route('**/assets/examine-window.png',r=>r.abort());await page.goto('/');
   await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('#world')).toHaveCount(0);
 });
+
+test('long original crop descriptions stay inside Examine and remain keyboard-scrollable in full',async({page})=>{
+  const {cropPlantTile}=await import('../../src/formats/crop-slots');const {worldIndex}=await import('../../src/formats/scenario');
+  const f=shopFixture();f.state.disasters.enabled=false;const g=f.load().withAllCrops(browserCrops),state=g.getSnapshot();
+  const crop=[...browserCrops].sort((a,b)=>b.description.length-a.description.length)[0],slot=state.scenario.cropFiles.indexOf(`${crop.id}.crp`);
+  const saved=JSON.parse(g.save(4));
+  const {readNativeSave,writeNativeSave}=await import('../../src/formats/native-save');const fixture=readNativeSave(JSON.stringify(saved));
+  const cell=fixture.state.scenario.cells[worldIndex(55,40)];cell.terrain=cropPlantTile(slot);cell.overlay=0;
+  const initial=writeNativeSave(fixture.state,4);await load(page,initial);await point(page,55,40);
+  const text=page.locator('#examine-text');await expect(text).toHaveText(crop.description);
+  const box=(await text.boundingBox())!,frame=(await page.locator('.examine-window').boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(frame.x);expect(box.x+box.width).toBeLessThanOrEqual(frame.x+frame.width);
+  expect(box.y+box.height).toBeLessThanOrEqual(frame.y+frame.height-16);
+  expect(await text.evaluate(e=>e.scrollWidth<=e.clientWidth)).toBe(true);
+  expect(await text.evaluate(e=>e.scrollHeight>e.clientHeight)).toBe(true);
+  await text.focus();await page.keyboard.press('End');await expect.poll(()=>text.evaluate(e=>e.scrollTop)).toBeGreaterThan(0);
+  expect(await save(page)).toEqual(JSON.parse(initial));await page.screenshot({path:'artifacts/browser-examine-text.png'});
+});

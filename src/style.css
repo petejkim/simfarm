@@ -387,7 +387,7 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .examine-window{position:relative;width:208px;height:192px;font:10px/10px monospace;color:#000}
 .examine-window>canvas{position:absolute;inset:0;width:208px;height:192px;image-rendering:pixelated}
 .examine-window p{position:absolute;top:80px;margin:0;font:10px/10px monospace;color:#000;white-space:pre-line}
-.examine-description{left:16px;width:160px}
+.examine-description{left:16px;width:160px;height:96px;overflow:auto;overflow-wrap:anywhere;overscroll-behavior:contain;scrollbar-width:thin}
 .examine-name{left:24px;width:168px}
 .examine-damage{position:absolute;left:24px;top:90px}
 .examine-condition{position:absolute;left:56px;top:88px;width:32px;height:32px;font:8px/8px monospace}
