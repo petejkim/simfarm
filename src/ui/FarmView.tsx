@@ -1,3 +1,4 @@
+import {FieldMessage} from './FieldMessage';
 import {EditHelp} from './EditHelp';
 import {BalanceWindow} from './BalanceWindow';
 import {DisasterMessage} from './DisasterMessage';
@@ -105,7 +106,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
   const objectMove=useObjectMove(simulation,snapshot);
   const construction=useConstruction(simulation,snapshot);
   const bulldoze=useBulldoze(simulation,snapshot);
-  const [messages,setMessages]=useState<(Extract<GameEvent,{type:'finance-notice'|'disaster-notice'}>&{serial:number})[]>([]);
+  const [messages,setMessages]=useState<(Extract<GameEvent,{type:'finance-notice'|'disaster-notice'|'field-notice'}>&{serial:number})[]>([]);
   const messageSerial=useRef(0);
   function closeMessage(){onGameEvent({type:'sound',sound:'click'});setMessages(previous=>previous.slice(1));}
   const onMapPointer = useCallback((pointer: MapFocus | null) => {
@@ -113,7 +114,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     if (buyPlacement || fieldMapTool || objectMove.active || construction.tool || bulldoze.active) setToolPointer(old => old?.x === pointer?.x && old?.y === pointer?.y ? old : pointer);
   }, [simulation, buyPlacement, fieldMapTool, objectMove.active,construction.tool,bulldoze.active]);
   useEffect(() => simulation?.subscribeEvents(event=>{
-    if(event.type==='finance-notice'||event.type==='disaster-notice'){
+    if(event.type==='finance-notice'||event.type==='disaster-notice'||event.type==='field-notice'){
       const message={...event,serial:++messageSerial.current};
       setMessages(previous=>[...previous,message]);
     }else if(event.type==='map-focus')setFocus({x:event.x,y:event.y});
@@ -498,6 +499,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       {bulldoze.pending&&<BulldozeDialog pending={bulldoze.pending} assets={assets} onConfirm={bulldoze.confirm} onCancel={bulldoze.dismiss}/>}
       {messages[0]&&(messages[0].type==='finance-notice'
         ? <FinanceMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>
+        : messages[0].type==='field-notice' ? <FieldMessage key={messages[0].serial} assets={assets} onClose={closeMessage}/>
         : <DisasterMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>)}
       <GameWindow windowKey="actions" title={mapTool === 'inspect' ? 'Field information' : mapTool === 'land' ? 'Land purchase' : mapTool === 'field' ? 'New field' : ['build', 'equipment', 'crop-supplies', 'livestock'].includes(mapTool) ? 'Buy' : 'Edit object'}>
         <div className="window-actions">{!['land', 'field', 'crop-supplies', 'network'].includes(mapTool) && <button onClick={() => { windows.show(null); viewportRef.current?.focus(); }}>Choose on map</button>}

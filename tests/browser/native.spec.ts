@@ -710,6 +710,7 @@ test('planner locks current prices, respects fixed harvests and clears future wo
   await expect(page.locator('#farm-cash')).toHaveText('$40,000');
   await page.locator('[data-plan-action="harvest"]').click(); await (await scheduleWeek(page,week+1)).click();
   await expect(page.locator('#plan-result')).toContainText('fixed annual harvest week');
+  await page.locator('#field-message-ok').click();
   await page.getByRole('button',{name:'Clear remaining plan',exact:true}).click(); await page.locator(`[data-plan-week="${week+1}"]`).click();
   await expect(page.locator('#plan-selection')).toContainText('Fallow');
   await (await scheduleWeek(page,239)).focus(); await expect(page.locator('#plan-selection')).toContainText('Fallow');

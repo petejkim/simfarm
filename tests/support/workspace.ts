@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 /** Existing subsystem tests acknowledge real informational dialogs before
  * continuing their next action. Dedicated message tests assert each notice. */
 export async function acknowledgeFinanceMessages(page:Page){
-  const ok=page.locator('#finance-message-ok,#disaster-message-ok');
+  const ok=page.locator('#finance-message-ok,#disaster-message-ok,#field-message-ok');
   while(await ok.isVisible())await ok.click();
 }
 

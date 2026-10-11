@@ -516,6 +516,8 @@ export class GameSimulation {
     } else if (command.type === 'edit-field-plan') {
       this.lastPlanEditResult = { ...editFieldPlan(this.scenario, this.crops, command.fieldSlot, command.week, command.action),
         fieldSlot: command.fieldSlot, week: command.week };
+      if(!this.lastPlanEditResult.ok&&this.lastPlanEditResult.reason==='fixed-harvest-week')
+        this.events.push({type:'field-notice',id:'fixed-harvest-week'});
     } else if (command.type === 'disaster-menu') {
       if (command.action === 'disable') this.disasters.enabled = !this.disasters.enabled;
       else {
