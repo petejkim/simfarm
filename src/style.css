@@ -106,7 +106,7 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .original-menu-popup{position:absolute;top:16px;padding:2px 0 1px;background:#fff;color:#000;border:1px solid #000;box-shadow:3px 3px #0008}
 .original-menu-popup button{display:block;width:100%;height:12px;border:0;border-radius:0;padding:0 8px;text-align:left;background:#fff;color:#000;font:inherit}
 .original-menu-popup button:disabled{opacity:.5;cursor:not-allowed}
-.original-menu-popup button:not(:disabled):hover,.original-menu-popup button:focus{background:#000;color:#fff;outline:none}
+.original-menu-popup button:focus{background:#000;color:#fff;outline:none}
 .original-control-bar{position:relative;height:32px;width:640px;font:10px/1 Arial,Helvetica,sans-serif;color:#000;background:#c2c2c2}
 .original-control-bar>img{display:block;image-rendering:pixelated;width:640px;height:32px;pointer-events:none}
 .original-control-bar .window-launcher{position:absolute;top:0;width:32px;height:32px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:#000}

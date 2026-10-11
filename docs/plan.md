@@ -277,3 +277,5 @@ Requested corrections1 and2 are complete: toolbar forecast a05ff51 and original 
 Requested correction3 is complete: Spray retains all four selected treatments across successful/busy fields until another tool/window control or explicit cancellation. Next4: default audio and persisted Options; then5–7. Add prolonged browser drought coverage when revisiting terrain validation.
 
 Requested correction4 is complete: default-on gesture-activated audio and remembered Options, with explicit-save authority. Next5–7 remain in order. Climate-control audit verified selected tables; SF-150 restart carryover and source startup temperature/wind remain documented quirks to revisit separately.
+
+Requested correction5 complete: menu hover and keyboard focus share a single highlighted row. Next6: all24 Plant choices in one popup, then7: region-map graphics.

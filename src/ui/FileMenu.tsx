@@ -73,6 +73,7 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
         }}>
         {active.items.map((item, index) => open === 0 && index === 5 ? null : <button key={item.offset} role={choices ? 'menuitemcheckbox' : 'menuitem'} aria-checked={choices?.checked[index]} tabIndex={-1}
           disabled={busy || choices?.disabled}
+          onPointerMove={event=>{if(event.pointerType==='mouse'&&document.activeElement!==event.currentTarget)event.currentTarget.focus({preventScroll:true});}}
           onClick={() => { if (open === 0) select(index); else if (choices) { closeMenu(); choices.choose(index); } else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{choices && <span className="menu-check" aria-hidden="true">{choices.checked[index] ? '✓' : ''}</span>}{item.label}</button>)}
       </div>}
     </nav>

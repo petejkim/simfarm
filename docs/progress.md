@@ -1981,3 +1981,10 @@ Eighteen Options/MIDI/VOC unit cases pass(1.72seconds). Initial Options browser 
 Climate question follow-up: all three Design controls feed the chosen source climate tables, verified in a live accepted farm. Low rain's240 entries range1..4 precipitation days/week with mean1.770833; low wind ranges2..8 (mean5.0625), low temperature10..70 (mean41.145833). Presets are seasonal, not constant values or a zero-rain guarantee. Existing SF-150 retained restart phases can carry prior next-week forecast, wind and anomalies; fresh startup also uses temperature table entry0 and wind5 before weekly updates, while its next forecast uses the calendar's following entry. These quirks can contradict the immediately visible choice; do not claim startup conditions honor all selected week values. Existing source evidence remains in original-bugs.md/new-farm.md; no climate rule was changed in this Options commit.
 
 Correction4 complete. Next requested5: mouse menu highlighting, then6: all24 Plant choices, then7: region graphics. Keep the full preservation goal active/incomplete; no pushes or installations.
+
+
+## 2026-10-11 — requested correction5: single menu highlight
+
+After d5d905f, replaced competing hover/focus highlights with one focused menu row. Mouse movement focuses that row; keyboard navigation moves the same highlight even while the pointer stays over the previous row. Disabled rows remain noninteractive. This fixes the first-item highlight remaining visible when another row is hovered across File/Options/Windows/Disasters. No source format, simulation, save, settings or artwork changed; no new original defect.
+
+Two focused browser cases pass(2.6seconds), asserting exactly one highlighted row for pointer→keyboard→pointer changes in every dropdown, retained eight-row Options geometry and existing keyboard actions. Type checking/production build and diff checks pass; no unrelated unit/full suite run for this small UI-only fix. Logs: artifacts/menu-highlight-browser.log and menu-highlight-build.log. Correction6 (all24 Plant choices together) is next, then7 region-map graphics; no push.

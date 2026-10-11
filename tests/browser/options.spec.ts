@@ -87,3 +87,18 @@ test('invalid or unavailable preference storage leaves defaults and usable contr
   await toggle(page,'Music');await expect(page.locator('#audio-status')).toHaveText('Music off');
   await toggle(page,'AutoScroll');await page.locator('#options-menu-button').click();await expect(page.getByRole('menuitemcheckbox',{name:'AutoScroll',exact:true})).not.toBeChecked();
 });
+
+
+test('pointer and keyboard share one highlighted menu item',async({page})=>{
+  await start(page);
+  for(const title of ['File','Options','Windows','Disasters']){
+    await page.locator('#'+title.toLowerCase()+'-menu-button').click();
+    const menu=page.getByRole('menu',{name:title,exact:true}),items=menu.locator('button:not(:disabled)');
+    const highlighted=()=>items.evaluateAll(els=>els.map((e,i)=>getComputedStyle(e).backgroundColor==='rgb(0, 0, 0)'?i:-1).filter(i=>i>=0));
+    await expect(items.nth(0)).toBeFocused();expect(await highlighted()).toEqual([0]);
+    await items.nth(2).hover();await expect(items.nth(2)).toBeFocused();expect(await highlighted()).toEqual([2]);
+    await page.keyboard.press('ArrowDown');await expect(items.nth(3)).toBeFocused();expect(await highlighted()).toEqual([3]);
+    const b=(await items.nth(2).boundingBox())!;await page.mouse.move(b.x+4,b.y+4);await expect(items.nth(2)).toBeFocused();expect(await highlighted()).toEqual([2]);
+    await page.keyboard.press('Escape');
+  }
+});
