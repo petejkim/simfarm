@@ -16,3 +16,11 @@ Current evidence from src/ui/FarmView.tsx and the referenced components:
 | Audio and tools / Game files | Transitional access wrappers. Menus already expose primary audio/load/save; native volume/file-error handling needs a deliberate accessible home. |
 
 Examine's Object actions shortcut is removed. Its supported building interior toggle stays available. No broader window deletion is claimed in this audit. Full preservation remains incomplete, and the original action evidence in subsystem documents remains authoritative.
+
+## Schedule handoff and direct-order evidence
+
+The empty Schedule's Create a field action now closes Schedule and opens the original Plant popup, with all24 crops and keyboard focus. Selection uses the existing map placement tool; cancellation leaves the checkpoint unchanged. This empty-state shortcut is a native affordance, not a newly recovered DOS control. It no longer opens the interim New field form. Other form entry points remain pending retirement.
+
+Rechecked the executable identified in field-tools.md: `23e9b` tests the Plant sentinel; `23eae` calls the new-field constructor and `23eb6` captures its returned slot. Both plan-recorder calls `23f73` and `2401b` belong to that same new-field branch. They do not establish a separate manual replant path. High confidence for this branch; absence of every possible original replant gesture is not proved. The interim immediate replant/harvest commands explicitly adapt weekly dispatcher branches (`2f7de..2fa54` / `2f776..2f7bc`). Corrected field-calendar.md's ambiguous “immediate handler” wording. No new original defect was established.
+
+Next: replace the remaining LandPanel/navigation entry points with Map Property and Plant, migrate their behavioral checks, and remove those redundant forms. Continue auditing Field information against original Schedule interactions; do not invent original buttons to preserve provisional immediate adapters.

@@ -86,7 +86,7 @@ test('desktop window shortcuts lead through land purchase, new-field planting an
 });
 
 test('an empty farm offers a path from the planner to creating a field and resets navigation on load', async ({ page }) => {
-  await page.goto('/'); const f = shopFixture(), text = f.load().withAllCrops(browserCrops).save(4);
+  await page.goto('/'); const f = shopFixture(), game = f.load().withAllCrops(browserCrops), text = game.save(4);
   const load = async () => {
     await page.locator('#load-farm-file').setInputFiles({ name: 'empty.json', mimeType: 'application/json', buffer: Buffer.from(text) });
     await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
@@ -94,8 +94,21 @@ test('an empty farm offers a path from the planner to creating a field and reset
   await load(); await openWindow(page, 'navigation'); await controls(page).getByRole('button', { name: 'Crop planner', exact: true }).click();
   await expect(page.locator('#field-planner')).toContainText('This farm has no fields yet');
   await page.getByRole('button', { name: 'Create a field', exact: true }).click();
-  await expect(page.locator('#land-heading')).toHaveText('New field'); await expect(page.locator('#land-heading')).toBeFocused();
-  await expect(page.locator('#create-field')).toBeDisabled();
+  const plant=page.getByRole('menu',{name:'Plant Field',exact:true});
+  await expect(plant).toBeVisible();await expect(plant.getByRole('menuitem')).toHaveCount(24);
+  await expect(plant.getByRole('menuitem').first()).toBeFocused();
+  await expect(page.locator('[data-window=actions]')).not.toBeVisible();
+  await expect(page.locator('#field-planner')).not.toBeVisible();
+  await page.keyboard.press('Escape');expect(await checkpoint(page,'empty-cancel')).toEqual(JSON.parse(text));
+  await openWindow(page,'schedule');await page.getByRole('button',{name:'Create a field',exact:true}).click();
+  await page.locator('[data-field-tool="0"]').click();
+  await page.locator('[data-window=navigation] .game-window-title>button').click();
+  await page.locator('#viewport').evaluate(v=>v.scrollTo(30*16,30*16));
+  const map=(await page.locator('#world').boundingBox())!;await page.mouse.click(map.x+40*16+8,map.y+40*16+8);
+  game.dispatch({type:'create-field',x:40,y:40,cropSlot:0});expect(game.getSnapshot().lastNewFieldResult?.ok).toBe(true);
+  await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
+  expect(await checkpoint(page,'empty-planted')).toEqual(JSON.parse(game.save(4)));
+  await openWindow(page,'schedule');await expect(page.locator('#planner-field')).toHaveValue('1');
   await load(); await expect(page.locator('#field-planner')).not.toBeVisible();
   await expect(page.locator('#map-tool')).toHaveValue('inspect');
   expect(await checkpoint(page, 'empty')).toEqual(JSON.parse(text));
