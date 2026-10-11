@@ -1,3 +1,4 @@
+import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { newGame } from '../support/workspace';
 import { fieldDescription } from '../support/field-checkpoint';
 import { scheduleNextHarvest } from '../support/schedule-window';
@@ -40,7 +41,7 @@ test('create a generated farm on mobile, save it and restore without any origina
   await page.route('**/assets/raw/SCEN*.SSM', route => { scenarioRequests.push(route.request().url()); return route.abort(); });
   await reveal(page, '#region-design'); await page.locator('#region-design').click(); await page.locator('#terrain-lake').click(); await reveal(page, '#play-farm'); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   await expect(page.locator('.new-farm-panel')).toHaveCount(0); await expect(page.locator('#new-farm')).toHaveCount(0);await expect(page.locator('#file-menu-button')).toBeEnabled();
-  await expect(page.locator('#farm-cash')).toHaveText('$40,000'); await expect(page.locator('#scenario')).toHaveValue('generated');
+  await expect(page.locator('#farm-cash')).toHaveText('$40,000');
   const first = await save(page, 'browser-created-farm'); expect(first.filename).toContain('simfarm-new-farm-1993-4-');
   expect(first.data.version).toBe(25); expect(first.data.scenarioId).toBeNull(); expect(first.data.scenario.source).toBeNull();
   const draft = CustomFarmSetup.fresh(first.data.runtime.newFarm.provenance.options, newFarmAssets);
@@ -53,7 +54,7 @@ test('create a generated farm on mobile, save it and restore without any origina
   expect((await save(page, 'browser-created-farm-restored')).data).toEqual(first.data);
   await page.screenshot({ path: 'artifacts/browser-new-farm-map.png', fullPage: true });
   expect(scenarioRequests).toEqual([]); expect(errors).toEqual([]);
-  await page.unroute('**/assets/raw/SCEN*.SSM'); await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
+  await page.unroute('**/assets/raw/SCEN*.SSM'); await loadScenarioCheckpoint(page,4);
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
 });
 

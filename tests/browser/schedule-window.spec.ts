@@ -1,3 +1,4 @@
+import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { setDisastersEnabled } from '../support/disaster-menu';
 import { openWindow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
@@ -16,7 +17,7 @@ async function save(page:Page){const pending=page.waitForEvent('download');await
 
 test('original map and Schedule controls complete harvest, storage, sale and replanting without immediate field orders',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('/');await reveal(page,'#scenario');await page.locator('#scenario').selectOption('4');
+  await page.goto('/');await loadScenarioCheckpoint(page,4);
   await expect(page.locator('#map-status')).toContainText('Scenario 5');
   await setDisastersEnabled(page,false);
   await reveal(page,'#zoom');await page.locator('#zoom').selectOption('0.5');

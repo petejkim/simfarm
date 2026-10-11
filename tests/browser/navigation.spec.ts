@@ -1,3 +1,4 @@
+import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { fieldDescription } from '../support/field-checkpoint';
 import { buyPlot, selectProperty, setAutoDoze, clickFarmTile } from '../support/field-actions';
 import { scheduleMonth, scheduleWeek } from '../support/schedule-window';
@@ -42,7 +43,7 @@ test('Schedule and Bank remain accessible without Farm controls and navigation p
   await openWindow(page,'bank');
   await reveal(page, '#loan-amount'); await expect(page.locator('#loan-amount')).toBeVisible();
   expect(await checkpoint(page, 'after')).toEqual(before);
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('1');
+  await loadScenarioCheckpoint(page,1);
   await expect(page.locator('#map-status')).toContainText('Scenario 2');
   await expect(page.locator('#loan-panel')).not.toBeVisible();
   await expect(page.locator('#field-planner')).not.toBeVisible();
@@ -54,7 +55,7 @@ test('Schedule and Bank remain accessible without Farm controls and navigation p
 test('Map and Plant lead through land purchase, field creation and planning without interim forms', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.setViewportSize({ width: 1280, height: 844 }); await page.goto('/');
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4'); await expect(page.locator('#map-status')).toContainText('Scenario 5');
+  await loadScenarioCheckpoint(page,4); await expect(page.locator('#map-status')).toContainText('Scenario 5');
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
   await selectProperty(page,0,2);
   await expect(page.getByRole('dialog',{name:'Map',exact:true})).toBeVisible();

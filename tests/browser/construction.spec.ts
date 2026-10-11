@@ -1,3 +1,4 @@
+import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { clickFarmTile, setAutoDoze } from '../support/field-actions';
 import { buyBuilding, selectBuilding } from '../support/building-actions';
 import { reveal } from '../support/workspace';
@@ -26,7 +27,7 @@ test('original Buy purchases storage roofs and usable records and persists accou
     if (checkBuildingPlacement(scenario, 65, x, y, initial.weather.soilMoisture).ok) point = { x, y };
   }
   expect(point).toBeDefined(); const { x, y } = point!;
-  await page.goto('/'); await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
+  await page.goto('/'); await loadScenarioCheckpoint(page,4);
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await buyBuilding(page,65,x,y); expected.dispatch({ type: 'build', buildingType: 65, x, y });
   const result = expected.getSnapshot().lastBuildingResult; expect(result?.ok).toBe(true);
