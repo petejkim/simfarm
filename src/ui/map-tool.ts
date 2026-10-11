@@ -1,2 +1,2 @@
-/** Remaining interim object tools; original Plant/Spray own their separate tool state. */
-export type MapTool = 'crop-supplies' | 'inspect';
+/** Remaining interim field-information selector; original palette owns map tools. */
+export type MapTool = 'inspect';

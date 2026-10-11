@@ -1,3 +1,4 @@
+import { browseSupply } from '../support/supply-actions';
 import { plantField } from '../support/field-actions';
 import { reveal, openWindow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
@@ -46,9 +47,8 @@ test('all crops are immediately plantable and plannable with source artwork and 
   await expect(page.locator('#plan-result')).toContainText('Plan updated');
   await page.screenshot({ path: 'artifacts/browser-all-crops.png', fullPage: true });
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  await reveal(page,'#map-tool');await page.locator('#map-tool').selectOption('crop-supplies');
-  await expect(page.locator('#crop-supply-type option')).toHaveCount(28);
-  await reveal(page, '#crop-supply-type'); await page.locator('#crop-supply-type').selectOption('215'); await expect(page.locator('#crop-supply-stock')).toContainText('In stock: 0');
+  await browseSupply(page,215);await expect(page.locator('#buy-owned')).toHaveText('0');
+  await expect(page.locator('#buy-description')).toContainText(browserCrops.find(c=>`${c.id}.crp`===game.getSnapshot().scenario.cropFiles[23])!.description);
   const checkpoint = await save(page); await page.reload(); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   await load(page, JSON.stringify(checkpoint)); expect(await save(page)).toEqual(checkpoint);
   for (let day = 0; day < 8; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
