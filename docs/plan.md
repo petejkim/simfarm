@@ -307,3 +307,5 @@ Land/New field retirement complete: removed LandPanel and both interim map-tool 
 Harvest worker animation fixed: original1036/1037 frames now alternate through a native presentation clock, pause with play, and clean up after harvest. Source evidence and the read-only rendering adaptation are in harvest-worker-animation.md. Resume remaining interim UI/action retirement; full game preservation remains incomplete.
 
 Farm controls retirement: removed the redundant navigation window, its launcher/style and shortcut-only Map plumbing. Original toolbar/menu/palette routes remain; existing object forms keep their separate Edit tools entry points until their action-specific retirement. Next continue Field information/Edit object audit and replacement, rather than adding new navigation scaffolding.
+
+Irrigation form retired: Ditch/Valve palette placement, direct existing-valve toggles and Options AutoDoze replace every action. Verified wet-flow/save continuation through those routes. Next retire remaining duplicate network and object controls after confirming each source interaction; Field information immediate-order adapters remain a separate audit.
