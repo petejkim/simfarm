@@ -2570,3 +2570,9 @@ Also corrected SF-035's overclaim of original plow UI reachability. Tool1's Wait
 Source audit passes;20 focused weekly/calendar/plan-order tests pass(10.96s), type checking/build and diff checks pass. Logs: artifacts/field-interaction-audit-{unit,build}.log and field-interaction-audit.json. No browser rerun for a comment/documentation/static-audit change after the preceding full milestone; no runtime expression, save schema, assets, dependency or supplied DOS file changed. Goal remains incomplete.
 
 User priority received during this audit: finish it, then make amain the first startup music before other tracks, then restore the original About dialog in a separate commit, omitting the entire registered-owner line. Both requests are recorded in docs/plan.md and take priority over the broader audit. No push.
+
+## 2026-10-11 — start music with amain
+
+Changed startup selection and protected it until amain successfully begins, including asynchronous asset loading and initially muted preferences. Later game music requests and original Options re-enable genfarm remain available. This follows the explicit user policy; source40e15's broader lifecycle and internal XMIDI loops remain unclassified. Browser audio still requires an interaction and respects saved mute.
+
+Both source MIDI decoder tests pass, type checking/build pass, and14 focused Options/event browser checks pass, including first requested track, muted first enable, later manual track selection and fair/rodeo switching. Logs artifacts/startup-music-{unit,build,browser}.log. No full regression repeated for this bounded audio policy. Next restore About, omitting registered-owner text. No source/save/dependency changes or push.

@@ -59,12 +59,12 @@ test('Messages off suppresses optional auction warnings but retains mandatory de
   await expect(page.locator('[data-finance-notice]')).toHaveAttribute('data-finance-notice','168');await page.locator('#finance-message-ok').click();await expect(page.locator('#finance-message-ok')).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(game.save(4)));
 });
 
-test('Music starts genfarm MIDI, sound toggles independently and advanced audio stays accessible',async({page})=>{
-  await start(page);const requests:string[]=[];page.on('request',r=>{if(r.url().includes('genfarm'))requests.push(r.url());});
-  await page.locator('#options-menu-button').click();await expect(page.locator('#audio-status')).toContainText('Playing genfarm');expect(requests.length).toBeGreaterThan(0);
+test('Music starts amain MIDI, sound toggles independently and advanced audio stays accessible',async({page})=>{
+  await start(page);const requests:string[]=[];page.on('request',r=>{if(r.url().endsWith('.music.json'))requests.push(r.url());});
+  await page.locator('#options-menu-button').click();await expect(page.locator('#audio-status')).toContainText('Playing amain');expect(requests.map(url=>url.split('/').pop())).toEqual(['amain.music.json']);
 await expect(page.getByRole('menuitemcheckbox',{name:'Music',exact:true})).toBeChecked();await expect(page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true})).toBeChecked();await page.keyboard.press('Escape');
-  await openWindow(page,'options');await expect(page.locator('#music')).toHaveValue('genfarm');await expectOptionChecked(page,'Sound Effects',true);
-  await toggle(page,'Music');await expect(page.locator('#audio-status')).toHaveText('Music off');await toggle(page,'Sound Effects');await expectOptionChecked(page,'Sound Effects',false);
+  await openWindow(page,'options');await expect(page.locator('#music')).toHaveValue('amain');await expectOptionChecked(page,'Sound Effects',true);
+  await toggle(page,'Music');await expect(page.locator('#audio-status')).toHaveText('Music off');await toggle(page,'Music');await expect(page.locator('#audio-status')).toContainText('Playing genfarm');await toggle(page,'Sound Effects');await expectOptionChecked(page,'Sound Effects',false);
 });
 
 
@@ -113,11 +113,20 @@ test('Settings opens from Options, keeps native view/audio controls together and
   const dialog=page.getByRole('dialog',{name:'Settings',exact:true});await expect(dialog).toBeVisible();
   await expect(dialog.locator('#audio-status')).toBeVisible();await expect(dialog.locator('#volume')).toBeVisible();
   await dialog.locator('#zoom').selectOption('2');await expect(page.locator('#world')).toHaveCSS('width','3072px');
-  await dialog.locator('#volume').fill('40');await dialog.locator('#music').selectOption('amain');
-  await expect(dialog.locator('#audio-status')).toContainText('Playing amain');
+  await dialog.locator('#volume').fill('40');await dialog.locator('#music').selectOption('ffarm');
+  await expect(dialog.locator('#audio-status')).toContainText('Playing ffarm');
   expect(await viewport.boundingBox()).toEqual(initial);expect(await save(page)).toEqual(before);
   await dialog.locator('.game-window-title').focus();await page.keyboard.press('Escape');await expect(dialog).toBeHidden();
   await openWindow(page,'options');await expect(dialog.locator('#volume')).toHaveValue('40');await expect(dialog.locator('#zoom')).toHaveValue('2');
   await expect(page.getByRole('dialog',{name:'Preservation progress',exact:true})).toHaveCount(0);
   await page.screenshot({path:'artifacts/browser-settings.png'});
+});
+
+test('first enable after a muted startup still plays amain before the Options genfarm track',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false})));
+  const requests:string[]=[];page.on('request',r=>{if(r.url().endsWith('.music.json'))requests.push(r.url().split('/').pop()!);});
+  await start(page);await page.locator('#options-menu-button').click();
+  await expect(page.locator('#audio-status')).toHaveText('Music off');expect(requests).toEqual([]);
+  await page.getByRole('menuitemcheckbox',{name:'Music',exact:true}).click();
+  await expect(page.locator('#audio-status')).toContainText('Playing amain');expect(requests).toEqual(['amain.music.json']);
 });

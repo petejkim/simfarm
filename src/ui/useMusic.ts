@@ -6,12 +6,13 @@ import { loadMusic } from '../assets/game-assets';
 type Playback = { status: 'idle' | 'loading' | 'playing' } | { status: 'error'; error: string };
 export function useMusic() {
   const [player] = useState(() => new MidiPlayer());
-  const [track, setTrack] = useState('genfarm'), [volume, setVolume] = useState(25);
+  const [track, setTrack] = useState('amain'), [volume, setVolume] = useState(25);
   const [playback, setPlayback] = useState<Playback>({ status: 'idle' });
   const request = useRef<AbortController | null>(null);
   const [enabled,setEnabled]=useState(()=>readPreferences().music??true);
-  const current = useRef({ track: 'genfarm', enabled });
+  const current = useRef({ track: 'amain', enabled });
   const activated=useRef(false);
+  const started=useRef(false);
   useEffect(() => {
     const stopOnHide = () => { activated.current = false; request.current?.abort(); player.stop(); setPlayback({ status: 'idle' }); };
     window.addEventListener('pagehide', stopOnHide);
@@ -26,7 +27,7 @@ export function useMusic() {
       const sequence = await loadMusic(id, controller.signal);
       if (controller.signal.aborted) return;
       await player.play(sequence);
-      if (!controller.signal.aborted) setPlayback({ status: 'playing' });
+      if (!controller.signal.aborted) { started.current=true; setPlayback({ status: 'playing' }); }
     } catch (error) {
       if (!controller.signal.aborted) { player.stop(); setPlayback({ status: 'error', error: String(error) }); }
     }
@@ -42,6 +43,7 @@ export function useMusic() {
     return()=>{window.removeEventListener('pointerdown',activate);window.removeEventListener('keydown',activate);};
   },[activate]);
   function toggleTrack(id: string) {
+    if (!started.current) id='amain';
     if (!current.current.enabled) { setTrack(id);current.current.track=id;toggle(); }
     else toggle();
   }
@@ -51,6 +53,7 @@ export function useMusic() {
     else activate();
   }
   function selectTrack(id: string) {
+    if (!started.current) id='amain';
     setTrack(id);
     current.current.track = id;
     if (current.current.enabled&&activated.current) void play(id);
@@ -58,7 +61,8 @@ export function useMusic() {
   // Original 0x23b22 requires music enabled and leaves an identical playing
   // sequence alone. Ref updates also deduplicate requests within one game tick.
   const requestTrack = useCallback((id: string) => {
-    if (!current.current.enabled || current.current.track === id) return;
+    // Startup has priority until amain has actually begun, including asset loading.
+    if (!started.current || !current.current.enabled || current.current.track === id) return;
     setTrack(id);current.current.track=id;if(activated.current)void play(id);
   }, [play]);
   function changeVolume(value: number) { setVolume(value); player.setVolume(value / 100); }
