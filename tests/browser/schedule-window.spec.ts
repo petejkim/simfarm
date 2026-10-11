@@ -128,8 +128,8 @@ test('reexamining the same field resets Schedule to today without editing its pl
   await openWindow(page,'schedule');await page.locator('#planner-field').selectOption('1');
   await page.locator('[data-plan-action="harvest"]').click();await page.getByRole('button',{name:'Water overlay',exact:true}).click();
   await scheduleMonth(page,57);await page.getByRole('button',{name:'CLOSE',exact:true}).click();
-  // Raising via the native planner shortcut retains browsing; map examination explicitly selects today.
-  await openWindow(page,'schedule');await expect(page.locator('#schedule-month')).toHaveValue('57');
+  // Reopening through map inspection resets browsing to today.
+  await openWindow(page,'schedule');await expect(page.locator('#schedule-month')).toHaveValue(String(world.farm.calendar.month));
   await page.getByRole('button',{name:'CLOSE',exact:true}).click();await page.getByRole('button',{name:'View object',exact:true}).click();
   const rect=(await page.locator('#world').boundingBox())!;
   await page.mouse.click(rect.x+(field.x+2)*16+8,rect.y+(field.y+2)*16+8);

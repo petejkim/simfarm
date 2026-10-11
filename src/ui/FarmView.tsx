@@ -34,7 +34,6 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExter
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
 import { terrainTile, worldPosition, worldIndex } from '../formats/scenario';
 import { ExpertWindow } from './ExpertWindow';
-import { FieldPanel } from './FieldPanel';
 import { ScheduleWindow } from './ScheduleWindow';
 import { FarmMap, type MapFocus } from './FarmMap';
 import { useResource } from './useResource';
@@ -59,7 +58,7 @@ import { checkLivestockPurchase } from '../simulation/livestock-purchase';
 const subscribeEmpty = () => () => {};
 const emptySnapshot = () => null;
 
-type FarmDestination = 'planner' | 'field' | 'loans' | 'map';
+type FarmDestination = 'loans';
 interface Props {
   audioControls: ReactNode;
   audioOptions: { music: boolean; sound: boolean; buttonClicks:boolean; toggleButtonClicks:()=>void; toggleMusic: () => void; toggleSound: () => void };
@@ -143,7 +142,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
   const viewportRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     if (!navigation) return;
-    const target = navigation.target === 'planner' ? plannerRef.current : navigation.target === 'loans' ? loansRef.current
+    const target = navigation.target === 'loans' ? loansRef.current
       : navigation.target === 'map' || navigation.target === 'edit' ? viewportRef.current
       : navigation.target === 'evaluation' ? evaluationRef.current : navigation.target === 'balance' ? balanceRef.current
       : navigation.target === 'sell' ? sellRef.current : navigation.target === 'weather' ? weatherRef.current
@@ -152,10 +151,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     target?.focus({ preventScroll: true });
   }, [navigation]);
   function navigate(target: FarmDestination) {
-    if(target==='field'){windows.close('actions');openFieldMenu('plant');return;}
     objectMove.cancel();construction.cancel();bulldoze.cancel();
     setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null);
-    windows.show(target === 'map' ? null : target === 'loans' ? 'bank' : target === 'planner' ? 'schedule' : 'actions');
+    windows.show('bank');
     setNavigation({ target });
   }
   function activateEdit(event: { target: EventTarget }) {
@@ -177,7 +175,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     if (window === 'map' || window === 'market') { setNavigation(null); return; }
     setNavigation({ target: window });
   }
-  function openFieldOrders() { objectMove.cancel();construction.cancel();bulldoze.cancel();setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null); windows.show('actions'); }
   function editTool(tool: EditTool) {
     simulation?.dispatch({type:'edit-status',code:EDIT_TOOL_STATUSES[tool]});
     setInteractionMessage('');
@@ -367,7 +364,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     </section>
     <button onClick={() => windows.show('options')}>Audio and tools</button>
     <button onClick={() => windows.show('disasters')}>Disaster details</button>
-    <button onClick={()=>openFieldOrders()}>Field orders</button>
     <button id="new-farm" onClick={() => setNewFarmOpen(true)}>New farm</button>
     {(['machinery', 'livestock', 'aircraft'] as const).map(key => <button key={key} onClick={() => windows.show(key)}>{key === 'machinery' ? 'Machinery' : key === 'livestock' ? 'Livestock' : 'Aircraft'}</button>)}
     </GameWindow>
@@ -446,18 +442,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
         ? <FinanceMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>
         : messages[0].type==='field-notice' ? <FieldMessage key={messages[0].serial} assets={assets} onClose={closeMessage}/>
         : <DisasterMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>)}
-      <GameWindow windowKey="actions" title="Field information">
-        <div className="window-actions"><button onClick={() => { windows.show(null); viewportRef.current?.focus(); }}>Choose on map</button>
-          <button onClick={() => windows.show('tools')}>Tools</button>
-          <button onClick={() => navigate('field')}>New field</button></div>
-        <fieldset className="farm-actions" aria-label="Farm actions" disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)}>
-
-        <FieldPanel scenario={data.scenario} crops={assets.catalog.crops} field={field}
-          harvestEstimate={field ? snapshot?.fieldHarvestEstimates[field.slot] : null}
-          onSelect={slot => { setSelection(null); selectField(slot, true); }} />
-        <button onClick={()=>navigate('planner')}>Crop planner</button>
-        </fieldset>
-      </GameWindow>
     </main>}
   </>;
 }

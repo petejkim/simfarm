@@ -1,3 +1,4 @@
+import { farmSnapshot } from './field-checkpoint';
 import type { Page } from '@playwright/test';
 
 /** Existing subsystem tests acknowledge real informational dialogs before
@@ -11,7 +12,17 @@ export async function acknowledgeFinanceMessages(page:Page){
  * Workspace/layout tests exercise discovery and window behavior directly. */
 export async function openWindow(page: Page, key: string) {
   await acknowledgeFinanceMessages(page);
-  if (key === 'schedule') { if (!await page.locator('[data-window="schedule"]').isVisible()) {await openWindow(page,'tools');await page.getByRole('button',{name:'Field orders',exact:true}).click();await page.locator('[data-window=actions]').getByRole('button',{name:'Crop planner',exact:true}).click();} return; }
+  if(key==='schedule'){
+    if(await page.locator('[data-window="schedule"]').isVisible()){await page.locator('[data-window="schedule"] .game-window-title').focus();return;}
+    const selected=Number(await page.locator('#planner-field').inputValue()),snapshot=await farmSnapshot(page);
+    const field=snapshot.scenario.fields.find(f=>f.active&&f.slot===selected)??snapshot.scenario.fields.find(f=>f.active);
+    if(!field)throw new Error('Schedule requires an existing field; create one with Plant first.');
+    await uncoverMap(page);await page.getByRole('button',{name:'View object',exact:true}).click();
+    const size=16*Number(await page.locator('#zoom').inputValue());
+    await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-3)*p.size,Math.max(0,p.y-3)*p.size),{x:field.x,y:field.y,size});
+    const bounds=(await page.locator('#world').boundingBox())!;
+    await page.mouse.click(bounds.x+(field.x+0.5)*size,bounds.y+(field.y+0.5)*size);return;
+  }
   if (key === 'taxes') { await openWindow(page,'balance'); await page.getByRole('button',{name:'View tax details',exact:true}).click(); return; }
   if (key === 'edit') { await page.locator('#window-edit').click(); return; }
   if (await page.locator(`[data-window="${key}"]`).isVisible()) {await page.locator(`[data-window="${key}"] .game-window-title`).focus();return;}
@@ -32,9 +43,7 @@ export async function openWindow(page: Page, key: string) {
   await page.getByRole('button', { name: 'Edit tools and help', exact: true }).click();
   if(!await page.locator('[data-window=tools]').isVisible())await page.getByRole('button', { name: 'Advanced controls', exact: true }).click();
   await page.locator('[data-window=tools] .game-window-title').focus();
-  if (key === 'actions') {
-    await page.locator('[data-window=tools]').getByRole('button',{name:'Field orders',exact:true}).click();
-  } else if (key !== 'tools') await page.locator('[data-window=tools]').getByRole('button', { name: key === 'machinery' ? 'Machinery' : key === 'livestock' ? 'Livestock' : 'Aircraft', exact: true }).click();
+  if (key !== 'tools') await page.locator('[data-window=tools]').getByRole('button', { name: key === 'machinery' ? 'Machinery' : key === 'livestock' ? 'Livestock' : 'Aircraft', exact: true }).click();
 }
 async function uncoverMap(page:Page){
   await openWindow(page,'edit');

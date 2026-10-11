@@ -1,3 +1,4 @@
+import { fieldDescription } from '../support/field-checkpoint';
 import { scheduleNextHarvest } from '../support/schedule-window';
 import { buyBuilding } from '../support/building-actions';
 import { setAutoDoze, plantField, clickFarmTile } from '../support/field-actions';
@@ -86,14 +87,14 @@ test('a previewed farm plants on its starting land and delivers harvest into new
   await setAutoDoze(page,true);await plantField(page,field.x,field.y);
   await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
   generated.dispatch({ type: 'create-field', ...field, cropSlot: 0 });
-  await expect(page.locator('#field-status')).toContainText('Planting');
+  expect(await fieldDescription(page)).toContain('Planting');
   view = generated.getSnapshot(); const storage = find((x, y) => checkBuildingPlacement(view.scenario, 65, x, y, view.weather.soilMoisture).ok);
   await buyBuilding(page,65,storage.x,storage.y); generated.dispatch({ type: 'build', ...storage, buildingType: 65 });
   for (let i = 0; i < 12; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); generated.dispatch({ type: 'advance-day' }); }
-  await page.getByRole('button', { name: 'View object', exact: true }).click(); await reveal(page, '#field'); await page.locator('#field').selectOption('1');
-  await expect(page.locator('#field-status')).toContainText('Growing');
+  await page.getByRole('button', { name: 'View object', exact: true }).click(); await reveal(page, '#planner-field'); await page.locator('#planner-field').selectOption('1');
+  expect(await fieldDescription(page)).toContain('Growing');
   const midpoint = await save(page, 'browser-generated-growing'); expect(midpoint.data).toEqual(JSON.parse(generated.save(null)));
-  await load(page, JSON.stringify(midpoint.data)); await reveal(page, '#field'); await page.locator('#field').selectOption('1');
+  await load(page, JSON.stringify(midpoint.data)); await reveal(page, '#planner-field'); await page.locator('#planner-field').selectOption('1');
   const {week,daysUntil}=await scheduleNextHarvest(page,field.x,field.y);
   generated.dispatch({type:'edit-field-plan',fieldSlot:1,week,action:{kind:'harvest'}});
   generated.dispatch({type:'edit-field-plan',fieldSlot:1,week:week+1,action:{kind:'clear'}});

@@ -30,7 +30,7 @@ test('all crops are immediately plantable and plannable with source artwork and 
   const slot = 23, file = game.getSnapshot().scenario.cropFiles[slot], crop = browserCrops.find(c => `${c.id}.crp` === file)!;
   await plantField(page,40,40,slot);await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
   game.dispatch({ type: 'create-field', x: 40, y: 40, cropSlot: slot });
-  await expect(page.locator('#field option:checked')).toContainText(crop.name);
+  await expect(page.locator('#planner-field option:checked')).toContainText(crop.name);
   await expect(page.locator('#plant-crop')).toHaveCount(0);
   const archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
   const palette = readPalette(archive.find(e => e.name === 'simfarm.pal')!.bytes);

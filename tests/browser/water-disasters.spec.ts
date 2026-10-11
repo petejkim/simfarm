@@ -1,3 +1,4 @@
+import { fieldDescription } from '../support/field-checkpoint';
 import { reveal, openWindow, acknowledgeFinanceMessages } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -60,7 +61,7 @@ test('Flood controls destroy a shoreline field and occupied building, render sou
   await reveal(page, '#disasters-enabled'); await page.locator('#disasters-enabled').uncheck(); game.dispatch({ type: 'set-disasters-enabled', enabled: false });
   await expect(page.locator('#start-drought')).toBeDisabled();
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
-  await expect(page.locator('#field-status')).toContainText('0 fields');
+  expect(await fieldDescription(page)).toContain('0 fields');
   await expect(page.locator('#disaster-notices')).toContainText('destroyed field 1');
   await expect(page.locator('#disaster-notices')).toContainText('destroyed a building at 40, 40');
   await expect.poll(async () => (await played(page)).some(s => s.length === 12736 && s.peak > 0.01)).toBe(true);
@@ -89,7 +90,7 @@ test('Drought controls dry and restore source shoreline pixels without start aud
   await reveal(page, '#start-drought'); await page.locator('#start-drought').click(); game.dispatch({ type: 'start-disaster', kind: 'drought' });
   await expect(page.locator('#water-disaster-state')).toContainText('Drought active.'); await expect(page.locator('#start-drought')).toBeDisabled();
   await originalTile(page, 20, 19, 28);
-  const checkpoint = await save(page, 'drought'); expect(checkpoint).toEqual(JSON.parse(game.save(4))); expect((await played(page)).map(s=>s.length)).toEqual([2667]); // Message OK click, no drought sound.
+  const checkpoint = await save(page, 'drought'); expect(checkpoint).toEqual(JSON.parse(game.save(4))); const sounds=(await played(page)).map(s=>s.length);expect(sounds.length).toBeGreaterThan(0);expect(sounds.every(length=>length===2667)).toBe(true); // Only UI click PCM; drought itself is silent.
   const bad = structuredClone(checkpoint); bad.runtime.waterDisasters.scanY = 94;
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
   await expect(page.locator('#save-status')).toContainText('flood scan Y'); expect(await save(page, 'after-invalid')).toEqual(checkpoint);
