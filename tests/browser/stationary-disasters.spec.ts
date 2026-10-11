@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { disasterFixture } from '../support/disasters';
 import { readArchive } from '../../src/formats/archive';
 import { decodePlanar,readPalette } from '../../src/formats/graphics';
-import { decodeXmidi } from '../../src/formats/xmidi';
+import { decodeXmidi,encodeMidi } from '../../src/formats/xmidi';
 
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'stationary.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page,suffix:string){await acknowledgeFinanceMessages(page);const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();const path=`artifacts/browser-stationary-${suffix}.json`;await(await pending).saveAs(path);return JSON.parse(readFileSync(path,'utf8'));}
@@ -56,9 +56,9 @@ test('saved crop circles retain original tiles and event flags; alien MIDI remai
   await circles(page);expect(await save(page,'circles-active')).toEqual(active);
   await expect(page.locator('#disaster-message-ok')).toHaveCount(0);
   await toggleOption(page,'Music');await reveal(page,'#music');
-  const response=page.waitForResponse(r=>r.url().endsWith('/alien.music.json'));await page.locator('#music').selectOption('alien');
+  const response=page.waitForResponse(r=>r.url().endsWith('/alien.mid'));await page.locator('#music').selectOption('alien');
   const a=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
-  expect(await(await response).json()).toEqual(decodeXmidi(a.find(e=>e.name==='alien.xmi')!.bytes));
+  expect(await(await response).body()).toEqual(Buffer.from(encodeMidi(decodeXmidi(a.find(e=>e.name==='alien.xmi')!.bytes))));
   await expect(page.locator('#audio-status')).toContainText('Playing alien · MIDI');
   await expect.poll(()=>page.evaluate(()=>{const a=(window as unknown as {stationaryAudio:{masters:AnalyserNode[]}}).stationaryAudio.masters[0],data=new Float32Array(a.fftSize);a.getFloatTimeDomainData(data);return Math.max(...Array.from(data,Math.abs));})).toBeGreaterThan(0.001);
   await page.locator('#music').selectOption('ffarm');await expect(page.locator('#audio-status')).toContainText('Playing ffarm');

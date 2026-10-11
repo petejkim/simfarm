@@ -60,8 +60,8 @@ test('Messages off suppresses optional auction warnings but retains mandatory de
 });
 
 test('Music starts amain MIDI, sound toggles independently and advanced audio stays accessible',async({page})=>{
-  await start(page);const requests:string[]=[];page.on('request',r=>{if(r.url().endsWith('.music.json'))requests.push(r.url());});
-  await page.locator('#options-menu-button').click();await expect(page.locator('#audio-status')).toContainText('Playing amain');expect(requests.map(url=>url.split('/').pop())).toEqual(['amain.music.json']);
+  await start(page);const requests:string[]=[];page.on('request',r=>{if(r.url().endsWith('.mid'))requests.push(r.url());});
+  await page.locator('#options-menu-button').click();await expect(page.locator('#audio-status')).toContainText('Playing amain');expect(requests.map(url=>url.split('/').pop())).toEqual(['amain.mid']);
 await expect(page.getByRole('menuitemcheckbox',{name:'Music',exact:true})).toBeChecked();await expect(page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true})).toBeChecked();await page.keyboard.press('Escape');
   await openWindow(page,'options');await expect(page.locator('#music')).toHaveValue('amain');await expectOptionChecked(page,'Sound Effects',true);
   await toggle(page,'Music');await expect(page.locator('#audio-status')).toHaveText('Music off');await toggle(page,'Music');await expect(page.locator('#audio-status')).toContainText('Playing genfarm');await toggle(page,'Sound Effects');await expectOptionChecked(page,'Sound Effects',false);
@@ -124,9 +124,9 @@ test('Settings opens from Options, keeps native view/audio controls together and
 
 test('first enable after a muted startup still plays amain before the Options genfarm track',async({page})=>{
   await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false})));
-  const requests:string[]=[];page.on('request',r=>{if(r.url().endsWith('.music.json'))requests.push(r.url().split('/').pop()!);});
+  const requests:string[]=[];page.on('request',r=>{if(r.url().endsWith('.mid'))requests.push(r.url().split('/').pop()!);});
   await start(page);await page.locator('#options-menu-button').click();
   await expect(page.locator('#audio-status')).toHaveText('Music off');expect(requests).toEqual([]);
   await page.getByRole('menuitemcheckbox',{name:'Music',exact:true}).click();
-  await expect(page.locator('#audio-status')).toContainText('Playing amain');expect(requests).toEqual(['amain.music.json']);
+  await expect(page.locator('#audio-status')).toContainText('Playing amain');expect(requests).toEqual(['amain.mid']);
 });

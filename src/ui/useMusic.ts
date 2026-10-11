@@ -69,7 +69,7 @@ export function useMusic() {
     setTrack(id);current.current.track=id;if(activated.current)void play(id);
   }, [play]);
   function changeVolume(value: number) { setVolume(value); player.setVolume(value / 100); }
-  const message = playback.status === 'playing' ? `Playing ${track} · MIDI with temporary synth timbres`
+  const message = playback.status === 'playing' ? `Playing ${track} · MIDI · AIL/SimFarm`
     : playback.status === 'loading' ? `Loading ${track}…`
     : playback.status === 'error' ? `Music unavailable: ${playback.error}` : enabled?'Music enabled · starts on interaction':'Music off';
   return { enabled, toggleTrack, track, volume, playback, message, selectTrack, changeVolume, requestTrack };

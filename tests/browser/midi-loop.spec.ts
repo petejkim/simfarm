@@ -1,26 +1,39 @@
 import {test,expect} from '@playwright/test';
-test('native audio repeats the body without a gap, keeps overlapping voices and stops on mute',async({page})=>{
+import {encodeMidi} from '../../src/formats/xmidi';
+test('light worklet uses bank39, renders MIDI, honors source loop bounds and silences on mute',async({page})=>{
   await page.addInitScript(()=>{
-    const w=window as unknown as {midiStarts:{start:number;stops:number[]}[]};w.midiStarts=[];
-    const original=AudioContext.prototype.createOscillator;
-    AudioContext.prototype.createOscillator=function(){
-      const node=original.call(this),start=node.start.bind(node),stop=node.stop.bind(node);
-      const record={start:0,stops:[] as number[]};
-      node.start=(when=0)=>{record.start=when;w.midiStarts.push(record);start(when);};
-      node.stop=(when=0)=>{record.stops.push(when);stop(when);};
-      return node;
+    const Original=AudioWorkletNode;
+    const w=window as any;w.adlMessages=[];
+    window.AudioWorkletNode=class extends Original{
+      constructor(context:BaseAudioContext,name:string,options?:AudioWorkletNodeOptions){
+        super(context,name,options);w.adlNode=this;
+        const analyser=context.createAnalyser();this.connect(analyser);w.adlAnalyser=analyser;
+        const post=this.port.postMessage.bind(this.port);
+        this.port.postMessage=((message:any)=>{w.adlMessages.push(message);post(message);}) as typeof post;
+      }
     };
   });
-  await page.route('**/amain.music.json',route=>route.fulfill({json:{events:[],endTick:1}}));
-  const body=[{tick:0,data:[0x90,64,100],voice:0},{tick:36,data:[0x80,64,0],voice:0}];
-  await page.route('**/genfarm.music.json',route=>route.fulfill({json:{ticksPerSecond:120,endTick:36,events:body,sourceMetadata:[],loop:{startTick:0,endTick:24,initialEvents:body,events:body}}}));
+  const events=[{tick:0,data:[0xc0,0]},{tick:0,data:[0x90,64,100]},{tick:60,data:[0x80,64,0]}];
+  const midi=(loop:boolean)=>Buffer.from(encodeMidi({ticksPerSecond:120,endTick:120,events,sourceMetadata:[],...(loop?{loop:{startTick:0,endTick:90,initialEvents:events,events}}:{})}));
+  await page.route('**/amain.mid',route=>route.fulfill({body:midi(false)}));
+  await page.route('**/genfarm.mid',route=>route.fulfill({body:midi(true)}));
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
   await page.locator('#options-menu-button').click();await expect(page.locator('#audio-status')).toContainText('Playing genfarm');
-  const notes=()=>page.evaluate(()=>(window as unknown as {midiStarts:{start:number;stops:number[]}[]}).midiStarts);
-  await expect.poll(async()=> (await notes()).filter(n=>n.stops.length).length).toBeGreaterThanOrEqual(4);
-  const before=await notes();
-  for(let i=1;i<4;i++)expect(before[i].start-before[i-1].start).toBeCloseTo(0.2,5);
-  for(const note of before.slice(0,4))expect(note.stops[0]-note.start).toBeCloseTo(0.48,5);
+  expect(await page.evaluate(()=>(window as any).adlMessages.filter((m:any)=>m.type==='setBank').map((m:any)=>m.bank))).toEqual([39]);
+  const bounds=await page.evaluate(async()=>{
+    const node=(window as any).adlNode as AudioWorkletNode;
+    const query=(type:string,response:string)=>new Promise<number>(resolve=>{
+      const handler=(event:MessageEvent)=>{if(event.data.type===response){node.port.removeEventListener('message',handler);resolve(event.data.time);}};
+      node.port.addEventListener('message',handler);node.port.postMessage({type});
+    });
+    return [await query('getLoopStartTime','loopStartTime'),await query('getLoopEndTime','loopEndTime')];
+  });
+  expect(bounds[0]).toBeCloseTo(0,2);expect(bounds[1]).toBeCloseTo(0.75,2);
+  await page.evaluate(()=>{const w=window as any;w.adlNode.connect(w.adlAnalyser);});
+  const peak=()=>page.evaluate(()=>{const a=(window as any).adlAnalyser as AnalyserNode;const data=new Float32Array(a.fftSize);a.getFloatTimeDomainData(data);return Math.max(...data.map(Math.abs));});
+  await expect.poll(peak).toBeGreaterThan(0.001);
+  await page.waitForTimeout(1800);await expect.poll(peak).toBeGreaterThan(0.001);
   await page.getByRole('menuitemcheckbox',{name:'Music',exact:true}).click();await expect(page.locator('#audio-status')).toHaveText('Music off');
-  const stopped=(await notes()).length;await page.waitForTimeout(400);expect((await notes()).length).toBe(stopped);
+  await expect.poll(peak).toBeLessThan(0.0001);expect(errors).toEqual([]);
 });

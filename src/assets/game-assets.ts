@@ -16,7 +16,6 @@ import type { DisasterSprites } from '../render/disaster-renderer';
 import type { FlightSprites } from '../render/aircraft-renderer';
 import type { CropDefinition } from '../formats/crop';
 import { readScenario, type Scenario } from '../formats/scenario';
-import type { MidiSequence } from '../formats/xmidi';
 import { TownLayouts } from '../formats/town';
 import { decodeVoc } from '../formats/voc';
 import type { GameSound } from '../simulation/events';
@@ -130,8 +129,8 @@ export async function loadScenarioAssets(id: number, signal: AbortSignal) {
   const scenario = readScenario(new Uint8Array(buffer));
   return { scenario, tiles: await loadGeneratedTiles(scenario.cropFiles, signal) };
 }
-export async function loadMusic(id: string, signal: AbortSignal): Promise<MidiSequence> {
-  return (await response(`${id}.music.json`, signal)).json();
+export async function loadMusic(id: string, signal: AbortSignal): Promise<ArrayBuffer> {
+  return (await response(`${id}.mid`, signal)).arrayBuffer();
 }
 export async function loadSound(id: GameSound, signal: AbortSignal) {
   return decodeVoc(new Uint8Array(await (await response(`raw/${id}.voc`, signal)).arrayBuffer()));

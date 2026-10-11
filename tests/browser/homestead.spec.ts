@@ -29,7 +29,7 @@ async function locateHome(page:Page){
 test('annual homestead updates repaint original tiles, persist once, and play original PCM effects with MIDI when enabled', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const music: string[] = [], sounds: string[] = [];
-  page.on('request', r => { if (r.url().endsWith('.music.json')) music.push(r.url()); if (/\/(cheers|boos)\.voc$/.test(r.url())) sounds.push(r.url()); });
+  page.on('request', r => { if (r.url().endsWith('.mid')) music.push(r.url()); if (/\/(cheers|boos)\.voc$/.test(r.url())) sounds.push(r.url()); });
   await page.addInitScript(() => {
     const Base = window.AudioContext, pcm: { length: number; analyser: AnalyserNode }[] = [];
     Object.assign(window, { __homePcm: pcm });
@@ -133,7 +133,7 @@ test('muting cancels a pending homestead sample and missing sound assets leave t
 
 test('weekly MIDI requests deduplicate the active track, respect Stop and cancel pending loads', async ({ page }) => {
   let happyRequests = 0;
-  page.on('request', r => { if (r.url().endsWith('/ffarm.music.json')) happyRequests++; });
+  page.on('request', r => { if (r.url().endsWith('/ffarm.mid')) happyRequests++; });
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(checkpoint(600000, 0, true));
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await toggleOption(page,'Music');await reveal(page, '#music');await page.locator('#music').selectOption('amain'); await expect(page.locator('#audio-status')).toContainText('Playing amain');
@@ -148,7 +148,7 @@ test('weekly MIDI requests deduplicate the active track, respect Stop and cancel
   await expect(page.locator('#music')).toHaveValue('amain'); expect(happyRequests).toBe(1);
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
-  await page.route('**/ffarm.music.json', async route => { await gate; await route.continue().catch(() => {}); });
+  await page.route('**/ffarm.mid', async route => { await gate; await route.continue().catch(() => {}); });
   await toggleOption(page,'Music');await reveal(page, '#music');await page.locator('#music').selectOption('amain'); await expect(page.locator('#audio-status')).toContainText('Playing amain');
   await reveal(page, '#music'); await page.locator('#music').selectOption('ffarm'); await expect(page.locator('#audio-status')).toContainText('Loading ffarm');
   await toggleOption(page,'Music'); await expect(page.locator('#audio-status')).toHaveText('Music off'); release();

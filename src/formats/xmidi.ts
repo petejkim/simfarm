@@ -80,7 +80,15 @@ function vlq(value: number): number[] {
 export function encodeMidi(sequence: MidiSequence): Uint8Array {
   const track = [0, 0xff, 0x51, 3, 7, 0xa1, 0x20];
   let previous = 0;
-  for (const event of sequence.events) {
+  const events = [...sequence.events];
+  if(sequence.loop){
+    // libADLMIDI recognizes standard sequencer marker names for loop bounds.
+    const marker=(tick:number,text:string)=>({tick,data:[0xff,6,text.length,...new TextEncoder().encode(text)]});
+    events.unshift(marker(sequence.loop.startTick,'loopStart'));
+    events.push(marker(sequence.loop.endTick,'loopEnd'));
+    events.sort((a,b)=>a.tick-b.tick);
+  }
+  for (const event of events) {
     track.push(...vlq(event.tick - previous), ...event.data);
     previous = event.tick;
   }

@@ -1,6 +1,6 @@
 # SimFarm native preservation
 
-Reconstruct the supplied `../simfarm-dos/SIMFARM.EXE` incrementally as a native TypeScript/React/Vite browser game, using Bun for packages, scripts and tests. Do not run or embed a DOS/x86 emulator. Background music must use MIDI, not AdLib/FM. Keep simulation, asset decoding, audio, and UI separable for later enhancements.
+Reconstruct the supplied `../simfarm-dos/SIMFARM.EXE` incrementally as a native TypeScript/React/Vite browser game, using Bun for packages, scripts and tests. Do not run or embed a DOS/x86 emulator. Background music plays converted .mid files through libadlmidi-js’s light build with embedded bank 39 (AIL/SimFarm), as explicitly requested by the user. This supersedes the earlier no-FM requirement; do not emulate the DOS environment. Keep simulation, asset decoding, audio, and UI separable for later enhancements.
 
 - Inspect current files and `docs/progress.md` before continuing. Treat `../simfarm2` as incomplete research, not an implementation to copy wholesale.
 - Ground recovered formats and rules in source bytes and executable addresses. Document offsets, hashes, hypotheses, and confidence in `docs`. Distinguish verified behavior from provisional scaffolding; do not declare a farming lookalike a completed port.

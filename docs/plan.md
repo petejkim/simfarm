@@ -434,3 +434,7 @@ Genfarm playback now consumes its recovered internal loop with uninterrupted sch
 Source-used MIDI message audit found no pitch/sustain/pressure gap: all ordinary supplied events are notes, program changes and CC7. Existing synth handles those categories; timbre fidelity is a separate limitation. Restored source uhoh.voc for machinery busy pickup/drop and closed-storage pickup. Next continue mapping remaining supply-move rejection branches and original interaction feedback rather than implementing MIDI messages absent from all eight supplied tracks.
 
 Supply drop source warning coverage now includes unowned, invalid/occupied terrain, incompatible and full storage; shared unowned machinery drops also warn. Retain silent native-only consistency/overflow/occupied-trough safety guards. Remaining source interaction audit should distinguish malformed-record pickup branches from ordinary missing gestures and avoid expanding warnings without caller evidence.
+
+## 2026-10-11 — requested MIDI synthesizer replacement
+
+Use libadlmidi-js light/bank39 (AIL/SimFarm) for converted `.mid` playback, superseding the earlier no-FM restriction. Preserve startup amain-once, situation-selected music, volume/mute preferences and source genfarm loop boundaries. Keep original PCM effects independent. See adlmidi-playback.md for integration, evidence and loop-tail fidelity limits. Original About/Expert bitmap-logo exceptions remain implemented in5fa35e2. Continue the broader remaining gameplay/UI audit after this increment; the full preservation port is still incomplete.
