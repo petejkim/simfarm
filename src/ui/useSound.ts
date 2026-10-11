@@ -10,6 +10,8 @@ export function useSound() {
   const [clickPlayer] = useState(() => new PcmPlayer());
   const clickSample=useRef<PcmSound|null>(null), clickRequest=useRef<AbortController|null>(null);
   const [enabled, setEnabled] = useState(()=>readPreferences().sound??true), [error, setError] = useState('');
+  const [buttonClicks,setButtonClicks]=useState(()=>readPreferences().buttonClicks??true);
+  const clicksActive=useRef(buttonClicks);
   const active = useRef(enabled), activated=useRef(false), flightRunning = useRef(false), planeFailed = useRef(false);
   const planeSample = useRef<PcmSound | null>(null), playing = useRef<GameSound | null>(null);
   const request = useRef<{ id: GameSound; controller: AbortController } | null>(null);
@@ -64,15 +66,19 @@ export function useSound() {
   }, [player]);
   // UI feedback has its own PCM voice so a button never cancels a disaster,
   // transaction or flight effect. Cache the original click sample after loading.
+  const toggleButtonClicks=useCallback(()=>{
+    const next=!clicksActive.current;clicksActive.current=next;setButtonClicks(next);rememberPreference('buttonClicks',next);
+    if(!next){clickRequest.current?.abort();clickPlayer.stop();}
+  },[clickPlayer]);
   const click=useCallback(()=>{
-    if(!active.current||!activated.current)return;
+    if(!active.current||!activated.current||!clicksActive.current)return;
     if(clickSample.current){clickPlayer.play(clickSample.current);return;}
     clickRequest.current?.abort();const controller=new AbortController();clickRequest.current=controller;
     void loadSound('click',controller.signal).then(sample=>{
-      if(controller.signal.aborted||!active.current)return;
+      if(controller.signal.aborted||!active.current||!clicksActive.current)return;
       clickSample.current=sample;clickPlayer.play(sample);
     }).catch(error=>{if(!controller.signal.aborted)setError(String(error));})
       .finally(()=>{if(clickRequest.current===controller)clickRequest.current=null;});
   },[clickPlayer]);
-  return { enabled, error, toggle, play, click, setFlightRunning };
+  return { enabled, buttonClicks, toggleButtonClicks, error, toggle, play, click, setFlightRunning };
 }

@@ -76,7 +76,7 @@ const emptySnapshot = () => null;
 
 interface Props {
   audioControls: ReactNode;
-  audioOptions: { music: boolean; sound: boolean; toggleMusic: () => void; toggleSound: () => void };
+  audioOptions: { music: boolean; sound: boolean; buttonClicks:boolean; toggleButtonClicks:()=>void; toggleMusic: () => void; toggleSound: () => void };
   id: number | null;
   loaded?: LoadedFarm;
   onLoad: (farm: LoadedFarm) => void;
@@ -372,9 +372,10 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
   }
   return <>
     {simulation && <SaveControls options={{
-      checked: [audioOptions.music, audioOptions.sound, ...FARM_OPTIONS.map(key=>simulation.getSnapshot().scenario.farm[key])],
+      checked: [audioOptions.music, audioOptions.sound, ...FARM_OPTIONS.map(key=>simulation.getSnapshot().scenario.farm[key]),audioOptions.buttonClicks],
+      extraLabels:['Button Click Sounds'],
       choose: index=>{
-        if(index===0)audioOptions.toggleMusic();else if(index===1)audioOptions.toggleSound();
+        if(index===0)audioOptions.toggleMusic();else if(index===1)audioOptions.toggleSound();else if(index===8)audioOptions.toggleButtonClicks();
         else {const option=FARM_OPTIONS[index-2];if(option){const enabled=!simulation.getSnapshot().scenario.farm[option];simulation.dispatch({type:'set-option',option,enabled});rememberPreference(option,enabled);}}
       },
     }} disasters={{

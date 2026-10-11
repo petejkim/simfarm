@@ -1,6 +1,6 @@
 import type {GameSimulation} from '../simulation/game';
 export const FARM_OPTIONS=['autoBuySeeds','autoScroll','autoClear','autoGoto','messages','autoRent'] as const;
-export type PreferenceKey=typeof FARM_OPTIONS[number]|'music'|'sound';
+export type PreferenceKey=typeof FARM_OPTIONS[number]|'music'|'sound'|'buttonClicks';
 export type Preferences=Partial<Record<PreferenceKey,boolean>>;
 export const PREFERENCES_KEY='simfarm.options.v1';
 /** Browser defaults only; canonical farm options remain in GameSimulation. */
@@ -8,7 +8,7 @@ export function readPreferences():Preferences{
   try{
     const value:unknown=JSON.parse(localStorage.getItem(PREFERENCES_KEY)??'{}');
     if(!value||typeof value!=='object'||Array.isArray(value))return {};
-    return Object.fromEntries([...FARM_OPTIONS,'music','sound'].flatMap(key=>typeof (value as Record<string,unknown>)[key]==='boolean'?[[key,(value as Record<string,boolean>)[key]]]:[]));
+    return Object.fromEntries([...FARM_OPTIONS,'music','sound','buttonClicks'].flatMap(key=>typeof (value as Record<string,unknown>)[key]==='boolean'?[[key,(value as Record<string,boolean>)[key]]]:[]));
   }catch{return {};}
 }
 export function rememberPreference(key:PreferenceKey,value:boolean):void{

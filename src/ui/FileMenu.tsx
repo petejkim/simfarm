@@ -11,7 +11,7 @@ function MenuDialog({ title, children, onClose }: { title: string; children: Rea
   </dialog>;
 }
 
-export interface MenuChoices { checked: readonly boolean[]; choose: (index: number) => void; disabled?: boolean }
+export interface MenuChoices { extraLabels?:readonly string[]; checked: readonly boolean[]; choose: (index: number) => void; disabled?: boolean }
 
 /** Recovered File/Options/Windows/Disasters chains; file-system/exit operations use browser policies. */
 export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad, onNewGame, onQuit, onWindow, options, disasters }: {
@@ -59,7 +59,7 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
           if ((index !== 2) && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) { event.preventDefault(); setOpen(index); }
         }}>{entry.title}</button>)}
       {active && <div ref={menu} id={`original-${active.title.toLowerCase()}-menu`} className="original-menu-popup" role="menu" tabIndex={-1} aria-label={active.title}
-        style={{ left: active.popup.x, width: active.popup.width, ...(choices ? { height: active.popup.height, padding: '1px 0' } : {}) }} onKeyDown={event => {
+        style={{ left: active.popup.x, width: choices?.extraLabels?.length ? Math.max(160,active.popup.width) : active.popup.width, ...(choices ? { height: active.popup.height+12*(choices.extraLabels?.length??0), padding: '1px 0' } : {}) }} onKeyDown={event => {
           const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
           const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
           if (event.key === 'Escape') { event.preventDefault(); closeMenu(); }
@@ -71,7 +71,7 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
             buttons[next]?.focus();
           }
         }}>
-        {active.items.map((item, index) => open === 0 && index === 5 ? null : <button key={item.offset} role={choices ? 'menuitemcheckbox' : 'menuitem'} aria-checked={choices?.checked[index]} tabIndex={-1}
+        {[...active.items,...(choices?.extraLabels??[]).map((label,i)=>({label,offset:-i-1}))].map((item, index) => open === 0 && index === 5 ? null : <button key={item.offset} role={choices ? 'menuitemcheckbox' : 'menuitem'} aria-checked={choices?.checked[index]} tabIndex={-1}
           disabled={busy || choices?.disabled}
           onPointerMove={event=>{if(event.pointerType==='mouse'&&document.activeElement!==event.currentTarget)event.currentTarget.focus({preventScroll:true});}}
           onClick={() => { if (open === 0) select(index); else if (choices) { closeMenu(); choices.choose(index); } else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{choices && <span className="menu-check" aria-hidden="true">{choices.checked[index] ? '✓' : ''}</span>}{item.label}</button>)}

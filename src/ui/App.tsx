@@ -35,7 +35,7 @@ function Game({ assets }: { assets: GameAssets }) {
         <MusicControls tracks={assets.catalog.music} music={music} />
         <button id="sound-toggle" aria-pressed={sound.enabled} onClick={() => void sound.toggle()}>{sound.enabled ? 'Mute sounds' : 'Enable sounds'}</button>
       </header>}
-      audioOptions={{ music: music.enabled, sound: sound.enabled, toggleMusic: () => music.toggleTrack('genfarm'), toggleSound: () => { void sound.toggle(); } }}
+      audioOptions={{ music: music.enabled, sound: sound.enabled, buttonClicks:sound.buttonClicks, toggleButtonClicks:sound.toggleButtonClicks, toggleMusic: () => music.toggleTrack('genfarm'), toggleSound: () => { void sound.toggle(); } }}
       onLoad={onLoad} assets={assets}
       zoom={zoom} onZoomChange={setZoom} onGameEvent={onGameEvent} onFlightRunning={sound.setFlightRunning} />
     <GameWindow windowKey="about-project" title="Preservation progress"><footer><strong>Reconstruction in progress</strong>
