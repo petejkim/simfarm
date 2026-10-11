@@ -2188,3 +2188,9 @@ Previous goal turn completed0463398; verified the clean tree and reviewed Field 
 Build/type checking and five focused treatment/menu source tests pass(852ms). All eight focused Plant/Spray/supply browser cases(32.8s) and three affected farming-cycle cases(32.4s) pass on first runs. Checks cover all four stock/auto-buy paths, source menu geometry/icons, busy/no-supply/cash guards, repeated spraying, actual fertility/work restoration, all24 field placement, exact checkpoints, and completed harvest/store/sell cycles including reload mid-treatment. Logs: artifacts/retire-field-care-{build,unit,browser,flows}.log. Diff checks pass; full suites were not repeated.
 
 Continue the immediate replant/harvest versus original Schedule audit before removing FieldPanel's remaining exclusive adapters. Diagnostic inventory/windows also remain. Full preservation remains incomplete; no push, installations or supplied-source changes.
+
+## 2026-10-11 — bound the unresolved Schedule-helper hypothesis
+
+Previous goal turn completed91a70a6; verified the clean tree. Added a reproducible read-only static audit for helper2e80e. The executable hash and overlay-manager mapping are checked; literal far pointers, relative E8/E9 candidates and standard manager stubs contain no direct reference to this helper. Four known overlay3 manager entries serve as positive controls. Output and helper hash are documented in field-calendar.md, with indirect/computed/alternate-segment limits explicit. This changes the next action: do not treat this buffer generator as the missing immediate field interaction; continue known Schedule/Edit routes. No new original defect is established.
+
+Ran `.venv/bin/python tools/audit-field-helper.py` successfully against supplied bytes; no runtime files changed, so game suites were not repeated for this research-only increment. Full preservation remains incomplete; original DOS files unchanged and no push/installations.
