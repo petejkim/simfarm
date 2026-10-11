@@ -2362,3 +2362,11 @@ Previous turn progressed with168cd1a; revalidated clean tree/progress. Remaining
 Build/type checking and six source Aircraft-window/live-service tests pass(839ms). All nine aircraft/service/flight browser cases pass across initial eight passes(19.5s) and one focused recheck(3.3s). Initial two-aircraft assertion assumed the shortcut's first-plane default; map entry correctly selected the clicked plane, so the test now explicitly selects slot1 for its intended first service. Coverage retains all parked tile/zoom/primary-secondary paths, original gauges/text, service quotes/repairs/chemical ordering, flight steering/spraying/landing/crash, original engine PCM, missing-audio recovery and exact saves. Logs: artifacts/retire-aircraft-shortcut-{build,unit,browser,recheck}.log. Diff checks pass; no full-suite repetition.
 
 Next retire duplicate New farm shortcut through File→New Game, then audit native scenario/zoom/centering/audio controls before utility-wrapper removal. Full preservation remains incomplete. No push, installation or supplied-DOS changes.
+
+## 2026-10-11 — retire duplicate New farm shortcut and recheck message bar
+
+Completed the pending Edit tools shortcut cleanup: New Game is reached through the original File menu, retaining the region chooser, editable seed and starting year. Migrated six browser files to that entry. No simulation, source rule or original defect changed. Build/type checking passes; all29 affected setup/region/startup/restart browser checks pass(42.3s). Eleven focused main-menu/startup/Edit-status unit tests pass(4.76s). Logs: artifacts/retire-new-farm-shortcut-{build,unit,browser}.log.
+
+Rechecked the user's message-bar report against the existing a6da121 fix. The empty bar renders from startup and after load, with an explicit16-pixel grid row reserving space above terrain. All three Edit-status browser checks pass(3.3s), including first-row hit testing and fixed map origin across tool and Market/Bank selections. Log: artifacts/message-bar-current-browser.log. No additional runtime change was needed for that already committed fix.
+
+Next audit scenario/zoom/centering/audio controls before removing utility wrappers, then run the planned broader regression milestone. Full preservation remains incomplete. No push or supplied-DOS changes.

@@ -360,7 +360,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       </select></label><button id="center" disabled={!data || Boolean(snapshot?.aircraftFlight)} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
     </section>
     <button onClick={() => windows.show('options')}>Audio and tools</button>
-    <button id="new-farm" onClick={() => setNewFarmOpen(true)}>New farm</button>
     </GameWindow>
     <GameWindow windowKey="speed" title="Speed">
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}

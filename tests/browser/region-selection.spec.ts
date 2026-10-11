@@ -1,3 +1,4 @@
+import { newGame } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -16,7 +17,7 @@ async function save(page: Page, name: string) {
   const path = `artifacts/browser-region-${name}.json`; await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
 }
 async function openMap(page: Page) {
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');
+  await newGame(page); await page.locator('#new-farm-seed').fill('9029');
   await reveal(page, '#region-map'); await expect(page.locator('#region-map')).toBeVisible();
 }
 
@@ -66,11 +67,11 @@ test('region asset failures allow custom creation or retry, and cancelled preset
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   const before = await save(page, 'failure-before');
   await page.route('**/assets/raw/scenario.int', route => route.fulfill({ status: 404, body: '' }));
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');
+  await newGame(page); await page.locator('#new-farm-seed').fill('9029');
   await expect(page.locator('#region-error')).toContainText('scenario.int'); await expect(page.locator('#region-use')).toHaveCount(0);
   await reveal(page, '#design-farm'); await page.locator('#design-farm').click(); await expect(page.locator('#play-farm')).toBeEnabled();
   await page.getByRole('button',{name:'Cancel',exact:true}).click();
-  await page.unroute('**/assets/raw/scenario.int'); await reveal(page,'#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029'); await reveal(page, '#region-map'); await expect(page.locator('#region-map')).toBeVisible();
+  await page.unroute('**/assets/raw/scenario.int'); await newGame(page); await page.locator('#new-farm-seed').fill('9029'); await reveal(page, '#region-map'); await expect(page.locator('#region-map')).toBeVisible();
   await page.locator('[data-region="15,8"]').click();
   await page.route('**/assets/raw/SCEN7.SSM', route => route.fulfill({ status: 404, body: '' }));
   await reveal(page, '#region-use'); await page.locator('#region-use').click(); await expect(page.locator('#new-farm-error')).toContainText('SCEN7.SSM');
@@ -89,16 +90,16 @@ test('region asset failures allow custom creation or retry, and cancelled preset
 test('malformed region metadata is rejected, cancelling a pending map remains usable, and manual climate stays editable', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1'); const before = await save(page, 'metadata-before');
   await page.route('**/assets/new-farm-setup.json', async route => { const r = await route.fetch(), data = await r.json(); data.farms[0].x = 18; await route.fulfill({ json: data }); });
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');
+  await newGame(page); await page.locator('#new-farm-seed').fill('9029');
   await expect(page.locator('#region-error')).toContainText('coordinate'); expect(await save(page, 'metadata-invalid')).toEqual(before);
   await page.getByRole('button', { name: 'Cancel', exact: true }).click(); await page.unroute('**/assets/new-farm-setup.json');
   let release!: () => void; const wait = new Promise<void>(resolve => { release = resolve; });
   let requested!: () => void; const started = new Promise<void>(resolve => { requested = resolve; });
   await page.route('**/assets/raw/scenario.odt', async route => { requested(); await wait; await route.fulfill({ body: readFileSync('public/assets/raw/scenario.odt'), contentType: 'application/octet-stream' }).catch(() => {}); });
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');  await started;
+  await newGame(page); await page.locator('#new-farm-seed').fill('9029');  await started;
   await expect(page.locator('#region-use')).toHaveCount(0);
   await page.getByRole('button', { name: 'Cancel', exact: true }).click(); release(); await page.unroute('**/assets/raw/scenario.odt');
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029'); await expect(page.locator('#region-use')).toBeEnabled();
+  await newGame(page); await page.locator('#new-farm-seed').fill('9029'); await expect(page.locator('#region-use')).toBeEnabled();
   await page.locator('#region-design').click();
   await page.locator('#terrain-temperature').focus(); await page.keyboard.press('Home'); await expect(page.locator('#terrain-temperature')).toHaveValue('0');
   expect(await save(page, 'metadata-recovered')).toEqual(before);
@@ -110,7 +111,7 @@ test('unmarked New Game geography resets old soil and water while applying locat
   await page.locator('#load-farm-file').setInputFiles({ name: 'retained-soil.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(old)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   const before = await save(page, 'warm-entry');
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');
+  await newGame(page); await page.locator('#new-farm-seed').fill('9029');
   await page.locator('[data-region="3,8"]').click(); await reveal(page, '#new-farm-year'); await page.locator('#new-farm-year').fill('1993');
   await reveal(page, '#region-use'); await page.locator('#region-use').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   await expect(page.locator('#terrain-design')).toHaveCount(0);

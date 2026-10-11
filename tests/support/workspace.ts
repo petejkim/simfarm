@@ -81,3 +81,9 @@ export async function reveal(page: Page, selector: string) {
   });
   if (closed) await page.locator(`#${closed} > summary`).click();
 }
+
+/** Original File entry; native seed/year remain inside the source region chooser. */
+export async function newGame(page:Page){
+  await acknowledgeFinanceMessages(page);await page.locator('#file-menu-button').click();
+  await page.getByRole('menuitem',{name:'New Game',exact:true}).click();
+}

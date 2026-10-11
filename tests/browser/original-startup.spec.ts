@@ -1,3 +1,4 @@
+import { newGame } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -20,7 +21,7 @@ async function save(page: Page) {
   return JSON.parse(readFileSync((await (await pending).path())!, 'utf8'));
 }
 async function chooser(page: Page) {
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');
+  await newGame(page); await page.locator('#new-farm-seed').fill('9029');
   await expect(page.locator('#region-map')).toBeVisible(); await expect(page.locator('#region-load')).toBeEnabled();
 }
 async function pick(page: Page, name: string, buffer: Buffer) {
@@ -94,7 +95,7 @@ test('malformed saves, picker cancellation and cancellation during startup or ti
     await expect(page.locator('#region-load')).toBeDisabled();
     await page.getByRole('button', { name: 'Cancel', exact: true }).click(); finish();
     await page.unroute(`**/assets/${asset}`); expect(await save(page)).toEqual(before);
-    await reveal(page, '#new-farm'); await expect(page.locator('#new-farm')).toBeVisible();
+    await expect(page.locator('#file-menu-button')).toBeVisible();
   }
   await chooser(page); await pick(page, 'SCEN4.SSM', source('SCEN4.SSM'));
   await expect(page.locator('#map-status')).toHaveText('Imported farm · original terrain');

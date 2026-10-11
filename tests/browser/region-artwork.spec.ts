@@ -1,3 +1,4 @@
+import { newGame } from '../support/workspace';
 import {PNG} from 'pngjs';
 import { reveal, openWindow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
@@ -19,7 +20,7 @@ async function start(page: Page) {
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
 }
 async function chooser(page: Page) {
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');  await reveal(page, '#geographic-chooser'); await expect(page.locator('#geographic-chooser')).toBeVisible();
+  await newGame(page); await page.locator('#new-farm-seed').fill('9029');  await reveal(page, '#geographic-chooser'); await expect(page.locator('#geographic-chooser')).toBeVisible();
 }
 async function pixels(page: Page, x: number, y: number) {
   // The source raster remains an exact reference under opaque HTML text surfaces.
@@ -76,7 +77,7 @@ test('chooser Load opens its file picker for exact checkpoint restoration and Qu
   await expect(page.locator('#geographic-chooser')).toHaveCount(0);
   await reveal(page, '#play-pause'); await page.locator('#play-pause').click(); await expect(page.locator('#time-status')).toContainText('Running');
   await chooser(page); await reveal(page, '#region-quit'); await page.locator('#region-quit').focus(); await page.keyboard.press('Enter');
-  await expect(page.locator('#time-status')).toContainText('Paused'); await reveal(page, '#new-farm'); await expect(page.locator('#new-farm')).toBeVisible();
+  await expect(page.locator('#time-status')).toContainText('Paused'); await expect(page.locator('#file-menu-button')).toBeVisible();
   expect(await save(page)).toEqual(before);
   await chooser(page); const bad = page.waitForEvent('filechooser'); await reveal(page, '#region-load'); await page.locator('#region-load').click();
   await (await bad).setFiles({ name: 'broken.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
@@ -87,7 +88,7 @@ test('truncated original artwork and palette fail atomically and original Quit c
   await start(page); const before = await save(page);
   for (const [file, length] of [['scenario.int', 153599], ['scenario.pal', 47]] as const) {
     await page.route(`**/assets/raw/${file}`, route => route.fulfill({ body: raw(file).subarray(0, length), contentType: 'application/octet-stream' }));
-    await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');
+    await newGame(page); await page.locator('#new-farm-seed').fill('9029');
     await reveal(page, '#region-error'); await expect(page.locator('#region-error')).toBeVisible(); await expect(page.locator('#region-use')).toHaveCount(0);
     await page.getByRole('button', { name: 'Cancel', exact: true }).click(); expect(await save(page)).toEqual(before);
     await page.unroute(`**/assets/raw/${file}`);
