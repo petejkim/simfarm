@@ -13,6 +13,7 @@ export class MidiPlayer {
   private origin = 0;
   private sequence?: MidiSequence;
   private volume = 0.25;
+  private onEnded?: () => void;
   get playing(): boolean { return this.timer !== undefined; }
   async enable():Promise<void>{
     if (!this.context) {
@@ -31,12 +32,13 @@ export class MidiPlayer {
     }
     await this.context.resume();
   }
-  async play(sequence: MidiSequence): Promise<void> {
+  async play(sequence: MidiSequence, onEnded?: () => void): Promise<void> {
     this.stop();
     const generation = this.generation;
     await this.enable();
     if (generation !== this.generation) return;
     this.sequence = sequence;
+    this.onEnded = onEnded;
     this.resetChannels();
     this.origin = this.context!.currentTime + 0.06;
     this.index = 0;
@@ -54,6 +56,7 @@ export class MidiPlayer {
     for (const voice of this.voices) { try { voice.node.stop(); } catch { /* Already ended. */ } voice.envelope.disconnect(); }
     this.voices.clear();
     this.sequence = undefined;
+    this.onEnded = undefined;
   }
   dispose(): void {
     this.stop();
@@ -70,6 +73,10 @@ export class MidiPlayer {
   private schedule(): void {
     const context = this.context!, sequence = this.sequence;
     if (!sequence) return;
+    // One-shot completion also applies after background-tab throttling.
+    if (this.onEnded && context.currentTime >= this.origin + sequence.endTick / 120 + 0.2) {
+      const done = this.onEnded; this.stop(); done(); return;
+    }
     // Avoid bursts of stale notes after background-tab timer throttling.
     if (context.currentTime - this.origin > sequence.endTick / 120 + 0.2) {
       for (const v of this.voices) { try { v.node.stop(); } catch { /* Ended. */ } }

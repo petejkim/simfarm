@@ -2576,3 +2576,9 @@ User priority received during this audit: finish it, then make amain the first s
 Changed startup selection and protected it until amain successfully begins, including asynchronous asset loading and initially muted preferences. Later game music requests and original Options re-enable genfarm remain available. This follows the explicit user policy; source40e15's broader lifecycle and internal XMIDI loops remain unclassified. Browser audio still requires an interaction and respects saved mute.
 
 Both source MIDI decoder tests pass, type checking/build pass, and14 focused Options/event browser checks pass, including first requested track, muted first enable, later manual track selection and fair/rodeo switching. Logs artifacts/startup-music-{unit,build,browser}.log. No full regression repeated for this bounded audio policy. Next restore About, omitting registered-owner text. No source/save/dependency changes or push.
+
+## 2026-10-11 — finish the introduction before normal farm music
+
+User caught amain repeating after the startup-priority commit. Added audio-clock one-shot completion and automatic genfarm handoff; mute/stop/replacement cancel the callback, and later situational tracks keep their existing behavior. No original lifecycle fidelity claim: this is the requested native intro policy. Two new real Web Audio browser cases use a shortened sequence fixture to verify completion order and no delayed restart after mute. Validation results recorded below before commit.
+
+Type checking/build, both MIDI decoder tests and all13 focused audio/Options browser cases pass(15.1s). Logs artifacts/startup-handoff-{build,unit,browser}.log. Full suites not repeated; no simulation/save/source/dependency changes. About remains next.

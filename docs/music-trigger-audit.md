@@ -145,3 +145,5 @@ Focused coverage: seven live calendar cases cover all entry forms, running/pause
 ## Native startup priority
 
 At the user's request, amain is the first sequence played per browser mount. Until its first successful playback, situational requests cannot replace it, including during fetch/unlock; an initially muted session also starts amain on first enable. Browser gesture requirements and saved mute preferences remain respected. Later events select their normal tracks; subsequent Options enable retains original genfarm. This is an explicit native startup policy, not a new claim about the unclassified source40e15 lifecycle. Internal XMIDI sequence loops remain a separate fidelity limitation.
+
+Startup follow-up: amain plays once, then hands off to genfarm. MidiPlayer accepts a one-shot completion callback; the audio clock triggers it after the final release tail, including resumption after a throttled tab. Stop, mute, replacement and disposal clear completion. Other tracks retain looping behavior. A later explicit amain selection also plays once. This corrects the initial native startup change's unintended indefinite intro loop.

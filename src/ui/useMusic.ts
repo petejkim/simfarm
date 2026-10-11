@@ -18,15 +18,18 @@ export function useMusic() {
     window.addEventListener('pagehide', stopOnHide);
     return () => { window.removeEventListener('pagehide', stopOnHide); request.current?.abort(); player.dispose(); };
   }, [player]);
-  const play = useCallback(async (id: string) => {
+  const play = useCallback(async (id: string): Promise<void> => {
     current.current = { track: id, enabled: true };
+    setTrack(id);
     request.current?.abort(); player.stop();
     const controller = new AbortController(); request.current = controller;
     setPlayback({ status: 'loading' });
     try {
       const sequence = await loadMusic(id, controller.signal);
       if (controller.signal.aborted) return;
-      await player.play(sequence);
+      await player.play(sequence, id === 'amain' ? () => {
+        if (!controller.signal.aborted && current.current.enabled) void play('genfarm');
+      } : undefined);
       if (!controller.signal.aborted) { started.current=true; setPlayback({ status: 'playing' }); }
     } catch (error) {
       if (!controller.signal.aborted) { player.stop(); setPlayback({ status: 'error', error: String(error) }); }
