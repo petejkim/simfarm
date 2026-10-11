@@ -730,7 +730,12 @@ export class GameSimulation {
       // every aging phase precedes wind0xbe74 and breeding0xbe81.
       const equipment = ageEquipment(s, this.finances, w.soilMoisture);
       this.equipmentAgingNotices = [...this.equipmentAgingNotices, ...equipment].slice(-20);
-      for (const result of equipment) if (result.kind === 'sold') this.events.push({ type: 'sound', sound: 'explode' });
+      for (const result of equipment) if (result.kind === 'sold') {
+        this.events.push({ type: 'sound', sound: 'explode' });
+        // Original0xbfb8 skips the outdoor cleanup/status tail for stored assets.
+        // 0xc00c pushes73 to22504: quick Edit history, not a modal Message.
+        if(result.outdoor)appendEditStatus(this.editStatus,73);
+      }
       ageBuildings(s, this.random);
       ageChemicals(s);
       const aging = ageAnimals(s, this.finances, this.random);

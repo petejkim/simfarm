@@ -42,16 +42,21 @@ test('weekly worn machinery sale displays proceeds, original clearing pixels and
   await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   await expect(page.locator('#machinery-notices')).toContainText(`Worn-out machine 1 was sold for $${game.getSnapshot().scenario.equipmentDefinitions[0].price >>> 3}.`);
   await expect(page.locator('#machinery-summary')).toContainText('Owned: 0 · Rented: 1');
+  const status=page.getByRole('button',{name:'Edit message history'});
+  await expect(status).toHaveText('A piece of machinery was lost.');
   await expect.poll(() => page.evaluate(() => {
     const analyser = (window as unknown as { __explosion?: AnalyserNode }).__explosion, data = new Float32Array(2048);
     analyser?.getFloatTimeDomainData(data); return Math.max(...data.map(Math.abs));
   })).toBeGreaterThan(0.01);
+  await status.click();await expect(page.getByRole('list',{name:'Recent Edit messages'}).locator('li')).toHaveText(['A piece of machinery was lost.']);
+  await page.keyboard.press('Escape');
   const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
   const archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA')), asset = (name: string) => archive.find(e => e.name === name)!.bytes;
   const expected = decodePlanar(asset('ega16til.til').subarray(664 * 128, 665 * 128), 16, 16, readPalette(asset('simfarm.pal'))).rgba;
   expect(await page.locator('#world').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(160, 160, 16, 16).data))).toEqual(Array.from(expected));
   const path = 'artifacts/browser-weekly-aging.simfarm.json'; expect(await save(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await load(page, game.save(4)); await expect(page.locator('#machinery-notices')).toHaveCount(0);
+  await expect(status).toHaveCount(0);
   for (let d = 0; d < 7; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page, path)).toEqual(JSON.parse(game.save(4)));
   await reveal(page, '#machinery-panel > summary'); await page.locator('#machinery-panel > summary').click(); await page.setViewportSize({ width: 1280, height: 844 });
@@ -67,6 +72,7 @@ test('busy worn machinery reports a deferred sale and remains owned through a br
   await expect(page.locator('#machinery-notices')).toContainText('Machine 1 is worn out and could not be sold while in use.');
   await expect(page.getByRole('table', { name: 'Machinery wear' })).toContainText('100%');
   await expect(page.locator('#machinery-summary')).toContainText('Owned: 1 · Rented: 0');
+  await expect(page.getByRole('button',{name:'Edit message history'})).toHaveCount(0);
   expect(await save(page, 'artifacts/browser-weekly-aging-deferred.simfarm.json')).toEqual(JSON.parse(game.save(4)));
 });
 

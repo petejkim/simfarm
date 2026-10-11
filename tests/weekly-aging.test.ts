@@ -20,6 +20,7 @@ test('weekly equipment and chemical phases pin active gates, wear/reset, sale, s
   exact(0xbf2f, '26ff87cca6'); exact(0xbf34, '2683bfcca604'); exact(0xbf43, '9a82215f0d');
   exact(0xbf65, '26f687bca640'); exact(0xbf8a, '6a029ae20fe624');
   exact(0x28042, 'e8a8f5eacc0fce271b00'); exact(0xbf99, '68ae1f9ab6082a21');
+  exact(0xc00c, '6a499ab42b751d'); // Status73 through22504, not a popup.
   exact(0xc120, '26ff87c8ed'); exact(0xc125, '268087c7ed01'); exact(0x14562, '268a87c7ed');
   assert.equal(e.subarray(0x8669e, 0x866aa).toString('ascii'), 'explode.voc\0');
 });
