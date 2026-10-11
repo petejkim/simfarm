@@ -48,7 +48,7 @@ export interface Catalog {
   tileCount: number;
   palette: number[][];
 }
-export interface WindowArtwork { title: HTMLImageElement; inactive: HTMLImageElement; close: HTMLImageElement }
+export interface WindowArtwork { title: HTMLImageElement; inactive: HTMLImageElement; close: HTMLImageElement; end: HTMLImageElement; endInactive: HTMLImageElement }
 export interface WeatherArtwork {frame:HTMLImageElement;sky:HTMLImageElement;ground:HTMLImageElement;vane:HTMLImageElement}
 export interface GameAssets { townChoiceArtwork:HTMLImageElement; townChoicePressed:HTMLImageElement; balanceArtwork:HTMLImageElement; evaluationArtwork:HTMLImageElement; weatherArtwork:WeatherArtwork; expertPortrait:HTMLImageElement; expertArtwork:HTMLImageElement; expertDeck:ExpertDeck; marketArtwork:HTMLImageElement; aircraftArtwork:HTMLImageElement; messageArtwork:HTMLImageElement; messageButton:HTMLImageElement; eventText:Uint8Array; editStatusText:Uint8Array; examineArtwork: HTMLImageElement; examineData: ExamineData; scheduleArtwork: HTMLImageElement; fieldGauges: HTMLImageElement; mapArtwork: HTMLImageElement; miniature: MapMiniature; catalog: Catalog; mainMenus: MainMenus; controlBar: HTMLImageElement; editPalette: HTMLImageElement; editHelp: HTMLImageElement; bankArtwork: HTMLImageElement; sellArtwork: HTMLImageElement; sellConditions: HTMLImageElement; buyArtwork: HTMLImageElement; buyCards: HTMLImageElement; buyCatalog: BuyCatalog; itemText: Uint8Array; windowArtwork: WindowArtwork; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
 export const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}assets/${path}`;
@@ -80,7 +80,7 @@ export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
     image('expert-portrait.png',signal),
   ]);
   if(expert[0].naturalWidth!==400||expert[0].naturalHeight!==224||expert[2].naturalWidth!==112||expert[2].naturalHeight!==64)throw new Error('Invalid Expert artwork');
-  const [townChoiceArtwork,townChoicePressed,balanceArtwork,evaluationArtwork,weatherFrame,weatherSky,weatherGround,weatherVane,marketArtwork,aircraftArtwork,messageArtwork,messageButton,eventText,editStatusText,examineArtwork, examineData, scheduleArtwork, fieldGauges, catalog, maskedTiles, townLayouts, airplane, shadow, dust, tornado, swarm, mainMenus, controlBar, editPalette, editHelp, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, mapArtwork, miniatureBytes, sellArtwork, sellConditions, windowTitle, windowInactive, windowClose] = await Promise.all([
+  const [townChoiceArtwork,townChoicePressed,balanceArtwork,evaluationArtwork,weatherFrame,weatherSky,weatherGround,weatherVane,marketArtwork,aircraftArtwork,messageArtwork,messageButton,eventText,editStatusText,examineArtwork, examineData, scheduleArtwork, fieldGauges, catalog, maskedTiles, townLayouts, airplane, shadow, dust, tornado, swarm, mainMenus, controlBar, editPalette, editHelp, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, mapArtwork, miniatureBytes, sellArtwork, sellConditions, windowTitle, windowInactive, windowClose, windowEnd, windowEndInactive] = await Promise.all([
     image('town-choice.png',signal),image('town-choice-pressed.png',signal),image('balance-window.png',signal),image('evaluation-window.png',signal),image('weather-window.png',signal),image('weather-sky.png',signal),image('weather-ground.png',signal),image('weather-vane.png',signal),
     image('market-window.png',signal),image('aircraft-window.png',signal),image('popup.bmp.png',signal),image('message-button.png',signal),response('raw/events.dat',signal).then(r=>r.arrayBuffer()).then(b=>new Uint8Array(b)),response('raw/qmessage.dat',signal).then(r=>r.arrayBuffer()).then(b=>new Uint8Array(b)),
     image('examine-window.png', signal), response('examine.json', signal).then(r=>r.json()).then(readExamineDataJson),
@@ -94,7 +94,7 @@ export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
     response('raw/itemtext.dat', signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b)),
     image('map-window.png', signal),
     response('raw/far_mapc.mbm', signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b)),
-    image('sell-window.png', signal), image('sell-conditions.png', signal), image('window-title.png', signal), image('window-title-inactive.png', signal), image('window-close.png', signal),
+    image('sell-window.png', signal), image('sell-conditions.png', signal), image('window-title.png', signal), image('window-title-inactive.png', signal), image('window-close.png', signal), image('window-title-end.png', signal), image('window-title-end-inactive.png', signal),
   ]);
   if(weatherFrame.naturalWidth!==336||weatherFrame.naturalHeight!==192||[weatherSky,weatherGround].some(i=>i.naturalWidth!==448||i.naturalHeight!==32)||weatherVane.naturalWidth!==64||weatherVane.naturalHeight!==32)throw new Error('Invalid Weather artwork');
   if(marketArtwork.naturalWidth!==320||marketArtwork.naturalHeight!==208)throw new Error('Invalid Market artwork');
@@ -108,14 +108,14 @@ export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
   if (editPalette.naturalWidth !== 48 || editPalette.naturalHeight !== 208) throw new Error('Invalid edit-palette artwork');
   if (bankArtwork.naturalWidth !== 288 || bankArtwork.naturalHeight !== 224) throw new Error('Invalid Bank artwork');
   if (buyArtwork.naturalWidth !== 256 || buyArtwork.naturalHeight !== 224 || buyCards.naturalWidth !== 896 || buyCards.naturalHeight !== 640 || itemText.length !== 18929) throw new Error('Invalid Buy artwork or text');
-  if ([windowTitle, windowInactive, windowClose].some(img => img.naturalWidth !== 16 || img.naturalHeight !== 16)) throw new Error('Invalid window title artwork');
+  if ([windowTitle, windowInactive, windowClose, windowEnd, windowEndInactive].some(img => img.naturalWidth !== 16 || img.naturalHeight !== 16)) throw new Error('Invalid window title artwork');
   if (sellArtwork.naturalWidth !== 192 || sellArtwork.naturalHeight !== 256 || sellConditions.naturalWidth !== 128 || sellConditions.naturalHeight !== 32) throw new Error('Invalid Sell artwork');
   if (mapArtwork.naturalWidth !== 288 || mapArtwork.naturalHeight !== 240) throw new Error('Invalid Map artwork');
   if (scheduleArtwork.naturalWidth !== 336 || scheduleArtwork.naturalHeight !== 224 || fieldGauges.naturalWidth !== 960 || fieldGauges.naturalHeight !== 24) throw new Error('Invalid Schedule artwork');
   if(evaluationArtwork.naturalWidth!==352||evaluationArtwork.naturalHeight!==192)throw new Error('Invalid Evaluation artwork');
   if(balanceArtwork.naturalWidth!==400||balanceArtwork.naturalHeight!==224)throw new Error('Invalid Balance Sheet artwork');
   if(townChoiceArtwork.naturalWidth!==368||townChoiceArtwork.naturalHeight!==224||townChoicePressed.naturalWidth!==73||townChoicePressed.naturalHeight!==73)throw new Error('Invalid town choice artwork');
-  return { townChoiceArtwork,townChoicePressed,balanceArtwork,evaluationArtwork,weatherArtwork:{frame:weatherFrame,sky:weatherSky,ground:weatherGround,vane:weatherVane},expertPortrait:expert[2],expertArtwork:expert[0],expertDeck:expert[1],marketArtwork,aircraftArtwork,messageArtwork,messageButton,eventText,editStatusText,examineArtwork, examineData, scheduleArtwork, fieldGauges, mapArtwork, miniature: readMapMiniature(miniatureBytes, catalog.palette), sellArtwork, sellConditions, catalog, mainMenus, controlBar, editPalette, editHelp, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, windowArtwork: { title: windowTitle, inactive: windowInactive, close: windowClose }, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
+  return { townChoiceArtwork,townChoicePressed,balanceArtwork,evaluationArtwork,weatherArtwork:{frame:weatherFrame,sky:weatherSky,ground:weatherGround,vane:weatherVane},expertPortrait:expert[2],expertArtwork:expert[0],expertDeck:expert[1],marketArtwork,aircraftArtwork,messageArtwork,messageButton,eventText,editStatusText,examineArtwork, examineData, scheduleArtwork, fieldGauges, mapArtwork, miniature: readMapMiniature(miniatureBytes, catalog.palette), sellArtwork, sellConditions, catalog, mainMenus, controlBar, editPalette, editHelp, bankArtwork, buyArtwork, buyCards, buyCatalog, itemText, windowArtwork: { title: windowTitle, inactive: windowInactive, close: windowClose, end: windowEnd, endInactive: windowEndInactive }, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
 }
 export async function loadScenarioAssets(id: number, signal: AbortSignal) {
   const [buffer, tiles] = await Promise.all([

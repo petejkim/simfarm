@@ -80,3 +80,31 @@ test('touch pointer cancellation stops movement and missing title artwork fails 
   await expect(page.locator('.loading')).toContainText('window-title.png');
   await expect(page.locator('#world')).toHaveCount(0);
 });
+
+test('right title ends show source active/inactive pixels and drag without closing or resizing',async({page})=>{
+  await start(page);const before=await save(page);
+  await page.locator('#window-buy').click();
+  const buy=page.locator('[data-window=buy]'),bank=page.locator('[data-window=bank]');
+  const title=buy.locator('.game-window-title');
+  await title.focus();for(let i=0;i<30;i++)await page.keyboard.press('ArrowRight');
+  await page.locator('#window-bank').click();await page.mouse.move(0,0);
+  const {PNG}=await import('pngjs');
+  async function endPixels(window:Locator,name:string){
+    const box=(await window.locator('.game-window-title').boundingBox())!;
+    const actual=PNG.sync.read(await page.screenshot({clip:{x:box.x+box.width-16,y:box.y,width:16,height:16}}));
+    const expected=PNG.sync.read(readFileSync(`public/assets/${name}.png`));
+    expect(actual.data).toEqual(expected.data);
+  }
+  await endPixels(bank,'window-title-end');await endPixels(buy,'window-title-end-inactive');
+  const old=(await buy.boundingBox())!,box=(await title.boundingBox())!;
+  // This area is the same title drag surface, not an extra button/tab stop.
+  await expect(title.getByRole('button')).toHaveCount(1);
+  await page.mouse.move(box.x+box.width-8,box.y+8);await page.mouse.down();
+  await page.mouse.move(box.x+box.width+32,box.y+38,{steps:3});await page.mouse.up();
+  await expect(buy).toHaveAttribute('data-front','true');await expect(bank).toHaveAttribute('data-front','false');
+  expect(await buy.boundingBox()).toEqual({...old,x:old.x+40,y:old.y+30});
+  await title.evaluate(el=>(el as HTMLElement).blur());await page.mouse.move(0,0);
+  await endPixels(buy,'window-title-end');await endPixels(bank,'window-title-end-inactive');
+  await page.screenshot({path:'artifacts/browser-title-ends.png'});
+  expect(await save(page)).toEqual(before);
+});

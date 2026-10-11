@@ -2015,3 +2015,10 @@ Startup-weather correction complete. Full preservation remains active/incomplete
 
 
 2026-10-11 scope clarification: the user excluded mobile adaptation and enhanced graphics/audio from the current goal. Updated AGENTS.md and plan.md; architecture stays separable, and existing requested native adaptations remain in scope. No runtime change or tests needed for this documentation-only clarification. Full preservation remains active/incomplete.
+
+
+## 2026-10-11 — original titlebar end caps
+
+The prior goal turn made concrete progress in be165d6 (startup-weather correction). Revalidated the clean tree and resumed right-title input research. Source ed0f..ed34 routes the alleged right control through ordinary title dragging; renderer2b180..2b1cf and decoded tiles confirm a decorative beveled cap. Corrected the earlier depth-button hypothesis and restored original active2/inactive119 artwork through reproducible import and shared CSS. No new focusable/action control, simulation/save behavior or original defect was introduced. Town's complete title artwork is preserved. During this increment the user excluded mobile adaptation and enhanced graphics/audio; committed that scope clarification separately as c3d8541.
+
+Five focused source/artwork tests pass (48 assertions,26ms); eight focused browser cases pass (5.4seconds), including final-composite cap RGBA, cap dragging/activation without resize/close, independent windows, launcher/menu checks, retained positions, touch cancellation of the existing generic pointer handler, asset failure and complete unchanged saves. Import, type checking/build and diff checks pass; reviewed artifacts/browser-title-ends.png. Logs: artifacts/title-end-{import,unit,build,browser}.log. No full-suite repetition. Next inspect original Edit activation and the current native close-all-floating-windows adaptation, then remaining original gameplay interactions. Full preservation remains active/incomplete; no push or supplied-source edits.

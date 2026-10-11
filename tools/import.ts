@@ -88,7 +88,7 @@ await png('control-bar.png', readControlBar(asset('cntlbtnh.bmp'), palette));
 await png('tiles.png', tileAtlas(asset('ega16til.til'), palette));
 // Window renderer2b09a: active title1, inactive237, left close control0.
 // These tiles contain artwork only; window titles stay HTML text.
-for (const [name, tile] of [['window-close', 0], ['window-title', 1], ['window-title-inactive', 237]] as const)
+for (const [name, tile] of [['window-close', 0], ['window-title', 1], ['window-title-inactive', 237], ['window-title-end', 2], ['window-title-end-inactive', 119]] as const)
   await png(`${name}.png`, decodePlanar(asset('ega16til.til').subarray(tile * 128, (tile + 1) * 128), 16, 16, palette));
 for (const name of ['airplane', 'apshadow', 'cropdust', 'tornado', 'swarm']) await png(`${name}.sprites.png`, spriteAtlas(asset(`${name}.spr`), palette));
 await png('masked-tiles.png', tileAtlas(asset('mskdtile.til'), palette, 32, 7));

@@ -12,6 +12,7 @@ export function WindowDesktop({ children, artwork }: { children: ReactNode; artw
   const active=order.at(-1)??null;
   return <Context value={{ active, order, show, close, raise }}><div className="game-desktop" style={{
     '--window-title': `url("${artwork.title.src}")`, '--window-inactive': `url("${artwork.inactive.src}")`, '--window-close': `url("${artwork.close.src}")`,
+    '--window-title-end': `url("${artwork.end.src}")`, '--window-title-end-inactive': `url("${artwork.endInactive.src}")`,
   } as CSSProperties}>{children}</div></Context>;
 }
 interface Position { left: number; top: number }
@@ -82,7 +83,7 @@ export function GameWindow({ windowKey, title, children, forced = false, modal =
     onPointerDownCapture={()=>{if(!forced)raise(windowKey);}} onFocusCapture={()=>{if(!forced)raise(windowKey);}}
     onCancel={event=>{event.preventDefault();event.stopPropagation();close();}}
     onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); } }}>
-    <div className="game-window-title" style={titleArtwork?{backgroundImage:`url("${titleArtwork}")`}:undefined} tabIndex={0} ref={ref} aria-label={`${title} window titlebar`}
+    <div className="game-window-title" data-title-artwork={Boolean(titleArtwork)} style={titleArtwork?{backgroundImage:`url("${titleArtwork}")`}:undefined} tabIndex={0} ref={ref} aria-label={`${title} window titlebar`}
       title="Drag to move; arrow keys move a focused titlebar (Shift for one pixel)"
       onPointerDown={startDrag} onPointerMove={event => {
         const start = drag.current; if (!start || start.pointer !== event.pointerId) return;
