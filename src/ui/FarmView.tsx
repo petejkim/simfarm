@@ -172,8 +172,13 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     windows.show(target === 'map' ? null : target === 'loans' ? 'bank' : target === 'planner' ? 'schedule' : 'actions');
     setNavigation({ target });
   }
-  function openWindow(window: WindowCommand) {
-    if(window!=='edit'&&windows.order.includes(window)){windows.close(window);return;}
+  function openWindow(window: WindowCommand, source: 'menu' | 'toolbar') {
+    if(window!=='edit'&&windows.order.includes(window)){
+      // Resident toolbar e9e0..ea16 raises a background window; the menu closes it.
+      if(source==='toolbar'&&windows.active!==window)windows.raise(window);
+      else windows.close(window);
+      return;
+    }
     windows.show(window === 'edit' ? null : window);
     if (window !== 'edit') {objectMove.cancel();construction.cancel();bulldoze.cancel();setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);}
     if (window === 'buy') { setNavigation(null); return; }

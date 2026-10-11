@@ -12,7 +12,7 @@ export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, o
   options: MenuChoices; disasters: MenuChoices;
   simulation: GameSimulation; scenarioId: number | null; assets: GameAssets; loaded: boolean;
   onLoad: (farm: LoadedFarm) => void;
-  onNewGame: () => void; onWindow: (window: WindowCommand) => void;
+  onNewGame: () => void; onWindow: (window: WindowCommand, source: 'menu' | 'toolbar') => void;
 }) {
   const input = useRef<HTMLInputElement>(null), pending = useRef<AbortController | null>(null);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(loaded ? 'Farm loaded.' : '');
@@ -58,9 +58,9 @@ export function SaveControls({ simulation, scenarioId, assets, loaded, onLoad, o
   return <div className="farm-file-controls">
     <div className="original-controls">
       <FileMenu options={options} disasters={disasters} data={assets.mainMenus} palette={assets.catalog.palette} busy={busy} filename={filename} error={message.startsWith('Could not save') ? message : null} onSave={save}
-        onLoad={() => input.current?.click()} onNewGame={onNewGame} onWindow={onWindow}
+        onLoad={() => input.current?.click()} onNewGame={onNewGame} onWindow={window=>onWindow(window,'menu')}
         onQuit={() => { simulation.dispatch({ type: 'set-paused', paused: true }); setMessage('Farm paused. Save before closing this tab.'); }} />
-      <ControlBar artwork={assets.controlBar} menus={assets.mainMenus} snapshot={simulation.getSnapshot()} onWindow={onWindow} />
+      <ControlBar artwork={assets.controlBar} menus={assets.mainMenus} snapshot={simulation.getSnapshot()} onWindow={window=>onWindow(window,'toolbar')} />
     </div>
     <GameWindow windowKey="session" title="Game files">
     <div className="save-controls"><div><button id="save-farm" disabled={busy} onClick={() => save()}>Save farm</button>

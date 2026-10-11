@@ -16,3 +16,23 @@ test('original window creation links neighbors and launcher toggle calls single-
   expect(b.subarray(0x2a781,0x2a789).toString('hex')).toBe('268947482689574a');
   expect(b.subarray(0x2ad39,0x2ad41).toString('hex')).toBe('268944482689544a');
 });
+
+
+test('toolbar closes only the front window and raises a background descriptor',()=>{
+  const b=readFileSync(new URL('../../simfarm-dos/SIMFARM.EXE',import.meta.url));
+  for(const [start,end,hash] of [
+    [0xe8d2,0xea19,'5cdf7c5576ad7ee88982e4bec8285301e29b580da51d77699cc289bd8bb60e1c'],
+    [0x2af9c,0x2b099,'ff0a666681b8ddc5583cd0cd5a988f7db28ad670b49d1916298c87caf9ea6ec2'],
+  ] as const)expect(createHash('sha256').update(b.subarray(start,end)).digest('hex')).toBe(hash);
+  // Toolbar rows below48, column x>>5; existing window is closed only if next is null.
+  expect(b.subarray(0xe8d7,0xe8dd).toString('hex')).toBe('2683bf7c1230');
+  expect(b.subarray(0xe8e7,0xe8ea).toString('hex')).toBe('c1f805');
+  expect(b.subarray(0xe9eb,0xe9f5).toString('hex')).toBe('268b4746260b4744750b');
+  expect(b.subarray(0xe9f7,0xe9fc).toString('hex')).toBe('9a6e10e624');
+  expect(b.subarray(0xea11,0xea16).toString('hex')).toBe('9a1e10e624');
+  // Raise stub24e6:101e -> overlay0:0eec; remove from neighbors then append at front.
+  expect(b.subarray(0x2807c,0x28086).toString('hex')).toBe('0000e86cf5eaec0ece27');
+  expect(b.subarray(0x2b01b,0x2b023).toString('hex')).toBe('26895c4426894446');
+  expect(b.subarray(0x2b04e,0x2b056).toString('hex')).toBe('26894f4426897746');
+  expect(b.subarray(0x2b05c,0x2b064).toString('hex')).toBe('26897f4626897f44');
+});

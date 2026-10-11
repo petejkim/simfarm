@@ -27,3 +27,23 @@ test('original launchers toggle only their own window and Edit remains permanent
   await page.locator('#window-edit').click();await expect(page.locator('.game-window:visible')).toHaveCount(0);await expect(page.locator('#viewport')).toBeVisible();
   await page.locator('#window-edit').click();await expect(page.locator('#viewport')).toBeVisible();
 });
+
+
+test('toolbar raises background windows without resetting controls, then toggles the front closed',async({page})=>{
+  await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  async function save(){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await(await p).path())!,'utf8'));}
+  const before=await save();
+  const buy=page.locator('[data-window=buy]'),bank=page.locator('[data-window=bank]');
+  await page.locator('#window-buy').click();await buy.getByRole('button',{name:'Machinery',exact:true}).click();
+  await buy.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');
+  const position=await buy.boundingBox();
+  await page.locator('#window-bank').click();
+  for(let i=0;i<2;i++){
+    await page.locator('#window-buy').click();await expect(buy).toHaveAttribute('data-front','true');await expect(bank).toBeVisible();
+    await expect(page.locator('#buy-description')).toContainText('Tractor');expect(await buy.boundingBox()).toEqual(position);
+    await page.locator('#window-bank').click();await expect(bank).toHaveAttribute('data-front','true');await expect(buy).toBeVisible();
+  }
+  await page.screenshot({path:'artifacts/browser-toolbar-raise.png'});
+  await page.locator('#window-bank').click();await expect(bank).toBeHidden();await expect(buy).toHaveAttribute('data-front','true');
+  await page.locator('#window-buy').click();await expect(buy).toBeHidden();expect(await save()).toEqual(before);
+});
