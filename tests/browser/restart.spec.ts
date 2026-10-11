@@ -80,38 +80,37 @@ test('a generated restart checkpoint preserves its original archive and continue
   expect(requests).toEqual([]); expect(errors).toEqual([]);
 });
 
-test('New farm restarts the active session, cancels safely and restores its generated continuation on mobile', async ({ page }) => {
+test('New Game starts fresh, cancels safely and restores its generated continuation', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 844 });
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   await reveal(page, '#next-day'); await page.locator('#next-day').click();
   const before = await save(page, 'live-before');
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click();
-  await expect(page.locator('#new-farm-session')).toHaveValue('restart');
-  await expect(page.locator('#new-farm-seed')).toBeDisabled();
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');
+  await expect(page.locator('#new-farm-session')).toHaveCount(0);
+  await expect(page.locator('#new-farm-seed')).toBeEnabled();
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   expect(await save(page, 'live-cancelled')).toEqual(before);
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#new-farm-year'); await page.locator('#new-farm-year').fill('1993');
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029'); await reveal(page, '#new-farm-year'); await page.locator('#new-farm-year').fill('1993');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-restart-mobile.png', fullPage: true });
   await reveal(page, '#region-design'); await page.locator('#region-design').click(); await reveal(page, '#play-farm'); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   const restarted = await save(page, 'live-generated');
-  const draft = CustomFarmSetup.restart(readNativeSave(JSON.stringify(before)).state, restarted.runtime.newFarm.provenance.options, assets);
+  const draft = CustomFarmSetup.fresh(restarted.runtime.newFarm.provenance.options, assets);
   const expected = GameSimulation.load(writeNativeSave(draft.accept('selected-climate'), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
   expect(restarted).toEqual(JSON.parse(expected.save(null)));
-  expect(restarted.runtime.newFarm.provenance.kind).toBe('restart');
+  expect(restarted.runtime.newFarm.provenance.kind).toBe('cold-start');
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
   const advanced = await save(page, 'live-generated-day'); expect(advanced).toEqual(JSON.parse(expected.save(null)));
   await load(page, JSON.stringify(advanced)); expect(await save(page, 'live-generated-restored')).toEqual(advanced);
 });
 
-test('all eight live restart markers retain session history and continue after original preset setup', async ({ page }) => {
+test('all eight New Game markers start fresh and continue after original preset setup', async ({ page }) => {
   const locations = readSetupMap(readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA')).find(e => e.name === 'scenario.odt')!.bytes).locations;
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   for (const [id, x, y] of [[0,0,8],[1,1,11],[2,1,3],[3,3,6],[4,9,7],[5,11,6],[6,13,11],[7,15,8]]) {
     const before = await save(page, `live-region-before-${id}`);
-    const expected = GameSimulation.load(JSON.stringify(before), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops)
-      .restartRegion(source(`SCEN${id}.SSM`), locations[y * 18 + x], assets, 'selected-climate').withAllCrops(browserCrops);
-    await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await expect(page.locator('#region-map')).toBeVisible();
+    const expected = GameSimulation.openGeographicRegion(source(`SCEN${id}.SSM`), locations[y * 18 + x], {visual:9029,simulation:9029,bounded:9029}, assets, 'selected-climate').withAllCrops(browserCrops);
+    await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029'); await expect(page.locator('#region-map')).toBeVisible();
     await page.locator(`[data-region="${x},${y}"]`).click(); await reveal(page, '#region-use'); await page.locator('#region-use').click();
     await expect(page.locator('#region-design')).toHaveCount(0);
     await expect(page.locator('#map-status')).toHaveText(`Scenario ${id + 1} · original terrain`);
@@ -122,16 +121,11 @@ test('all eight live restart markers retain session history and continue after o
   }
 });
 
-test('older original saves explain missing restart history and allow an explicit fresh farm', async ({ page }) => {
+test('New Game from older original saves needs no retained restart history', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   const legacy = await save(page, 'live-legacy-before'); useOriginalCatalog(legacy); legacy.version = 18; delete legacy.runtime.setup;
-  await load(page, JSON.stringify(legacy)); await reveal(page, '#new-farm'); await page.locator('#new-farm').click();
-  await expect(page.locator('#restart-unavailable')).toContainText('older save');
-  await expect(page.locator('#region-design')).toBeDisabled();
-  await expect(page.locator('#region-map')).toBeVisible(); await page.locator('[data-region="0,8"]').click();
-  await expect(page.locator('#region-design')).toBeDisabled();
-  await expect(page.locator('#region-design')).toBeDisabled();
-  await reveal(page, '#new-farm-session'); await page.locator('#new-farm-session').selectOption('fresh');
+  await load(page, JSON.stringify(legacy)); await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');
+  await expect(page.locator('#region-design')).toBeEnabled();
   await expect(page.locator('#new-farm-seed')).toBeEnabled(); await expect(page.locator('#restart-unavailable')).toHaveCount(0);
   await reveal(page, '#region-design'); await page.locator('#region-design').click(); await reveal(page, '#play-farm'); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   const fresh = await save(page, 'live-legacy-fresh'); expect(fresh.runtime.newFarm.provenance.kind).toBe('cold-start');
@@ -179,7 +173,7 @@ test('v20 climate selection stays unknown through browser import until an explic
     await expect(page.locator('#save-status')).toContainText('Could not load farm');
     expect(await save(page, 'climate-error')).toEqual(imported);
   }
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#region-design'); await page.locator('#region-design').click();
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029'); await reveal(page, '#region-design'); await page.locator('#region-design').click();
   await reveal(page, '#terrain-precipitation'); await page.locator('#terrain-precipitation').focus(); await page.keyboard.press('End');
   await reveal(page, '#terrain-temperature'); await page.locator('#terrain-temperature').focus(); await page.keyboard.press('Home');
   await reveal(page, '#terrain-wind'); await page.locator('#terrain-wind').focus(); await page.keyboard.press('End');

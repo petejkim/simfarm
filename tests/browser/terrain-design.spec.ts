@@ -55,7 +55,7 @@ test('custom screen uses HTML text over exact terrain pixels and Play accepts it
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.route('**/assets/raw/egafont.fnt', route => route.abort()); // Live text has no font-bitmap dependency.
   await start(page); const before = await save(page);
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#new-farm-session'); await page.locator('#new-farm-session').selectOption('fresh');
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');
   await reveal(page, '#region-design'); await page.locator('#region-design').click(); await expect(page.getByRole('heading', { name: 'Design your terrain' })).toBeFocused();
   const draft = CustomFarmSetup.fresh(options, assets); await expectPreview(page, draft);
   expect(await save(page)).toEqual(before);
@@ -75,10 +75,10 @@ test('custom screen uses HTML text over exact terrain pixels and Play accepts it
   expect(errors).toEqual([]);
 });
 
-test('mobile restart rerolls retain original streams, respond to keyboard and continue exactly after Play', async ({ page }) => {
+test('custom rerolls retain their own streams, respond to keyboard and continue exactly after Play', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 844 }); await start(page);
-  const before = await save(page), draft = CustomFarmSetup.restart(readNativeSave(JSON.stringify(before)).state, options, assets);
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#region-design'); await page.locator('#region-design').click();
+  const before = await save(page), draft = CustomFarmSetup.fresh(options, assets);
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029'); await reveal(page, '#region-design'); await page.locator('#region-design').click();
   await expectPreview(page, draft);
   await page.getByRole('button', { name: 'Increase rainfall', exact: true }).click();
   draft.setSettings({ ...options, climate: { ...options.climate, precipitation: 2 } });
@@ -98,7 +98,7 @@ test('mobile restart rerolls retain original streams, respond to keyboard and co
 test('missing preview assets and cancellation leave the old farm intact and allow a fresh preview', async ({ page }) => {
   await start(page); const before = await save(page);
   await page.route('**/assets/raw/far_mapc.mbm', route => route.fulfill({ status: 200, body: Buffer.alloc(0), contentType: 'application/octet-stream' }));
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#region-design'); await page.locator('#region-design').click();
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029'); await reveal(page, '#region-design'); await page.locator('#region-design').click();
   await expect(page.locator('#new-farm-error')).toContainText('Invalid miniature tile atlas');
   expect(await save(page)).toEqual(before);
   await page.unroute('**/assets/raw/far_mapc.mbm'); await reveal(page, '#region-design'); await page.locator('#region-design').click();
@@ -108,21 +108,19 @@ test('missing preview assets and cancellation leave the old farm intact and allo
   const started = new Promise<void>(resolve => { requested = resolve; });
   const release = new Promise<void>(resolve => { finish = resolve; });
   await page.route('**/assets/defworld.png', async route => { requested(); await release; await route.continue().catch(() => {}); });
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#region-design'); await page.locator('#region-design').click(); await started;
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029'); await reveal(page, '#region-design'); await page.locator('#region-design').click(); await started;
   await page.getByRole('button', { name: 'Cancel', exact: true }).click(); finish();
   await page.unroute('**/assets/defworld.png'); expect(await save(page)).toEqual(before);
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#region-design'); await page.locator('#region-design').click();
-  await expectPreview(page, CustomFarmSetup.restart(readNativeSave(JSON.stringify(before)).state, options, assets));
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029'); await reveal(page, '#region-design'); await page.locator('#region-design').click();
+  await expectPreview(page, CustomFarmSetup.fresh(options, assets));
 });
 
-test('extreme retained soil rejects unplaceable terrain atomically and Start fresh remains available', async ({ page }) => {
+test('New Game ignores extreme soil from the previous farm', async ({ page }) => {
   await start(page); const original = await save(page); original.runtime.weather.soilMoisture = -128;
   await page.locator('#load-farm-file').setInputFiles({ name: 'soil-boundary.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(original)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); const before = await save(page);
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#region-design'); await page.locator('#region-design').click();
-  await expect(page.locator('#new-farm-error')).toContainText('No starting property fits this preview');
-  await expect(page.locator('#play-farm')).toHaveCount(0); expect(await save(page)).toEqual(before);
-  await reveal(page, '#new-farm-session'); await page.locator('#new-farm-session').selectOption('fresh'); await reveal(page, '#region-design'); await page.locator('#region-design').click();
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029'); await reveal(page, '#region-design'); await page.locator('#region-design').click();
+  expect(await save(page)).toEqual(before);
   await expect(page.locator('#new-farm-error')).toHaveCount(0);
   await expect(page.locator('#play-farm')).toBeEnabled(); await reveal(page, '#play-farm'); await page.locator('#play-farm').click();
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
@@ -130,7 +128,7 @@ test('extreme retained soil rejects unplaceable terrain atomically and Start fre
 });
 
 
-for (const session of ['fresh', 'restart']) test(`${session} custom farms start with the selected climate and remembered Options`,async({page})=>{
+test('custom farms start with the selected climate and remembered Options',async({page})=>{
   await start(page);
   const prior = await save(page);
   Object.assign(prior.runtime.weather, { nextForecast: Array(7).fill(3), forecast: Array(7).fill(3), current: 3,
@@ -139,7 +137,7 @@ for (const session of ['fresh', 'restart']) test(`${session} custom farms start 
   await page.locator('#load-farm-file').setInputFiles({name:'storm.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(prior))});
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'AutoDoze',exact:true}).click();
-  await reveal(page,'#new-farm');await page.locator('#new-farm').click();await reveal(page,'#new-farm-session');await page.locator('#new-farm-session').selectOption(session);
+  await reveal(page,'#new-farm');await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');
   await reveal(page,'#region-design');await page.locator('#region-design').click();
   for(const channel of ['precipitation','temperature','wind']){await reveal(page,'#terrain-'+channel);await page.locator('#terrain-'+channel).focus();await page.keyboard.press('Home');}
   await expect(page.locator('#terrain-settings')).toContainText('Rainfall: Low · Temperature: Low · Wind: Low');

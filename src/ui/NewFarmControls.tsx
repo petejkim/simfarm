@@ -3,20 +3,26 @@ import { useEffect, useRef, useState } from 'react';
 import { loadGeneratedTiles, loadSavedFarmTiles, loadNewFarmAssets, loadRegionAssets, loadScenarioAssets, loadTerrainPreviewAssets, type TerrainPreviewAssets, type GameAssets, type RegionAssets } from '../assets/game-assets';
 import { GameSimulation } from '../simulation/game';
 import { CustomFarmSetup } from '../simulation/custom-farm-setup';
-import { readNativeSave, writeNativeSave, MAX_SAVE_BYTES } from '../formats/native-save';
+import { writeNativeSave, MAX_SAVE_BYTES } from '../formats/native-save';
 import type { NewFarmOptions } from '../simulation/new-farm-state';
 import type { LoadedFarm } from './SaveControls';
 import { RegionMap } from './RegionMap';
 import { TerrainDesign } from './TerrainDesign';
 
+/** Browser setup defaults are independent of the simulation's saved RNG streams. */
+function randomSetupSeeds(): NewFarmOptions['seeds'] {
+  const value = new Uint16Array(1);
+  do { crypto.getRandomValues(value); } while (value[0] === 0);
+  return { visual: value[0], simulation: value[0], bounded: value[0] };
+}
+
 export function NewFarmControls({ assets, simulation: current, open, onOpenChange, onCreate }: {
   assets: GameAssets; simulation: GameSimulation; open: boolean; onOpenChange: (open: boolean) => void; onCreate: (farm: LoadedFarm) => void;
 }) {
-  const [session, setSession] = useState<'restart' | 'fresh'>('restart');
   const [options, setOptions] = useState<NewFarmOptions>(() => {
     const date = new Date();
     return { climate: { precipitation: 2, temperature: 2, wind: 1 }, river: true, lake: false,
-      date: { year: date.getFullYear(), dayOfWeek: date.getDay() }, seeds: { visual: 9029, simulation: 9029, bounded: 9029 } };
+      date: { year: date.getFullYear(), dayOfWeek: date.getDay() }, seeds: randomSetupSeeds() };
   });
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [draft, setDraft] = useState<{ setup: CustomFarmSetup; artwork: TerrainPreviewAssets; tiles: HTMLImageElement } | null>(null);
@@ -26,12 +32,11 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
   const fileInput = useRef<HTMLInputElement>(null);
   const pending = useRef<AbortController | null>(null), form = useRef<HTMLFormElement>(null);
   useEffect(() => {
-    if (open) { setDraft(null); setBusy(false); setError(''); void chooseRegion(); }
+    if (open) { setOptions(o => ({...o, seeds: randomSetupSeeds()})); setDraft(null); setBusy(false); setError(''); void chooseRegion(); }
     return () => { pending.current?.abort(); pending.current = null; regionPending.current?.abort(); };
   }, [open]);
   const location = region ? region.locations[selected] : null;
   const preset = location && region ? region.farms.find(f => f.x === location.x && f.y === location.y) : undefined;
-  const missingHistory = session === 'restart' && current.getSnapshot().setup.terrainHistory === null;
   function selectRegion(index: number, map = region) {
     const p = map?.locations[index]; if (!p?.selectable) return;
     setSelected(index); setError('');
@@ -53,9 +58,7 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
       if (preset && !custom) {
         const [farm, setup] = await Promise.all([loadScenarioAssets(preset.id, controller.signal), loadNewFarmAssets(assets, controller.signal)]);
         controller.signal.throwIfAborted();
-        const simulation = session === 'restart'
-          ? current.restartRegion(farm.scenario.sourceBytes!, options.climate, setup, 'selected-climate')
-          : GameSimulation.openGeographicRegion(farm.scenario.sourceBytes!, options.climate, options.seeds, setup, 'selected-climate');
+        const simulation = GameSimulation.openGeographicRegion(farm.scenario.sourceBytes!, options.climate, options.seeds, setup, 'selected-climate');
         if (!controller.signal.aborted) { applyPreferredOptions(simulation);onCreate({ scenarioId: preset.id, simulation, tiles: farm.tiles }); onOpenChange(false); }
         return;
       }
@@ -64,11 +67,10 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
         !custom ? Promise.resolve(null) : loadTerrainPreviewAssets(controller.signal)]);
       controller.signal.throwIfAborted();
       if (artwork) {
-        const preview = session === 'restart' ? CustomFarmSetup.restart(readNativeSave(current.save(null)).state, options, setup)
-          : CustomFarmSetup.fresh(options, setup);
+        const preview = CustomFarmSetup.fresh(options, setup);
         setDraft({ setup: preview, artwork, tiles }); return;
       }
-      const simulation = session === 'restart' ? current.restartGeographic(options, setup, 'selected-climate') : GameSimulation.createGeographic(options, setup, 'selected-climate');
+      const simulation = GameSimulation.createGeographic(options, setup, 'selected-climate');
       if (!controller.signal.aborted) { applyPreferredOptions(simulation);onCreate({ scenarioId: null, simulation, tiles }); onOpenChange(false); }
     } catch (cause) {
       if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : String(cause));
@@ -86,8 +88,7 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
       let restored: { scenarioId: number | null; simulation: GameSimulation };
       if (originalFile) {
         const setup = await loadNewFarmAssets(assets, controller.signal); controller.signal.throwIfAborted();
-        const simulation = session === 'restart' ? current.restartOriginalSave(bytes, options.date, setup)
-          : GameSimulation.openOriginalSave(bytes, { date: options.date, seeds: options.seeds }, setup);
+        const simulation = GameSimulation.openOriginalSave(bytes, { date: options.date, seeds: options.seeds }, setup);
         restored = { scenarioId: null, simulation };
       } else restored = GameSimulation.load(new TextDecoder().decode(bytes), assets.catalog.crops, assets.townLayouts);
       const tiles = await loadSavedFarmTiles(restored.simulation.getSnapshot().scenario, restored.scenarioId, controller.signal);
@@ -115,22 +116,19 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
         const file = event.currentTarget.files?.[0]; event.currentTarget.value = '';
         if (file) void loadFile(file);
       }} />
-    <form ref={form} onSubmit={event => { event.preventDefault(); if (!busy && !missingHistory && region) void create(); }}>
-      {region ? <RegionMap assets={region} selected={selected} disabled={busy} unavailable={missingHistory} onSelect={selectRegion}
+    <form ref={form} onSubmit={event => { event.preventDefault(); if (!busy && region) void create(); }}>
+      {region ? <RegionMap assets={region} selected={selected} disabled={busy} unavailable={false} onSelect={selectRegion}
         onDesign={() => { if (form.current?.reportValidity()) void create(true); }}
         onLoad={() => { setError(''); fileInput.current?.click(); }}
         onQuit={() => { pending.current?.abort(); current.dispatch({ type: 'set-paused', paused: true }); onOpenChange(false); }} />
         : <div className="setup-loading">
           {regionError ? <p id="region-error" role="alert">Could not load regions: {regionError}</p> : <p role="status">Loading regions…</p>}
           <button id="choose-region" type="button" onClick={() => void chooseRegion()}>Retry region map</button>
-          <button id="design-farm" type="button" disabled={busy || missingHistory} onClick={() => { if(form.current?.reportValidity()) void create(true); }}>Design your own</button>
+          <button id="design-farm" type="button" disabled={busy} onClick={() => { if(form.current?.reportValidity()) void create(true); }}>Design your own</button>
         </div>}
       <fieldset className="setup-options" disabled={busy} aria-label="Farm options">
-        <label>Session <select id="new-farm-session" value={session} onChange={e => setSession(e.target.value as 'restart' | 'fresh')}>
-          <option value="restart">Restart</option><option value="fresh">Start fresh</option>
-        </select></label>
-        <label>Map seed <input id="new-farm-seed" type="number" min="1" max="65535" step="1" required disabled={session === 'restart'} value={options.seeds.simulation}
-          title={session === 'restart' ? 'Restart continues the current random sequence. Choose Start fresh to set a seed.' : 'Reproduce a map using the same seed and settings.'}
+        <label>Map seed <input id="new-farm-seed" type="number" min="1" max="65535" step="1" required value={options.seeds.simulation}
+          title="Reproduce a map using the same seed and settings."
           onChange={e => { const seed = Number(e.target.value); setOptions(o => ({ ...o, seeds: { visual: seed, simulation: seed, bounded: seed } })); }} /></label>
         <label>Starting year <input id="new-farm-year" type="number" min="1" max="65535" step="1" required disabled={Boolean(preset)} value={options.date.year}
           title={preset ? 'Original farms retain their saved year.' : 'Year for a generated farm.'}
@@ -138,10 +136,9 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
       </fieldset>
       <div className="setup-footer">
         <span id="region-selection" role="status">{location ? `Region ${location.x + 1}, ${location.y + 1} · ${preset ? `Scenario ${preset.id + 1}` : 'New farm'}` : ''}</span>
-        <details><summary>Help</summary><div id="region-map-help">Choose a location, then Use This Region. Yellow squares open original farms and retain their dates. Design Your Own opens the terrain designer. Restart keeps financial history; Start fresh resets it and enables the map seed. Cancel keeps your farm; Quit also pauses it. Save your current farm before replacing it.</div></details>
+        <details><summary>Help</summary><div id="region-map-help">Choose a location, then Use This Region. Yellow squares open original farms and retain their dates. Design Your Own opens the terrain designer. New Game starts a fresh farm. Enter a seed to reproduce a map. Cancel keeps your farm; Quit also pauses it. Save your current farm before replacing it.</div></details>
         <button type="button" onClick={() => { pending.current?.abort(); regionPending.current?.abort(); onOpenChange(false); }}>Cancel</button>
       </div>
-      {missingHistory && <p id="restart-unavailable" role="status">This older save cannot restart through the farm chooser. Choose Start fresh.</p>}
       {error && <p id="new-farm-error" role="alert">Could not open farm: {error}</p>}
     </form>
   </section>;

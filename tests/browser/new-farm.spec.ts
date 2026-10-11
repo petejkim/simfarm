@@ -28,8 +28,8 @@ async function selectTile(page: Page, x: number, y: number) {
 test('create a generated farm on mobile, save it and restore without any original scenario request', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#new-farm'); await page.locator('#new-farm').click();
-  await reveal(page, '#new-farm-session'); await page.locator('#new-farm-session').selectOption('fresh');
+  await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');
+
   await reveal(page, '#new-farm-year'); await page.locator('#new-farm-year').fill('1993'); await reveal(page, '#new-farm-seed'); await page.locator('#new-farm-seed').fill('9029');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-new-farm-setup.png', fullPage: true });
@@ -108,11 +108,11 @@ test('a failed creation keeps the current session, and Cancel followed by anothe
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   const before = (await save(page, 'browser-create-failure-before')).data;
   await page.route('**/assets/new-farm-runtime.json', route => route.fulfill({ status: 404, body: '' }));
-  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await reveal(page, '#region-design'); await page.locator('#region-design').click();
+  await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029'); await reveal(page, '#region-design'); await page.locator('#region-design').click();
   await expect(page.locator('#new-farm-error')).toContainText('Missing game asset');
   expect((await save(page, 'browser-create-failure-after')).data).toEqual(before);
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await page.unroute('**/assets/new-farm-runtime.json'); await reveal(page, '#new-farm'); await page.locator('#new-farm').click();
+  await page.unroute('**/assets/new-farm-runtime.json'); await reveal(page, '#new-farm'); await page.locator('#new-farm').click(); await page.locator('#new-farm-seed').fill('9029');
   await expect(page.locator('#region-design')).toBeEnabled(); await expect(page.locator('#new-farm-error')).toHaveCount(0);
   await reveal(page, '#region-design'); await page.locator('#region-design').click(); await reveal(page, '#play-farm'); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
 });
