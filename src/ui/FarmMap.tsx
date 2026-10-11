@@ -10,6 +10,7 @@ import { drawWorld, type MapPreview } from '../render/world-renderer';
 
 export interface MapFocus { x: number; y: number }
 interface Props {
+  autoScroll: boolean;
   viewportRef: RefObject<HTMLDivElement | null>;
   scenario: Scenario;
   flight: AircraftFlight | null;
@@ -40,7 +41,7 @@ const directions: Record<string, [number, number]> = {
   ArrowLeft: [-64, 0], ArrowRight: [64, 0], ArrowUp: [0, -64], ArrowDown: [0, 64],
 };
 
-export function FarmMap({ viewportRef, scenario, tiles, maskedTiles, zoom, focus, field, selection, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
+export function FarmMap({ autoScroll, viewportRef, scenario, tiles, maskedTiles, zoom, focus, field, selection, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stroke=useRef<{pointer:number;last:number|null}|null>(null),suppressClick=useRef(false);
   const stopPainting=useCallback(()=>{
@@ -77,6 +78,27 @@ export function FarmMap({ viewportRef, scenario, tiles, maskedTiles, zoom, focus
     };
   }, [clearPointer, updatePointer]);
   useEffect(() => () => clearPointer(), [clearPointer]);
+  useEffect(() => {
+    if (!autoScroll || flight) return;
+    let frame: number, last: number | null = null;
+    const step = (now: number) => {
+      const p = pointerRef.current, viewport = viewportRef.current;
+      if (!document.hidden && p && viewport && document.elementFromPoint(p.clientX, p.clientY) === canvasRef.current) {
+        const bounds = viewport.getBoundingClientRect(), x = p.clientX - bounds.left, y = p.clientY - bounds.top;
+        const dx = x <= 1 ? -1 : x >= viewport.clientWidth - 16 ? 1 : 0;
+        const dy = y <= 1 ? -1 : y >= viewport.clientHeight - 16 ? 1 : 0;
+        if (!dx && !dy) last = null;
+        else if (last === null) last = now;
+        else if (now - last >= 200) {
+          // Source c6a0 moves two 16px cells. Browser cadence replaces DOS polling.
+          viewport.scrollBy(dx * 32 * zoom, dy * 32 * zoom); updatePointer(); last = now;
+        }
+      } else last = null;
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [autoScroll, flight, zoom, updatePointer, viewportRef]);
   const previousZoom = useRef(zoom), previousFocus = useRef<MapFocus | null>(null);
   useLayoutEffect(() => {
     const context = canvasRef.current!.getContext('2d')!;

@@ -36,6 +36,7 @@ export function readNewFarmRuntimeDefaults(executable: Uint8Array): NewFarmRunti
       timerTicks: word(0x139e), animationTicks: word(0x13a0), dayDelayTicks: word(0x1f8c), speed: word(0x1f90),
       paceEquipment: Boolean(byte(0xa8a0)), equipmentPacingByte: byte(0xa8a0), precipitationDays: word(0x2412),
       autoRent: Boolean(byte(0xa89d)), autoBuySeeds: Boolean(byte(0xa89c)), autoClear: Boolean(byte(0xa89f)),
+      autoScroll: Boolean(byte(0xa89e)), autoGoto: Boolean(byte(0x0189)), messages: Boolean(byte(0xa8a1)),
       seedExpenses: dword(0x3e78), rentalExpenses: dword(0x3ea8), cropIncome: dword(0x3e60), contractGains: dword(0x3e6c),
       contractLosses: dword(0x3e84), salesAccumulator: dword(0x3e44), workerExpenses: dword(0x3e88), landExpenses: dword(0x3e80),
       chemicalExpenses: dword(0x3ea0), townRegionX: word(0x7592), townRegionY: word(0xd530, 0x2d9f),

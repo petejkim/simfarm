@@ -69,6 +69,7 @@ const emptySnapshot = () => null;
 
 interface Props {
   audioControls: ReactNode;
+  audioOptions: { music: boolean; sound: boolean; toggleMusic: () => void; toggleSound: () => void };
   id: number | null;
   loaded?: LoadedFarm;
   onLoad: (farm: LoadedFarm) => void;
@@ -80,7 +81,7 @@ interface Props {
   onFlightRunning: (running: boolean) => void;
 }
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
-export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, onGameEvent, onFlightRunning }: Props) {
+export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onScenarioChange, assets, zoom, onZoomChange, onGameEvent, onFlightRunning }: Props) {
   const windows = useWindows();
   useEffect(() => windows.show(null), [windows.show]);
   const [newFarmOpen, setNewFarmOpen] = useState(false);
@@ -112,7 +113,8 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     if(event.type==='finance-notice'){
       const message={serial:++financeMessageSerial.current,id:event.id};
       setFinanceMessages(previous=>[...previous,message]);
-    }else onGameEvent(event);
+    }else if(event.type==='map-focus')setFocus({x:event.x,y:event.y});
+    else onGameEvent(event);
   }), [simulation, onGameEvent]);
   const flightRunning = Boolean(snapshot?.aircraftFlight && !snapshot.paused);
   useEffect(() => { onFlightRunning(flightRunning); return () => onFlightRunning(false); }, [flightRunning, onFlightRunning]);
@@ -345,8 +347,14 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
     }
   }
   return <>
-    {simulation && <SaveControls simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
-    <GameWindow windowKey="options" title="Options">{audioControls}
+    {simulation && <SaveControls options={{
+      checked: [audioOptions.music, audioOptions.sound, ...(['autoBuySeeds','autoScroll','autoClear','autoGoto','messages','autoRent'] as const).map(key=>simulation.getSnapshot().scenario.farm[key])],
+      toggle: index=>{
+        if(index===0)audioOptions.toggleMusic();else if(index===1)audioOptions.toggleSound();
+        else {const option=(['autoBuySeeds','autoScroll','autoClear','autoGoto','messages','autoRent'] as const)[index-2];if(option)simulation.dispatch({type:'set-option',option,enabled:!simulation.getSnapshot().scenario.farm[option]});}
+      },
+    }} simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
+    <GameWindow windowKey="options" title="Audio and tools">{audioControls}
       <button onClick={() => windows.show('session')}>Game files</button> <button onClick={() => windows.show('tools')}>Edit tools</button>
       <button onClick={() => windows.show('about-project')}>Preservation progress</button>
     </GameWindow>
@@ -374,6 +382,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
       </select></label><button id="center" disabled={!data || Boolean(snapshot?.aircraftFlight)} onClick={() => setFocus({ x: 48, y: 48 })}>Center map</button></div>
     </section>
+    <button onClick={() => windows.show('options')}>Audio and tools</button>
     <button onClick={() => windows.show('navigation')}>Farm controls</button>
     <button onClick={()=>chooseTool('inspect')}>Field orders</button>
     <button id="new-farm" onClick={() => setNewFarmOpen(true)}>New farm</button>
@@ -437,7 +446,7 @@ export function FarmView({ audioControls, id, loaded, onLoad, onScenarioChange, 
         onChoose={tool=>{setFieldMenu(null);setFieldMapTool(tool);setMapTool(tool.kind==='plant'?'field':'inspect');setSelection(null);viewportRef.current?.focus({preventScroll:true});}}/>}
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
-        <FarmMap viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
+        <FarmMap autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !fieldMenu && !bulldoze.pending && !financeMessages.length && !snapshot.pendingTown && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={data.tiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;setInteractionMessage('');const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
           field={field} selection={selection} preview={preview} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {

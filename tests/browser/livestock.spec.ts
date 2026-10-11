@@ -30,7 +30,7 @@ test('live livestock moves with original pixels, drinks and preserves frame stat
   const pixels = await page.locator('#world').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(11 * 16, 10 * 16, 16, 16).data));
   expect(pixels).toEqual(Array.from(ground));
   const path = 'artifacts/browser-livestock.simfarm.json', saved = await download(page, path);
-  expect(saved.version).toBe(24); expect(saved.runtime.animalFrame.lastMoveTick).toBe(16); expect(saved).toEqual(JSON.parse(game.save(4)));
+  expect(saved.version).toBe(25); expect(saved.runtime.animalFrame.lastMoveTick).toBe(16); expect(saved).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   for (let day = 0; day < 21; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4))); expect(game.getSnapshot().animalFrame.lastCentreTick).toBeGreaterThan(320);

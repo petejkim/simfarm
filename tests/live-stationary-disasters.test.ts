@@ -19,7 +19,7 @@ test('live frost cancels locusts, posts original loss/prices/sound and resumes d
   const history = f.state.market.history[4][29]!;
   assert.equal(s.market.history[4][29],Math.min((history+(history>>>f.state.crops[4][72]))&65535,(f.state.crops[4][34]|f.state.crops[4][35]<<8)*4));
   assert.deepEqual(s.cropMarketPrices,f.state.cropMarketPrices);
-  assert.deepEqual(events,[{type:'sound',sound:'swarm'},{type:'sound',sound:'wind'}]);assert.deepEqual(saved(g).runtime.random,rng);
+  assert.deepEqual(events,[{type:'sound',sound:'swarm'},{type:'map-focus',x:20,y:20},{type:'sound',sound:'wind'}]);assert.deepEqual(saved(g).runtime.random,rng);
   const checkpoint=g.save(4),result=s.lastDisasterResult;
   if(result?.ok&&'fields'in result)result.fields.push(97);s.disasters.flags=0;assert.equal(g.save(4),checkpoint);
   g.tick(40000);assert.equal(g.save(4),checkpoint);

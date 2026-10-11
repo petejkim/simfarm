@@ -17,6 +17,9 @@ export interface SavedFarmState {
   autoRent: boolean;
   autoBuySeeds: boolean;
   autoClear: boolean;
+  autoScroll: boolean;
+  autoGoto: boolean;
+  messages: boolean;
   seedExpenses: number;
   rentalExpenses: number;
   cropIncome: number;
@@ -45,7 +48,8 @@ export function readFarmState(bytes: Uint8Array, workerExpenses = 0): SavedFarmS
     salesAccumulator: b.u32(0x21722), workerExpenses, // SF-014: original loader never restores 6190:3e88.
     landExpenses: b.u32(0x216b4), // SF-014: second 3e80 read overwrites the entry at 0x216ac.
     chemicalExpenses: b.u32(0x216bc), // 0x45e06 -> 6190:3ea0.
-    autoBuySeeds: Boolean(bytes[0x2173b]), autoClear: Boolean(bytes[0x21737]),
+    autoBuySeeds: Boolean(b.slice(0x2173b, 1)[0]), autoClear: Boolean(b.slice(0x21737, 1)[0]),
+    autoScroll: Boolean(b.slice(0x21739, 1)[0]), autoGoto: Boolean(b.slice(0x21735, 1)[0]), messages: Boolean(b.slice(0x21733, 1)[0]),
     seedExpenses: b.u32(0x216a4), paceEquipment: Boolean(b.slice(0x21718, 1)[0]), equipmentPacingByte: b.slice(0x21718, 1)[0] };
 }
 

@@ -11,8 +11,11 @@ function MenuDialog({ title, children, onClose }: { title: string; children: Rea
   </dialog>;
 }
 
-/** Recovered File/Windows chains; file-system/exit operations use browser policies. */
-export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad, onNewGame, onQuit, onWindow }: {
+export interface MenuOptions { checked: readonly boolean[]; toggle: (index: number) => void }
+
+/** Recovered File/Options/Windows chains; file-system/exit operations use browser policies. */
+export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad, onNewGame, onQuit, onWindow, options }: {
+  options: MenuOptions;
   data: MainMenus; palette: number[][]; busy: boolean; filename: string; error: string | null;
   onSave: (filename?: string) => boolean; onLoad: () => void; onNewGame: () => void; onQuit: () => void; onWindow: (window: GameWindow) => void;
 }) {
@@ -48,13 +51,13 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
         id={`${entry.title.toLowerCase()}-menu-button`} disabled={busy}
         style={{ left: entry.header.x, width: entry.header.width, paddingLeft: index === 0 ? 8 : 0 }}
         title={undefined}
-        aria-haspopup={index === 0 || index === 3 ? 'menu' : undefined} aria-expanded={index === 0 || index === 3 ? open === index : undefined}
-        aria-controls={index === 0 || index === 3 ? `original-${entry.title.toLowerCase()}-menu` : undefined}
-        onClick={() => { if (index === 0 || index === 3) setOpen(value => value === index ? null : index); else { setOpen(null); windows.show(index === 1 ? 'options' : index === 2 ? 'speed' : 'disasters'); } }} onKeyDown={event => {
-          if ((index === 0 || index === 3) && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) { event.preventDefault(); setOpen(index); }
+        aria-haspopup={index === 0 || index === 1 || index === 3 ? 'menu' : undefined} aria-expanded={index === 0 || index === 1 || index === 3 ? open === index : undefined}
+        aria-controls={index === 0 || index === 1 || index === 3 ? `original-${entry.title.toLowerCase()}-menu` : undefined}
+        onClick={() => { if (index === 0 || index === 1 || index === 3) setOpen(value => value === index ? null : index); else { setOpen(null); windows.show(index === 2 ? 'speed' : 'disasters'); } }} onKeyDown={event => {
+          if ((index === 0 || index === 1 || index === 3) && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) { event.preventDefault(); setOpen(index); }
         }}>{entry.title}</button>)}
       {active && <div ref={menu} id={`original-${active.title.toLowerCase()}-menu`} className="original-menu-popup" role="menu" aria-label={active.title}
-        style={{ left: active.popup.x, width: active.popup.width }} onKeyDown={event => {
+        style={{ left: active.popup.x, width: active.popup.width, ...(open === 1 ? { height: active.popup.height, padding: '1px 0' } : {}) }} onKeyDown={event => {
           const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
           const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
           if (event.key === 'Escape') { event.preventDefault(); closeMenu(); }
@@ -66,9 +69,9 @@ export function FileMenu({ data, palette, busy, filename, error, onSave, onLoad,
             buttons[next]?.focus();
           }
         }}>
-        {active.items.map((item, index) => open === 0 && index === 5 ? null : <button key={item.offset} role="menuitem" tabIndex={-1}
+        {active.items.map((item, index) => open === 0 && index === 5 ? null : <button key={item.offset} role={open === 1 ? 'menuitemcheckbox' : 'menuitem'} aria-checked={open === 1 ? options.checked[index] : undefined} tabIndex={-1}
           disabled={busy}
-          onClick={() => { if (open === 0) select(index); else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{item.label}</button>)}
+          onClick={() => { if (open === 0) select(index); else if (open === 1) { closeMenu(); options.toggle(index); } else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{open === 1 && <span className="menu-check" aria-hidden="true">{options.checked[index] ? '✓' : ''}</span>}{item.label}</button>)}
       </div>}
     </nav>
     {dialog === 'about' && <MenuDialog title={file.items[0].label} onClose={closeDialog}>

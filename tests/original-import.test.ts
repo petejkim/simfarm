@@ -25,7 +25,7 @@ test('original import retains runtime history, RNG, weather, traffic and timers 
   for (let id = 0; id < 8; id++) {
     const bytes = source(`SCEN${id}.SSM`), file = readScenario(bytes), next = old.importOriginal(bytes, crops).simulation;
     const saved = parsed(next), state = readNativeSave(next.save(null)).state;
-    assert.equal(saved.version, 23); assert.equal(saved.scenarioId, null); assert.equal(saved.scenario.origin, 'original');
+    assert.equal(saved.version, 25); assert.equal(saved.scenarioId, null); assert.equal(saved.scenario.origin, 'original');
     assert.equal(saved.scenario.source, bytes.toString('hex')); assert.equal(saved.runtime.retainedSetup, null);
     assert.equal(saved.scenario.farm.workerExpenses, 0xfedcba98); assert.equal(state.finances.accounts.buildingBookValue, 45678);
     assert.equal(state.finances.debt.balanceDue, 123); assert.deepEqual(state.scenario.climate, file.climate);

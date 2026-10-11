@@ -14,7 +14,8 @@ export async function openWindow(page: Page, key: string) {
   if (key === 'taxes') { await openWindow(page,'balance'); await page.getByRole('button',{name:'View tax details',exact:true}).click(); return; }
   if (key === 'edit') { await page.locator('#window-edit').click(); return; }
   if (await page.locator(`[data-window="${key}"]`).isVisible()) return;
-  if (['options', 'speed', 'disasters'].includes(key)) { await page.locator(`#${key}-menu-button`).click(); return; }
+  if (key === 'options') { await openWindow(page, 'tools'); await page.getByRole('button', { name: 'Audio and tools', exact: true }).click(); return; }
+  if (['speed', 'disasters'].includes(key)) { await page.locator(`#${key}-menu-button`).click(); return; }
   if (['bank', 'sell', 'evaluation', 'balance'].includes(key)) { await page.locator(`#window-${key}`).click(); return; }
   if (key === 'expert') {
     await page.locator('#windows-menu-button').click(); await page.getByRole('menuitem', { name: 'Farm Expert', exact: true }).click(); return;

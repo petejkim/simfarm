@@ -30,7 +30,7 @@ test('cold setup is independent of SSM balances and retains unset town, calendar
   const state = fresh();
   assert.deepEqual(state.farm, { cash: 20000, calendar: { day: 1, season: 1, week: 1, year: 1992, month: 0 },
     timerTicks: 0, animationTicks: 0, dayDelayTicks: 256, speed: 1, paceEquipment: true, equipmentPacingByte: 2, precipitationDays: 0,
-    autoRent: true, autoBuySeeds: true, autoClear: false, seedExpenses: 0, rentalExpenses: 0, cropIncome: 0,
+    autoRent: true, autoBuySeeds: true, autoClear: false, autoScroll: true, autoGoto: false, messages: true, seedExpenses: 0, rentalExpenses: 0, cropIncome: 0,
     contractGains: 0, contractLosses: 0, salesAccumulator: 0, workerExpenses: 0, landExpenses: 0,
     chemicalExpenses: 0, townRegionX: 65535, townRegionY: 0 });
   assert.deepEqual(state.finances.loan, { principal: 0, scheduledPayment: 0, availableCredit: 0, selectedAmount: 0 });

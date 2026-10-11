@@ -177,6 +177,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'start-disaster'; kind: MovingDisasterKind | WaterDisasterKind | StationaryDisasterKind | 'wind' }
   | { type: 'set-disasters-enabled'; enabled: boolean }
   | { type: 'set-auto-clear'; enabled: boolean }
+  | { type: 'set-option'; option: 'autoBuySeeds' | 'autoRent' | 'autoClear' | 'autoScroll' | 'autoGoto' | 'messages'; enabled: boolean }
   | { type: 'buy-land' | 'sell-land'; regionX: number; regionY: number }
   | { type: 'build'; buildingType: number; x: number; y: number }
   | { type: 'move-supply'; selected: SupplyMoveTarget; x: number; y: number }
@@ -457,6 +458,10 @@ export class GameSimulation {
       this.mapPointer = p ? { x: p.x, y: p.y } : null;
       return;
     }
+    if (command.type === 'set-option') {
+      if (!['autoBuySeeds','autoRent','autoClear','autoScroll','autoGoto','messages'].includes(command.option) || typeof command.enabled !== 'boolean') throw new Error('Invalid farm option');
+      this.scenario.farm[command.option] = command.enabled; this.publish(); return;
+    }
     if (command.type === 'choose-town') {
       const pending = this.pendingTown;
       if (!pending) return;
@@ -726,7 +731,7 @@ export class GameSimulation {
       if (next.monthEnded) {
         this.random.mixMonth(before.month + 1);
         const retry = retryMonthlyDebts(s, this.finances.accounts, this.finances.debt, this.finances.clearing,
-          w.soilMoisture, before.month + 1, id=>this.events.push({type:'finance-notice',id}));
+          w.soilMoisture, before.month + 1, id=>{if(id>=128||this.scenario.farm.messages)this.events.push({type:'finance-notice',id});});
         this.financeNotices = retry.notices;
         if (retry.pendingDefault) {
           this.finances.defaultDecision = retry.pendingDefault.decision;
@@ -770,13 +775,17 @@ export class GameSimulation {
     w.windYear = (w.windYear + 1) % 5;
   }
 
-  private disasterNotice(text: string): void { this.disasterNotices = [...this.disasterNotices, text].slice(-8); }
+  private disasterNotice(text: string): void { if (!this.scenario.farm.messages) return; this.disasterNotices = [...this.disasterNotices, text].slice(-8); }
 
   private startDisaster(kind: MovingDisasterKind): MovingDisasterStart {
     const result = beginMovingDisaster(this.scenario, this.disasters, kind, this.scenario.farm.animationTicks, this.random);
     if (result.ok) {
       this.disasterNotice(kind === 'tornado' ? 'A tornado has formed. Buildings and crops are at risk.' : 'Locusts have descended on a field.');
       this.events.push({ type: 'sound', sound: kind });
+      if (this.scenario.farm.autoGoto) {
+        const target = this.disasters[kind];
+        this.events.push({ type: 'map-focus', x: target.x, y: target.y });
+      }
     }
     return result;
   }

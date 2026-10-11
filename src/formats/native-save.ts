@@ -66,13 +66,16 @@ function encodeScenario(s: Scenario) {
       return [key, hex(raw)];
     })) };
 }
-function decodeFarm(value: unknown, version: number): SavedFarmState {
+function decodeFarm(value: unknown, version: number, original: SavedFarmState | null): SavedFarmState {
   const f = object(value, 'farm'), calendar = object(f.calendar, 'calendar');
   const result = {} as SavedFarmState;
   for (const key of ['cash', 'seedExpenses', 'rentalExpenses', 'cropIncome', 'contractGains', 'contractLosses',
     'salesAccumulator', 'workerExpenses', 'landExpenses', 'chemicalExpenses'] as const) result[key] = number(f[key], 0, 0xffffffff, key);
   for (const key of ['timerTicks', 'animationTicks', 'dayDelayTicks', 'speed', 'precipitationDays'] as const) result[key] = number(f[key], 0, 65535, key);
   for (const key of ['autoRent', 'autoBuySeeds', 'autoClear', 'paceEquipment'] as const) result[key] = boolean(f[key], key);
+  // Older checkpoints had no editable preferences; recover their original save bytes
+  // or the verified generated-farm defaults without discarding unknown source bytes.
+  for (const key of ['autoScroll', 'autoGoto', 'messages'] as const) result[key] = version >= 25 ? boolean(f[key], key) : original?.[key] ?? (key !== 'autoGoto');
   result.equipmentPacingByte = version >= 22 && f.equipmentPacingByte !== null ? number(f.equipmentPacingByte, 0, 255, 'equipment pacing byte') : null;
   if (result.equipmentPacingByte !== null && result.paceEquipment !== (result.equipmentPacingByte !== 0)) fail('inconsistent equipment pacing gate');
   for (const key of ['townRegionX', 'townRegionY'] as const) result[key] = number(f[key], 0, 11, key);
@@ -91,12 +94,12 @@ function decodeScenario(value: unknown, version: number): Scenario {
   const original = source ? readScenario(source, false, version >= 18 && irrigation ? { workerExpenses: 0, irrigation } : undefined) : null;
   let cropFiles = original?.cropFiles;
   if (version >= 15) {
-    if (!Array.isArray(s.cropFiles) || s.cropFiles.length !== (version >= 24 ? 24 : 16) || s.cropFiles.some(n => typeof n !== 'string' || !/^[a-z0-9_]{1,8}\.crp$/.test(n))) fail('crop filenames');
+    if (!Array.isArray(s.cropFiles) || !(version >= 25 ? [16, 24] : [version === 24 ? 24 : 16]).includes(s.cropFiles.length) || s.cropFiles.some(n => typeof n !== 'string' || !/^[a-z0-9_]{1,8}\.crp$/.test(n))) fail('crop filenames');
     cropFiles = [...s.cropFiles];
     if (original && cropFiles.slice(0, 16).some((file, i) => file !== original.cropFiles[i])) fail('original crop filenames');
   }
   if (!cropFiles) fail('crop filenames');
-  if (version >= 24) { try { allCropFiles(cropFiles); } catch { fail('expanded crop catalog'); } }
+  if (cropFiles.length === 24) { try { allCropFiles(cropFiles); } catch { fail('expanded crop catalog'); } }
   const cropCount = cropFiles.length;
   const raw = {} as ScenarioTableBytes;
   for (const [key, [, originalCount, stride]] of Object.entries(tables)) {
@@ -113,7 +116,7 @@ function decodeScenario(value: unknown, version: number): Scenario {
       precipitation: numbers(climate.precipitation, 240, -128, 7, 'precipitation table'),
       temperature: numbers(climate.temperature, 240, -128, 127, 'temperature table') },
     irrigation: irrigation ?? original!.irrigation,
-    farm: decodeFarm(s.farm, version) }; // No repeat of DOS startup's lost/overwritten ledgers (SF-014).
+    farm: decodeFarm(s.farm, version, original?.farm ?? null) }; // No repeat of DOS startup's lost/overwritten ledgers (SF-014).
 }
 
 function decodeWeather(value: unknown): WeatherState {
@@ -176,7 +179,7 @@ export function writeNativeSave(state: SimulationState, scenarioId: number | nul
     if (state.scenario.origin !== 'original' || !state.scenario.sourceBytes || state.newFarm !== null) fail('original provenance');
   }
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: scenario.cropFiles.length === 24 ? 24 : 23, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 25, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, setup: { ...state.setup, sourceArchive: state.setup.sourceArchive ? hex(state.setup.sourceArchive) : null }, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -186,7 +189,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25].includes(save.version)) fail('unsupported format or version');
   const s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const scenarioId = s.origin === 'generated' || (save.version >= 18 && save.scenarioId === null) ? null : number(save.scenarioId, 0, 7, 'scenario ID');
   if (s.origin === 'generated' && save.scenarioId !== null) fail('generated scenario ID');

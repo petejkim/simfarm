@@ -28,6 +28,10 @@ export function useMusic() {
       if (!controller.signal.aborted) { current.current.enabled = false; player.stop(); setPlayback({ status: 'error', error: String(error) }); }
     }
   }, [player]);
+  function toggleTrack(id: string) {
+    if (!current.current.enabled) { setTrack(id); void play(id); }
+    else toggle();
+  }
   function toggle() {
     if (current.current.enabled) { current.current.enabled = false; request.current?.abort(); player.stop(); setPlayback({ status: 'idle' }); }
     else void play(track);
@@ -47,5 +51,5 @@ export function useMusic() {
   const message = playback.status === 'playing' ? `Playing ${track} · MIDI with temporary synth timbres`
     : playback.status === 'loading' ? `Loading ${track}…`
     : playback.status === 'error' ? `Music unavailable: ${playback.error}` : 'Music off';
-  return { track, volume, playback, message, toggle, selectTrack, changeVolume, requestTrack };
+  return { enabled: playback.status === 'playing' || playback.status === 'loading', toggleTrack, track, volume, playback, message, toggle, selectTrack, changeVolume, requestTrack };
 }

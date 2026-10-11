@@ -16,12 +16,12 @@ const loss = (b: Uint8Array) => b[18] | b[19] << 8;
 test('live locusts damage a real field, checkpoint every clock/RNG phase, pause, change speed and expire identically', () => {
   const f = disasterFixture(), game = f.load(), events: GameEvent[] = []; game.subscribeEvents(e => events.push(e));
   game.dispatch({ type: 'start-disaster', kind: 'swarm' });
-  assert.deepEqual(events, [{ type: 'sound', sound: 'swarm' }]); assert.equal(game.getSnapshot().disasters.flags, 32);
+  assert.deepEqual(events, [{ type: 'sound', sound: 'swarm' }, {type:'map-focus',x:20,y:20}]); assert.equal(game.getSnapshot().disasters.flags, 32);
   const before = game.save(4); game.tick(20000); assert.equal(game.save(4), before);
   game.dispatch({ type: 'set-paused', paused: false }); game.tick(1280.5);
   assert.ok(loss(game.getSnapshot().scenario.fields[1].bytes) >= 1024);
   const checkpoint = game.save(4), restored = GameSimulation.load(checkpoint, f.crops).simulation;
-  assert.equal(saved(game).version, 23); const restoredEvents: GameEvent[] = []; restored.subscribeEvents(e => restoredEvents.push(e));
+  assert.equal(saved(game).version, 25); const restoredEvents: GameEvent[] = []; restored.subscribeEvents(e => restoredEvents.push(e));
   game.getSnapshot().disasters.swarm.x = 90; game.getSnapshot().disasterNotices.push('changed'); assert.equal(game.save(4), checkpoint);
   game.tick(1201); restored.tick(400); restored.tick(801); assert.deepEqual(saved(game), saved(restored));
   for (const g of [game, restored]) {

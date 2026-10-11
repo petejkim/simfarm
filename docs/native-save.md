@@ -175,3 +175,7 @@ User-requested pacing adjustment (still v23): the native1× baseline is now one 
 ## V24: all supplied crops
 
 Expanded browser farms write v24 with24 filenames/definition blocks/prices/history rows; seed and harvest tables contain24 records each, and crop trade records contain32 (the24 active entries followed by the retained eight unnamed source entries). The original first16 slot identities are stable. V1–23 decoding stays16-slot; browser activation then explicitly appends missing crops without replaying work. Non-expanded research simulations continue writing v23. Full policy, native tile ranges, unknown-record retention and market RNG handling are documented in [all-crops.md](all-crops.md).
+
+## V25 — original Options preferences
+
+V25 now writes both16-slot research and24-slot playable checkpoints. It adds required boolean farm.autoScroll, farm.autoGoto and farm.messages alongside the existing autoBuySeeds/autoClear/autoRent. Versions1–24 recover these previously uneditable preferences from the retained original SSM runtime bytes, or true/false/true for generated farms. Original raw bytes and unknown fields remain intact. All catalog/count/identity validation stays in place. The preceding v23/v24 writing policy is historical. Browser audio enablement and viewport positions are not checkpoint state. See [options-menu.md](options-menu.md) for source offsets, duplicate reads, defaults and explicit adaptations.
