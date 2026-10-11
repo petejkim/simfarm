@@ -37,3 +37,9 @@ The row selection outline is source palette1 yellow, drawn twice at4b823..4b867;
 Tests pin executable descriptor/control/dispatch bytes, asset hashes, every unmasked pixel, all quality badges, binary boundaries, all-farm displayed receipts/nonmutation, native24-crop identities and rental/busy handling. Browser coverage checks source-size geometry, sprite pixels, selection/scroll boundaries, all categories, empty/last-item behavior, source-sized dragging/reopening and exact checkpoint continuation. Full preservation remains incomplete; independent original Sell event-loop/redraw timing and the other original dialogs remain ongoing work.
 
 The source list's absent record-capacity stop is retained separately as SF-156. Its inconsistent-count reachability and downstream harm are unproven; the native projection uses bounded decoded arrays. This does not justify labeling the ordinary Sell interaction an exploit.
+
+## Duplicate asset-sale forms retired (2026-10-11)
+
+Removed AssetSaleControls from the interim Machinery/Livestock inventories. Source list builder4baee/4bd7a/4bf3a already covers the same records, excluding rentals and preserving slot order; original Sell is now the sole UI sale route. Its three-row catalog/scrollbar selects newborn animals, stored parents, ground/stored machines and aircraft. Busy entries retain their explanation and disabled SELL. The old locate shortcut was native navigation, not an exclusive simulation action; it is removed with the duplicate forms. Move/Examine and original map inspection remain available.
+
+Migrated manual-sale browser checks preserve source quotes, exact cash/ledger/storage/map cleanup, rental exclusion, blocked-sale nonmutation, reload mid-sale sequence, seven-day continuation, aircraft repurchase and source terrain pixels. No canonical sale/save rule changed; original defect records remain in manual-sales.md/original-bugs.md.

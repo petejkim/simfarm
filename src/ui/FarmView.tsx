@@ -379,12 +379,12 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     {snapshot && <TaxPanel snapshot={snapshot} open={taxOpen} onOpenChange={setTaxOpen} />}
     </GameWindow>
     <GameWindow windowKey="livestock" title="Livestock">
-    {snapshot && <LivestockPanel snapshot={snapshot} onMoveSupplies={() => { windows.close('livestock'); editTool('Move object'); }} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
+    {snapshot && <LivestockPanel snapshot={snapshot} onMoveSupplies={() => { windows.close('livestock'); editTool('Move object'); }} />}
     </GameWindow>
     {snapshot && simulation && <AircraftWindow assets={assets} selectedSlot={aircraftSlot} onSelect={setAircraftSlot} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
       onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); if (simulation.getSnapshot().aircraftFlight) windows.show(null); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
     <GameWindow windowKey="machinery" title="Machinery">
-    {snapshot && <MachineryPanel snapshot={snapshot} onMove={() => { windows.close('machinery'); editTool('Move object'); }} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
+    {snapshot && <MachineryPanel snapshot={snapshot} onMove={() => { windows.close('machinery'); editTool('Move object'); }} />}
     </GameWindow>
     <GameWindow windowKey="disasters" title="Disasters">
     {snapshot && <DisasterPanel snapshot={snapshot} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}

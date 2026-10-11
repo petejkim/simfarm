@@ -1,3 +1,4 @@
+import { selectAssetSale } from '../support/sell-window';
 import { aircraftCatalog } from '../support/aircraft-browser';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -19,7 +20,7 @@ async function save(page: Page, file: string) {
   await (await pending).saveAs(file); return JSON.parse(readFileSync(file, 'utf8'));
 }
 
-test('Livestock controls sell a live newborn and stored parent, show original quotes/income and continue exact saved state', async ({ page }) => {
+test('Original Sell controls sell a live newborn and stored parent, show original quotes/income and continue exact saved state', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = breedingFixture(); f.state.random.visual = 10; // Newborn moves NW onto free ground after the traffic draw.
   f.state.scenario.animals[1].flags |= 3; f.state.scenario.animals[1].bytes[28] = 40;
@@ -27,27 +28,26 @@ test('Livestock controls sell a live newborn and stored parent, show original qu
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click(); await expect(page.locator('#livestock-panel > summary')).toContainText('2 animals');
   for (const slot of [2, 1]) {
-    await reveal(page, '#sale-animal-selection'); await page.locator('#sale-animal-selection').selectOption(String(slot));
+    await selectAssetSale(page,'Livestock',slot);
     const s = game.getSnapshot(), quote = checkManualAssetSale(s.scenario, s.finances, 'animal', slot, s.weather.soilMoisture); expect(quote.ok).toBe(true);
     if (!quote.ok) throw new Error('Missing source animal quote');
-    await expect(page.locator('#sale-animal-quote')).toHaveText(`Sale amount: ${money(quote.value)}`);
-    await reveal(page, '#locate-sale-animal'); await page.locator('#locate-sale-animal').click();
-    await reveal(page, '#sell-animal'); await page.locator('#sell-animal').click(); game.dispatch({ type: 'sell-asset', kind: 'animal', slot });
-    await expect(page.locator('#sale-animal-result')).toHaveText(`Animal ${slot} sold for ${money(quote.value)}.`);
+    await expect(page.locator('[role=option][aria-selected=true]')).toHaveAttribute('data-value',String(quote.value));
+    await page.locator('#catalog-sell').click(); game.dispatch({ type: 'sell-asset', kind: 'animal', slot });
+    await expect(page.locator('#catalog-sale-result')).toHaveText(`Animal sold for ${money(quote.value)}.`);
     await expect(page.locator('#farm-cash')).toHaveText(money(game.getSnapshot().scenario.farm.cash));
     expect(await save(page, 'artifacts/browser-animal-sale.simfarm.json')).toEqual(JSON.parse(game.save(4)));
     if (slot === 2) {
       await page.reload(); await load(page, game.save(4)); await reveal(page, '#livestock-panel > summary'); await page.locator('#livestock-panel > summary').click();
-      await expect(page.locator('#sale-animal-result')).toHaveCount(0);
+      await expect(page.locator('#catalog-sale-result')).toHaveCount(0);
     }
   }
   await expect(page.locator('#livestock-panel > summary')).toContainText('0 animals');
-  await expect(page.locator('#livestock-panel')).toContainText('No animals available to sell.');
+  await openWindow(page,'sell');await page.getByRole('region',{name:'Sell catalog'}).getByRole('button',{name:'Livestock',exact:true}).click();await expect(page.locator('#catalog-sell')).toBeDisabled();await expect(page.locator('.sell-empty')).toContainText('FOR SALE');
   for (let d = 0; d < 7; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page, 'artifacts/browser-animal-sale.simfarm.json')).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
 
-test('Machinery sale controls hide rentals, explain busy machines and sell ground/storage/aircraft with exact map and ledger cleanup', async ({ page }) => {
+test('Original Sell machinery controls hide rentals, explain busy machines and sell ground/storage/aircraft with exact map and ledger cleanup', async ({ page }) => {
   const f = aircraftFixture(), game = f.load().withAllCrops(browserCrops);
   game.dispatch({ type: 'build', buildingType: 67, x: 40, y: 40 });
   game.dispatch({ type: 'buy-equipment', equipmentType: 0, x: 10, y: 10 });
@@ -56,21 +56,22 @@ test('Machinery sale controls hide rentals, explain busy machines and sell groun
   const state = readNativeSave(game.save(4)).state;
   state.scenario.equipment[1].flags |= 64; state.scenario.equipment[2].flags |= 1;
   await page.goto('/'); const busy = writeNativeSave(state, 4); await load(page, busy); await reveal(page, '#machinery-panel > summary'); await page.locator('#machinery-panel > summary').click();
-  await expect(page.locator('#sale-equipment-selection option[value="1"]')).toHaveCount(0);
-  await expect(page.locator('#sale-equipment-quote')).toContainText('This machine is in use.'); await expect(page.locator('#sell-equipment')).toBeDisabled();
+  await selectAssetSale(page,'Machinery',2);
+  await expect(page.locator('[role=option][data-slot="1"]')).toHaveCount(0);
+  await expect(page.locator('.sell-feedback')).toContainText('This machine is in use.');await expect(page.locator('#catalog-sell')).toBeDisabled();
   expect(await save(page, 'artifacts/browser-equipment-sale.simfarm.json')).toEqual(JSON.parse(busy));
   await load(page, game.save(4)); await reveal(page, '#machinery-panel > summary'); await page.locator('#machinery-panel > summary').click();
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#machinery-panel'); await page.locator('#machinery-panel').scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-manual-sales.png', fullPage: true });
   for (const slot of [1, 2, 3]) {
-    await reveal(page, '#sale-equipment-selection'); await page.locator('#sale-equipment-selection').selectOption(String(slot));
+    await selectAssetSale(page,'Machinery',slot);
     const s = game.getSnapshot(), quote = checkManualAssetSale(s.scenario, s.finances, 'equipment', slot, s.weather.soilMoisture); expect(quote.ok).toBe(true);
     if (!quote.ok) throw new Error('Missing source machinery quote');
-    await expect(page.locator('#sale-equipment-quote')).toHaveText(`Sale amount: ${money(quote.value)}`);
-    await reveal(page, '#locate-sale-equipment'); await page.locator('#locate-sale-equipment').click(); await reveal(page, '#sell-equipment'); await page.locator('#sell-equipment').click();
+    await expect(page.locator('[role=option][aria-selected=true]')).toHaveAttribute('data-value',String(quote.value));
+    await page.locator('#catalog-sell').click();
     game.dispatch({ type: 'sell-asset', kind: 'equipment', slot });
-    await expect(page.locator('#sale-equipment-result')).toHaveText(`Machine ${slot} sold for ${money(quote.value)}.`);
+    await expect(page.locator('#catalog-sale-result')).toHaveText(`Machine sold for ${money(quote.value)}.`);
     expect(await save(page, 'artifacts/browser-equipment-sale.simfarm.json')).toEqual(JSON.parse(game.save(4)));
   }
   const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
@@ -81,7 +82,7 @@ test('Machinery sale controls hide rentals, explain busy machines and sell groun
     const actual = await page.locator('#world').evaluate((c: HTMLCanvasElement, p) => Array.from(c.getContext('2d')!.getImageData(p.x * 16, p.y * 16, 16, 16).data), { x, y });
     expect(actual).toEqual(Array.from(expected));
   }
-  await expect(page.locator('#machinery-panel')).toContainText('No owned machines available to sell.');
+  await expect(page.locator('#catalog-sell')).toBeDisabled();await expect(page.locator('.sell-empty')).toContainText('FOR SALE');
   await aircraftCatalog(page); await page.locator('#catalog-buy').click(); game.dispatch({type:'buy-aircraft'});
   await expect(page.locator('#buy-result')).toHaveText('Crop Duster purchased.'); expect(await save(page,'artifacts/browser-manual-aircraft-repurchase.json')).toEqual(JSON.parse(game.save(4)));
 });

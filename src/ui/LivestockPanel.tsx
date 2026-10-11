@@ -1,5 +1,4 @@
-import { AssetSaleControls } from './AssetSaleControls';
-import type { GameCommand, GameSnapshot } from '../simulation/game';
+import type { GameSnapshot } from '../simulation/game';
 import { storedWater } from '../simulation/water-storage';
 import { ANIMAL_ADULT_WEEKS } from '../simulation/animal-allocation';
 
@@ -7,7 +6,7 @@ const names = ['Horse', 'Cow', 'Pig', 'Sheep'];
 const notices: Record<number, string> = { 56: 'died from lack of feed.', 57: 'needs water.', 58: 'died from lack of water.',
   59: 'needs feed.', 67: 'broke through a fence.' };
 
-export function LivestockPanel({ snapshot, onMoveSupplies, onCommand, onLocate }: { snapshot: GameSnapshot; onMoveSupplies: () => void; onCommand: (command: GameCommand) => void; onLocate: (x: number, y: number) => void }) {
+export function LivestockPanel({ snapshot, onMoveSupplies }: { snapshot: GameSnapshot; onMoveSupplies: () => void }) {
   const animals = snapshot.scenario.animals.filter(a => a.active);
   const supplies = snapshot.scenario.inventory.filter(i => i.active && (i.type === 299 || i.type === 300));
   const stores = snapshot.scenario.buildings.filter(b => b.active && b.type === 72);
@@ -40,6 +39,5 @@ export function LivestockPanel({ snapshot, onMoveSupplies, onCommand, onLocate }
         {names[notice.animalType - 160] ?? 'Animal'} {notice.slot} {notices[notice.id] ?? 'needs attention.'}
       </li>)}
     </ul></div>}
-    <AssetSaleControls kind="animal" snapshot={snapshot} onCommand={onCommand} onLocate={onLocate} />
   </details>;
 }

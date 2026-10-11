@@ -2244,3 +2244,11 @@ Completedc41f771 before addressing the user's Market Value viewport-shift report
 Regression now preserves page/desktop/map scroll, map position and size through Market Value followed by Bank, Sell, Evaluation, Balance, Weather, Buy, Map and Edit. All nine viewport/window-stacking/navigation browser checks pass(8.4s), the focused source window-menu check passes(14 assertions), and type checking/production build pass. Logs: artifacts/window-viewport-{browser,unit,build}.log; failing reproduction retained in artifacts/retire-field-panel-recheck.log. No simulation changes or full-suite rerun.
 
 Resume remaining interim Machinery/Livestock inventory action audit next. Full preservation remains incomplete. No push, installation or supplied-DOS changes.
+
+## 2026-10-11 — retire duplicate animal and machinery sale forms
+
+Previous goal turn completedc41f771 and8bceba7; revalidated the clean tree and current progress. Audited AssetSaleControls against original Sell's source4baee/4bd7a/4bf3a record scans and existing canonical sale preflight. Both cover active animals and owned machinery, including aircraft; original Sell excludes rentals and explains busy-machine rejection. Deleted the duplicate component, styles, local selector/quote/result/locate controls and parent callbacks. Machinery/Livestock diagnostic summaries and Move shortcuts remain pending their next audit. No simulation/save change or new original defect.
+
+Migrated manual-sale browser checks to original category/slot scrolling and SELL. All four affected browser cases pass first run(8.3s), preserving source quotes, newborn/stored-parent sales, ground/storage/aircraft cleanup, source pixels, rental/busy guards, exact checkpoints, seven-day continuation and aircraft repurchase. Fourteen focused sale/live-accounting tests pass(6.68s); build/type checking and diff checks pass. Logs: artifacts/retire-asset-sales-{build,unit,browser}.log. No full-suite repetition.
+
+Next remove redundant inventory Move shortcuts and retire diagnostic Machinery/Livestock shells after checking original notices/readings. Full preservation remains incomplete. No push, installation or supplied-DOS changes.
