@@ -1,6 +1,29 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { openWindow, reveal } from './workspace';
 import { clickFarmTile } from './field-actions';
+/** Use a real checkpoint to locate next week; all changes go through original controls.
+ * CUT prevents the generated repeat plan from planting again before a harvest assertion. */
+export async function scheduleNextHarvest(page:Page,x:number,y:number,fixedWeek?:number){
+  const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();
+  await page.getByRole('menuitem',{name:'Save',exact:true}).click();
+  const saved=JSON.parse(readFileSync((await (await pending).path())!,'utf8'));
+  const calendar=saved.scenario.farm.calendar,week=calendar.month*4+calendar.week+1;
+  await reveal(page,'#viewport');await page.getByRole('button',{name:'View object',exact:true}).click();
+  await clickFarmTile(page,x,y);await scheduleMonth(page,Math.floor(week/4));
+  await page.locator('[data-plan-action="harvest"]').click();await page.locator(`[data-plan-week="${week}"]`).click();
+  if(fixedWeek!==undefined){
+    await expect(page.locator('#plan-result')).toHaveText('This crop has a fixed annual harvest week.');
+    await scheduleMonth(page,Math.floor(fixedWeek/4));
+    await expect(page.locator(`[data-plan-week="${fixedWeek}"]`)).toHaveAttribute('aria-label',/Harvest/);
+    return {week:fixedWeek,daysUntil:(fixedWeek-calendar.month*4-calendar.week)*7-calendar.day};
+  }
+  await expect(page.locator('#plan-result')).toContainText('Plan updated');
+  await page.getByRole('button',{name:'Clear remaining plan',exact:true}).click();
+  await page.locator(`[data-plan-week="${week+1}"]`).click();
+  await expect(page.locator('#plan-result')).toContainText('Plan updated');
+  return {week,daysUntil:7-calendar.day};
+}
 /** Enter the original field window from the map, then queue a crop for a supplied future week. */
 export async function schedulePlant(page:Page,x:number,y:number,week:number,cropSlot:number){
   await reveal(page,'#viewport');await page.getByRole('button',{name:'View object',exact:true}).click();

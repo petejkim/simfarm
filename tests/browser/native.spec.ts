@@ -1,5 +1,5 @@
 import { sprayField, buyPlot, selectProperty, setAutoDoze, plantField, clickFarmTile } from '../support/field-actions';
-import { scheduleWeek, schedulePlant } from '../support/schedule-window';
+import { scheduleWeek, schedulePlant, scheduleNextHarvest } from '../support/schedule-window';
 import { saleOffers, selectSaleOffer } from '../support/sell-window';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
@@ -206,13 +206,15 @@ test('scheduled planting buys seed, rents machinery and renders original crop pi
   expect(errors).toEqual([]);
 });
 
-for (const id of [0, 4]) test(`harvest controls complete ${id === 0 ? 'worker' : 'machinery'} harvest and show stored crops`, async ({ page }) => {
+for (const id of [0, 4]) test(`scheduled harvest controls complete ${id === 0 ? 'worker' : 'machinery'} harvest and show stored crops`, async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   const source = (name: string) => readFileSync(new URL(`../../../simfarm-dos/${name}`, import.meta.url));
   const scenario = readScenario(source(`SCEN${id}.SSM`)), field = scenario.fields[1];
   const file = scenario.cropFiles[field.cropSlot], crop = readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`));
   const quantity = crop.rawDefinition[32] | crop.rawDefinition[33] << 8;
+  const crops=scenario.cropFiles.map(name=>readCrop(name.replace('.crp',''),source(`CROPS/${name.toUpperCase()}`)));
+  const expectedGame=new GameSimulation(scenario,crops).withAllCrops(browserCrops);
   await page.clock.install();
   await page.goto('/');
   if (id) { await reveal(page, '#scenario'); await page.locator('#scenario').selectOption(String(id)); }
@@ -220,22 +222,31 @@ for (const id of [0, 4]) test(`harvest controls complete ${id === 0 ? 'worker' :
   await reveal(page, '#field'); await page.locator('#field').selectOption('1');
   await expect(page.locator('#harvest-estimate')).toContainText('Estimated crop value: $0');
   await expect(page.locator('#harvest-stock')).toHaveText('No stored harvests.');
-  await reveal(page, '#harvest-field'); await page.locator('#harvest-field').click();
-  await expect(page.locator('#field-status')).toContainText('Harvest');
-  await expect(page.locator('#harvest-result')).toContainText('Harvest ordered');
-  await expect(page.locator('#harvest-field')).toBeDisabled();
+  const {week,daysUntil}=await scheduleNextHarvest(page,field.x,field.y,crop.rawDefinition[76]||undefined);
+  if(!crop.rawDefinition[76]){
+    expectedGame.dispatch({type:'edit-field-plan',fieldSlot:1,week,action:{kind:'harvest'}});
+    expectedGame.dispatch({type:'edit-field-plan',fieldSlot:1,week:week+1,action:{kind:'clear'}});
+  }else{
+    expectedGame.dispatch({type:'edit-field-plan',fieldSlot:1,week:scenario.farm.calendar.month*4+scenario.farm.calendar.week+1,action:{kind:'harvest'}});
+  }
+  await expect(page.locator('#field-status')).toContainText('Growing');
+  await expect(page.locator('#harvest-field')).toHaveCount(0);
   await expect(page.locator('#plant-field')).toHaveCount(0);
   await page.clock.runFor(1000);
-  await expect(page.locator('#field-status')).toContainText('Harvest');
-  for (let day = 0; day < 12; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  await expect(page.locator('#field-status')).toContainText('Growing');
+  for (let day = 0; day < daysUntil+12; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click();expectedGame.dispatch({type:'advance-day'}); }
   await expect(page.locator('#field-status')).toContainText(crop.rawDefinition[62] & 1 ? 'Growing' : 'Waiting');
-  // SCEN0's six almond fields also follow their saved harvest orders during these twelve days.
-  await expect(page.locator('#harvest-stock')).toHaveText(id === 0 ? '7 stored harvests' : '1 stored harvest');
+  // SCEN0's other grape and almond fields also harvest on their saved annual dates.
+  await expect(page.locator('#harvest-stock')).toHaveText(id === 0 ? '13 stored harvests' : '1 stored harvest');
   await selectSaleOffer(page, name => name.startsWith(`Sell ${crop.name},`));
-  await expect(page.locator('#harvest-items')).toContainText(`${crop.name} · Quantity ${quantity} · Loss 100%`);
+  const lot=expectedGame.getSnapshot().scenario.inventory.find(i=>i.active&&i.type===168+field.cropSlot)!;
+  await expect(page.locator('#harvest-items')).toContainText(`${crop.name} · Quantity ${quantity} · Loss ${Math.floor(lot.loss*100/65535)}%`);
+  const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();
+  await page.getByRole('menuitem',{name:'Save',exact:true}).click();
+  expect(JSON.parse(readFileSync((await (await pending).path())!,'utf8'))).toEqual(JSON.parse(expectedGame.save(id)));
   await expect(page.locator('#harvest-progress')).toHaveCount(0);
   await expect(page.locator('#plant-field')).toHaveCount(0);
-  if (!(crop.rawDefinition[62] & 1)) await expect(page.locator('#harvest-field')).toBeDisabled();
+  if (!(crop.rawDefinition[62] & 1)) await expect(page.locator('#harvest-field')).toHaveCount(0);
   await page.screenshot({ path: `artifacts/browser-harvest-${id}.png`, fullPage: true });
   await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('1');
   await expect(page.locator('#harvest-stock')).toHaveText('No stored harvests.');
@@ -258,8 +269,8 @@ test('a planted original corn crop grows, is harvested and sold through browser 
   await expect(page.locator('#field-status')).toContainText('Growing');
   await expect(page.locator('#harvest-estimate')).not.toContainText('value: $0,');
   const previousLots = await saleOffers(page);
-  await reveal(page, '#harvest-field'); await page.locator('#harvest-field').click();
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  const {daysUntil}=await scheduleNextHarvest(page,initial.fields[1].x,initial.fields[1].y);
+  for(let day=0;day<daysUntil+1;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();}
   await expect(page.locator('#harvest-stock')).toHaveText('4 stored harvests');
   const newLots = (await saleOffers(page))
     .filter(name => !previousLots.some(old => old?.split(', for ')[0] === name.split(', for ')[0]));
@@ -347,8 +358,8 @@ test('map tools buy original land and complete a new-field planting and harvest 
   // Original unowned soil is poor; this checks new-field work and delivery, not a profitable crop.
   await expect(page.locator('#harvest-estimate')).toContainText('value: $0,');
   await page.screenshot({ path: 'artifacts/browser-new-field.png', fullPage: true });
-  await reveal(page, '#harvest-field'); await page.locator('#harvest-field').click();
-  for (let day = 0; day < 12; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  const {daysUntil}=await scheduleNextHarvest(page,0,16);
+  for (let day = 0; day < daysUntil+12; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
   await expect(page.locator('#harvest-stock')).toHaveText('1 stored harvest');
   await reveal(page, '.sell-harvest'); await page.locator('.sell-harvest').click();
   await expect(page.locator('#harvest-stock')).toHaveText('No stored harvests.');
@@ -384,18 +395,20 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   await expect(page.locator('#field-tool-result')).toHaveText('Treatment ordered.');
   await expect(page.locator('#farm-cash')).toHaveText('$21,613');
   await expect(page.locator('#plant-field')).toHaveCount(0);
-  await expect(page.locator('#harvest-field')).toBeDisabled();
+  await expect(page.locator('#harvest-field')).toHaveCount(0);
   await reveal(page, '#next-day'); await page.locator('#next-day').click();
   await expect(page.locator('#field-status')).toContainText('Growing');
   await expect(page.locator('#field-growth')).toContainText('Fertility: 255 / 255');
   await page.screenshot({ path: 'artifacts/browser-fertilizer.png', fullPage: true });
   for (let day = 3; day < 84; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
   await expect(page.locator('#harvest-estimate')).toContainText('value: $1,700');
-  await reveal(page, '#harvest-field'); await page.locator('#harvest-field').click();
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  const {daysUntil}=await scheduleNextHarvest(page,0,16);
+  for(let day=0;day<daysUntil+12;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();}
   // Scheduled replanting changes history after the weekly quote; the lot still sells at that quote.
-  await selectSaleOffer(page, name => name === 'Sell Corn, lot 5, for $1831'); await page.getByRole('button', { name: 'Sell Corn, lot 5, for $1831', exact: true }).click();
-  await expect(page.locator('#farm-cash')).toHaveText('$23,220');
+  await selectSaleOffer(page,name=>/^Sell Corn, lot 5, for \$[1-9]/.test(name));
+  const sale=page.locator('#catalog-sell'),price=Number((await sale.getAttribute('aria-label'))!.split(', for $')[1]);
+  const cash=Number((await page.locator('#farm-cash').textContent())!.replace(/[^0-9]/g,''));
+  await sale.click();await expect(page.locator('#farm-cash')).toHaveText(`$${(cash+price).toLocaleString('en-US')}`);
   await expect(page.locator('#harvest-stock')).toHaveText('4 stored harvests');
   await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('0');
   await reveal(page, '#field'); await page.locator('#field').selectOption('1');
@@ -469,10 +482,12 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await page.screenshot({ path: 'artifacts/browser-load.png', fullPage: true });
   for (let day = 2; day < 84; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
   await expect(page.locator('#harvest-estimate')).toContainText('value: $1,700');
-  await reveal(page, '#harvest-field'); await page.locator('#harvest-field').click();
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
-  await selectSaleOffer(page, name => name === 'Sell Corn, lot 5, for $1831'); await page.getByRole('button', { name: 'Sell Corn, lot 5, for $1831', exact: true }).click();
-  await expect(page.locator('#farm-cash')).toHaveText('$23,220');
+  const {daysUntil}=await scheduleNextHarvest(page,0,16);
+  for(let day=0;day<daysUntil+12;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();}
+  await selectSaleOffer(page,name=>/^Sell Corn, lot 5, for \$[1-9]/.test(name));
+  const sale=page.locator('#catalog-sell'),price=Number((await sale.getAttribute('aria-label'))!.split(', for $')[1]);
+  const cash=Number((await page.locator('#farm-cash').textContent())!.replace(/[^0-9]/g,''));
+  await sale.click();await expect(page.locator('#farm-cash')).toHaveText(`$${(cash+price).toLocaleString('en-US')}`);
   await page.setViewportSize({ width: 1280, height: 844 });
   await reveal(page, '#save-farm'); await page.locator('#save-farm').scrollIntoViewIfNeeded();
   await reveal(page, '#save-farm'); await expect(page.locator('#save-farm')).toBeVisible();

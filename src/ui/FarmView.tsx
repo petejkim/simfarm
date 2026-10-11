@@ -453,9 +453,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
         <fieldset className="farm-actions" aria-label="Farm actions" disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)}>
 
         <FieldPanel scenario={data.scenario} crops={assets.catalog.crops} field={field}
-          harvestResult={snapshot?.lastHarvestResult ?? null}
           harvestEstimate={field ? snapshot?.fieldHarvestEstimates[field.slot] : null}
-          onHarvest={fieldSlot => simulation?.dispatch({ type: 'harvest-field', fieldSlot })}
           onSelect={slot => { setSelection(null); selectField(slot, true); }} />
         <button onClick={()=>navigate('planner')}>Crop planner</button>
         </fieldset>

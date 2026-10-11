@@ -1,3 +1,4 @@
+import { scheduleNextHarvest } from '../support/schedule-window';
 import { buyBuilding } from '../support/building-actions';
 import { setAutoDoze, plantField, clickFarmTile } from '../support/field-actions';
 import { reveal, openWindow } from '../support/workspace';
@@ -93,8 +94,10 @@ test('a previewed farm plants on its starting land and delivers harvest into new
   await expect(page.locator('#field-status')).toContainText('Growing');
   const midpoint = await save(page, 'browser-generated-growing'); expect(midpoint.data).toEqual(JSON.parse(generated.save(null)));
   await load(page, JSON.stringify(midpoint.data)); await reveal(page, '#field'); await page.locator('#field').selectOption('1');
-  await reveal(page, '#harvest-field'); await page.locator('#harvest-field').click(); generated.dispatch({ type: 'harvest-field', fieldSlot: 1 });
-  for (let i = 0; i < 12; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); generated.dispatch({ type: 'advance-day' }); }
+  const {week,daysUntil}=await scheduleNextHarvest(page,field.x,field.y);
+  generated.dispatch({type:'edit-field-plan',fieldSlot:1,week,action:{kind:'harvest'}});
+  generated.dispatch({type:'edit-field-plan',fieldSlot:1,week:week+1,action:{kind:'clear'}});
+  for (let i = 0; i < daysUntil+12; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); generated.dispatch({ type: 'advance-day' }); }
   await expect(page.locator('#harvest-stock')).toHaveText('1 stored harvest');
   const slot = generated.getSnapshot().scenario.inventory.find(i => i.active && i.type === 168)!.slot;
   await reveal(page, '.sell-harvest'); await page.locator('.sell-harvest').click(); generated.dispatch({ type: 'sell-harvest', inventorySlot: slot });
