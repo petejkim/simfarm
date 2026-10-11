@@ -1,2 +1,2 @@
 /** Remaining interim object tools; original Plant/Spray own their separate tool state. */
-export type MapTool = 'crop-supplies' | 'inspect' | 'livestock' | 'equipment';
+export type MapTool = 'crop-supplies' | 'inspect' | 'livestock';

@@ -321,3 +321,5 @@ Supply movement form retired: Move object now handles all five supply families e
 Machinery movement form retired: original Move object now provides queued machinery travel exclusively; the Machinery shortcut arms it directly. Both movement forms are gone. Continue the remaining shops and duplicate interior controls, followed by Field information's immediate-order/calendar audit.
 
 Duplicate interior controls retired: use original right-click or Examine. Before removing EquipmentShop, resolve its provisional type6 purchase exposure against the original catalog omission; preserve source evidence rather than assuming all interim actions were original. Continue remaining shops and Field information audit.
+
+EquipmentShop retired: original catalog byte audit confirms omission of type6; retain its records/rules without the provisional purchase entry. Machinery buys now use original Buy exclusively, with Options AutoDoze. Continue crop-supply/livestock shop retirement and Field information; type6 exact purpose remains research, not a blocker or claimed defect.
