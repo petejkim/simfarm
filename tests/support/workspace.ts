@@ -49,9 +49,8 @@ export async function openWindow(page: Page, key: string) {
     if(alreadyOpen){await page.locator('#windows-menu-button').click();await item.click();}return;
   }
 
-  await page.getByRole('button', { name: 'Edit tools and help', exact: true }).click();
-  if(!await page.locator('[data-window=tools]').isVisible())await page.getByRole('button', { name: 'Advanced controls', exact: true }).click();
-  await page.locator('[data-window=tools] .game-window-title').focus();
+  if(['buy','map','weather','market'].includes(key)){await page.locator(`#window-${key}`).click();return;}
+  throw new Error(`No original window entry for ${key}`);
 }
 async function uncoverMap(page:Page){
   await openWindow(page,'edit');

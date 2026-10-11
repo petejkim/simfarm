@@ -101,7 +101,6 @@ test('an empty farm creates its first field with Plant and then opens Schedule',
   await page.keyboard.press('Escape');expect(await checkpoint(page,'empty-cancel')).toEqual(JSON.parse(text));
   await page.getByRole('button',{name:'Plant',exact:true}).click();
   await page.locator('[data-field-tool="0"]').click();
-  for(const key of ['tools']){const window=page.locator(`[data-window=${key}]`);if(await window.isVisible())await window.locator('.game-window-title>button').click();}
   await page.locator('#viewport').evaluate(v=>v.scrollTo(30*16,30*16));
   const map=(await page.locator('#world').boundingBox())!;await page.mouse.click(map.x+40*16+8,map.y+40*16+8);
   game.dispatch({type:'create-field',x:40,y:40,cropSlot:0});expect(game.getSnapshot().lastNewFieldResult?.ok).toBe(true);

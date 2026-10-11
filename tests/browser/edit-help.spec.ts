@@ -18,11 +18,10 @@ test('Edit help restores source-size leaders and real text, supports dismissal a
   await button.click();await page.locator('.original-control-bar').click({position:{x:600,y:8}});await expect(help).toHaveCount(0);expect(await save(page)).toEqual(before);
 });
 
-test('Advanced controls retain access and choosing a palette tool closes help without buying anything',async({page})=>{
+test('palette help has no interim launcher and choosing a tool closes help without buying anything',async({page})=>{
   await start(page);const before=await save(page),button=page.getByRole('button',{name:'Edit tools and help',exact:true});
-  await button.click();await page.keyboard.press('Tab');await expect(page.getByRole('button',{name:'Advanced controls',exact:true})).toBeFocused();await page.keyboard.press('Enter');
-  await expect(page.getByRole('dialog',{name:'Edit tools',exact:true})).toBeVisible();await expect(page.locator('#zoom')).toBeVisible();
-  await page.getByRole('button',{name:'Close Edit tools',exact:true}).click();await button.click();await page.getByRole('button',{name:'Trees',exact:true}).click();
+  await button.click();await expect(page.getByRole('button',{name:'Advanced controls',exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'Trees',exact:true}).click();
   await expect(page.getByRole('complementary',{name:'Edit tool help'})).toHaveCount(0);await expect(page.locator('#cancel-construction')).toBeVisible();
   await button.click();await expect(page.locator('#cancel-construction')).toHaveCount(0);await page.keyboard.press('Escape');expect(await save(page)).toEqual(before);
 });

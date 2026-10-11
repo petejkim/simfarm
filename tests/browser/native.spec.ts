@@ -1,3 +1,5 @@
+import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
+import {toggleOption} from '../support/options-menu';
 import { setDisastersEnabled } from '../support/disaster-menu';
 import { fieldDescription, selectedFieldSnapshot } from '../support/field-checkpoint';
 import { sprayField, buyPlot, selectProperty, setAutoDoze, plantField, clickFarmTile } from '../support/field-actions';
@@ -38,7 +40,7 @@ test('crop and masked pixels match source assets at original world coordinates; 
   await reveal(page, '#viewport'); await page.locator('#viewport').click({ position: center });
   await expect(page.locator('#planner-field')).toHaveValue('1');
   await expect(page.locator('#cell-status')).toContainText('Tile 43, 33');
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('1');
+  await loadScenarioCheckpoint(page,Number('1'));
   await expect(page.locator('#map-status')).toHaveText('Scenario 2 · original terrain');
   await expect(page.locator('#planner-field option')).toHaveCount(10);
   await expect(page.locator('#planner-field')).toHaveValue('');
@@ -80,12 +82,12 @@ test('original scenario maps, crop selection, navigation and audible MIDI', asyn
   await expect(page.locator('[data-expert-crop="corn"]')).toContainText('Temperature: 2000 Degree Days');
   await expect.poll(() => page.locator('.expert-crop-picture').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 112)).toBeTruthy();
   for (let i = 1; i < 8; i++) {
-    await reveal(page, '#scenario'); await page.locator('#scenario').selectOption(String(i));
+    await loadScenarioCheckpoint(page,Number(String(i)));
     await expect(page.locator('#map-status')).toHaveText(`Scenario ${i + 1} · original terrain`);
   }
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
   await expect(page.locator('#world')).toHaveCSS('width', '768px');
-  await openWindow(page, 'options'); await page.locator('#music').selectOption('amain');await page.getByRole('button', { name: 'Play music' }).click();
+  await toggleOption(page,'Music');await openWindow(page, 'options'); await page.locator('#music').selectOption('amain');
   await expect(page.locator('#audio-status')).toContainText('Playing amain');
   await expect.poll(() => page.evaluate(() => {
     const audio = (window as unknown as { __audioTest: { contexts: AudioContext[]; analysers: AnalyserNode[] } }).__audioTest;
@@ -93,14 +95,14 @@ test('original scenario maps, crop selection, navigation and audible MIDI', asyn
     audio.analysers[0]?.getFloatTimeDomainData(data);
     return Math.max(...data.map(Math.abs));
   })).toBeGreaterThan(0.001);
-  await openWindow(page, 'options'); await page.getByRole('button', { name: 'Stop music' }).click();
+  await toggleOption(page,'Music');
   await expect(page.locator('#audio-status')).toHaveText('Music off');
   await expect.poll(() => page.evaluate(() => {
     const audio = (window as unknown as { __audioTest: { analysers: AnalyserNode[] } }).__audioTest;
     const data = new Float32Array(2048); audio.analysers[0].getFloatTimeDomainData(data);
     return Math.max(...data.map(Math.abs));
   })).toBeLessThan(0.0001);
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('0');
+  await loadScenarioCheckpoint(page,Number('0'));
   await expect(page.locator('#map-status')).toContainText('Scenario 1');
   await page.screenshot({ path: 'artifacts/native-browser.png', fullPage: true });
   expect(errors).toEqual([]);
@@ -113,30 +115,6 @@ test('missing assets give a useful startup error', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('./tools/bun run import');
 });
 
-test('scenario changes cancel pending loads and recover after missing farm assets', async ({ page }) => {
-  let release!: () => void;
-  const pending = new Promise<void>(resolve => { release = resolve; });
-  await page.route('**/assets/raw/SCEN0.SSM', async route => {
-    await pending;
-    await route.fulfill({ body: readFileSync(new URL('../../../simfarm-dos/SCEN0.SSM', import.meta.url)) });
-  });
-  await page.route('**/assets/scenario2.tiles.png', route => route.fulfill({ status: 404, body: '' }));
-  await page.goto('/');
-  await expect(page.locator('#map-status')).toHaveText('Loading map…');
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('1');
-  await expect(page.locator('#map-status')).toHaveText('Scenario 2 · original terrain');
-  release();
-  await expect(page.locator('#planner-field option')).toHaveCount(10);
-  await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2');
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('2');
-  await expect(page.locator('#map-status')).toContainText('Cannot load scenario2.tiles.png');
-  await expect(page.locator('#world')).toHaveCount(0);
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('3');
-  await expect(page.locator('#map-status')).toHaveText('Scenario 4 · original terrain');
-  await expect(page.locator('#planner-field option')).toHaveCount(4);
-  await expect(page.locator('#world')).toHaveCSS('width', '3072px');
-});
-
 test('time controls advance the simulation, render crop changes, pause, and reset on scenario changes', async ({ page }) => {
   test.setTimeout(45_000); // Advances17.6s of animation and repaints full maps; isolated run takes25s.
   const errors: string[] = [];
@@ -144,7 +122,7 @@ test('time controls advance the simulation, render crop changes, pause, and rese
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.goto('/');
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
+  await loadScenarioCheckpoint(page,Number('4'));
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await reveal(page, '#planner-field'); await page.locator('#planner-field').selectOption('1');
   await expect(page.locator('#farm-date')).toHaveText('April 28, 1993');
@@ -164,7 +142,7 @@ test('time controls advance the simulation, render crop changes, pause, and rese
   await expect(page.locator('#time-status')).toHaveText('Paused · 4 days advanced');
   await expect(page.locator('#next-day')).toBeEnabled();
   await reveal(page, '#play-pause'); await page.locator('#play-pause').click();
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('0');
+  await loadScenarioCheckpoint(page,Number('0'));
   await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
   await page.clock.runFor(2100);
   await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
@@ -181,7 +159,7 @@ test('scheduled planting buys seed, rents machinery and renders original crop pi
   const archive=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
   const palette=readPalette(archive.find(e=>e.name==='simfarm.pal')!.bytes);
   const expected=decodePlanar(source(`CROPS/${cropFile.toUpperCase()}`).subarray(0,128),16,16,palette).rgba;
-  await page.goto('/');await reveal(page,'#scenario');await page.locator('#scenario').selectOption('1');
+  await page.goto('/');await loadScenarioCheckpoint(page,Number('1'));
   const week=scenario.farm.calendar.month*4+scenario.farm.calendar.week+1;
   await schedulePlant(page,field.x,field.y,week,2);
   game.dispatch({type:'edit-field-plan',fieldSlot:1,week,action:{kind:'plant',cropSlot:2}});
@@ -219,7 +197,7 @@ for (const id of [0, 4]) test(`scheduled harvest controls complete ${id === 0 ? 
   const expectedGame=new GameSimulation(scenario,crops).withAllCrops(browserCrops);
   await page.clock.install();
   await page.goto('/');
-  if (id) { await reveal(page, '#scenario'); await page.locator('#scenario').selectOption(String(id)); }
+  if (id) { await loadScenarioCheckpoint(page,Number(String(id))); }
   await expect(page.locator('#map-status')).toHaveText(`Scenario ${id + 1} · original terrain`);
   await reveal(page, '#planner-field'); await page.locator('#planner-field').selectOption('1');
   expect((await selectedFieldSnapshot(page)).estimate?.value).toBe(0);
@@ -250,7 +228,7 @@ for (const id of [0, 4]) test(`scheduled harvest controls complete ${id === 0 ? 
   await expect(page.locator('#plant-field')).toHaveCount(0);
   if (!(crop.rawDefinition[62] & 1)) await expect(page.locator('#harvest-field')).toHaveCount(0);
   await page.screenshot({ path: `artifacts/browser-harvest-${id}.png`, fullPage: true });
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('1');
+  await loadScenarioCheckpoint(page,Number('1'));
   await expect(page.locator('#harvest-stock')).toHaveText('No stored harvests.');
   await expect(page.locator('#harvest-result')).toHaveCount(0);
   expect(errors).toEqual([]);
@@ -261,7 +239,7 @@ test('a planted original corn crop grows, is harvested and sold through browser 
   page.on('pageerror', error => errors.push(error.message));
   await page.clock.install();
   await page.goto('/');
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
+  await loadScenarioCheckpoint(page,Number('4'));
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await reveal(page, '#planner-field'); await page.locator('#planner-field').selectOption('1');
   const initial=readScenario(readFileSync(new URL('../../../simfarm-dos/SCEN4.SSM',import.meta.url)));
@@ -290,7 +268,7 @@ test('a planted original corn crop grows, is harvested and sold through browser 
   await expect(sell).toHaveCount(0);
   await expect(page.locator('#plant-field')).toHaveCount(0);
   await page.screenshot({ path: 'artifacts/browser-farming-cycle.png', fullPage: true });
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('0');
+  await loadScenarioCheckpoint(page,Number('0'));
   await expect(page.locator('#sale-result')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
@@ -323,7 +301,7 @@ test('speed slider adjusts running time, stays paused and keeps Next day to one 
   await page.clock.runFor(1000);
   await expect(page.locator('#time-status')).toHaveText('Paused · 18 days advanced');
   await page.screenshot({ path: 'artifacts/browser-speed.png', fullPage: true });
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
+  await loadScenarioCheckpoint(page,Number('4'));
   await expect(page.locator('#simulation-speed-value')).toHaveText('1×');
   await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
   await page.setViewportSize({ width: 1280, height: 844 });
@@ -335,7 +313,7 @@ test('map tools buy original land and complete a new-field planting and harvest 
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
+  await loadScenarioCheckpoint(page,Number('4'));
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
   await plantField(page,0,16);
@@ -367,12 +345,14 @@ test('map tools buy original land and complete a new-field planting and harvest 
   await expect(page.locator('#harvest-stock')).toHaveText('No stored harvests.');
   expect(await fieldDescription(page)).toContain('Waiting');
   await expect(page.locator('#plant-field')).toHaveCount(0);
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('0');
+  await loadScenarioCheckpoint(page,Number('0'));
   await expect(page.locator('#map-tool')).toHaveCount(0);
   await expect(page.locator('#farm-cash')).toHaveText('$40,000');
   await page.setViewportSize({ width: 1280, height: 844 });
   await page.locator('#options-menu-button').click();
-  await expect(page.getByRole('menuitemcheckbox',{name:'AutoDoze',exact:true})).toHaveAttribute('aria-checked','true');
+  // Explicit checkpoints restore their own options; the preference remains for fresh games.
+  await expect(page.getByRole('menuitemcheckbox',{name:'AutoDoze',exact:true})).toHaveAttribute('aria-checked','false');
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('simfarm.options.v1')!).autoClear)).toBe(true);
   await page.keyboard.press('Escape');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   expect(errors).toEqual([]);
@@ -382,7 +362,7 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
+  await loadScenarioCheckpoint(page,Number('4'));
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await setDisastersEnabled(page,false);
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
@@ -410,7 +390,7 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   const cash=Number((await page.locator('#farm-cash').textContent())!.replace(/[^0-9]/g,''));
   await sale.click();await expect(page.locator('#farm-cash')).toHaveText(`$${(cash+price).toLocaleString('en-US')}`);
   await expect(page.locator('#harvest-stock')).toHaveText('4 stored harvests');
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('0');
+  await loadScenarioCheckpoint(page,Number('0'));
   await reveal(page, '#planner-field'); await page.locator('#planner-field').selectOption('1');
   await expect(page.locator('#field-tool-result')).toBeEmpty();
   expect(errors).toEqual([]);
@@ -439,7 +419,7 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
+  await loadScenarioCheckpoint(page,Number('4'));
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await setDisastersEnabled(page,false);
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
@@ -465,7 +445,7 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Load Game', exact: true }).click();
   await (await chooserPromise).setFiles(path);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await expect(page.locator('#scenario')).toHaveValue('4');
+  await expect(page.locator('#map-status')).toContainText('Scenario 5');
   await expect(page.locator('#farm-date')).toHaveText(date!);
   await expect(page.locator('#time-status')).toHaveText('Paused · 2 days advanced');
   await expect(page.locator('#farm-cash')).toHaveText('$21,613');
@@ -511,7 +491,7 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
     await expect(page.locator('#save-status')).toContainText('Could not load farm:');
     expect(JSON.parse(await saved())).toEqual(expected);
   }
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
+  await loadScenarioCheckpoint(page,Number('4'));
   await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
   const file = { name: 'farm.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(text) };
   await page.locator('#load-farm-file').setInputFiles(file);
@@ -556,14 +536,14 @@ test('failed or cancelled asset loading cannot replace a current farm', async ({
   await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
   const pendingDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const file = { name: 'farm.json', mimeType: 'application/json', buffer: readFileSync((await (await pendingDownload).path())!) };
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
+  await loadScenarioCheckpoint(page,Number('4'));
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await reveal(page, '#next-day'); await page.locator('#next-day').click();
   await page.route('**/scenario0.tiles.png', route => route.abort());
   await page.locator('#load-farm-file').setInputFiles(file);
   await expect(page.locator('#save-status')).toContainText('Could not load farm:');
   await expect(page.locator('#time-status')).toHaveText('Paused · 1 days advanced');
-  await expect(page.locator('#scenario')).toHaveValue('4');
+  await expect(page.locator('#map-status')).toContainText('Scenario 5');
   await page.unroute('**/scenario0.tiles.png');
   let release!: () => void;
   const held = new Promise<void>(resolve => { release = resolve; });
@@ -571,11 +551,12 @@ test('failed or cancelled asset loading cannot replace a current farm', async ({
   const requestSeen = new Promise<void>(resolve => { requested = resolve; });
   await page.route('**/scenario0.tiles.png', async route => { requested(); await held; await route.abort(); });
   await page.locator('#load-farm-file').setInputFiles(file); await requestSeen;
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('2');
+  await page.getByRole('button',{name:'Cancel loading',exact:true}).click();
+  await loadScenarioCheckpoint(page,Number('2'));
   await expect(page.locator('#map-status')).toHaveText('Scenario 3 · original terrain');
   release();
   await reveal(page, '#next-day'); await page.locator('#next-day').click();
-  await expect(page.locator('#scenario')).toHaveValue('2');
+  await expect(page.locator('#map-status')).toContainText('Scenario 3');
   await expect(page.locator('#time-status')).toHaveText('Paused · 1 days advanced');
   expect(errors).toEqual([]);
 });
@@ -604,7 +585,7 @@ test('original field plans harvest and replant automatically through the browser
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
+  await loadScenarioCheckpoint(page,Number('4'));
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await reveal(page, '#planner-field'); await page.locator('#planner-field').selectOption('1');
   await expect(page.locator('#schedule-status')).toHaveText('Field plans run automatically each week.');
@@ -646,7 +627,7 @@ test('calendar planner edits five years, preserves saved plans and dispatches th
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
+  await loadScenarioCheckpoint(page,Number('4'));
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await reveal(page, '#planner-field'); await page.locator('#planner-field').selectOption('1');
   await openWindow(page,'schedule');
@@ -702,7 +683,7 @@ test('planner locks current prices, respects fixed harvests and clears future wo
   await page.getByRole('button',{name:'Clear remaining plan',exact:true}).click(); await page.locator(`[data-plan-week="${week+1}"]`).click();
   await expect(page.locator('#plan-selection')).toContainText('Fallow');
   await (await scheduleWeek(page,239)).focus(); await expect(page.locator('#plan-selection')).toContainText('Fallow');
-  await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
+  await loadScenarioCheckpoint(page,Number('4'));
   await expect(page.locator('#plan-result')).toHaveCount(0);
   await reveal(page, '#planner-field'); await page.locator('#planner-field').selectOption('1');
   await openWindow(page,'schedule');

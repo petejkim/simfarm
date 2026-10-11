@@ -1,6 +1,6 @@
 # Original Edit help legend
 
-The palette “?” now shows the original88×200 legend beside the tools. Its15 captions are actual HTML text; the source border and leader lines are retained at1×. Advanced controls remain accessible below the legend as an explicit native addition.
+The palette “?” now shows the original88×200 legend beside the tools. Its15 captions are actual HTML text; the source border and leader lines are retained at1×. The former native Advanced controls shortcut is removed; settings and file operations are reached through their menus.
 
 ## Evidence
 
@@ -16,7 +16,7 @@ The importer validates88×200 and writes ignored edit-help.png. Clearing x19..86
 
 Edit remains fixed at screen y48, so the legend begins48,64; CSS compensates for the2-pixel Edit border. It is an attached popup, like Plant/Spray, not a movable floating window. Browser activation toggles it instead of requiring a held button. Escape returns focus to “?”; another click, an outside pointer press or selection of a palette tool dismisses it. Opening cancels active movement/placement/painting drafts and closes other panels without issuing simulation commands. The advanced category remains selected for compatibility with its existing controls. AutoScroll is suppressed while help is visible.
 
-The Advanced controls button beneath the original200-pixel image opens the existing interim tools panel. It is not source artwork or a recovered original command. No small-screen layout change, simulation/save schema, MIDI or pacing change is included. The browser legend does not pause simulation or reproduce the source synchronous button-wait loop. Remaining original sound/cursor/window lifecycle work is still incomplete.
+The original200-pixel legend now stands alone, without the former Advanced controls button or Edit tools window. Options → Settings retains native zoom/audio preferences and File → New Game/Load Game retains farm selection. No small-screen layout change, simulation/save schema, MIDI or pacing change is included. The browser legend does not pause simulation or reproduce the source synchronous button-wait loop. Remaining original sound/cursor/window lifecycle work is still incomplete.
 
 ## Focused validation
 

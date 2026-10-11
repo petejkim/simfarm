@@ -2,7 +2,7 @@ import {useEffect,useLayoutEffect,useRef} from 'react';
 import {EDIT_HELP_LABELS} from '../formats/edit-help';
 
 /** Attached palette legend, not a movable document window. */
-export function EditHelp({artwork,onClose,onAdvanced}:{artwork:HTMLImageElement;onClose:()=>void;onAdvanced:()=>void}){
+export function EditHelp({artwork,onClose}:{artwork:HTMLImageElement;onClose:()=>void}){
   const root=useRef<HTMLElement>(null);
   useLayoutEffect(()=>{root.current?.focus({preventScroll:true});},[]);
   useEffect(()=>{
@@ -18,6 +18,5 @@ export function EditHelp({artwork,onClose,onAdvanced}:{artwork:HTMLImageElement;
     <div className="edit-help-artwork"><img src={artwork.src} width={88} height={200} alt="" draggable={false}/>
       {EDIT_HELP_LABELS.map(([text,y])=><span key={text} style={{top:y}}>{text}</span>)}
     </div>
-    <button onClick={onAdvanced}>Advanced controls</button>
   </aside>;
 }

@@ -62,7 +62,6 @@ interface Props {
   id: number | null;
   loaded?: LoadedFarm;
   onLoad: (farm: LoadedFarm) => void;
-  onScenarioChange: (id: number) => void;
   onRetry: () => void;
   assets: GameAssets;
   zoom: number;
@@ -71,7 +70,7 @@ interface Props {
   onFlightRunning: (running: boolean) => void;
 }
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
-export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onScenarioChange, onRetry, assets, zoom, onZoomChange, onGameEvent, onFlightRunning }: Props) {
+export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRetry, assets, zoom, onZoomChange, onGameEvent, onFlightRunning }: Props) {
   const windows = useWindows();
   useEffect(() => windows.reset(), [windows.reset]);
   const [newFarmOpen, setNewFarmOpen] = useState(false);
@@ -351,16 +350,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     <GameWindow windowKey="newgame" title="New Game" forced={newFarmOpen} onClose={() => setNewFarmOpen(false)}>
     {simulation && <NewFarmControls assets={assets} simulation={simulation} open={newFarmOpen} onOpenChange={setNewFarmOpen} onCreate={onLoad} />}
     </GameWindow>
-    <GameWindow windowKey="tools" title="Edit tools">
-    <section className="toolbar">
-      <div><label>Original farm <select id="scenario" value={id ?? 'generated'} onChange={e => onScenarioChange(Number(e.target.value))}>
-        {id === null && <option value="generated" disabled>{snapshot?.scenario.origin === 'original' ? 'Imported farm' : 'Generated farm'}</option>}
-        {Array.from({ length: 8 }, (_, i) => <option key={i} value={i}>Scenario {i + 1}</option>)}
-      </select></label>
-        <span id="map-status" role="status">{resource.status === 'ready' ? (id === null ? `${snapshot?.scenario.origin === 'original' ? 'Imported' : 'Generated'} farm · original terrain` : `Scenario ${id + 1} · original terrain`)
-          : resource.status === 'error' ? resource.error : 'Loading map…'}</span></div>
-    </section>
-    </GameWindow>
+    <span id="map-status" className="file-status" role="status">{resource.status === 'ready' ? (id === null ? `${snapshot?.scenario.origin === 'original' ? 'Imported' : 'Generated'} farm · original terrain` : `Scenario ${id + 1} · original terrain`)
+          : resource.status === 'error' ? resource.error : 'Loading map…'}</span>
     <GameWindow windowKey="speed" title="Speed">
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     </GameWindow>
@@ -387,7 +378,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     {data && snapshot && <BuyWindow assets={assets} snapshot={snapshot} tiles={data.tiles} onBuy={beginPurchase} />}
     {resource.status !== 'ready' && <div className="loading"><p role="status">{resource.status === 'error' ? resource.error : 'Loading farm…'}</p>
       {resource.status === 'error' && <button onClick={onRetry}>Retry loading farm</button>}
-      <button aria-label="Edit tools and help" onClick={() => windows.show('tools')}>Choose another farm</button></div>}
+      </div>}
       {simulation&&snapshot?.finances.defaultDecision&&!messages.length&&!newFarmOpen&&<DefaultDialog
         decision={snapshot.finances.defaultDecision} assets={assets} onCommand={command=>simulation.dispatch(command)}
         onRestart={()=>setNewFarmOpen(true)}/>}
@@ -395,7 +386,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       <EditPalette artwork={assets.editPalette} disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}
         onField={() => openFieldMenu('plant')} onSpray={() => openFieldMenu('spray')} onHelp={() => {objectMove.cancel();bulldoze.cancel();construction.cancel();setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);windows.show(null);setEditHelpOpen(open=>!open);}} />
       {snapshot&&<EditStatus codes={snapshot.editStatuses} text={assets.editStatusText}/>}
-      {editHelpOpen&&<EditHelp artwork={assets.editHelp} onClose={()=>setEditHelpOpen(false)} onAdvanced={()=>{setEditHelpOpen(false);windows.show('tools');}}/>}
+      {editHelpOpen&&<EditHelp artwork={assets.editHelp} onClose={()=>setEditHelpOpen(false)}/>}
       {fieldMenu&&snapshot&&<FieldToolMenu kind={fieldMenu} assets={assets} world={data.scenario} tiles={data.tiles}
         onClose={()=>{setFieldMenu(null);viewportRef.current?.focus({preventScroll:true});}}
         onChoose={tool=>{simulation?.dispatch({type:'edit-status',code:tool.kind==='plant'?17:SPRAY_STATUSES[tool.kind]});setFieldMenu(null);setFieldMapTool(tool);setSelection(null);viewportRef.current?.focus({preventScroll:true});}}/>}

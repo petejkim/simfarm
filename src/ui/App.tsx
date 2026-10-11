@@ -31,7 +31,6 @@ function Game({ assets }: { assets: GameAssets }) {
   return <WindowDesktop artwork={assets.windowArtwork} onButtonClick={sound.click}>
     <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded}
       onRetry={() => setFarm(previous => ({ ...previous, serial: previous.serial + 1 }))}
-      onScenarioChange={id => setFarm(previous => ({ id, serial: previous.serial + 1 }))}
       audioControls={<>
         <MusicControls tracks={assets.catalog.music} music={music} />
         <span id="audio-status" role="status">{music.message}</span>

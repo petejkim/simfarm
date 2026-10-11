@@ -30,7 +30,7 @@ test('original SSM import retains the active session, continues and restores wit
   await page.route('**/assets/raw/SCEN*.SSM', route => { requests.push(route.request().url()); return route.abort(); });
   await load(page, bytes, 'MYFARM.SSM');
   await expect(page.locator('#map-status')).toHaveText('Imported farm · original terrain');
-  await expect(page.locator('#scenario option:checked')).toHaveText('Imported farm');
+  await expect(page.locator('#map-status')).toHaveText('Imported farm · original terrain');
   const imported = await save(page, 'loaded');
   expect(imported.filename).toContain('simfarm-imported-farm-');
   expect(imported.data).toEqual(JSON.parse(expected.save(null)));

@@ -86,9 +86,8 @@ test('palette popups remain usable over open windows while the map stays behind 
   for(let i=0;i<13;i++)await page.keyboard.press('ArrowLeft');
   for(let i=0;i<4;i++)await page.keyboard.press('ArrowUp');
   await page.getByRole('button',{name:'Edit tools and help',exact:true}).click();
-  await page.getByRole('button',{name:'Advanced controls',exact:true}).click();
-  await expect(page.locator('[data-window=tools]')).toHaveAttribute('data-front','true');
-  await page.getByRole('button',{name:'Close Edit tools',exact:true}).click();
+  await expect(page.getByRole('complementary',{name:'Edit tool help'})).toBeVisible();
+  await expect(page.getByRole('dialog',{name:'Edit tools',exact:true})).toHaveCount(0);await page.keyboard.press('Escape');
   for(const name of ['Plant','Spray']){
     await page.getByRole('button',{name,exact:true}).click();
     const item=page.getByRole('menuitem').first(),box=(await item.boundingBox())!;

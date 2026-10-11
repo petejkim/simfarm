@@ -2,21 +2,20 @@
 
 User priority2026-10-11: after click feedback/Examine corrections, restore original interactions for actions available only through interim controls, then remove redundant windows. Do not preserve a scaffold because tests happen to use it. Do not delete an action until its original route is verified. Mobile and audiovisual enhancement remain excluded.
 
-Current evidence from src/ui/FarmView.tsx and the referenced components:
+Current inventory after the utility-window retirement (2026-10-11):
 
-| Interim surface | Current replacement / remaining audit |
+| Removed interim surface | Gameplay replacement |
 | --- | --- |
-| Farm controls (FarmNavigation) | Removed with its launcher. Use View object on a field for Schedule, Map Property for land, Plant for fields, Buy for supplies, palette for roads/fences and Bank for loans. Existing object forms remain independently accessible under Edit tools pending their own retirement. |
-| Edit tools | Mixes scenario/debug selectors, zoom/centering and interim window launchers. New Game, Map, original menus and palette replace much of it; separate necessary view controls from debugging scaffolding before retirement. |
-| Land purchase / New field (LandPanel) | Removed. Toolbar Map Property/Plant and Options AutoDoze provide the corresponding original routes; the redundant Farm controls shortcuts are also gone. |
-| Field information (FieldPanel) | Removed. Original Spray handles treatments; View object → Schedule handles field selection, gauges, planting and movable harvests. Fixed annual crops retain their source harvest dates. Diagnostic browser assertions read exported checkpoints. No original immediate gesture is claimed. |
-| Edit object / action window | All object action forms and shops are removed. CropSupplyShop and its category/navigation are gone; original Buy provides seed/chemical selection and direct storage delivery. The remaining Field information/actions window and planner shortcut are also removed. LivestockShop and its category/launcher are removed; original Buy covers four species and Hay/Trough palette tools cover feed/water. EquipmentShop and its category/launcher are removed; original Buy covers the verified machinery catalog. BuildingInteriorControls is removed; original right-click and Examine cover its sole open/close action. EquipmentMovePanel and its category are removed; original Move object covers queued machinery travel, and the machinery shortcut arms it directly. SupplyMovePanel and its category are removed; original Move object covers all five supply families, and right-click/Examine opens storage. BuildingPanel and its category are removed; the original Buy catalog covers all nine building types and Options supplies AutoDoze. RemovalPanel and its category are removed; original Bulldoze and MESSAGE confirmations cover all removal actions. NetworkPanel and its category are removed; original road/fence/gate tools and map gate toggles cover all actions. IrrigationPanel and its category are removed; original Ditch/Valve controls cover placement and existing-valve toggles. Buy/palette/Move/Examine replace many paths. Audit command-by-command; useConstruction already handles existing valve/gate toggles. Source gestures, not the old forms, are the intended interface. |
-| Machinery | Removed. Original Buy/Move/Examine/Sell cover its actions and condition/value. Outdoor worn-machine loss uses original Edit status73; diagnostic wear percentages/counts are checked through saves. |
-| Livestock | Diagnostic inventory/notices and Move supplies shortcut remain. Duplicate sale/locate forms are removed; original Sell covers all active animals. Audit original animal notices/readings before removing this shell. |
-| Tax details / Disaster details | Primarily diagnostic summaries around original Balance/Disasters interactions; review for any exclusive action, then retire or move debugging information out of gameplay. |
-| Audio and tools / Game files | Transitional access wrappers. Menus already expose primary audio/load/save; native volume/file-error handling needs a deliberate accessible home. |
+| Farm controls / Land purchase / New field | Map Property, Plant, Buy, Bank and the original palette |
+| Field information / immediate field orders | View object → Schedule, original Spray and Plant; fixed annual crop dates remain fixed |
+| Edit object / object shops and forms | Buy, Move object, Examine/right-click, Sell, Bulldoze confirmations and direct palette tools |
+| Machinery / Livestock inventories | Original Buy/Move/Examine/Sell, Hay/Trough, source Edit messages and water-storage burst Message |
+| Tax / Disaster details | Balance Sheet, original Disasters menu, Message dialogs, AutoGoto and Map navigation |
+| Game files | File Save/Save As/Load Game, native file errors and loading cancellation |
+| Audio and tools / Preservation progress | Options audio toggles, Settings for zoom/track/volume/audio feedback, File About for project context |
+| Edit tools / Advanced controls | File New Game/Load Game and Options Settings; startup failures have Retry loading farm |
 
-Examine's Object actions shortcut is removed. Its supported building interior toggle stays available. Farm controls and Land purchase/New field are removed; the other listed interim windows remain under audit. Full preservation remains incomplete, and the original action evidence in subsystem documents remains authoritative.
+The scenario dropdown cold constructor was a diagnostic shortcut, not ordinary original loading. Subsystem tests now use explicit cold native checkpoints through File Load; actual original SSM import retains its source session-transfer rules. Loading status remains accessible; loading errors/retry stay visible. The permanent terrain, original palette help, source dialogs and native Settings remain. No whole-game completion is claimed. Historical audit entries below preserve the evidence and order of restoration.
 
 ## Schedule handoff and direct-order evidence
 
