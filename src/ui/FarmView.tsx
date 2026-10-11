@@ -378,7 +378,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
         const result=simulation.getSnapshot().lastDisasterResult;
         setInteractionMessage(result?.ok?'':result?.reason==='no-fields'?'Create a field before starting locusts.':result?.reason==='tornado-active'?'Locusts cannot start during a tornado.':'That disaster is already active.');
       },
-    }} simulation={simulation} scenarioId={id} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
+    }} simulation={simulation} scenarioId={id} tiles={data?.tiles??null} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
     <GameWindow windowKey="options" title="Audio and tools">{audioControls}
       <button onClick={() => windows.show('session')}>Game files</button> <button onClick={() => windows.show('tools')}>Edit tools</button>
       <button onClick={() => windows.show('about-project')}>Preservation progress</button>

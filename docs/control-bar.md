@@ -48,3 +48,10 @@ Bank follow-up: its launcher now opens the reconstructed original terminal at so
 
 
 Market Value is now available from the toolbar and Windows menu, with its original chart/crop grid, real text and all24-crop pages. See [market-window.md](market-window.md). Earlier unavailable/transitional notes above describe the toolbar increment, not the current Market implementation.
+
+
+## Restored toolbar forecast
+
+The previously empty center inset now displays the original three weather tiles at screen328/344/360,24 (16×16 each). Source2a518..2a552 reads DS124e (day), adds loop index0..2, reads signed forecast byte DS4078+index, and draws atlas tile204+code. SHA2562a518..2a554(end exclusive): `1eb4aa42ad4ed2ac672e0b4e52c868dda723331308245be900e72769c38e2b31`. Confidence high from static instructions and existing Weather-window forecast decoding.
+
+ControlBar subscribes through the existing snapshot render and uses the current terrain atlas; imperative canvas drawing remains in src/render/toolbar-weather.ts. Adjacent current/next-week arrays provide the three days across rollover without RNG calls or simulated prediction. The accessible label/title names today, tomorrow and day3; icons contain no bitmap text. Opening Weather is not required. Browser checks compare every pixel against original tiles, verify exact1× coordinates, cross-week day advancement and unchanged saves when merely viewing. This completes user correction1; climate-dependent terrain appearance is next.

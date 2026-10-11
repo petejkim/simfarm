@@ -36,3 +36,12 @@ test('toolbar closes only the front window and raises a background descriptor',(
   expect(b.subarray(0x2b04e,0x2b056).toString('hex')).toBe('26894f4426897746');
   expect(b.subarray(0x2b05c,0x2b064).toString('hex')).toBe('26897f4626897f44');
 });
+
+
+test('toolbar weather draws three forecast tiles at original coordinates',()=>{
+  const b=readFileSync(new URL('../../simfarm-dos/SIMFARM.EXE',import.meta.url));
+  expect(createHash('sha256').update(b.subarray(0x2a518,0x2a554)).digest('hex')).toBe('1eb4aa42ad4ed2ac672e0b4e52c868dda723331308245be900e72769c38e2b31');
+  expect(b.subarray(0x2a52d,0x2a539).toString('hex')).toBe('268a8778409805cc00506a18');
+  expect(b.subarray(0x2a53c,0x2a542).toString('hex')).toBe('c1e004054801');
+  expect(b.subarray(0x2a54e,0x2a554).toString('hex')).toBe('837efe037cc9');
+});

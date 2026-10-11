@@ -80,3 +80,21 @@ test('missing Weather assets fail before creating a farm',async({page})=>{
     await page.route('**/assets/'+name,r=>r.abort());await page.goto('/');await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('.loading')).toContainText(name);await expect(page.locator('#world')).toHaveCount(0);await page.unroute('**/assets/'+name);
   }
 });
+
+
+test('toolbar shows three original weather icons across week boundaries and updates after advancing a day',async({page})=>{
+  const f=fixture();f.state.scenario.farm.calendar.day=6;
+  const game=f.load().withAllCrops(browserCrops);await start(page);await load(page,game.save(4));const before=await save(page);
+  const icons=page.locator('.toolbar-weather');expect(await icons.boundingBox()).toEqual({x:328,y:24,width:48,height:16});
+  async function check(codes:number[]){
+    for(const [i,code] of codes.entries()){
+      const pixels=await icons.evaluate((c:HTMLCanvasElement,i)=>Array.from(c.getContext('2d')!.getImageData(i*16,0,16,16).data),i);
+      expect(pixels).toEqual(Array.from(decodePlanar(asset('ega16til.til').subarray((204+code)*128,(205+code)*128),16,16,palette).rgba));
+    }
+  }
+  await expect(icons).toHaveAttribute('aria-label','Today: Partly cloudy; Tomorrow: Snow; Day 3: Rain');await check([1,4,3]);
+  expect(await save(page)).toEqual(before);
+  await reveal(page,'#next-day');await page.locator('#next-day').click();await check([4,3,2]);
+  await expect(icons).toHaveAttribute('aria-label','Today: Snow; Tomorrow: Rain; Day 3: Cloudy');
+  await page.locator('#window-edit').click();await page.screenshot({path:'artifacts/browser-toolbar-weather.png'});
+});

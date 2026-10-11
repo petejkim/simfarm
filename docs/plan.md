@@ -257,3 +257,17 @@ Windows menu checks now reflect all independently open windows, not only the fro
 
 
 Toolbar activation audit corrected the prior shared-launcher assumption: background toolbar clicks raise, front toolbar clicks close, while Windows menu entries always close an existing ordinary window. Implemented with retained window selections/positions and source-backed focused checks. Continue tracing right titlebar flag40 input; tile2/119 rendering and bring-forward routine alone do not establish its action. See window-stacking.md. Preserve fixed/maximized Edit and keep the complete native game goal active.
+
+
+## 2026-10-11 — user-prioritized corrections
+
+After ab54040, complete these in the requested order, one separate conventional commit per item, before returning to titlebar-depth or other reconstruction:
+1. Restore the toolbar weather display (three original forecast icons).
+2. Make terrain color respond to climate/weather; inspect existing soil-moisture tile updates and renderer invalidation.
+3. Retain selected Spray treatment for repeated spraying until another control is chosen.
+4. Enable MIDI music/effects by default and persist Options selections, respecting browser gesture activation.
+5. Make mouse menu highlighting follow the hovered item, with retained keyboard navigation.
+6. Show all24 Plant crops together, without paging.
+7. Correct region-map graphics against original asset/layout evidence.
+
+Use focused checks and update this queue/progress as each separate commit completes. These corrections take priority over the previous depth-control follow-up; the broader preservation goal remains incomplete.
