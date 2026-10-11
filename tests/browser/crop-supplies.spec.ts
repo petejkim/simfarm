@@ -119,3 +119,7 @@ test('supply shop explains storage and money limits, supports building and map s
   await expect(page.locator('#crop-supply-shop h2')).toBeFocused();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({path:'artifacts/browser-crop-supplies.png',fullPage:true});expect(await save(page)).toEqual(broke);
 });
+
+
+// These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});

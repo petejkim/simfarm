@@ -48,7 +48,7 @@ test('annual homestead updates repaint original tiles, persist once, and play or
   expect(music).toEqual([]); expect(sounds).toEqual([]); // No automatic opt-in, even on a genuine game event.
   await page.locator('#load-farm-file').setInputFiles(checkpoint());
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await reveal(page, '#play'); await page.locator('#play').click(); await expect(page.locator('#audio-status')).toContainText('Playing amain');
+  await reveal(page, '#play'); await page.locator('#music').selectOption('amain');await page.locator('#play').click(); await expect(page.locator('#audio-status')).toContainText('Playing amain');
   await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await expect(page.locator('#sound-toggle')).toHaveAttribute('aria-pressed', 'true');
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
   await expect(page.locator('#audio-status')).toContainText('Playing cowman'); await expect(page.locator('#music')).toHaveValue('cowman');
@@ -127,7 +127,7 @@ test('weekly MIDI requests deduplicate the active track, respect Stop and cancel
   page.on('request', r => { if (r.url().endsWith('/ffarm.music.json')) happyRequests++; });
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(checkpoint(600000, 0, true));
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await reveal(page, '#play'); await page.locator('#play').click(); await expect(page.locator('#audio-status')).toContainText('Playing amain');
+  await reveal(page, '#play'); await page.locator('#music').selectOption('amain');await page.locator('#play').click(); await expect(page.locator('#audio-status')).toContainText('Playing amain');
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); await expect(page.locator('#audio-status')).toContainText('Playing ffarm');
   expect(happyRequests).toBe(1);
   for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
@@ -140,9 +140,13 @@ test('weekly MIDI requests deduplicate the active track, respect Stop and cancel
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
   await page.route('**/ffarm.music.json', async route => { await gate; await route.continue().catch(() => {}); });
-  await reveal(page, '#play'); await page.locator('#play').click(); await expect(page.locator('#audio-status')).toContainText('Playing amain');
+  await reveal(page, '#play'); await page.locator('#music').selectOption('amain');await page.locator('#play').click(); await expect(page.locator('#audio-status')).toContainText('Playing amain');
   await reveal(page, '#music'); await page.locator('#music').selectOption('ffarm'); await expect(page.locator('#audio-status')).toContainText('Loading ffarm');
   await reveal(page, '#play'); await page.locator('#play').click(); await expect(page.locator('#audio-status')).toHaveText('Music off'); release();
   await reveal(page, '#music'); await page.locator('#music').selectOption('amain'); await reveal(page, '#play'); await page.locator('#play').click();
   await expect(page.locator('#audio-status')).toContainText('Playing amain');
 });
+
+
+// These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});

@@ -99,3 +99,7 @@ test('Drought controls dry and restore source shoreline pixels without start aud
   await originalTile(page, 20, 19, game.getSnapshot().scenario.cells[20 * 96 + 19].terrain & 2047);
   expect(await save(page, 'recovered')).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
+
+
+// These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});

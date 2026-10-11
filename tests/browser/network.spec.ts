@@ -94,3 +94,7 @@ test('construction explains land, cash, terrain and gate limits and supports map
   await openWindow(page, 'navigation'); await page.getByRole('button',{name:'Roads & fences',exact:true}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({path:'artifacts/browser-network-mobile.png',fullPage:true});
 });
+
+
+// These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});

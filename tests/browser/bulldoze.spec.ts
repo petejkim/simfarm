@@ -93,3 +93,7 @@ test('Bulldoze explains town and cash gates, permits exact25 payment, and cancel
   await reveal(page, '#confirm-removal'); await page.locator('#confirm-removal').click(); game.dispatch({ type: 'remove-object', x: 95, y: 95, kind: quote.kind, slot: quote.slot, tile: quote.tile });
   await expect(page.locator('#farm-cash')).toHaveText('$0'); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
 });
+
+
+// These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});

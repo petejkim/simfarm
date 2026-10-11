@@ -48,7 +48,7 @@ test('frost controls cancel locusts, play original wind PCM and retain cooling/l
 test('crop circles render original seven tiles and request audible alien MIDI without replaying the event on load',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await observeAudio(page);await page.goto('/');
   const f=disasterFixture();f.state.scenario.fields[1].bytes[14]=1;const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));
-  await reveal(page, '#play'); await page.locator('#play').click();await expect(page.locator('#audio-status')).toContainText('Playing amain');
+  await reveal(page, '#play'); await page.locator('#music').selectOption('amain');await page.locator('#play').click();await expect(page.locator('#audio-status')).toContainText('Playing amain');
   await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();const response=page.waitForResponse(r=>r.url().endsWith('/alien.music.json'));
   await reveal(page, '#start-crop-circles'); await page.locator('#start-crop-circles').click();g.dispatch({type:'start-disaster',kind:'crop-circles'});
   const a=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
@@ -86,3 +86,7 @@ test('ineligible crop-circle attempts explain rejection and toxic warnings remai
   await expect(page.locator('#start-wind')).toBeDisabled();expect(await save(page,'manual-wind')).toEqual(JSON.parse(g.save(4)));
   await expect.poll(async()=>(await audio(page)).some(a=>a.length===12132&&a.peak>0.01)).toBe(true);
 });
+
+
+// These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});

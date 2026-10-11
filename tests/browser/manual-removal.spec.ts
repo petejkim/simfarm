@@ -109,3 +109,7 @@ test('field removal explains active machinery, destroys a growing crop after con
   expect(game.getSnapshot().scenario.fields[result.slot].state).toBe(4);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
 });
+
+
+// These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});

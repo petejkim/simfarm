@@ -1,3 +1,4 @@
+import {readPreferences,rememberPreference} from './preferences';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PcmPlayer } from '../audio/pcm-player';
 import { loadSound } from '../assets/game-assets';
@@ -6,12 +7,12 @@ import type { PcmSound } from '../formats/voc';
 
 export function useSound() {
   const [player] = useState(() => new PcmPlayer());
-  const [enabled, setEnabled] = useState(false), [error, setError] = useState('');
-  const active = useRef(false), flightRunning = useRef(false), planeFailed = useRef(false);
+  const [enabled, setEnabled] = useState(()=>readPreferences().sound??true), [error, setError] = useState('');
+  const active = useRef(enabled), activated=useRef(false), flightRunning = useRef(false), planeFailed = useRef(false);
   const planeSample = useRef<PcmSound | null>(null), playing = useRef<GameSound | null>(null);
   const request = useRef<{ id: GameSound; controller: AbortController } | null>(null);
   const stop = useCallback(() => {
-    active.current = false; request.current?.controller.abort(); request.current = null;
+    active.current = false; activated.current=false; request.current?.controller.abort(); request.current = null;
     player.stop(); playing.current = null; planeFailed.current = false; setEnabled(false);
   }, [player]);
   // Presentation lifetime only. Flight rules and timing remain in GameSimulation.
@@ -23,17 +24,27 @@ export function useSound() {
     }
   }, [player]);
   useEffect(() => {
-    window.addEventListener('pagehide', stop);
-    return () => { window.removeEventListener('pagehide', stop); active.current = false; request.current?.controller.abort(); player.dispose(); };
+    active.current=enabled; // Restore intent after React's development effect cleanup.
+    const suspend=()=>{activated.current=false;request.current?.controller.abort();player.stop();};
+    window.addEventListener('pagehide', suspend);
+    return () => { window.removeEventListener('pagehide', suspend); active.current = false; request.current?.controller.abort(); player.dispose(); };
   }, [player, stop]);
+  const activate=useCallback(()=>{
+    if(!active.current||activated.current)return;
+    activated.current=true;void player.enable().catch(error=>{activated.current=false;setError(String(error));});
+  },[player]);
+  useEffect(()=>{
+    window.addEventListener('pointerdown',activate);window.addEventListener('keydown',activate);
+    return()=>{window.removeEventListener('pointerdown',activate);window.removeEventListener('keydown',activate);};
+  },[activate]);
   const toggle = async () => {
-    if (active.current) { stop(); return; }
-    active.current = true; setEnabled(true); setError('');
+    if (active.current) { rememberPreference('sound',false);stop(); return; }
+    rememberPreference('sound',true);active.current = true;activated.current=true;setEnabled(true);setError('');
     try { await player.enable(); }
     catch (error) { if (active.current) { stop(); setError(String(error)); } }
   };
   const play = useCallback((id: GameSound) => {
-    if (!active.current) return;
+    if (!active.current||!activated.current) return;
     // Source0x23d72 skips status2. Native engine requests wait for the current
     // sample/load to finish, then replay on a later flight frame, never restarting each frame.
     if (id === 'plane' && (!flightRunning.current || request.current || player.playing || planeFailed.current)) return;

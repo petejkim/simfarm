@@ -82,7 +82,7 @@ test('original scenario maps, crop selection, navigation and audible MIDI', asyn
   }
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
   await expect(page.locator('#world')).toHaveCSS('width', '768px');
-  await openWindow(page, 'options'); await page.getByRole('button', { name: 'Play music' }).click();
+  await openWindow(page, 'options'); await page.locator('#music').selectOption('amain');await page.getByRole('button', { name: 'Play music' }).click();
   await expect(page.locator('#audio-status')).toContainText('Playing amain');
   await expect.poll(() => page.evaluate(() => {
     const audio = (window as unknown as { __audioTest: { contexts: AudioContext[]; analysers: AnalyserNode[] } }).__audioTest;
@@ -795,3 +795,7 @@ test('saved financial default stops time and actions, supports ending or restart
   await expect(page.locator('#next-day')).toBeEnabled(); await expect(page.locator('#time-status')).toContainText('0 days advanced');
   await openWindow(page, 'bank'); await expect(page.locator('#loan-overdue')).toHaveCount(0);
 });
+
+
+// These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});

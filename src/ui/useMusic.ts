@@ -1,3 +1,4 @@
+import {readPreferences,rememberPreference} from './preferences';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MidiPlayer } from '../audio/midi-player';
 import { loadMusic } from '../assets/game-assets';
@@ -5,12 +6,14 @@ import { loadMusic } from '../assets/game-assets';
 type Playback = { status: 'idle' | 'loading' | 'playing' } | { status: 'error'; error: string };
 export function useMusic() {
   const [player] = useState(() => new MidiPlayer());
-  const [track, setTrack] = useState('amain'), [volume, setVolume] = useState(25);
+  const [track, setTrack] = useState('genfarm'), [volume, setVolume] = useState(25);
   const [playback, setPlayback] = useState<Playback>({ status: 'idle' });
   const request = useRef<AbortController | null>(null);
-  const current = useRef({ track: 'amain', enabled: false });
+  const [enabled,setEnabled]=useState(()=>readPreferences().music??true);
+  const current = useRef({ track: 'genfarm', enabled });
+  const activated=useRef(false);
   useEffect(() => {
-    const stopOnHide = () => { current.current.enabled = false; request.current?.abort(); player.stop(); setPlayback({ status: 'idle' }); };
+    const stopOnHide = () => { activated.current = false; request.current?.abort(); player.stop(); setPlayback({ status: 'idle' }); };
     window.addEventListener('pagehide', stopOnHide);
     return () => { window.removeEventListener('pagehide', stopOnHide); request.current?.abort(); player.dispose(); };
   }, [player]);
@@ -25,31 +28,42 @@ export function useMusic() {
       await player.play(sequence);
       if (!controller.signal.aborted) setPlayback({ status: 'playing' });
     } catch (error) {
-      if (!controller.signal.aborted) { current.current.enabled = false; player.stop(); setPlayback({ status: 'error', error: String(error) }); }
+      if (!controller.signal.aborted) { player.stop(); setPlayback({ status: 'error', error: String(error) }); }
     }
   }, [player]);
+  const activate=useCallback(()=>{
+    if(!current.current.enabled||activated.current)return;
+    activated.current=true;
+    // Resume Web Audio synchronously from the gesture before fetching MIDI.
+    void player.enable().then(()=>{if(activated.current&&current.current.enabled)void play(current.current.track);}).catch(error=>setPlayback({status:'error',error:String(error)}));
+  },[player,play]);
+  useEffect(()=>{
+    window.addEventListener('pointerdown',activate);window.addEventListener('keydown',activate);
+    return()=>{window.removeEventListener('pointerdown',activate);window.removeEventListener('keydown',activate);};
+  },[activate]);
   function toggleTrack(id: string) {
-    if (!current.current.enabled) { setTrack(id); void play(id); }
+    if (!current.current.enabled) { setTrack(id);current.current.track=id;toggle(); }
     else toggle();
   }
   function toggle() {
-    if (current.current.enabled) { current.current.enabled = false; request.current?.abort(); player.stop(); setPlayback({ status: 'idle' }); }
-    else void play(track);
+    const next=!current.current.enabled;current.current.enabled=next;setEnabled(next);rememberPreference('music',next);
+    if(!next){activated.current=false;request.current?.abort();player.stop();setPlayback({status:'idle'});}
+    else activate();
   }
   function selectTrack(id: string) {
     setTrack(id);
     current.current.track = id;
-    if (current.current.enabled) void play(id);
+    if (current.current.enabled&&activated.current) void play(id);
   }
   // Original 0x23b22 requires music enabled and leaves an identical playing
   // sequence alone. Ref updates also deduplicate requests within one game tick.
   const requestTrack = useCallback((id: string) => {
     if (!current.current.enabled || current.current.track === id) return;
-    setTrack(id); void play(id);
+    setTrack(id);current.current.track=id;if(activated.current)void play(id);
   }, [play]);
   function changeVolume(value: number) { setVolume(value); player.setVolume(value / 100); }
   const message = playback.status === 'playing' ? `Playing ${track} · MIDI with temporary synth timbres`
     : playback.status === 'loading' ? `Loading ${track}…`
-    : playback.status === 'error' ? `Music unavailable: ${playback.error}` : 'Music off';
-  return { enabled: playback.status === 'playing' || playback.status === 'loading', toggleTrack, track, volume, playback, message, toggle, selectTrack, changeVolume, requestTrack };
+    : playback.status === 'error' ? `Music unavailable: ${playback.error}` : enabled?'Music enabled · starts on interaction':'Music off';
+  return { enabled, toggleTrack, track, volume, playback, message, toggle, selectTrack, changeVolume, requestTrack };
 }

@@ -14,9 +14,7 @@ export class MidiPlayer {
   private sequence?: MidiSequence;
   private volume = 0.25;
   get playing(): boolean { return this.timer !== undefined; }
-  async play(sequence: MidiSequence): Promise<void> {
-    this.stop();
-    const generation = this.generation;
+  async enable():Promise<void>{
     if (!this.context) {
       this.context = new AudioContext();
       this.master = this.context.createGain();
@@ -32,10 +30,15 @@ export class MidiPlayer {
       for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
     }
     await this.context.resume();
+  }
+  async play(sequence: MidiSequence): Promise<void> {
+    this.stop();
+    const generation = this.generation;
+    await this.enable();
     if (generation !== this.generation) return;
     this.sequence = sequence;
     this.resetChannels();
-    this.origin = this.context.currentTime + 0.06;
+    this.origin = this.context!.currentTime + 0.06;
     this.index = 0;
     this.schedule();
     this.timer = setInterval(() => this.schedule(), 25);

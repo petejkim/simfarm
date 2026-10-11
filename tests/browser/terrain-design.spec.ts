@@ -127,3 +127,18 @@ test('extreme retained soil rejects unplaceable terrain atomically and Start fre
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   expect((await save(page)).runtime.weather.soilMoisture).toBe(8);
 });
+
+
+test('remembered farm Options apply to accepted custom terrain, and all three climate controls select their source tables',async({page})=>{
+  await start(page);
+  await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'AutoDoze',exact:true}).click();
+  await reveal(page,'#new-farm');await page.locator('#new-farm').click();await reveal(page,'#new-farm-session');await page.locator('#new-farm-session').selectOption('fresh');
+  await reveal(page,'#create-farm');await page.locator('#create-farm').click();
+  for(const channel of ['precipitation','temperature','wind']){await reveal(page,'#terrain-'+channel);await page.locator('#terrain-'+channel).focus();await page.keyboard.press('Home');}
+  await expect(page.locator('#terrain-settings')).toContainText('Rainfall: Low · Temperature: Low · Wind: Low');
+  await reveal(page,'#play-farm');await page.locator('#play-farm').click();await expect(page.locator('#map-status')).toContainText('Generated farm');
+  const state=readNativeSave(JSON.stringify(await save(page))).state;
+  expect(state.setup.climateSelection).toEqual({precipitation:0,temperature:0,wind:0});
+  expect(state.scenario.climate).toEqual({precipitation:assets.climate.precipitation[0],temperature:assets.climate.temperature[0],wind:assets.climate.wind[0]});
+  expect(state.scenario.farm.autoClear).toBe(true);
+});

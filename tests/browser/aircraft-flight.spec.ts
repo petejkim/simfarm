@@ -177,3 +177,7 @@ test('missing engine audio reports once per flight attempt and can recover witho
   await expect(page.locator('#sound-error')).toHaveCount(0); await reveal(page, '#flight-pause'); await page.locator('#flight-pause').click();
   expect(errors).toEqual([]);
 });
+
+
+// These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});

@@ -97,3 +97,7 @@ test('original animal voices are audible when enabled, mute does not alter state
   await expect(page.locator('#sound-error')).toContainText('cow2.voc'); await expect(page.locator('#next-day')).toBeEnabled();
   expect(await save(page)).toEqual(JSON.parse(muted.save(4))); expect(errors).toEqual([]);
 });
+
+
+// These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});

@@ -69,3 +69,7 @@ test('busy worn machinery reports a deferred sale and remains owned through a br
   await expect(page.locator('#machinery-summary')).toContainText('Owned: 1 · Rented: 0');
   expect(await save(page, 'artifacts/browser-weekly-aging-deferred.simfarm.json')).toEqual(JSON.parse(game.save(4)));
 });
+
+
+// These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});

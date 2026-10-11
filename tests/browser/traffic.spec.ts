@@ -67,3 +67,7 @@ test('traffic collision plays source PCM only when enabled, never replays on loa
   expect(await save(page, 'legacy')).toEqual(JSON.parse(migrated.save(4))); expect(migrated.getSnapshot().traffic.activeCount).toBe(0);
   expect(requests).toHaveLength(count);
 });
+
+
+// These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});

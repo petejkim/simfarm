@@ -1,3 +1,4 @@
+import {applyPreferredOptions} from './preferences';
 import { useEffect, useRef, useState } from 'react';
 import { loadGeneratedTiles, loadSavedFarmTiles, loadNewFarmAssets, loadRegionAssets, loadScenarioAssets, loadTerrainPreviewAssets, type TerrainPreviewAssets, type GameAssets, type RegionAssets } from '../assets/game-assets';
 import { GameSimulation } from '../simulation/game';
@@ -57,7 +58,7 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
         const simulation = session === 'restart'
           ? current.restartRegion(farm.scenario.sourceBytes!, options.climate, setup)
           : GameSimulation.openGeographicRegion(farm.scenario.sourceBytes!, options.climate, options.seeds, setup);
-        if (!controller.signal.aborted) { onCreate({ scenarioId: preset.id, simulation, tiles: farm.tiles }); onOpenChange(false); }
+        if (!controller.signal.aborted) { applyPreferredOptions(simulation);onCreate({ scenarioId: preset.id, simulation, tiles: farm.tiles }); onOpenChange(false); }
         return;
       }
       const setup = await loadNewFarmAssets(assets, controller.signal);
@@ -70,7 +71,7 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
         setDraft({ setup: preview, artwork, tiles }); return;
       }
       const simulation = session === 'restart' ? current.restartGeographic(options, setup) : GameSimulation.createGeographic(options, setup);
-      if (!controller.signal.aborted) { onCreate({ scenarioId: null, simulation, tiles }); onOpenChange(false); }
+      if (!controller.signal.aborted) { applyPreferredOptions(simulation);onCreate({ scenarioId: null, simulation, tiles }); onOpenChange(false); }
     } catch (cause) {
       if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -106,7 +107,7 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
       onPlay={() => {
         try {
           const simulation = GameSimulation.load(writeNativeSave(draft.setup.accept(), null), assets.catalog.crops, assets.townLayouts).simulation;
-          onCreate({ scenarioId: null, simulation, tiles: draft.tiles }); onOpenChange(false);
+          applyPreferredOptions(simulation);onCreate({ scenarioId: null, simulation, tiles: draft.tiles }); onOpenChange(false);
         } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
       }} />
   </section>;

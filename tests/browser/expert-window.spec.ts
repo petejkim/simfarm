@@ -116,3 +116,7 @@ test('missing or malformed Expert resources fail before creating a farm',async({
   await page.route('**/assets/raw/card1.hc',r=>r.fulfill({status:200,contentType:'application/octet-stream',body:Buffer.from([0x8b,0])}));await page.goto('/');
   await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('#world')).toHaveCount(0);
 });
+
+
+// These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});

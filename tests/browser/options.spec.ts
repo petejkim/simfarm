@@ -15,7 +15,7 @@ test('original eight-row Options dropdown has real text, source geometry, live c
   const menu=page.getByRole('menu',{name:'Options',exact:true}),items=menu.getByRole('menuitemcheckbox');
   expect(await menu.boundingBox()).toEqual({x:64,y:16,width:120,height:100});
   expect(await items.evaluateAll(els=>els.map(el=>[...el.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE).map(n=>n.textContent).join('')))).toEqual(['Music','Sound Effects','AutoBuy','AutoScroll','AutoDoze','AutoGoto','Messages','AutoLease']);
-  expect(await items.evaluateAll(els=>els.map(el=>el.getAttribute('aria-checked')))).toEqual(['false','false','true','true','false','true','true','true']);
+  expect(await items.evaluateAll(els=>els.map(el=>el.getAttribute('aria-checked')))).toEqual(['true','true','true','true','false','true','true','true']);
   await expect(items.nth(0)).toBeFocused();await page.keyboard.press('End');await expect(items.nth(7)).toBeFocused();await page.keyboard.press('Home');await page.keyboard.press('ArrowDown');await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');
   await expect(menu).toHaveCount(0);await expect(page.locator('#options-menu-button')).toBeFocused();
   const after=await save(page);before.scenario.farm.autoBuySeeds=false;expect(after).toEqual(before);
@@ -59,8 +59,31 @@ test('Messages off suppresses optional auction warnings but retains mandatory de
 
 test('Music starts genfarm MIDI, sound toggles independently and advanced audio stays accessible',async({page})=>{
   await start(page);const requests:string[]=[];page.on('request',r=>{if(r.url().includes('genfarm'))requests.push(r.url());});
-  await toggle(page,'Music');await expect(page.locator('#audio-status')).toContainText('Playing genfarm');expect(requests.length).toBeGreaterThan(0);
-  await toggle(page,'Sound Effects');await page.locator('#options-menu-button').click();await expect(page.getByRole('menuitemcheckbox',{name:'Music',exact:true})).toBeChecked();await expect(page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true})).toBeChecked();await page.keyboard.press('Escape');
+  await page.locator('#options-menu-button').click();await expect(page.locator('#audio-status')).toContainText('Playing genfarm');expect(requests.length).toBeGreaterThan(0);
+await expect(page.getByRole('menuitemcheckbox',{name:'Music',exact:true})).toBeChecked();await expect(page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true})).toBeChecked();await page.keyboard.press('Escape');
   await openWindow(page,'options');await expect(page.locator('#music')).toHaveValue('genfarm');await expect(page.locator('#sound-toggle')).toHaveAttribute('aria-pressed','true');
   await toggle(page,'Music');await expect(page.locator('#audio-status')).toHaveText('Music off');await toggle(page,'Sound Effects');await expect(page.locator('#sound-toggle')).toHaveAttribute('aria-pressed','false');
+});
+
+
+test('Options persist across browser reloads while explicit checkpoints retain their gameplay settings',async({page})=>{
+  await start(page);const original=await save(page);
+  const names=['Music','Sound Effects','AutoBuy','AutoScroll','AutoDoze','AutoGoto','Messages','AutoLease'];
+  for(const name of names)await toggle(page,name);
+  const changed=await save(page);
+  await page.reload();await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  await page.locator('#options-menu-button').click();
+  const checks=page.getByRole('menu',{name:'Options'}).getByRole('menuitemcheckbox');
+  expect(await checks.evaluateAll(els=>els.map(el=>el.getAttribute('aria-checked')))).toEqual(['false','false','false','false','true','false','false','false']);
+  await page.keyboard.press('Escape');expect(await save(page)).toEqual(changed);
+  await load(page,JSON.stringify(original));expect(await save(page)).toEqual(original);
+  await page.locator('#options-menu-button').click();await expect(page.getByRole('menuitemcheckbox',{name:'Music',exact:true})).not.toBeChecked();await expect(page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true})).not.toBeChecked();
+});
+
+test('invalid or unavailable preference storage leaves defaults and usable controls',async({page})=>{
+  await page.addInitScript(()=>{localStorage.setItem('simfarm.options.v1','{"music":"false","sound":false,"autoScroll":null,"untrusted":true}');});
+  await start(page);await page.locator('#options-menu-button').click();await expect(page.getByRole('menuitemcheckbox',{name:'Music',exact:true})).toBeChecked();await expect(page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true})).not.toBeChecked();await expect(page.getByRole('menuitemcheckbox',{name:'AutoScroll',exact:true})).toBeChecked();await page.keyboard.press('Escape');
+  await page.evaluate(()=>{Storage.prototype.setItem=()=>{throw new Error('Storage blocked');};});
+  await toggle(page,'Music');await expect(page.locator('#audio-status')).toHaveText('Music off');
+  await toggle(page,'AutoScroll');await page.locator('#options-menu-button').click();await expect(page.getByRole('menuitemcheckbox',{name:'AutoScroll',exact:true})).not.toBeChecked();
 });

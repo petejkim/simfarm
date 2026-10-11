@@ -1,3 +1,4 @@
+import {FARM_OPTIONS,applyPreferredOptions,rememberPreference} from './preferences';
 import {tilesForWeather} from '../assets/weather-tiles';
 import {EDIT_TOOL_STATUSES,SPRAY_STATUSES} from '../simulation/edit-status';
 import {EditStatus} from './EditStatus';
@@ -95,7 +96,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     if (loaded) return { ...loaded, simulation: loaded.simulation.withAllCrops(assets.catalog.crops) };
     if (id === null) throw new Error('Missing generated farm state');
     const data = await loadScenarioAssets(id, signal);
-    return { tiles: data.tiles, simulation: new GameSimulation(data.scenario, assets.catalog.crops, assets.townLayouts).withAllCrops(assets.catalog.crops) };
+    const simulation=new GameSimulation(data.scenario, assets.catalog.crops, assets.townLayouts).withAllCrops(assets.catalog.crops);
+    applyPreferredOptions(simulation);
+    return {tiles:data.tiles,simulation};
   }, [id, loaded, assets.catalog.crops, assets.townLayouts]);
   const resource = useResource(load);
   const simulation = resource.status === 'ready' ? resource.value.simulation : null;
@@ -365,10 +368,10 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
   }
   return <>
     {simulation && <SaveControls options={{
-      checked: [audioOptions.music, audioOptions.sound, ...(['autoBuySeeds','autoScroll','autoClear','autoGoto','messages','autoRent'] as const).map(key=>simulation.getSnapshot().scenario.farm[key])],
+      checked: [audioOptions.music, audioOptions.sound, ...FARM_OPTIONS.map(key=>simulation.getSnapshot().scenario.farm[key])],
       choose: index=>{
         if(index===0)audioOptions.toggleMusic();else if(index===1)audioOptions.toggleSound();
-        else {const option=(['autoBuySeeds','autoScroll','autoClear','autoGoto','messages','autoRent'] as const)[index-2];if(option)simulation.dispatch({type:'set-option',option,enabled:!simulation.getSnapshot().scenario.farm[option]});}
+        else {const option=FARM_OPTIONS[index-2];if(option){const enabled=!simulation.getSnapshot().scenario.farm[option];simulation.dispatch({type:'set-option',option,enabled});rememberPreference(option,enabled);}}
       },
     }} disasters={{
       checked: disasterMenuChecks(simulation.getSnapshot().disasters),
