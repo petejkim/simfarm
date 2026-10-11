@@ -1,3 +1,4 @@
+import { plantField } from '../support/field-actions';
 import { reveal, openWindow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -20,19 +21,13 @@ test('all crops are immediately plantable and plannable with source artwork and 
   const fixture = shopFixture(); fixture.state.disasters.enabled = false;
   const legacy = fixture.load().save(4), game = fixture.load().withAllCrops(browserCrops);
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('field'); await expect(page.locator('#new-field-crop option')).toHaveCount(24);
+  await page.getByRole('button',{name:'Plant',exact:true}).click();await expect(page.locator('[data-field-tool]')).toHaveCount(24);await page.keyboard.press('Escape');
   await load(page, legacy);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await reveal(page, '#file-menu-button'); await page.locator('#file-menu-button').click(); await expect(page.getByRole('menuitem', { name: 'Load Crop' })).toHaveCount(0);
   await page.keyboard.press('Escape');
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('field');
-  await expect(page.locator('#new-field-crop option')).toHaveCount(24);
   const slot = 23, file = game.getSnapshot().scenario.cropFiles[slot], crop = browserCrops.find(c => `${c.id}.crp` === file)!;
-  await reveal(page, '#new-field-crop'); await page.locator('#new-field-crop').selectOption(String(slot));
-  await page.locator('#viewport').evaluate(el => el.scrollTo(40 * 16, 40 * 16));
-  await reveal(page, '#viewport'); await page.locator('#viewport').scrollIntoViewIfNeeded(); const rect = await page.locator('#world').boundingBox();
-  await page.mouse.click(rect!.x + 40 * 16 + 8, rect!.y + 40 * 16 + 8);
-  await expect(page.locator('#placement-status')).toContainText('Ready to plant'); await reveal(page, '#create-field'); await page.locator('#create-field').click();
+  await plantField(page,40,40,slot);await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
   game.dispatch({ type: 'create-field', x: 40, y: 40, cropSlot: slot });
   await expect(page.locator('#field option:checked')).toContainText(crop.name);
   await expect(page.locator('#plant-crop option')).toHaveCount(24);

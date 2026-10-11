@@ -1,3 +1,4 @@
+import { setAutoDoze, plantField, clickFarmTile } from '../support/field-actions';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -19,9 +20,7 @@ async function load(page: Page, text: string) {
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
 }
 async function selectTile(page: Page, x: number, y: number) {
-  await page.locator('#viewport').evaluate((el, p) => el.scrollTo(p.x * 16, p.y * 16), { x, y });
-  await reveal(page, '#viewport'); await page.locator('#viewport').scrollIntoViewIfNeeded(); const rect = await page.locator('#world').boundingBox();
-  await page.mouse.click(rect!.x + x * 16 + 8, rect!.y + y * 16 + 8);
+  await reveal(page,'#viewport');await clickFarmTile(page,x,y);
   await expect(page.locator('#cell-status')).toContainText(`Tile ${x}, ${y}`);
 }
 
@@ -82,8 +81,8 @@ test('a previewed farm plants on its starting land and delivers harvest into new
     throw new Error('Missing test location');
   };
   const field = find((x, y) => checkFieldPlacement(view.scenario, x, y).ok);
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('field'); await reveal(page, '#auto-clear'); await page.locator('#auto-clear').check(); await selectTile(page, field.x, field.y);
-  await expect(page.locator('#create-field')).toBeEnabled(); await reveal(page, '#create-field'); await page.locator('#create-field').click();
+  await setAutoDoze(page,true);await plantField(page,field.x,field.y);
+  await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
   generated.dispatch({ type: 'create-field', ...field, cropSlot: 0 });
   await expect(page.locator('#field-status')).toContainText('Planting');
   view = generated.getSnapshot(); const storage = find((x, y) => checkBuildingPlacement(view.scenario, 65, x, y, view.weather.soilMoisture).ok);

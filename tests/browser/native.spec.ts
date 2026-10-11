@@ -1,3 +1,4 @@
+import { buyPlot, selectProperty, setAutoDoze, plantField, clickFarmTile } from '../support/field-actions';
 import { scheduleWeek } from '../support/schedule-window';
 import { saleOffers, selectSaleOffer } from '../support/sell-window';
 import { reveal, openWindow } from '../support/workspace';
@@ -326,31 +327,23 @@ test('map tools buy original land and complete a new-field planting and harvest 
   await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('field');
-  await page.locator('#viewport').evaluate(el => el.scrollTo(0, 0));
-  await reveal(page, '#viewport'); await page.locator('#viewport').click({ position: { x: 4, y: 132 } }); // Original tile (0,16).
-  await expect(page.locator('#cell-status')).toContainText('Tile 0, 16');
-  await expect(page.locator('#placement-status')).toContainText('Buy all the land');
-  await expect(page.locator('#create-field')).toBeDisabled();
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('land');
-  await expect(page.locator('#land-quote')).toHaveText('Plot at 0, 16 · $18,060');
-  await expect(page.locator('#land-soil')).toHaveText('Soil fertility: 2 / 15');
+  await plantField(page,0,16);
+  await expect(page.locator('#field-tool-result')).toContainText('Buy all the land');
+  await selectProperty(page,0,2);
+  await expect(page.locator('.overview-land-value')).toHaveText('18060');
   await page.screenshot({ path: 'artifacts/browser-land-purchase.png', fullPage: true });
-  await reveal(page, '#buy-land'); await page.locator('#buy-land').click();
+  await buyPlot(page,0,2);
   await expect(page.locator('#farm-cash')).toHaveText('$21,940');
-  await expect(page.locator('#map-tool')).toHaveValue('field');
-  await expect(page.locator('#land-result')).toHaveText('Bought plot at 0, 16 for $18,060.');
-  await expect(page.locator('#auto-clear')).not.toBeChecked();
-  await expect(page.locator('#create-field')).toBeDisabled();
-  await reveal(page, '#auto-clear'); await page.locator('#auto-clear').check();
-  await expect(page.locator('#placement-status')).toHaveText('Ready to plant at 0, 16.');
-  await reveal(page, '#new-field-crop'); await page.locator('#new-field-crop').selectOption('0');
-  await reveal(page, '#create-field'); await page.locator('#create-field').click();
+  await expect(page.locator('#map-land-result')).toHaveText('Bought plot at 0, 16 for $18,060.');
+  await plantField(page,0,16);
+  await expect(page.locator('#field-tool-result')).toContainText('Terrain blocks');
+  await setAutoDoze(page,true);await clickFarmTile(page,0,16);
+  await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
   await expect(page.locator('#field')).toHaveValue('9');
   await expect(page.locator('#field option')).toHaveCount(10);
   await expect(page.locator('#field-status')).toHaveText('Field 9 · Planting · 8 × 8 tiles at 0, 16');
   await expect(page.locator('#farm-cash')).toHaveText('$21,888');
-  await expect(page.locator('#plant-result')).toContainText('Planting ordered');
+  await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
   for (let day = 0; day < 12; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
   await expect(page.locator('#field-status')).toContainText('Growing');
   // Original unowned soil is poor; this checks new-field work and delivery, not a profitable crop.
@@ -367,8 +360,9 @@ test('map tools buy original land and complete a new-field planting and harvest 
   await expect(page.locator('#map-tool')).toHaveValue('inspect');
   await expect(page.locator('#farm-cash')).toHaveText('$40,000');
   await page.setViewportSize({ width: 1280, height: 844 });
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('field');
-  await expect(page.locator('#auto-clear')).not.toBeChecked();
+  await page.locator('#options-menu-button').click();
+  await expect(page.getByRole('menuitemcheckbox',{name:'AutoDoze',exact:true})).toHaveAttribute('aria-checked','true');
+  await page.keyboard.press('Escape');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   expect(errors).toEqual([]);
 });
@@ -383,12 +377,8 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   await reveal(page, '#disasters-enabled'); await page.locator('#disasters-enabled').uncheck();
   await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('land');
-  await page.locator('#viewport').evaluate(el => el.scrollTo(0, 0));
-  await reveal(page, '#viewport'); await page.locator('#viewport').click({ position: { x: 4, y: 132 } });
-  await reveal(page, '#buy-land'); await page.locator('#buy-land').click();
-  await reveal(page, '#auto-clear'); await page.locator('#auto-clear').check();
-  await reveal(page, '#create-field'); await page.locator('#create-field').click();
+  await buyPlot(page,0,2);await setAutoDoze(page,true);await plantField(page,0,16);
+  await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
   for (let day = 0; day < 2; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
   await expect(page.locator('#field-status')).toContainText('Growing');
   await expect(page.locator('#treatment-quote')).toContainText('Supply: $275');
@@ -455,12 +445,8 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await reveal(page, '#disasters-enabled'); await page.locator('#disasters-enabled').uncheck();
   await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('land');
-  await page.locator('#viewport').evaluate(el => el.scrollTo(0, 0));
-  await reveal(page, '#viewport'); await page.locator('#viewport').click({ position: { x: 4, y: 132 } });
-  await reveal(page, '#buy-land'); await page.locator('#buy-land').click();
-  await reveal(page, '#auto-clear'); await page.locator('#auto-clear').check();
-  await reveal(page, '#create-field'); await page.locator('#create-field').click();
+  await buyPlot(page,0,2);await setAutoDoze(page,true);await plantField(page,0,16);
+  await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
   for (let day = 0; day < 2; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
   await reveal(page, '#treat-field'); await page.locator('#treat-field').click();
   await expect(page.locator('#field-status')).toContainText('Fertilize');

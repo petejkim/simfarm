@@ -1,3 +1,4 @@
+import { plantField } from '../support/field-actions';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -102,8 +103,7 @@ test('field removal explains active machinery, destroys a growing crop after con
   await reveal(page, '#cancel-removal'); await page.locator('#cancel-removal').click(); await clearingPixels(page, 0, 16);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await load(page, game.save(4)); await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
-  await reveal(page, '#map-tool'); await page.locator('#map-tool').selectOption('field'); await selectTile(page, 0, 16);
-  await reveal(page, '#create-field'); await page.locator('#create-field').click(); game.dispatch({ type: 'create-field', x: 0, y: 16, cropSlot: 0 });
+  await plantField(page,0,16);await expect(page.locator('#field-tool-result')).toContainText('Field planted.'); game.dispatch({ type: 'create-field', x: 0, y: 16, cropSlot: 0 });
   expect(game.getSnapshot().lastNewFieldResult?.ok).toBe(true); await expect(page.locator('#map-tool')).toHaveValue('inspect');
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   expect(game.getSnapshot().scenario.fields[result.slot].state).toBe(4);
