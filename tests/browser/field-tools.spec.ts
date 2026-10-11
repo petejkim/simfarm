@@ -14,16 +14,15 @@ async function point(page:Page,x:number,y:number){
 }
 async function plant(page:Page,slot:number){
   await page.getByRole('button',{name:'Plant',exact:true}).click();
-  if(slot>=16)await page.getByRole('menu',{name:'Plant Field'}).getByRole('button',{name:'Next crops'}).click();
   await page.locator(`[data-field-tool="${slot}"]`).click();
 }
 
 test('original Plant and Spray popup geometry, real labels, source icons and keyboard cancellation preserve saves',async({page})=>{
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');const before=await save(page);
   await page.getByRole('button',{name:'Plant',exact:true}).click();const menu=page.getByRole('menu',{name:'Plant Field',exact:true});
-  expect(await menu.boundingBox()).toEqual({x:48,y:112,width:224,height:160});
-  expect(await menu.locator('canvas').boundingBox()).toEqual({x:48,y:112,width:224,height:160});
-  await expect(menu.getByRole('menuitem')).toHaveCount(16);await expect(menu.getByRole('menuitem').first()).toBeFocused();
+  expect(await menu.boundingBox()).toEqual({x:48,y:112,width:336,height:160});
+  expect(await menu.locator('canvas').boundingBox()).toEqual({x:48,y:112,width:336,height:160});
+  await expect(menu.getByRole('menuitem')).toHaveCount(24);await expect(menu.getByRole('menuitem').first()).toBeFocused();
   await page.keyboard.press('ArrowRight');await expect(menu.getByRole('menuitem').nth(8)).toBeFocused();
   await page.keyboard.press('ArrowDown');await expect(menu.getByRole('menuitem').nth(9)).toBeFocused();
   const source=(name:string)=>readFileSync(new URL('../../../simfarm-dos/'+name,import.meta.url));
@@ -33,7 +32,13 @@ test('original Plant and Spray popup geometry, real labels, source icons and key
   const pixels=decodePlanar(bytes.subarray(0x1480,0x1500),16,16,palette).rgba;
   expect(await menu.locator('canvas').evaluate((c:HTMLCanvasElement)=>[...c.getContext('2d')!.getImageData(0,17,16,16).data])).toEqual([...pixels]);
   await page.screenshot({path:'artifacts/browser-plant-menu.png'});
-  await menu.getByRole('button',{name:'Next crops'}).click();await expect(menu.getByRole('menuitem')).toHaveCount(8);
+  await expect(menu.getByRole('button',{name:'Next crops'})).toHaveCount(0);
+  await page.keyboard.press('ArrowRight');await expect(menu.getByRole('menuitem').nth(17)).toBeFocused();
+  await page.keyboard.press('End');await expect(menu.getByRole('menuitem').nth(23)).toBeFocused();
+  for(let slot=0;slot<24;slot++){
+    const expected=decodePlanar(source('CROPS/'+before.scenario.cropFiles[slot].toUpperCase()).subarray(0x1480,0x1500),16,16,palette).rgba;
+    expect(await menu.locator('canvas').evaluate((c:HTMLCanvasElement,i)=>[...c.getContext('2d')!.getImageData(Math.floor(i/8)*112,17+i%8*17,16,16).data],slot)).toEqual([...expected]);
+  }
   await page.keyboard.press('Escape');await expect(menu).toHaveCount(0);expect(await save(page)).toEqual(before);
   await page.getByRole('button',{name:'Spray',exact:true}).click();const spray=page.getByRole('menu',{name:'Spray Field',exact:true});
   expect(await spray.boundingBox()).toEqual({x:48,y:192,width:112,height:88});

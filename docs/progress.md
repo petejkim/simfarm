@@ -1988,3 +1988,10 @@ Correction4 complete. Next requested5: mouse menu highlighting, then6: all24 Pla
 After d5d905f, replaced competing hover/focus highlights with one focused menu row. Mouse movement focuses that row; keyboard navigation moves the same highlight even while the pointer stays over the previous row. Disabled rows remain noninteractive. This fixes the first-item highlight remaining visible when another row is hovered across File/Options/Windows/Disasters. No source format, simulation, save, settings or artwork changed; no new original defect.
 
 Two focused browser cases pass(2.6seconds), asserting exactly one highlighted row for pointer→keyboard→pointer changes in every dropdown, retained eight-row Options geometry and existing keyboard actions. Type checking/production build and diff checks pass; no unrelated unit/full suite run for this small UI-only fix. Logs: artifacts/menu-highlight-browser.log and menu-highlight-build.log. Correction6 (all24 Plant choices together) is next, then7 region-map graphics; no push.
+
+
+## 2026-10-11 — requested correction6: all24 Plant choices
+
+After e60c73e, removed Plant popup paging and expanded it to three112-pixel columns of eight crops,336×160 total at the existing position. Every label remains real text and every source crop icon remains16×16. Source16-slot geometry constants/tests remain preservation evidence; the third column is the user's explicit24-crop adaptation. Arrow keys reach all columns and End reaches crop23. Spray layout, seed checks and canonical planting remain unchanged.
+
+Three source/crop unit cases pass(144ms). All six field-tool browser cases pass(33.2seconds), including exact RGBA for all24 icons, all24 successful field creations without paging, keyboard movement through the third column, exact saves, failed seed/placement checks and persistent Spray. Build/type checking and diff checks pass; reviewed browser-plant-menu.png. Logs: artifacts/plant-all-unit.log, plant-all-browser.log and plant-all-build.log. No full-suite run or new original defect. Next7: region-map graphics, then the explicitly requested startup-weather correction. No push.

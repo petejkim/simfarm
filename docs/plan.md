@@ -279,3 +279,7 @@ Requested correction3 is complete: Spray retains all four selected treatments ac
 Requested correction4 is complete: default-on gesture-activated audio and remembered Options, with explicit-save authority. Next5–7 remain in order. Climate-control audit verified selected tables; SF-150 restart carryover and source startup temperature/wind remain documented quirks to revisit separately.
 
 Requested correction5 complete: menu hover and keyboard focus share a single highlighted row. Next6: all24 Plant choices in one popup, then7: region-map graphics.
+
+User follow-up: after the remaining Plant and region-map corrections, fix new-farm startup weather in a separate commit so the selected climate initializes current/next forecasts, temperature and wind without inherited anomalies. Explicitly loaded saves must retain their recorded weather. Keep SF-150 and related original startup quirks as preserved evidence.
+
+Correction6 complete: all24 Plant choices together in three source-spaced columns, no paging. Next7 region graphics; then correct startup climate/forecast carryover in its own commit.

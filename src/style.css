@@ -380,7 +380,6 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .field-tool-menu>button{position:absolute;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:#000;text-align:left;font:10px/10px monospace}
 .field-tool-menu>button>span{position:absolute;left:16px;top:4px;white-space:nowrap}
 .field-tool-menu>button:hover:not(:disabled),.field-tool-menu>button:focus-visible{outline:1px solid #000;outline-offset:-1px;background:#ffff0033}
-.field-tool-menu>.field-tool-page{top:0;width:16px;height:16px;font:14px/16px monospace;text-align:center}
 #field-tool-result:empty{display:none}
 
 
