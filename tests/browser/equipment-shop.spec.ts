@@ -1,3 +1,4 @@
+import { farmSnapshot } from '../support/field-checkpoint';
 import { clickFarmTile, setAutoDoze } from '../support/field-actions';
 import { reveal } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -34,7 +35,7 @@ test('original Buy purchases ground sprites and stored machines with exact saved
   await clickFarmTile(page,10,10);await expect(page.locator('#buy-result')).not.toHaveText('Tractor purchased.');
   await selectMachine(page,4);await clickFarmTile(page,21,20);game.dispatch({type:'buy-equipment',equipmentType:4,x:21,y:20});
   await expect(page.locator('#buy-result')).toContainText('purchased.');
-  await reveal(page,'#machinery-summary');await expect(page.locator('#machinery-summary')).toHaveText('Owned: 2 · Rented: 0');
+  const machines=(await farmSnapshot(page)).scenario.equipment.filter(e=>e.active);expect(machines).toHaveLength(2);expect(machines.every(e=>!(e.flags&64))).toBe(true);
   const path = 'artifacts/browser-equipment-shop.simfarm.json'; expect(await save(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await load(page, game.save(4));
   const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));

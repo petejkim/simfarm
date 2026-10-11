@@ -48,7 +48,6 @@ import { LivestockPanel } from './LivestockPanel';
 import { checkEquipmentPurchase } from '../simulation/equipment-purchase';
 import { AircraftWindow } from './AircraftWindow';
 import { aircraftMapEntry } from '../simulation/aircraft-view';
-import { MachineryPanel } from './MachineryPanel';
 import { TownChoicePanel } from './TownChoicePanel';
 import type { GameEvent } from '../simulation/events';
 import { checkBuildingPlacement } from '../simulation/building-placement';
@@ -366,7 +365,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     <button onClick={() => windows.show('options')}>Audio and tools</button>
     <button onClick={() => windows.show('disasters')}>Disaster details</button>
     <button id="new-farm" onClick={() => setNewFarmOpen(true)}>New farm</button>
-    {(['machinery', 'livestock', 'aircraft'] as const).map(key => <button key={key} onClick={() => windows.show(key)}>{key === 'machinery' ? 'Machinery' : key === 'livestock' ? 'Livestock' : 'Aircraft'}</button>)}
+    {(['livestock', 'aircraft'] as const).map(key => <button key={key} onClick={() => windows.show(key)}>{key === 'livestock' ? 'Livestock' : 'Aircraft'}</button>)}
     </GameWindow>
     <GameWindow windowKey="speed" title="Speed">
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
@@ -383,9 +382,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     </GameWindow>
     {snapshot && simulation && <AircraftWindow assets={assets} selectedSlot={aircraftSlot} onSelect={setAircraftSlot} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
       onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); if (simulation.getSnapshot().aircraftFlight) windows.show(null); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
-    <GameWindow windowKey="machinery" title="Machinery">
-    {snapshot && <MachineryPanel snapshot={snapshot} onMove={() => { windows.close('machinery'); editTool('Move object'); }} />}
-    </GameWindow>
     <GameWindow windowKey="disasters" title="Disasters">
     {snapshot && <DisasterPanel snapshot={snapshot} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     </GameWindow>

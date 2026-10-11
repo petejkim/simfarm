@@ -55,13 +55,13 @@ test('Original Sell machinery controls hide rentals, explain busy machines and s
   game.dispatch({ type: 'buy-aircraft' });
   const state = readNativeSave(game.save(4)).state;
   state.scenario.equipment[1].flags |= 64; state.scenario.equipment[2].flags |= 1;
-  await page.goto('/'); const busy = writeNativeSave(state, 4); await load(page, busy); await reveal(page, '#machinery-panel > summary'); await page.locator('#machinery-panel > summary').click();
+  await page.goto('/'); const busy = writeNativeSave(state, 4); await load(page, busy);
   await selectAssetSale(page,'Machinery',2);
   await expect(page.locator('[role=option][data-slot="1"]')).toHaveCount(0);
   await expect(page.locator('.sell-feedback')).toContainText('This machine is in use.');await expect(page.locator('#catalog-sell')).toBeDisabled();
   expect(await save(page, 'artifacts/browser-equipment-sale.simfarm.json')).toEqual(JSON.parse(busy));
-  await load(page, game.save(4)); await reveal(page, '#machinery-panel > summary'); await page.locator('#machinery-panel > summary').click();
-  await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#machinery-panel'); await page.locator('#machinery-panel').scrollIntoViewIfNeeded();
+  await load(page, game.save(4));
+  await page.setViewportSize({ width: 1280, height: 844 }); await openWindow(page,'sell');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-manual-sales.png', fullPage: true });
   for (const slot of [1, 2, 3]) {

@@ -28,13 +28,13 @@ async function tilePixels(page: Page, x: number, y: number, tile: number) {
   expect(actual).toEqual(Array.from(expected));
 }
 
-test('move shortcut opens stored machinery, cancels safely and delivers to storage with exact saves and original interior pixels', async ({ page }) => {
+test('original Move opens stored machinery, cancels safely and delivers to storage with exact saves and original interior pixels', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = shopFixture(), game = f.load().withAllCrops(browserCrops);
   game.dispatch({ type: 'build', buildingType: 67, x: 20, y: 20 }); game.dispatch({ type: 'build', buildingType: 67, x: 40, y: 40 });
   game.dispatch({ type: 'buy-equipment', equipmentType: 4, x: 20, y: 20 });
   await page.goto('/'); await load(page, game.save(4));
-  await reveal(page, '#machinery-panel > summary'); await page.locator('#machinery-panel > summary').click(); await reveal(page, '#open-equipment-move'); await page.locator('#open-equipment-move').click();
+  await reveal(page,'#viewport');await page.getByRole('button',{name:'Move object',exact:true}).click();
   await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick'); await clickFarmTile(page, 20, 21);
   await expect(page.locator('#object-move-result')).toContainText('Open the building');
   await toggleBuilding(page,20,21); game.dispatch({ type: 'toggle-building-interior', x: 20, y: 21, slot: 1 });

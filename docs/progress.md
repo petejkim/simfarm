@@ -2260,3 +2260,11 @@ Previous goal turn completed0174393; revalidated clean files/progress and audite
 Build/type checking,14 focused aging/history tests(1.147s) and all four relevant browser cases(5.9s) pass first run. Coverage includes source call bytes, stored/outdoor/busy distinctions, canonical ledgers/clearing, source text/history, audible PCM, source pixels, load-reset and exact continuation. Logs: artifacts/equipment-status-{build,unit,browser}.log; disassembly artifacts/disassembly-00bff0.asm. Diff checks pass; no full-suite repetition.
 
 MachineryPanel still remains for the next incremental retirement; this source interaction was restored first as requested before removing the interim-only presentation. Next remove its diagnostic shell/Move shortcut, then audit Livestock notices. Full preservation remains incomplete. No push, installation or supplied-DOS changes.
+
+## 2026-10-11 — retire Machinery diagnostic window
+
+Previous goal turn completed9bd197e, restoring the original loss message prerequisite. Revalidated the clean worktree/progress. Deleted MachineryPanel, its Edit tools launcher and Move shortcut. Original Buy/Move/Examine/Sell already cover purchasing, movement, condition/value and sale eligibility; original status73 supplies outdoor loss feedback. No source rules/save schema or original defects changed. The separate aircraft and Livestock windows remain.
+
+Migrated purchase/ownership assertions to native checkpoint records and movement to original Move. Busy worn machinery is inspected through original Examine BAD condition and Sell's rejection; canonical checkpoints still prove retained wear/ownership and sale ledgers. All eight affected browser cases pass first run(12.4s), including source sprites/interiors, cancellation, towing/tractor return, stored delivery, audio/status/clearing, sales, aircraft repurchase and exact continuation. Thirteen focused aging/manual-sale/movement tests pass(7.68s); build/type checking and diff checks pass. Logs: artifacts/retire-machinery-panel-{build,unit,browser}.log. No full-suite repetition.
+
+Next audit Livestock's original animal notices, water/feed readings and Move supplies shortcut, then remove that diagnostic shell. Full preservation remains incomplete. No push, installation or supplied-DOS changes.
