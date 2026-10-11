@@ -108,3 +108,29 @@ test('Spray shortage status covers all four supplies and cash failure without ch
   }
   await page.screenshot({path:'artifacts/browser-treatment-status.png'});
 });
+
+
+test('selected Spray treatment stays active across successful fields and busy rejection until another control is chosen',async({page})=>{
+  const f=shopFixture();f.state.disasters.enabled=false;const game=f.load().withAllCrops(browserCrops);
+  for(const x of [40,50]){game.dispatch({type:'create-field',x,y:40,cropSlot:0});expect(game.getSnapshot().lastNewFieldResult?.ok).toBe(true);}
+  for(let i=0;i<7;i++)game.dispatch({type:'advance-day'});
+  await page.goto('/');await load(page,game.save(4));
+  for(const [kind,label] of [['fertilizer','Fertilize'],['pesticide','Pesticide'],['herbicide','Herbicide'],['fungicide','Fungicide']] as const){
+    await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:label,exact:true}).click();
+    for(const [x,slot] of [[42,1],[52,2]]){
+      await point(page,x,42);game.dispatch({type:'treat-field',fieldSlot:slot,treatment:kind});
+      expect(game.getSnapshot().lastTreatmentResult?.ok).toBe(true);
+      await expect(page.locator('#field-tool-result')).toHaveText('Treatment ordered.');
+      await expect(page.locator('#map-tool-hint')).toContainText(label+':');await expect(page.locator('#cancel-field-tool')).toBeVisible();
+    }
+    await point(page,52,42);await expect(page.locator('#field-tool-result')).toHaveText('This field is already being worked.');
+    expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+    await page.locator('#window-edit').click();await expect(page.locator('#cancel-field-tool')).toHaveCount(0);
+    await expect(page.locator('#map-tool-hint')).not.toContainText(label+':');
+    for(let i=0;i<7;i++){await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});}
+    await openWindow(page,'edit');
+  }
+  await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:'Fertilize',exact:true}).click();
+  await page.getByRole('button',{name:'View object',exact:true}).click();await expect(page.locator('#cancel-field-tool')).toHaveCount(0);
+  expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+});

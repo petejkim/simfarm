@@ -273,3 +273,5 @@ After ab54040, complete these in the requested order, one separate conventional 
 Use focused checks and update this queue/progress as each separate commit completes. These corrections take priority over the previous depth-control follow-up; the broader preservation goal remains incomplete.
 
 Requested corrections1 and2 are complete: toolbar forecast a05ff51 and original rain/frost terrain palettes (weather-terrain.md). Next implement3: persistent selected Spray treatment until another control is chosen; then4–7 in order, separate commits.
+
+Requested correction3 is complete: Spray retains all four selected treatments across successful/busy fields until another tool/window control or explicit cancellation. Next4: default audio and persisted Options; then5–7. Add prolonged browser drought coverage when revisiting terrain validation.

@@ -174,6 +174,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     setNavigation({ target });
   }
   function openWindow(window: WindowCommand, source: 'menu' | 'toolbar') {
+    if(fieldMapTool)cancelFieldTool();
     if(window!=='edit'&&windows.order.includes(window)){
       // Resident toolbar e9e0..ea16 raises a background window; the menu closes it.
       if(source==='toolbar'&&windows.active!==window)windows.raise(window);
@@ -292,7 +293,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       const slot=fieldMapTool.kind==='plant'&&'slot' in result?result.slot:selected?.slot;
       if(slot!==undefined)setFieldSlot(slot);
       setFieldToolMessage(fieldMapTool.kind==='plant'?`Field planted. ${result.source==='stored'?'Used seed in stock.':`Seed cost: $${result.cost}.`}`:'Treatment ordered.');
-      setFieldMapTool(null);setToolPointer(null);setMapTool('inspect');
+      if(fieldMapTool.kind==='plant'){setFieldMapTool(null);setToolPointer(null);setMapTool('inspect');}
     } else {
       const messages:Record<string,string>={'outside-map':'The entire field must fit inside the map.','not-owned':'Buy all the land under this field first.',
         'blocked-terrain':'Terrain blocks this field. Automatic clearing handles trees and fences; buildings and water still block planting.',
