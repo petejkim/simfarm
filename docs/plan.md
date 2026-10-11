@@ -2,7 +2,9 @@
 
 The end state is the original SimFarm running as native browser code, with MIDI music and replaceable graphics/audio/UI. A data viewer or invented farming simulation is an intermediate artifact, not completion.
 
-## Current user priorities (2026-10-10)
+## Current user priorities (updated 2026-10-11)
+
+Scope clarification: mobile adaptation and enhanced graphics/audio are excluded from the active preservation goal. Complete the native original game with the original desktop layout/assets and the explicitly requested adaptations (MIDI, native pacing, all24 crops, fixed Edit, real text and recorded corrections). Do not make excluded enhancements a completion gate.
 
 All24 shipped crops are now available simultaneously without file loading or slot swapping, with native saves, plans, goods and artwork extended while retaining original16-slot decoding. Crop-file loading is intentionally removed from the reconstruction backlog.
 
@@ -15,7 +17,7 @@ Next prioritize original UI, dialogs and gameplay interactions: replace the inte
 3. Connect a native world renderer and input to recovered land/field operations. Reach a complete plant → grow → harvest → store → sell loop using original rules as soon as evidence allows. Save/load deterministically.
 4. Reconstruct weather, crop health, equipment, workers, buildings, finances, livestock, disasters, town growth, scenarios, and original UI functionality. Track gaps explicitly.
 5. Convert original XMIDI sequences to standard MIDI and play them through a browser synthesizer or MIDI output. Verify timing/programs/controllers; no FM emulation.
-6. Verify the full game against recovered code/data and original documented behavior, then expose enhancement interfaces. Do not mark the goal complete while major systems remain provisional.
+6. Verify the full game against recovered code/data and original documented behavior. Do not mark the goal complete while major systems remain provisional. Mobile adaptation and enhanced graphics/audio are excluded from this goal; separable architecture remains a requirement, not a commitment to implement enhancements.
 
 Only local tools and original files are needed at runtime/build time; the delivered browser bundle must contain no DOS execution environment.
 
