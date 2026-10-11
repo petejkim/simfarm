@@ -361,7 +361,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     </section>
     <button onClick={() => windows.show('options')}>Audio and tools</button>
     <button id="new-farm" onClick={() => setNewFarmOpen(true)}>New farm</button>
-    <button onClick={() => windows.show('aircraft')}>Aircraft</button>
     </GameWindow>
     <GameWindow windowKey="speed" title="Speed">
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}

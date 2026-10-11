@@ -1,3 +1,4 @@
+import { aircraftMapEntry } from '../../src/simulation/aircraft-view';
 import { farmSnapshot } from './field-checkpoint';
 import type { Page } from '@playwright/test';
 
@@ -25,6 +26,18 @@ export async function openWindow(page: Page, key: string) {
   }
   if (key === 'edit') { await page.locator('#window-edit').click(); return; }
   if (await page.locator(`[data-window="${key}"]`).isVisible()) {await page.locator(`[data-window="${key}"] .game-window-title`).focus();return;}
+  if(key==='aircraft'){
+    const snapshot=await farmSnapshot(page),world=snapshot.scenario;
+    let parked:{x:number;y:number}|null=null;
+    for(let x=0;x<96&&!parked;x++)for(let y=0;y<96;y++)if(aircraftMapEntry(world,x,y)?.slot){parked={x,y};break;}
+    if(!parked)throw new Error('AIRPLANE requires a parked crop duster; buy one from the original catalog first.');
+    await uncoverMap(page);
+    const size=16*Number(await page.locator('#zoom').inputValue());
+    await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-3)*p.size,Math.max(0,p.y-3)*p.size),{...parked,size});
+    const bounds=(await page.locator('#world').boundingBox())!;
+    await page.mouse.click(bounds.x+(parked.x+0.5)*size,bounds.y+(parked.y+0.5)*size);
+    return;
+  }
   if (key === 'options') { await openWindow(page, 'tools'); await page.getByRole('button', { name: 'Audio and tools', exact: true }).click(); return; }
   if (key === 'speed') { await page.locator(`#${key}-menu-button`).click(); return; }
   if (['bank', 'sell', 'evaluation', 'balance'].includes(key)) { await page.locator(`#window-${key}`).click(); return; }
@@ -41,7 +54,6 @@ export async function openWindow(page: Page, key: string) {
   await page.getByRole('button', { name: 'Edit tools and help', exact: true }).click();
   if(!await page.locator('[data-window=tools]').isVisible())await page.getByRole('button', { name: 'Advanced controls', exact: true }).click();
   await page.locator('[data-window=tools] .game-window-title').focus();
-  if (key !== 'tools') await page.locator('[data-window=tools]').getByRole('button', { name: 'Aircraft', exact: true }).click();
 }
 async function uncoverMap(page:Page){
   await openWindow(page,'edit');

@@ -67,6 +67,7 @@ test('all four parked tiles select the right plane with primary and secondary in
 test('chemical icon order and full-width payload price match paid service across two aircraft and saved selection',async({page})=>{
   const f=fixture(),w=f.state.scenario;w.regionalConditions[(2*12+2)*7]&=~0x20;expect(purchaseAircraft(w,f.state.finances).ok).toBe(true);w.chemicalDefinitions[1].price=2580;
   const game=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,game.save(4));await openWindow(page,'aircraft');
+  await page.locator('#aircraft-selection').selectOption('1'); // Map entry selects the clicked plane; this case services slot1 first.
   await expect(page.locator('#aircraft-load-price')).toHaveText('65790');await expect(page.locator('#aircraft-load')).toHaveAccessibleName('Load chemicals · $65,790');
   await page.locator('#aircraft-load').click();game.dispatch({type:'service-aircraft',slot:1,action:{kind:'load'}});await expect(page.locator('#aircraft-service-result')).toHaveText('Service completed for $65,790.');
   for(const type of [222,223,221]){
