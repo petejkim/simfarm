@@ -1,3 +1,4 @@
+import {registerWeatherTiles} from './weather-tiles';
 import {readEditStatus} from '../formats/edit-status';
 import { readExamineDataJson, type ExamineData } from '../formats/examine';
 import { EXPERT_CARD_IDS, readExpertDeck, type ExpertDeck } from '../formats/expert-cards';
@@ -135,8 +136,10 @@ export async function loadGeneratedTiles(cropFiles: readonly string[], signal: A
   cropFiles = allCropFiles(cropFiles);
   if (cropFiles.length !== 24 || cropFiles.some(n => !/^[a-z0-9_]{1,8}\.crp$/.test(n))) throw new Error('Invalid crop filenames');
   const binary = (path: string) => response(path, signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b));
-  const [tiles, palette, ...crops] = await Promise.all([binary('raw/ega16til.til'), binary('raw/simfarm.pal'), ...cropFiles.map(file => binary(`raw/crops/${file}`))]);
-  return rasterImage(tileAtlas(patchCropGraphics(tiles, crops), readPalette(palette)), signal);
+  const [tiles, palette, rain, frost, ...crops] = await Promise.all([binary('raw/ega16til.til'), binary('raw/simfarm.pal'), binary('raw/rainpal.pal'), binary('raw/frostpal.pal'), ...cropFiles.map(file => binary(`raw/crops/${file}`))]);
+  const patched=patchCropGraphics(tiles,crops);
+  const images=await Promise.all([palette,rain,frost].map(p=>rasterImage(tileAtlas(patched,readPalette(p)),signal)));
+  return registerWeatherTiles(images[0],images[1],images[2]);
 }
 /** Native checkpoints may require either bundled or recomposed original tiles. */
 export async function loadSavedFarmTiles(world: Scenario, scenarioId: number | null, signal: AbortSignal): Promise<HTMLImageElement> {

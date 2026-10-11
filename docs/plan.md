@@ -271,3 +271,5 @@ After ab54040, complete these in the requested order, one separate conventional 
 7. Correct region-map graphics against original asset/layout evidence.
 
 Use focused checks and update this queue/progress as each separate commit completes. These corrections take priority over the previous depth-control follow-up; the broader preservation goal remains incomplete.
+
+Requested corrections1 and2 are complete: toolbar forecast a05ff51 and original rain/frost terrain palettes (weather-terrain.md). Next implement3: persistent selected Spray treatment until another control is chosen; then4–7 in order, separate commits.

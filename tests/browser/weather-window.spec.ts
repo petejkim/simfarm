@@ -98,3 +98,22 @@ test('toolbar shows three original weather icons across week boundaries and upda
   await expect(icons).toHaveAttribute('aria-label','Today: Snow; Tomorrow: Rain; Day 3: Cloudy');
   await page.locator('#window-edit').click();await page.screenshot({path:'artifacts/browser-toolbar-weather.png'});
 });
+
+
+test('terrain uses original rain/frost colors and restores dry artwork without modifying the farm',async({page})=>{
+  await start(page);
+  for(const [current,temperature,name] of [[3,40,'rainpal.pal'],[4,31,'frostpal.pal'],[4,32,'rainpal.pal'],[0,20,'simfarm.pal']] as const){
+    const f=fixture();Object.assign(f.state.weather,{current,temperature});
+    const game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));
+    const before=await save(page);
+    const pixels=await page.locator('#world').evaluate((c:HTMLCanvasElement)=>Array.from(c.getContext('2d')!.getImageData(0,0,16,16).data));
+    expect(pixels).toEqual(Array.from(decodePlanar(asset('ega16til.til').subarray(15*128,16*128),16,16,readPalette(asset(name))).rgba));
+    expect(await save(page)).toEqual(before);
+    if(name==='frostpal.pal')await page.screenshot({path:'artifacts/browser-terrain-frost.png'});
+  }
+  const f=fixture();Object.assign(f.state.weather,{current:3,temperature:40,forecast:[3,0,0,0,0,0,0]});f.state.scenario.farm.calendar.day=0;
+  await load(page,f.load().withAllCrops(browserCrops).save(4));
+  await reveal(page,'#next-day');await page.locator('#next-day').click();
+  const pixels=await page.locator('#world').evaluate((c:HTMLCanvasElement)=>Array.from(c.getContext('2d')!.getImageData(0,0,16,16).data));
+  expect(pixels).toEqual(Array.from(decodePlanar(asset('ega16til.til').subarray(15*128,16*128),16,16,palette).rgba));
+});
