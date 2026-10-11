@@ -6,11 +6,14 @@ export interface MapPreview { x: number; y: number; width: number; height: numbe
 
 /** Native render pass, independent of React and UI state management. */
 export function drawWorld(context: CanvasRenderingContext2D, scenario: Scenario, tiles: CanvasImageSource,
-  maskedTiles: CanvasImageSource, field?: FieldRecord, selection: number | null = null, preview?: MapPreview, workerPhase=0): void {
+  maskedTiles: CanvasImageSource, field?: FieldRecord, selection: number | null = null, preview?: MapPreview, workerPhase=0, townEventTiles?: CanvasImageSource): void {
   context.imageSmoothingEnabled = false;
   for (let i = 0; i < scenario.cells.length; i++) {
     const cell = scenario.cells[i], tile = terrainTile(cell), { x, y } = worldPosition(i);
-    context.drawImage(tiles, tile % 32 * 16, Math.floor(tile / 32) * 16, 16, 16, x * 16, y * 16, 16, 16);
+    if (townEventTiles && tile >= 483 && tile < 518) {
+      const eventTile = tile - 483;
+      context.drawImage(townEventTiles, eventTile % 7 * 16, Math.floor(eventTile / 7) * 16, 16, 16, x * 16, y * 16, 16, 16);
+    } else context.drawImage(tiles, tile % 32 * 16, Math.floor(tile / 32) * 16, 16, 16, x * 16, y * 16, 16, 16);
     const storedOverlay = maskedTile(cell);
     const overlay = storedOverlay===null?null:harvestWorkerTile(storedOverlay,workerPhase);
     if (overlay !== null && overlay >= 0 && overlay < 200) {

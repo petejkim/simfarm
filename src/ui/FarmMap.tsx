@@ -22,6 +22,7 @@ interface Props {
   onViewportSize: (size: { columns: number; rows: number }) => void;
   onFlightControl: (control: FlightControl) => void;
   tiles: CanvasImageSource;
+  townEventTiles?: CanvasImageSource;
   maskedTiles: CanvasImageSource;
   zoom: number;
   focus: MapFocus;
@@ -43,7 +44,7 @@ const directions: Record<string, [number, number]> = {
   ArrowLeft: [-64, 0], ArrowRight: [64, 0], ArrowUp: [0, -64], ArrowDown: [0, 64],
 };
 
-export function FarmMap({ animateWorkers, autoScroll, viewportRef, scenario, tiles, maskedTiles, zoom, focus, field, selection, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
+export function FarmMap({ animateWorkers, autoScroll, viewportRef, scenario, tiles, townEventTiles, maskedTiles, zoom, focus, field, selection, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stroke=useRef<{pointer:number;last:number|null}|null>(null),suppressClick=useRef(false);
   const stopPainting=useCallback(()=>{
@@ -122,11 +123,11 @@ export function FarmMap({ animateWorkers, autoScroll, viewportRef, scenario, til
   useLayoutEffect(() => {
     paint.current=()=>{
       const context = canvasRef.current!.getContext('2d')!;
-      drawWorld(context, scenario, tiles, maskedTiles, flight ? undefined : field, flight ? null : selection, flight ? undefined : preview,workerAnimation.current.phase);
+      drawWorld(context, scenario, tiles, maskedTiles, flight ? undefined : field, flight ? null : selection, flight ? undefined : preview,workerAnimation.current.phase,townEventTiles);
       if (flight) drawAircraft(context, flight, flightSprites);
       if (disasters) drawDisasters(context, disasters, disasterSprites);
     };paint.current();
-  }, [scenario, tiles, maskedTiles, field, selection, preview, flight, flightSprites, disasters, disasterSprites]);
+  }, [scenario, tiles, townEventTiles, maskedTiles, field, selection, preview, flight, flightSprites, disasters, disasterSprites]);
   useLayoutEffect(() => {
     const viewport = viewportRef.current!;
     const measure = () => {
