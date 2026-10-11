@@ -6,6 +6,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { disasterFixture } from '../support/disasters';
 import { GameSimulation } from '../support/game';
+import { schedulePlant } from '../support/schedule-window';
 async function load(page: Page, text: string) {
   await page.locator('#load-farm-file').setInputFiles({ name: 'market.json', mimeType: 'application/json', buffer: Buffer.from(text) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
@@ -16,17 +17,17 @@ async function save(page: Page, name: string) {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 
-test('planting keeps trade quotes until the weekly market updates seed purchases, with exact restored continuation', async ({ page }) => {
+test('scheduled planting keeps trade quotes until weekly execution updates seed purchases, with exact restored continuation', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = disasterFixture(); f.state.scenario.farm.calendar.day = 6; f.state.dayTicks = 64;
   f.state.disasters.enabled = false; f.state.random.simulation = 9029;
   const game = f.load().withAllCrops(browserCrops); game.dispatch({ type: 'build', buildingType: 66, x: 10, y: 10 });
   const before = game.getSnapshot();
   await page.goto('/'); await load(page, game.save(4));
-  await reveal(page, '#field'); await page.locator('#field').selectOption('1'); await reveal(page, '#plant-crop'); await page.locator('#plant-crop').selectOption('0'); await reveal(page, '#plant-field'); await page.locator('#plant-field').click();
-  game.dispatch({ type: 'plant-field', fieldSlot: 1, cropSlot: 0 });
+  await schedulePlant(page,20,20,1,0);
+  game.dispatch({ type: 'edit-field-plan', fieldSlot: 1, week:1, action:{kind:'plant',cropSlot:0} });
   const planted = await save(page, 'planted');
-  expect(planted.runtime.market.history[0][29]).toBe(113);
+  expect(planted.runtime.market).toEqual(before.market);
   expect(planted.runtime.cropMarketPrices).toEqual(before.cropMarketPrices);
   expect(planted).toEqual(JSON.parse(game.save(4)));
   await browseSupply(page,192);await expect(page.locator('#buy-price')).toHaveText('$32');
@@ -34,7 +35,10 @@ test('planting keeps trade quotes until the weekly market updates seed purchases
   const price = game.getSnapshot().scenario.seedDefinitions[0].price; expect(price).not.toBe(32);
   await browseSupply(page,192);await expect(page.locator('#buy-price')).toHaveText(`$${price}`);
   const week = await save(page, 'weekly'); expect(week).toEqual(JSON.parse(game.save(4)));
-  expect(week.runtime.market.history.map((h: number[]) => h[29])).toEqual(week.runtime.cropMarketPrices);
+  // Weekly quotes are sampled before queued planting adjusts the current history sample.
+  expect(week.runtime.market.history[0][29]).toBe(113);
+  expect(week.runtime.cropMarketPrices[0]).toBe(150);
+  expect(week.runtime.market.history.slice(1).map((h: number[]) => h[29])).toEqual(week.runtime.cropMarketPrices.slice(1));
   await load(page, JSON.stringify(week));
   await selectSupply(page,192);await clickFarmTile(page,10,10);
   game.dispatch({ type: 'buy-crop-supply', productType: 192, x: 10, y: 10 });

@@ -1,4 +1,5 @@
 import { selectSupply } from '../support/supply-actions';
+import { schedulePlant } from '../support/schedule-window';
 import { buyBuilding } from '../support/building-actions';
 import { clickFarmTile, sprayField } from '../support/field-actions';
 import { reveal } from '../support/workspace';
@@ -84,9 +85,10 @@ test('supply controls buy original stock, plays feedback, preserves checkpoints 
   await originalPixels(page,11,10,217,913);await originalPixels(page,11,11,217,912);
   const sounds=(await played(page)).length;await load(page,g.save(4));
   await expect(page.locator('#cancel-buy-placement')).toHaveCount(0);expect((await played(page)).length).toBe(sounds);
-  await reveal(page, '#field'); await page.locator('#field').selectOption('1');await reveal(page, '#plant-crop'); await page.locator('#plant-crop').selectOption('4');
-  await reveal(page, '#plant-field'); await page.locator('#plant-field').click();g.dispatch({type:'plant-field',fieldSlot:1,cropSlot:4});
-  await expect(page.locator('#plant-result')).toContainText('Used seed in stock');
+  await schedulePlant(page,20,20,1,4);g.dispatch({type:'edit-field-plan',fieldSlot:1,week:1,action:{kind:'plant',cropSlot:4}});
+  await expect(page.locator('#plan-result')).toContainText('Plan updated');
+  for(let n=0;n<7;n++){await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}
+  expect(g.getSnapshot().scenario.inventory.some(i=>i.active&&i.type===196)).toBe(false);
   for(let n=0;n<10 && g.getSnapshot().scenario.fields[1].state!==4;n++){await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}
   await sprayField(page,g.getSnapshot().scenario.fields[1].x,g.getSnapshot().scenario.fields[1].y,'fertilizer');g.dispatch({type:'treat-field',fieldSlot:1,treatment:'fertilizer'});
   await expect(page.locator('#field-tool-result')).toHaveText('Treatment ordered.');expect(g.getSnapshot().lastTreatmentResult).toMatchObject({ok:true,source:'stored'});
