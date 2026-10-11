@@ -395,3 +395,5 @@ Recreation event terrain cleanup and animations are now source-grounded, tested 
 Original event state is now decoded fromSSM21674..2167b and checked against matching source writer/reader; preserve inactiveSCEN5 phase/timestamp. Rodeo invitation text is decoded from original record61. Finish position-bit/restart lifetime audit, then integrate the complete event state and interaction flow rather than resetting events on import.
 
 Fair/rodeo entry, decisions and weekly outcome primitives are implemented and tested with explicit pending dialogs and MIDI/artwork effects. Next wire their canonical state into checkpoint/import/new-farm lifecycle and scheduler, then original message dialogs and renderer. Track uploaded bank separately from mode because source insufficient-funds rodeo leaves bank1 with mode0(SF-174).
+
+Native event checkpoint codec now preserves pending outcomes, phase/position and uploaded bank with tested exact RNG/payment continuation. Integrate into the top-level schema together with interrupted-calendar phase and scheduler; a standalone pending dialog field is insufficient. Original SSM position-bit/restart policy still requires source audit.
