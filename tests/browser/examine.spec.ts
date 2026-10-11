@@ -29,7 +29,7 @@ test('View object shows original building card, exact1× photo, HTML captions an
   const title=dialog.locator('.game-window-title');await title.focus();await page.keyboard.press('ArrowRight');expect(await dialog.boundingBox()).toMatchObject({x:42,y:64});
   await page.keyboard.press('Escape');await expect(dialog).toBeHidden();await point(page,40,40);expect(await dialog.boundingBox()).toMatchObject({x:42,y:64});
   await page.locator('#examine-building').click();g.dispatch({type:'toggle-building-interior',x:40,y:40,slot:1});expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  await page.getByRole('button',{name:'Object actions',exact:true}).click();await expect(page.locator('#building-interior-panel')).toBeVisible();
+  await expect(page.getByRole('button',{name:'Object actions',exact:true})).toHaveCount(0);
 });
 
 test('Examine covers ground machinery, livestock, chemicals and terrain without mutating farm state',async({page})=>{
