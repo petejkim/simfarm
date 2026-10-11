@@ -1,6 +1,6 @@
 # Original Edit status line and history
 
-The native Edit view now displays the original quick-message line and expandable ten-entry history. Plant crop selection posts17 and failed new-field placement posts51, using verified source wording. Remaining message producers are not yet connected; this is an incremental reconstruction, not completion of every original notification.
+The native Edit view now displays the original quick-message line and expandable ten-entry history. Plant crop selection posts17, failed new-field placement posts51, and all twelve palette tools/four Spray choices post their verified source wording. Remaining operation-result message producers are not yet connected; this is an incremental reconstruction, not completion of every original notification.
 
 ## Source records and producers
 
@@ -18,6 +18,29 @@ The original history is held until primary-button release221cb..221d5. Native ac
 
 ## Lifetime, checks and remaining work
 
-History is transient and resets on native load/new simulation; it is excluded from v25 saves. Raw original scenario bytes remain preserved. Exact original startup/warm-restart/load history lifetime has not been fully audited; this reset policy is explicit, not claimed source-equivalent. Only code17 is exposed as a tool-selection command; failed create-field posts51 internally. Existing modal guards precede either path. Other quick-message producers must be traced before being connected; no translated native failure is arbitrarily mapped to another original code.
+History is transient and resets on native load/new simulation; it is excluded from v25 saves. Raw original scenario bytes remain preserved. Exact original startup/warm-restart/load history lifetime has not been fully audited; this reset policy is explicit, not claimed source-equivalent. Only verified Plant, palette and Spray selection codes are exposed as tool-selection commands; failed create-field posts51 internally. Existing modal guards precede either path. Other quick-message producers must be traced before being connected; no translated native failure is arbitrarily mapped to another original code.
 
 Tests pin producer/reader/renderer evidence, record hashes, all record truncation boundaries, input immutability, ring wrap across all76 codes, duplicate suppression, detached snapshots, unchanged rejected-placement saves, modal rejection and load reset. Six existing placement cases remain passing. Browser checks cover original position/height, exact text and recent order, repeat rejection, Escape/internal-click dismissal, canonical nonmutation, load reset, truncated-asset failure and existing all24-crop Plant/Spray/help flows. See progress.md for results. Whole-game preservation remains incomplete.
+
+## Palette and Spray selection producers
+
+High-confidence static evidence: palette callback214f0 dispatches through table22352 (index is ID minus one; code segment file base1f950). Each branch below pushes the indicated quick-message code. Move/View call22504 directly at2174d/2170d; Bulldoze calls it at2167e. Other palette branches jump to the shared2167d call sequence. Source-byte tests verify table destinations, immediate codes and call destinations.
+
+| Tool | ID | Branch | Code push | Code |
+|---|---:|---|---|---:|
+| Move object | 26 | 21726 | 2174a | 6 |
+| View object | 2 | 21688 | 2170a | 64 |
+| Paved road | 15 | 21a9a | 21b51 | 35 |
+| Dirt road | 16 | 21b56 | 21c10 | 36 |
+| Fence | 11 | 217a8 | 2185f | 32 |
+| Gate | 12 | 21864 | 2191b | 33 |
+| Ditch | 20 | 21e30 | 21ee7 | 40 |
+| Valve | 19 | 21d74 | 21e2b | 25 |
+| Hay | 13 | 21920 | 219d7 | 41 |
+| Trough | 14 | 219dc | 21a94 | 34 |
+| Trees | 17 | 21c16 | 21ccd | 37 |
+| Bulldoze | 1 | 215ea | 2167b | 63 |
+
+Spray pushes at383e8/38436/3847c/384c4 select fertilizer14, pesticide15, herbicide31 and fungicide16, each followed by far call1d75:2bb4 (`9ab42b751d`). Valve selection uses25, “Irrigation Ditch Valve,” rather than the separate39 “Ditch Valve On/Off.” View uses64, not the identical wording at19. These distinctions retain source codes even where visible labels overlap.
+
+Selection changes only transient history and existing UI tool state; canonical farm saves are unchanged. Modal guards still apply. Tests reject unverified externally requested codes, verify all sixteen producers and adjacent deduplication across ring wrap, and exercise every choice through actual browser controls. Source click-sound requests and subsequent operation-result producers remain separate work; no new original defect was established here.

@@ -1,3 +1,4 @@
+import {EDIT_TOOL_STATUSES,SPRAY_STATUSES} from '../simulation/edit-status';
 import {EditStatus} from './EditStatus';
 import {FieldMessage} from './FieldMessage';
 import {EditHelp} from './EditHelp';
@@ -187,6 +188,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
   const [livestockType, setLivestockType] = useState(161);
   function chooseTool(tool: MapTool) { objectMove.cancel();construction.cancel();bulldoze.cancel();setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null); setMapTool(tool); windows.show('actions'); }
   function editTool(tool: EditTool) {
+    simulation?.dispatch({type:'edit-status',code:EDIT_TOOL_STATUSES[tool]});
     setInteractionMessage('');
     objectMove.cancel();construction.cancel();bulldoze.cancel();
     setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null);
@@ -463,7 +465,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       {editHelpOpen&&<EditHelp artwork={assets.editHelp} onClose={()=>setEditHelpOpen(false)} onAdvanced={()=>{setEditHelpOpen(false);windows.show('tools');}}/>}
       {fieldMenu&&snapshot&&<FieldToolMenu kind={fieldMenu} assets={assets} world={data.scenario} tiles={data.tiles}
         onClose={()=>{setFieldMenu(null);viewportRef.current?.focus({preventScroll:true});}}
-        onChoose={tool=>{if(tool.kind==='plant')simulation?.dispatch({type:'edit-status',code:17});setFieldMenu(null);setFieldMapTool(tool);setMapTool(tool.kind==='plant'?'field':'inspect');setSelection(null);viewportRef.current?.focus({preventScroll:true});}}/>}
+        onChoose={tool=>{simulation?.dispatch({type:'edit-status',code:tool.kind==='plant'?17:SPRAY_STATUSES[tool.kind]});setFieldMenu(null);setFieldMapTool(tool);setMapTool(tool.kind==='plant'?'field':'inspect');setSelection(null);viewportRef.current?.focus({preventScroll:true});}}/>}
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
         <FarmMap autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !editHelpOpen && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}

@@ -10,3 +10,14 @@ export function appendEditStatus(history:EditStatusHistory,code:number):void {
 export function recentEditStatuses(history:EditStatusHistory):number[]{
   return Array.from({length:10},(_,i)=>history.codes[(history.cursor-i+10)%10]).filter(code=>code>=0);
 }
+
+/** Palette214f0 branches and Spray383e8/38436/3847c/384c4. */
+export const EDIT_TOOL_STATUSES={
+  'Move object':6,'View object':64,'Paved road':35,'Dirt road':36,'Fence':32,'Gate':33,
+  'Ditch':40,'Valve':25,'Hay':41,'Trough':34,'Trees':37,'Bulldoze':63,
+} as const;
+export const SPRAY_STATUSES={fertilizer:14,pesticide:15,herbicide:31,fungicide:16} as const;
+export type EditToolStatusCode=17|typeof EDIT_TOOL_STATUSES[keyof typeof EDIT_TOOL_STATUSES]|typeof SPRAY_STATUSES[keyof typeof SPRAY_STATUSES];
+export function isEditToolStatus(code:number):code is EditToolStatusCode {
+  return code===17||Object.values(EDIT_TOOL_STATUSES).some(n=>n===code)||Object.values(SPRAY_STATUSES).some(n=>n===code);
+}

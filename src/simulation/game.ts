@@ -1,4 +1,4 @@
-import {createEditStatus,appendEditStatus,recentEditStatuses} from './edit-status';
+import {createEditStatus,appendEditStatus,recentEditStatuses,isEditToolStatus,type EditToolStatusCode} from './edit-status';
 import {DISASTER_MESSAGES} from '../formats/disaster-message';
 import type {DisasterNoticeId} from './events';
 import { DISASTER_MENU_KINDS, type DisasterMenuAction } from './disaster-menu';
@@ -202,7 +202,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'buy-crop-supply'; productType: number; x: number; y: number }
   | { type: 'buy-equipment'; equipmentType: number; x: number; y: number }
   | { type: 'buy-livestock'; productType: number; x: number; y: number }
-  | { type: 'edit-status'; code:17 }
+  | { type: 'edit-status'; code:EditToolStatusCode }
   | { type: 'create-field'; x: number; y: number; cropSlot: number }
   | { type: 'treat-field'; fieldSlot: number; treatment: Treatment }
   | { type: 'plant-field'; fieldSlot: number; cropSlot: number }
@@ -591,7 +591,7 @@ export class GameSimulation {
         else this.events.push({ type: 'sound', sound: 'uhoh' });
       }
     } else if(command.type==='edit-status'){
-      if(command.code!==17)throw new Error('Invalid Edit tool status');
+      if(!isEditToolStatus(command.code))throw new Error('Invalid Edit tool status');
       appendEditStatus(this.editStatus,command.code);
     } else if (command.type === 'create-field') {
       this.lastPlantResult = null; this.lastHarvestResult = null;
