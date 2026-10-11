@@ -147,7 +147,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       : navigation.target === 'evaluation' ? evaluationRef.current : navigation.target === 'balance' ? balanceRef.current
       : navigation.target === 'sell' ? sellRef.current : navigation.target === 'weather' ? weatherRef.current
       : navigation.target === 'expert' ? expertRef.current : null;
-    target?.scrollIntoView({ block: 'start', inline: 'nearest' });
+    // Floating windows already occupy the desktop. Scrolling a child into view
+    // also scrolls its overflow-hidden ancestors and displaces the entire map.
     target?.focus({ preventScroll: true });
   }, [navigation]);
   function navigate(target: FarmDestination) {
