@@ -10,7 +10,7 @@ Plant selection3838d..38394 posts17, `Choose a location for your field.` Map pla
 
 ## Display and source defect
 
-Palette nodeDS54ca has x48,y16,widthffff,height16,ID32. The latest line is painted by204f2..205a6; text coordinates are Edit x+72,y+18. Source historyID32 jumps through table22352 to22032, saves/draws a96-pixel-high region at Edit x+48,y+16 using the client width, gray palette12 and black border. Text rows start x+72,y+18 with8-pixel pitch. Current native Edit origin0,48 therefore places the strip at48,64 and text at72,66. Browser font metrics differ from bitmap glyphs; no glyph pixels are displayed.
+Palette nodeDS54ca has x48,y16,widthffff,height16,ID32. The latest line is painted by204f2..205a6; text coordinates are Edit x+72,y+18. Source historyID32 jumps through table22352 to22032, saves/draws a96-pixel-high region at Edit x+48,y+16 using the client width, gray palette12 and black border. Text rows start x+72,y+18 with8-pixel pitch. With the Edit titlebar removed, the native strip sits at48,48 and text at72,50. A dedicated16-pixel layout row places the terrain viewport at50,64; the palette spans both rows. The strip remains visible and blank when history is empty, including after load. The expanded history temporarily overlays the map until dismissed. Browser font metrics differ from bitmap glyphs; no glyph pixels are displayed.
 
 Source22160..22176 computes `(cursor-row+10)%10` in a stack local, but2217d loads row directly and22180/22188 read the physical slot. SF-172 records this display-order bug. Native recentEditStatuses uses the computed circular index and omits unused entries, showing newest first. Storage, wrap and adjacent-duplicate suppression retain the source rules.
 

@@ -58,5 +58,5 @@ test('livestock loss is shown in React, malformed frame saves preserve the curre
   await page.screenshot({ path: 'artifacts/browser-livestock.png' });
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await expect(page.locator('#livestock-panel > summary')).toContainText('0 animals'); await expect(page.locator('#livestock-notices')).toHaveCount(0);
-  await expect(status).toHaveCount(0);
+  await expect(status).toBeVisible();await expect(status).toHaveText('');
 });
