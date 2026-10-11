@@ -1,3 +1,4 @@
+import { animateTownEventMap, validateTownEventMap } from './town-event-map';
 import { importTownEvent } from './town-event-lifecycle';
 import { encodeTownEventCheckpoint, type TownEventCheckpoint } from '../formats/town-event-save';
 import {createEditStatus,appendEditStatus,recentEditStatuses,isEditToolStatus,type EditToolStatusCode} from './edit-status';
@@ -315,6 +316,7 @@ export class GameSimulation {
     this.townLayouts = new TownLayouts(townLayouts.bytes);
     this.townEvent = restored ? encodeTownEventCheckpoint(restored.townEvent) : importTownEvent(scenario.sourceBytes!);
     this.finances = restored ? copyFinancialState(restored.finances) : readFinancialState(scenario.sourceBytes!);
+    if (this.townEvent.mode) validateTownEventMap(scenario, this.finances.town, this.townEvent);
     this.crops = scenario.cropFiles.map(file => {
       const crop = crops.find(c => `${c.id}.crp` === file);
       if (!crop) throw new Error(`Missing simulation crop ${file}`);
@@ -701,6 +703,7 @@ export class GameSimulation {
       advanceTraffic(s, this.traffic, this.random, this.equipmentRuntime); // Main0xbd73, after animals and before disasters.
       this.requestCollisionSounds();
       this.advanceDisasters(); // Main-loop0xbd85.
+      if (this.townEvent.mode) animateTownEventMap(s, this.finances.town, this.townEvent, s.farm.animationTicks, this.random); //0xbdb0, after disasters.
     }
   }
 

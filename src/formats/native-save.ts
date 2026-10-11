@@ -1,3 +1,4 @@
+import { validateTownEventMap } from '../simulation/town-event-map';
 import { coldTownEvent } from '../simulation/town-event-lifecycle';
 import { decodeTownEventCheckpoint, encodeTownEventCheckpoint } from './town-event-save';
 import { allCropFiles } from './crop-slots';
@@ -181,6 +182,7 @@ export function writeNativeSave(state: SimulationState, scenarioId: number | nul
     if (state.scenario.origin !== 'original' || !state.scenario.sourceBytes || state.newFarm !== null) fail('original provenance');
   }
   if (state.townEvent.pending) fail('town event continuation not yet supported');
+  if (state.townEvent.mode) validateTownEventMap(state.scenario, state.finances.town, state.townEvent);
   const { scenario, finances, ...runtime } = state;
   const text = JSON.stringify({ format: FORMAT, version: 26, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, townEvent: encodeTownEventCheckpoint(state.townEvent), setup: { ...state.setup, sourceArchive: state.setup.sourceArchive ? hex(state.setup.sourceArchive) : null }, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
@@ -242,6 +244,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
       ...(save.version < 8 ? { homestead: readHomestead(originalSource(s)) } : {}),
       ...(save.version < 7 ? { statistics: readAnnualStatistics(originalSource(s)) } : {}) }) : readFinancialState(originalSource(s)) };
   if (state.townEvent.pending) fail('town event continuation not yet supported');
+  if (state.townEvent.mode) validateTownEventMap(state.scenario, state.finances.town, state.townEvent);
   if (state.finances.defaultDecision && !state.paused) fail('unpaused terminal default');
   if (state.aircraftFlight && (state.finances.defaultDecision || state.pendingTown)) fail('flight during modal decision');
   const town = state.finances.town.activeSite, townIndex = (town.regionX * 12 + town.regionY) * 7;

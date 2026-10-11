@@ -403,3 +403,5 @@ Live weekly scheduler now exposes source result-return(field water) and entry-re
 Version26 now gives GameSimulation canonical townEvent ownership, exact checkpoint persistence, source transfer/reset mapping and inactive legacy migration. Full902-unit/266-browser regression passed; one subsequent unsupported-pending writer/reader guard has11 focused passes (903 total unit inventory). Next activate events only with complete calendar/tick continuation and original dialog/MIDI/atlas consumers. Current top-level saves reject pending event dialogs until that continuation exists.
 
 Browser renderer now consumes canonical event artworkMode, independently from event mode, with all three source weather palettes and verified1× pixels. Next connect calendar/tick continuation and original fair/rodeo dialogs/music; artwork selection no longer blocks that integration.
+
+Loaded active recreation events now animate through the actual simulation tick tail and restore exact visible/RNG state after checkpoints. Next integrate original calendar entry/results and dialog continuation/MIDI; neither renderer nor active animation remains a prerequisite blocker.
