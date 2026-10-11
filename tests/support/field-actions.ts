@@ -35,3 +35,8 @@ export async function buyPlot(page:Page,x:number,y:number){
   await page.locator('#map-land-action').click();
   await expect(page.locator('#map-land-result')).toContainText(`Bought plot at ${x*8}, ${y*8}`);
 }
+
+export async function sprayField(page:Page,x:number,y:number,treatment:string){
+  await reveal(page,'#viewport');await page.getByRole('button',{name:'Spray',exact:true}).click();
+  await page.locator(`[data-field-tool="${treatment}"]`).click();await clickFarmTile(page,x,y);
+}

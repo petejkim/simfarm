@@ -5,8 +5,6 @@ import { useState } from 'react';
 import type { PlantResult } from '../simulation/plant-order';
 import type { HarvestOrderResult } from '../simulation/field-harvest';
 import type { FieldHarvestEstimate } from '../simulation/game';
-import { FieldCare } from './FieldCare';
-import type { Treatment, TreatmentResult } from '../simulation/field-treatment';
 
 interface Props {
   scenario: Scenario;
@@ -18,10 +16,8 @@ interface Props {
   onHarvest: (fieldSlot: number) => void;
   harvestResult: HarvestOrderResult | null;
   harvestEstimate?: FieldHarvestEstimate | null;
-  treatmentResult: TreatmentResult | null;
-  onTreat: (fieldSlot: number, treatment: Treatment) => void;
 }
-export function FieldPanel({ scenario, crops, field, onSelect, onPlant, plantResult, onHarvest, harvestResult, harvestEstimate, treatmentResult, onTreat }: Props) {
+export function FieldPanel({ scenario, crops, field, onSelect, onPlant, plantResult, onHarvest, harvestResult, harvestEstimate }: Props) {
   const [cropSlot, setCropSlot] = useState(0);
   const fields = scenario.fields.filter(f => f.active);
   const cropName = (f: FieldRecord) => crops.find(c => `${c.id}.crp` === scenario.cropFiles[f.cropSlot])?.name ?? scenario.cropFiles[f.cropSlot];
@@ -43,7 +39,6 @@ export function FieldPanel({ scenario, crops, field, onSelect, onPlant, plantRes
       : `${fields.length} fields in this farm. Select a field to inspect it.`}</p>
     {field && <p id="field-growth">{field.state === 4 ? `Crop age: ${field.bytes[34]} weeks · ` : ''}
       Water: {field.bytes[24] | field.bytes[25] << 8} · Fertility: {field.bytes[29]} / 255</p>}
-    {field && <FieldCare scenario={scenario} field={field} result={treatmentResult} onTreat={onTreat} />}
     {field && harvestEstimate && <div className="harvest-controls">
       <p id="harvest-estimate">Maturity: {Math.floor(harvestEstimate.maturity * 100 / 65535)}% · Estimated crop value: ${harvestEstimate.value.toLocaleString('en-US')}, before expenses.</p>
       <button id="harvest-field" disabled={Boolean(busy) || field.state !== 4 || Boolean(field.bytes[46] | field.bytes[47])}

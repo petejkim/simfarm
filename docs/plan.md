@@ -327,3 +327,5 @@ EquipmentShop retired: original catalog byte audit confirms omission of type6; r
 LivestockShop retired: use original Buy for animals and Hay/Trough palette tools for supplies. Quantity totals remain in the still-interim livestock overview; no new catalog products. Next retire crop-supply shopping and audit Field information's immediate-order adapters against original interactions.
 
 CropSupplyShop retired: original Buy covers seed/chemical purchases and direct map storage delivery, including all24 crops and live market prices. All interim object shops are gone. Next resolve Field information's immediate-order versus original calendar controls, then remove its remaining Inspect selector/navigation bridge and diagnostic inventories/windows.
+
+FieldCare retired: use original Spray for immediate treatments. FieldPanel's existing-field plant/harvest adapters remain under audit; unresolved helper2e80e manipulates schedule buffers and does not yet establish a direct original gesture. Continue source-based field interaction reconstruction before deleting the remaining exclusive paths.

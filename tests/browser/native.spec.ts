@@ -1,4 +1,4 @@
-import { buyPlot, selectProperty, setAutoDoze, plantField, clickFarmTile } from '../support/field-actions';
+import { sprayField, buyPlot, selectProperty, setAutoDoze, plantField, clickFarmTile } from '../support/field-actions';
 import { scheduleWeek } from '../support/schedule-window';
 import { saleOffers, selectSaleOffer } from '../support/sell-window';
 import { reveal, openWindow } from '../support/workspace';
@@ -381,18 +381,15 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
   for (let day = 0; day < 2; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
   await expect(page.locator('#field-status')).toContainText('Growing');
-  await expect(page.locator('#treatment-quote')).toContainText('Supply: $275');
-  await reveal(page, '#treat-field'); await page.locator('#treat-field').click();
+  await sprayField(page,0,16,'fertilizer');
   await expect(page.locator('#field-status')).toContainText('Fertilize');
-  await expect(page.locator('#treatment-result')).toContainText('Supply cost: $275');
+  await expect(page.locator('#field-tool-result')).toHaveText('Treatment ordered.');
   await expect(page.locator('#farm-cash')).toHaveText('$21,613');
-  await expect(page.locator('#treat-field')).toBeDisabled();
   await expect(page.locator('#plant-field')).toBeDisabled();
   await expect(page.locator('#harvest-field')).toBeDisabled();
   await reveal(page, '#next-day'); await page.locator('#next-day').click();
   await expect(page.locator('#field-status')).toContainText('Growing');
   await expect(page.locator('#field-growth')).toContainText('Fertility: 255 / 255');
-  await expect(page.locator('#treatment-progress')).toHaveCount(0);
   await page.screenshot({ path: 'artifacts/browser-fertilizer.png', fullPage: true });
   for (let day = 3; day < 84; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
   await expect(page.locator('#harvest-estimate')).toContainText('value: $1,700');
@@ -404,7 +401,7 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   await expect(page.locator('#harvest-stock')).toHaveText('4 stored harvests');
   await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('0');
   await reveal(page, '#field'); await page.locator('#field').selectOption('1');
-  await expect(page.locator('#treatment-result')).toHaveCount(0);
+  await expect(page.locator('#field-tool-result')).toBeEmpty();
   expect(errors).toEqual([]);
 });
 
@@ -414,23 +411,15 @@ test('all four field treatments use original stored supplies and restore crop wo
   await page.goto('/');
   await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
   await reveal(page, '#field'); await page.locator('#field').selectOption('1');
-  for (const [name, stock, status] of [['fertilizer', 18, 'Fertilize'], ['pesticide', 18, 'Pesticide'],
-    ['herbicide', 9, 'Herbicide'], ['fungicide', 18, 'Fungicide']] as const) {
-    await reveal(page, '#field-treatment'); await page.locator('#field-treatment').selectOption(name);
-    await expect(page.locator('#treatment-quote')).toContainText(`${stock} in stock`);
-    const cash = await page.locator('#farm-cash').textContent();
-    await reveal(page, '#treat-field'); await page.locator('#treat-field').click();
-    await expect(page.locator('#field-status')).toContainText(status);
-    await expect(page.locator('#treatment-result')).toContainText('Used one supply in stock');
-    await expect(page.locator('#treatment-quote')).toContainText(`${stock - 1} in stock`);
-    await expect(page.locator('#farm-cash')).toHaveText(cash!);
-    for (let day = 0; day < 8; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  const field=readScenario(readFileSync(new URL('../../../simfarm-dos/SCEN0.SSM',import.meta.url))).fields[1];
+  for(const [name,status] of [['fertilizer','Fertilize'],['pesticide','Pesticide'],['herbicide','Herbicide'],['fungicide','Fungicide']]){
+    const cash=await page.locator('#farm-cash').textContent();
+    await sprayField(page,field.x,field.y,name);await expect(page.locator('#field-status')).toContainText(status);
+    await expect(page.locator('#field-tool-result')).toHaveText('Treatment ordered.');await expect(page.locator('#farm-cash')).toHaveText(cash!);
+    for(let day=0;day<8;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();}
     await expect(page.locator('#field-status')).toContainText('Growing');
-    await expect(page.locator('#treat-field')).toBeEnabled();
   }
-  await page.setViewportSize({ width: 1280, height: 844 });
-  await reveal(page, '#field-treatment'); await page.locator('#field-treatment').scrollIntoViewIfNeeded();
-  await reveal(page, '#field-treatment'); await expect(page.locator('#field-treatment')).toBeVisible();
+  await page.setViewportSize({width:1280,height:844});await reveal(page,'#viewport');await expect(page.getByRole('button',{name:'Spray',exact:true})).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   expect(errors).toEqual([]);
 });
@@ -448,7 +437,7 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await buyPlot(page,0,2);await setAutoDoze(page,true);await plantField(page,0,16);
   await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
   for (let day = 0; day < 2; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
-  await reveal(page, '#treat-field'); await page.locator('#treat-field').click();
+  await sprayField(page,0,16,'fertilizer');
   await expect(page.locator('#field-status')).toContainText('Fertilize');
   const date = await page.locator('#farm-date').textContent();
   const downloadPromise = page.waitForEvent('download');

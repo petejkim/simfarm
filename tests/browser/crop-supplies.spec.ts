@@ -1,6 +1,6 @@
 import { selectSupply } from '../support/supply-actions';
 import { buyBuilding } from '../support/building-actions';
-import { clickFarmTile } from '../support/field-actions';
+import { clickFarmTile, sprayField } from '../support/field-actions';
 import { reveal } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -88,8 +88,8 @@ test('supply controls buy original stock, plays feedback, preserves checkpoints 
   await reveal(page, '#plant-field'); await page.locator('#plant-field').click();g.dispatch({type:'plant-field',fieldSlot:1,cropSlot:4});
   await expect(page.locator('#plant-result')).toContainText('Used seed in stock');
   for(let n=0;n<10 && g.getSnapshot().scenario.fields[1].state!==4;n++){await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}
-  await reveal(page, '#treat-field'); await page.locator('#treat-field').click();g.dispatch({type:'treat-field',fieldSlot:1,treatment:'fertilizer'});
-  await expect(page.locator('#treatment-result')).toContainText('stock');
+  await sprayField(page,g.getSnapshot().scenario.fields[1].x,g.getSnapshot().scenario.fields[1].y,'fertilizer');g.dispatch({type:'treat-field',fieldSlot:1,treatment:'fertilizer'});
+  await expect(page.locator('#field-tool-result')).toHaveText('Treatment ordered.');expect(g.getSnapshot().lastTreatmentResult).toMatchObject({ok:true,source:'stored'});
   expect(await save(page)).toEqual(JSON.parse(g.save(4)));expect(errors).toEqual([]);
 });
 
