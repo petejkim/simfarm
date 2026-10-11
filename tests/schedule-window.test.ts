@@ -92,3 +92,12 @@ test('Schedule preserves source gauge thresholds, signed water arithmetic, matur
   }
   for(const month of [-1,58,NaN,.5])assert.throws(()=>scheduleFieldView(world,field,crop,month));
 });
+
+
+test('View object field entry selects its field and copies current month into the Schedule view',()=>{
+  assert.equal(exe.subarray(0x38b9b,0x38ba0).toString('hex'),'9ab8015719'); // field finder1b928.
+  assert.equal(exe.subarray(0x38bf2,0x38bfd).toString('hex'),'689061688c5d9a2810e624'); // Schedule descriptor/create.
+  assert.equal(exe.subarray(0x38c43,0x38c5e).toString('hex'),
+    '8a46ce8e062ecc26a230618e0630cc26a056128e0632cc26a2f75d');
+  assert.equal(exe.subarray(0x2df0a,0x2df11).toString('hex'),'26a05612a2f75d'); // TODAY copies the same month.
+});

@@ -134,6 +134,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [simulation,Boolean(bulldoze.pending),Boolean(messages.length)]);
+  const [fieldInspection,setFieldInspection]=useState<{month:number}|null>(null);
   const [selection, setSelection] = useState<number | null>(null), [fieldSlot, setFieldSlot] = useState<number | null>(null);
   const [focus, setFocus] = useState<MapFocus>(() => {
     const home = id === null ? loaded?.simulation.getSnapshot().finances.homestead : null;
@@ -433,7 +434,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     <GameWindow windowKey="disasters" title="Disasters">
     {snapshot && <DisasterPanel snapshot={snapshot} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
     </GameWindow>
-    {data && snapshot && <ScheduleWindow assets={assets} snapshot={snapshot} tiles={data.tiles} field={field} focusRef={plannerRef}
+    {data && snapshot && <ScheduleWindow inspection={fieldInspection} assets={assets} snapshot={snapshot} tiles={data.tiles} field={field} focusRef={plannerRef}
       onSelect={slot=>{setSelection(null);selectField(slot,true);}} onNewField={()=>navigate('field')} onCommand={command=>simulation?.dispatch(command)}/>}
     {data && <ExpertWindow assets={assets} cropFiles={data.scenario.cropFiles} tiles={data.tiles} focusRef={expertRef} onEvent={onGameEvent}/>}
     {data && snapshot && <MarketWindow assets={assets} snapshot={snapshot} tiles={data.tiles}/>}
@@ -473,6 +474,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
             if (fieldMapTool) {applyFieldTool(x,y);return;}
             const selected=data.scenario.fields.find(f => f.contains(x,y));
             selectField(selected?.slot ?? null,false);
+            if(mapTool==='inspect'&&selected)setFieldInspection({month:data.scenario.farm.calendar.month});
             windows.show(mapTool==='inspect'?(selected?'schedule':'examine'):'actions');
           }} />
         <div className="map-footer">{bulldoze.active&&<><button id="cancel-bulldoze" onClick={cancelBulldoze}>Stop bulldozing</button><span id="bulldoze-result" role="status">{bulldoze.message}</span></>}{construction.tool&&<><button id="cancel-construction" onClick={cancelConstruction}>Stop construction</button><span id="construction-result" role="status">{construction.message}</span></>}<span id="map-interaction-result" role="status">{interactionMessage}</span>{objectMove.active&&<><button id="cancel-object-move" onClick={cancelObjectMove}>Cancel move</button><span id="object-move-result" role="status">{objectMove.message}</span></>}<span id="field-tool-result" role="status">{fieldToolMessage}</span>{fieldMapTool&&<button id="cancel-field-tool" onClick={cancelFieldTool}>Cancel field tool</button>}{buyPlacement && <button id="cancel-buy-placement" onClick={cancelPurchase}>Cancel purchase</button>}<span id="buy-result" role="status">{buyMessage}</span><span id="map-tool-hint">{bulldoze.active?'Bulldoze: click or drag to clear · Buildings and fields ask for confirmation · Escape stops':construction.tool?construction.hint:objectMove.active?objectMove.hint:fieldMapTool ? fieldMapTool.kind==='plant' ? `Plant ${assets.catalog.crops.find(c=>`${c.id}.crp`===data.scenario.cropFiles[fieldMapTool.cropSlot])?.name}: click the top-left corner of a new field · Escape cancels` : `${SPRAY_TOOLS.find(t=>t.kind===fieldMapTool.kind)?.label}: click an existing field · Escape cancels` : buyPlacement ? `${buyPlacement.name}: click to place · Escape cancels` : snapshot?.aircraftFlight ? 'Following aircraft · farm calendar suspended' : mapTool === 'land' ? 'Click to select a plot to buy' : mapTool === 'field'

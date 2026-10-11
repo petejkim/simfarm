@@ -56,3 +56,24 @@ test('missing Schedule artwork fails before play',async({page})=>{
   await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();
   await expect(page.locator('.loading')).toContainText('field-gauges.png');await expect(page.locator('#world')).toHaveCount(0);
 });
+
+
+test('reexamining the same field resets Schedule to today without editing its plan or losing the selected tool',async({page})=>{
+  await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));
+  await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const before=await save(page),world=readScenario(source('SCEN0.SSM')),field=world.fields[1];
+  await openWindow(page,'schedule');await page.locator('#planner-field').selectOption('1');
+  await page.locator('[data-plan-action="harvest"]').click();await page.getByRole('button',{name:'Water overlay',exact:true}).click();
+  await scheduleMonth(page,57);await page.getByRole('button',{name:'CLOSE',exact:true}).click();
+  // Raising via the native planner shortcut retains browsing; map examination explicitly selects today.
+  await openWindow(page,'schedule');await expect(page.locator('#schedule-month')).toHaveValue('57');
+  await page.getByRole('button',{name:'CLOSE',exact:true}).click();await page.getByRole('button',{name:'View object',exact:true}).click();
+  const rect=(await page.locator('#world').boundingBox())!;
+  await page.mouse.click(rect.x+(field.x+2)*16+8,rect.y+(field.y+2)*16+8);
+  await expect(page.getByRole('dialog',{name:'Schedule',exact:true})).toBeVisible();
+  await expect(page.locator('#planner-field')).toHaveValue('1');await expect(page.locator('#schedule-month')).toHaveValue(String(world.farm.calendar.month));
+  await expect(page.locator('[data-plan-action="harvest"]')).toHaveAttribute('aria-pressed','true');
+  await expect(page.getByRole('button',{name:'Water overlay',exact:true})).toHaveAttribute('aria-pressed','true');
+  // Browsing after entry must remain possible; snapshots do not repeatedly reset the month.
+  await scheduleMonth(page,5);await expect(page.locator('#schedule-month')).toHaveValue('5');expect(await save(page)).toEqual(before);
+});

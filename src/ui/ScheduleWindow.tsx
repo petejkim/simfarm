@@ -19,15 +19,22 @@ const failures:Record<string,string>={
   'fixed-harvest-week':'This crop has a fixed annual harvest week.',
 };
 interface Props { assets:GameAssets; snapshot:GameSnapshot; tiles:CanvasImageSource; field?:FieldRecord;
-  focusRef:Ref<HTMLElement>; onSelect:(slot:number|null)=>void; onNewField:()=>void; onCommand:(command:GameCommand)=>void }
+  inspection:{month:number}|null; focusRef:Ref<HTMLElement>; onSelect:(slot:number|null)=>void; onNewField:()=>void; onCommand:(command:GameCommand)=>void }
 export function ScheduleWindow(props:Props){
   return <GameWindow windowKey="schedule" title="Schedule">
     <ScheduleEditor key={`${props.field?.slot}-${props.snapshot.scenario.farm.calendar.year}`} {...props}/>
   </GameWindow>;
 }
-function ScheduleEditor({assets,snapshot,tiles,field,focusRef,onSelect,onNewField,onCommand}:Props){
+function ScheduleEditor({assets,snapshot,tiles,field,inspection,focusRef,onSelect,onNewField,onCommand}:Props){
   const windows=useWindows(),scenario=snapshot.scenario,calendar=scenario.farm.calendar,now=calendar.month*4+calendar.week;
   const [month,setMonth]=useState(calendar.month),[cropPage,setCropPage]=useState(0),[action,setAction]=useState<FieldPlanEdit>({kind:'plant',cropSlot:0});
+  // View object38c52..38c5a assigns the current month on every field entry,
+  // even when the same field is reopened. Merely raising the window does not.
+  const previousInspection=useRef(inspection);
+  useEffect(()=>{
+    if(previousInspection.current!==inspection&&inspection)setMonth(inspection.month);
+    previousInspection.current=inspection;
+  },[inspection]);
   // CUT selects an erase gesture; the original leaves the previous tool badge in place.
   const [badge,setBadge]=useState<FieldPlanEdit>({kind:'plant',cropSlot:0});
   function chooseAction(next:FieldPlanEdit){setAction(next);if(next.kind!=='clear')setBadge(next);}
