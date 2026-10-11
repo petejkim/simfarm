@@ -38,7 +38,7 @@ export async function openWindow(page: Page, key: string) {
     await page.mouse.click(bounds.x+(parked.x+0.5)*size,bounds.y+(parked.y+0.5)*size);
     return;
   }
-  if (key === 'options') { await openWindow(page, 'tools'); await page.getByRole('button', { name: 'Audio and tools', exact: true }).click(); return; }
+  if (key === 'options') { await page.locator('#options-menu-button').click(); await page.getByRole('menuitem', { name: 'Settings…', exact: true }).click(); return; }
   if (key === 'speed') { await page.locator(`#${key}-menu-button`).click(); return; }
   if (['bank', 'sell', 'evaluation', 'balance'].includes(key)) { await page.locator(`#window-${key}`).click(); return; }
   if (key === 'expert') {
@@ -48,9 +48,7 @@ export async function openWindow(page: Page, key: string) {
     // A covered Expert is still open; its menu item closes it before reopening.
     if(alreadyOpen){await page.locator('#windows-menu-button').click();await item.click();}return;
   }
-  if (key === 'about-project') {
-    await openWindow(page, 'options'); await page.getByRole('button', { name: 'Preservation progress', exact: true }).click(); return;
-  }
+
   await page.getByRole('button', { name: 'Edit tools and help', exact: true }).click();
   if(!await page.locator('[data-window=tools]').isVisible())await page.getByRole('button', { name: 'Advanced controls', exact: true }).click();
   await page.locator('[data-window=tools] .game-window-title').focus();

@@ -325,6 +325,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     {simulation && <SaveControls options={{
       checked: [audioOptions.music, audioOptions.sound, ...FARM_OPTIONS.map(key=>simulation.getSnapshot().scenario.farm[key]),audioOptions.buttonClicks],
       extraLabels:['Button Click Sounds'],
+      actions:[{label:'Settings…',choose:()=>windows.show('options')}],
       choose: index=>{
         if(index===0)audioOptions.toggleMusic();else if(index===1)audioOptions.toggleSound();else if(index===8)audioOptions.toggleButtonClicks();
         else {const option=FARM_OPTIONS[index-2];if(option){const enabled=!simulation.getSnapshot().scenario.farm[option];simulation.dispatch({type:'set-option',option,enabled});rememberPreference(option,enabled);}}
@@ -340,10 +341,12 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
         setInteractionMessage(result?.ok?'':result?.reason==='no-fields'?'Create a field before starting locusts.':result?.reason==='tornado-active'?'Locusts cannot start during a tornado.':'That disaster is already active.');
       },
     }} simulation={simulation} scenarioId={id} tiles={data?.tiles??null} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
-    <GameWindow windowKey="options" title="Audio and tools">{audioControls}
-      <button onClick={() => windows.show('tools')}>Edit tools</button>
-      <button onClick={() => windows.show('about-project')}>Preservation progress</button>
-    </GameWindow>
+    <GameWindow windowKey="options" title="Settings"><section className="browser-settings" aria-label="View and audio settings">
+      <label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
+        <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
+      </select></label>
+      {audioControls}
+    </section></GameWindow>
     <GameWindow windowKey="newgame" title="New Game" forced={newFarmOpen} onClose={() => setNewFarmOpen(false)}>
     {simulation && <NewFarmControls assets={assets} simulation={simulation} open={newFarmOpen} onOpenChange={setNewFarmOpen} onCreate={onLoad} />}
     </GameWindow>
@@ -355,11 +358,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       </select></label>
         <span id="map-status" role="status">{resource.status === 'ready' ? (id === null ? `${snapshot?.scenario.origin === 'original' ? 'Imported' : 'Generated'} farm · original terrain` : `Scenario ${id + 1} · original terrain`)
           : resource.status === 'error' ? resource.error : 'Loading map…'}</span></div>
-      <div><label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
-        <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
-      </select></label></div>
     </section>
-    <button onClick={() => windows.show('options')}>Audio and tools</button>
     </GameWindow>
     <GameWindow windowKey="speed" title="Speed">
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}

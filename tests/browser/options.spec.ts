@@ -15,10 +15,10 @@ const position=(page:Page)=>page.locator('#viewport').evaluate(el=>[el.scrollLef
 test('original Options plus native click toggle has real text, source geometry, live checks and keyboard navigation',async({page})=>{
   await start(page);const before=await save(page);await page.locator('#options-menu-button').focus();await page.keyboard.press('ArrowDown');
   const menu=page.getByRole('menu',{name:'Options',exact:true}),items=menu.getByRole('menuitemcheckbox');
-  expect(await menu.boundingBox()).toEqual({x:64,y:16,width:160,height:112});
+  expect(await menu.boundingBox()).toEqual({x:64,y:16,width:160,height:124});
   expect(await items.evaluateAll(els=>els.map(el=>[...el.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE).map(n=>n.textContent).join('')))).toEqual(['Music','Sound Effects','AutoBuy','AutoScroll','AutoDoze','AutoGoto','Messages','AutoLease','Button Click Sounds']);
   expect(await items.evaluateAll(els=>els.map(el=>el.getAttribute('aria-checked')))).toEqual(['true','true','true','true','false','true','true','true','true']);
-  await expect(items.nth(0)).toBeFocused();await page.keyboard.press('End');await expect(items.nth(8)).toBeFocused();await page.keyboard.press('Home');await page.keyboard.press('ArrowDown');await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');
+  await expect(items.nth(0)).toBeFocused();await page.keyboard.press('End');await expect(menu.getByRole('menuitem',{name:'Settings…',exact:true})).toBeFocused();await page.keyboard.press('Home');await page.keyboard.press('ArrowDown');await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');
   await expect(menu).toHaveCount(0);await expect(page.locator('#options-menu-button')).toBeFocused();
   const after=await save(page);before.scenario.farm.autoBuySeeds=false;expect(after).toEqual(before);
   await page.locator('#options-menu-button').click();await page.screenshot({path:'artifacts/browser-options.png'});await page.keyboard.press('Escape');await expect(menu).toHaveCount(0);
@@ -103,4 +103,21 @@ test('pointer and keyboard share one highlighted menu item',async({page})=>{
     const b=(await items.nth(2).boundingBox())!;await page.mouse.move(b.x+4,b.y+4);await expect(items.nth(2)).toBeFocused();expect(await highlighted()).toEqual([2]);
     await page.keyboard.press('Escape');
   }
+});
+
+test('Settings opens from Options, keeps native view/audio controls together and leaves the farm unchanged',async({page})=>{
+  await start(page);const before=await save(page),viewport=page.locator('#viewport'),initial=(await viewport.boundingBox())!;
+  await page.locator('#options-menu-button').click();
+  const entry=page.getByRole('menuitem',{name:'Settings…',exact:true});
+  await expect(entry).not.toHaveAttribute('aria-checked');await entry.focus();await page.keyboard.press('Enter');
+  const dialog=page.getByRole('dialog',{name:'Settings',exact:true});await expect(dialog).toBeVisible();
+  await expect(dialog.locator('#audio-status')).toBeVisible();await expect(dialog.locator('#volume')).toBeVisible();
+  await dialog.locator('#zoom').selectOption('2');await expect(page.locator('#world')).toHaveCSS('width','3072px');
+  await dialog.locator('#volume').fill('40');await dialog.locator('#music').selectOption('amain');
+  await expect(dialog.locator('#audio-status')).toContainText('Playing amain');
+  expect(await viewport.boundingBox()).toEqual(initial);expect(await save(page)).toEqual(before);
+  await dialog.locator('.game-window-title').focus();await page.keyboard.press('Escape');await expect(dialog).toBeHidden();
+  await openWindow(page,'options');await expect(dialog.locator('#volume')).toHaveValue('40');await expect(dialog.locator('#zoom')).toHaveValue('2');
+  await expect(page.getByRole('dialog',{name:'Preservation progress',exact:true})).toHaveCount(0);
+  await page.screenshot({path:'artifacts/browser-settings.png'});
 });
