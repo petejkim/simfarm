@@ -1,9 +1,28 @@
+import { validateCalendar, type FarmCalendar } from '../simulation/calendar';
 import type { TownEventState, TownEventDialog } from '../simulation/town-events';
 import type { TownEventMode } from './town-event-graphics';
 
 /** Native exact continuation includes fields omitted from original SSM and the
  * uploaded bank, which can differ from mode after insufficient rodeo funds. */
-export interface TownEventCheckpoint extends TownEventState { artworkMode: TownEventMode }
+export interface TownEventContinuation {
+  phase: 'weekly-water' | 'weekly-rollover';
+  before: FarmCalendar;
+  resumeRunning: boolean;
+}
+export interface TownEventCheckpoint extends TownEventState {
+  artworkMode: TownEventMode;
+  continuation: TownEventContinuation | null;
+}
+function decodeContinuation(value: unknown): TownEventContinuation | null {
+  if (value === null) return null;
+  const o = object(value), c = object(o.before);
+  if ((o.phase !== 'weekly-water' && o.phase !== 'weekly-rollover') || typeof o.resumeRunning !== 'boolean') fail();
+  const before = { day: number(c.day, 6), week: number(c.week, 3), month: number(c.month, 11),
+    year: number(c.year, 65535), season: number(c.season, 3) };
+  validateCalendar(before);
+  if (before.day !== 6) fail();
+  return { phase: o.phase, before, resumeRunning: o.resumeRunning };
+}
 function fail(): never { throw new Error('Invalid native save: town event'); }
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) fail();
@@ -36,7 +55,7 @@ export function decodeTownEventCheckpoint(value: unknown): TownEventCheckpoint {
     rodeoFrame: number(o.rodeoFrame, 3), lastTick: number(o.lastTick, 65535),
     rodeoX: number(o.rodeoX, 1), rodeoY: number(o.rodeoY, 1),
     animalType: species(o.animalType), participation: number(o.participation, 65535),
-    weeksRemaining: number(o.weeksRemaining, 255), pending,
+    weeksRemaining: number(o.weeksRemaining, 255), pending, continuation: decodeContinuation(o.continuation),
   };
   if (pending) {
     if (mode !== (pending.kind.startsWith('fair-') ? 2 : 1)) fail();

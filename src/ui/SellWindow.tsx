@@ -15,7 +15,7 @@ export function SellWindow({assets,snapshot,tiles,onCommand,focusRef}:{assets:Ga
   const rows=items.slice(offset,offset+3),product=items[index];
   const canvas=useRef<HTMLCanvasElement>(null);
   useEffect(()=>{if(canvas.current)drawSellPreview(canvas.current.getContext('2d')!,rows,tiles,assets.maskedTiles);},[snapshot,category,offset,tiles,assets.maskedTiles]);
-  const blocked=Boolean(snapshot.pendingTown||snapshot.finances.defaultDecision||snapshot.aircraftFlight);
+  const blocked=Boolean(snapshot.pendingTown||snapshot.townEvent.pending||snapshot.finances.defaultDecision||snapshot.aircraftFlight);
   const result=category==='harvest'?snapshot.lastSaleResult:snapshot.lastAssetSaleResult?.kind===category?snapshot.lastAssetSaleResult:null;
   const harvestCount=snapshot.scenario.inventory.filter(i=>i.active&&i.type>=168&&i.type<168+snapshot.scenario.cropFiles.length).length;
   function select(next:number){const i=Math.max(0,Math.min(items.length-1,next));setSelection({index:i,offset:Math.max(0,Math.min(Math.max(0,items.length-3),i<offset?i:i>offset+2?i-2:offset))});}

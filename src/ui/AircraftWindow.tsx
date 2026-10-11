@@ -18,7 +18,7 @@ export function AircraftWindow({assets,snapshot,selectedSlot,onSelect,onCommand,
   const windows=useWindows(),planes=snapshot.scenario.equipment.filter(e=>e.active&&e.type===8);
   const plane=planes.find(e=>e.slot===selectedSlot)??planes[0];
   const view=plane?aircraftWindowView(snapshot.scenario,snapshot.aircraftService,plane):null;
-  const blocked=Boolean(snapshot.pendingTown||snapshot.finances.defaultDecision||snapshot.aircraftFlight);
+  const blocked=Boolean(snapshot.pendingTown||snapshot.townEvent.pending||snapshot.finances.defaultDecision||snapshot.aircraftFlight);
   const quote=(action:AircraftServiceAction)=>plane?checkAircraftService(snapshot.scenario,snapshot.finances,snapshot.aircraftService,plane.slot,action):null;
   const service=(action:AircraftServiceAction)=>plane&&onCommand({type:'service-aircraft',slot:plane.slot,action});
   const base=quote({kind:'fuel'}),result=snapshot.lastAircraftServiceResult;

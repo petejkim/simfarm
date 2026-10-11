@@ -1,3 +1,4 @@
+import { declineTownEvents } from './support/town-events';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -57,7 +58,11 @@ test('save midway through new-field work and treatments continues through valuab
   }
   for (const game of [original, restored]) {
     game.dispatch({ type: 'set-paused', paused: true });
-    while (game.getSnapshot().daysAdvanced < 84) game.dispatch({ type: 'advance-day' });
+    for (let day = 0; game.getSnapshot().daysAdvanced < 84 && day < 84; day++) {
+      game.dispatch({ type: 'advance-day' });
+      declineTownEvents(game);
+    }
+    assert.equal(game.getSnapshot().daysAdvanced, 84);
     game.dispatch({ type: 'harvest-field', fieldSlot: result.slot });
   }
   restored = GameSimulation.load(restored.save(4), crops).simulation;
@@ -66,9 +71,13 @@ test('save midway through new-field work and treatments continues through valuab
   same(original, restored, 4);
   restored = GameSimulation.load(restored.save(4), crops).simulation;
   const inventory = original.getSnapshot().scenario.inventory.find(i => i.active && i.type === 168 && !priorItems.has(i.slot))!;
-  assert.ok(inventory); assert.equal(original.getSnapshot().storedHarvestValues[inventory.slot], 1831);
+  assert.ok(inventory);
+  // Declined rodeo still animates and consumes the recovered simulation RNG.
+  const value = original.getSnapshot().storedHarvestValues[inventory.slot]!;
+  assert.equal(value, 911);
+  const cash = original.getSnapshot().scenario.farm.cash;
   for (const game of [original, restored]) game.dispatch({ type: 'sell-harvest', inventorySlot: inventory.slot });
-  same(original, restored, 4); assert.equal(restored.getSnapshot().scenario.farm.cash, 23220);
+  same(original, restored, 4); assert.equal(restored.getSnapshot().scenario.farm.cash, cash + value);
 }, 15000);
 
 test('all four treatments, tick rollover and fifth-year weather retain exact continuation', () => {

@@ -1,3 +1,4 @@
+import { declineTownEvents } from './support/town-events';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -47,7 +48,7 @@ test('fertilizer makes a newly purchased original plot produce a valuable stored
     { ok: true, source: 'purchased', cost: 275, fieldSlot: result.slot, treatment: 'fertilizer' });
   const ordered = game.getSnapshot();
   game.tick(12000); assert.equal(game.getSnapshot(), ordered); // Paused work stays paused.
-  for (let day = 2; day < 84; day++) game.dispatch({ type: 'advance-day' });
+  for (let day = 2; day < 84; day++) { game.dispatch({ type: 'advance-day' }); declineTownEvents(game); }
   const grown = game.getSnapshot();
   assert.equal(grown.scenario.fields[result.slot].state, 4);
   assert.ok(grown.scenario.fields[result.slot].bytes[29] > 128);
@@ -57,15 +58,14 @@ test('fertilizer makes a newly purchased original plot produce a valuable stored
   game.dispatch({ type: 'advance-day' }); // The next week completes harvest and replants four original corn fields.
   const stored = game.getSnapshot(), item = stored.scenario.inventory.find(i => i.active && i.type === 168 && !priorItems.has(i.slot))!;
   assert.ok(item);
-  // Strict source days include one more logical tick than the former >= gate;
-  // the shared random stream now yields a different stress/weekly-price path.
-  assert.deepEqual([item.quantity, item.loss, stored.cropMarketPrices[0]], [289, 35873, 147]);
-  assert.equal(stored.storedHarvestValues[item.slot], Math.floor(289 * 14 * (65535 - 35873) / 65536));
-  assert.equal(stored.storedHarvestValues[item.slot], 1831);
+  // Source rodeo animation consumes the shared RNG even after declining,
+  // so stress and weekly price follow the restored event-inclusive path.
+  assert.deepEqual([item.quantity, item.loss, stored.cropMarketPrices[0]], [289, 36002, 75]);
+  assert.equal(stored.storedHarvestValues[item.slot], Math.floor(289 * 7 * (65535 - 36002) / 65536));
+  assert.equal(stored.storedHarvestValues[item.slot], 911);
   const cash = stored.scenario.farm.cash;
   game.dispatch({ type: 'sell-harvest', inventorySlot: item.slot });
-  assert.equal(game.getSnapshot().scenario.farm.cash, cash + 1831);
-  assert.equal(game.getSnapshot().scenario.farm.cash, 23220);
+  assert.equal(game.getSnapshot().scenario.farm.cash, cash + 911);
   assert.equal(game.getSnapshot().scenario.fields[result.slot].state, 0);
 });
 
@@ -170,8 +170,13 @@ test('simulation owns game state, publishes stable detached snapshots, and pause
 
 test('manual and timed schedules produce the same crop, climate and calendar state', () => {
   const input = farm(), manual = new GameSimulation(input.scenario, input.crops), timed = new GameSimulation(input.scenario, input.crops);
-  for (let i = 0; i < 100; i++) manual.dispatch({ type: 'advance-day' });
-  timed.dispatch({ type: 'set-paused', paused: false }); timed.tick(400000);
+  timed.dispatch({ type: 'set-paused', paused: false });
+  for (let i = 0; i < 100; i++) {
+    manual.dispatch({ type: 'advance-day' }); declineTownEvents(manual);
+    timed.tick(4000); declineTownEvents(timed);
+  }
+  assert.equal(manual.getSnapshot().daysAdvanced, 100);
+  assert.equal(timed.getSnapshot().daysAdvanced, 100);
   const a = manual.getSnapshot(), b = timed.getSnapshot();
   assert.deepEqual(a.scenario, b.scenario); assert.deepEqual(a.weather, b.weather);
   assert.equal(a.scenario.fields[1].state, 4); // The original plan has harvested and replanted corn.
@@ -236,6 +241,7 @@ test('all eight original farms advance a year without invalid terrain or missing
     const input = farm(i), game = new GameSimulation(input.scenario, input.crops);
     for (let day = 0; day < 336; day++) {
       game.dispatch({ type: 'advance-day' });
+      declineTownEvents(game);
       if (game.getSnapshot().pendingTown) game.dispatch({ type: 'choose-town', choice: 'residential' });
     }
     const snapshot = game.getSnapshot();
@@ -327,7 +333,7 @@ test('an invalid harvest order leaves cash, field work and inventory unchanged',
 test('original corn completes a positive-value plant-grow-harvest-store-sell cycle and releases its storage', () => {
   const input = farm(4), game = new GameSimulation(input.scenario, input.crops);
   game.dispatch({ type: 'plant-field', fieldSlot: 1, cropSlot: 0 });
-  for (let day = 0; day < 84; day++) game.dispatch({ type: 'advance-day' });
+  for (let day = 0; day < 84; day++) { game.dispatch({ type: 'advance-day' }); declineTownEvents(game); }
   const grown = game.getSnapshot();
   assert.equal(grown.scenario.fields[1].state, 4); assert.ok(grown.fieldHarvestEstimates[1]!.value > 0);
   const previousLots = new Set(grown.scenario.inventory.filter(i => i.active).map(i => i.slot));

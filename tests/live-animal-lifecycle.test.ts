@@ -1,3 +1,4 @@
+import { declineTownEvents } from './support/town-events';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { GameSimulation } from './support/game';
@@ -9,7 +10,7 @@ test('a source-stored cow matures at month end, starts pregnancy and gives birth
   let s = game.getSnapshot(), parent = s.scenario.animals[1];
   assert.equal(parent.ageWeeks, 81); assert.equal(parent.bytes[18], 1); assert.equal(parent.flags & 3, 3);
   assert.equal(parent.bytes[28], 0); assert.deepEqual(s.scenario.farm.calendar, { day: 0, week: 0, month: 1, season: 0, year: 1993 });
-  for (let d = 0; d < 40 * 7; d++) game.dispatch({ type: 'advance-day' });
+  for (let d = 0; d < 40 * 7; d++) { game.dispatch({ type: 'advance-day' }); declineTownEvents(game); }
   s = game.getSnapshot(); parent = s.scenario.animals[1];
   assert.equal(parent.bytes[28], 40); assert.equal(s.scenario.animals.filter(a => a.active).length, 1);
   const saved = game.save(4), restored = GameSimulation.load(saved, f.crops).simulation;

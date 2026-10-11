@@ -1,3 +1,4 @@
+import { declineTownEvents } from './support/town-events';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { waterDisasterFixture } from './support/water-disasters';
@@ -29,7 +30,7 @@ test('live flood saves mid-scan, destroys fields and storage, retains unknown wo
   const a = GameSimulation.load(writeNativeSave(state, 4), f.crops).simulation;
   const checkpoint = a.save(4), b = GameSimulation.load(checkpoint, f.crops).simulation;
   const restoredEvents: GameEvent[] = []; b.subscribeEvents(e => restoredEvents.push(e));
-  assert.equal(saved(a).version, 26); assert.equal(b.save(4), checkpoint);
+  assert.equal(saved(a).version, 27); assert.equal(b.save(4), checkpoint);
   a.tick(1201); b.tick(400); b.tick(801); assert.deepEqual(saved(a), saved(b));
   for (const game of [a, b]) {
     game.dispatch({ type: 'set-disasters-enabled', enabled: false });
@@ -120,7 +121,7 @@ test('all eight source farms remain loadable through a live flood and70 days of 
     const crops = world.cropFiles.map(file => readCrop(file.replace('.crp', ''), source(`CROPS/${file.toUpperCase()}`)));
     const g = new GameSimulation(world, crops); g.dispatch({ type: 'start-disaster', kind: 'flood' });
     for (let day = 0; day < 70; day++) {
-      g.dispatch({ type: 'advance-day' });
+      g.dispatch({ type: 'advance-day' }); declineTownEvents(g);
       if (day === 0 || day === 2 || day === 27 || day === 34 || day === 62 || day === 69) {
         const checkpoint = g.save(id);
         assert.deepEqual(JSON.parse(GameSimulation.load(checkpoint, crops).simulation.save(id)), JSON.parse(checkpoint));

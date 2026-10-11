@@ -70,7 +70,7 @@ test('a generated restart checkpoint preserves its original archive and continue
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   await expect(page.locator('#farm-cash')).toHaveText('$40,000');
   const initial = await save(page, 'initial');
-  expect(initial.version).toBe(26); expect(initial.runtime.newFarm.provenance.kind).toBe('restart');
+  expect(initial.version).toBe(27); expect(initial.runtime.newFarm.provenance.kind).toBe('restart');
   expect(initial.runtime.setup.sourceArchive).toBe(source('SCEN4.SSM').toString('hex'));
   expect(initial).toEqual(JSON.parse(game.save(null)));
   for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
@@ -162,7 +162,7 @@ test('v20 climate selection stays unknown through browser import until an explic
   useOriginalCatalog(legacy); legacy.version = 20; delete legacy.runtime.setup.climateSelection;
   await load(page, JSON.stringify(legacy));
   const migrated = await save(page, 'v20-climate');
-  expect(migrated.version).toBe(26); expect(migrated.runtime.setup.climateSelection).toBeNull();
+  expect(migrated.version).toBe(27); expect(migrated.runtime.setup.climateSelection).toBeNull();
   expect(migrated.scenario).toEqual({ ...JSON.parse(game.save(null)).scenario, farm: { ...legacy.scenario.farm, equipmentPacingByte: null } }); expect(migrated.runtime.random).toEqual(legacy.runtime.random);
   // SSM tables are unrelated to the retained chooser level bytes.
   await page.locator('#load-farm-file').setInputFiles({ name: 'SCEN4.SSM', mimeType: 'application/octet-stream', buffer: source('SCEN4.SSM') });

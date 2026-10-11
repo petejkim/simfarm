@@ -42,7 +42,7 @@ function ScheduleEditor({assets,snapshot,tiles,field,inspection,focusRef,onSelec
   const canvas=useRef<HTMLCanvasElement>(null),crop=(slot:number)=>assets.catalog.crops.find(c=>`${c.id}.crp`===scenario.cropFiles[slot])!;
   const view=field?scheduleFieldView(scenario,field,crop(field.cropSlot),month):null;
   const weeks=Array.from({length:12},(_,i)=>month*4+i),fields=scenario.fields.filter(f=>f.active);
-  const blocked=Boolean(snapshot.pendingTown||snapshot.finances.defaultDecision||snapshot.aircraftFlight);
+  const blocked=Boolean(snapshot.pendingTown||snapshot.townEvent.pending||snapshot.finances.defaultDecision||snapshot.aircraftFlight);
   const date=(row:number)=>`${months[Math.floor(row%48/4)]} ${(row%4)*7+1}–${(row%4+1)*7}, ${(calendar.year+Math.floor(row/48))&65535}`;
   function description(row:number){
     if(!field)return 'No field selected';

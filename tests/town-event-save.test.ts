@@ -7,7 +7,7 @@ import { beginTownCalendarEvent, resolveTownEventDialog, advanceTownEventWeek } 
 import { animateTownEventMap } from '../src/simulation/town-event-map';
 import { FarmRandom } from '../src/simulation/random';
 const initial = (): TownEventCheckpoint => ({ mode: 0, artworkMode: 1, rodeoFrame: 2, lastTick: 65532,
-  rodeoX: 1, rodeoY: 0, animalType: 0, participation: 0, weeksRemaining: 0, pending: null });
+  rodeoX: 1, rodeoY: 0, animalType: 0, participation: 0, weeksRemaining: 0, pending: null, continuation: null });
 
 test('event checkpoint preserves every dialog and differing mode/artwork without aliasing', () => {
   const samples: TownEventCheckpoint[] = [initial(),

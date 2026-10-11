@@ -1,3 +1,4 @@
+import { beginTownCalendarEvent, advanceTownEventWeek, resolveTownEventDialog, type TownEventEffects } from './town-events';
 import { animateTownEventMap, validateTownEventMap } from './town-event-map';
 import { importTownEvent } from './town-event-lifecycle';
 import { encodeTownEventCheckpoint, type TownEventCheckpoint } from '../formats/town-event-save';
@@ -181,6 +182,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'borrow'; amount: number } | { type: 'repay-loan' }
   | { type: 'resolve-default'; choice: 'restart' | 'exit' }
   | { type: 'choose-town'; choice: TownChoice }
+  | { type: 'resolve-town-event'; accept: boolean }
   | { type: 'edit-field-plan'; fieldSlot: number; week: number; action: FieldPlanEdit }
   | { type: 'set-speed'; speed: number }
   | { type: 'start-disaster'; kind: MovingDisasterKind | WaterDisasterKind | StationaryDisasterKind | 'wind' }
@@ -477,6 +479,24 @@ export class GameSimulation {
       if (!['autoBuySeeds','autoRent','autoClear','autoScroll','autoGoto','messages'].includes(command.option) || typeof command.enabled !== 'boolean') throw new Error('Invalid farm option');
       this.scenario.farm[command.option] = command.enabled; this.publish(); return;
     }
+    if (command.type === 'resolve-town-event') {
+      const continuation = this.townEvent.continuation;
+      if (!continuation || !this.townEvent.pending) return;
+      if (typeof command.accept !== 'boolean') throw new Error('Invalid town event choice');
+      this.applyTownEventEffects(resolveTownEventDialog(this.scenario, this.finances.town,
+        this.townEvent, this.finances.annual, command.accept));
+      this.townEvent.continuation = null;
+      this.paused = !continuation.resumeRunning; this.elapsed = 0;
+      const next = advanceCalendarDay(continuation.before);
+      if (continuation.phase === 'weekly-water') this.finishWeeklyWater(continuation.before, next);
+      else this.finishWeeklyRollover(continuation.before, next);
+      // Imported countdowns can expire at year-end and transfer ownership to
+      // the annual town chooser. Its acknowledgement must finish this tick.
+      if (this.pendingTown) this.pendingTown.resumeTickTail = true;
+      this.finishTick();
+      this.publish(); return;
+    }
+    if (this.townEvent.pending) return;
     if (command.type === 'choose-town') {
       const pending = this.pendingTown;
       if (!pending) return;
@@ -488,6 +508,7 @@ export class GameSimulation {
         this.finishWeek(this.scenario.farm.calendar, true);
         this.finishDay(this.scenario.farm.calendar);
         this.paused = !pending.resumeRunning; this.elapsed = 0;
+        if (pending.resumeTickTail) this.finishTick();
       }
       this.publish(); return;
     }
@@ -654,7 +675,7 @@ export class GameSimulation {
   }
 
   private advanceTick(): void {
-    if (this.finances.defaultDecision || this.pendingTown) return;
+    if (this.finances.defaultDecision || this.pendingTown || this.townEvent.pending) return;
     const s = this.scenario, tick = s.farm.timerTicks = (s.farm.timerTicks + 1) & 0xffff;
     s.farm.animationTicks = (s.farm.animationTicks + 1) & 0xffff;
     if (this.aircraftFlight) {
@@ -682,6 +703,13 @@ export class GameSimulation {
     this.requestCollisionSounds();
     this.dayTicks = (this.dayTicks + 1) & 65535;
     if (calendarDayDue(this.dayTicks, s.farm.dayDelayTicks)) { this.dayTicks = 0; this.advanceDay(); }
+    this.finishTick();
+  }
+
+  /** Resume only the interrupted tick tail; never increment clocks/equipment. */
+  private finishTick(): void {
+    if (this.finances.defaultDecision || this.pendingTown || this.townEvent.pending) return;
+    const s = this.scenario;
     // 0xbd42 follows the calendar and equipment calls. Modal decisions suspend
     // the remaining work; native Pause freezes the same logical animation clock.
     if (!this.finances.defaultDecision && !this.pendingTown) updateIrrigation(s, s.irrigation, s.farm.animationTicks, this.weather.wind, status => {
@@ -771,6 +799,8 @@ export class GameSimulation {
       }
       this.animalLifecycleNotices = [...this.animalLifecycleNotices, ...advanceAnimalGestation(s, this.finances, this.random)].slice(-20); // 0xbe81.
       this.requestMusic(updateReportedFieldStatus(s, this.finances.statistics)); // 0xbe8b, before water/status dispatch 0xbea3.
+      this.applyTownEventEffects(advanceTownEventWeek(s, this.finances.town, this.townEvent, this.random));
+      if (this.suspendTownEvent('weekly-water', before, next.calendar)) return;
       this.finishWeeklyWater(before, next);
       return;
     }
@@ -788,6 +818,9 @@ export class GameSimulation {
     // 0xc920 increments week; 0xcbbd dispatches before 0xcc10 normalizes month/week.
     // At year-end this executes old plan row 48 and completes the final week's work.
     s.farm.calendar = { ...before, day: 0, week: before.week + 1, season: next.calendar.season };
+    this.applyTownEventEffects(beginTownCalendarEvent(s, this.finances.town, this.townEvent,
+      before.month, before.week + 1, s.farm.messages, this.random));
+    if (this.suspendTownEvent('weekly-rollover', before, next.calendar)) return;
     this.finishWeeklyRollover(before, next);
   }
 
@@ -795,6 +828,7 @@ export class GameSimulation {
    * Existing default/annual-town continuations retain their later ownership. */
   private finishWeeklyRollover(before: FarmCalendar, next: ReturnType<typeof advanceCalendarDay>): void {
     const s = this.scenario, w = this.weather;
+    s.farm.calendar = { ...before, day: 0, week: before.week + 1, season: next.calendar.season };
     developTown(s, this.finances.town, this.townLayouts, w.soilMoisture, this.random); // 0xcbb3, before field orders.
     this.lastScheduleResult = dispatchFieldSchedule(s, this.crops, this.market, this.random, this.equipmentRuntime, w.soilMoisture);
     // 0xcbc6 indexes temperature before month/year rollover. Index 240 aliases DS:4368 (wind).
@@ -829,6 +863,19 @@ export class GameSimulation {
     }
     this.finishWeek(next.calendar, next.monthEnded);
     this.finishDay(next.calendar);
+  }
+
+  private applyTownEventEffects(effects: TownEventEffects): void {
+    if (effects.artworkMode !== undefined) this.townEvent.artworkMode = effects.artworkMode;
+    if (effects.music) this.events.push({ type: 'music', track: effects.music });
+  }
+
+  private suspendTownEvent(phase: 'weekly-water' | 'weekly-rollover', before: FarmCalendar, next: FarmCalendar): boolean {
+    if (!this.townEvent.pending) return false;
+    this.townEvent.continuation = { phase, before: { ...before }, resumeRunning: !this.paused };
+    this.scenario.farm.calendar = { ...next };
+    this.paused = true; this.elapsed = 0;
+    return true;
   }
 
   private finishYear(): void {

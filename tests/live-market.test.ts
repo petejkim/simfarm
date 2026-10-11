@@ -1,3 +1,4 @@
+import { declineTownEvents } from './support/town-events';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -96,7 +97,7 @@ test('v1–15 scenario migrations preserve prices/RNG, mark missing history and 
   }
   const old = structuredClone(current); old.version = 15; delete old.runtime.market;
   const g = GameSimulation.load(JSON.stringify(old), f.crops).simulation; g.dispatch({ type: 'set-disasters-enabled', enabled: false });
-  for (let day = 0; day < 29 * 7; day++) g.dispatch({ type: 'advance-day' });
+  for (let day = 0; day < 29 * 7; day++) { g.dispatch({ type: 'advance-day' }); declineTownEvents(g); }
   assert.ok(g.getSnapshot().market.history.every(h => h.every(p => p !== null)));
 });
 

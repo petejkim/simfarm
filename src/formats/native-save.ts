@@ -12,7 +12,7 @@ import { createWaterDisasters, validateWaterDisasters, type WaterDisasterState }
 import { readScenario, type Scenario } from './scenario';
 import { FieldSchedule, FIELD_SCHEDULE_SIZE } from './field-schedule';
 import type { SavedFarmState } from './scenario-state';
-import { validateCalendar } from '../simulation/calendar';
+import { advanceCalendarDay, validateCalendar } from '../simulation/calendar';
 import { FarmRandom } from '../simulation/random';
 import type { WeatherState } from '../simulation/weather';
 import { SIMULATION_SPEEDS, type SimulationState, type PendingTownExpansion } from '../simulation/save-state';
@@ -174,6 +174,21 @@ function decodeWaterDisasters(value: unknown): WaterDisasterState {
     rawFF6C: number(w.rawFF6C, 0, 65535, 'flood raw FF6C'), rawFF6E: number(w.rawFF6E, 0, 65535, 'flood raw FF6E') };
   validateWaterDisasters(state); return state;
 }
+/** A modal event checkpoints the already-advanced public date, retaining the
+ * original weekly date solely to resume the correct source call boundary. */
+function validateTownEventContinuation(state: SimulationState): void {
+  const { pending, continuation: c } = encodeTownEventCheckpoint(state.townEvent);
+  if (!pending && !c) return;
+  if (!pending || !c || !state.paused || state.elapsed !== 0 || state.dayTicks !== 0 ||
+    state.pendingTown || state.finances.defaultDecision || state.aircraftFlight || !state.finances.town.recreationCount)
+    fail('town event continuation');
+  const isResult = pending.kind === 'fair-result' || pending.kind === 'rodeo-result';
+  if (c.phase !== (isResult ? 'weekly-water' : 'weekly-rollover')) fail('town event continuation phase');
+  const next = advanceCalendarDay(c.before).calendar, current = state.scenario.farm.calendar;
+  if (Object.keys(next).some(key => next[key as keyof typeof next] !== current[key as keyof typeof next])) fail('town event continuation date');
+  if (!isResult && (c.before.week !== 3 || c.before.month !== (pending.kind === 'rodeo-entry' ? 5 : 8))) fail('town event entry date');
+}
+
 export function writeNativeSave(state: SimulationState, scenarioId: number | null): string {
   if (state.scenario.origin === 'generated') {
     if (scenarioId !== null || state.scenario.sourceBytes !== null || state.scenario.version !== null || !state.newFarm || state.retainedSetup !== null) fail('generated provenance');
@@ -181,10 +196,10 @@ export function writeNativeSave(state: SimulationState, scenarioId: number | nul
     if (scenarioId !== null) number(scenarioId, 0, 7, 'scenario ID');
     if (state.scenario.origin !== 'original' || !state.scenario.sourceBytes || state.newFarm !== null) fail('original provenance');
   }
-  if (state.townEvent.pending) fail('town event continuation not yet supported');
+  validateTownEventContinuation(state);
   if (state.townEvent.mode) validateTownEventMap(state.scenario, state.finances.town, state.townEvent);
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 26, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 27, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, townEvent: encodeTownEventCheckpoint(state.townEvent), setup: { ...state.setup, sourceArchive: state.setup.sourceArchive ? hex(state.setup.sourceArchive) : null }, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -194,7 +209,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].includes(save.version)) fail('unsupported format or version');
   const s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const scenarioId = s.origin === 'generated' || (save.version >= 18 && save.scenarioId === null) ? null : number(save.scenarioId, 0, 7, 'scenario ID');
   if (s.origin === 'generated' && save.scenarioId !== null) fail('generated scenario ID');
@@ -224,7 +239,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   const state: SimulationState = { scenario: s, setup, newFarm, retainedSetup, crops: r.crops.map(c => numbers(c, 128, 0, 255, 'crop bytes')),
     originalPause: save.version >= 23 ? decodeOriginalPause(r.originalPause) : unknownOriginalPause(),
     townLayoutBytes: save.version >= 5 ? numbers(r.townLayoutBytes, TOWN_LAYOUT_BYTES, 0, 255, 'town layout bytes') : null,
-    townEvent: save.version >= 26 ? decodeTownEventCheckpoint(r.townEvent) : coldTownEvent(),
+    townEvent: save.version >= 26 ? decodeTownEventCheckpoint(save.version === 26 ? { ...object(r.townEvent, 'town event'), continuation: null } : r.townEvent) : coldTownEvent(),
     pendingTown: save.version >= 6 ? decodePendingTown(r.pendingTown) : null,
     random: rng.snapshot(), weather: decodeWeather(r.weather), daysAdvanced: number(r.daysAdvanced, 0, Number.MAX_SAFE_INTEGER, 'days advanced'),
     paused: boolean(r.paused, 'paused'), speed, elapsed: number(r.elapsed, 0, 1, 'fractional ticks', false),
@@ -243,7 +258,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
       ...(save.version === 3 ? { defaultDecision: null } : {}),
       ...(save.version < 8 ? { homestead: readHomestead(originalSource(s)) } : {}),
       ...(save.version < 7 ? { statistics: readAnnualStatistics(originalSource(s)) } : {}) }) : readFinancialState(originalSource(s)) };
-  if (state.townEvent.pending) fail('town event continuation not yet supported');
+  validateTownEventContinuation(state);
   if (state.townEvent.mode) validateTownEventMap(state.scenario, state.finances.town, state.townEvent);
   if (state.finances.defaultDecision && !state.paused) fail('unpaused terminal default');
   if (state.aircraftFlight && (state.finances.defaultDecision || state.pendingTown)) fail('flight during modal decision');
@@ -294,7 +309,8 @@ function decodePendingTown(value: unknown): PendingTownExpansion | null {
   if (value === null) return null;
   const p = object(value, 'pending town'), site = object(p.site, 'pending town site');
   if (p.phase !== 'annual-reset') fail('pending town phase');
-  return { phase: 'annual-reset', resumeRunning: boolean(p.resumeRunning, 'pending town run state'),
+  if (p.resumeTickTail !== undefined && p.resumeTickTail !== true) fail('pending town tick tail');
+  return { ...(p.resumeTickTail === true ? { resumeTickTail: true as const } : {}), phase: 'annual-reset', resumeRunning: boolean(p.resumeRunning, 'pending town run state'),
     site: { regionX: number(site.regionX, 0, 11, 'pending town X'), regionY: number(site.regionY, 0, 11, 'pending town Y') } };
 }
 

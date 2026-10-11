@@ -16,7 +16,7 @@ export function LoanPanel({ snapshot, onCommand, artwork, onClose, panelRef }: {
   const [amount, setAmount] = useState(String(snapshot.finances.loan.selectedAmount)), [help, setHelp] = useState(false);
   const { finances: f, availableLoan, lastLoanResult: result } = snapshot, decision = f.defaultDecision;
   const requested = Number(amount), valid = /^\d+$/.test(amount) && Number.isSafeInteger(requested) && requested <= availableLoan;
-  const blocked = Boolean(decision || snapshot.pendingTown || snapshot.aircraftFlight);
+  const blocked = Boolean(decision || snapshot.pendingTown || snapshot.townEvent.pending || snapshot.aircraftFlight);
   function enter(value: string) {
     if (blocked) return;
     if (/^\d*$/.test(value)) setAmount(value === '' ? '' : String(Math.min(Number(value), availableLoan)));

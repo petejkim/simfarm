@@ -18,7 +18,7 @@ const restore = (text: string) => GameSimulation.load(text, crops, layouts).simu
 test('session setup owns retained terrain history across cold entry, generation, original import and native restoration', () => {
   const old = original(); assert.deepEqual(old.getSnapshot().setup, { terrainHistory: initialTerrainHistory(9029), sourceArchive: null, previewRaw: null, climateSelection: { precipitation: 0, temperature: 0, wind: 0 } });
   const generated = GameSimulation.createNew(newFarmOptions, assets), checkpoint = parsed(generated);
-  assert.equal(checkpoint.version, 26);
+  assert.equal(checkpoint.version, 27);
   assert.deepEqual(checkpoint.runtime.setup.terrainHistory, checkpoint.runtime.newFarm.terrainHistory);
   const imported = generated.importOriginal(source('SCEN6.SSM'), crops).simulation;
   assert.deepEqual(imported.getSnapshot().setup, generated.getSnapshot().setup);

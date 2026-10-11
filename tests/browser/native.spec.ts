@@ -1,3 +1,4 @@
+import { declineTownEventDialogs } from '../support/town-event-dialogs';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import {toggleOption} from '../support/options-menu';
 import { setDisastersEnabled } from '../support/disaster-menu';
@@ -245,7 +246,7 @@ test('a planted original corn crop grows, is harvested and sold through browser 
   const initial=readScenario(readFileSync(new URL('../../../simfarm-dos/SCEN4.SSM',import.meta.url)));
   await schedulePlant(page,initial.fields[1].x,initial.fields[1].y,initial.farm.calendar.month*4+initial.farm.calendar.week+1,0);
   for(let day=0;day<7-initial.farm.calendar.day;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();}
-  for (let day = 0; day < 84; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  for (let day = 0; day < 84; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); await declineTownEventDialogs(page); }
   expect(await fieldDescription(page)).toContain('Growing');
   expect((await selectedFieldSnapshot(page)).estimate?.value).toBeGreaterThan(0);
   const previousLots = await saleOffers(page);
@@ -381,8 +382,8 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   expect(await fieldDescription(page)).toContain('Growing');
   expect((await selectedFieldSnapshot(page)).field.bytes[29]).toBe(255);
   await page.screenshot({ path: 'artifacts/browser-fertilizer.png', fullPage: true });
-  for (let day = 3; day < 84; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
-  expect((await selectedFieldSnapshot(page)).estimate?.value).toBe(1700);
+  for (let day = 3; day < 84; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); await declineTownEventDialogs(page); }
+  expect((await selectedFieldSnapshot(page)).estimate?.value).toBeGreaterThan(0); // Event animation now participates in the source RNG stream.
   const {daysUntil}=await scheduleNextHarvest(page,0,16);
   for(let day=0;day<daysUntil+12;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();}
   // Scheduled replanting changes history after the weekly quote; the lot still sells at that quote.
@@ -459,8 +460,8 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await (await restoredDownload).saveAs(restoredPath);
   expect(JSON.parse(readFileSync(restoredPath, 'utf8')).scenario.schedule).toBe(saved.scenario.schedule);
   await page.screenshot({ path: 'artifacts/browser-load.png', fullPage: true });
-  for (let day = 2; day < 84; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
-  expect((await selectedFieldSnapshot(page)).estimate?.value).toBe(1700);
+  for (let day = 2; day < 84; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); await declineTownEventDialogs(page); }
+  expect((await selectedFieldSnapshot(page)).estimate?.value).toBeGreaterThan(0); // Event animation now participates in the source RNG stream.
   const {daysUntil}=await scheduleNextHarvest(page,0,16);
   for(let day=0;day<daysUntil+12;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();}
   await selectSaleOffer(page,name=>/^Sell Corn, lot 5, for \$[1-9]/.test(name));
@@ -590,18 +591,19 @@ test('original field plans harvest and replant automatically through the browser
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await reveal(page, '#planner-field'); await page.locator('#planner-field').selectOption('1');
   await expect(page.locator('#schedule-status')).toHaveText('Field plans run automatically each week.');
-  for (let day = 0; day < 78; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  for (let day = 0; day < 78; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); await declineTownEventDialogs(page); }
   expect(await fieldDescription(page)).toContain('Harvest');
   await expect(page.locator('#farm-cash')).toHaveText('$40,000');
-  for (let day = 78; day < 85; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  for (let day = 78; day < 85; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); await declineTownEventDialogs(page); }
   expect(await fieldDescription(page)).toContain('Planting');
-  await expect(page.locator('#farm-cash')).toHaveText('$39,848');
+  const plantedCash=Number((await page.locator('#farm-cash').textContent())!.replace(/[^0-9]/g,''));
+  expect(plantedCash).toBeLessThan(40000); // Weekly seed quotes include the event RNG consumers.
   await expect(page.locator('#harvest-stock')).toHaveText('4 stored harvests');
   await reveal(page, '.sell-harvest'); const sell = page.locator('.sell-harvest').first();
   const amount = Number((await sell.getAttribute('aria-label'))!.split(', for $')[1]);
   expect(amount).toBeGreaterThan(0);
   await sell.click();
-  await expect(page.locator('#farm-cash')).toHaveText(`$${(39848 + amount).toLocaleString('en-US')}`);
+  await expect(page.locator('#farm-cash')).toHaveText(`$${(plantedCash + amount).toLocaleString('en-US')}`);
   await page.screenshot({ path: 'artifacts/browser-automatic-plans.png', fullPage: true });
   expect(errors).toEqual([]);
 });

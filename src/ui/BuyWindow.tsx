@@ -12,7 +12,7 @@ export function BuyWindow({ assets, snapshot, tiles, onBuy }: { assets: GameAsse
   const product = shopProduct(snapshot.scenario,snapshot.finances,assets.catalog.crops,assets.buyCatalog,assets.itemText,products[index] ?? products[0]);
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => { if (canvas.current) drawShopPreview(canvas.current.getContext('2d')!,product,tiles,assets.maskedTiles); }, [product.type, product.tile, product.width, product.height, tiles, assets.maskedTiles]);
-  const blocked = Boolean(snapshot.pendingTown || snapshot.finances.defaultDecision || snapshot.aircraftFlight);
+  const blocked = Boolean(snapshot.pendingTown || snapshot.townEvent.pending || snapshot.finances.defaultDecision || snapshot.aircraftFlight);
   function cycle(direction: number) { setIndex(value => (value+direction+products.length)%products.length); }
   return <GameWindow windowKey="buy" title="Buy">
     <section className="buy-window" aria-label="Buy catalog" onKeyDown={event => {

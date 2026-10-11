@@ -10,7 +10,7 @@ export function ExamineWindow({assets,snapshot,tiles,position,onCommand}:{assets
   const canvas=useRef<HTMLCanvasElement>(null),world=snapshot.scenario;
   const view=position?examineObject(world,snapshot.finances,assets.catalog.crops,assets.buyCatalog,assets.examineData,assets.itemText,position.x,position.y):null;
   const building=position&&findBuilding(world,position.x,position.y);
-  const blocked=Boolean(snapshot.pendingTown||snapshot.finances.defaultDecision||snapshot.aircraftFlight);
+  const blocked=Boolean(snapshot.pendingTown||snapshot.townEvent.pending||snapshot.finances.defaultDecision||snapshot.aircraftFlight);
   useEffect(()=>{if(view&&canvas.current)drawExamine(canvas.current.getContext('2d')!,view,assets.examineArtwork,assets.buyCards,tiles,assets.maskedTiles,assets.catalog.palette);},[snapshot,position,tiles,assets]);
   return <GameWindow windowKey="examine" title="Examine">
     {view&&<section className="examine-window" aria-label="Object information" data-kind={view.kind}>

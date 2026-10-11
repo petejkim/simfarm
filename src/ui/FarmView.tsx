@@ -1,3 +1,4 @@
+import { TownEventMessage } from './TownEventMessage';
 import { BuildingMessage } from './BuildingMessage';
 import {FARM_OPTIONS,applyPreferredOptions,rememberPreference} from './preferences';
 import {tilesForWeather} from '../assets/weather-tiles';
@@ -226,7 +227,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
   function beginPurchase(product: ShopProduct) {
     objectMove.cancel();construction.cancel();bulldoze.cancel();
     setFieldMenu(null);setFieldMapTool(null);
-    if (!simulation || !snapshot || snapshot.pendingTown || snapshot.finances.defaultDecision || snapshot.aircraftFlight) return;
+    if (!simulation || !snapshot || snapshot.pendingTown || snapshot.townEvent.pending || snapshot.finances.defaultDecision || snapshot.aircraftFlight) return;
     setBuyMessage('');
     if (product.type === 8) {
       simulation.dispatch({ type: 'buy-aircraft' }); purchaseFeedback(simulation.getSnapshot().lastAircraftPurchaseResult,product.name);
@@ -237,7 +238,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     windows.show(null); viewportRef.current?.focus({ preventScroll: true });
   }
   function placePurchase(x: number, y: number) {
-    if (!simulation || !buyPlacement || !snapshot || snapshot.pendingTown || snapshot.finances.defaultDecision || snapshot.aircraftFlight) return;
+    if (!simulation || !buyPlacement || !snapshot || snapshot.pendingTown || snapshot.townEvent.pending || snapshot.finances.defaultDecision || snapshot.aircraftFlight) return;
     const type = buyPlacement.type;
     if (type < 8) simulation.dispatch({ type: 'buy-equipment', equipmentType: type, x, y });
     else if (type < 128) simulation.dispatch({ type: 'build', buildingType: type, x, y });
@@ -253,7 +254,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
   }
   function cancelFieldTool(){setFieldMenu(null);setFieldMapTool(null);setToolPointer(null);setFieldToolMessage('');}
   function applyFieldTool(x:number,y:number){
-    if(!simulation||!snapshot||!fieldMapTool||snapshot.pendingTown||snapshot.finances.defaultDecision||snapshot.aircraftFlight)return;
+    if(!simulation||!snapshot||!fieldMapTool||snapshot.pendingTown||snapshot.townEvent.pending||snapshot.finances.defaultDecision||snapshot.aircraftFlight)return;
     const selected=data?.scenario.fields.find(f=>f.contains(x,y));
     simulation.dispatch(fieldMapTool.kind==='plant'?{type:'create-field',x,y,cropSlot:fieldMapTool.cropSlot}
       :{type:'treat-field',fieldSlot:selected?.slot??0,treatment:fieldMapTool.kind});
@@ -289,7 +290,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
   function enterMapWindow(index:number){
     if(!simulation)return false;
     const current=simulation.getSnapshot();
-    if(current.pendingTown||current.finances.defaultDecision||current.aircraftFlight)return false;
+    if(current.pendingTown||current.townEvent.pending||current.finances.defaultDecision||current.aircraftFlight)return false;
     const {x,y}=worldPosition(index),entry=aircraftMapEntry(current.scenario,x,y);
     if(entry){if(entry.slot!==null){setAircraftSlot(entry.slot);windows.show('aircraft');}return true;}
     const town=townWindowAt(current.scenario,x,y);
@@ -300,7 +301,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     if(enterMapWindow(index))return;
     if(!simulation)return;
     const current=simulation.getSnapshot();
-    if(current.pendingTown||current.finances.defaultDecision||current.aircraftFlight)return;
+    if(current.pendingTown||current.townEvent.pending||current.finances.defaultDecision||current.aircraftFlight)return;
     const {x,y}=worldPosition(index),command=mapObjectInteraction(current.scenario,x,y);
     setInteractionMessage('');
     if(!command)return;
@@ -332,7 +333,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
       },
     }} disasters={{
       checked: disasterMenuChecks(simulation.getSnapshot().disasters),
-      disabled: Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight),
+      disabled: Boolean(snapshot?.pendingTown || snapshot?.townEvent.pending || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight),
       choose: index=>{
         const action=index===6?'disable':DISASTER_MENU_KINDS[index]; if(!action)return;
         simulation.dispatch({type:'disaster-menu',action});
@@ -383,7 +384,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
         decision={snapshot.finances.defaultDecision} assets={assets} onCommand={command=>simulation.dispatch(command)}
         onRestart={()=>setNewFarmOpen(true)}/>}
     {data && <main className="edit-workspace" aria-label="Edit" onPointerDownCapture={activateEdit} onFocusCapture={activateEdit} onKeyDown={event => { if(objectMove.active&&event.key==='Escape'){event.preventDefault();cancelObjectMove();} if ((fieldMenu||fieldMapTool) && event.key==='Escape') {event.preventDefault();cancelFieldTool();} if (buyPlacement && event.key === 'Escape') { event.preventDefault(); cancelPurchase(); } }}>
-      <EditPalette artwork={assets.editPalette} disabled={Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}
+      <EditPalette artwork={assets.editPalette} disabled={Boolean(snapshot?.pendingTown || snapshot?.townEvent.pending || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}
         onField={() => openFieldMenu('plant')} onSpray={() => openFieldMenu('spray')} onHelp={() => {objectMove.cancel();bulldoze.cancel();construction.cancel();setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);windows.show(null);setEditHelpOpen(open=>!open);}} />
       {snapshot&&<EditStatus codes={snapshot.editStatuses} text={assets.editStatusText}/>}
       {editHelpOpen&&<EditHelp artwork={assets.editHelp} onClose={()=>setEditHelpOpen(false)}/>}
@@ -392,7 +393,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
         onChoose={tool=>{simulation?.dispatch({type:'edit-status',code:tool.kind==='plant'?17:SPRAY_STATUSES[tool.kind]});setFieldMenu(null);setFieldMapTool(tool);setSelection(null);viewportRef.current?.focus({preventScroll:true});}}/>}
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
-        <FarmMap animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !editHelpOpen && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
+        <FarmMap animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !editHelpOpen && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={tilesForWeather(data.tiles,snapshot?.weather)} townEventTiles={tilesForWeather(assets.townEventTiles[snapshot?.townEvent.artworkMode ?? 0],snapshot?.weather)} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;setInteractionMessage('');const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
           field={field} selection={selection} preview={preview} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {
@@ -415,6 +416,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
         </div>
       </section>
       {bulldoze.pending&&<BulldozeDialog pending={bulldoze.pending} assets={assets} onConfirm={bulldoze.confirm} onCancel={bulldoze.dismiss}/>}
+      {simulation&&snapshot?.townEvent.pending&&!messages.length&&!newFarmOpen&&<TownEventMessage state={snapshot.townEvent} assets={assets} onResolve={accept=>simulation.dispatch({type:'resolve-town-event',accept})}/>}
       {messages[0]&&(messages[0].type==='finance-notice'
         ? <FinanceMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>
         : messages[0].type==='field-notice' ? <FieldMessage key={messages[0].serial} assets={assets} onClose={closeMessage}/>

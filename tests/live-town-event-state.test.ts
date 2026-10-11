@@ -20,7 +20,7 @@ test('all original farms expose and checkpoint their event bytes with detached s
     const { raw, game, crops } = fixture(id), expected = { ...coldTownEvent(), ...readTownEvent(raw) };
     assert.deepEqual(game.getSnapshot().townEvent, expected);
     const text = game.save(id), saved = JSON.parse(text);
-    assert.equal(saved.version, 26); assert.deepEqual(saved.runtime.townEvent, expected);
+    assert.equal(saved.version, 27); assert.deepEqual(saved.runtime.townEvent, expected);
     const copy = GameSimulation.load(text, crops).simulation;
     copy.getSnapshot().townEvent.rodeoFrame = 3;
     assert.deepEqual(JSON.parse(copy.save(id)), JSON.parse(text));
@@ -49,7 +49,7 @@ test('source restart clears only mapped event globals and migration does not res
 });
 
 
-test('top-level writer and reader reject event dialogs without a wired calendar continuation', () => {
+test('top-level writer and reader reject event dialogs without their calendar continuation', () => {
   const { game } = fixture(), text = game.save(5), state = readNativeSave(text).state;
   state.townEvent.mode = 1; state.townEvent.pending = { kind: 'rodeo-entry' };
   assert.throws(() => writeNativeSave(state, 5), /town event continuation/);

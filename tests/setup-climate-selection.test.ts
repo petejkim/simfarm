@@ -60,7 +60,7 @@ test('accepted custom/geographic choices replace the retained levels; SSM import
 
 test('v21 requires bounded climate selections or explicit unknown; older saves never infer them from tables or provenance', () => {
   const generated = GameSimulation.createNew(options, assets), original = cold();
-  const current = JSON.parse(generated.save(null)); assert.equal(current.version, 26);
+  const current = JSON.parse(generated.save(null)); assert.equal(current.version, 27);
   for (const value of [null, { precipitation: 0, temperature: 3, wind: 0 }, { precipitation: 3, temperature: 0, wind: 3 }]) {
     const valid = structuredClone(current); valid.runtime.setup.climateSelection = value;
     const decoded = readNativeSave(JSON.stringify(valid)).state;

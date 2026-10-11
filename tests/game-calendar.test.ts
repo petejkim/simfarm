@@ -1,3 +1,4 @@
+import { declineTownEvents } from './support/town-events';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -108,7 +109,10 @@ test('year projection sees a perennial-to-annual crop change from the week-48 or
 
 test('an unmodified original plan automatically harvests, stores and replants without manual field orders', () => {
   const { scenario, crops } = setup(), game = new GameSimulation(scenario, crops);
-  for (let day = 0; day < 78; day++) game.dispatch({ type: 'advance-day' });
+  for (let day = 0; day < 78; day++) {
+    game.dispatch({ type: 'advance-day' });
+    declineTownEvents(game);
+  }
   assert.equal(game.getSnapshot().scenario.fields[1].state, 5); // Original week 27 harvest.
   for (let day = 78; day < 85; day++) game.dispatch({ type: 'advance-day' });
   const planted = game.getSnapshot();

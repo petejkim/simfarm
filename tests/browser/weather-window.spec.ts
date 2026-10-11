@@ -1,3 +1,5 @@
+import { declineTownEventDialogs } from '../support/town-event-dialogs';
+import { declineTownEvents } from '../support/town-events';
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {readArchive} from '../../src/formats/archive';
@@ -54,7 +56,7 @@ test('Weather follows all seasons and sky types, cross-week forecasts, signed ex
   }
   const f=fixture(),game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));
   for(let day=0;day<9;day++){
-    await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});await open(page);
+    await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});await declineTownEventDialogs(page);declineTownEvents(game);await open(page);
     const s=game.getSnapshot(),v=weatherWindowView(s.scenario.farm.calendar,s.weather,s.scenario.climate);
     await expect(page.locator('#weather-fahrenheit')).toHaveText(String(v.fahrenheit));await expect(page.locator('#weather-calendar')).toHaveText(v.calendar);
     await expect(page.getByRole('list',{name:'Five day forecast'})).toContainText(v.forecast.map((code,i)=>`${i===0?'Today':`Day ${i+1}`}: ${WEATHER_SKIES[code]}`).join(''));
@@ -94,7 +96,7 @@ test('toolbar shows three original weather icons across week boundaries and upda
   }
   await expect(icons).toHaveAttribute('aria-label','Today: Partly cloudy; Tomorrow: Snow; Day 3: Rain');await check([1,4,3]);
   expect(await save(page)).toEqual(before);
-  await reveal(page,'#next-day');await page.locator('#next-day').click();await check([4,3,2]);
+  await reveal(page,'#next-day');await page.locator('#next-day').click();await declineTownEventDialogs(page);await check([4,3,2]);
   await expect(icons).toHaveAttribute('aria-label','Today: Snow; Tomorrow: Rain; Day 3: Cloudy');
   await page.locator('#window-edit').click();await page.screenshot({path:'artifacts/browser-toolbar-weather.png'});
 });

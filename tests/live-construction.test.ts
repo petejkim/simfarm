@@ -1,3 +1,4 @@
+import { declineTownEvents } from './support/town-events';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -49,7 +50,11 @@ test('a newly planted crop completes harvest into purchased storage and sells af
   game.dispatch({ type: 'advance-day' });
   game.dispatch({ type: 'treat-field', fieldSlot: field.slot, treatment: 'fertilizer' });
   assert.ok(game.getSnapshot().lastTreatmentResult?.ok);
-  while (game.getSnapshot().daysAdvanced < 84) game.dispatch({ type: 'advance-day' });
+  for (let day = 0; game.getSnapshot().daysAdvanced < 84 && day < 84; day++) {
+    game.dispatch({ type: 'advance-day' });
+    declineTownEvents(game);
+  }
+  assert.equal(game.getSnapshot().daysAdvanced, 84);
   game.dispatch({ type: 'harvest-field', fieldSlot: field.slot }); assert.ok(game.getSnapshot().lastHarvestResult?.ok);
   const restored = GameSimulation.load(game.save(4), crops).simulation;
   for (const sim of [game, restored]) sim.dispatch({ type: 'advance-day' });

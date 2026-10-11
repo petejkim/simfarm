@@ -398,10 +398,19 @@ Fair/rodeo entry, decisions and weekly outcome primitives are implemented and te
 
 Native event checkpoint codec now preserves pending outcomes, phase/position and uploaded bank with tested exact RNG/payment continuation. Integrate into the top-level schema together with interrupted-calendar phase and scheduler; a standalone pending dialog field is insufficient. Original SSM position-bit/restart policy still requires source audit.
 
-Live weekly scheduler now exposes source result-return(field water) and entry-return(town/orders/rollover) boundaries, verified with30 unit and4 town-choice browser tests. Pending event continuation must also distinguish direct-day versus tick-driven calls and resume the latter's remaining irrigation/animal/traffic/disaster tail exactly once. Next integrate the checkpointed event owner and original dialogs across those boundaries.
+Live weekly scheduler now exposes source result-return(field water) and entry-return(town/orders/rollover) boundaries, verified with30 unit and4 town-choice browser tests. Correction: Next day also runs through advanceTick. Pending event continuation must resume the remaining irrigation/animal/traffic/disaster tail exactly once for every calendar caller. Next integrate the checkpointed event owner and original dialogs across those boundaries.
 
 Version26 now gives GameSimulation canonical townEvent ownership, exact checkpoint persistence, source transfer/reset mapping and inactive legacy migration. Full902-unit/266-browser regression passed; one subsequent unsupported-pending writer/reader guard has11 focused passes (903 total unit inventory). Next activate events only with complete calendar/tick continuation and original dialog/MIDI/atlas consumers. Current top-level saves reject pending event dialogs until that continuation exists.
 
 Browser renderer now consumes canonical event artworkMode, independently from event mode, with all three source weather palettes and verified1× pixels. Next connect calendar/tick continuation and original fair/rodeo dialogs/music; artwork selection no longer blocks that integration.
 
 Loaded active recreation events now animate through the actual simulation tick tail and restore exact visible/RNG state after checkpoints. Next integrate original calendar entry/results and dialog continuation/MIDI; neither renderer nor active animation remains a prerequisite blocker.
+
+
+## Live town-event integration milestone (2026-10-11)
+
+Fair and rodeo now connect original calendar gates, entry/announcement, fees/bets, weekly outcomes, original text/portraits/buttons, artwork/animation and carnival/rodeo MIDI. The authoritative event owner suspends the calendar/tick at source return boundaries; native version27 adds the saved prior date, phase and run state, including result-to-entry and result-to-annual-choice chaining. Versions1–25 retain inactive migration and26 retains all existing event fields with no pending continuation. Source eligibility/artwork discrepancy SF-174 remains intentional preservation behavior.
+
+Milestone regression now has passing evidence for all916 unit and271 browser cases across full runs and targeted rechecks; type checking/build and source audit pass. The initial failures were legacy scenarios advancing past newly restored dialogs without answering, obsolete event-free RNG expectations, and one unrelated menu timeout that passed unchanged on recheck. Production code stayed fixed. Next resume the remaining-interaction/music audit (including amain lifecycle and XMIDI sequence controls). Passing this event increment will not establish that all original gameplay is ported. Mobile adaptation/enhanced graphics/audio remain excluded.
+
+Remaining-interaction audit candidate: plant-order.ts still labels immediate replacement of an in-flight field job unported, while weekly cleanup now includes equipment returns and cancellation. Trace the original reachable UI caller before treating that old comment as a confirmed missing player action; it may be stale or refer only to the retired immediate-command UI. Do not infer complete interaction coverage from the fair/rodeo milestone.

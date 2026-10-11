@@ -62,7 +62,7 @@ test('ordinary loads retain opening checks and loaded post-return depth across a
       const input = Buffer.from(bytes), loaded = prior.importOriginal(bytes, assets.crops).simulation;
       const expected = { depth: Math.max(0, depth - 1), speedChecks: depth === 1 ? [0, 0, 1, 0, 0] : [0, 0, 0, 0, 1] };
       assert.deepEqual(loaded.getSnapshot().originalPause, expected);
-      const saved = parsed(loaded); assert.equal(saved.version, 26); assert.deepEqual(saved.runtime.originalPause, expected);
+      const saved = parsed(loaded); assert.equal(saved.version, 27); assert.deepEqual(saved.runtime.originalPause, expected);
       const copy = restore(saved); assert.equal(copy.save(null), loaded.save(null));
       for (const game of [loaded, copy]) { game.dispatch({ type: 'set-paused', paused: false }); game.tick(41.5); }
       assert.equal(copy.save(null), loaded.save(null)); assert.deepEqual(bytes, input);

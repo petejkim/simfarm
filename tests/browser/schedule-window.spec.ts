@@ -1,3 +1,4 @@
+import { declineTownEventDialogs } from '../support/town-event-dialogs';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { setDisastersEnabled } from '../support/disaster-menu';
 import { openWindow } from '../support/workspace';
@@ -23,7 +24,9 @@ test('original map and Schedule controls complete harvest, storage, sale and rep
   await reveal(page,'#zoom');await page.locator('#zoom').selectOption('0.5');
   await buyPlot(page,0,2);await setAutoDoze(page,true);await plantField(page,0,16);
   await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
-  async function days(count:number){for(let i=0;i<count;i++){await reveal(page,'#next-day');await page.locator('#next-day').click();}}
+  async function days(count:number){for(let i=0;i<count;i++){await reveal(page,'#next-day');await page.locator('#next-day').click();
+    await declineTownEventDialogs(page);
+  }}
   async function examine(){
     await reveal(page,'#viewport');await page.getByRole('button',{name:'View object',exact:true}).click();
     await clickFarmTile(page,0,16);await expect(page.getByRole('dialog',{name:'Schedule',exact:true})).toBeVisible();

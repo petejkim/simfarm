@@ -1,3 +1,4 @@
+import { declineTownEvents } from './support/town-events';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -43,6 +44,7 @@ test('live calendar charges only the four recovered loan months and restores ide
     });
     const copy = GameSimulation.load(game.save(4), crops).simulation;
     game.dispatch({ type: 'advance-day' }); copy.dispatch({ type: 'advance-day' });
+    declineTownEvents(game); declineTownEvents(copy);
     const nextMonth = (month + 1) % 12, paid = isLoanPaymentMonth(nextMonth), state = game.getSnapshot();
     assert.equal(state.scenario.farm.calendar.month, nextMonth);
     assert.equal(state.finances.loan.principal, paid ? 899 : 1000);

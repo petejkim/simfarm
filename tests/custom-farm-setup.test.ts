@@ -105,7 +105,7 @@ test('restart drafts retain entry state while the live farm advances; cancel and
 test('native v20 retains raw preview bytes, validates their bounds and migrates older saves without replay', () => {
   const draft = CustomFarmSetup.fresh(options, assets); draft.generateWorld();
   const state = draft.accept(), text = writeNativeSave(state, null), document = JSON.parse(text);
-  assert.equal(document.version, 26); assert.deepEqual(document.runtime.setup.previewRaw, { ds1521: 201, ds23db: 201 });
+  assert.equal(document.version, 27); assert.deepEqual(document.runtime.setup.previewRaw, { ds1521: 201, ds23db: 201 });
   assert.deepEqual(readNativeSave(text).state, state);
   for (const value of [0, 255]) {
     const next = structuredClone(document); next.runtime.setup.previewRaw = { ds1521: value, ds23db: 255 - value };

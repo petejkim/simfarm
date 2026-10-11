@@ -21,6 +21,8 @@ export interface PendingTownExpansion {
   phase: 'annual-reset';
   site: TownSite;
   resumeRunning: boolean;
+  /** An event result interrupted this same tick before annual collection. */
+  resumeTickTail?: true;
 }
 
 /** Native checkpoint, not the original DOS SSM format. UI feedback is deliberately transient. */

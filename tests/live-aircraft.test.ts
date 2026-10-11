@@ -19,7 +19,7 @@ test('live aircraft purchase and service change canonical records/accounts and v
   assert.deepEqual([aircraftFuel(snapshot.scenario.equipment[1]), aircraftPayload(snapshot.scenario.equipment[1]), aircraftChemical(snapshot.scenario.equipment[1])], [255, 255, 221]);
   snapshot.aircraftService.selectedChemical = 222; snapshot.scenario.equipment[1].bytes.fill(0);
   assert.equal(game.save(4), saved);
-  assert.equal(JSON.parse(saved).version, 26);
+  assert.equal(JSON.parse(saved).version, 27);
   const restored = GameSimulation.load(saved, f.crops).simulation;
   assert.equal(restored.getSnapshot().lastAircraftPurchaseResult, null); assert.equal(restored.getSnapshot().lastAircraftServiceResult, null);
   assert.equal(restored.getSnapshot().aircraftService.selectedChemical, 223);
