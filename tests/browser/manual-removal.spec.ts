@@ -100,7 +100,7 @@ test('field removal explains active machinery, destroys a growing crop after con
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await load(page, game.save(4)); await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   await plantField(page,0,16);await expect(page.locator('#field-tool-result')).toContainText('Field planted.'); game.dispatch({ type: 'create-field', x: 0, y: 16, cropSlot: 0 });
-  expect(game.getSnapshot().lastNewFieldResult?.ok).toBe(true); await expect(page.locator('#map-tool')).toHaveValue('inspect');
+  expect(game.getSnapshot().lastNewFieldResult?.ok).toBe(true); await expect(page.locator('#map-tool')).toHaveCount(0);
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   expect(game.getSnapshot().scenario.fields[result.slot].state).toBe(4);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));

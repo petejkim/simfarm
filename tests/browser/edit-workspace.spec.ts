@@ -43,7 +43,7 @@ test('palette opens field planning and real tools; Speed retains slower pacing a
   await expect(page.locator('#map-tool-hint')).toContainText('Dirt road: click or drag');
   await page.getByRole('button', { name: 'Edit tools and help', exact: true }).click();
   await page.getByRole('button', { name: 'Advanced controls', exact: true }).click();
-  await expect(page.locator('#map-tool')).toHaveValue('inspect');
+  await expect(page.locator('#map-tool')).toHaveCount(0);
   await expect(page.locator('#cancel-construction')).toHaveCount(0);
   await expect(page.locator('#map-tool option[value=network],#network-panel')).toHaveCount(0);
   await page.locator('#speed-menu-button').click(); await expect(page.locator('#simulation-speed-value')).toHaveText('1×');

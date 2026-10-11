@@ -63,3 +63,5 @@ Native View object now requests that month reset on every field click, including
 Focused tests pin the original field/month writes and exercise re-entry from month57, retained tool/overlay, subsequent browsing and exact unchanged checkpoints, alongside the existing Schedule and Plant/Spray cases.
 
 The fixed-harvest rejection now opens its original mandatory Message (portrait74, DS6142) while preserving the existing plan. See [field-messages.md](field-messages.md). Messages off does not suppress this source branch; other validation feedback remains as previously implemented.
+
+Input audit follow-up: event5 at2cfb6 enters crop/week hit testing; crop selection2d002..2d02f only stores the selected action inDS6132. Week activation2d08b..2d0aa derives the visible column, pushes that action and field slot minus one, and calls2e11a. Control callback2ddec handles descriptor controls separately (water/temperature, month, CUT/TODAY/CLOSE). These traced paths establish no immediate planting/harvest bypass of editor2e214..2e22e. This is scoped evidence about these handlers, not proof that every possible original input route has been found.

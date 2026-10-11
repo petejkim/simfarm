@@ -33,7 +33,7 @@ export async function openWindow(page: Page, key: string) {
   if(!await page.locator('[data-window=tools]').isVisible())await page.getByRole('button', { name: 'Advanced controls', exact: true }).click();
   await page.locator('[data-window=tools] .game-window-title').focus();
   if (key === 'actions') {
-    const tool = await page.locator('#map-tool').inputValue(); await page.locator('#map-tool').selectOption(tool);
+    await page.locator('[data-window=tools]').getByRole('button',{name:'Field orders',exact:true}).click();
   } else if (key !== 'tools') await page.locator('[data-window=tools]').getByRole('button', { name: key === 'machinery' ? 'Machinery' : key === 'livestock' ? 'Livestock' : 'Aircraft', exact: true }).click();
 }
 async function uncoverMap(page:Page){

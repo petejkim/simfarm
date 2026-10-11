@@ -357,7 +357,7 @@ test('map tools buy original land and complete a new-field planting and harvest 
   await expect(page.locator('#field-status')).toContainText('Waiting');
   await expect(page.locator('#plant-field')).toBeEnabled();
   await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('0');
-  await expect(page.locator('#map-tool')).toHaveValue('inspect');
+  await expect(page.locator('#map-tool')).toHaveCount(0);
   await expect(page.locator('#farm-cash')).toHaveText('$40,000');
   await page.setViewportSize({ width: 1280, height: 844 });
   await page.locator('#options-menu-button').click();

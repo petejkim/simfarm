@@ -329,3 +329,5 @@ LivestockShop retired: use original Buy for animals and Hay/Trough palette tools
 CropSupplyShop retired: original Buy covers seed/chemical purchases and direct map storage delivery, including all24 crops and live market prices. All interim object shops are gone. Next resolve Field information's immediate-order versus original calendar controls, then remove its remaining Inspect selector/navigation bridge and diagnostic inventories/windows.
 
 FieldCare retired: use original Spray for immediate treatments. FieldPanel's existing-field plant/harvest adapters remain under audit; unresolved helper2e80e manipulates schedule buffers and does not yet establish a direct original gesture. Continue source-based field interaction reconstruction before deleting the remaining exclusive paths.
+
+Removed the now-single-value Map tool selector and state. Remaining Field orders stays explicit until its exclusive native immediate adapters are replaced; ordinary inspection uses original Schedule/Examine. Rechecked Schedule hit testing/callback paths: week activation calls the future-only editor and crop selection stores an action, with no immediate bypass established.

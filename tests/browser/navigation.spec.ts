@@ -107,6 +107,6 @@ test('an empty farm offers a path from the planner to creating a field and reset
   expect(await checkpoint(page,'empty-planted')).toEqual(JSON.parse(game.save(4)));
   await openWindow(page,'schedule');await expect(page.locator('#planner-field')).toHaveValue('1');
   await load(); await expect(page.locator('#field-planner')).not.toBeVisible();
-  await expect(page.locator('#map-tool')).toHaveValue('inspect');
+  await expect(page.locator('#map-tool')).toHaveCount(0);
   expect(await checkpoint(page, 'empty')).toEqual(JSON.parse(text));
 });
