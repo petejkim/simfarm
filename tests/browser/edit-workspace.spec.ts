@@ -40,10 +40,12 @@ test('palette opens field planning and real tools; Speed retains slower pacing a
   await openWindow(page,'schedule');await expect(page.locator('#field-planner')).toBeVisible();
   await page.locator('#window-edit').click();
   await page.getByRole('button', { name: 'Dirt road', exact: true }).click();
+  await expect(page.locator('#map-tool-hint')).toContainText('Dirt road: click or drag');
   await page.getByRole('button', { name: 'Edit tools and help', exact: true }).click();
   await page.getByRole('button', { name: 'Advanced controls', exact: true }).click();
-  await expect(page.locator('#map-tool')).toHaveValue('network'); // Help cancels painting but retains the advanced category.
-  await page.locator('#map-tool').selectOption('network'); await expect(page.locator('#network-tool')).toHaveValue('road-161');
+  await expect(page.locator('#map-tool')).toHaveValue('inspect');
+  await expect(page.locator('#cancel-construction')).toHaveCount(0);
+  await expect(page.locator('#map-tool option[value=network],#network-panel')).toHaveCount(0);
   await page.locator('#speed-menu-button').click(); await expect(page.locator('#simulation-speed-value')).toHaveText('1×');
   await page.locator('#play-pause').click(); await page.clock.runFor(3000); await expect(page.locator('#time-status')).toContainText('0 days advanced');
   await page.clock.runFor(1100); await expect(page.locator('#time-status')).toContainText('1 days advanced'); await page.locator('#play-pause').click();

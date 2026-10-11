@@ -26,9 +26,7 @@ import type { ShopProduct } from '../simulation/shop-product';
 import { GameWindow, useWindows } from './GameWindow';
 import { EditPalette, type EditTool } from './EditPalette';
 import type { GameWindow as WindowCommand } from './ControlBar';
-import { NetworkPanel } from './NetworkPanel';
 import { NewFarmControls } from './NewFarmControls';
-import { checkNetworkPlacement, type NetworkAction } from '../simulation/network-placement';
 import { CropSupplyShop } from './CropSupplyShop';
 import { checkCropSupplyPurchase } from '../simulation/crop-supply-purchase';
 import { DisasterPanel } from './DisasterPanel';
@@ -70,7 +68,7 @@ import { checkLivestockPurchase } from '../simulation/livestock-purchase';
 const subscribeEmpty = () => () => {};
 const emptySnapshot = () => null;
 
-type FarmDestination = 'network' | 'crop-supplies' | 'planner' | 'field' | 'loans' | 'map';
+type FarmDestination = 'crop-supplies' | 'planner' | 'field' | 'loans' | 'map';
 interface Props {
   audioControls: ReactNode;
   audioOptions: { music: boolean; sound: boolean; buttonClicks:boolean; toggleButtonClicks:()=>void; toggleMusic: () => void; toggleSound: () => void };
@@ -152,13 +150,12 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
   const evaluationRef = useRef<HTMLElement>(null), balanceRef = useRef<HTMLElement>(null), weatherRef = useRef<HTMLElement>(null);
   const sellRef = useRef<HTMLElement>(null), expertRef = useRef<HTMLElement>(null);
   const plannerRef = useRef<HTMLElement>(null), loansRef = useRef<HTMLElement>(null);
-  const networkRef = useRef<HTMLHeadingElement>(null);
   const supplyRef = useRef<HTMLHeadingElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     if (!navigation) return;
     const target = navigation.target === 'planner' ? plannerRef.current : navigation.target === 'loans' ? loansRef.current
-      : navigation.target === 'network' ? networkRef.current : navigation.target === 'crop-supplies' ? supplyRef.current : navigation.target === 'map' || navigation.target === 'edit' ? viewportRef.current
+      : navigation.target === 'crop-supplies' ? supplyRef.current : navigation.target === 'map' || navigation.target === 'edit' ? viewportRef.current
       : navigation.target === 'evaluation' ? evaluationRef.current : navigation.target === 'balance' ? balanceRef.current
       : navigation.target === 'sell' ? sellRef.current : navigation.target === 'weather' ? weatherRef.current
       : navigation.target === 'expert' ? expertRef.current : null;
@@ -170,7 +167,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     objectMove.cancel();construction.cancel();bulldoze.cancel();
     setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null);
     if (target === 'planner') setMapTool('inspect');
-    if (target === 'crop-supplies' || target === 'network') setMapTool(target);
+    if (target === 'crop-supplies') setMapTool(target);
     windows.show(target === 'map' ? null : target === 'loans' ? 'bank' : target === 'planner' ? 'schedule' : 'actions');
     setNavigation({ target });
   }
@@ -194,7 +191,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     setNavigation({ target: window });
   }
   const [buildingType, setBuildingType] = useState(64);
-  const [networkTool, setNetworkTool] = useState<NetworkAction>('road-161');
   const [equipmentType, setEquipmentType] = useState(0);
   const [cropSupplyType, setCropSupplyType] = useState(192);
   const [livestockType, setLivestockType] = useState(161);
@@ -208,8 +204,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     else if (tool === 'Move object') { objectMove.start();setMapTool('move');setSelection(null);setToolPointer(null);setBuyMessage('');setFieldToolMessage('');windows.show(null);viewportRef.current?.focus({preventScroll:true}); }
     else if (tool === 'Bulldoze') { bulldoze.start();setSelection(null);setToolPointer(null);setMapTool('remove');windows.show(null);viewportRef.current?.focus({preventScroll:true}); }
     else if (tool === 'Paved road' || tool === 'Dirt road' || tool === 'Fence' || tool === 'Gate') {
-      setNetworkTool(tool === 'Paved road' ? 'road-150' : tool === 'Dirt road' ? 'road-161' : tool === 'Fence' ? 'fence' : 'gate');
-      construction.start(tool==='Paved road'?'road-150':tool==='Dirt road'?'road-161':tool==='Fence'?'fence':'gate');setSelection(null);setToolPointer(null);setMapTool('network'); windows.show(null);viewportRef.current?.focus({preventScroll:true});
+      construction.start(tool==='Paved road'?'road-150':tool==='Dirt road'?'road-161':tool==='Fence'?'fence':'gate');setSelection(null);setToolPointer(null);setMapTool('inspect'); windows.show(null);viewportRef.current?.focus({preventScroll:true});
     } else if (tool === 'Ditch' || tool === 'Valve') {
       construction.start(tool==='Ditch'?'ditch':'valve');setSelection(null);setToolPointer(null);setMapTool('inspect'); windows.show(null);viewportRef.current?.focus({preventScroll:true});
     } else if (tool === 'Hay' || tool === 'Trough' || tool === 'Trees') {
@@ -233,10 +228,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     : position && data && snapshot && mapTool !== 'inspect' ? {
     x: position.x,
     y: position.y,
-    width: mapTool === 'equipment' ? data.scenario.equipmentDefinitions[equipmentType].width : mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].width : mapTool === 'network' || mapTool === 'livestock' || mapTool === 'crop-supplies' ? 1 : 8,
-    height: mapTool === 'equipment' ? data.scenario.equipmentDefinitions[equipmentType].height : mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].height : mapTool === 'network' || mapTool === 'livestock' || mapTool === 'crop-supplies' ? 1 : 8,
+    width: mapTool === 'equipment' ? data.scenario.equipmentDefinitions[equipmentType].width : mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].width : mapTool === 'livestock' || mapTool === 'crop-supplies' ? 1 : 8,
+    height: mapTool === 'equipment' ? data.scenario.equipmentDefinitions[equipmentType].height : mapTool === 'build' ? data.scenario.buildingDefinitions[buildingType - 64].height : mapTool === 'livestock' || mapTool === 'crop-supplies' ? 1 : 8,
     valid: mapTool === 'build' ? checkBuildingPlacement(data.scenario, buildingType, position.x, position.y, snapshot.weather.soilMoisture).ok
-      : mapTool === 'network' ? checkNetworkPlacement(data.scenario, snapshot.finances, networkTool, position.x, position.y, snapshot.weather.soilMoisture).ok
       : mapTool === 'equipment' ? checkEquipmentPurchase(data.scenario, equipmentType, position.x, position.y, snapshot.weather.soilMoisture).ok
       : mapTool === 'crop-supplies' ? checkCropSupplyPurchase(data.scenario, cropSupplyType, position.x, position.y, snapshot.weather.soilMoisture).ok
       : mapTool === 'livestock' ? checkLivestockPurchase(data.scenario, snapshot.finances, livestockType, position.x, position.y, snapshot.weather.soilMoisture).ok
@@ -391,7 +385,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
         <option value="inspect">Inspect</option>
         <option value="build">Build</option>
         <option value="remove">Bulldoze</option>
-        <option value="network">Roads &amp; fences</option>
         <option value="equipment">Buy machinery</option><option value="move">Move machinery</option><option value="supply-move">Move supplies</option>
         <option value="crop-supplies">Buy seeds &amp; chemicals</option>
         <option value="livestock">Animals &amp; supplies</option>
@@ -474,13 +467,12 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
           : mapTool === 'supply-move' ? 'Select a supply, then choose its destination in the movement panel'
           : mapTool === 'move' ? 'Select a machine, then choose its destination in the movement panel'
           : mapTool === 'remove' ? 'Click an object or terrain to review its removal'
-          : mapTool === 'network' ? 'Choose a tile, then review road, fence or gate work'
           : mapTool === 'equipment' ? 'Click clear ground or an equipment storage building'
           : mapTool === 'crop-supplies' ? 'Click a storage building, then review your purchase'
           : mapTool === 'livestock' ? 'Click a tile for your animal or supply' : 'Scroll to explore · click a tile to examine'}</span>
           <span id="cell-status">{cell && position ? `Tile ${position.x}, ${position.y} · graphic ${terrainTile(cell)}` : '96 × 96 tiles'}</span>
-          {!fieldMapTool && !construction.tool && (mapTool === 'crop-supplies' || mapTool === 'network') && <button disabled={!position || Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)}
-            onClick={() => navigate(mapTool)}>{mapTool === 'network' ? 'Review construction' : 'Review supplies'}</button>}
+          {!fieldMapTool && !construction.tool && mapTool === 'crop-supplies' && <button disabled={!position || Boolean(snapshot?.pendingTown || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)}
+            onClick={() => navigate(mapTool)}>Review supplies</button>}
         </div>
       </section>
       {bulldoze.pending&&<BulldozeDialog pending={bulldoze.pending} assets={assets} onConfirm={bulldoze.confirm} onCancel={bulldoze.dismiss}/>}
@@ -489,7 +481,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
         : messages[0].type==='field-notice' ? <FieldMessage key={messages[0].serial} assets={assets} onClose={closeMessage}/>
         : <DisasterMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>)}
       <GameWindow windowKey="actions" title={mapTool === 'inspect' ? 'Field information' : ['build', 'equipment', 'crop-supplies', 'livestock'].includes(mapTool) ? 'Buy' : 'Edit object'}>
-        <div className="window-actions">{!['crop-supplies', 'network'].includes(mapTool) && <button onClick={() => { windows.show(null); viewportRef.current?.focus(); }}>Choose on map</button>}
+        <div className="window-actions">{mapTool !== 'crop-supplies' && <button onClick={() => { windows.show(null); viewportRef.current?.focus(); }}>Choose on map</button>}
           <button onClick={() => windows.show('tools')}>Tools</button>
           {mapTool === 'inspect' && <button onClick={() => navigate('field')}>New field</button>}</div>
         {['build', 'equipment', 'crop-supplies', 'livestock'].includes(mapTool) && <label>Buy <select aria-label="Purchase category" value={mapTool} onChange={event => setMapTool(event.target.value as MapTool)}>
@@ -506,8 +498,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
           onCommand={command => simulation?.dispatch(command)} onCancel={() => { setSelection(null); setFieldSlot(null); }} />}
         {snapshot && mapTool === 'build' && <BuildingPanel snapshot={snapshot} position={position} buildingType={buildingType}
           onTypeChange={setBuildingType} onCommand={command => simulation?.dispatch(command)} />}
-        {snapshot && mapTool === 'network' && <NetworkPanel snapshot={snapshot} position={position} tool={networkTool}
-          onToolChange={setNetworkTool} onCommand={command => simulation?.dispatch(command)} headingRef={networkRef} onChooseMap={() => navigate('map')} />}
         {snapshot && mapTool === 'crop-supplies' && <CropSupplyShop snapshot={snapshot} crops={assets.catalog.crops} position={position} productType={cropSupplyType}
           onTypeChange={setCropSupplyType} onCommand={command => simulation?.dispatch(command)} headingRef={supplyRef}
           onChooseMap={() => navigate('map')} onBuild={() => { setBuildingType(66); setMapTool('build'); }}
