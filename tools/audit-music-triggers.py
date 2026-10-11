@@ -53,11 +53,13 @@ for address, value in {
     0xcaf4: 'c606d31e03', 0xcba6: 'c606d31e02',
     0xdc0c: '9a7d00fd0524033c02',          # Rodeo random low-two-bit comparison.
     0xdc84: '9a7d00fd05a801',              # Fair random low-bit test.
+    0x135b0: 'ff360c239aa300fd05',           # Bounded random ordinal among active animals.
+    0x135db: '26f687026420',                # Active record flag, no age/condition filter.
     0xdd34: '6a000ee878fc',                 # Restore recreation mode zero.
 }.items():
     pin(address, bytes.fromhex(value))
 ranges = [(0xc88e, 0xcbb3), (0xd9b2, 0xdbe4), (0xdbe4, 0xdd3e),
-          (0x23b22, 0x23b8a), (0x40e07, 0x40e22)]
+          (0x23b22, 0x23b8a), (0x40e07, 0x40e22), (0x1359a, 0x135f8)]
 report = {
     'exeSha256': expected,
     'literalMusicCalls': [{'file': hex(a), 'filenameDS': hex(o), 'filename': n}

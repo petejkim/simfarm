@@ -29,6 +29,7 @@ import { readBankArtwork } from '../src/formats/bank-artwork';
 import { readEditPalette } from '../src/formats/edit-palette';
 import { readControlBar } from '../src/formats/control-bar';
 import { readPalette, readBitmap, tileAtlas, miniTileAtlas, decodePlanar, readInterleavedScreen, type Raster } from '../src/formats/graphics';
+import { townEventTileBank } from '../src/formats/town-event-graphics';
 import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
 import { readCrop, type CropDefinition } from '../src/formats/crop';
 
@@ -86,6 +87,8 @@ await png('edit-help.png',readEditHelp(asset('edithelp.bmp'),palette));
 await png('edit-palette.png', readEditPalette(asset('editeasy.lzs'), palette));
 await png('control-bar.png', readControlBar(asset('cntlbtnh.bmp'), palette));
 await png('tiles.png', tileAtlas(asset('ega16til.til'), palette));
+for (const mode of [0, 1, 2] as const)
+  await png(`town-event-${mode}.png`, tileAtlas(townEventTileBank(asset('twnevent.til'), mode), palette, 7));
 // Window renderer2b09a: active title1, inactive237, left close control0.
 // These tiles contain artwork only; window titles stay HTML text.
 for (const [name, tile] of [['window-close', 0], ['window-title', 1], ['window-title-inactive', 237], ['window-title-end', 2], ['window-title-end-inactive', 119]] as const)

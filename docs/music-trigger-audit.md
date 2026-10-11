@@ -28,7 +28,7 @@ Both branches require Messages `6190:a8a1 != 0`, then call `d9b2` with mode2 for
 Fair `c9eb..caf9`:
 
 - Zero livestock count `6190:230c`, or failure to afford200 through `1a66:0006`, selects announcement “The town fair is starting!” and animal/type sentinel DS1ed9=ff.
-- Otherwise `0f87:1b2a` selects an animal record; its word at+6406 minus160 becomes DS1ed9. Selection criteria still need tracing. Seven-byte text records at6190:22a0/22bc supply species/name substitutions; the complete source prompt and200-dollar fee are captured by the audit.
+- Otherwise `0f87:1b2a` selects an animal record; its word at+6406 minus160 becomes DS1ed9. Selection at1359a..135f7 draws below the active livestock count through05fd:00a3, scans records from index1, counts only flag0x20 and returns the chosen ordinal. It does not filter by species, age, condition or storage. The native implementation must bound this count-driven scan (existing SF-059 hazard). Seven-byte text records at6190:22a0/22bc supply species/name substitutions; the complete source prompt and200-dollar fee are captured by the audit.
 - `carnival` is requested **before** the dialog, including the announcement-only case. Message portrait74 uses button IDs1/0 for announcement or11/12 for entry choice.
 - Entry result zero attempts a200-dollar category−1 debit (`cad3..cae3`). Nonzero debit result stores participation DS1ed0=1; declining clears it. Announcement and failed-debit paths do not explicitly clear that word. Countdown DS1ed3 becomes3.
 
@@ -46,6 +46,12 @@ For participation nonzero and mode1, `dc0c..dc15` draws the simulation RNG and w
 
 ## Implementation sequence and limits
 
-Next trace animal selection, event61 text/portraits, mode0 artwork/map restoration, all writes/initialization of DS1ed0/1ed2/1ed3/1ed9, and original save/load lifetime. Then implement the event state and calendar ordering in plain TypeScript, with bounded recreation coordinates and checkpoint continuation; expose source dialogs in React and emit MIDI requests at the actual dialog branches. Browser tests should cover entry/decline, Messages gating, no recreation, insufficient funds, delayed outcomes and load continuation. A calendar-only music switch would not restore the original interaction.
+Next trace event61 text/portraits, mode0 artwork/map restoration, all writes/initialization of DS1ed0/1ed2/1ed3/1ed9, and original save/load lifetime. Then implement the event state and calendar ordering in plain TypeScript, with bounded recreation coordinates and checkpoint continuation; expose source dialogs in React and emit MIDI requests at the actual dialog branches. Browser tests should cover entry/decline, Messages gating, no recreation, insufficient funds, delayed outcomes and load continuation. A calendar-only music switch would not restore the original interaction.
 
-High confidence: pinned direct calls, gates, amounts, countdowns, random masks and strings. Unresolved: complete caller coverage, amain lifecycle, animal selection and state lifetime. No runtime behavior changed by this audit, and full native preservation remains incomplete.
+High confidence: pinned direct calls, gates, amounts, countdowns, random masks and strings. Unresolved: complete caller coverage, amain lifecycle, state lifetime and live event integration. No runtime behavior changed by this audit, and full native preservation remains incomplete.
+
+## Recreation artwork decoder
+
+`src/formats/town-event-graphics.ts` now exposes detached banks for modes0(normal),1(rodeo),2(fair), and a nonmutating atlas patch. Source pointerc682 selects2be7; initialized word2be7:0984 at file4f5e4 is483. Loaderdb55 seeks mode*4480, reads4480 bytes and uploads35 consecutive planar16×16 tiles to483..517. The resource has20480 bytes, SHA256 `533e3c7f544bfcd1b18752f3eff0f222771ca9bb2d21cd46e4b401844647aac2`; bytes beyond the three traced banks remain uninterpreted. Do not treat trailing data as padding or expose unproven extra event modes.
+
+Local import emits ignored town-event-0/1/2.png contact sheets (seven columns,112×80); these are resource previews, not the recreation district's map layout. Actual map placement and transient atlas ownership still need integration. Tests compare every pixel in all105 tiles directly with source plane bits, pin source upload constants, retain all unaffected original/expanded atlas bytes and reject malformed resources/modes/atlas boundaries. Inputs including Bun Buffers are never aliased. Type checking/build and import pass; fair contact sheet was visually inspected. No browser behavior changes in this decoder increment.
