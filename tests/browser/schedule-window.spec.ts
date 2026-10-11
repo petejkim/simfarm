@@ -1,3 +1,4 @@
+import { setDisastersEnabled } from '../support/disaster-menu';
 import { openWindow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -17,7 +18,7 @@ test('original map and Schedule controls complete harvest, storage, sale and rep
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');await reveal(page,'#scenario');await page.locator('#scenario').selectOption('4');
   await expect(page.locator('#map-status')).toContainText('Scenario 5');
-  await reveal(page,'#disasters-enabled');await page.locator('#disasters-enabled').uncheck();
+  await setDisastersEnabled(page,false);
   await reveal(page,'#zoom');await page.locator('#zoom').selectOption('0.5');
   await buyPlot(page,0,2);await setAutoDoze(page,true);await plantField(page,0,16);
   await expect(page.locator('#field-tool-result')).toContainText('Field planted.');

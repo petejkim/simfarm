@@ -12,19 +12,11 @@ export function DisasterPanel({ snapshot: s, onCommand, onLocate }: {
   const result = s.lastDisasterResult;
   return <details id="disasters-panel" className="disasters-panel">
     <summary>Disasters{activeNames.length ? ` · ${activeNames.join(', ')} active` : ''}</summary>
-    <label><input id="disasters-enabled" type="checkbox" checked={d.enabled} disabled={blocked}
-      onChange={e => onCommand({ type: 'set-disasters-enabled', enabled: e.currentTarget.checked })} /> Allow new disasters</label>
     <p>Disabling new disasters lets an existing event run its course. High winds can strip nutrients from fields; nearby trees offer protection.</p>
-    <p>Start an event manually below. Tornadoes can destroy buildings and their contents; locusts damage crops.</p>
+    <p>Start an event from the Disasters menu. Tornadoes can destroy buildings and their contents; locusts damage crops.</p>
     <p>Floods spread beside permanent water and can destroy fields and buildings. Droughts dry shallow shoreline water. Advance time to let events run their course.</p>
     <p>Frost damages sensitive crops and can end a locust swarm. Crop circles may appear in wheat, barley, oats or sorghum fields. The toxic-land action records a warning.</p>
     <div className="disaster-actions">
-      <button id="start-tornado" disabled={blocked || !d.enabled || Boolean(d.flags & 1)} onClick={() => onCommand({ type: 'start-disaster', kind: 'tornado' })}>Start tornado</button>
-      <button id="start-swarm" disabled={blocked || !d.enabled || Boolean(d.flags & 33) || !s.scenario.fields.some(f => f.active)} onClick={() => onCommand({ type: 'start-disaster', kind: 'swarm' })}>Start locust swarm</button>
-      <button id="start-drought" disabled={blocked || !d.enabled || Boolean(d.flags & 2)} onClick={() => onCommand({ type: 'start-disaster', kind: 'drought' })}>Start drought</button>
-      <button id="start-flood" disabled={blocked || !d.enabled || Boolean(d.flags & 4)} onClick={() => onCommand({ type: 'start-disaster', kind: 'flood' })}>Start flood</button>
-      <button id="start-wind" disabled={blocked || !d.enabled || Boolean(d.flags & 9)} onClick={() => onCommand({ type: 'start-disaster', kind: 'wind' })}>Start high winds</button>
-      <button id="start-frost" disabled={blocked || !d.enabled || Boolean(d.flags & 16)} onClick={() => onCommand({ type: 'start-disaster', kind: 'frost' })}>Start frost</button>
       <button id="start-crop-circles" disabled={blocked || !d.enabled || Boolean(d.flags & 64) || !s.scenario.fields.some(f => f.active)} onClick={() => onCommand({ type: 'start-disaster', kind: 'crop-circles' })}>Create crop circles</button>
       <button id="start-toxic-land" disabled={blocked || !d.enabled || Boolean(d.flags & 128)} onClick={() => onCommand({ type: 'start-disaster', kind: 'toxic-land' })}>Show toxic-land warning</button>
       {circle >= 0 && <button id="locate-circles" onClick={() => onLocate(Math.floor(circle / 96), circle % 96)}>Locate crop circles</button>}

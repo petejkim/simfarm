@@ -1,3 +1,4 @@
+import { chooseDisaster, setDisastersEnabled, expectDisasterChecked } from '../support/disaster-menu';
 import { fieldDescription } from '../support/field-checkpoint';
 import { reveal, openWindow, acknowledgeFinanceMessages } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -54,12 +55,12 @@ test('Flood controls destroy a shoreline field and occupied building, render sou
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await audio(page); await page.goto('/');
   const f = waterDisasterFixture(), game = f.load().withAllCrops(browserCrops); await load(page, game.save(4));
   await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click(); await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
-  await reveal(page, '#start-flood'); await page.locator('#start-flood').click(); game.dispatch({ type: 'start-disaster', kind: 'flood' });
+  await chooseDisaster(page,'flood'); game.dispatch({ type:'disaster-menu',action:'flood' });
   await expect(page.locator('#water-disaster-state')).toContainText('Flood active · Water is spreading. Paused.');
-  await expect(page.locator('#start-flood')).toBeDisabled();
+  await expectDisasterChecked(page,'flood');
   await expect.poll(async () => (await played(page)).some(s => s.length === 9729 && s.peak > 0.01)).toBe(true);
-  await reveal(page, '#disasters-enabled'); await page.locator('#disasters-enabled').uncheck(); game.dispatch({ type: 'set-disasters-enabled', enabled: false });
-  await expect(page.locator('#start-drought')).toBeDisabled();
+  await setDisastersEnabled(page,false); game.dispatch({ type: 'set-disasters-enabled', enabled: false });
+  await expectDisasterChecked(page,'disable');
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   expect(await fieldDescription(page)).toContain('0 fields');
   await expect(page.locator('#disaster-notices')).toContainText('destroyed field 1');
@@ -87,8 +88,8 @@ test('Drought controls dry and restore source shoreline pixels without start aud
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await audio(page); await page.goto('/');
   const f = waterDisasterFixture(), game = f.load().withAllCrops(browserCrops); await load(page, game.save(4));
   await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click(); await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
-  await reveal(page, '#start-drought'); await page.locator('#start-drought').click(); game.dispatch({ type: 'start-disaster', kind: 'drought' });
-  await expect(page.locator('#water-disaster-state')).toContainText('Drought active.'); await expect(page.locator('#start-drought')).toBeDisabled();
+  await chooseDisaster(page,'drought'); game.dispatch({ type:'disaster-menu',action:'drought' });
+  await expect(page.locator('#water-disaster-state')).toContainText('Drought active.'); await expectDisasterChecked(page,'drought');
   await originalTile(page, 20, 19, 28);
   const checkpoint = await save(page, 'drought'); expect(checkpoint).toEqual(JSON.parse(game.save(4))); const sounds=(await played(page)).map(s=>s.length);expect(sounds.length).toBeGreaterThan(0);expect(sounds.every(length=>length===2667)).toBe(true); // Only UI click PCM; drought itself is silent.
   const bad = structuredClone(checkpoint); bad.runtime.waterDisasters.scanY = 94;

@@ -1,3 +1,4 @@
+import { chooseDisaster } from '../support/disaster-menu';
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {GameSimulation} from '../support/game';
@@ -44,7 +45,7 @@ test('AutoGoto centers a newly started disaster while disabling it keeps the map
   await start(page);const initial=await save(page);
   for(const enabled of [false,true]){
     const data=structuredClone(initial);data.scenario.farm.autoGoto=enabled;await load(page,JSON.stringify(data));
-    await page.locator('#viewport').evaluate(el=>el.scrollTo(40,50));await reveal(page,'#start-tornado');await page.locator('#start-tornado').click();
+    await page.locator('#viewport').evaluate(el=>el.scrollTo(40,50));await chooseDisaster(page,'tornado');
     const saved=await save(page),p=saved.runtime.disasters.tornado;
     const expected=await page.locator('#viewport').evaluate((el,p)=>[Math.max(0,Math.min(el.scrollWidth-el.clientWidth,p.x*16-el.clientWidth/2)),Math.max(0,Math.min(el.scrollHeight-el.clientHeight,p.y*16-el.clientHeight/2))],p);
     expect(await position(page)).toEqual(enabled?expected:[40,50]);

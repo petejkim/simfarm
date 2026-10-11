@@ -1,3 +1,4 @@
+import { setDisastersEnabled } from '../support/disaster-menu';
 import { fieldDescription, selectedFieldSnapshot } from '../support/field-checkpoint';
 import { sprayField, buyPlot, selectProperty, setAutoDoze, plantField, clickFarmTile } from '../support/field-actions';
 import { scheduleWeek, schedulePlant, scheduleNextHarvest } from '../support/schedule-window';
@@ -383,9 +384,7 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   await page.goto('/');
   await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
-  await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();
-  await reveal(page, '#disasters-enabled'); await page.locator('#disasters-enabled').uncheck();
-  await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();
+  await setDisastersEnabled(page,false);
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
   await buyPlot(page,0,2);await setAutoDoze(page,true);await plantField(page,0,16);
   await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
@@ -442,9 +441,7 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await page.goto('/');
   await reveal(page, '#scenario'); await page.locator('#scenario').selectOption('4');
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
-  await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();
-  await reveal(page, '#disasters-enabled'); await page.locator('#disasters-enabled').uncheck();
-  await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();
+  await setDisastersEnabled(page,false);
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
   await buyPlot(page,0,2);await setAutoDoze(page,true);await plantField(page,0,16);
   await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
