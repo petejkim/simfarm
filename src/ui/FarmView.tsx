@@ -173,6 +173,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     setNavigation({ target });
   }
   function openWindow(window: WindowCommand) {
+    if(window!=='edit'&&windows.order.includes(window)){windows.close(window);return;}
     windows.show(window === 'edit' ? null : window);
     if (window !== 'edit') {objectMove.cancel();construction.cancel();bulldoze.cancel();setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);}
     if (window === 'buy') { setNavigation(null); return; }
@@ -424,7 +425,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     </GameWindow>
     <GameWindow windowKey="bank" title="Bank">
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
-      artwork={assets.bankArtwork} onClose={() => windows.show(null)} panelRef={loansRef} />}
+      artwork={assets.bankArtwork} onClose={() => windows.close('bank')} panelRef={loansRef} />}
     </GameWindow>
     <GameWindow windowKey="taxes" title="Tax details">
     {snapshot && <TaxPanel snapshot={snapshot} open={taxOpen} onOpenChange={setTaxOpen} />}

@@ -14,7 +14,7 @@ export async function openWindow(page: Page, key: string) {
   if (key === 'schedule') { if (!await page.locator('[data-window="schedule"]').isVisible()) {await openWindow(page,'navigation');await page.getByRole('button',{name:'Crop planner',exact:true}).click();} return; }
   if (key === 'taxes') { await openWindow(page,'balance'); await page.getByRole('button',{name:'View tax details',exact:true}).click(); return; }
   if (key === 'edit') { await page.locator('#window-edit').click(); return; }
-  if (await page.locator(`[data-window="${key}"]`).isVisible()) return;
+  if (await page.locator(`[data-window="${key}"]`).isVisible()) {await page.locator(`[data-window="${key}"] .game-window-title`).focus();return;}
   if (key === 'options') { await openWindow(page, 'tools'); await page.getByRole('button', { name: 'Audio and tools', exact: true }).click(); return; }
   if (key === 'disasters') { await openWindow(page, 'tools'); await page.getByRole('button', { name: 'Disaster details', exact: true }).click(); return; }
   if (key === 'speed') { await page.locator(`#${key}-menu-button`).click(); return; }
@@ -26,7 +26,7 @@ export async function openWindow(page: Page, key: string) {
     await openWindow(page, 'options'); await page.getByRole('button', { name: key === 'session' ? 'Game files' : 'Preservation progress', exact: true }).click(); return;
   }
   await page.getByRole('button', { name: 'Edit tools and help', exact: true }).click();
-  await page.getByRole('button', { name: 'Advanced controls', exact: true }).click();
+  if(!await page.locator('[data-window=tools]').isVisible())await page.getByRole('button', { name: 'Advanced controls', exact: true }).click();
   if (key === 'actions') {
     const tool = await page.locator('#map-tool').inputValue(); await page.locator('#map-tool').selectOption(tool);
   } else if (key !== 'tools') await page.getByRole('button', { name: key === 'navigation' ? 'Farm controls' : key === 'machinery' ? 'Machinery' : key === 'livestock' ? 'Livestock' : 'Aircraft', exact: true }).click();

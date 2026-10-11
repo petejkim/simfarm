@@ -94,7 +94,7 @@ function ScheduleEditor({assets,snapshot,tiles,field,inspection,focusRef,onSelec
       <button style={{left:248,top:88,width:16,height:16}} aria-label="Next month" disabled={month===57} onClick={()=>setMonth(month+1)}/>
       <button className="schedule-caption" style={{top:61}} onClick={()=>setMonth(calendar.month)}>TODAY</button>
       <button className="schedule-caption" style={{top:77}} aria-label="Clear remaining plan" title="Choose CUT, then the first week to clear" aria-pressed={action.kind==='clear'} onClick={()=>chooseAction({kind:'clear'})}>CUT</button>
-      <button className="schedule-caption" style={{top:101}} onClick={()=>windows.show(null)}>CLOSE</button>
+      <button className="schedule-caption" style={{top:101}} onClick={()=>windows.close('schedule')}>CLOSE</button>
       {view&&<>
         <span className="schedule-season">{view.season} {view.year}</span>
         <output id="schedule-value">{view.value}</output>

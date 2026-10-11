@@ -47,7 +47,7 @@ export function SellWindow({assets,snapshot,tiles,onCommand,focusRef}:{assets:Ga
       <p id="sell-position">{product?`Item: ${index+1} of ${items.length}`:''}</p>
       <button id="catalog-sell" className={`sell-caption ${category==='harvest'&&product?'sell-harvest':''}`} style={{left:88,width:40}} disabled={blocked||!product?.available}
         aria-label={product?`Sell ${product.name}, ${category==='harvest'?'lot':'item'} ${product.slot}, for $${product.value}`:'Sell selected item'} onClick={()=>{if(product)onCommand(product.kind==='harvest'?{type:'sell-harvest',inventorySlot:product.slot}:{type:'sell-asset',kind:product.kind,slot:product.slot});}}>SELL</button>
-      <button className="sell-caption" style={{left:128,width:48}} onClick={()=>windows.show(null)}>CLOSE</button>
+      <button className="sell-caption" style={{left:128,width:48}} onClick={()=>windows.close('sell')}>CLOSE</button>
       <p id="harvest-stock" className="sale-accessible-detail">{harvestCount?`${harvestCount} stored harvest${harvestCount===1?'':'s'}`:'No stored harvests.'}</p>
     </section>
     {(product?.reason||result)&&<div className="sell-feedback">

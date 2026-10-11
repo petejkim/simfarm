@@ -153,7 +153,7 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .game-window .music-controls{max-width:none;flex-wrap:wrap}.game-window .volume,.game-window .music-controls label:first-child{display:flex}
 .game-window #crop-card{float:none;box-sizing:content-box}
 .game-window .geographic-chooser{width:472px}.game-window .terrain-design{width:352px}
-.game-desktop .original-menu-bar{z-index:50}
+.game-desktop .original-menu-bar{z-index:100}
 .game-desktop .homestead-notice{position:absolute;bottom:30px;left:60px;z-index:10;background:#c2c2c2;color:#000;padding:6px;font-size:12px}
 .game-window :is(#field-status,#field-growth,#farm-weather,#time-status,#crop-description,#schedule-status,#save-status){color:#000}
 .game-window[data-window=newgame]{z-index:40}
@@ -463,3 +463,5 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .edit-status-current{display:block;width:100%;height:16px;text-align:left;padding:2px 0 0 24px;border:0;border-radius:0;color:#000;background:#c2c2c2;font:inherit}
 .edit-status-history{position:absolute;left:0;right:0;top:0;height:96px;margin:0;padding:2px 0 0 23px;border:1px solid #000;list-style:none;background:#c2c2c2;pointer-events:auto}
 .edit-status-history li{height:8px;line-height:8px;white-space:nowrap}
+
+.game-window[data-front=false]>.game-window-title{background-image:var(--window-inactive)}

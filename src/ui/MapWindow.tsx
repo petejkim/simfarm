@@ -11,17 +11,17 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
   assets: GameAssets; snapshot: GameSnapshot; onCommand: (command: GameCommand) => void;
   viewportRef: RefObject<HTMLDivElement | null>; zoom: number; onLocate: (x:number,y:number)=>void;
 }) {
-  const {active,show}=useWindows(),canvas=useRef<HTMLCanvasElement>(null);
+  const {active,order,close}=useWindows(),canvas=useRef<HTMLCanvasElement>(null);
   const legend=useRef<HTMLCanvasElement>(null);
   const [mode,setMode]=useState<MapMode>(0),[selected,setSelected]=useState({x:0,y:0}),[help,setHelp]=useState(false);
   const [view,setView]=useState({x:0,y:0,width:40,height:32});
   const [transaction,setTransaction]=useState<'buy'|'sell'|null>(null);
   const quote=quoteLand(snapshot.scenario,selected.x,selected.y,snapshot.weather.soilMoisture)!;
   useLayoutEffect(()=>{
-    if(active!=='map')return;
+    if(!order.includes('map'))return;
     paintTerrainPreview(canvas.current!,renderOverview(snapshot.scenario,assets.miniature,assets.catalog.palette,mode,snapshot.weather.soilMoisture,selected));
     if(legend.current)paintTerrainPreview(legend.current,renderOverviewLegend(assets.miniature));
-  },[active,snapshot,assets,mode,selected]);
+  },[order,snapshot,assets,mode,selected]);
   useLayoutEffect(()=>{
     const el=viewportRef.current;if(!el)return;
     const update=()=>setView({x:el.scrollLeft/(8*zoom),y:el.scrollTop/(8*zoom),width:el.clientWidth/(8*zoom),height:el.clientHeight/(8*zoom)});
@@ -60,7 +60,7 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
       <span className="overview-mode-name" style={{top:mode>1?222:216}}>{MAP_MODES[mode]}</span>
       {mode===1&&quote.ownership<=1&&<button id="map-land-action" className="overview-trade" disabled={quote.ownership===0&&(quote.price>snapshot.scenario.farm.cash||quote.price===0)}
         onClick={()=>{const sell=quote.ownership===1;setTransaction(sell?'sell':'buy');onCommand({type:sell?'sell-land':'buy-land',regionX:selected.x,regionY:selected.y});}}>{quote.ownership===1?'SELL':'BUY'}</button>}
-      <button className="overview-close" onClick={()=>show(null)}>CLOSE</button>
+      <button className="overview-close" onClick={()=>close('map')}>CLOSE</button>
     </section>
     <div className="overview-feedback"><span className="sale-accessible-detail" id="map-land-selection">Plot at {selected.x*8}, {selected.y*8}: {quote.ownership===1?'Owned by you':quote.ownership?'Not for sale':'For sale'}</span>
       {mode===1&&quote.ownership===0&&quote.price>snapshot.scenario.farm.cash&&<p>There is not enough cash to buy this plot.</p>}

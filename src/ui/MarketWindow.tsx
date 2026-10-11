@@ -23,7 +23,7 @@ export function MarketWindow({assets,snapshot,tiles}:{assets:GameAssets;snapshot
         <output id="market-owned" style={{left:120,top:182,width:40}}>{view.futuresOwned}</output>
         {world.cropFiles.slice(page*16,page*16+16).map((file,i)=>{const crop=assets.catalog.crops.find(c=>`${c.id}.crp`===file)!;return <button key={file} data-market-crop={page*16+i}
           style={{left:176+i%4*32,top:8+Math.floor(i/4)*32,width:32,height:32}} aria-label={crop.name} title={crop.name} aria-pressed={slot===page*16+i} onClick={()=>setSlot(page*16+i)}/>;})}
-        <button className="market-close" style={{left:258,top:173,width:48,height:24}} onClick={()=>windows.show(null)}>CLOSE</button>
+        <button className="market-close" style={{left:258,top:173,width:48,height:24}} onClick={()=>windows.close('market')}>CLOSE</button>
       </div>
       <div className="market-pages" aria-label="Market crop pages">
         <button aria-label="Previous market crops" disabled={page===0} onClick={()=>setPage(page-1)}>‹</button>

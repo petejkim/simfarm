@@ -11,16 +11,16 @@ export function WeatherWindow({assets,snapshot,tiles,focusRef,onEvent}:{assets:G
   const windows=useWindows(),canvas=useRef<HTMLCanvasElement>(null),[frame,setFrame]=useState(0);
   const view=weatherWindowView(snapshot.scenario.farm.calendar,snapshot.weather,snapshot.scenario.climate);
   useEffect(()=>{
-    if(windows.active!=='weather'||snapshot.paused)return;
+    if(!windows.order.includes('weather')||snapshot.paused)return;
     // Browser presentation pacing only: more wind animates the original two
     // frames faster. DOS timer delays never control native game speed.
     const id=window.setInterval(()=>{if(!document.hidden)setFrame(n=>n^1);},Math.max(100,800/(1+Math.max(0,snapshot.weather.wind)/8)));
     return ()=>window.clearInterval(id);
-  },[windows.active,snapshot.paused,snapshot.weather.wind]);
+  },[windows.order,snapshot.paused,snapshot.weather.wind]);
   useEffect(()=>{if(canvas.current)drawWeatherPreview(canvas.current.getContext('2d')!,assets.weatherArtwork,tiles,assets.fieldGauges,assets.catalog.palette,view,frame);},[assets,tiles,snapshot,frame]);
   const value=(id:string,x:number,y:number,width:number,text:string|number,label:string)=><output id={id} aria-label={label} title={String(text)}
     style={{left:x,top:y,width,fontSize:Math.min(10,width/(String(text).length*.62))}}>{text}</output>;
-  return <GameWindow windowKey="weather" title="Weather" onClose={()=>{onEvent({type:'sound',sound:'click'});windows.show(null);}}>
+  return <GameWindow windowKey="weather" title="Weather" onClose={()=>{onEvent({type:'sound',sound:'click'});windows.close('weather');}}>
     <section ref={focusRef} tabIndex={-1} className="weather-window" aria-label="Weather conditions">
       <img src={assets.weatherArtwork.frame.src} width={336} height={192} alt="" draggable={false}/>
       <canvas ref={canvas} width={336} height={192} className="weather-preview" aria-label="Original seasonal scene, gauges and forecast illustrations"/>

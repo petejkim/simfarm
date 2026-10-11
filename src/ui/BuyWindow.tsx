@@ -31,7 +31,7 @@ export function BuyWindow({ assets, snapshot, tiles, onBuy }: { assets: GameAsse
       <span className="buy-label" style={{top:110}}>PRICE</span><output id="buy-price" style={{top:128}}>${product.price.toLocaleString('en-US')}</output>
       <span className="buy-label" style={{top:142}}>OWN</span><output id="buy-owned" style={{top:160}}>{product.count}</output>
       <button id="catalog-buy" className="buy-caption" style={{left:168,width:32}} disabled={blocked} onClick={()=>onBuy(product)}>BUY</button>
-      <button className="buy-caption" style={{left:200,width:48}} onClick={()=>windows.show(null)}>CLOSE</button>
+      <button className="buy-caption" style={{left:200,width:48}} onClick={()=>windows.close('buy')}>CLOSE</button>
     </section>
   </GameWindow>;
 }

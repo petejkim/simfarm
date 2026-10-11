@@ -41,7 +41,7 @@ export function AircraftWindow({assets,snapshot,selectedSlot,onSelect,onCommand,
             aria-pressed={snapshot.aircraftService.selectedChemical===chemical} disabled={blocked||!q?.ok} onClick={()=>service({kind:'chemical',chemicalType:chemical})}/>;}
           return c.id===5?<button key={c.id} id="fly-aircraft" className="aircraft-caption" style={style} aria-label="Fly aircraft" disabled={blocked||!plane||Boolean(base&&!base.ok&&base.reason!=='insufficient-cash')}
             onClick={()=>{if(plane)onFly(plane.slot);}}>FLY!</button>
-            :<button key={c.id} className="aircraft-caption" style={style} onClick={()=>windows.show(null)}>CLOSE</button>;
+            :<button key={c.id} className="aircraft-caption" style={style} onClick={()=>windows.close('aircraft')}>CLOSE</button>;
         })}
         {(['fuel','load','repair'] as const).map((kind,i)=><output key={kind} id={`aircraft-${kind}-price`} aria-label={`${kind} cost`} style={{top:44+i*55}}>{view?.prices?.[kind]??'—'}</output>)}
       </div>
