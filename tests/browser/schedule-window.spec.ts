@@ -6,8 +6,71 @@ import { readArchive } from '../../src/formats/archive';
 import { readPalette, decodePlanar } from '../../src/formats/graphics';
 import { browserCrops } from '../support/crop-catalog';
 import { scheduleMonth } from '../support/schedule-window';
+import { buyPlot, setAutoDoze, plantField, sprayField, clickFarmTile } from '../support/field-actions';
+import { reveal } from '../support/workspace';
+import { selectSaleOffer } from '../support/sell-window';
+import { GameSimulation } from '../support/game';
 const source=(name:string)=>readFileSync(new URL('../../../simfarm-dos/'+name,import.meta.url));
 async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await (await pending).path())!,'utf8'));}
+
+test('original map and Schedule controls complete harvest, storage, sale and replanting without immediate field orders',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/');await reveal(page,'#scenario');await page.locator('#scenario').selectOption('4');
+  await expect(page.locator('#map-status')).toContainText('Scenario 5');
+  await reveal(page,'#disasters-enabled');await page.locator('#disasters-enabled').uncheck();
+  await reveal(page,'#zoom');await page.locator('#zoom').selectOption('0.5');
+  await buyPlot(page,0,2);await setAutoDoze(page,true);await plantField(page,0,16);
+  await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
+  async function days(count:number){for(let i=0;i<count;i++){await reveal(page,'#next-day');await page.locator('#next-day').click();}}
+  async function examine(){
+    await reveal(page,'#viewport');await page.getByRole('button',{name:'View object',exact:true}).click();
+    await clickFarmTile(page,0,16);await expect(page.getByRole('dialog',{name:'Schedule',exact:true})).toBeVisible();
+    await expect(page.locator('#planner-field')).toHaveValue('9');
+  }
+  await days(2);await sprayField(page,0,16,'fertilizer');
+  await expect(page.locator('#field-tool-result')).toHaveText('Treatment ordered.');
+  await days(82);await examine();
+  expect(Number(await page.locator('#schedule-value').textContent())).toBeGreaterThan(0);
+  const before=await save(page),calendar=before.scenario.farm.calendar;
+  const harvestWeek=calendar.month*4+calendar.week+1;
+  await scheduleMonth(page,Math.floor(harvestWeek/4));
+  await page.locator('[data-plan-action="harvest"]').click();await page.locator(`[data-plan-week="${harvestWeek}"]`).click();
+  await expect(page.locator('#plan-result')).toContainText('Plan updated');
+  const scheduled=await save(page);
+  const snapshot=(checkpoint:unknown)=>GameSimulation.load(JSON.stringify(checkpoint),browserCrops).simulation.getSnapshot();
+  expect(snapshot(scheduled).scenario.fields[9].state).toBe(4);
+  expect(snapshot(scheduled).scenario.schedule.get(harvestWeek,8)).toBe(440);
+  // Remove the generated repeat-plant plan so this cycle waits for our explicit replant order.
+  await page.getByRole('button',{name:'Clear remaining plan',exact:true}).click();
+  await page.locator(`[data-plan-week="${harvestWeek+1}"]`).click();
+  await expect(page.locator('#plan-result')).toContainText('Plan updated');
+  // Seven days reach the next weekly order; allow the source machinery/delivery stages to finish.
+  await days(10);
+  const harvested=snapshot(await save(page)).scenario;
+  expect(harvested.fields[9].state).toBe(0);
+  expect(harvested.inventory[5].active).toBe(true);
+  expect(harvested.inventory[5].type).toBe(168);
+  const offers=page.locator('#catalog-sell');
+  await selectSaleOffer(page,label=>/^Sell Corn, lot 5, for \$[1-9]/.test(label));
+  const price=Number((await offers.getAttribute('aria-label'))!.match(/\$(\d+)$/)![1]);
+  const cashBefore=(await save(page)).scenario.farm.cash;
+  await offers.click();const sold=await save(page);
+  expect(sold.scenario.farm.cash).toBe(cashBefore+price);
+  expect(snapshot(sold).scenario.inventory[5].active).toBe(false);
+  await examine();
+  const afterSale=await save(page),now=afterSale.scenario.farm.calendar;
+  const plantWeek=now.month*4+now.week+1;
+  await scheduleMonth(page,Math.floor(plantWeek/4));
+  await page.locator('[data-plan-crop="0"]').click();await page.locator(`[data-plan-week="${plantWeek}"]`).click();
+  await expect(page.locator('#plan-result')).toContainText('Plan updated');
+  await days(12);await examine();
+  await expect(page.locator('#planner-field option:checked')).toContainText('Corn');
+  // Read the persisted simulation, not the interim Field orders panel.
+  const replanted=await save(page);
+  expect(snapshot(replanted).scenario.fields[9].state).toBe(4);
+  expect(snapshot(replanted).scenario.fields[9].bytes[34]).toBeLessThan(3);
+  expect(errors).toEqual([]);
+});
 
 test('Schedule restores source geometry, field artwork, gauges, all24 crops and weather overlays without changing the farm',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
