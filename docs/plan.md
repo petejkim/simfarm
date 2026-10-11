@@ -311,3 +311,5 @@ Farm controls retirement: removed the redundant navigation window, its launcher/
 Irrigation form retired: Ditch/Valve palette placement, direct existing-valve toggles and Options AutoDoze replace every action. Verified wet-flow/save continuation through those routes. Next retire remaining duplicate network and object controls after confirming each source interaction; Field information immediate-order adapters remain a separate audit.
 
 Network form retired: roads/fences/gates now use original palette construction and direct gate toggles exclusively. Removed duplicate category/preview/review plumbing; source-price, rendered-pixel, free gate and save-continuation checks use the original interactions. Continue remaining object forms and Field information audit.
+
+Removal form retired: original Bulldoze and its MESSAGE dialogs now provide removal access. Migrated stored-content demolition, terrain/loose clearing, original PCM, busy-field rejection, cancellation and cleared-field reuse checks to that route. Continue remaining building/movement/shop forms and Field information audit; full preservation remains incomplete.

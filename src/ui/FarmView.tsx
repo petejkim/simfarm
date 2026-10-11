@@ -58,8 +58,6 @@ import { MachineryPanel } from './MachineryPanel';
 import { TownChoicePanel } from './TownChoicePanel';
 import type { GameEvent } from '../simulation/events';
 import { BuildingPanel } from './BuildingPanel';
-import { RemovalPanel } from './RemovalPanel';
-import { checkManualRemoval } from '../simulation/manual-removal';
 import { checkBuildingPlacement } from '../simulation/building-placement';
 import { LivestockShop } from './LivestockShop';
 import { DISASTER_MENU_KINDS, disasterMenuChecks } from '../simulation/disaster-menu';
@@ -202,7 +200,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null);
     if (tool === 'View object') { setMapTool('inspect'); windows.show(null); }
     else if (tool === 'Move object') { objectMove.start();setMapTool('move');setSelection(null);setToolPointer(null);setBuyMessage('');setFieldToolMessage('');windows.show(null);viewportRef.current?.focus({preventScroll:true}); }
-    else if (tool === 'Bulldoze') { bulldoze.start();setSelection(null);setToolPointer(null);setMapTool('remove');windows.show(null);viewportRef.current?.focus({preventScroll:true}); }
+    else if (tool === 'Bulldoze') { bulldoze.start();setSelection(null);setToolPointer(null);setMapTool('inspect');windows.show(null);viewportRef.current?.focus({preventScroll:true}); }
     else if (tool === 'Paved road' || tool === 'Dirt road' || tool === 'Fence' || tool === 'Gate') {
       construction.start(tool==='Paved road'?'road-150':tool==='Dirt road'?'road-161':tool==='Fence'?'fence':'gate');setSelection(null);setToolPointer(null);setMapTool('inspect'); windows.show(null);viewportRef.current?.focus({preventScroll:true});
     } else if (tool === 'Ditch' || tool === 'Valve') {
@@ -217,14 +215,12 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
   const field = data?.scenario.fields.find(f => f.slot === fieldSlot && f.active);
   const cell = selection !== null ? data?.scenario.cells[selection] : undefined;
   const position = buyPlacement || fieldMapTool || objectMove.active || construction.tool || bulldoze.active ? toolPointer : selection !== null ? worldPosition(selection) : null;
-  const removal = position && data && mapTool === 'remove' ? checkManualRemoval(data.scenario, position.x, position.y) : null;
   const hoveredField=position?data?.scenario.fields.find(f=>f.contains(position.x,position.y)):undefined;
   const constructionQuote=position?construction.quote(position.x,position.y):null;
   const preview = bulldoze.active ? bulldoze.preview(position) : construction.tool&&position ? {...position,width:1,height:1,valid:construction.enabled&&Boolean(constructionQuote?.ok)} : objectMove.active ? objectMove.preview(position) : fieldMapTool && position && data ? fieldMapTool.kind==='plant'
     ? {...position,width:8,height:8,valid:checkFieldPlacement(data.scenario,position.x,position.y).ok}
     : hoveredField ? {x:hoveredField.x,y:hoveredField.y,width:hoveredField.width,height:hoveredField.height,valid:true}: {...position,width:1,height:1,valid:false}
     : mapTool === 'move' || mapTool === 'supply-move' ? position ? { ...position, width: 1, height: 1, valid: true } : undefined
-    : mapTool === 'remove' ? removal?.ok ? { x: removal.x, y: removal.y, width: removal.width, height: removal.height, valid: true } : undefined
     : position && data && snapshot && mapTool !== 'inspect' ? {
     x: position.x,
     y: position.y,
@@ -384,7 +380,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
       <div><label>Map tool <select id="map-tool" disabled={!data || Boolean(snapshot?.aircraftFlight)} value={mapTool} onChange={e => chooseTool(e.target.value as MapTool)}>
         <option value="inspect">Inspect</option>
         <option value="build">Build</option>
-        <option value="remove">Bulldoze</option>
         <option value="equipment">Buy machinery</option><option value="move">Move machinery</option><option value="supply-move">Move supplies</option>
         <option value="crop-supplies">Buy seeds &amp; chemicals</option>
         <option value="livestock">Animals &amp; supplies</option>
@@ -466,7 +461,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
         <div className="map-footer">{bulldoze.active&&<><button id="cancel-bulldoze" onClick={cancelBulldoze}>Stop bulldozing</button><span id="bulldoze-result" role="status">{bulldoze.message}</span></>}{construction.tool&&<><button id="cancel-construction" onClick={cancelConstruction}>Stop construction</button><span id="construction-result" role="status">{construction.message}</span></>}<span id="map-interaction-result" role="status">{interactionMessage}</span>{objectMove.active&&<><button id="cancel-object-move" onClick={cancelObjectMove}>Cancel move</button><span id="object-move-result" role="status">{objectMove.message}</span></>}<span id="field-tool-result" role="status">{fieldToolMessage}</span>{fieldMapTool&&<button id="cancel-field-tool" onClick={cancelFieldTool}>Cancel field tool</button>}{buyPlacement && <button id="cancel-buy-placement" onClick={cancelPurchase}>Cancel purchase</button>}<span id="buy-result" role="status">{buyMessage}</span><span id="map-tool-hint">{bulldoze.active?'Bulldoze: click or drag to clear · Buildings and fields ask for confirmation · Escape stops':construction.tool?construction.hint:objectMove.active?objectMove.hint:fieldMapTool ? fieldMapTool.kind==='plant' ? `Plant ${assets.catalog.crops.find(c=>`${c.id}.crp`===data.scenario.cropFiles[fieldMapTool.cropSlot])?.name}: click the top-left corner of a new field · Escape cancels` : `${SPRAY_TOOLS.find(t=>t.kind===fieldMapTool.kind)?.label}: click an existing field · Escape cancels` : buyPlacement ? `${buyPlacement.name}: click to place · Escape cancels` : snapshot?.aircraftFlight ? 'Following aircraft · farm calendar suspended' : mapTool === 'build' ? 'Click the top-left corner of a building'
           : mapTool === 'supply-move' ? 'Select a supply, then choose its destination in the movement panel'
           : mapTool === 'move' ? 'Select a machine, then choose its destination in the movement panel'
-          : mapTool === 'remove' ? 'Click an object or terrain to review its removal'
           : mapTool === 'equipment' ? 'Click clear ground or an equipment storage building'
           : mapTool === 'crop-supplies' ? 'Click a storage building, then review your purchase'
           : mapTool === 'livestock' ? 'Click a tile for your animal or supply' : 'Scroll to explore · click a tile to examine'}</span>
@@ -494,8 +488,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
           onCommand={command => simulation?.dispatch(command)} onPicked={() => setSelection(null)} />}
         {snapshot && (mapTool === 'inspect' || mapTool === 'move' || mapTool === 'supply-move' || mapTool === 'crop-supplies') && <BuildingInteriorControls snapshot={snapshot} position={position}
           onCommand={command => simulation?.dispatch(command)} />}
-        {snapshot && mapTool === 'remove' && <RemovalPanel snapshot={snapshot} position={position}
-          onCommand={command => simulation?.dispatch(command)} onCancel={() => { setSelection(null); setFieldSlot(null); }} />}
         {snapshot && mapTool === 'build' && <BuildingPanel snapshot={snapshot} position={position} buildingType={buildingType}
           onTypeChange={setBuildingType} onCommand={command => simulation?.dispatch(command)} />}
         {snapshot && mapTool === 'crop-supplies' && <CropSupplyShop snapshot={snapshot} crops={assets.catalog.crops} position={position} productType={cropSupplyType}
