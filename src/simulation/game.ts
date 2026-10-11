@@ -551,6 +551,8 @@ export class GameSimulation {
       this.lastSupplyMoveResult = moveManualSupply(this.scenario, this.finances, command.selected, command.x, command.y, this.weather.soilMoisture);
     } else if (command.type === 'move-equipment') {
       this.lastEquipmentMoveResult = moveManualEquipment(this.scenario, command.selected, command.x, command.y, this.scenario.farm.timerTicks);
+      // Original13c86 uses the wrong text index62; SF-173 retains evidence.
+      if(!this.lastEquipmentMoveResult.ok&&this.lastEquipmentMoveResult.reason==='equipment-busy')appendEditStatus(this.editStatus,61);
     } else if (command.type === 'toggle-building-interior') {
       this.lastBuildingInteriorResult = toggleManualBuildingInterior(this.scenario, command.x, command.y, command.slot);
     } else if (command.type === 'remove-object') {

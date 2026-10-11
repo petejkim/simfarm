@@ -44,3 +44,11 @@ High-confidence static evidence: palette callback214f0 dispatches through table2
 Spray pushes at383e8/38436/3847c/384c4 select fertilizer14, pesticide15, herbicide31 and fungicide16, each followed by far call1d75:2bb4 (`9ab42b751d`). Valve selection uses25, “Irrigation Ditch Valve,” rather than the separate39 “Ditch Valve On/Off.” View uses64, not the identical wording at19. These distinctions retain source codes even where visible labels overlap.
 
 Selection changes only transient history and existing UI tool state; canonical farm saves are unchanged. Modal guards still apply. Tests reject unverified externally requested codes, verify all sixteen producers and adjacent deduplication across ring wrap, and exercise every choice through actual browser controls. Source click-sound requests and subsequent operation-result producers remain separate work; no new original defect was established here.
+
+## Move pickup and busy feedback
+
+Successful machinery/chemical pickup converges on13bce (via13802/13821); feed also falls through to13bce. Seed, harvest and trough branches independently push7 at138f6,139ea and13ae8. Each calls22504, yielding “Choose a destination.” Native emits7 after the existing canonical pickup preflight succeeds, with no storage withdrawal or saved mutation. Preview/hover does not post messages. Failed empty/closed/invalid selection does not invent a source status.
+
+Busy equipment pickup1371a and drop13c86 actually push62, not61. SF-173 records that original text-index defect; native deliberately uses61, “Cannot move item in use.” The canonical move-equipment command publishes it after the rejected order, so secondary controls receive the same feedback. A busy drop returns the direct Move draft to pickup, matching13c90. Successful drops reset the pickup cursor at14510 without a new status call; native retains the destination line until another verified producer runs. Cancellation similarly clears the draft without adding an unverified message. Existing native safety checks and modal gates remain unchanged.
+
+Handler136c6..1454c SHA256 `7560e5339b2d2e0575722b5aeb8acbebaae79e45c9a0c1573de34be45db20e8b`. Source call sites and direct record contents are pinned in move-status.test.ts. This is high-confidence static reconstruction, not a claim of DOS execution. Gesture/error sounds and original cursor art remain deferred.

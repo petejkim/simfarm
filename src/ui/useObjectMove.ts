@@ -38,8 +38,11 @@ export function useObjectMove(simulation:GameSimulation|null,snapshot:GameSnapsh
     if(!active||blocked||!simulation)return;
     if(!selected){
       const result=pickup(x,y);if(!result)return;
-      if(result.ok){setSelected(result.selection);setMessage('');}
-      else setMessage(reasons[result.reason]??'This object cannot be moved.');
+      if(result.ok){setSelected(result.selection);setMessage('');simulation.dispatch({type:'edit-status',code:7});}
+      else {
+        if(result.reason==='equipment-busy')simulation.dispatch({type:'edit-status',code:61}); // SF-173
+        setMessage(reasons[result.reason]??'This object cannot be moved.');
+      }
       return;
     }
     simulation.dispatch(selected.kind==='equipment'?{type:'move-equipment',selected:selected.target,x,y}
@@ -49,7 +52,11 @@ export function useObjectMove(simulation:GameSimulation|null,snapshot:GameSnapsh
     if(result.ok){
       setMessage(selected.kind==='equipment'?'Movement ordered. Resume time to let the machinery travel.':
         'deleted' in result&&result.deleted?'Empty feed discarded.':'Supply moved.');setSelected(null);
-    }else setMessage(reasons[result.reason]??'This object cannot be moved.');
+    }else {
+      // Original13c90 returns to pickup when the selected machine becomes busy.
+      if(result.reason==='equipment-busy')setSelected(null);
+      setMessage(reasons[result.reason]??'This object cannot be moved.');
+    }
   }
   function preview(pointer:{x:number;y:number}|null):MapPreview|undefined{
     if(!active||!snapshot||!pointer)return;

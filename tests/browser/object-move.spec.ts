@@ -22,7 +22,7 @@ test('Move object picks stored machinery directly, cancels without withdrawal, r
   await page.goto('/');await load(page,g.save(4));await move(page);await point(page,20,21);
   await expect(page.locator('#object-move-result')).toContainText('Open the building');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await page.getByRole('button',{name:'View object',exact:true}).click();await point(page,20,21);await page.locator('#examine-building').click();g.dispatch({type:'toggle-building-interior',x:20,y:21,slot:1});
-  await move(page);await point(page,20,21);await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','drop');
+  await move(page);await point(page,20,21);await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','drop');await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Choose a destination.');
   await expect(page.locator('[data-window=actions]')).toBeHidden();expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await page.keyboard.press('Escape');await expect(page.locator('#cancel-object-move')).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await move(page);await point(page,20,21);await point(page,60,60);await expect(page.locator('#object-move-result')).toHaveText('Choose a destination on your land.');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
@@ -39,7 +39,7 @@ test('one Move object tool transfers every supply category, retains rejected/can
   const g=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,g.save(4));await move(page);
   for(const x of [10,12,14,16,18]){
     const selected=checkSupplyPickup(g.getSnapshot().scenario,g.getSnapshot().finances,x,10);if(!selected.ok)throw new Error('Missing supply');
-    await point(page,x,10);await expect(page.locator('#map-tool-hint')).toContainText(`Move ${selected.kind}`);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+    await point(page,x,10);await expect(page.locator('#map-tool-hint')).toContainText(`Move ${selected.kind}`);await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Choose a destination.');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
     await point(page,60,60);await expect(page.locator('#object-move-result')).toHaveText('Choose a destination on your land.');
     await point(page,x,20);g.dispatch({type:'move-supply',selected,x,y:20});await expect(page.locator('#object-move-result')).toHaveText('Supply moved.');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   }
@@ -54,7 +54,7 @@ test('one Move object tool transfers every supply category, retains rejected/can
 test('selection respects busy machinery and switching tools discards the draft without changing the farm',async({page})=>{
   const f=shopFixture();f.state.disasters.enabled=false;const g=f.load().withAllCrops(browserCrops);g.dispatch({type:'buy-equipment',equipmentType:0,x:40,y:40});
   const state=readNativeSave(g.save(4)).state;state.scenario.equipment[1].flags|=1;const busy=writeNativeSave(state,4);
-  await page.goto('/');await load(page,busy);await move(page);await point(page,40,40);await expect(page.locator('#object-move-result')).toHaveText('This machine is in use or already moving.');expect(await save(page)).toEqual(JSON.parse(busy));
+  await page.goto('/');await load(page,busy);await move(page);await point(page,40,40);await expect(page.locator('#object-move-result')).toHaveText('This machine is in use or already moving.');await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Cannot move item in use.');expect(await save(page)).toEqual(JSON.parse(busy));
   await load(page,g.save(4));await move(page);await point(page,40,40);await page.getByRole('button',{name:'View object',exact:true}).click();await point(page,40,40);await expect(page.getByRole('dialog',{name:'Examine',exact:true})).toBeVisible();
   expect(await save(page)).toEqual(JSON.parse(g.save(4)));await move(page);await point(page,40,40);await page.locator('#window-buy').click();await expect(page.locator('#cancel-object-move')).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
 });

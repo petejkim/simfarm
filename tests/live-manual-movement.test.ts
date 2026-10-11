@@ -41,6 +41,7 @@ test('live trailer towing checkpoints resume exactly and rejects repeat orders w
   game.dispatch({ type: 'move-equipment', selected, x: 60, y: 60 });
   const ordered = game.save(4); game.dispatch({ type: 'move-equipment', selected, x: 30, y: 30 });
   assert.equal(game.save(4), ordered); assert.deepEqual(game.getSnapshot().lastEquipmentMoveResult, { ok: false, reason: 'equipment-busy' });
+  assert.deepEqual(game.getSnapshot().editStatuses,[61]);
   game.dispatch({ type: 'advance-day' });
   assert.equal(game.getSnapshot().scenario.equipment[1].attachment, 2);
   const saved = game.save(4), copy = GameSimulation.load(saved, f.crops).simulation; assert.equal(copy.save(4), saved);
