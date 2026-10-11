@@ -117,3 +117,22 @@ test('terrain uses original rain/frost colors and restores dry artwork without m
   const pixels=await page.locator('#world').evaluate((c:HTMLCanvasElement)=>Array.from(c.getContext('2d')!.getImageData(0,0,16,16).data));
   expect(pixels).toEqual(Array.from(decodePlanar(asset('ega16til.til').subarray(15*128,16*128),16,16,palette).rgba));
 });
+
+
+test('prolonged dry climate reaches the original cracked-soil artwork in the live terrain',async({page})=>{
+  const f=fixture();Object.assign(f.state.weather,{current:0,soilMoisture:12,moistureBalance:0,wind:15,temperature:100,windAnomaly:0,temperatureAnomaly:0,forecast:Array(7).fill(0),nextForecast:Array(7).fill(0)});
+  f.state.scenario.farm.messages=false;
+  Object.assign(f.state.scenario.farm.calendar,{day:0,week:0,month:5});
+  f.state.scenario.climate.precipitation.fill(0);f.state.scenario.climate.temperature.fill(100);f.state.scenario.climate.wind.fill(15);
+  for(const cell of f.state.scenario.cells){cell.terrain=27;cell.attribute=0;}
+  const game=f.load().withAllCrops(browserCrops);await start(page);await load(page,game.save(4));
+  const pixels=()=>page.locator('#world').evaluate((c:HTMLCanvasElement)=>Array.from(c.getContext('2d')!.getImageData(0,0,16,16).data));
+  const original=(tile:number)=>Array.from(decodePlanar(asset('ega16til.til').subarray(tile*128,(tile+1)*128),16,16,palette).rgba);
+  expect(await pixels()).toEqual(original(27));
+  await reveal(page,'#next-day');
+  for(let day=0;day<28;day++){await page.locator('#next-day').click();game.dispatch({type:'advance-day'});}
+  expect(game.getSnapshot().weather.soilMoisture).toBe(0);expect(game.getSnapshot().scenario.cells[0].terrain&2047).toBe(15);
+  expect(await pixels()).toEqual(original(15));expect(await pixels()).not.toEqual(original(27));
+  expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+  await page.locator('#window-edit').click();await page.screenshot({path:'artifacts/browser-drought-cracked-soil.png'});
+});
