@@ -46,44 +46,41 @@ test('frost controls cancel locusts, play original wind PCM and retain cooling/l
   await expect(page.locator('#frost-state')).toHaveCount(0);await expect(page.locator('#disaster-notices')).toContainText('The frost has ended');expect(await save(page,'frost-ended')).toEqual(JSON.parse(g.save(4)));expect(errors).toEqual([]);
 });
 
-test('crop circles render original seven tiles and request audible alien MIDI without replaying the event on load',async({page})=>{
+test('saved crop circles retain original tiles and event flags; alien MIDI remains audible without replay on load',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await observeAudio(page);await page.goto('/');
-  const f=disasterFixture();f.state.scenario.fields[1].bytes[14]=1;const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));
-  await reveal(page, '#play'); await page.locator('#music').selectOption('amain');await page.locator('#play').click();await expect(page.locator('#audio-status')).toContainText('Playing amain');
-  await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();const response=page.waitForResponse(r=>r.url().endsWith('/alien.music.json'));
-  await reveal(page, '#start-crop-circles'); await page.locator('#start-crop-circles').click();g.dispatch({type:'start-disaster',kind:'crop-circles'});
+  const f=disasterFixture();f.state.scenario.fields[1].bytes[14]=1;const g=f.load().withAllCrops(browserCrops);
+  // The source trigger is debug-only; construct its resulting checkpoint outside the browser.
+  g.dispatch({type:'start-disaster',kind:'crop-circles'});const active=JSON.parse(g.save(4));await load(page,JSON.stringify(active));
+  await circles(page);expect(await save(page,'circles-active')).toEqual(active);
+  await expect(page.locator('#disaster-message-ok')).toHaveCount(0);
+  await reveal(page,'#play');await page.locator('#music').selectOption('alien');
+  const response=page.waitForResponse(r=>r.url().endsWith('/alien.music.json'));await page.locator('#play').click();
   const a=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
   expect(await(await response).json()).toEqual(decodeXmidi(a.find(e=>e.name==='alien.xmi')!.bytes));
   await expect(page.locator('#audio-status')).toContainText('Playing alien · MIDI');
   await expect.poll(()=>page.evaluate(()=>{const a=(window as unknown as {stationaryAudio:{masters:AnalyserNode[]}}).stationaryAudio.masters[0],data=new Float32Array(a.fftSize);a.getFloatTimeDomainData(data);return Math.max(...Array.from(data,Math.abs));})).toBeGreaterThan(0.001);
-  await expect(page.locator('#start-crop-circles')).toBeDisabled();await reveal(page, '#locate-circles'); await page.locator('#locate-circles').click();await circles(page);
-  const active=await save(page,'circles-active');expect(active).toEqual(JSON.parse(g.save(4)));
-  await reveal(page, '#music'); await page.locator('#music').selectOption('ffarm');await expect(page.locator('#audio-status')).toContainText('Playing ffarm');
-  await load(page,JSON.stringify(active));await expect(page.locator('#audio-status')).toContainText('Playing ffarm');await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();
-  await circles(page);await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});await expect(page.locator('#start-crop-circles')).toBeEnabled();await circles(page);
-  expect(await save(page,'circles-ended')).toEqual(JSON.parse(g.save(4)));
-  await reveal(page, '#play'); await page.locator('#play').click();await reveal(page, '#start-crop-circles'); await page.locator('#start-crop-circles').click();g.dispatch({type:'start-disaster',kind:'crop-circles'});
+  await page.locator('#music').selectOption('ffarm');await expect(page.locator('#audio-status')).toContainText('Playing ffarm');
+  await load(page,JSON.stringify(active));await expect(page.locator('#audio-status')).toContainText('Playing ffarm');
+  await circles(page);await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});
+  const ended=await save(page,'circles-ended');expect(ended.runtime.disasters.flags&64).toBe(0);expect(ended).toEqual(JSON.parse(g.save(4)));await circles(page);
+  await reveal(page,'#play');await page.locator('#play').click();await load(page,JSON.stringify(active));
   await expect(page.locator('#audio-status')).toHaveText('Music off');await expect(page.locator('#music')).toHaveValue('ffarm');
-  await page.setViewportSize({width:1280,height:844});await reveal(page, '#start-crop-circles'); await page.locator('#start-crop-circles').scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
-  await page.screenshot({path:'artifacts/browser-stationary-mobile.png',fullPage:true});expect(errors).toEqual([]);
+  expect(await save(page,'circles-reloaded-muted')).toEqual(active);expect(errors).toEqual([]);
 });
 
-test('ineligible crop-circle attempts explain rejection and toxic warnings remain saved without invented damage or sound',async({page})=>{
-  await observeAudio(page);await page.goto('/');const f=disasterFixture();f.state.scenario.fields[1].bytes[14]=0;const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));
-  await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
-  await setDisastersEnabled(page,false);g.dispatch({type:'set-disasters-enabled',enabled:false});
-  for(const id of ['start-crop-circles','start-toxic-land'])await expect(page.locator('#'+id)).toBeDisabled();
-  await setDisastersEnabled(page,true);g.dispatch({type:'set-disasters-enabled',enabled:true});
-  await reveal(page, '#start-crop-circles'); await page.locator('#start-crop-circles').click();g.dispatch({type:'start-disaster',kind:'crop-circles'});await expect(page.locator('#disaster-error')).toContainText('not suitable for crop circles');
-  expect(await save(page,'rejected')).toEqual(JSON.parse(g.save(4)));
-  await reveal(page, '#start-toxic-land'); await page.locator('#start-toxic-land').click();g.dispatch({type:'start-disaster',kind:'toxic-land'});
-  await expect(page.locator('#toxic-warning-state')).toHaveText('Toxic-land warning recorded.');await expect(page.locator('#start-toxic-land')).toBeDisabled();
-  const active=await save(page,'warning');expect(active).toEqual(JSON.parse(g.save(4)));expect((await audio(page)).filter(s=>s.length!==2667)).toEqual([]); // Menu and Message OK clicks only; no disaster PCM.
-
-  await load(page,JSON.stringify(active));await reveal(page, '#disasters-panel > summary'); await page.locator('#disasters-panel > summary').click();await reveal(page, '#toxic-warning-state'); await expect(page.locator('#toxic-warning-state')).toBeVisible();
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});expect(await save(page,'warning-continued')).toEqual(JSON.parse(g.save(4)));expect((await audio(page)).filter(s=>s.length!==2667)).toEqual([]); // Menu and Message OK clicks only; no disaster PCM.
-
-  await chooseDisaster(page,'wind');g.dispatch({type:'disaster-menu',action:'wind'});await expect(page.locator('#disaster-state')).toContainText('High winds active');
+test('saved toxic warning remains flag-only and ordinary play has no provisional extra triggers',async({page})=>{
+  await observeAudio(page);await page.goto('/');const f=disasterFixture(),g=f.load().withAllCrops(browserCrops);
+  const before=JSON.parse(g.save(4));g.dispatch({type:'start-disaster',kind:'toxic-land'});const active=JSON.parse(g.save(4));
+  expect(active.scenario).toEqual(before.scenario);expect(active.runtime.random).toEqual(before.runtime.random);
+  await load(page,JSON.stringify(active));await expect(page.locator('#disaster-message-ok')).toHaveCount(0);
+  await reveal(page,'#sound-toggle');await page.locator('#sound-toggle').click();
+  await openWindow(page,'disasters');await expect(page.locator('#start-crop-circles,#start-toxic-land')).toHaveCount(0);
+  // Uppercase A is source debug input, not an ordinary gameplay shortcut.
+  await reveal(page,'#viewport');await page.keyboard.press('Shift+A');expect(await save(page,'warning')).toEqual(active);
+  await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});
+  const continued=await save(page,'warning-continued');expect(continued.runtime.disasters.flags&128).toBe(128);expect(continued).toEqual(JSON.parse(g.save(4)));
+  expect((await audio(page)).filter(s=>s.length!==2667)).toEqual([]);
+  await chooseDisaster(page,'wind');g.dispatch({type:'disaster-menu',action:'wind'});
   await expectDisasterChecked(page,'wind');expect(await save(page,'manual-wind')).toEqual(JSON.parse(g.save(4)));
   await expect.poll(async()=>(await audio(page)).some(a=>a.length===12132&&a.peak>0.01)).toBe(true);
 });

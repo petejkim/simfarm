@@ -1,9 +1,9 @@
-import type { GameCommand, GameSnapshot } from '../simulation/game';
+import type { GameSnapshot } from '../simulation/game';
 
-export function DisasterPanel({ snapshot: s, onCommand, onLocate }: {
-  snapshot: GameSnapshot; onCommand: (command: GameCommand) => void; onLocate: (x: number, y: number) => void;
+export function DisasterPanel({ snapshot: s, onLocate }: {
+  snapshot: GameSnapshot; onLocate: (x: number, y: number) => void;
 }) {
-  const d = s.disasters, blocked = Boolean(s.pendingTown || s.finances.defaultDecision || s.aircraftFlight);
+  const d = s.disasters;
   const active = d.flags & 1 ? 'tornado' : d.flags & 32 ? 'swarm' : null;
   const names = [[1, 'Tornado'], [32, 'Locust swarm'], [2, 'Drought'], [4, 'Flood'], [8, 'High winds'], [16, 'Frost'], [64, 'Crop circles'], [128, 'Toxic-land warning']] as const;
   const activeNames = names.filter(([flag]) => d.flags & flag).map(([, name]) => name);
@@ -15,10 +15,7 @@ export function DisasterPanel({ snapshot: s, onCommand, onLocate }: {
     <p>Disabling new disasters lets an existing event run its course. High winds can strip nutrients from fields; nearby trees offer protection.</p>
     <p>Start an event from the Disasters menu. Tornadoes can destroy buildings and their contents; locusts damage crops.</p>
     <p>Floods spread beside permanent water and can destroy fields and buildings. Droughts dry shallow shoreline water. Advance time to let events run their course.</p>
-    <p>Frost damages sensitive crops and can end a locust swarm. Crop circles may appear in wheat, barley, oats or sorghum fields. The toxic-land action records a warning.</p>
     <div className="disaster-actions">
-      <button id="start-crop-circles" disabled={blocked || !d.enabled || Boolean(d.flags & 64) || !s.scenario.fields.some(f => f.active)} onClick={() => onCommand({ type: 'start-disaster', kind: 'crop-circles' })}>Create crop circles</button>
-      <button id="start-toxic-land" disabled={blocked || !d.enabled || Boolean(d.flags & 128)} onClick={() => onCommand({ type: 'start-disaster', kind: 'toxic-land' })}>Show toxic-land warning</button>
       {circle >= 0 && <button id="locate-circles" onClick={() => onLocate(Math.floor(circle / 96), circle % 96)}>Locate crop circles</button>}
       {active && <button id="locate-disaster" onClick={() => onLocate(d[active].x, d[active].y)}>Locate {active === 'swarm' ? 'locusts' : 'tornado'}</button>}
       {Boolean(d.flags & 6) && shoreline >= 0 && <button id="locate-shoreline" onClick={() => onLocate(Math.floor(shoreline / 96), shoreline % 96)}>Locate shoreline</button>}

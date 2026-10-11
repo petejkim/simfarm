@@ -378,7 +378,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onSc
     {snapshot && simulation && <AircraftWindow assets={assets} selectedSlot={aircraftSlot} onSelect={setAircraftSlot} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })}
       onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); if (simulation.getSnapshot().aircraftFlight) windows.show(null); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
     <GameWindow windowKey="disasters" title="Disasters">
-    {snapshot && <DisasterPanel snapshot={snapshot} onCommand={command => simulation?.dispatch(command)} onLocate={(x, y) => setFocus({ x, y })} />}
+    {snapshot && <DisasterPanel snapshot={snapshot} onLocate={(x, y) => setFocus({ x, y })} />}
     </GameWindow>
     {data && snapshot && <ScheduleWindow inspection={fieldInspection} assets={assets} snapshot={snapshot} tiles={data.tiles} field={field} focusRef={plannerRef}
       onSelect={slot=>{setSelection(null);selectField(slot,true);}} onNewField={()=>{windows.close('schedule');openFieldMenu('plant');}} onCommand={command=>simulation?.dispatch(command)}/>}

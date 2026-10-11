@@ -1,3 +1,4 @@
+import { chooseDisaster } from '../support/disaster-menu';
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {PNG} from 'pngjs';
@@ -25,12 +26,12 @@ async function message(page:Page,id:DisasterNoticeId){
   return win;
 }
 
-test('all eight starts restore original text and portrait pixels, honor Messages, and preserve canonical checkpoints',async({page})=>{
+test('all six original menu starts restore original text and portrait pixels, honor Messages, and preserve canonical checkpoints',async({page})=>{
   await start(page);
-  for(const enabled of [true,false])for(const kind of ['frost','wind','crop-circles','toxic-land','tornado','drought','flood','swarm'] as const){
+  for(const enabled of [true,false])for(const kind of ['frost','wind','tornado','drought','flood','swarm'] as const){
     const f=disasterFixture();f.state.scenario.fields[1].bytes[14]=1;f.state.scenario.farm.messages=enabled;
     const game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));
-    await reveal(page,`#start-${kind}`);await page.locator(`#start-${kind}`).click();game.dispatch({type:'start-disaster',kind});
+    await chooseDisaster(page,kind);game.dispatch({type:'disaster-menu',action:kind});
     if(enabled||DISASTER_MESSAGES[kind].mandatory){await message(page,kind);await page.keyboard.press('Escape');}
     await expect(page.locator('#disaster-message-ok')).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(game.save(4)));
     await load(page,game.save(4));await expect(page.locator('#disaster-message-ok')).toHaveCount(0);

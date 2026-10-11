@@ -138,7 +138,7 @@ Seven foundation tests pin instructions/resources, cover all256 field states, sp
 
 ## Live frost, crop circles, toxic warning and manual high wind
 
-The **Disasters** panel now provides **Start frost**, **Create crop circles**, **Show toxic-land warning** and **Start high winds**. Wind uses the previously verified mode6 path from the original manual menu0x3e41c, with no second implementation of prices or damage. Frost emits original wind.voc, reports affected sensitive-field count and cancels the swarm. Crop circles request original alien music through the MIDI player and offer **Locate crop circles** while their center tile remains, including after loading. An ineligible selected crop reports failure without retrying. The toxic action explicitly records a warning, with no invented pollution mutation. These controls/notices are native presentation; manual exposure of the warning and explicit circle button do not claim the original input/menu layout.
+Original Disasters now supplies Frost and Windstorm. The former Create crop circles and Show toxic-land warning buttons were provisional native exposures and have been removed after the [trigger audit](disaster-trigger-audit.md). The canonical primitives still preserve source effects, disabled/ineligible/repeat guards, MIDI/Message events and saves for research and future verified input reconstruction. Disaster details retains only diagnostics and Locate pending retirement; it owns no simulation commands.
 
 GameSimulation calls frost's daily helper before odd-day needs/status work and calls the stationary dispatcher before wind/moving/flood effects. The existing tornado gate controls disaster updates during modal flight, so a circle/frost flag alone waits until ordinary farm updates resume; a concurrent tornado permits dispatch. Paused ticks do nothing. Disabling new events leaves existing effects running. Ending notices are bounded native feedback, not recovered source end dialogs. Frost and circle starts consume exactly the source loss/price/RNG operations; toxic warnings remain flag-only. Existing v14 state retains all effects without a new schema. Detached snapshots copy the new result field-slot array. Loading does not reprice, repaint, add loss, select another field or replay audio.
 
@@ -148,7 +148,7 @@ Six live cases cover frost/swarm interaction, loss/current prices, daily and dis
 
 ## Original menu integration
 
-The seven-entry Disasters dropdown now invokes the canonical events directly, displays active flags and inverse Disable, and preserves ongoing damage when disabled. Explicit native menu starts correct the source enable-after-call/check mismatch (SF-171); general and automatic start guards remain unchanged. See [disasters-menu.md](disasters-menu.md) for source callbacks, input audit, native policy and verification. The original events.dat notification popup interiors remain unfinished.
+The seven-entry Disasters dropdown now invokes the canonical events directly, displays active flags and inverse Disable, and preserves ongoing damage when disabled. Explicit native menu starts correct the source enable-after-call/check mismatch (SF-171); general and automatic start guards remain unchanged. See [disasters-menu.md](disasters-menu.md) for source callbacks, input audit, native policy and verification. The original events.dat notification popup interiors are restored below.
 
 ## Original notification integration
 

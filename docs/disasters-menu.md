@@ -4,7 +4,7 @@ Source: immutable SIMFARM.EXE, SHA-256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1a
 
 ## Source dispatch and state
 
-Descriptor DSa650 gives header288,0,72,16 and popup288,16,104,88. The linked items are Tornado, Locusts, Drought, Flood, Frost, Windstorm and Disable, with12-pixel row pitch. Their decoded source labels are actual React text. The native dropdown retains this1× layout and does not add the interim panel's crop-circle/toxic-land controls to the original menu. Crop-circle/toxic-land controls, active-event details and explicit Locate remain temporarily available through Edit tools → Disaster details pending their source-reachability audit. The six duplicate ordinary start buttons and Allow new disasters checkbox have been removed; original menu choices and Disable now provide those player interactions exclusively.
+Descriptor DSa650 gives header288,0,72,16 and popup288,16,104,88. The linked items are Tornado, Locusts, Drought, Flood, Frost, Windstorm and Disable, with12-pixel row pitch. Their decoded source labels are actual React text. The native dropdown retains this1× layout and does not add the interim panel's crop-circle/toxic-land controls to the original menu. Active-event details and explicit Locate remain temporarily available through Edit tools → Disaster details. Crop-circle/toxic-land buttons have been removed after the [trigger audit](disaster-trigger-audit.md): circle input is debug-only and no ordinary toxic-mode caller was proven. The six duplicate ordinary start buttons and Allow new disasters checkbox have been removed; original menu choices and Disable now provide those player interactions exclusively.
 
 Stub24e6:1348/file283a8 dispatches overlay18:0000/file3e3b0. Table3e448 has seven16-bit targets relative to3e3b0:
 
