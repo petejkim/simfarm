@@ -1,6 +1,7 @@
 import { Binary } from './binary';
 export interface MidiEvent { tick: number; data: number[] }
-export interface MidiSequence { ticksPerSecond: 120; endTick: number; events: MidiEvent[]; sourceMetadata: MidiEvent[] }
+export interface MidiLoop { startTick:number; endTick:number; events:MidiEvent[] }
+export interface MidiSequence { loop?:MidiLoop; ticksPerSecond: 120; endTick: number; events: MidiEvent[]; sourceMetadata: MidiEvent[] }
 
 function eventChunks(bytes: Uint8Array, depth = 0): Uint8Array[] {
   if (depth > 8) throw new Error('IFF nesting too deep');
@@ -21,6 +22,8 @@ export function decodeXmidi(bytes: Uint8Array): MidiSequence {
   const chunks = eventChunks(bytes);
   if (chunks.length !== 1) throw new Error('Expected one XMIDI sequence');
   const source = chunks[0];
+  const loopStack:{tick:number;eventIndex:number}[]=[];
+  let loop:MidiLoop|undefined;
   let pos = 0, tick = 0, ended = false;
   const events: MidiEvent[] = [], sourceMetadata: MidiEvent[] = [];
   function next(): number { if (pos >= source.length) throw new Error('Truncated XMIDI event'); return source[pos++]; }
@@ -48,6 +51,14 @@ export function decodeXmidi(bytes: Uint8Array): MidiSequence {
       sourceMetadata.push({ tick, data });
       // Preserve AIL instructions as evidence; fail instead of flattening finite loops or callbacks.
       if ((data[1] === 116 && data[2] !== 0) || [115, 119].includes(data[1])) throw new Error('XMIDI branch/finite-loop interpretation required');
+      // Supplied GMT32MPU.ADV1a41..1aa0: first free of four slots,
+      // NEXT selects the last occupied slot regardless of MIDI channel.
+      if (!loop && data[1] === 116 && loopStack.length < 4) loopStack.push({tick,eventIndex:events.length});
+      if (!loop && data[1] === 117 && data[2] >= 64 && loopStack.length) {
+        const start=loopStack.at(-1)!;
+        if(tick<=start.tick)throw new Error('Nonadvancing XMIDI loop');
+        loop={startTick:start.tick,endTick:tick,events:events.slice(start.eventIndex)};
+      }
     } else events.push({ tick, data });
     if (kind === 9) {
       const duration = vlq();
@@ -56,7 +67,8 @@ export function decodeXmidi(bytes: Uint8Array): MidiSequence {
   }
   if (!ended) throw new Error('XMIDI has no end-of-track event');
   events.sort((a, b) => a.tick - b.tick);
-  return { ticksPerSecond: 120, endTick: Math.max(tick, ...events.map(e => e.tick)), events, sourceMetadata };
+  if(loop)loop.events.sort((a,b)=>a.tick-b.tick);
+  return { ...(loop?{loop}:{}),ticksPerSecond: 120, endTick: Math.max(tick, ...events.map(e => e.tick)), events, sourceMetadata };
 }
 function vlq(value: number): number[] {
   if (!Number.isInteger(value) || value < 0 || value > 0x0fffffff) throw new Error('Invalid MIDI delta');

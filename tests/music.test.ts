@@ -1,5 +1,6 @@
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { readArchive } from '../src/formats/archive';
 import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
@@ -38,5 +39,30 @@ test('all eight source tracks produce balanced MIDI notes and preserve program c
     }
     assert.ok([...notes.values()].every(n => n === 0), entry.name);
     assert.ok(encodeMidi(sequence).length > 100);
+  }
+});
+
+test('supplied driver loop slots select the fourth start, ignore overflow and preserve note tails',()=>{
+  const driver=readFileSync(new URL('../../simfarm-dos/SOUND/GMT32MPU.ADV',import.meta.url));
+  assert.equal(createHash('sha256').update(driver).digest('hex'),'3b3c22aae5578a0ca58b792d629912471f1d13527fcf16ba91f3a4f8152bf368');
+  assert.equal(driver.subarray(0x1a41,0x1a47).toString('hex'),'bb0000b90400');
+  assert.equal(driver.subarray(0x1a6e,0x1a74).toString('hex'),'bb0600b90400');
+  assert.equal(driver.subarray(0x1a82,0x1a88).toString('hex'),'83786000740d');
+  const input=sequence([0xc0,3,0xb0,116,0,0xb1,116,0,0xb2,116,0,2,0xb3,116,0,0xc1,8,3,0xb4,116,0,0x90,60,100,20,5,0xb9,117,100,0xff,0x2f,0]);
+  const result=decodeXmidi(input);
+  assert.deepEqual(result.loop,{startTick:2,endTick:10,events:[{tick:2,data:[0xc1,8]},{tick:5,data:[0x90,60,100]},{tick:25,data:[0x80,60,0]}]});
+  assert.throws(()=>decodeXmidi(sequence([0xb0,116,0,0xb0,117,100,0xff,0x2f,0])),/Nonadvancing/);
+  assert.equal(decodeXmidi(sequence([0xb0,116,0,10,0xb0,117,0,0xff,0x2f,0])).loop,undefined);
+});
+
+test('only genfarm has an infinite source loop and its note releases cross the boundary',()=>{
+  const source=(n:string)=>readFileSync(new URL('../../simfarm-dos/'+n,import.meta.url));
+  const entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')).filter(e=>e.name.endsWith('.xmi'));
+  for(const entry of entries){
+    const decoded=decodeXmidi(entry.bytes);
+    if(entry.name!=='genfarm.xmi'){assert.equal(decoded.loop,undefined);continue;}
+    assert.equal(decoded.loop?.startTick,0);assert.equal(decoded.loop?.endTick,7199);
+    assert.ok(decoded.loop.events.some(e=>e.tick>7199));
+    assert.ok(decoded.loop.events.length<decoded.events.length);
   }
 });
