@@ -1,3 +1,4 @@
+import {toggleOption} from '../support/options-menu';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { chooseDisaster, setDisastersEnabled, expectDisasterChecked } from '../support/disaster-menu';
 import { reveal, acknowledgeFinanceMessages } from '../support/workspace';
@@ -72,7 +73,7 @@ test('Disasters controls start real locust damage, render every source sprite pi
    await setDisastersEnabled(page,false);
   game.dispatch({ type: 'set-disasters-enabled', enabled: false }); await expectDisasterChecked(page,'disable');
   await setDisastersEnabled(page,true); game.dispatch({ type: 'set-disasters-enabled', enabled: true });
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await chooseDisaster(page,'swarm'); game.dispatch({ type:'disaster-menu',action:'swarm' });
+  await toggleOption(page,'Sound Effects'); await chooseDisaster(page,'swarm'); game.dispatch({ type:'disaster-menu',action:'swarm' });
   const active=await farmSnapshot(page);expect(active.paused).toBe(true);expect([active.disasters.swarm.x,active.disasters.swarm.y]).toEqual([20,20]);
   await expectDisasterChecked(page,'swarm'); await sprites(page, game.getSnapshot().disasters, 'swarm');
   await expect.poll(() => page.evaluate(() => (window as unknown as { disasterAudio: { length: number; peak: number }[] }).disasterAudio.some(a => a.length === 7259 && a.peak > 0.01))).toBe(true);
@@ -95,7 +96,7 @@ test('manual tornado destroys a building and contents without sale credit; disab
   expect(purchaseBuilding(f.state.scenario, f.state.finances, 67, x, y, 0).ok).toBe(true);
   expect(purchaseEquipment(f.state.scenario, f.state.finances, 0, x, y, 0).ok).toBe(true);
   const game = f.load().withAllCrops(browserCrops), cash = game.getSnapshot().scenario.farm.cash; await load(page, game.save(4));
-   await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+   await toggleOption(page,'Sound Effects');
   await chooseDisaster(page,'tornado'); game.dispatch({ type:'disaster-menu',action:'tornado' });
   await sprites(page, game.getSnapshot().disasters, 'tornado'); await reveal(page,'#viewport');
   await expect.poll(() => page.evaluate(() => (window as unknown as { disasterAudio: { length: number; peak: number }[] }).disasterAudio.some(a => a.length === 11549 && a.peak > 0.01))).toBe(true);

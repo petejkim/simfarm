@@ -1,6 +1,9 @@
+import {farmSnapshot} from '../support/field-checkpoint';
+import {acknowledgeFinanceMessages} from '../support/workspace';
+import {toggleOption,expectOptionChecked} from '../support/options-menu';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readScenario } from '../../src/formats/scenario';
 import { readCrop } from '../../src/formats/crop';
@@ -17,10 +20,16 @@ function checkpoint(cash = 800000, rank = 0, weekly = false) {
   return { name: 'home.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(save)) };
 }
 
+async function locateHome(page:Page){
+  await acknowledgeFinanceMessages(page);await page.locator('#window-map').click();
+  await page.locator('.overview-viewport canvas').click({position:{x:96,y:80}});
+  await page.getByRole('region',{name:'Farm overview'}).getByRole('button',{name:'CLOSE',exact:true}).click();
+}
+
 test('annual homestead updates repaint original tiles, persist once, and play original PCM effects with MIDI when enabled', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const music: string[] = [], sounds: string[] = [];
-  page.on('request', r => { if (r.url().endsWith('.music.json')) music.push(r.url()); if (r.url().endsWith('.voc')) sounds.push(r.url()); });
+  page.on('request', r => { if (r.url().endsWith('.music.json')) music.push(r.url()); if (/\/(cheers|boos)\.voc$/.test(r.url())) sounds.push(r.url()); });
   await page.addInitScript(() => {
     const Base = window.AudioContext, pcm: { length: number; analyser: AnalyserNode }[] = [];
     Object.assign(window, { __homePcm: pcm });
@@ -43,13 +52,12 @@ test('annual homestead updates repaint original tiles, persist once, and play or
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(checkpoint());
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); await reveal(page, '#town-choice'); await expect(page.locator('#town-choice')).toBeVisible();
-  await expect(page.locator('#homestead-notice')).toHaveCount(0);
-  await reveal(page, '#town-airport'); await page.locator('#town-airport').click(); await expect(page.locator('#homestead-notice')).toContainText('improved');
+  await reveal(page, '#town-airport'); await page.locator('#town-airport').click(); expect((await farmSnapshot(page)).finances.homestead.rank).toBe(5);
   expect(music).toEqual([]); expect(sounds).toEqual([]); // No automatic opt-in, even on a genuine game event.
   await page.locator('#load-farm-file').setInputFiles(checkpoint());
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await reveal(page, '#play'); await page.locator('#music').selectOption('amain');await page.locator('#play').click(); await expect(page.locator('#audio-status')).toContainText('Playing amain');
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await expect(page.locator('#sound-toggle')).toHaveAttribute('aria-pressed', 'true');
+  await toggleOption(page,'Sound Effects'); await expectOptionChecked(page,'Sound Effects',true);
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
   await expect(page.locator('#audio-status')).toContainText('Playing cowman'); await expect(page.locator('#music')).toHaveValue('cowman');
   await expect.poll(() => page.evaluate(() => {
@@ -58,8 +66,8 @@ test('annual homestead updates repaint original tiles, persist once, and play or
     voice?.analyser.getFloatTimeDomainData(samples); return Math.max(...samples.map(Math.abs));
   })).toBeGreaterThan(0.01);
   expect(sounds.filter(s => s.endsWith('/cheers.voc'))).toHaveLength(1);
-  await reveal(page, '#view-home'); await page.locator('#view-home').click(); await page.setViewportSize({ width: 1280, height: 844 });
-  await reveal(page, '#view-home'); await page.locator('#view-home').click();
+  await locateHome(page); await page.setViewportSize({ width: 1280, height: 844 });
+  await locateHome(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-homestead.png', fullPage: true });
   const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
@@ -70,20 +78,21 @@ test('annual homestead updates repaint original tiles, persist once, and play or
   expect(world.readUInt16LE(((59 * 96) + 51) * 5)).toBe(524);
   const bad = structuredClone(saved); bad.runtime.finances.homestead.rank = 6;
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad-home.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
-  await expect(page.locator('#save-status')).toContainText('financial state'); await expect(page.locator('#homestead-notice')).toContainText('improved');
+  await expect(page.locator('#save-status')).toContainText('financial state'); await page.locator('#file-error-ok').click(); expect((await farmSnapshot(page)).finances.homestead.rank).toBe(5);
   const count = sounds.length; await page.locator('#load-farm-file').setInputFiles(path);
-  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await expect(page.locator('#homestead-notice')).toHaveCount(0);
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); expect((await farmSnapshot(page)).finances.homestead.rank).toBe(5);
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); expect(sounds).toHaveLength(count);
   await page.locator('#load-farm-file').setInputFiles(checkpoint(40000, 5));
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
-  await expect(page.locator('#homestead-notice')).toContainText('downgraded');
+
   await expect.poll(() => page.evaluate(() => {
     const pcm = (window as unknown as { __homePcm: { length: number; analyser: AnalyserNode }[] }).__homePcm;
     const voice = pcm.find(p => p.length === 11663), samples = new Float32Array(2048);
     voice?.analyser.getFloatTimeDomainData(samples); return Math.max(...samples.map(Math.abs));
   })).toBeGreaterThan(0.01);
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await expect(page.locator('#sound-toggle')).toHaveAttribute('aria-pressed', 'false');
+  expect((await farmSnapshot(page)).finances.homestead.rank).toBe(0);
+  await toggleOption(page,'Sound Effects'); await expectOptionChecked(page,'Sound Effects',false);
   expect(errors).toEqual([]);
 });
 
@@ -95,7 +104,7 @@ test('muting cancels a pending homestead sample and missing sound assets leave t
         super(options); const create = this.createBufferSource.bind(this);
         this.createBufferSource = () => {
           const source = create(), start = source.start.bind(source);
-          source.start = (...args) => { (window as unknown as { __pcmStarts: number }).__pcmStarts++; start(...args); };
+          source.start = (...args) => { if(source.buffer && [12343,11663].includes(source.buffer.length))(window as unknown as { __pcmStarts: number }).__pcmStarts++; start(...args); };
           return source;
         };
       }
@@ -106,17 +115,17 @@ test('muting cancels a pending homestead sample and missing sound assets leave t
   await page.route('**/raw/cheers.voc', async route => { requested = true; await gate; await route.continue().catch(() => {}); });
   try {
     await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(checkpoint());
-    await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+    await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await toggleOption(page,'Sound Effects');
     await reveal(page, '#next-day'); await page.locator('#next-day').click(); await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
-    await expect.poll(() => requested).toBe(true); await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); release();
-    await expect(page.locator('#sound-toggle')).toHaveAttribute('aria-pressed', 'false');
-    await expect(page.locator('#homestead-notice')).toContainText('improved');
+    await expect.poll(() => requested).toBe(true); await toggleOption(page,'Sound Effects'); release();
+    await expectOptionChecked(page,'Sound Effects',false);
+    expect((await farmSnapshot(page)).finances.homestead.rank).toBe(5);
     await page.unroute('**/raw/cheers.voc');
     await page.route('**/raw/cheers.voc', route => route.fulfill({ status: 404, body: 'Missing sound' }));
     await page.locator('#load-farm-file').setInputFiles(checkpoint());
-    await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+    await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await toggleOption(page,'Sound Effects');
     await reveal(page, '#next-day'); await page.locator('#next-day').click(); await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
-    await expect(page.locator('#homestead-notice')).toContainText('improved'); await expect(page.locator('#sound-error')).toContainText('cheers.voc');
+    expect((await farmSnapshot(page)).finances.homestead.rank).toBe(5); await expect(page.locator('#sound-error')).toContainText('cheers.voc');
     await expect(page.locator('#time-status')).toContainText('1 days advanced'); await expect(page.locator('#next-day')).toBeEnabled();
     expect(await page.evaluate(() => (window as unknown as { __pcmStarts: number }).__pcmStarts)).toBe(0);
   } finally { release(); }

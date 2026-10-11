@@ -1,3 +1,4 @@
+import {toggleOption} from '../support/options-menu';
 import { selectSupply } from '../support/supply-actions';
 import { schedulePlant } from '../support/schedule-window';
 import { buyBuilding } from '../support/building-actions';
@@ -73,7 +74,7 @@ test('supply controls buy original stock, plays feedback, preserves checkpoints 
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await audio(page);await page.goto('/');
   const f=disasterFixture();f.state.scenario.farm.autoBuySeeds=false;const g=f.load().withAllCrops(browserCrops);
   g.dispatch({type:'build',buildingType:67,x:10,y:10});g.dispatch({type:'toggle-building-interior',slot:1,x:10,y:10});
-  await load(page,g.save(4));await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+  await load(page,g.save(4));await toggleOption(page,'Sound Effects');
   for(const productType of [196,220,221,222,223]){
     await selectSupply(page,productType);await clickFarmTile(page,10,10);
     g.dispatch({type:'buy-crop-supply',productType,x:10,y:10});await expect(page.locator('#buy-result')).toContainText('purchased.');

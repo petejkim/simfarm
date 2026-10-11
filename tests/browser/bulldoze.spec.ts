@@ -1,3 +1,4 @@
+import {toggleOption} from '../support/options-menu';
 import {clickFarmTile} from '../support/field-actions';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -56,7 +57,7 @@ test('Bulldoze removes loose supplies/chemicals and terrain, renders source conn
     };
   });
   const f = bulldozeFixture(), game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+  await toggleOption(page,'Sound Effects');
   for (const [i, [x, y]] of bulldozeTargets.entries()) {
     await select(page, x, y); const quote = checkManualRemoval(game.getSnapshot().scenario, x, y); expect(quote.ok).toBe(true);
     if (!quote.ok) throw new Error('Missing target');

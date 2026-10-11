@@ -33,7 +33,6 @@ function Game({ assets }: { assets: GameAssets }) {
       onScenarioChange={id => setFarm(previous => ({ id, serial: previous.serial + 1 }))}
       audioControls={<header>
         <MusicControls tracks={assets.catalog.music} music={music} />
-        <button id="sound-toggle" aria-pressed={sound.enabled} onClick={() => void sound.toggle()}>{sound.enabled ? 'Mute sounds' : 'Enable sounds'}</button>
       </header>}
       audioOptions={{ music: music.enabled, sound: sound.enabled, buttonClicks:sound.buttonClicks, toggleButtonClicks:sound.toggleButtonClicks, toggleMusic: () => music.toggleTrack('genfarm'), toggleSound: () => { void sound.toggle(); } }}
       onLoad={onLoad} assets={assets}

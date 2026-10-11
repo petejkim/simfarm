@@ -1,3 +1,4 @@
+import {toggleOption} from '../support/options-menu';
 import { chooseDisaster, setDisastersEnabled, expectDisasterChecked } from '../support/disaster-menu';
 import { farmSnapshot, fieldDescription } from '../support/field-checkpoint';
 import { reveal, acknowledgeFinanceMessages } from '../support/workspace';
@@ -54,7 +55,7 @@ const played = (page: Page) => page.evaluate(() => (window as unknown as { water
 test('Flood controls destroy a shoreline field and occupied building, render source water, play PCM and resume saved scanning through drainage', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await audio(page); await page.goto('/');
   const f = waterDisasterFixture(), game = f.load().withAllCrops(browserCrops); await load(page, game.save(4));
-   await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+   await toggleOption(page,'Sound Effects');
   await chooseDisaster(page,'flood'); game.dispatch({ type:'disaster-menu',action:'flood' });
   const active=await farmSnapshot(page);expect(active.paused).toBe(true);expect(active.waterDisasters.scanning).toBe(true);
   await expectDisasterChecked(page,'flood');
@@ -85,7 +86,7 @@ test('Flood controls destroy a shoreline field and occupied building, render sou
 test('Drought controls dry and restore source shoreline pixels without start audio; invalid v14 flood state leaves the farm intact', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await audio(page); await page.goto('/');
   const f = waterDisasterFixture(), game = f.load().withAllCrops(browserCrops); await load(page, game.save(4));
-   await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+   await toggleOption(page,'Sound Effects');
   await chooseDisaster(page,'drought'); game.dispatch({ type:'disaster-menu',action:'drought' });
   await expectDisasterChecked(page,'drought');
   await originalTile(page, 20, 19, 28);

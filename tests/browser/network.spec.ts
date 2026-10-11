@@ -1,3 +1,4 @@
+import {toggleOption} from '../support/options-menu';
 import {clickFarmTile} from '../support/field-actions';
 import { reveal } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -48,7 +49,7 @@ const played=(page:Page)=>page.evaluate(()=>(window as unknown as {networkAudio:
 test('network controls construct original networks, operate gates, play placement PCM and restore exact saves',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await audio(page);await page.goto('/');
   const f=shopFixture();f.state.scenario.cells[worldIndex(12,10)].terrain=0x2000|98;const g=f.load().withAllCrops(browserCrops);
-  await load(page,g.save(4));await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+  await load(page,g.save(4));await toggleOption(page,'Sound Effects');
   await expect(page.locator('#network-panel')).toHaveCount(0);
   const actions:[keyof typeof labels,number,number,number][]=[['road-161',10,10,20],['road-150',11,10,30],['road-150',12,10,40],['fence',10,12,50],['fence',11,12,50],['gate',10,12,75]];
   for(const [kind,x,y,price] of actions){

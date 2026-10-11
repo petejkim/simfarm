@@ -1,3 +1,4 @@
+import {toggleOption} from '../support/options-menu';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { chooseDisaster, setDisastersEnabled, expectDisasterChecked } from '../support/disaster-menu';
 import { reveal, acknowledgeFinanceMessages } from '../support/workspace';
@@ -33,7 +34,7 @@ const audio=(page:Page)=>page.evaluate(()=>(window as unknown as {stationaryAudi
 test('frost controls cancel locusts, play original wind PCM and retain cooling/loss through active save and ending',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await observeAudio(page);await page.goto('/');
   const f=disasterFixture();f.state.weather.temperature=50;f.state.weather.temperatureAnomaly=0;const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+  await toggleOption(page,'Sound Effects');
   await chooseDisaster(page,'swarm');g.dispatch({type:'disaster-menu',action:'swarm'});
   await chooseDisaster(page,'frost');g.dispatch({type:'disaster-menu',action:'frost'});
   await expectDisasterChecked(page,'swarm',false);await expectDisasterChecked(page,'tornado',false);
@@ -74,7 +75,7 @@ test('saved toxic warning remains flag-only and ordinary play has no provisional
   const before=JSON.parse(g.save(4));g.dispatch({type:'start-disaster',kind:'toxic-land'});const active=JSON.parse(g.save(4));
   expect(active.scenario).toEqual(before.scenario);expect(active.runtime.random).toEqual(before.runtime.random);
   await load(page,JSON.stringify(active));await expect(page.locator('#disaster-message-ok')).toHaveCount(0);
-  await reveal(page,'#sound-toggle');await page.locator('#sound-toggle').click();
+  await toggleOption(page,'Sound Effects');
   await expect(page.locator('#start-crop-circles,#start-toxic-land,[data-window=disasters]')).toHaveCount(0);
   // Uppercase A is source debug input, not an ordinary gameplay shortcut.
   await reveal(page,'#viewport');await page.keyboard.press('Shift+A');expect(await save(page,'warning')).toEqual(active);

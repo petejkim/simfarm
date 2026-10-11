@@ -1,3 +1,4 @@
+import {toggleOption} from '../support/options-menu';
 import { plantField, clickFarmTile } from '../support/field-actions';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -57,7 +58,7 @@ test('removal selection cancels safely, confirms stored-content demolition, play
   await selectTile(page,21,21);await expect(dialog).toContainText('destroy this structure?');
   await dialog.getByRole('button',{name:'CANCEL',exact:true}).click();await expect(dialog).toHaveCount(0);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click();
+  await toggleOption(page,'Sound Effects');
   for (const [x, y] of [[21, 21], [41, 41]]) {
     await selectTile(page, x, y); const quote = checkManualRemoval(game.getSnapshot().scenario, x, y); expect(quote.ok).toBe(true);
     if (!quote.ok) throw new Error('Missing removal target');

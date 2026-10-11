@@ -1,3 +1,4 @@
+import {expectOptionChecked} from '../support/options-menu';
 import { chooseDisaster } from '../support/disaster-menu';
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
@@ -62,8 +63,8 @@ test('Music starts genfarm MIDI, sound toggles independently and advanced audio 
   await start(page);const requests:string[]=[];page.on('request',r=>{if(r.url().includes('genfarm'))requests.push(r.url());});
   await page.locator('#options-menu-button').click();await expect(page.locator('#audio-status')).toContainText('Playing genfarm');expect(requests.length).toBeGreaterThan(0);
 await expect(page.getByRole('menuitemcheckbox',{name:'Music',exact:true})).toBeChecked();await expect(page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true})).toBeChecked();await page.keyboard.press('Escape');
-  await openWindow(page,'options');await expect(page.locator('#music')).toHaveValue('genfarm');await expect(page.locator('#sound-toggle')).toHaveAttribute('aria-pressed','true');
-  await toggle(page,'Music');await expect(page.locator('#audio-status')).toHaveText('Music off');await toggle(page,'Sound Effects');await expect(page.locator('#sound-toggle')).toHaveAttribute('aria-pressed','false');
+  await openWindow(page,'options');await expect(page.locator('#music')).toHaveValue('genfarm');await expectOptionChecked(page,'Sound Effects',true);
+  await toggle(page,'Music');await expect(page.locator('#audio-status')).toHaveText('Music off');await toggle(page,'Sound Effects');await expectOptionChecked(page,'Sound Effects',false);
 });
 
 

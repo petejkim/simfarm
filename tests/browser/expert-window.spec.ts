@@ -1,3 +1,4 @@
+import {toggleOption} from '../support/options-menu';
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {PNG} from 'pngjs';
@@ -93,7 +94,7 @@ test('Expert navigation and portrait play original PCM only when enabled, with m
   await start(page);const before=await save(page);await openWindow(page,'expert');
   const client=page.getByRole('region',{name:'Farm Expert'});await client.getByRole('button',{name:'Livestock',exact:true}).click();
   await client.getByRole('button',{name:'Play rooster sound',exact:true}).click();expect(requests).toHaveLength(0);
-  await reveal(page,'#sound-toggle');await page.locator('#sound-toggle').click();await openWindow(page,'expert');
+  await toggleOption(page,'Sound Effects');await openWindow(page,'expert');
   await client.getByRole('button',{name:'NEXT',exact:true}).click();
   const length=decodeVoc(asset('click.voc')).samples.length;
   await expect.poll(()=>page.evaluate(n=>(window as unknown as {__expertVoices:{length:number}[]}).__expertVoices.some(v=>v.length===n),length)).toBe(true);
@@ -101,9 +102,9 @@ test('Expert navigation and portrait play original PCM only when enabled, with m
   const rooster=decodeVoc(asset('rooster.voc')).samples.length;
   await expect.poll(()=>page.evaluate(n=>{const v=(window as unknown as {__expertVoices:{length:number;analyser:AnalyserNode}[]}).__expertVoices.find(v=>v.length===n),data=new Float32Array(2048);v?.analyser.getFloatTimeDomainData(data);return Math.max(...data.map(Math.abs));},rooster)).toBeGreaterThan(.01);
   expect(requests.filter(r=>r.endsWith('/click.voc'))).toHaveLength(1);expect(requests.filter(r=>r.endsWith('/rooster.voc'))).toHaveLength(1);
-  await reveal(page,'#sound-toggle');await page.locator('#sound-toggle').click();await openWindow(page,'expert');const n=requests.length;
+  await toggleOption(page,'Sound Effects');await openWindow(page,'expert');const n=requests.length;
   await client.getByRole('button',{name:'Play rooster sound',exact:true}).click();await client.getByRole('button',{name:'NEXT',exact:true}).click();expect(requests).toHaveLength(n);
-  await page.route('**/rooster.voc',r=>r.fulfill({status:404,body:'Missing rooster'}));await reveal(page,'#sound-toggle');await page.locator('#sound-toggle').click();await openWindow(page,'expert');
+  await page.route('**/rooster.voc',r=>r.fulfill({status:404,body:'Missing rooster'}));await toggleOption(page,'Sound Effects');await openWindow(page,'expert');
   await client.getByRole('button',{name:'Play rooster sound',exact:true}).click();await expect(page.locator('#sound-error')).toContainText('rooster.voc');await expect(client.getByRole('button',{name:'NEXT',exact:true})).toBeEnabled();
   expect(await save(page)).toEqual(before);expect(errors).toEqual([]);
 });

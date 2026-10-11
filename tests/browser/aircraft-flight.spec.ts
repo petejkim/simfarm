@@ -1,3 +1,4 @@
+import {toggleOption} from '../support/options-menu';
 import { aircraftCatalog } from '../support/aircraft-browser';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -140,7 +141,7 @@ test('original engine PCM plays without frame restarts, caches between clips, an
     };
   });
   await page.goto('/'); const f = prepared(); await load(page, f.game.save(4)); await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2');
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await openWindow(page, 'aircraft'); await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click();
+  await toggleOption(page,'Sound Effects'); await openWindow(page, 'aircraft'); await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click();
   const voices = () => page.evaluate(() => (window as unknown as { __flightVoices: { length: number; time: number; duration: number; stopped: boolean }[] }).__flightVoices
     .filter(v => v.length === 12848).map(({ length, time, duration, stopped }) => ({ length, time, duration, stopped })));
   await expect.poll(() => page.evaluate(() => {
@@ -154,10 +155,10 @@ test('original engine PCM plays without frame restarts, caches between clips, an
   await reveal(page, '#flight-pause'); await page.locator('#flight-pause').click(); await expect.poll(async () => (await voices()).at(-1)!.stopped).toBe(true);
   const checkpoint = await save(page), count = (await voices()).length;
   await reveal(page, '#flight-step'); await page.locator('#flight-step').click(); expect((await voices()).length).toBe(count); // Paused steps are silent.
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await reveal(page, '#flight-pause'); await page.locator('#flight-pause').click();
+  await toggleOption(page,'Sound Effects'); await reveal(page, '#flight-pause'); await page.locator('#flight-pause').click();
   await expect(page.locator('#flight-input-status')).toContainText('Flying');
   expect(requests).toHaveLength(1); expect((await voices()).length).toBe(count);
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await expect.poll(async () => (await voices()).length).toBeGreaterThan(count);
+  await toggleOption(page,'Sound Effects'); await expect.poll(async () => (await voices()).length).toBeGreaterThan(count);
   await load(page, JSON.stringify(checkpoint)); await expect(page.locator('#flight-input-status')).toContainText('Paused');
   await expect.poll(async () => (await voices()).at(-1)!.stopped).toBe(true);
   expect(await save(page)).toEqual(checkpoint); expect(errors).toEqual([]);
@@ -167,7 +168,7 @@ test('missing engine audio reports once per flight attempt and can recover witho
   let requests = 0; const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.route('**/plane.voc', route => { requests++; return route.fulfill({ status: 404, body: 'Missing engine' }); });
   await page.goto('/'); const f = prepared(); await load(page, f.game.save(4)); await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2');
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await openWindow(page, 'aircraft'); await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click();
+  await toggleOption(page,'Sound Effects'); await openWindow(page, 'aircraft'); await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click();
   await expect(page.locator('#sound-error')).toContainText('plane.voc');
   await reveal(page, '#flight-pause'); await page.locator('#flight-pause').click(); const snapshot = await save(page);
   expect(snapshot.runtime.aircraftFlight).not.toBeNull(); expect(requests).toBe(1);

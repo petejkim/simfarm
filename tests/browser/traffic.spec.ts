@@ -1,3 +1,4 @@
+import {toggleOption} from '../support/options-menu';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -55,7 +56,7 @@ test('traffic collision plays source PCM only when enabled, never replays on loa
   const f = trafficFixture(true), game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   expect(requests).toEqual([]); expect(await save(page, 'muted-hit')).toEqual(JSON.parse(game.save(4)));
-  await load(page, f.load().withAllCrops(browserCrops).save(4)); await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await load(page, f.load().withAllCrops(browserCrops).save(4)); await toggleOption(page,'Sound Effects'); await reveal(page, '#next-day'); await page.locator('#next-day').click();
   await expect.poll(() => page.evaluate(() => (window as unknown as { __trafficPlayed: { length: number; peak: number }[] }).__trafficPlayed.some(p => p.length === 1467 && p.peak > 0.1))).toBe(true);
   const checkpoint = await save(page, 'audible-hit'); expect(checkpoint).toEqual(JSON.parse(game.save(4)));
   const count = requests.length; await load(page, JSON.stringify(checkpoint)); expect(await save(page, 'hit-restored')).toEqual(checkpoint); expect(requests).toHaveLength(count);

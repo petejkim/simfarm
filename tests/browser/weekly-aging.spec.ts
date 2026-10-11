@@ -1,3 +1,4 @@
+import {toggleOption} from '../support/options-menu';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { selectAssetSale } from '../support/sell-window';
 import { clickFarmTile } from '../support/field-actions';
@@ -42,7 +43,7 @@ test('weekly worn machinery sale displays proceeds, original clearing pixels and
   const before=await farmSnapshot(page);expect(before.scenario.equipment.filter(e=>e.active)).toHaveLength(2);
   expect(before.scenario.equipment[1].condition).toBe(253);expect(before.scenario.equipment[2].flags&64).toBe(64);
   await expect(page.getByRole('dialog',{name:'Machinery',exact:true})).toHaveCount(0);
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await toggleOption(page,'Sound Effects'); await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
   await expect(page.locator('#farm-cash')).toHaveText(`$${game.getSnapshot().scenario.farm.cash.toLocaleString('en-US')}`);
   const status=page.getByRole('button',{name:'Edit message history'});
   await expect(status).toHaveText('A piece of machinery was lost.');
@@ -58,7 +59,7 @@ test('weekly worn machinery sale displays proceeds, original clearing pixels and
   expect(await page.locator('#world').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(160, 160, 16, 16).data))).toEqual(Array.from(expected));
   const path = 'artifacts/browser-weekly-aging.simfarm.json'; expect(await save(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await load(page, game.save(4));
-  await expect(status).toHaveCount(0);
+  await expect(status).toBeVisible();await expect(status).toHaveText('');
   for (let d = 0; d < 7; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({width:1280,height:844});

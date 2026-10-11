@@ -1,3 +1,4 @@
+import {toggleOption} from '../support/options-menu';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -68,7 +69,7 @@ test('original animal voices are audible when enabled, mute does not alter state
   const muted = weekly.load().withAllCrops(browserCrops); await load(page, muted.save(4));
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); muted.dispatch({ type: 'advance-day' }); expect(requests).toEqual([]);
   expect(await save(page)).toEqual(JSON.parse(muted.save(4)));
-  await load(page, weekly.load().withAllCrops(browserCrops).save(4)); await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await load(page, weekly.load().withAllCrops(browserCrops).save(4)); await toggleOption(page,'Sound Effects'); await reveal(page, '#next-day'); await page.locator('#next-day').click();
   await expect.poll(() => page.evaluate(() => {
     const voices = (window as unknown as { __animalVoices: { length: number; analyser: AnalyserNode }[] }).__animalVoices;
     const voice = voices.find(v => v.length === 8210), values = new Float32Array(2048);
@@ -90,10 +91,10 @@ test('original animal voices are audible when enabled, mute does not alter state
     expect(requests.some(r => r.endsWith(`/${name}.voc`))).toBe(true);
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   }
-  await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await load(page, weekly.load().withAllCrops(browserCrops).save(4));
+  await toggleOption(page,'Sound Effects'); await load(page, weekly.load().withAllCrops(browserCrops).save(4));
   const count = requests.length; await reveal(page, '#next-day'); await page.locator('#next-day').click(); expect(requests).toHaveLength(count);
   await page.route('**/cow2.voc', route => route.fulfill({ status: 404, body: 'Missing voice' }));
-  await load(page, weekly.load().withAllCrops(browserCrops).save(4)); await reveal(page, '#sound-toggle'); await page.locator('#sound-toggle').click(); await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await load(page, weekly.load().withAllCrops(browserCrops).save(4)); await toggleOption(page,'Sound Effects'); await reveal(page, '#next-day'); await page.locator('#next-day').click();
   await expect(page.locator('#sound-error')).toContainText('cow2.voc'); await expect(page.locator('#next-day')).toBeEnabled();
   expect(await save(page)).toEqual(JSON.parse(muted.save(4))); expect(errors).toEqual([]);
 });
