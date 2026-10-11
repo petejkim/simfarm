@@ -1,3 +1,4 @@
+import { resetTownEvent } from './town-event-lifecycle';
 import { originalCatalogForRestart } from './all-crops';
 import { beginTerrainPreview, copyLocatedTerrainPreview, type TerrainPreviewState } from './terrain-preview';
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
@@ -99,7 +100,7 @@ export function restartGeneratedFarm(previous: SimulationState, options: Restart
     dayTicks: prior.dayTicks,
     equipmentAnimationTick: runtime.farm.animationTicks,
     // Native session/view policy: replace modal work, start paused, reset day display.
-    paused: true, elapsed: 0, daysAdvanced: 0, pendingTown: null, aircraftFlight: null };
+    townEvent: resetTownEvent(prior.townEvent), paused: true, elapsed: 0, daysAdvanced: 0, pendingTown: null, aircraftFlight: null };
 }
 
 /** Loaded chooser result2: reset -> SSM transfers -> climate/cash/town -> main

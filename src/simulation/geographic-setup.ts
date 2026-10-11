@@ -1,3 +1,4 @@
+import { importTownEvent } from './town-event-lifecycle';
 import { Binary } from '../formats/binary';
 import { readScenario } from '../formats/scenario';
 import { readFinancialState } from '../formats/finance';
@@ -72,5 +73,5 @@ export function createGeographicRegion(bytes: Uint8Array, selection: ClimateSele
     dayTicks: scenario.farm.animationTicks, equipmentAnimationTick: scenario.farm.animationTicks,
     daysAdvanced: 0, paused: true, originalPause: { ...initialOriginalPause(), depth: bytes[0x21719] }, speed: 1, elapsed: 0, grassTravelCount: 0,
     disasters: createMovingDisasters(), waterDisasters: createWaterDisasters(), animalFrame: createAnimalFrameState(),
-    aircraftService: createAircraftServiceState(), aircraftFlight: null, pendingTown: null };
+    townEvent: importTownEvent(bytes), aircraftService: createAircraftServiceState(), aircraftFlight: null, pendingTown: null };
 }

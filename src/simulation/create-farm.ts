@@ -1,3 +1,4 @@
+import { coldTownEvent } from './town-event-lifecycle';
 import { copyLocatedTerrainPreview, type TerrainPreviewState } from './terrain-preview';
 import type { CropDefinition } from '../formats/crop';
 import { climateForSetup, type ClimatePresets } from '../formats/new-farm';
@@ -84,5 +85,5 @@ export function createNewFarmState(options: NewFarmOptions, assets: NewFarmAsset
     grassTravelCount: 0, equipmentAnimationTick: 0, animalFrame: createAnimalFrameState(),
     aircraftService: createAircraftServiceState(), aircraftFlight: null, cropMarketPrices,
     market: { history: marketHistory, mood: records.marketMood, rawBC72: 0 },
-    finances: runtime.finances, pendingTown: null };
+    townEvent: coldTownEvent(), finances: runtime.finances, pendingTown: null };
 }

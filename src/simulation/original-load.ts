@@ -1,3 +1,4 @@
+import { importTownEvent } from './town-event-lifecycle';
 import type { CropDefinition } from '../formats/crop';
 import { Binary } from '../formats/binary';
 import { readScenario } from '../formats/scenario';
@@ -44,7 +45,7 @@ export function loadOriginalFarmState(prior: SimulationState, bytes: Uint8Array,
   const finances = readFinancialState(bytes, prior.finances);
   // Native modal callbacks reference the replaced world and must not resume on it.
   finances.defaultDecision = null;
-  const state: SimulationState = { ...prior, scenario, finances, crops: definitions, cropMarketPrices, market,
+  const state: SimulationState = { ...prior, scenario, finances, townEvent: importTownEvent(bytes, prior.townEvent), crops: definitions, cropMarketPrices, market,
     originalPause: { depth: bytes[0x21719], speedChecks: [...prior.originalPause.speedChecks] },
     newFarm: null, retainedSetup: prior.newFarm ?? prior.retainedSetup,
     weather: { ...prior.weather, precipitationDays: scenario.farm.precipitationDays },

@@ -1,3 +1,5 @@
+import { coldTownEvent } from '../simulation/town-event-lifecycle';
+import { decodeTownEventCheckpoint, encodeTownEventCheckpoint } from './town-event-save';
 import { allCropFiles } from './crop-slots';
 import type { SessionSetup } from '../simulation/session-setup';
 import { unknownOriginalPause, type OriginalPauseState } from '../simulation/original-pause';
@@ -178,9 +180,10 @@ export function writeNativeSave(state: SimulationState, scenarioId: number | nul
     if (scenarioId !== null) number(scenarioId, 0, 7, 'scenario ID');
     if (state.scenario.origin !== 'original' || !state.scenario.sourceBytes || state.newFarm !== null) fail('original provenance');
   }
+  if (state.townEvent.pending) fail('town event continuation not yet supported');
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 25, scenarioId, scenario: encodeScenario(scenario),
-    runtime: { ...runtime, setup: { ...state.setup, sourceArchive: state.setup.sourceArchive ? hex(state.setup.sourceArchive) : null }, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
+  const text = JSON.stringify({ format: FORMAT, version: 26, scenarioId, scenario: encodeScenario(scenario),
+    runtime: { ...runtime, townEvent: encodeTownEventCheckpoint(state.townEvent), setup: { ...state.setup, sourceArchive: state.setup.sourceArchive ? hex(state.setup.sourceArchive) : null }, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
 }
@@ -189,7 +192,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26].includes(save.version)) fail('unsupported format or version');
   const s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const scenarioId = s.origin === 'generated' || (save.version >= 18 && save.scenarioId === null) ? null : number(save.scenarioId, 0, 7, 'scenario ID');
   if (s.origin === 'generated' && save.scenarioId !== null) fail('generated scenario ID');
@@ -219,6 +222,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   const state: SimulationState = { scenario: s, setup, newFarm, retainedSetup, crops: r.crops.map(c => numbers(c, 128, 0, 255, 'crop bytes')),
     originalPause: save.version >= 23 ? decodeOriginalPause(r.originalPause) : unknownOriginalPause(),
     townLayoutBytes: save.version >= 5 ? numbers(r.townLayoutBytes, TOWN_LAYOUT_BYTES, 0, 255, 'town layout bytes') : null,
+    townEvent: save.version >= 26 ? decodeTownEventCheckpoint(r.townEvent) : coldTownEvent(),
     pendingTown: save.version >= 6 ? decodePendingTown(r.pendingTown) : null,
     random: rng.snapshot(), weather: decodeWeather(r.weather), daysAdvanced: number(r.daysAdvanced, 0, Number.MAX_SAFE_INTEGER, 'days advanced'),
     paused: boolean(r.paused, 'paused'), speed, elapsed: number(r.elapsed, 0, 1, 'fractional ticks', false),
@@ -237,6 +241,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
       ...(save.version === 3 ? { defaultDecision: null } : {}),
       ...(save.version < 8 ? { homestead: readHomestead(originalSource(s)) } : {}),
       ...(save.version < 7 ? { statistics: readAnnualStatistics(originalSource(s)) } : {}) }) : readFinancialState(originalSource(s)) };
+  if (state.townEvent.pending) fail('town event continuation not yet supported');
   if (state.finances.defaultDecision && !state.paused) fail('unpaused terminal default');
   if (state.aircraftFlight && (state.finances.defaultDecision || state.pendingTown)) fail('flight during modal decision');
   const town = state.finances.town.activeSite, townIndex = (town.regionX * 12 + town.regionY) * 7;

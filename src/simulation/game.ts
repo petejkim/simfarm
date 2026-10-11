@@ -1,3 +1,5 @@
+import { importTownEvent } from './town-event-lifecycle';
+import { encodeTownEventCheckpoint, type TownEventCheckpoint } from '../formats/town-event-save';
 import {createEditStatus,appendEditStatus,recentEditStatuses,isEditToolStatus,type EditToolStatusCode} from './edit-status';
 import {DISASTER_MESSAGES} from '../formats/disaster-message';
 import type {DisasterNoticeId} from './events';
@@ -128,6 +130,7 @@ export interface GameSnapshot {
   speed: number;
   finances: FinancialState;
   pendingTown: PendingTownExpansion | null;
+  townEvent: TownEventCheckpoint;
   lastTownResult: TownConstructionResult | null;
   lastHomesteadChange: HomesteadChange | null;
   taxAssessment: TaxAssessment;
@@ -295,6 +298,7 @@ export class GameSimulation {
   private lastPlanEditResult: GameSnapshot['lastPlanEditResult'] = null;
   private lastLoanResult: GameSnapshot['lastLoanResult'] = null;
   private financeNotices: number[] = [];
+  private readonly townEvent: TownEventCheckpoint;
   private pendingTown: PendingTownExpansion | null = null;
   private lastTownResult: TownConstructionResult | null = null;
   private lastTaxSettlement: TaxSettlement | null = null;
@@ -309,6 +313,7 @@ export class GameSimulation {
     this.newFarm = restored?.newFarm ? structuredClone(restored.newFarm) : null;
     this.retainedSetup = restored?.retainedSetup ? structuredClone(restored.retainedSetup) : null;
     this.townLayouts = new TownLayouts(townLayouts.bytes);
+    this.townEvent = restored ? encodeTownEventCheckpoint(restored.townEvent) : importTownEvent(scenario.sourceBytes!);
     this.finances = restored ? copyFinancialState(restored.finances) : readFinancialState(scenario.sourceBytes!);
     this.crops = scenario.cropFiles.map(file => {
       const crop = crops.find(c => `${c.id}.crp` === file);
@@ -374,7 +379,7 @@ export class GameSimulation {
       disasters: this.disasters, waterDisasters: this.waterDisasters, grassTravelCount: this.equipmentRuntime.grassTravelCount,
       equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices, market: this.market, traffic: snapshotTraffic(this.traffic),
       animalFrame: this.animalFrame, aircraftService: this.aircraftService, aircraftFlight: this.aircraftFlight,
-      finances: this.finances, pendingTown: this.pendingTown, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
+      townEvent: encodeTownEventCheckpoint(this.townEvent), finances: this.finances, pendingTown: this.pendingTown, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
   }
 
   static load(text: string, crops: readonly CropDefinition[], townLayouts: TownLayouts): { scenarioId: number | null; simulation: GameSimulation } {
@@ -955,6 +960,7 @@ export class GameSimulation {
       editStatuses:recentEditStatuses(this.editStatus), disasterNotices: [...this.disasterNotices], revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
       farmReport: { income: report.reportIncome, expenses: report.reportExpenses, net: report.reportNet,
         fields: summarizeFieldStatus(this.scenario.fields, this.scenario.farm.cash) },
+      townEvent: encodeTownEventCheckpoint(this.townEvent),
       finances: copyFinancialState(this.finances),
       pendingTown: this.pendingTown ? { ...this.pendingTown, site: { ...this.pendingTown.site } } : null,
       lastTownResult: this.lastTownResult ? this.lastTownResult.ok

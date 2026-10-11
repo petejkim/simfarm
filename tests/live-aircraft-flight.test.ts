@@ -44,7 +44,7 @@ test('v12 resumes fractional flight ticks and queued controls exactly across pau
   game.dispatch({ type: 'flight-control', control: 'spray-on' }); game.tick(29.5);
   for (const control of ['left', 'right', 'climb', 'spray-off', 'spray-on'] as const) game.dispatch({ type: 'flight-control', control });
   const checkpoint = game.save(4), restored = GameSimulation.load(checkpoint, crops).simulation;
-  assert.equal(saved(game).version, 25); assert.equal(saved(game).runtime.elapsed, 0.375);
+  assert.equal(saved(game).version, 26); assert.equal(saved(game).runtime.elapsed, 0.375);
   game.tick(446.5); for (const ms of [0.625, 1, 30, 0.5, 79.5]) restored.tick(4 * ms);
   assert.deepEqual(saved(restored), saved(game));
   for (const g of [game, restored]) {

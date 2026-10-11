@@ -1,3 +1,4 @@
+import type { TownEventCheckpoint } from '../formats/town-event-save';
 import type { SessionSetup } from './session-setup';
 import type { OriginalPauseState } from './original-pause';
 import type { MarketState } from './market';
@@ -53,5 +54,6 @@ export interface SimulationState {
   traffic: TrafficDefaults;
   finances: FinancialState;
   pendingTown: PendingTownExpansion | null;
+  townEvent: TownEventCheckpoint;
 }
 export const SIMULATION_SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16] as const;
