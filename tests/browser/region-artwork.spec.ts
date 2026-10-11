@@ -1,3 +1,4 @@
+import {PNG} from 'pngjs';
 import { reveal, openWindow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -39,7 +40,15 @@ test('original geographic panel paints exact markers and bars, preserves selecti
   await page.locator('[data-region="1,3"]').click(); await pixels(page, 1, 3);
   await expect(page.locator('#region-selection')).toContainText('Scenario 3');
   expect(await page.locator('#geographic-chooser').boundingBox()).toMatchObject({ width: 472, height: 328 });
-  await page.mouse.move(0, 0); await page.locator('#geographic-chooser').screenshot({ path: 'artifacts/browser-region-artwork-desktop.png' });
+  await page.mouse.move(0, 0);await page.locator('[data-region="1,3"]').evaluate((e:HTMLButtonElement)=>e.blur());
+  const mapBounds=(await page.locator('#region-map').boundingBox())!;
+  const composite=PNG.sync.read(await page.screenshot({clip:{x:Math.round(mapBounds.x),y:Math.round(mapBounds.y),width:288,height:288}}));
+  expect([composite.width,composite.height]).toEqual([288,288]);
+  const sourceMap=await page.locator('#region-artwork').evaluate((c:HTMLCanvasElement)=>Array.from(c.getContext('2d')!.getImageData(168,24,288,288).data));
+  expect(Array.from(composite.data)).toEqual(sourceMap);
+  // Check enabled and disabled hit areas, not just the hidden underlying canvas.
+  expect(await page.locator('.region-grid button').evaluateAll(els=>els.every(e=>{const s=getComputedStyle(e);return s.backgroundColor==='rgba(0, 0, 0, 0)'&&s.borderTopWidth==='0px'&&s.paddingTop==='0px';}))).toBe(true);
+  await page.locator('#geographic-chooser').screenshot({ path: 'artifacts/browser-region-artwork-desktop.png' });
   await page.locator('[data-region="1,3"]').focus(); await page.keyboard.press('ArrowRight');
   await pixels(page, 2, 3); expect(await save(page)).toEqual(before);
   const selected = locations[3 * 18 + 2];

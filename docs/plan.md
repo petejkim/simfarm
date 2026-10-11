@@ -283,3 +283,5 @@ Requested correction5 complete: menu hover and keyboard focus share a single hig
 User follow-up: after the remaining Plant and region-map corrections, fix new-farm startup weather in a separate commit so the selected climate initializes current/next forecasts, temperature and wind without inherited anomalies. Explicitly loaded saves must retain their recorded weather. Keep SF-150 and related original startup quirks as preserved evidence.
 
 Correction6 complete: all24 Plant choices together in three source-spaced columns, no paging. Next7 region graphics; then correct startup climate/forecast carryover in its own commit.
+
+Correction7 complete: transparent region hit areas reveal original geographic artwork, with final-composite pixel coverage. All seven requested corrections are complete. Next implement the promised startup-weather correction; explicit loads preserve weather and original partial-reset evidence remains retained.

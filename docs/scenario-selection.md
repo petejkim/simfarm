@@ -93,3 +93,10 @@ The live geographic chooser follows the user's text policy: SELECT A REGION, cli
 ## Saved-game branch integration (2026-10-09)
 
 Load a Saved Game now handles original SSMs through the source result1 startup, using the selected session mode but retaining prior climate-choice bytes rather than the highlighted map climate. Native JSON checkpoints restore directly. The file picker belongs to New farm; errors keep the chooser open and cancellation retains the current farm. Quit still closes/pauses the old farm, including during pending loading. Ordinary Load farm remains a separate in-game import. Source phases, retained owners, tests and the explicit browser cancellation/time policy are documented in original-load-startup.md. No bitmap text or new source assets were introduced.
+
+
+## Region graphics correction (2026-10-11)
+
+The common game-window control styles overrode the transparent region-grid hit buttons with gray backgrounds, borders and padding, obscuring the original map with324 beveled squares. Canvas-only assertions remained green because the underlying artwork was intact. Scoped region-grid rules now keep enabled/disabled hit areas transparent and borderless, retain translucent hover and inward keyboard focus, and preserve original indexed map/marker pixels. No asset decoder, source bytes, climate selection, save or simulation behavior changed.
+
+A browser regression now compares every RGBA pixel of the final visible288×288 map composite against the underlying original raster, with hover/focus removed, and checks all hit-area computed backgrounds/borders. The screenshot clip rounds the fractional page origin to physical pixels; this does not resize source artwork. Existing region keyboard selection, custom-design entry, native load, cancellation, unavailable assets and1× layout checks remain. Reviewed the resulting composite screenshot; this closes the old canvas-only validation gap.

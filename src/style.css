@@ -466,3 +466,8 @@ summary:focus-visible,#land-heading:focus{outline:2px solid #e4ce83;outline-offs
 .game-window[data-front=false]>.game-window-title{background-image:var(--window-inactive)}
 
 .original-control-bar .toolbar-weather{position:absolute;left:328px;top:8px;width:48px;height:16px;cursor:default;pointer-events:none;image-rendering:pixelated}
+
+/* Region cells are transparent hit areas over the original geographic artwork. */
+.game-window .geographic-chooser .region-grid button{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.game-window .geographic-chooser .region-grid button:hover:not(:disabled){background:#ffffff30}
+.game-window .geographic-chooser .region-grid button:focus-visible{outline:2px solid #fff;outline-offset:-2px}
