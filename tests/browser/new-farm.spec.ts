@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
-import { newGame } from '../support/workspace';
+import { newGame, expectPaletteAction } from '../support/workspace';
 import { fieldDescription } from '../support/field-checkpoint';
 import { scheduleNextHarvest } from '../support/schedule-window';
 import { buyBuilding } from '../support/building-actions';
@@ -26,7 +26,6 @@ async function load(page: Page, text: string) {
 }
 async function selectTile(page: Page, x: number, y: number) {
   await reveal(page,'#viewport');await clickFarmTile(page,x,y);
-  await expect(page.locator('#cell-status')).toContainText(`Tile ${x}, ${y}`);
 }
 
 test('create a generated farm on mobile, save it and restore without any original scenario request', async ({ page }) => {
@@ -87,7 +86,7 @@ test('a previewed farm plants on its starting land and delivers harvest into new
   };
   const field = find((x, y) => checkFieldPlacement(view.scenario, x, y).ok);
   await setAutoDoze(page,true);await plantField(page,field.x,field.y);
-  await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
+  await expectPaletteAction(page,'View object');
   generated.dispatch({ type: 'create-field', ...field, cropSlot: 0 });
   expect(await fieldDescription(page)).toContain('Planting');
   view = generated.getSnapshot(); const storage = find((x, y) => checkBuildingPlacement(view.scenario, 65, x, y, view.weather.soilMoisture).ok);

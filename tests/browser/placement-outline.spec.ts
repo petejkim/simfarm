@@ -6,6 +6,7 @@ import {worldIndex,type Scenario} from '../../src/formats/scenario';
 import {shopFixture} from '../support/livestock';
 import {browserCrops} from '../support/crop-catalog';
 import {readSaveText} from '../support/save-file';
+import {expectFarmCash} from '../support/workspace';
 const source=(name:string)=>readFileSync(new URL('../../../simfarm-dos/'+name,import.meta.url));
 const archive=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
 const asset=(name:string)=>archive.find(a=>a.name===name)!.bytes;
@@ -85,7 +86,7 @@ test('Buy uses the definition footprint, retains an unfilled border after reject
   const d=world.equipmentDefinitions[0],footprint={x:10,y:20,width:d.width,height:d.height};
   const region={x:9*16,y:19*16,width:(d.width+2)*16,height:(d.height+2)*16};
   await hover(page,10,20);expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal',footprint));
-  await page.mouse.down();await page.mouse.up();await expect(page.locator('#buy-result')).not.toHaveText('Tractor purchased.');
+  await page.mouse.down();await page.mouse.up();await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
   expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal',footprint));
   await page.screenshot({path:'artifacts/browser-placement-outline.png'});
   await page.keyboard.press('Escape');
@@ -146,7 +147,6 @@ test('Move shows only centered hand cursors without altering terrain on hover, p
   await expect(page.locator('#world')).toHaveCSS('cursor',/move-drop\.png.*8 8, crosshair/);
   expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal'));
   await hover(page,14,20);await page.mouse.down();await page.mouse.up();
-  await expect(page.locator('#object-move-result')).toHaveText('Choose a destination on your land.');
   await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','drop');
   expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal'));
   await page.keyboard.press('Escape');

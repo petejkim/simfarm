@@ -1,4 +1,5 @@
 import {readSaveText} from '../support/save-file';
+import { expectPaletteAction } from '../support/workspace';
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {PNG} from 'pngjs';
@@ -23,8 +24,8 @@ test('palette help has no interim launcher and choosing a tool closes help witho
   await start(page);const before=await save(page),button=page.getByRole('button',{name:'Edit tools and help',exact:true});
   await button.click();await expect(page.getByRole('button',{name:'Advanced controls',exact:true})).toHaveCount(0);
   await page.getByRole('button',{name:'Trees',exact:true}).click();
-  await expect(page.getByRole('complementary',{name:'Edit tool help'})).toHaveCount(0);await expect(page.locator('#cancel-construction')).toBeVisible();
-  await button.click();await expect(page.locator('#cancel-construction')).toHaveCount(0);await page.keyboard.press('Escape');expect(await save(page)).toEqual(before);
+  await expect(page.getByRole('complementary',{name:'Edit tool help'})).toHaveCount(0);await expectPaletteAction(page,'Trees');
+  await button.click();await expectPaletteAction(page,'Edit tools and help');await page.keyboard.press('Escape');await expectPaletteAction(page,'View object');expect(await save(page)).toEqual(before);
 });
 
 test('missing help artwork fails before play',async({page})=>{

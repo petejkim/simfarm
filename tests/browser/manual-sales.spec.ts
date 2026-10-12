@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { selectAssetSale } from '../support/sell-window';
 import { aircraftCatalog } from '../support/aircraft-browser';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow, expectFarmCash } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -86,5 +86,5 @@ test('Original Sell machinery controls hide rentals, explain busy machines and s
   }
   await expect(page.locator('#catalog-sell')).toBeDisabled();await expect(page.locator('.sell-empty')).toContainText('FOR SALE');
   await aircraftCatalog(page); await page.locator('#catalog-buy').click(); game.dispatch({type:'buy-aircraft'});
-  await expect(page.locator('#buy-result')).toHaveText('Crop Duster purchased.'); expect(await save(page,'artifacts/browser-manual-aircraft-repurchase.json')).toEqual(JSON.parse(game.save(4)));
+  await expectFarmCash(page,game.getSnapshot().scenario.farm.cash); expect(await save(page,'artifacts/browser-manual-aircraft-repurchase.json')).toEqual(JSON.parse(game.save(4)));
 });

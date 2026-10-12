@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import { aircraftCatalog } from '../support/aircraft-browser';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow, expectFarmCash } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -22,9 +22,9 @@ test('Aircraft catalog buys at the original airport pad, refuels, changes and lo
   const f = aircraftFixture(), game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
   await aircraftCatalog(page); await expect(page.locator('#buy-price')).toHaveText('$6,000');
   await page.locator('#catalog-buy').click(); game.dispatch({type:'buy-aircraft'});
-  await expect(page.locator('#buy-result')).toHaveText('Crop Duster purchased.');
+  await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
   await expect(page.locator('#buy-owned')).toHaveText('1');
-  await page.locator('#catalog-buy').click(); await expect(page.locator('#buy-result')).toHaveText('No airport parking space is available.');
+  await page.locator('#catalog-buy').click(); await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
   await openWindow(page,'aircraft');
   await expect(page.locator('#aircraft-status')).toHaveText('Fuel: 0 / 255 · Payload: 0 / 255 · Wear: 0%');
   await reveal(page, '#aircraft-fuel'); await page.locator('#aircraft-fuel').click(); game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind: 'fuel' } });
@@ -69,6 +69,6 @@ test('Aircraft repairs preserve saved age, cash failures explain disabled servic
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-aircraft.png', fullPage: true });
   f.state.finances.town.airportCount = 0; await load(page, f.load().withAllCrops(browserCrops).save(4));
-  await aircraftCatalog(page); await page.locator('#catalog-buy').click();
-  await expect(page.locator('#buy-result')).toContainText('An airport is needed');
+  await aircraftCatalog(page); const cash = await page.locator('#farm-cash').textContent(), owned = await page.locator('#buy-owned').textContent(); await page.locator('#catalog-buy').click();
+  await expect(page.locator('#buy-owned')).toHaveText(owned!); await expect(page.locator('#farm-cash')).toHaveText(cash!);
 });

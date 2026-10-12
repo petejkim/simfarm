@@ -21,7 +21,7 @@ import { useObjectMove } from './useObjectMove';
 import { mapObjectInteraction } from '../simulation/map-interaction';
 import { ExamineWindow } from './ExamineWindow';
 import { FieldToolMenu } from './FieldToolMenu';
-import { SPRAY_TOOLS, type FieldMapTool } from '../formats/field-tool-menu';
+import type { FieldMapTool } from '../formats/field-tool-menu';
 import { MapWindow } from './MapWindow';
 import { BuyWindow } from './BuyWindow';
 import type { ShopProduct } from '../simulation/shop-product';
@@ -34,7 +34,7 @@ import { NewFarmControls } from './NewFarmControls';
 import { FlightControls } from './FlightControls';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
-import { terrainTile, worldPosition, worldIndex } from '../formats/scenario';
+import { worldPosition, worldIndex } from '../formats/scenario';
 import { ExpertWindow } from './ExpertWindow';
 import { ScheduleWindow } from './ScheduleWindow';
 import { FarmMap, type MapFocus } from './FarmMap';
@@ -83,11 +83,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
   const resource = useResource(load);
   const simulation = resource.status === 'ready' ? resource.value.simulation : null;
   const [fieldMenu,setFieldMenu]=useState<'plant'|'spray'|null>(null),[fieldMapTool,setFieldMapTool]=useState<FieldMapTool|null>(null);
-  const [fieldToolMessage,setFieldToolMessage]=useState('');
-  const [interactionMessage,setInteractionMessage]=useState('');
   const [aircraftSlot,setAircraftSlot]=useState<number|null>(null);
   const [buyPlacement, setBuyPlacement] = useState<Pick<ShopProduct, 'type' | 'name'> | null>(null);
-  const [toolPointer, setToolPointer] = useState<MapFocus | null>(null), [buyMessage, setBuyMessage] = useState('');
+  const [toolPointer, setToolPointer] = useState<MapFocus | null>(null);
   const snapshot = useSyncExternalStore(simulation?.subscribe ?? subscribeEmpty, simulation?.getSnapshot ?? emptySnapshot);
   const objectMove=useObjectMove(simulation,snapshot,onGameEvent);
   const construction=useConstruction(simulation,snapshot);
@@ -174,11 +172,10 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     simulation?.dispatch({type:'edit-status',code:EDIT_TOOL_STATUSES[tool]});
     // Choosing any other palette action ends examining: the Examine window closes.
     if (tool !== 'View object') windows.close('examine');
-    setInteractionMessage('');
     objectMove.cancel();construction.cancel();bulldoze.cancel();
     setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null);
     if (tool === 'View object') { windows.show(null); }
-    else if (tool === 'Move object') { objectMove.start();setSelection(null);setToolPointer(null);setBuyMessage('');setFieldToolMessage('');windows.show(null);viewportRef.current?.focus({preventScroll:true}); }
+    else if (tool === 'Move object') { objectMove.start();setSelection(null);setToolPointer(null);windows.show(null);viewportRef.current?.focus({preventScroll:true}); }
     else if (tool === 'Bulldoze') { bulldoze.start();setSelection(null);setToolPointer(null);windows.show(null);viewportRef.current?.focus({preventScroll:true}); }
     else if (tool === 'Paved road' || tool === 'Dirt road' || tool === 'Fence' || tool === 'Gate') {
       construction.start(tool==='Paved road'?'road-150':tool==='Dirt road'?'road-161':tool==='Fence'?'fence':'gate');setSelection(null);setToolPointer(null); windows.show(null);viewportRef.current?.focus({preventScroll:true});
@@ -194,7 +191,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     : construction.tool ? CONSTRUCTION_TOOLS[construction.tool] : fieldMenu==='plant'||fieldMapTool?.kind==='plant' ? 'Plant' : fieldMenu||fieldMapTool ? 'Spray' : 'View object';
   const data = resource.status === 'ready' && snapshot ? { tiles: resource.value.tiles, scenario: snapshot.scenario } : null;
   const field = data?.scenario.fields.find(f => f.slot === fieldSlot && f.active);
-  const cell = selection !== null ? data?.scenario.cells[selection] : undefined;
   const position = buyPlacement || fieldMapTool || objectMove.active || construction.tool || bulldoze.active ? toolPointer : selection !== null ? worldPosition(selection) : null;
   // Source mode11 uses only hand cursors; other tools draw their footprint
   // regardless of placement validity. Canonical commands validate actual clicks.
@@ -206,25 +202,11 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     : buyPlacement&&data&&buyPlacement.type>=64&&buyPlacement.type<=72 ? {...toolPointer,
       width:data.scenario.buildingDefinitions[buyPlacement.type-64].width,height:data.scenario.buildingDefinitions[buyPlacement.type-64].height}
     : {...toolPointer,width:1,height:1};
-  function purchaseFeedback(result: { ok: boolean; reason?: string } | null, name: string) {
-    if (!result) return;
-    const reasons: Record<string,string> = {
-      'insufficient-cash':'Not enough cash.', 'not-owned':'Choose land you own.', 'outside-map':'The whole item must fit inside the map.',
-      'blocked-terrain':'Choose clear ground or compatible storage.', 'occupied':'This location is occupied.',
-      'storage-required':'Choose a crop or equipment storage building.', 'incompatible-storage':'Choose equipment storage for chemicals.',
-      'no-storage-space':'There is no compatible free storage space.', 'no-airport':'An airport is needed.', 'no-parking':'No airport parking space is available.',
-    };
-    setBuyMessage(result.ok ? `${name} purchased.` : reasons[result.reason ?? ''] ?? `Cannot buy here: ${result.reason?.replaceAll('-', ' ') ?? 'unavailable'}.`);
-  }
   function beginPurchase(product: ShopProduct) {
     objectMove.cancel();construction.cancel();bulldoze.cancel();
     setFieldMenu(null);setFieldMapTool(null);
     if (!simulation || !snapshot || snapshot.pendingTown || snapshot.townEvent.pending || snapshot.finances.defaultDecision || snapshot.aircraftFlight) return;
-    setBuyMessage('');
-    if (product.type === 8) {
-      simulation.dispatch({ type: 'buy-aircraft' }); purchaseFeedback(simulation.getSnapshot().lastAircraftPurchaseResult,product.name);
-      return;
-    }
+    if (product.type === 8) { simulation.dispatch({ type: 'buy-aircraft' }); return; }
     setBuyPlacement({ type:product.type, name:product.name }); setToolPointer(null); setSelection(null);
 
     windows.show(null); viewportRef.current?.focus({ preventScroll: true });
@@ -236,15 +218,13 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     else if (type < 128) simulation.dispatch({ type: 'build', buildingType: type, x, y });
     else if (type < 192) simulation.dispatch({ type: 'buy-livestock', productType: type, x, y });
     else simulation.dispatch({ type: 'buy-crop-supply', productType: type, x, y });
-    const next = simulation.getSnapshot();
-    purchaseFeedback(type < 8 ? next.lastEquipmentPurchaseResult : type < 128 ? next.lastBuildingResult : type < 192 ? next.lastLivestockResult : next.lastCropSupplyPurchaseResult,buyPlacement.name);
   }
   function openFieldMenu(kind:'plant'|'spray') {
     objectMove.cancel();construction.cancel();bulldoze.cancel();
-    setBuyPlacement(null);setFieldMapTool(null);setToolPointer(null);setFieldToolMessage('');setNavigation(null);
+    setBuyPlacement(null);setFieldMapTool(null);setToolPointer(null);setNavigation(null);
     windows.close('examine');windows.show(null);setFieldMenu(kind);
   }
-  function cancelFieldTool(){setFieldMenu(null);setFieldMapTool(null);setToolPointer(null);setFieldToolMessage('');}
+  function cancelFieldTool(){setFieldMenu(null);setFieldMapTool(null);setToolPointer(null);}
   function applyFieldTool(x:number,y:number){
     if(!simulation||!snapshot||!fieldMapTool||snapshot.pendingTown||snapshot.townEvent.pending||snapshot.finances.defaultDecision||snapshot.aircraftFlight)return;
     const selected=data?.scenario.fields.find(f=>f.contains(x,y));
@@ -255,15 +235,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     if(result.ok){
       const slot=fieldMapTool.kind==='plant'&&'slot' in result?result.slot:selected?.slot;
       if(slot!==undefined)setFieldSlot(slot);
-      setFieldToolMessage(fieldMapTool.kind==='plant'?`Field planted. ${result.source==='stored'?'Used seed in stock.':`Seed cost: $${result.cost}.`}`:'Treatment ordered.');
       if(fieldMapTool.kind==='plant'){setFieldMapTool(null);setToolPointer(null);}
-    } else {
-      const messages:Record<string,string>={'outside-map':'The entire field must fit inside the map.','not-owned':'Buy all the land under this field first.',
-        'blocked-terrain':'Terrain blocks this field. Automatic clearing handles trees and fences; buildings and water still block planting.',
-        'field-too-close':'Leave at least one tile between fields.','no-field-slots':'The farm has reached its field limit.',
-        'no-seeds':'No seed in stock. Automatic seed buying is disabled.','insufficient-funds':'There is not enough cash.',
-        'invalid-field':'Choose an existing field.','field-busy':'This field is already being worked.','no-supplies':'No treatment supply in stock. Automatic buying is disabled.'};
-      setFieldToolMessage(messages[result.reason]??`Cannot apply this tool: ${result.reason.replaceAll('-',' ')}.`);
     }
   }
   const cancelObjectMove=useCallback(()=>{objectMove.cancel();setToolPointer(null);},[objectMove.cancel]);
@@ -278,7 +250,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     window.addEventListener('keydown',cancel);
     return()=>window.removeEventListener('keydown',cancel);
   },[objectMove.active,cancelObjectMove,construction.tool,cancelConstruction,bulldoze.active,cancelBulldoze]);
-  function cancelPurchase() { setBuyPlacement(null); setToolPointer(null); setBuyMessage(''); }
+  function cancelPurchase() { setBuyPlacement(null); setToolPointer(null); }
   function enterMapWindow(index:number){
     if(!simulation)return false;
     const current=simulation.getSnapshot();
@@ -295,17 +267,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     const current=simulation.getSnapshot();
     if(current.pendingTown||current.townEvent.pending||current.finances.defaultDecision||current.aircraftFlight)return;
     const {x,y}=worldPosition(index),command=mapObjectInteraction(current.scenario,x,y);
-    setInteractionMessage('');
-    if(!command)return;
-    simulation.dispatch(command);
-    const next=simulation.getSnapshot();
-    if(command.type==='toggle-building-interior'){
-      const result=next.lastBuildingInteriorResult;
-      if(result?.ok)setInteractionMessage(result.open?'Building opened.':'Building closed.');
-    }else if(command.type==='toggle-valve'){
-      const result=next.lastIrrigationResult;
-      if(result?.ok)setInteractionMessage(result.tile&1?'Valve closed.':'Valve opened.');
-    }else if(next.lastNetworkResult?.ok)setInteractionMessage(command.tool==='open-gate'?'Gate opened.':'Gate closed.');
+    if(command)simulation.dispatch(command);
   }
   function selectField(slot: number | null, navigate: boolean) {
     const selected = data?.scenario.fields.find(f => f.slot === slot && f.active);
@@ -342,9 +304,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
       choose: index=>{
         const action=index===6?'disable':DISASTER_MENU_KINDS[index]; if(!action)return;
         simulation.dispatch({type:'disaster-menu',action});
-        if(action==='disable'){setInteractionMessage(simulation.getSnapshot().disasters.enabled?'New disasters enabled.':'New disasters disabled; active events continue.');return;}
-        const result=simulation.getSnapshot().lastDisasterResult;
-        setInteractionMessage(result?.ok?'':result?.reason==='no-fields'?'Create a field before starting locusts.':result?.reason==='tornado-active'?'Locusts cannot start during a tornado.':'That disaster is already active.');
       },
     }} simulation={simulation} scenarioId={id} tiles={data?.tiles??null} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
     <GameWindow windowKey="options" title="Settings"><section className="browser-settings" aria-label="View and audio settings">
@@ -400,9 +359,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
         <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") ${cursorHotspot} ${cursorHotspot}, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !editHelpOpen && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={tilesForWeather(data.tiles,snapshot?.weather)} townEventTiles={tilesForWeather(assets.townEventTiles[snapshot?.townEvent.artworkMode ?? 0],snapshot?.weather)} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
-          stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;setInteractionMessage('');const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
+          stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
           preview={preview} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {
-            setInteractionMessage('');
             if(construction.tool||bulldoze.active)return;
             if(enterMapWindow(index))return;
             setSelection(index);
@@ -415,10 +373,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
             if(selected)setFieldInspection({month:data.scenario.farm.calendar.month});
             windows.show(selected?'schedule':'examine');
           }} />
-        <div className="map-footer">{bulldoze.active&&<><button id="cancel-bulldoze" onClick={cancelBulldoze}>Stop bulldozing</button><span id="bulldoze-result" role="status">{bulldoze.message}</span></>}{construction.tool&&<><button id="cancel-construction" onClick={cancelConstruction}>Stop construction</button><span id="construction-result" role="status">{construction.message}</span></>}<span id="map-interaction-result" role="status">{interactionMessage}</span>{objectMove.active&&<><button id="cancel-object-move" onClick={cancelObjectMove}>Cancel move</button><span id="object-move-result" role="status">{objectMove.message}</span></>}<span id="field-tool-result" role="status">{fieldToolMessage}</span>{fieldMapTool&&<button id="cancel-field-tool" onClick={cancelFieldTool}>Cancel field tool</button>}{buyPlacement && <button id="cancel-buy-placement" onClick={cancelPurchase}>Cancel purchase</button>}<span id="buy-result" role="status">{buyMessage}</span><span id="map-tool-hint">{bulldoze.active?'Bulldoze: click or drag to clear · Buildings and fields ask for confirmation · Escape stops':construction.tool?construction.hint:objectMove.active?objectMove.hint:fieldMapTool ? fieldMapTool.kind==='plant' ? `Plant ${assets.catalog.crops.find(c=>`${c.id}.crp`===data.scenario.cropFiles[fieldMapTool.cropSlot])?.name}: click the top-left corner of a new field · Escape cancels` : `${SPRAY_TOOLS.find(t=>t.kind===fieldMapTool.kind)?.label}: click an existing field · Escape cancels` : buyPlacement ? `${buyPlacement.name}: click to place · Escape cancels` : snapshot?.aircraftFlight ? 'Following aircraft · farm calendar suspended'
- : 'Scroll to explore · click a tile to examine'}</span>
-          <span id="cell-status">{cell && position ? `Tile ${position.x}, ${position.y} · graphic ${terrainTile(cell)}` : '96 × 96 tiles'}</span>
-        </div>
       </section>
       {bulldoze.pending&&<BulldozeDialog pending={bulldoze.pending} assets={assets} onConfirm={bulldoze.confirm} onCancel={bulldoze.dismiss}/>}
       {simulation&&snapshot?.townEvent.pending&&!messages.length&&!newFarmOpen&&<TownEventMessage state={snapshot.townEvent} assets={assets} onResolve={accept=>simulation.dispatch({type:'resolve-town-event',accept})}/>}

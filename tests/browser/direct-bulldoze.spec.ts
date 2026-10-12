@@ -9,18 +9,18 @@ import { GameSimulation } from '../support/game';
 import { checkManualRemoval } from '../../src/simulation/manual-removal';
 import { readScenario,worldIndex } from '../../src/formats/scenario';
 import { readCrop } from '../../src/formats/crop';
-import { reveal } from '../support/workspace';
+import { reveal, expectPaletteAction } from '../support/workspace';
 async function load(page:Page,text:string){await page.goto('/');await page.locator('#load-farm-file').setInputFiles({name:'direct-bulldoze.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
 async function point(page:Page,x:number,y:number,scroll=true){const zoom=Number(await page.locator('#zoom').inputValue());if(scroll)await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x*16*p.z-120),Math.max(0,p.y*16*p.z-120)),{x,y,z:zoom});const r=(await page.locator('#world').boundingBox())!;return{x:r.x+(x+.5)*16*zoom,y:r.y+(y+.5)*16*zoom};}
 async function click(page:Page,x:number,y:number){const p=await point(page,x,y);await page.mouse.click(p.x,p.y);}
-async function tool(page:Page){await page.getByRole('button',{name:'Bulldoze',exact:true}).click();await expect(page.locator('#cancel-bulldoze')).toBeVisible();await expect(page.locator('#world')).toHaveCSS('cursor',/edit-bulldoze\.png.*0 0, crosshair/);await expect(page.locator('[data-window=actions]')).toBeHidden();}
+async function tool(page:Page){await page.getByRole('button',{name:'Bulldoze',exact:true}).click();await expectPaletteAction(page,'Bulldoze');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-bulldoze\.png.*0 0, crosshair/);await expect(page.locator('[data-window=actions]')).toBeHidden();}
 function remove(g:GameSimulation,x:number,y:number){const q=checkManualRemoval(g.getSnapshot().scenario,x,y);if(!q.ok)throw new Error(q.reason);g.dispatch({type:'remove-object',x,y,kind:q.kind,slot:q.slot,tile:q.tile});}
 
 test('direct Bulldoze clears supplies, chemicals and every network family with exact saves and no extra panel',async({page})=>{
   const f=bulldozeFixture(),g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));await tool(page);
-  for(const [x,y] of bulldozeTargets){await click(page,x,y);remove(g,x,y);await expect(page.getByRole('dialog',{name:'Message',exact:true})).toHaveCount(0);await expect(page.locator('#bulldoze-result')).toContainText('removed for $25.');expect(await save(page)).toEqual(JSON.parse(g.save(4)));}
-  await page.keyboard.press('Escape');await expect(page.locator('#cancel-bulldoze')).toHaveCount(0);await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  for(const [x,y] of bulldozeTargets){await click(page,x,y);remove(g,x,y);await expect(page.getByRole('dialog',{name:'Message',exact:true})).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(g.save(4)));}
+  await page.keyboard.press('Escape');await expectPaletteAction(page,'View object');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await page.reload();await load(page,g.save(4));for(let day=0;day<8;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}expect(await save(page)).toEqual(JSON.parse(g.save(4)));
 });
 
@@ -36,9 +36,9 @@ test('original movable MESSAGE confirmation cancels without mutation, blocks bac
   await page.mouse.click(700,500);await expect(dialog).toBeVisible();
   const title=dialog.locator('.game-window-title'),r=(await title.boundingBox())!;await page.mouse.move(r.x+120,r.y+8);await page.mouse.down();await page.mouse.move(r.x+180,r.y+48,{steps:4});await page.mouse.up();expect(await dialog.boundingBox()).toMatchObject({x:252,y:190});
   await page.screenshot({path:'artifacts/browser-direct-bulldoze-confirmation.png'});
-  await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);await expect(page.locator('#cancel-bulldoze')).toBeVisible();await expect(page.locator('#world')).toHaveCSS('cursor',/edit-bulldoze\.png.*0 0, crosshair/);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);await expectPaletteAction(page,'Bulldoze');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-bulldoze\.png.*0 0, crosshair/);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await click(page,21,21);await dialog.getByRole('button',{name:'CANCEL',exact:true}).click();expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  for(const [x,y] of [[21,21],[41,41]]){await click(page,x,y);await dialog.getByRole('button',{name:'YES',exact:true}).click();remove(g,x,y);await expect(dialog).toHaveCount(0);await expect(page.locator('#bulldoze-result')).toHaveText('Building removed for $25.');expect(await save(page)).toEqual(JSON.parse(g.save(4)));}
+  for(const [x,y] of [[21,21],[41,41]]){await click(page,x,y);await dialog.getByRole('button',{name:'YES',exact:true}).click();remove(g,x,y);await expect(dialog).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(g.save(4)));}
   expect(g.getSnapshot().scenario.animals[1].active).toBe(false);expect(g.getSnapshot().scenario.equipment.filter(e=>e.active)).toHaveLength(0);
 });
 
@@ -62,11 +62,11 @@ test('drag clearing stops on leaving Edit or cancellation; primary Bulldoze remo
   const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));await tool(page);
   let a=await point(page,10,10),b=await point(page,11,10,false);await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(a.x+2,a.y+2,{steps:4});await page.mouse.move(b.x,b.y,{steps:4});await page.mouse.move(400,8);const c=await point(page,12,10,false);await page.mouse.move(c.x,c.y);await page.mouse.up();
   remove(g,10,10);remove(g,11,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  await click(page,14,10);await expect(page.locator('#bulldoze-result')).toContainText('Town-owned');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  await click(page,14,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await reveal(page,'#zoom');await page.locator('#zoom').selectOption('2');await tool(page);a=await point(page,12,10);b=await point(page,13,10,false);const session=await page.context().newCDPSession(page);
   await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[a]});await session.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await page.mouse.move(b.x,b.y);remove(g,12,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));await session.detach();
-  await click(page,13,10);remove(g,13,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));await click(page,15,10);await expect(page.locator('#bulldoze-result')).toContainText('need $25');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  await page.locator('#window-buy').click();await expect(page.locator('#cancel-bulldoze')).toHaveCount(0);await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
+  await click(page,13,10);remove(g,13,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));await click(page,15,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  await page.locator('#window-buy').click();await expectPaletteAction(page,'View object');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
 });
 
 
@@ -77,7 +77,7 @@ test('Bulldoze cash warning is an original status, respects town priority and st
     const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));await tool(page);
     const status=page.getByRole('button',{name:'Edit message history'}),p=await point(page,40,40);
     await page.mouse.move(p.x,p.y);await expect(status).toHaveText('Bulldoze');
-    await click(page,41,40);await expect(status).toHaveText('Bulldoze');await expect(page.locator('#bulldoze-result')).toContainText('Town-owned');
+    await click(page,41,40);await expect(status).toHaveText('Bulldoze');
     await click(page,40,40);
     if(cash===25){remove(g,40,40);await expect(status).toHaveText('Bulldoze');await click(page,42,40);}
     await expect(status).toHaveText('Not enough money.');await expect(page.getByRole('dialog',{name:'Message',exact:true})).toHaveCount(0);

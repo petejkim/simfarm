@@ -1,4 +1,4 @@
-import { openWindow, focusEdit } from '../support/workspace';
+import { openWindow, focusEdit, expectPaletteAction } from '../support/workspace';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
@@ -43,11 +43,11 @@ test('palette opens field planning and real tools; Speed retains slower pacing a
   await openWindow(page,'schedule');await expect(page.locator('#field-planner')).toBeVisible();
   await focusEdit(page);
   await page.getByRole('button', { name: 'Dirt road', exact: true }).click();
-  await expect(page.locator('#map-tool-hint')).toContainText('Dirt road: click or drag');
+  await expectPaletteAction(page,'Dirt road');
   await page.getByRole('button', { name: 'Edit tools and help', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Advanced controls', exact: true })).toHaveCount(0);await page.keyboard.press('Escape');
   await expect(page.locator('#map-tool')).toHaveCount(0);
-  await expect(page.locator('#cancel-construction')).toHaveCount(0);
+  await expectPaletteAction(page,'View object');
   await expect(page.locator('#map-tool option[value=network],#network-panel')).toHaveCount(0);
   await page.locator('#speed-menu-button').click(); await expect(page.locator('#simulation-speed-value')).toHaveText('1×');
   await page.locator('#play-pause').click(); await page.clock.runFor(3000); await expect(page.locator('#time-status')).toContainText('0 days advanced');
@@ -87,7 +87,7 @@ test('palette keeps the running action depressed and returns to View object when
   expect(await pressed()).toEqual(['Fence']); expect(await bevel('Fence')).toBe('rgb(130, 130, 130)'); expect(await bevel('View object')).toBe('rgb(255, 255, 255)');
   await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
   await palette.getByRole('button', { name: 'Bulldoze', exact: true }).click(); expect(await pressed()).toEqual(['Bulldoze']);
-  await page.locator('#cancel-bulldoze').click(); await expect.poll(pressed).toEqual(['View object']);
+  await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
   await palette.getByRole('button', { name: 'Plant', exact: true }).click(); await expect.poll(pressed).toEqual(['Plant']);
   await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
   await palette.getByRole('button', { name: 'Spray', exact: true }).click(); await expect.poll(pressed).toEqual(['Spray']);

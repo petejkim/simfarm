@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import {clickFarmTile} from '../support/field-actions';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow, expectPaletteAction } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -69,14 +69,13 @@ test('Bulldoze removes loose supplies/chemicals and terrain, renders source conn
       await page.screenshot({ path: 'artifacts/browser-bulldoze.png', fullPage: true });
     }
     game.dispatch({ type: 'remove-object', x, y, kind: quote.kind, slot: quote.slot, tile: quote.tile });
-    await expect(page.locator('#bulldoze-result')).toContainText('removed for $25.');
+    
     if (i === 3) await expect.poll(() => page.evaluate(() => (window as unknown as { __bulldozePeak?: number }).__bulldozePeak ?? 0)).toBeGreaterThan(0.01);
     await page.getByRole('button',{name:'View object',exact:true}).click();
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   }
   await pixels(page, game.getSnapshot().scenario);
   await page.reload(); await load(page, game.save(4)); await expect(page.locator('#removal-panel')).toHaveCount(0);
-  await expect(page.locator('#bulldoze-result')).toHaveCount(0);
   for (let d = 0; d < 14; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
@@ -84,11 +83,11 @@ test('Bulldoze removes loose supplies/chemicals and terrain, renders source conn
 test('Bulldoze explains town and cash gates, permits exact25 payment, and cancellation never removes a terrain tile', async ({ page }) => {
   const f = bulldozeFixture(); f.state.scenario.farm.cash = 24; let game = f.load().withAllCrops(browserCrops);
   await page.goto('/'); await load(page, game.save(4)); await expect(page.locator('#removal-panel')).toHaveCount(0);
-  await select(page, 50, 50); await expect(page.locator('#bulldoze-result')).toContainText('Town-owned land');
-  await select(page, 95, 95); await expect(page.locator('#bulldoze-result')).toContainText('You need $25');
+  await select(page, 50, 50); 
+  await select(page, 95, 95); 
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   f.state.scenario.farm.cash = 25; game = f.load().withAllCrops(browserCrops); await load(page, game.save(4)); await expect(page.locator('#removal-panel')).toHaveCount(0);
-  await reveal(page,'#viewport');await page.getByRole('button',{name:'Bulldoze',exact:true}).click();await page.keyboard.press('Escape');await expect(page.locator('#cancel-bulldoze')).toHaveCount(0);
+  await reveal(page,'#viewport');await page.getByRole('button',{name:'Bulldoze',exact:true}).click();await page.keyboard.press('Escape');await expectPaletteAction(page,'View object');
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await select(page, 95, 95); const quote = checkManualRemoval(game.getSnapshot().scenario, 95, 95); if (!quote.ok) throw new Error('Missing tree');
   game.dispatch({ type: 'remove-object', x: 95, y: 95, kind: quote.kind, slot: quote.slot, tile: quote.tile });

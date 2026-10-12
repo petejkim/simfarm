@@ -37,7 +37,7 @@ test('original Move opens stored machinery, cancels safely and delivers to stora
   await page.goto('/'); await load(page, game.save(4));
   await reveal(page,'#viewport');await page.getByRole('button',{name:'Move object',exact:true}).click();
   await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick'); await clickFarmTile(page, 20, 21);
-  await expect(page.locator('#object-move-result')).toContainText('Open the building');
+  
   await toggleBuilding(page,20,21); game.dispatch({ type: 'toggle-building-interior', x: 20, y: 21, slot: 1 });
   await tilePixels(page, 22, 22, 217);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
@@ -46,11 +46,11 @@ test('original Move opens stored machinery, cancels safely and delivers to stora
   await startMove(page);await clickFarmTile(page,20,21); await clickFarmTile(page, 40, 40);
   const selected = checkEquipmentPickup(game.getSnapshot().scenario, 20, 21); expect(selected.ok).toBe(true); if (!selected.ok) throw new Error('Missing machine');
   game.dispatch({ type: 'move-equipment', selected, x: 40, y: 40 });
-  await expect(page.locator('#object-move-result')).toContainText('Movement ordered');
+  
   expect(await save(page)).toEqual(JSON.parse(game.save(4))); await tilePixels(page, 20, 20, 217);
   // Save/reload while moving; source interior remains open and destination closed.
   await page.reload(); await load(page, game.save(4)); await startMove(page);
-  await expect(page.locator('#object-move-result')).toBeEmpty();
+  await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');
   for (let d = 0; d < 8; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(game.getSnapshot().scenario.equipment[1].flags & 4).toBe(4); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await startMove(page);await clickFarmTile(page,40,40);
@@ -60,7 +60,7 @@ test('original Move opens stored machinery, cancels safely and delivers to stora
   // Type67 graphic9 base451, bottom-right of its3x3 roof is459.
   await tilePixels(page, 42, 42, 459); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 1280, height: 844 }); await startMove(page);
-  await clickFarmTile(page,40,40);await expect(page.locator('#object-move-result')).toContainText('Open the building');
+  await clickFarmTile(page,40,40);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-manual-movement.png', fullPage: true }); expect(errors).toEqual([]);
 });
@@ -70,11 +70,11 @@ test('move controls explain busy and unowned targets, then tow an implement and 
   game.dispatch({ type: 'buy-equipment', equipmentType: 0, x: 10, y: 10 }); game.dispatch({ type: 'buy-equipment', equipmentType: 1, x: 11, y: 10 });
   const state = readNativeSave(game.save(4)).state; state.scenario.equipment[1].flags |= 1;
   await page.goto('/'); await load(page, writeNativeSave(state, 4)); await startMove(page);
-  await clickFarmTile(page, 10, 10); await expect(page.locator('#object-move-result')).toContainText('in use');
+  await clickFarmTile(page, 10, 10); 
   state.scenario.equipment[1].flags &= ~1; state.scenario.cells[30 * 96 + 30].overlay = 0;
   await load(page, writeNativeSave(state, 4)); await startMove(page);
   await clickFarmTile(page, 11, 10); await clickFarmTile(page, 30, 30);
-  await expect(page.locator('#object-move-result')).toHaveText('Choose a destination on your land.');
+  
   expect(await save(page)).toEqual(JSON.parse(writeNativeSave(state, 4)));
   await load(page, game.save(4)); await startMove(page);
   await clickFarmTile(page, 11, 10); await clickFarmTile(page, 30, 30);

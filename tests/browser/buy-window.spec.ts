@@ -1,4 +1,5 @@
 import {readSaveText} from '../support/save-file';
+import { expectFarmCash } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
@@ -46,19 +47,19 @@ test('Buy arms direct map placement, purchases repeatedly, reports blocked cells
   await page.locator('#catalog-buy').click();
   await expect(page.getByRole('region', { name: 'Buy catalog' })).toBeVisible();
   await page.getByRole('button', { name: 'Close Buy', exact: true }).click();
-  await expect(page.locator('#cancel-buy-placement')).toBeVisible();
   await expect(page.locator('#world')).toHaveCSS('cursor',/edit-buy\.png.*0 0, crosshair/);
   await page.locator('#viewport').evaluate(el => el.scrollTo(0, 0));
   const box = (await page.locator('#world').boundingBox())!;
   for (const x of [10, 12]) {
     await page.mouse.click(box.x + x * 16 + 8, box.y + 10 * 16 + 8);
     game.dispatch({ type: 'buy-equipment', equipmentType: 0, x, y: 10 });
-    await expect(page.locator('#buy-result')).toHaveText('Tractor purchased.');
+    await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
   }
   await page.mouse.click(box.x + 10 * 16 + 8, box.y + 10 * 16 + 8);
-  await expect(page.locator('#buy-result')).not.toHaveText('Tractor purchased.');
+  await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
   await expect(page.locator('#world')).toHaveCSS('cursor',/edit-buy\.png.*0 0, crosshair/);
-  await page.keyboard.press('Escape'); await expect(page.locator('#cancel-buy-placement')).toHaveCount(0);
+  // Escape disarms placement: another click on clear ground buys nothing.
+  await page.keyboard.press('Escape'); await page.mouse.click(box.x + 14 * 16 + 8, box.y + 10 * 16 + 8); await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
   await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
 });

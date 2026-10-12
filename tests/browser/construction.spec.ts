@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { clickFarmTile, setAutoDoze } from '../support/field-actions';
 import { buyBuilding, selectBuilding } from '../support/building-actions';
-import { reveal } from '../support/workspace';
+import { reveal, expectFarmCash } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -32,7 +32,7 @@ test('original Buy purchases storage roofs and usable records and persists accou
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await buyBuilding(page,65,x,y); expected.dispatch({ type: 'build', buildingType: 65, x, y });
   const result = expected.getSnapshot().lastBuildingResult; expect(result?.ok).toBe(true);
-  await clickFarmTile(page,x,y); await expect(page.locator('#buy-result')).toHaveText('This location is occupied.');
+  await clickFarmTile(page,x,y); await expectFarmCash(page,expected.getSnapshot().scenario.farm.cash);
   await expect(page.locator('#farm-cash')).toHaveText(`$${expected.getSnapshot().scenario.farm.cash.toLocaleString('en-US')}`);
   const text = await download(page, 'artifacts/browser-construction.simfarm.json');
   expect(JSON.parse(text)).toEqual(JSON.parse(expected.save(4)));
@@ -48,7 +48,6 @@ test('original Buy purchases storage roofs and usable records and persists accou
     pixels.push(...atlas.data.subarray(pos, pos + 4));
   }
   expect(actual).toEqual(pixels);
-  await expect(page.locator('#cancel-buy-placement')).toHaveCount(0);
   await page.setViewportSize({ width: 1280, height: 844 }); await selectBuilding(page,69);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-construction.png', fullPage: true });
@@ -66,14 +65,13 @@ test('original building placement rejects blocked ground and cash limits, and Op
   await page.locator('#load-farm-file').setInputFiles({ name: 'trees.json', mimeType: 'application/json', buffer: Buffer.from(expected.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await selectBuilding(page,65);await clickFarmTile(page,0,0);
-  await expect(page.locator('#buy-result')).toHaveText('Choose clear ground or compatible storage.');
   expect(JSON.parse(await download(page,'artifacts/browser-construction-blocked.simfarm.json'))).toEqual(JSON.parse(expected.save(4)));
   await setAutoDoze(page,true);expected.dispatch({type:'set-auto-clear',enabled:true});
-  await selectBuilding(page,69);await clickFarmTile(page,0,0);await expect(page.locator('#buy-result')).toHaveText('Not enough cash.');
+  await selectBuilding(page,69);await clickFarmTile(page,0,0);await expectFarmCash(page,expected.getSnapshot().scenario.farm.cash);
   expect(JSON.parse(await download(page,'artifacts/browser-construction-cash.simfarm.json'))).toEqual(JSON.parse(expected.save(4)));
   await buyBuilding(page,65,0,0);
   expected.dispatch({ type: 'build', buildingType: 65, x: 0, y: 0 });
   await expect(page.locator('#farm-cash')).toHaveText('$25');
   expect(JSON.parse(await download(page, 'artifacts/browser-construction-clearing.simfarm.json'))).toEqual(JSON.parse(expected.save(4)));
-  await selectBuilding(page,65);await clickFarmTile(page,3,3);await expect(page.locator('#buy-result')).toHaveText('Not enough cash.');
+  await selectBuilding(page,65);await clickFarmTile(page,3,3);await expectFarmCash(page,expected.getSnapshot().scenario.farm.cash);
 });

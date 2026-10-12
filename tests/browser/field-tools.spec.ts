@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import {disasterFixture} from '../support/disasters';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
-import { reveal, openWindow, focusEdit } from '../support/workspace';
+import { reveal, openWindow, focusEdit, expectPaletteAction } from '../support/workspace';
 import { readArchive } from '../../src/formats/archive';
 import { readPalette, decodePlanar } from '../../src/formats/graphics';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'field-tools.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
@@ -46,7 +46,7 @@ test('original Plant and Spray popup geometry, real labels, source icons and key
   expect(await spray.boundingBox()).toEqual({x:48,y:192,width:112,height:88});
   expect(await spray.getByRole('menuitem').allTextContents()).toEqual(['Fertilize','Pesticide','Herbicide','Fungicide']);
   await page.screenshot({path:'artifacts/browser-spray-menu.png'});await page.keyboard.press('End');await page.keyboard.press('Enter');
-  await expect(page.locator('#map-tool-hint')).toContainText('Fungicide');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-spray\.png.*0 0, crosshair/);await page.keyboard.press('Escape');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
+  await expectPaletteAction(page,'Spray');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-spray\.png.*0 0, crosshair/);await page.keyboard.press('Escape');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
   expect(await save(page)).toEqual(before);
 });
 
@@ -57,12 +57,12 @@ test('Plant creates all24 crop fields directly, guards boundaries and occupied f
     await plant(page,slot);const x=5+slot%8*10,y=40+Math.floor(slot/8)*10;
     await point(page,x,y);game.dispatch({type:'create-field',x,y,cropSlot:slot});
     expect(game.getSnapshot().lastNewFieldResult?.ok).toBe(true);
-    await expect(page.locator('#field-tool-result')).toContainText('Field planted.');await expect(page.locator('#cancel-field-tool')).toHaveCount(0);
+    await expectPaletteAction(page,'View object');
     await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
   }
   const before=await save(page);expect(before).toEqual(JSON.parse(game.save(4)));
-  await plant(page,0);await point(page,5,40);await expect(page.locator('#field-tool-result')).toContainText('Terrain blocks');
-  await point(page,95,95);await expect(page.locator('#field-tool-result')).toContainText('entire field must fit');
+  await plant(page,0);await point(page,5,40);await expectPaletteAction(page,'Plant');
+  await point(page,95,95);await expectPaletteAction(page,'Plant');
   await page.keyboard.press('Escape');expect(await save(page)).toEqual(before);
   await page.reload();await load(page,JSON.stringify(before));expect(await save(page)).toEqual(before);
   await page.getByRole('button',{name:'View object',exact:true}).click();await point(page,6,41);
@@ -76,12 +76,12 @@ test('Spray applies all four treatments through canonical supplies and busy guar
   await page.goto('/');await load(page,game.save(4));
   for(const [kind,label] of [['fertilizer','Fertilize'],['pesticide','Pesticide'],['herbicide','Herbicide'],['fungicide','Fungicide']] as const){
     await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:label,exact:true}).click();
-    await point(page,30,30);await expect(page.locator('#field-tool-result')).toHaveText('Choose an existing field.');
+    await point(page,30,30);await expectPaletteAction(page,'Spray');
     await point(page,42,42);game.dispatch({type:'treat-field',fieldSlot:1,treatment:kind});expect(game.getSnapshot().lastTreatmentResult?.ok).toBe(true);
-    await expect(page.locator('#field-tool-result')).toHaveText('Treatment ordered.');await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('');
+    await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('');
     const before=await save(page);expect(before).toEqual(JSON.parse(game.save(4)));
     await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:label,exact:true}).click();
-    await point(page,42,42);await expect(page.locator('#field-tool-result')).toHaveText('This field is already being worked.');await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Field is busy.');
+    await point(page,42,42);await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Field is busy.');
     await page.keyboard.press('Escape');expect(await save(page)).toEqual(before);
     for(let i=0;i<7;i++){await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});}
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));await openWindow(page,'edit');
@@ -94,9 +94,9 @@ test('Plant retains failed seed orders without constructing a field or changing 
   const game=fixture.load().withAllCrops(browserCrops),before=JSON.parse(game.save(4));
   await page.goto('/');await load(page,JSON.stringify(before));await page.getByRole('button',{name:'Plant',exact:true}).click();
   await expect(page.locator('[data-field-tool="0"]')).toHaveText('NONE OWNED');await page.locator('[data-field-tool="0"]').click();
-  await point(page,40,40);await expect(page.locator('#field-tool-result')).toHaveText('No seed in stock. Automatic seed buying is disabled.');
-  expect(await save(page)).toEqual(before);await page.getByRole('button',{name:'Cancel field tool'}).click();
-  await expect(page.locator('#cancel-field-tool')).toHaveCount(0);
+  await point(page,40,40);await expectPaletteAction(page,'Plant');
+  expect(await save(page)).toEqual(before);await page.locator('#viewport').focus();await page.keyboard.press('Escape');
+  await expectPaletteAction(page,'View object');
 });
 
 
@@ -128,17 +128,15 @@ test('selected Spray treatment stays active across successful fields and busy re
     for(const [x,slot] of [[42,1],[52,2]]){
       await point(page,x,42);game.dispatch({type:'treat-field',fieldSlot:slot,treatment:kind});
       expect(game.getSnapshot().lastTreatmentResult?.ok).toBe(true);
-      await expect(page.locator('#field-tool-result')).toHaveText('Treatment ordered.');
-      await expect(page.locator('#map-tool-hint')).toContainText(label+':');await expect(page.locator('#cancel-field-tool')).toBeVisible();
+      await expectPaletteAction(page,'Spray');
     }
-    await point(page,52,42);await expect(page.locator('#field-tool-result')).toHaveText('This field is already being worked.');
+    await point(page,52,42);await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Field is busy.');
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-    await focusEdit(page);await expect(page.locator('#cancel-field-tool')).toHaveCount(0);
-    await expect(page.locator('#map-tool-hint')).not.toContainText(label+':');
+    await focusEdit(page);await expectPaletteAction(page,'View object');
     for(let i=0;i<7;i++){await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});}
     await openWindow(page,'edit');
   }
   await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:'Fertilize',exact:true}).click();
-  await page.getByRole('button',{name:'View object',exact:true}).click();await expect(page.locator('#cancel-field-tool')).toHaveCount(0);
+  await page.getByRole('button',{name:'View object',exact:true}).click();await expectPaletteAction(page,'View object');
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
 });

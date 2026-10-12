@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { browseSupply, selectSupply } from '../support/supply-actions';
 import { clickFarmTile } from '../support/field-actions';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow, expectFarmCash } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { disasterFixture } from '../support/disasters';
@@ -42,7 +42,7 @@ test('scheduled planting keeps trade quotes until weekly execution updates seed 
   await load(page, JSON.stringify(week));
   await selectSupply(page,192);await clickFarmTile(page,10,10);
   game.dispatch({ type: 'buy-crop-supply', productType: 192, x: 10, y: 10 });
-  await expect(page.locator('#buy-result')).toContainText('purchased.');
+  await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
   expect(await save(page, 'purchase')).toEqual(JSON.parse(game.save(4)));
   expect(errors).toEqual([]);
 });

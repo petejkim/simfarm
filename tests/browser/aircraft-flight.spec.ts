@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { aircraftCatalog } from '../support/aircraft-browser';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow, expectFarmCash } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -113,7 +113,7 @@ test('browser spraying changes actual crop bytes, mid-flight save/load resumes q
   await step(page, game, 'end'); await expect(page.locator('#flight-result')).toContainText('crashed');
   expect(game.getSnapshot().scenario.equipment[1].active).toBe(false); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await aircraftCatalog(page); await page.locator('#catalog-buy').click(); game.dispatch({type:'buy-aircraft'});
-  await expect(page.locator('#buy-result')).toHaveText('Crop Duster purchased.'); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+  await expectFarmCash(page,game.getSnapshot().scenario.farm.cash); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
 });
 
 test('original engine PCM plays without frame restarts, caches between clips, and stops on pause, mute and farm replacement', async ({ page }) => {

@@ -1,6 +1,6 @@
 import { aircraftMapEntry } from '../../src/simulation/aircraft-view';
 import { farmSnapshot } from './field-checkpoint';
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 /** Existing subsystem tests acknowledge real informational dialogs before
  * continuing their next action. Dedicated message tests assert each notice. */
@@ -87,4 +87,13 @@ export async function reveal(page: Page, selector: string) {
 export async function newGame(page:Page){
   await acknowledgeFinanceMessages(page);await page.locator('#file-menu-button').click();
   await page.getByRole('menuitem',{name:'New Game',exact:true}).click();
+}
+
+/** The depressed Edit palette button names the running map action (View object when idle). */
+export async function expectPaletteAction(page:Page,name:string){
+  await expect(page.getByRole('toolbar',{name:'Edit tools'}).getByRole('button',{pressed:true})).toHaveAccessibleName(name);
+}
+/** The control strip's Funds readout equals the expected simulation cash. */
+export async function expectFarmCash(page:Page,cash:number){
+  await expect(page.locator('#farm-cash')).toHaveText(`$${cash.toLocaleString('en-US')}`);
 }

@@ -2760,3 +2760,14 @@ The terrain panel's dashboard shadow is removed inside the game desktop. At user
 - Choosing any non-View palette action closes Examine.
 
 Details are in edit-palette.md. New browser cases cover launcher press/release across Buy/Bank, palette transitions (Fence, Bulldoze, Plant, Spray, help) and Examine closing (Fence/Plant/help, with View object keeping it open). Validation: 127/127 browser cases pass across 32 toolbar/palette/window specs (artifacts/pressed-state-browser.log); type checking and build pass. No simulation/save changes; full suite not rerun.
+
+## 2026-10-11 — remove interim map status footer
+
+Removed the native-only status bar under the terrain and its related code, by user request. That covers hints, cell readout, cancel buttons, and FarmView/hook result-message state and tables, with CSS. Gameplay commands, Edit status codes, sounds, dialogs and Escape cancellation are unchanged. See edit-workspace.md.
+
+About 170 browser assertions were migrated to outcome checks using new `expectPaletteAction`/`expectFarmCash` helpers and the object-move data attribute. Removed cancel-button clicks now use Escape. Validation: type checking/build pass; full unit suite 927/927. Full browser suite run recorded below (artifacts/map-footer-removal-browser.log).
+Full browser suite: 277/281 passed on the first run. Two failures were migration errors and are now fixed:
+- The aircraft fixture already owns a plane, so the check now compares owned count before and after.
+- Edit help's pressed state is "Edit tools and help" while open.
+
+The other two did not involve the footer: town-event-calendar's rodeo MIDI status and terrain-design's Save menu timeout. They failed only under full-suite load. Focused rechecks pass for all four cases (4/4). Full suite not repeated, since only test expectations changed after the run.

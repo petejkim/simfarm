@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import { declineTownEventDialogs } from '../support/town-event-dialogs';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { setDisastersEnabled } from '../support/disaster-menu';
-import { openWindow } from '../support/workspace';
+import { openWindow, expectPaletteAction } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readScenario } from '../../src/formats/scenario';
@@ -24,7 +24,7 @@ test('original map and Schedule controls complete harvest, storage, sale and rep
   await setDisastersEnabled(page,false);
   await reveal(page,'#zoom');await page.locator('#zoom').selectOption('0.5');
   await buyPlot(page,0,2);await setAutoDoze(page,true);await plantField(page,0,16);
-  await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
+  await expectPaletteAction(page,'View object');
   async function days(count:number){for(let i=0;i<count;i++){await reveal(page,'#next-day');await page.locator('#next-day').click();
     await declineTownEventDialogs(page);
   }}
@@ -34,7 +34,6 @@ test('original map and Schedule controls complete harvest, storage, sale and rep
     await expect(page.locator('#planner-field')).toHaveValue('9');
   }
   await days(2);await sprayField(page,0,16,'fertilizer');
-  await expect(page.locator('#field-tool-result')).toHaveText('Treatment ordered.');
   await days(82);await examine();
   expect(Number(await page.locator('#schedule-value').textContent())).toBeGreaterThan(0);
   const before=await save(page),calendar=before.scenario.farm.calendar;

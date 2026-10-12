@@ -36,14 +36,14 @@ test('each source menu choice starts its actual disaster from Disable, restores 
 test('Disable does not cancel an active swarm; its damage continues and checked events are not stop switches',async({page})=>{
   await start(page);const f=disasterFixture(),game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));
   await choose(page,'Locusts');game.dispatch({type:'disaster-menu',action:'swarm'});await choose(page,'Disable');game.dispatch({type:'disaster-menu',action:'disable'});
-  await checks(page,[false,true,false,false,false,false,true]);await choose(page,'Locusts');game.dispatch({type:'disaster-menu',action:'swarm'});await expect(page.locator('#map-interaction-result')).toHaveText('That disaster is already active.');
+  await checks(page,[false,true,false,false,false,false,true]);await choose(page,'Locusts');game.dispatch({type:'disaster-menu',action:'swarm'});
   await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   const field=game.getSnapshot().scenario.fields[1];expect(field.bytes[18]|field.bytes[19]<<8).toBeGreaterThan(0);
 });
 
 test('failed locust choices leave Disable checked without phantom events, and naturally ended events clear their checks',async({page})=>{
   await start(page);const f=disasterFixture();f.state.disasters.enabled=false;for(const field of f.state.scenario.fields)field.bytes[7]&=~1;
-  const game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));const before=await save(page);await choose(page,'Locusts');await expect(page.locator('#map-interaction-result')).toHaveText('Create a field before starting locusts.');expect(await save(page)).toEqual(before);await checks(page,[false,false,false,false,false,false,true]);
+  const game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));const before=await save(page);await choose(page,'Locusts');expect(await save(page)).toEqual(before);await checks(page,[false,false,false,false,false,false,true]);
   const end=disasterFixture();end.state.disasters.flags=16;end.state.disasters.enabled=false;end.state.weather.temperatureAnomaly=0;const ending=end.load().withAllCrops(browserCrops);await load(page,ending.save(4));
   await checks(page,[false,false,false,false,true,false,true]);await reveal(page,'#next-day');await page.locator('#next-day').click();ending.dispatch({type:'advance-day'});await checks(page,[false,false,false,false,false,false,true]);expect(await save(page)).toEqual(JSON.parse(ending.save(4)));
 });

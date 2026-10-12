@@ -55,20 +55,19 @@ test('network controls construct original networks, operate gates, play placemen
   const actions:[keyof typeof labels,number,number,number][]=[['road-161',10,10,20],['road-150',11,10,30],['road-150',12,10,40],['fence',10,12,50],['fence',11,12,50],['gate',10,12,75]];
   for(const [kind,x,y,price] of actions){
     await tool(page,labels[kind]);await clickFarmTile(page,x,y);
-    g.dispatch({type:'network',tool:kind,x,y});await expect(page.locator('#construction-result')).toHaveText(`${labels[kind]} placed for $${price}.`);
+    g.dispatch({type:'network',tool:kind,x,y});
   }
   await expect.poll(async()=>(await played(page)).some(s=>s.length===1389&&s.peak>0.01)).toBe(true);
   for(const action of ['open-gate','close-gate','open-gate'] as const){
     const sounds=(await played(page)).filter(s=>s.length!==2667).length;await gate(page,10,12);
-    g.dispatch({type:'network',tool:action,x:10,y:12});await expect(page.locator('#map-interaction-result')).toHaveText(action==='open-gate'?'Gate opened.':'Gate closed.');
+    g.dispatch({type:'network',tool:action,x:10,y:12});
     expect((await played(page)).filter(s=>s.length!==2667).length).toBe(sounds);
   }
   await tool(page,'View object'); // Remove placement preview from source-pixel targets.
   await pixels(page,10,10,162);await pixels(page,11,10,151);await pixels(page,12,10,172);await pixels(page,10,12,191);await pixels(page,11,12,178);
   expect(await save(page,'built')).toEqual(JSON.parse(g.save(4)));
   await page.reload();await load(page,g.save(4));expect((await played(page)).length).toBe(0);
-  await expect(page.locator('#map-interaction-result')).toBeEmpty();
-  await gate(page,10,12);g.dispatch({type:'network',tool:'close-gate',x:10,y:12});await expect(page.locator('#map-interaction-result')).toHaveText('Gate closed.');
+  await gate(page,10,12);g.dispatch({type:'network',tool:'close-gate',x:10,y:12});
   for(let day=0;day<3;day++){await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}
   expect(await save(page,'continued')).toEqual(JSON.parse(g.save(4)));expect(errors).toEqual([]);
 });
@@ -81,13 +80,13 @@ test('original construction rejects land, cash, terrain and gate limits and stil
   w.cells[worldIndex(14,10)].terrain=179;w.cells[worldIndex(15,10)].terrain=188;
   const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));
   for(const [kind,x,message] of [['road-161',10,'not enough cash'],['fence',11,'Town land'],['fence',12,'Buy this land'],['road-150',13,'Terrain blocks'],['gate',14,'straight fence']] as const){
-    await tool(page,labels[kind]);await clickFarmTile(page,x,10);await expect(page.locator('#construction-result')).toContainText(message);
+    await tool(page,labels[kind]);await clickFarmTile(page,x,10);
   }
   expect(await save(page,'rejected')).toEqual(JSON.parse(g.save(4)));
   w.farm.cash=45;const funded=f.load().withAllCrops(browserCrops);await load(page,funded.save(4));
-  await tool(page,'Dirt road');await clickFarmTile(page,10,10);await expect(page.locator('#construction-result')).toHaveText('Dirt road placed for $45.');
+  await tool(page,'Dirt road');await clickFarmTile(page,10,10);
   funded.dispatch({type:'network',tool:'road-161',x:10,y:10});
-  await gate(page,15,10);funded.dispatch({type:'network',tool:'open-gate',x:15,y:10});await expect(page.locator('#map-interaction-result')).toHaveText('Gate opened.');
+  await gate(page,15,10);funded.dispatch({type:'network',tool:'open-gate',x:15,y:10});
   expect(await save(page,'zero-cash-gate')).toEqual(JSON.parse(funded.save(4)));
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({path:'artifacts/browser-network-mobile.png',fullPage:true});

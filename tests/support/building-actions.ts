@@ -12,9 +12,9 @@ export async function selectBuilding(page:Page,type:number){
   for(let i=64;i<type;i++)await catalog.getByRole('button',{name:'Next item'}).click();
   await page.locator('#catalog-buy').click();
   await catalog.getByRole('button',{name:'CLOSE',exact:true}).click();
-  await expect(page.locator('#cancel-buy-placement')).toBeVisible();
 }
 export async function buyBuilding(page:Page,type:number,x:number,y:number){
+  const cash=await page.locator('#farm-cash').textContent();
   await selectBuilding(page,type);await clickFarmTile(page,x,y);
-  await expect(page.locator('#buy-result')).toContainText('purchased.');
+  await expect(page.locator('#farm-cash')).not.toHaveText(cash!);
 }

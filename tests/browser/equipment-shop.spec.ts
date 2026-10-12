@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { clickFarmTile, setAutoDoze } from '../support/field-actions';
-import { reveal } from '../support/workspace';
+import { reveal, expectFarmCash } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -32,10 +32,10 @@ test('original Buy purchases ground sprites and stored machines with exact saved
   game.dispatch({ type: 'build', buildingType: 66, x: 20, y: 20 });
   await page.goto('/'); await load(page, game.save(4));
   await selectMachine(page,0);await clickFarmTile(page,10,10);game.dispatch({type:'buy-equipment',equipmentType:0,x:10,y:10});
-  await expect(page.locator('#buy-result')).toHaveText('Tractor purchased.');
-  await clickFarmTile(page,10,10);await expect(page.locator('#buy-result')).not.toHaveText('Tractor purchased.');
+  await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
+  await clickFarmTile(page,10,10);await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
   await selectMachine(page,4);await clickFarmTile(page,21,20);game.dispatch({type:'buy-equipment',equipmentType:4,x:21,y:20});
-  await expect(page.locator('#buy-result')).toContainText('purchased.');
+  await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
   const machines=(await farmSnapshot(page)).scenario.equipment.filter(e=>e.active);expect(machines).toHaveLength(2);expect(machines.every(e=>!(e.flags&64))).toBe(true);
   const path = 'artifacts/browser-equipment-shop.simfarm.json'; expect(await save(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await load(page, game.save(4));
@@ -45,7 +45,6 @@ test('original Buy purchases ground sprites and stored machines with exact saved
   const tractor = decodePlanar(asset('mskdtile.til').subarray(0, 128), 16, 16, palette, 7).rgba;
   for (let p = 0; p < ground.length; p += 4) if (tractor[p + 3]) ground.set(tractor.subarray(p, p + 4), p);
   expect(await page.locator('#world').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(160, 160, 16, 16).data))).toEqual(Array.from(ground));
-  await expect(page.locator('#cancel-buy-placement')).toHaveCount(0);
   for (let d = 0; d < 7; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page, path)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
@@ -54,10 +53,9 @@ test('machinery shop explains cash, trees and incompatible storage and fits a na
   const f = shopFixture(); f.state.scenario.farm.cash = 425; f.state.scenario.cells[worldIndex(10, 10)].terrain = 535;
   const game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
   await selectMachine(page,0);await clickFarmTile(page,10,10);
-  await expect(page.locator('#buy-result')).toHaveText('Choose clear ground or compatible storage.');
   expect(await save(page,'artifacts/browser-equipment-blocked.simfarm.json')).toEqual(JSON.parse(game.save(4)));
   await setAutoDoze(page,true);game.dispatch({type:'set-auto-clear',enabled:true});
-  await selectMachine(page,7);await clickFarmTile(page,10,10);await expect(page.locator('#buy-result')).toHaveText('Not enough cash.');
+  await selectMachine(page,7);await clickFarmTile(page,10,10);await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
   expect(await save(page,'artifacts/browser-equipment-cash.simfarm.json')).toEqual(JSON.parse(game.save(4)));
   await selectMachine(page,0);await clickFarmTile(page,10,10);
   game.dispatch({ type: 'buy-equipment', equipmentType: 0, x: 10, y: 10 });
@@ -65,10 +63,9 @@ test('machinery shop explains cash, trees and incompatible storage and fits a na
   expect(await save(page, 'artifacts/browser-equipment-shop-clearing.simfarm.json')).toEqual(JSON.parse(game.save(4)));
   const storage = shopFixture(), stored = storage.load().withAllCrops(browserCrops); stored.dispatch({ type: 'build', buildingType: 64, x: 20, y: 20 });
   await load(page,stored.save(4));await selectMachine(page,0);await clickFarmTile(page,20,20);
-  await expect(page.locator('#buy-result')).toHaveText('There is no compatible free storage space.');
   expect(await save(page,'artifacts/browser-equipment-storage-rejected.simfarm.json')).toEqual(JSON.parse(stored.save(4)));
   await page.setViewportSize({width:1280,height:844});await clickFarmTile(page,22,20);stored.dispatch({type:'buy-equipment',equipmentType:0,x:22,y:20});
-  await expect(page.locator('#buy-result')).toHaveText('Tractor purchased.');
+  await expectFarmCash(page,stored.getSnapshot().scenario.farm.cash);
   expect(await save(page,'artifacts/browser-equipment-ground.simfarm.json')).toEqual(JSON.parse(stored.save(4)));
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-equipment-shop.png', fullPage: true });

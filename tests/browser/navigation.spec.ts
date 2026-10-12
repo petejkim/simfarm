@@ -3,7 +3,7 @@ import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { fieldDescription } from '../support/field-checkpoint';
 import { buyPlot, selectProperty, setAutoDoze, clickFarmTile } from '../support/field-actions';
 import { scheduleMonth, scheduleWeek } from '../support/schedule-window';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow, expectPaletteAction } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { shopFixture } from '../support/livestock';
@@ -69,7 +69,7 @@ test('Map and Plant lead through land purchase, field creation and planning with
   const plant=page.getByRole('menu',{name:'Plant Field',exact:true});await expect(plant).toBeVisible();
   await expect(page.getByRole('dialog',{name:'New field',exact:true})).toHaveCount(0);
   await page.locator('[data-field-tool="0"]').click();await clickFarmTile(page,0,16);
-  await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
+  await expectPaletteAction(page,'View object');
   expect(await fieldDescription(page)).toContain('Field 9 · Planting');
   await openWindow(page,'schedule');
   await expect(page.locator('#planner-field')).toHaveValue('9');
@@ -104,7 +104,7 @@ test('an empty farm creates its first field with Plant and then opens Schedule',
   await page.locator('#viewport').evaluate(v=>v.scrollTo(30*16,30*16));
   const map=(await page.locator('#world').boundingBox())!;await page.mouse.click(map.x+40*16+8,map.y+40*16+8);
   game.dispatch({type:'create-field',x:40,y:40,cropSlot:0});expect(game.getSnapshot().lastNewFieldResult?.ok).toBe(true);
-  await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
+  await expectPaletteAction(page,'View object');
   expect(await checkpoint(page,'empty-planted')).toEqual(JSON.parse(game.save(4)));
   await openWindow(page,'schedule');await expect(page.locator('#planner-field')).toHaveValue('1');
   await load(); await expect(page.locator('#field-planner')).not.toBeVisible();

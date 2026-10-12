@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { clickFarmTile, setAutoDoze } from '../support/field-actions';
-import { reveal } from '../support/workspace';
+import { reveal, expectFarmCash } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -29,8 +29,8 @@ test('original Buy and palette purchase a cow and usable supplies and save their
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   for(const [productType,x,y] of [[161,10,10],[299,12,10],[300,12,11]]){
     await selectProduct(page,productType);await clickFarmTile(page,x,y);game.dispatch({type:'buy-livestock',productType,x,y});
-    await expect(page.locator(productType<299?'#buy-result':'#construction-result')).toContainText(productType<299?'purchased.':'placed for');
-    await clickFarmTile(page,x,y);await expect(page.locator(productType<299?'#buy-result':'#construction-result')).toContainText('occupied');
+    await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
+    await clickFarmTile(page,x,y);await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
   }
   expect((await farmSnapshot(page)).scenario.animals.filter(a=>a.active)).toHaveLength(1);
   expect((await farmSnapshot(page)).scenario.inventory.filter(i=>i.active&&(i.type===299||i.type===300)).map(i=>[i.type,i.quantity])).toEqual([[299,256],[300,512]]);
@@ -63,19 +63,19 @@ test('livestock purchases explain clearing and cash limits and are usable on a n
   const game = f.load().withAllCrops(browserCrops); await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'shop-trees.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await selectProduct(page,299);await clickFarmTile(page,20,20);await expect(page.locator('#construction-result')).toContainText('Terrain blocks');
+  await selectProduct(page,299);await clickFarmTile(page,20,20);
   expect(await download(page,'artifacts/browser-livestock-blocked.simfarm.json')).toEqual(JSON.parse(game.save(4)));
   await setAutoDoze(page,true);game.dispatch({type:'set-auto-clear',enabled:true});
-  await selectProduct(page,300);await clickFarmTile(page,20,20);await expect(page.locator('#construction-result')).toContainText('not enough cash');
+  await selectProduct(page,300);await clickFarmTile(page,20,20);
   const path = 'artifacts/browser-livestock-shop-clearing.simfarm.json';
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await selectProduct(page,299);await clickFarmTile(page,20,20);
   game.dispatch({ type: 'buy-livestock', productType: 299, x: 20, y: 20 });
   await expect(page.locator('#farm-cash')).toHaveText('$0');
-  await clickFarmTile(page,20,20);await expect(page.locator('#construction-result')).toContainText('occupied');
+  await clickFarmTile(page,20,20);
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 1280, height: 844 }); await selectProduct(page,299);await clickFarmTile(page,22,20);
-  await expect(page.locator('#construction-result')).toContainText('not enough cash');
+  
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-livestock-shop.png', fullPage: true });
 });

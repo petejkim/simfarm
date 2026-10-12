@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { browseSupply } from '../support/supply-actions';
 import { plantField } from '../support/field-actions';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow, expectPaletteAction } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { shopFixture } from '../support/livestock';
@@ -29,7 +29,7 @@ test('all crops are immediately plantable and plannable with source artwork and 
   await reveal(page, '#file-menu-button'); await page.locator('#file-menu-button').click(); await expect(page.getByRole('menuitem', { name: 'Load Crop' })).toHaveCount(0);
   await page.keyboard.press('Escape');
   const slot = 23, file = game.getSnapshot().scenario.cropFiles[slot], crop = browserCrops.find(c => `${c.id}.crp` === file)!;
-  await plantField(page,40,40,slot);await expect(page.locator('#field-tool-result')).toContainText('Field planted.');
+  await plantField(page,40,40,slot);await expectPaletteAction(page,'View object');
   game.dispatch({ type: 'create-field', x: 40, y: 40, cropSlot: slot });
   await expect(page.locator('#planner-field option:checked')).toContainText(crop.name);
   await expect(page.locator('#plant-crop')).toHaveCount(0);
