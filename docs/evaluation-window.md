@@ -53,3 +53,13 @@ The original scans16 crops and paints only the first eight matching slots. Nativ
 |DS4496..451c, Close/descriptor||f7dd65190e4d01d0bc4f89a5a5582e2a2de996f198ffa5d09c01cca1e1c8633b|
 
 Confidence is high for source geometry, resource formats and arithmetic branches. Unit checks pin source descriptors/hashes, verify every bitmap/import pixel, reject every truncated frame prefix and wrong-sized images, enumerate all48 weeks×five years×eight farms and all65536 multiplication input words, and check status masks/full24 eligibility without save changes. Browser checks cover actual text, source gauge/problem/crop pixels, paging, movement/reopening/Close, independent Balance Sheet routing, season/year rollover through the real town decision, exact save continuation, clearing and missing resources. Final checks are recorded in progress.md. Remaining original window-manager/audio behavior and the wider preservation goal are not claimed complete.
+
+## Native rebuild on shared chrome (2026-10-12)
+
+The window is now a framed flex layout (`GameWindow framed`), with no background bitmap or canvas (`src/render/evaluation-preview.ts` was removed).
+- **Topic rows:** each topic sits in a `SunkenInset` (162×14). Its gauge inset (84×12) holds a meter span whose width is the gauge value, coloured from the source palette index.
+- **Season column:** a sunken tile inset showing tile 200+season, beside the season text.
+- **Problems and Suggested Crops panels:** list only the badges that are present (map tiles 539+(16+i)·4 and `cropBadgeTile`). The source draws blank cells for absent problems; natively absent problems are simply omitted.
+- **Buttons:** Prev/Next and CLOSE are `BevelButton`s in a right-hand column. CLOSE keeps its source client position (280,152).
+
+Tests check structure rather than pixels: meter width and colour, sprite tile positions, and the absence of an image or canvas. Validation: the evaluation-window and annual specs pass (5/5).

@@ -2916,3 +2916,7 @@ Framed flex window replacing the background bitmap and canvas; details in schedu
 ## 2026-10-12 — Balance Sheet rebuilt as a ledger
 
 Framed ledger of striped rows with header/total bars and a CLOSE BevelButton (no background bitmap). Restored generic window-button specificity via :where (Town Choice regression). Balance/annual/town-choice 9/9 and earlier converted windows 34/34 pass.
+
+## 2026-10-12 — Evaluation window rebuilt on shared chrome
+
+The window is now framed flex rows built from `SunkenInset` gauges, sprite season and problem badges, and `BevelButton` paging and CLOSE. The evaluation-preview renderer was removed. Details are in evaluation-window.md. The evaluation-window and annual specs pass (5/5).
