@@ -75,7 +75,9 @@ test('original scenario maps, crop selection, navigation and audible MIDI', asyn
   await openWindow(page,'expert');await page.getByRole('button',{name:'Crops',exact:true}).click();
   for(let i=0;i<24&&!await page.locator('[data-expert-crop="corn"]').count();i++)await page.getByRole('button',{name:'NEXT',exact:true}).click();
   await expect(page.locator('[data-expert-crop="corn"]')).toContainText('Temperature: 2000 Degree Days');
-  await expect.poll(() => page.locator('.expert-crop-picture').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 112)).toBeTruthy();
+  // The crop photo is a 112×64 sprite of the imported card image, which must decode at that size.
+  const photo = page.getByRole('img', { name: /original crop illustration$/ });
+  expect(await photo.evaluate(el => new Promise(resolve => { const img = new Image(); img.onload = () => resolve([img.naturalWidth, img.naturalHeight, img.src.endsWith('corn.card.png')]); img.onerror = () => resolve(null); img.src = getComputedStyle(el).backgroundImage.slice(5, -2); }))).toEqual([112, 64, true]);
   for (let i = 1; i < 8; i++) {
     await loadScenarioCheckpoint(page,Number(String(i)));
     await expect(page.locator('#map-status')).toHaveText(`Scenario ${i + 1} · original terrain`);
