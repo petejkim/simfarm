@@ -22,9 +22,9 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
   const box = await bar.boundingBox();
   expect(box).toEqual({ x: 0, y: 16, width: 1280, height: 32 }); // spans the page
   expect(await bar.getByRole('button').evaluateAll(els => els.map(el => el.getAttribute('aria-label')))).toEqual(
-    ['Buy', 'Sell', 'Evaluation', 'Map', 'Weather', 'Balance Sheet', 'Bank', 'Market Value', 'Farm Expert']);
+    ['Buy', 'Sell', 'Evaluation', 'Map', 'Weather', 'Balance Sheet', 'Bank', 'Market Value', 'Farm Expert', 'Resume']);
   await expect(page.locator('#window-edit')).toHaveCount(0);
-  for (const [index, button] of (await bar.getByRole('button').all()).entries()) {
+  for (const [index, button] of (await bar.locator('.toolbar-launchers').getByRole('button').all()).entries()) {
     expect(await button.boundingBox()).toEqual({ x: index * 32, y: 16, width: 32, height: 32 });
   }
   expect(await page.locator('#windows-menu-button').boundingBox()).toMatchObject({ y: 0, height: 16 }); // content-sized heading in the 16px bar
@@ -94,6 +94,20 @@ test('the native Farm Expert launcher shows the halved expert head and stays dep
   await page.keyboard.press('Escape'); await expect(launcher).toHaveAttribute('aria-pressed', 'false');
 });
 
+test('the pause/resume launcher sits right of Date and Funds and toggles time with matching faces', async ({ page }) => {
+  await start(page); const toggle = page.locator('#toolbar-pause'), funds = (await page.locator('#farm-cash').locator('..').boundingBox())!;
+  const box = (await toggle.boundingBox())!; expect([box.width, box.height, box.y]).toEqual([32, 32, 16]);
+  expect(box.x).toBeGreaterThanOrEqual(funds.x + funds.width); // right of the readouts
+  const face = () => toggle.locator('.bevel-button-face').evaluate(el => [(el as HTMLElement).style.backgroundImage.includes('time-toggle.png'), (el as HTMLElement).style.backgroundPosition]);
+  await expect(page.locator('#time-status')).toContainText('Paused');
+  await expect(toggle).toHaveAccessibleName('Resume'); expect(await face()).toEqual([true, '-26px 0px']); // play arrow
+  const before = await save(page);
+  await toggle.click(); await expect(toggle).toHaveAccessibleName('Pause'); expect(await face()).toEqual([true, '0px 0px']);
+  await expect(page.locator('#time-status')).toContainText('Running');
+  await toggle.click(); await expect(toggle).toHaveAccessibleName('Resume'); await expect(page.locator('#time-status')).toContainText('Paused');
+  expect(await save(page)).toEqual(before); // frozen clock: toggling alone changes no farm state
+});
+
 test('missing control-bar artwork reports an asset error before starting the farm', async ({ page }) => {
   await page.route('**/assets/control-bar.png', route => route.abort()); await page.goto('/');
   await expect(page.getByRole('heading', { name: 'SimFarm assets unavailable' })).toBeVisible();
@@ -107,14 +121,16 @@ test('flex-laid launchers and insets rebuild the source bevels with CSS around s
   await expect(bar.locator('img')).toHaveCount(0);
   expect(await bar.locator('*').evaluateAll(els => els.filter(el => getComputedStyle(el).position === 'absolute').length)).toBe(0);
   const faces = [0, 1, 2, 3, 4, 5, 6, 8]; // source face7 (Edit) has no launcher; the last launcher is the native Expert face
-  for (const [index, launcher] of (await bar.locator('.window-launcher').all()).entries()) {
+  for (const [index, launcher] of (await bar.locator('.toolbar-launchers .window-launcher').all()).entries()) {
     // The frame is the button's black background behind 1px padding, so fractional zoom cannot open a gap.
     expect(await launcher.evaluate(el => { const s = getComputedStyle(el); return [s.borderTopWidth, s.backgroundColor, s.paddingTop]; })).toEqual(['0px', 'rgb(0, 0, 0)', '1px']);
     expect(await launcher.locator('.window-launcher-face').evaluate(el => { const s = getComputedStyle(el); return [s.borderTopWidth, s.borderTopColor, s.borderRightColor, s.backgroundPositionX, s.backgroundPositionY, s.imageRendering]; }))
       .toEqual(['2px', 'rgb(255, 255, 255)', 'rgb(130, 130, 130)', ...(index < faces.length ? [`${-(faces[index] * 32 + 3)}px`, '-3px'] : ['0px', '0px']), 'pixelated']);
   }
-  // Full-width strip: readouts end 3px from the page's right edge; the forecast centres between the launchers (nine, ending x288) and readouts.
-  const right = page.viewportSize()!.width;
+  // Full-width strip: readouts end 3px before the native pause launcher at the right edge; the forecast centres
+  // between the launchers (nine, ending x288) and readouts.
+  const right = page.viewportSize()!.width - 32;
+  expect(await page.locator('#toolbar-pause').boundingBox()).toEqual({ x: right, y: 16, width: 32, height: 32 });
   expect(await page.locator('#farm-date').locator('..').boundingBox()).toEqual({ x: right - 179, y: 18, width: 176, height: 13 });
   expect(await page.locator('#farm-cash').locator('..').boundingBox()).toEqual({ x: right - 179, y: 33, width: 176, height: 13 });
   expect(await page.locator('.toolbar-forecast').boundingBox()).toEqual({ x: (288 + right - 224) / 2 - 26, y: 22, width: 52, height: 20 });

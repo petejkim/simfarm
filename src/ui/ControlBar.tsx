@@ -22,8 +22,9 @@ const LAUNCHERS = [...GAME_WINDOWS.slice(0, 9).map((window, face) => ({ window, 
 
 /** Source toolbar at screen (0,16): window launchers, forecast inset and Date/Funds readouts, laid out with flexbox.
  * Bevels are CSS borders; cntlbtnh.bmp only supplies each launcher's 26×26 picture face. */
-export function ControlBar({ artwork, expertFace, menus, snapshot, tiles, onWindow }: {
-  artwork: HTMLImageElement; expertFace: HTMLImageElement; menus: MainMenus; snapshot: GameSnapshot; tiles: HTMLImageElement | null; onWindow: (window: GameWindow) => void;
+export function ControlBar({ artwork, expertFace, timeToggle, menus, snapshot, tiles, onWindow, onTogglePause }: {
+  artwork: HTMLImageElement; expertFace: HTMLImageElement; timeToggle: HTMLImageElement; menus: MainMenus; snapshot: GameSnapshot; tiles: HTMLImageElement | null;
+  onWindow: (window: GameWindow) => void; onTogglePause: () => void;
 }) {
   const date = snapshot.scenario.farm.calendar, windows = useWindows();
   const forecast=[...snapshot.weather.forecast,...snapshot.weather.nextForecast].slice(date.day,date.day+3);
@@ -38,6 +39,8 @@ export function ControlBar({ artwork, expertFace, menus, snapshot, tiles, onWind
       <ToolbarReadout id="farm-date" label="Date">{months[date.month]} {date.week * 7 + date.day + 1}, {date.year}</ToolbarReadout>
       <ToolbarReadout id="farm-cash" label="Funds">${snapshot.scenario.farm.cash.toLocaleString('en-US')}</ToolbarReadout>
     </div>
+    <PauseToggle sheet={timeToggle} paused={snapshot.paused} onToggle={onTogglePause}
+      disabled={Boolean(snapshot.finances.defaultDecision || snapshot.pendingTown || snapshot.townEvent.pending)} />
   </div>;
 }
 
@@ -50,6 +53,14 @@ export function WindowLauncher({ window, faceStyle, label, captioned, pressed, o
     faceStyle={faceStyle} aria-label={label} title={label} onClick={() => onWindow(window)}>
     {captioned && <span className="toolbar-caption">{label.toUpperCase()}</span>}
   </BevelButton>;
+}
+
+/** Native pause/resume launcher (user request), right of Date/Funds: a 32×32 launcher like the others whose face
+ * (time-toggle.png) shows pause while running and the rotated Buy arrow (play) while paused. Same blocking as Speed's Play/Pause. */
+export function PauseToggle({ sheet, paused, disabled, onToggle }: { sheet: HTMLImageElement; paused: boolean; disabled: boolean; onToggle: () => void }) {
+  const label = paused ? 'Resume' : 'Pause';
+  return <BevelButton id="toolbar-pause" className="window-launcher toolbar-pause" faceClassName="window-launcher-face" disabled={disabled}
+    faceStyle={spriteFace(sheet.src, paused ? CONTROL_BAR_LAUNCHER.face : 0, 0)} aria-label={label} title={label} onClick={onToggle} />;
 }
 
 /** Source2a518..2a552: three 16×16 forecast tiles (204+code from the current day) inside a 52×20 inset. */

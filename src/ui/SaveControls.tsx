@@ -100,7 +100,8 @@ export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, st
     <div className="original-controls">
       <FileMenu debug={debug} about={assets.about} options={options} disasters={disasters} data={assets.mainMenus} busy={busy||saving} onSave={saveGame} onSaveToFile={save}
         onLoad={() => void chooseFile()} onNewGame={onNewGame} onWindow={window=>onWindow(window,'menu')} />
-      <ControlBar tiles={tiles} artwork={assets.controlBar} expertFace={assets.expertLauncher} menus={assets.mainMenus} snapshot={simulation.getSnapshot()} onWindow={window=>onWindow(window,'toolbar')} />
+      <ControlBar tiles={tiles} artwork={assets.controlBar} expertFace={assets.expertLauncher} timeToggle={assets.timeToggle} menus={assets.mainMenus} snapshot={simulation.getSnapshot()} onWindow={window=>onWindow(window,'toolbar')}
+        onTogglePause={()=>simulation.dispatch({ type: 'set-paused', paused: !simulation.getSnapshot().paused })} />
     </div>
     <input ref={input} id="load-farm-file" type="file" accept=".ssm,.SSM,.simfarm.json,.json,.gz,application/json,application/gzip" hidden
       aria-label="Load farm file" onChange={event => {

@@ -103,3 +103,14 @@ A ninth launcher after Market Value opens the Farm Expert. It has no source equi
 - **Behaviour:** it uses the shared `WindowLauncher`/`BevelButton` chrome and stays depressed while the Expert window is open. The forecast inset re-centres between the launchers (now ending at x288) and the readouts.
 
 Validation: unit expert-cards 7/7; browser control-bar, weather-window, expert-window, native and edit-workspace specs pass.
+
+## Pause/resume launcher (2026-10-12, user request)
+
+A native 32×32 launcher sits at the right end of the strip, right of the Date and Funds readouts, built like the other launchers (CSS frame and bevel around a 26×26 sprite face). While the game runs it shows **pause** and pauses on click; while paused it shows **play** and resumes. It is disabled under the same conditions as the Speed window's Play/Pause: a financial default, a pending town choice or a town event decision.
+
+- **Faces:** `timeToggleFaces` in `src/formats/control-bar.ts` builds a 52×26 sheet that the importer writes to the ignored `time-toggle.png`; pause is at x0, play at x26.
+- **Play** is the Buy window's next-item up-arrow face (`buywndo.bmp`, 22×22 at 179,75, the face `BuyWindow` already shows), rotated 90° clockwise and centred. The user chose this over a re-shaded variant because its lighting (dark top/left, white bottom/right) matches the pause bars.
+- **Pause** is native artwork: two 5×16 engraved bars drawn only in the arrow's four sampled colours, with the same lighting and a fill-coloured lip outside the dark edges. The importer rejects the source if the sampled colours are not ordered outline < fill < face < highlight.
+- **Accessible name:** the button is named "Pause" or "Resume" in HTML; the faces carry no lettering.
+
+Validation: control-bar unit test (rotation pixel-for-pixel against `buywndo.bmp`, pause palette and bar columns) and control-bar browser spec (7/7). The spec checks placement right of the readouts, the faces for both states and the toggle with no farm change on a frozen clock, and updates the existing launcher and readout geometry for the new button. Production build passes.
