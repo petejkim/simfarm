@@ -113,7 +113,9 @@ test('missing assets give a useful startup error', async ({ page }) => {
 });
 
 test('time controls advance the simulation, render crop changes, pause, and reset on scenario changes', async ({ page }) => {
-  test.setTimeout(45_000); // Advances17.6s of animation and repaints full maps; isolated run takes25s.
+  // Advances 17.6 s of mocked animation, repainting full maps on every simulated tick. Alone ~25 s;
+  // under parallel load it exceeded 45 s and timed out mid-run, so budget for that load.
+  test.setTimeout(120_000);
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });

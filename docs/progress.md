@@ -3065,3 +3065,11 @@ Validation: production build. Full browser suite: 297/299. The two failures were
 ## 2026-10-12 — Roboto and DM Serif Display
 
 The UI font is now Roboto everywhere. The two New Game titles use DM Serif Display. Both are self-hosted from @fontsource (bun.lock updated). The weather window's thermometer and rain-gauge rows were pinned so font metrics no longer move them. Details in ui-components.md. Validation: production build; screenshots of the region chooser, terrain designer and Schedule over the farm; full browser suite 297/300. The failures were the two known wall-clock timing specs and weather-window, which was then fixed (weather-window 7/7).
+
+## 2026-10-12 — Fixed the two flaky timing specs
+
+`finance-messages.spec.ts:71` and `native.spec.ts:115` failed whenever other specs ran in parallel. Their "Received ''" output came from timeouts: Playwright closed the page mid-run. They were not wrong values. Each runs 12–16 s of mocked frames, and every simulated tick republishes the snapshot and repaints the full map. Alone the finance spec took ~30 s against the 30 s default, and the native spec ~25 s against its 45 s budget. Both now allow 120 s. With 8 workers and 4 repeats they pass 8/8; before, they failed every time under that load.
+
+Instrumentation also showed a real but secondary race: the frame loop held time on React state (message queue, bulldoze prompt). That state commits later in real time, so under load time could keep running after a message opened, or stall after OK. The loop now reads synchronous refs, updated when the event arrives and when it is acknowledged. Open follow-up: per-tick full snapshot copies and map repaints make long runs CPU-heavy in production too.
+
+Validation: production build; full browser suite 300/300.

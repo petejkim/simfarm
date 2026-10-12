@@ -1,4 +1,4 @@
-import { useCallback,useState } from 'react';
+import { useCallback,useRef,useState } from 'react';
 import type { GameSimulation,GameSnapshot } from '../simulation/game';
 import { checkManualRemoval,type RemovalTarget } from '../simulation/manual-removal';
 
@@ -7,8 +7,12 @@ const blocked=(s:GameSnapshot)=>Boolean(s.pendingTown||s.finances.defaultDecisio
 /** Source mode15 ->2591c. Only presentation drafts live here; canonical
  * removal commands validate current identity, records, money and terrain. */
 export function useBulldoze(simulation:GameSimulation|null,snapshot:GameSnapshot|null){
-  const [active,setActive]=useState(false),[pending,setPending]=useState<BulldozePrompt|null>(null);
-  const cancel=useCallback(()=>{setActive(false);setPending(null);},[]);
+  const [active,setActive]=useState(false),[pending,setPendingState]=useState<BulldozePrompt|null>(null);
+  // Synchronous mirror for the frame loop: React commits state later, which would let time run (or stall)
+  // for a nondeterministic number of frames after a prompt opens or closes.
+  const pendingRef=useRef(false);
+  const setPending=useCallback((value:BulldozePrompt|null)=>{pendingRef.current=value!==null;setPendingState(value);},[]);
+  const cancel=useCallback(()=>{setActive(false);setPending(null);},[setPending]);
   function remove(target:RemovalTarget,click:{x:number;y:number}){
     if(!simulation||blocked(simulation.getSnapshot()))return;
     simulation.dispatch({type:'remove-object',...click,kind:target.kind,slot:target.slot,tile:target.tile});
@@ -21,7 +25,7 @@ export function useBulldoze(simulation:GameSimulation|null,snapshot:GameSnapshot
     if(q.kind==='building'||q.kind==='field'){setPending({kind:'confirm',target:q,click:{x,y}});return false;}
     remove(q,{x,y});return true;
   }
-  return {active,pending,cancel,paint,enabled:Boolean(active&&!pending&&snapshot&&!blocked(snapshot)),
+  return {active,pending,pendingRef,cancel,paint,enabled:Boolean(active&&!pending&&snapshot&&!blocked(snapshot)),
     start(){setActive(true);setPending(null);},
     dismiss(){setPending(null);},
     confirm(){if(pending?.kind==='confirm')remove(pending.target,pending.click);setPending(null);},

@@ -97,7 +97,10 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
   const bulldoze=useBulldoze(simulation,snapshot);
   const [messages,setMessages]=useState<(Extract<GameEvent,{type:'finance-notice'|'disaster-notice'|'field-notice'|'building-notice'}>&{serial:number})[]>([]);
   const messageSerial=useRef(0);
-  function closeMessage(){setMessages(previous=>previous.slice(1));}
+  // Queued message count, kept in step with events and acknowledgements synchronously so the frame loop
+  // holds time from the very tick that raised a message until OK (not from React's later commit).
+  const heldMessages=useRef(0);
+  function closeMessage(){heldMessages.current=Math.max(0,heldMessages.current-1);setMessages(previous=>previous.slice(1));}
   const onMapPointer = useCallback((pointer: MapFocus | null) => {
     simulation?.dispatch({ type: 'set-map-pointer', pointer });
     setToolPointer(old => old?.x === pointer?.x && old?.y === pointer?.y ? old : pointer);
@@ -105,7 +108,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
   useEffect(() => simulation?.subscribeEvents(event=>{
     if(event.type==='finance-notice'||event.type==='disaster-notice'||event.type==='field-notice'||event.type==='building-notice'){
       const message={...event,serial:++messageSerial.current};
-      setMessages(previous=>[...previous,message]);
+      heldMessages.current++;setMessages(previous=>[...previous,message]);
     }else if(event.type==='map-focus')setFocus({x:event.x,y:event.y});
     else onGameEvent(event);
   }), [simulation, onGameEvent]);
@@ -118,13 +121,13 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
     let frame: number, previous: number | null = null;
     const tick = (now: number) => {
       // Background tabs do not accumulate days; wall-clock pacing remains outside the simulation rules.
-      if (!document.hidden && previous !== null && !bulldoze.pending && !messages.length) simulation.tick(Math.min(250, Math.max(0, now - previous)));
+      if (!document.hidden && previous !== null && !bulldoze.pendingRef.current && !heldMessages.current) simulation.tick(Math.min(250, Math.max(0, now - previous)));
       previous = now;
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [simulation,Boolean(bulldoze.pending),Boolean(messages.length)]);
+  }, [simulation,bulldoze.pendingRef]);
   const [fieldInspection,setFieldInspection]=useState<{month:number}|null>(null);
   const [selection, setSelection] = useState<number | null>(null), [fieldSlot, setFieldSlot] = useState<number | null>(null);
   const [focus, setFocus] = useState<MapFocus>(() => {

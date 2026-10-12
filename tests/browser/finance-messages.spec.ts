@@ -69,6 +69,9 @@ test('Escape acknowledges only the current message; the next queued notice start
 });
 
 test('a running farm waits for acknowledgement and resumes without accumulated wall-clock time',async({page})=>{
+  // Runs ~16 s of mocked frames; each simulated tick republishes and repaints the full map. Alone this takes
+  // ~30 s (the default limit), so parallel load timed it out mid-run. Budget for that load.
+  test.setTimeout(120_000);
   await start(page);const game=financeMessageFixture('loan-new');await load(page,game.save(4));
   await reveal(page,'#play-pause');await page.locator('#play-pause').click();await page.clock.runFor(4200);
   await expect(page.locator('#finance-message-ok')).toBeVisible();await expect(page.locator('#time-status')).toContainText('Running · 1 days advanced');
