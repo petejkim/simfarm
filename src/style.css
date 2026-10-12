@@ -95,18 +95,16 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .original-menu-popup button{display:block;width:100%;height:12px;border:0;border-radius:0;padding:0 8px;text-align:left;background:#fff;color:#000;font:inherit}
 .original-menu-popup button:disabled{opacity:.5;cursor:not-allowed}
 .original-menu-popup button:focus{background:#000;color:#fff;outline:none}
-.original-control-bar{position:relative;height:32px;width:640px;font:10px/1 Arial,Helvetica,sans-serif;color:#000;background:#c2c2c2}
-.original-control-bar>img{display:block;image-rendering:pixelated;width:640px;height:32px;pointer-events:none}
-.original-control-bar .window-launcher{position:absolute;top:0;width:32px;height:32px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:#000}
-.original-control-bar .window-launcher:disabled{opacity:1;cursor:not-allowed;background:#c2c2c266}
-.original-control-bar .window-launcher:hover:not(:disabled){box-shadow:inset 0 0 0 2px #000;background:#fff2}
-.original-control-bar .window-launcher:active:not(:disabled){box-shadow:inset 2px 2px #000,inset -2px -2px #fff;background:#0002}
+.original-control-bar{--bevel-light:#fff;--bevel-shadow:#828282;--bar-face:#c2c2c2;--bar-ink:#000;position:relative;height:32px;width:640px;font:10px/1 Arial,Helvetica,sans-serif;color:var(--bar-ink);background:var(--bar-face);box-shadow:inset 0 1px var(--bar-ink)}
+.original-control-bar .window-launcher{position:absolute;top:0;width:32px;height:32px;margin:0;padding:0;border:1px solid var(--bar-ink);border-radius:0;background:var(--bar-face);color:var(--bar-ink)}
+.original-control-bar .window-launcher-face{position:relative;display:block;width:30px;height:30px;border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light);background:var(--control-bar-sprite) no-repeat;image-rendering:pixelated}
+.original-control-bar .window-launcher:hover{background:var(--bar-face)}
+.original-control-bar .window-launcher:active .window-launcher-face{border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
 .original-control-bar .window-launcher:focus-visible{outline:2px solid #0000eb;outline-offset:-4px}
-.toolbar-caption{position:absolute;left:3px;right:3px;bottom:2px;height:10px;background:#c2c2c2;color:#000;font:bold 10px/10px Arial,Helvetica,sans-serif}
-.toolbar-date-label,.toolbar-funds-label{position:absolute;left:416px;width:43px;height:12px;display:flex;justify-content:flex-end;align-items:center;font-weight:bold}
-.toolbar-date-label{top:2px}.toolbar-funds-label{top:18px}
-.original-control-bar #farm-date,.original-control-bar #farm-cash{position:absolute;left:464px;width:171px;height:10px;display:flex;align-items:center;color:#000;background:#c2c2c2;font:10px/1 Arial,Helvetica,sans-serif;white-space:nowrap}
-.original-control-bar #farm-date{top:4px}.original-control-bar #farm-cash{top:20px}
+.toolbar-caption{position:absolute;left:0;top:17px;width:26px;height:9px;display:flex;align-items:center;justify-content:center;color:#414141;text-shadow:1px 0 var(--bevel-light);font:bold 10px/1 Arial,Helvetica,sans-serif;pointer-events:none}
+.toolbar-inset{position:absolute;display:block;border:2px solid;border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
+.toolbar-readout-label{position:absolute;left:400px;width:57px;height:13px;display:flex;justify-content:flex-end;align-items:center;font-weight:bold}
+.toolbar-readout{display:flex;align-items:center;overflow:clip visible;white-space:nowrap;padding-left:1px}
 
 /* Permanent desktop workspace. No phone breakpoint rearranges this frame. */
 .game-desktop{position:relative;min-width:640px;width:100%;height:max(480px,100dvh);overflow:hidden;background:#c2c2c2;color:#000;color-scheme:light}
@@ -447,7 +445,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 
 .game-window[data-front=false]>.game-window-title{background-image:var(--window-inactive)}
 
-.original-control-bar .toolbar-weather{position:absolute;left:328px;top:8px;width:48px;height:16px;cursor:default;pointer-events:none;image-rendering:pixelated}
+.original-control-bar .toolbar-weather{display:block;width:48px;height:16px;cursor:default;pointer-events:none;image-rendering:pixelated}
 
 /* Region cells are transparent hit areas over the original geographic artwork. */
 .game-window .geographic-chooser .region-grid button{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}

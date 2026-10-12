@@ -1,11 +1,16 @@
 import { readBitmap, type Palette, type Raster } from './graphics';
 
+/** Launcher geometry in cntlbtnh.bmp: 32px pitch, 1px black frame + 2px bevel, then a 26×26 picture face.
+ * The native toolbar draws frame/bevel with CSS and uses only the faces as a sprite sheet. */
+export const CONTROL_BAR_LAUNCHER = { size: 32, inset: 3, face: 26 } as const;
+
 /** Lettering in cntlbtnh.bmp, in source pixels. Live captions are React text.
+ * Launcher captions occupy face rows 21..27 only, so the bevel and picture above stay source pixels.
  * See docs/control-bar.md. Keep the imported preservation bitmap untouched. */
 export const CONTROL_BAR_TEXT = [
-  { x: 3, y: 20, width: 26, height: 10 },
-  { x: 35, y: 20, width: 26, height: 10 },
-  { x: 225, y: 19, width: 30, height: 12 },
+  { x: 3, y: 21, width: 26, height: 7 },
+  { x: 35, y: 21, width: 26, height: 7 },
+  { x: 227, y: 21, width: 26, height: 7 },
   { x: 416, y: 2, width: 44, height: 12 },
   { x: 416, y: 18, width: 44, height: 12 },
 ] as const;

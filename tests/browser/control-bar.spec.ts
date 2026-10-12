@@ -1,6 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { reveal, openWindow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 async function start(page: Page) {
   await page.clock.install({ time: new Date('1993-04-05T12:00:00Z') });
@@ -87,4 +88,42 @@ test('missing control-bar artwork reports an asset error before starting the far
   await expect(page.getByRole('heading', { name: 'SimFarm assets unavailable' })).toBeVisible();
   await expect(page.locator('.loading')).toContainText('control-bar.png');
   await expect(page.locator('#world')).toHaveCount(0);
+});
+
+test('launchers and insets rebuild the source bevels with CSS borders around sprite faces, with captions as text', async ({ page }) => {
+  const { PNG } = await import('pngjs');
+  const { readArchive } = await import('../../src/formats/archive');
+  const { readBitmap, readPalette } = await import('../../src/formats/graphics');
+  const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
+  const archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
+  const original = readBitmap(archive.find(e => e.name === 'cntlbtnh.bmp')!.bytes, readPalette(archive.find(e => e.name === 'simfarm.pal')!.bytes));
+  await start(page); await page.evaluate(() => scrollTo(0, 0));
+  const bar = page.getByRole('toolbar', { name: 'Game toolbar' });
+  await expect(bar.locator('img')).toHaveCount(0);
+  for (const [index, face] of (await bar.locator('.window-launcher-face').all()).entries()) {
+    expect(await face.evaluate(el => { const s = getComputedStyle(el); return [s.borderTopWidth, s.borderTopColor, s.borderRightColor, s.backgroundPositionX, s.backgroundPositionY]; }))
+      .toEqual(['2px', 'rgb(255, 255, 255)', 'rgb(130, 130, 130)', `${-(index * 32 + 3)}px`, '-3px']);
+  }
+  expect(await page.locator('.toolbar-forecast').boundingBox()).toEqual({ x: 326, y: 22, width: 52, height: 20 });
+  expect(await page.locator('#farm-date').locator('..').boundingBox()).toEqual({ x: 461, y: 18, width: 176, height: 13 });
+  expect(await page.locator('#farm-cash').locator('..').boundingBox()).toEqual({ x: 461, y: 33, width: 176, height: 13 });
+  await expect(page.locator('#farm-date-label')).toHaveText('Date'); await expect(page.locator('#farm-cash-label')).toHaveText('Funds');
+  expect(await bar.locator('.toolbar-caption').allTextContents()).toEqual(['BUY', 'SELL', 'EDIT']);
+  const shot = PNG.sync.read(await page.screenshot({ clip: { x: 0, y: 16, width: 640, height: 32 } }));
+  // Live text replaces source lettering; the forecast interior is checked in weather-window.spec.
+  const live = [[3, 21, 26, 7], [35, 21, 26, 7], [227, 21, 26, 7], [400, 2, 58, 13], [400, 17, 58, 13], [463, 4, 172, 9], [463, 19, 172, 9], [328, 8, 48, 16]];
+  // Corner pixels where light and shadow bevels meet; the source paints face grey, CSS miters blend.
+  const miter = (x: number, y: number) => { const bx = x < 288 ? x % 32 : -1;
+    return (bx >= 0 && ((bx === 30 && y === 1) || (bx === 29 && y === 2) || (bx === 1 && y === 30) || (bx === 2 && y === 29)))
+      || [[377, 6], [376, 7], [327, 24], [326, 25], [636, 2], [635, 3], [462, 13], [461, 14], [636, 17], [635, 18], [462, 28], [461, 29]].some(([px, py]) => px === x && py === y); };
+  const wrong: string[] = [];
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 640; x++) {
+    if (miter(x, y) || live.some(([lx, ly, w, h]) => x >= lx && x < lx + w && y >= ly && y < ly + h)) continue;
+    const a = [...shot.data.subarray((y * 640 + x) * 4, (y * 640 + x) * 4 + 3)], b = [...original.rgba.subarray((y * 640 + x) * 4, (y * 640 + x) * 4 + 3)];
+    if (a.some((v, i) => v !== b[i])) wrong.push(`${x},${y}:${a}≠${b}`);
+  }
+  expect(wrong.slice(0, 20)).toEqual([]);
+  await page.locator('#window-buy').hover(); await page.mouse.down();
+  expect(await page.locator('#window-buy .window-launcher-face').evaluate(el => getComputedStyle(el).borderTopColor)).toBe('rgb(130, 130, 130)');
+  await page.mouse.up();
 });

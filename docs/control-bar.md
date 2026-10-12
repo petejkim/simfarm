@@ -55,3 +55,21 @@ Market Value is now available from the toolbar and Windows menu, with its origin
 The previously empty center inset now displays the original three weather tiles at screen328/344/360,24 (16×16 each). Source2a518..2a552 reads DS124e (day), adds loop index0..2, reads signed forecast byte DS4078+index, and draws atlas tile204+code. SHA2562a518..2a554(end exclusive): `1eb4aa42ad4ed2ac672e0b4e52c868dda723331308245be900e72769c38e2b31`. Confidence high from static instructions and existing Weather-window forecast decoding.
 
 ControlBar subscribes through the existing snapshot render and uses the current terrain atlas; imperative canvas drawing remains in src/render/toolbar-weather.ts. Adjacent current/next-week arrays provide the three days across rollover without RNG calls or simulated prediction. The accessible label/title names today, tomorrow and day3; icons contain no bitmap text. Opening Weather is not required. Browser checks compare every pixel against original tiles, verify exact1× coordinates, cross-week day advancement and unchanged saves when merely viewing. This completes user correction1; climate-dependent terrain appearance is next.
+
+
+## Component reconstruction of the strip (2026-10-11)
+
+User request: replace the background-image strip with transparent overlay buttons by separate components whose bevels are CSS borders. `ControlBar` now composes `WindowLauncher`, `ToolbarInset`, `ToolbarForecast` and `ToolbarReadout`; no full-strip `<img>` remains. Geometry below is measured from `cntlbtnh.bmp` pixels (bitmap-local, add16 for screen y). Palette roles: black0, white255, face grey194, shadow130, lettering65.
+
+| Element | Source pixels | Native construction |
+| --- | --- | --- |
+| Strip | Row0 black across640; rows1..31 grey right of x288 | Grey background with 1px inset top shadow |
+| Launcher n (0..8) | x32n..32n+31: 1px black frame; 2px raised bevel (white top/left, grey130 bottom/right); 26×26 face at (32n+3,3) | `<button>` 1px black border; inner face 2px border; `control-bar.png` as sprite at background-position(-(32n+3),-3) |
+| Buy/Sell/Edit captions | Face rows21..27, lettering65 with white right-hand pixels | HTML text, `#414141`, 1px white right text-shadow |
+| Forecast inset | Outer(326,6) 52×20, 2px sunken bevel (grey130 top/left, white bottom/right), interior(328,8) 48×16 | `ToolbarInset` containing the existing forecast canvas |
+| Date/Funds boxes | Outer(461,2)/(461,17) 176×13, 2px sunken bevel, interior172×9 | `ToolbarInset` holding live `#farm-date`/`#farm-cash` text |
+| Date/Funds labels | Bold black lettering ending x456; caps rows5..11/20..26 | Right-aligned HTML text ending x457, vertically centred on its box |
+
+Where light and shadow bevels meet, the source paints the two diagonal pixels face grey. CSS solid-border miters antialias those pixels to a blend of white and grey130 (≈grey192), visually close but not guaranteed identical; the browser test exempts only those corner pixels.
+
+`CONTROL_BAR_TEXT` launcher rectangles were narrowed to the lettering rows inside the faces: Buy(3,21,26,7), Sell(35,21,26,7), Edit(227,21,26,7). The previous native rectangles (y20..29 and Edit x225..254,y19..30) also erased bevel rows/columns and the bottom of the Buy/Sell bag shadows and Edit crane mast. That was a native import overreach, not an original defect. The Date/Funds rectangles remain erased although those sprite regions are no longer displayed. Pressed launchers swap the bevel colours on `:active`; this is a native affordance with no recovered source pressed-state routine (redraw2a126..2a39e only sets menu check flags, see window-stacking.md). The previous hover highlight was dropped. Confidence high for measured geometry/colours; text metrics remain browser-font approximations.
