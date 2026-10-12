@@ -90,8 +90,12 @@ test('Schedule restores source geometry, field artwork, gauges, all24 crops and 
   await expect(page.locator('[data-plan-week]')).toHaveCount(12);await expect(page.locator('[data-plan-action]')).toHaveCount(6);
   await expect(page.locator('.schedule-label').filter({hasText:'Disease'})).toHaveText('Disease');
   // Disease gauge shows fldgrph.til frame floor(byte22/52) from the field-gauge sheet.
-  const gauge=Math.floor(field.bytes[22]/52),disease=page.locator('.schedule-gauge').first();
-  expect(await disease.evaluate(el=>[getComputedStyle(el).backgroundImage.includes('field-gauges'),getComputedStyle(el).backgroundPosition,el.getBoundingClientRect().width,el.getBoundingClientRect().height])).toEqual([true,`${-gauge*48}px 0px`,48,24]);
+  // The whole 56×32 dial shows: the bitmap rim (source 16,168) with the 48×24 frame stacked at offset 8,8.
+  const gauge=Math.floor(field.bytes[22]/52),disease=page.locator('.schedule-gauge').first(),frame=disease.locator('.schedule-gauge-frame');
+  const dial=(await disease.boundingBox())!;expect([dial.width,dial.height]).toEqual([56,32]);
+  expect(await disease.locator('.sprite').first().evaluate(el=>[getComputedStyle(el).backgroundImage.includes('schedule-window'),getComputedStyle(el).backgroundPosition])).toEqual([true,'-16px -168px']);
+  expect(await frame.evaluate(el=>[getComputedStyle(el).backgroundImage.includes('field-gauges'),getComputedStyle(el).backgroundPosition])).toEqual([true,`${-gauge*48}px 0px`]);
+  expect(await frame.boundingBox()).toEqual({x:dial.x+8,y:dial.y+8,width:48,height:24});
   await page.getByRole('button',{name:'Water overlay',exact:true}).click();
   const first=browserCrops.find(c=>`${c.id}.crp`===world.cropFiles[0])!;
   await expect(page.locator('[data-plan-crop="0"]')).toHaveText(String(first.rawDefinition[40]>>>1));
@@ -103,7 +107,7 @@ test('Schedule restores source geometry, field artwork, gauges, all24 crops and 
   // All twenty-four crops in three rows of eight; no crop pager.
   await expect(page.locator('[data-plan-crop]')).toHaveCount(24);await expect(page.getByRole('button',{name:/^(Next|Previous) crops$/})).toHaveCount(0);
   const crops=(await page.locator('.schedule-crops').boundingBox())!;
-  for(const slot of [0,7,8,23])expect(await page.locator(`[data-plan-crop="${slot}"]`).boundingBox()).toEqual({x:crops.x+4+slot%8*16,y:crops.y+2+Math.floor(slot/8)*16,width:16,height:16});
+  for(const slot of [0,7,8,23])expect(await page.locator(`[data-plan-crop="${slot}"]`).boundingBox()).toEqual({x:crops.x+2+slot%8*16,y:crops.y+2+Math.floor(slot/8)*16,width:16,height:16});
   await page.locator('[data-plan-crop="23"]').click();
   await expect(page.locator('[data-plan-crop="23"]')).toHaveAttribute('aria-pressed','true');
   // CUT leaves the previous tool badge in place (source behaviour).

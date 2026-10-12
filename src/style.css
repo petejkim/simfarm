@@ -207,7 +207,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .schedule-weather{width:18px;height:23px;margin:7px 0 0 14px}
 .schedule-weather-temperature{margin-left:2px}
 .schedule-crops+.schedule-weather{margin-left:2px}
-.schedule-crops{display:grid;grid-template-columns:repeat(8,16px);grid-auto-rows:16px;width:134px;height:52px;margin-left:2px;padding-left:2px}
+.schedule-crops{display:grid;grid-template-columns:repeat(8,16px);grid-auto-rows:16px;width:132px;height:52px;margin-left:2px}
 .schedule-top>.schedule-badge-column:last-child{margin-left:17px}
 .game-window .schedule-window button.schedule-icon{display:grid;width:16px;height:16px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--ink)}
 .schedule-icon>*{grid-area:1/1}
@@ -242,8 +242,11 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .schedule-readout{display:flex;align-items:center;width:86px;height:13px;padding:0 2px}
 .schedule-maturity-bar{display:block;width:80px;height:8px;background:var(--face)}
 .schedule-maturity-bar>span{display:block;height:8px;background:#0000eb}
-.schedule-gauges{display:flex;gap:8px;margin-top:auto;padding:0 0 2px 13px}
-.schedule-panel-crop .schedule-gauges{padding-left:17px}
+.schedule-gauges{display:flex;margin-top:auto;padding:0 0 2px 5px}
+.schedule-gauge{display:grid}
+.schedule-gauge>*{grid-area:1/1}
+.schedule-gauge-frame{margin:8px 0 0 8px}
+.schedule-panel-crop .schedule-gauges{padding-left:9px}
 .schedule-gauge-cell{display:flex;flex-direction:column;align-items:center}
 .schedule-quality-row{display:flex;align-items:center;justify-content:space-between;padding:0 14px 0 6px}
 .schedule-quality-labels{display:flex;flex-direction:column}

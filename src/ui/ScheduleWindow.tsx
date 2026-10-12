@@ -65,8 +65,12 @@ function ScheduleEditor({assets,snapshot,tiles,field,inspection,focusRef,onComma
     title={kind==='water'?'Water requirements and rainfall':'Heat requirements and temperature'} aria-label={kind==='water'?'Water overlay':'Temperature overlay'} pressed={overlay===kind}
     faceStyle={spriteFace(art,kind==='water'?83:239,16)} onClick={()=>setOverlay(overlay===kind?null:kind)}/>;
   const gauges=[{label:'Disease',x:24},{label:'Pests',x:80},{label:'Weeds',x:136},{label:'Water',x:216},{label:'Soil',x:272}];
-  const gauge=(i:number)=>view?<Sprite className="schedule-gauge" image={assets.fieldGauges.src} x={view.gauges[i]*48} y={0} width={48} height={24}/>
-    :<Sprite className="schedule-gauge" image={art} x={gauges[i].x} y={176} width={48} height={24}/>;
+  // The 56×32 dial rim comes from the window bitmap (source x-8, 168); field-gauge frames cover only its
+  // inner 48×24, at offset 8,8. With no field the bitmap dial (and its resting needle) shows alone.
+  const gauge=(i:number)=><span className="schedule-gauge">
+    <Sprite image={art} x={gauges[i].x-8} y={168} width={56} height={32}/>
+    {view&&<Sprite className="schedule-gauge-frame" image={assets.fieldGauges.src} x={view.gauges[i]*48} y={0} width={48} height={24}/>}
+  </span>;
   const labelled=(i:number)=><span key={i} className="schedule-gauge-cell">{gauge(i)}<span className="schedule-label">{gauges[i].label}</span></span>;
   return <section id="field-planner" ref={focusRef} tabIndex={-1} aria-label={field?`Field ${field.number} schedule`:'Field schedule'}>
     <div className="schedule-window">

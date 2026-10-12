@@ -3007,3 +3007,7 @@ At the user's request, the crop pager was replaced by a 6×4 grid showing every 
 ## 2026-10-12 — Schedule shows all 24 crops
 
 At the user's request, the Schedule crop pager was replaced by a third row of crop icons. The window is 16px taller. The schedule-window, all-crops and field-message specs pass.
+
+## 2026-10-12 — Schedule crop inset flush; gauges uncropped
+
+The crop inset now fits its icons exactly. Gauges now combine the bitmap's 56×32 dial rim with the 48×24 field-gauge frame at 8,8, as the source does; before, only the frame showed. The schedule specs pass.

@@ -117,3 +117,10 @@ Performance note: tile helpers are plain functions, not components defined durin
 ## All crops at once (2026-10-12, user request)
 
 The crop pager is gone. The crop inset holds all twenty-four planting icons in three rows of eight (134×52), where the source pages sixteen at a time. The client grows 16px taller (232px). The Tool badge keeps its former position in the space the pager used. The browser spec checks the icon positions for slots 0, 7, 8 and 23. Validation: schedule-window, all-crops and field-message specs pass (6/6).
+
+## Crop inset and full gauges (2026-10-12, user request)
+
+- **Crop inset:** now exactly 132×52, so eight 16px icons sit flush inside its 2px bevel; the extra 2px left padding is gone.
+- **Gauges:** previously cropped. `fldgrph.til` frames are only the 48×24 middle of each dial. In the source, the outer rim and the top of the arc come from the window bitmap: a 56×32 dial at gauge x−8, y168 (Disease 16,168; Pests 72; Weeds 128; Water 208; Soil 264), with the frame drawn at offset 8,8. Each gauge now stacks the bitmap dial sprite with the frame sprite. With no field selected, the bitmap dial and its resting needle show alone. The dials sit edge to edge, as in the source.
+
+The spec checks the 56×32 dial, the bitmap sprite offset, and the frame's tile and offset. Validation: schedule-window and all-crops specs pass (5/5).
