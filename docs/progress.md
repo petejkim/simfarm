@@ -2991,3 +2991,11 @@ Missing-asset browser tests were updated to match:
 - Expert checks only the portrait and cards.
 
 The related specs pass (25/25).
+
+## 2026-10-12 — Post-cleanup regression and dead CSS sweep
+
+After the runtime asset cleanup, the full browser suite passes 293/293. That is two fewer tests than before because two obsolete missing-asset tests were removed.
+
+A scripted sweep removed CSS for thirteen classes that no source file references any more, leftovers from the old dashboard and setup panels: aircraft-selector/actions, eyebrow, panel-heading, crop-label, field-care, land-panel, harvest-inventory, farm-actions, homestead-notice, new-farm-action, region-mode and region-description. Classes built from template strings were kept (balance-left/right, schedule-weather-temperature, terrain-level-*).
+
+Validation: the production build passes, and the aircraft-window, options, default-dialog, new-game-layout and homestead specs pass (23/23).
