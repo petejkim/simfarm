@@ -2866,3 +2866,7 @@ User request. Hidden like Load Crop; the Save As dialog, filename state and cust
 ## 2026-10-12 — clean condition badge, shared ConditionBadge
 
 Replaced the four-frame `sell-conditions.png` sprite sheet with one rebuilt `sell-condition.png` that keeps the full red ring; the method is in sell-dialog.md. Added a shared `ConditionBadge` for Sell, Examine and Schedule: centred letter with grey drop shadow, centred 8px word. This fixes Schedule's off-centre letter and word. New browser case checks single-image background, letter/word boxes, shadow and font size in Schedule and Sell. Validation: sell-window decoder 3/3; Sell/manual-sales/Examine/Schedule/weekly-aging specs 16/16; type checking/build/import pass.
+
+## 2026-10-12 — examining a non-field closes Schedule
+
+User request. View object on a field opens Schedule; examining any other object now closes Schedule before showing Examine. A new examine.spec case covers field → building → field (it fails without the change). Examine/Schedule specs pass 10/10.

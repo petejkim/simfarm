@@ -85,3 +85,14 @@ test('choosing another palette action closes Examine; View object keeps it open'
     await page.keyboard.press('Escape');
   }
 });
+
+test('examining a non-field object closes the field Schedule window',async({page})=>{
+  const f=shopFixture();f.state.disasters.enabled=false;const g=f.load().withAllCrops(browserCrops);
+  g.dispatch({type:'create-field',x:30,y:40,cropSlot:0});expect(g.getSnapshot().lastNewFieldResult?.ok).toBe(true);
+  g.dispatch({type:'build',buildingType:67,x:50,y:40});await load(page,g.save(4));
+  const schedule=page.getByRole('dialog',{name:'Schedule',exact:true}),examine=page.getByRole('dialog',{name:'Examine',exact:true});
+  await page.getByRole('button',{name:'View object',exact:true}).click();
+  await point(page,32,42);await expect(schedule).toBeVisible();
+  await point(page,50,40);await expect(examine).toBeVisible();await expect(schedule).toBeHidden();
+  await point(page,32,42);await expect(schedule).toBeVisible();
+});

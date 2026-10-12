@@ -370,6 +370,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
             const selected=data.scenario.fields.find(f => f.contains(x,y));
             selectField(selected?.slot ?? null,false);
             if(selected)setFieldInspection({month:data.scenario.farm.calendar.month});
+            // Examining anything other than a field replaces the field's Schedule window.
+            if(!selected)windows.close('schedule');
             windows.show(selected?'schedule':'examine');
           }} />
       </section>
