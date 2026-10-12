@@ -56,3 +56,6 @@ Four loose-item tests cover source call pins, all eight farms' definitions, all 
 
 
 Historical investigation (subsequently recovered in examine-window.md and manual-movement.md): nearby map caller0x20898 invokes stub24e6:1136, whose descriptor atfile0x28196 selects overlay12, offset0 (file0x38790). It enters mouse-held handler0x38868 and draws context information using source lookups/quotes, alltiles.btl and text such as “Empty Storage Spot”; proximity to bulldoze is not evidence of relocation. Caller0x20d3b instead reaches233c:16a4/file0x26c64 and dispatches selected field operations. Continue tracing actual selection/drag dispatch before adding an invented manual machinery destination command.
+
+
+Current UI supersedes the transitional whole-object highlight above: direct Bulldoze keeps the source one-tile pointer outline from2161d..21646, including over buildings and fields. A click resolves the complete object and uses the restored original Message confirmation dialog. There is no persistent yellow selected-object/field outline. See direct-bulldoze.md and edit-cursors.md; canonical removal rules and saved state are unchanged.

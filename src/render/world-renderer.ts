@@ -2,13 +2,12 @@ import { invertedTiles } from '../assets/inverted-tiles';
 import { clipPlacementOutline } from './placement-outline';
 import { harvestWorkerTile } from './harvest-workers';
 import { maskedTile, terrainTile, worldPosition, worldIndex, WORLD_SIZE, type Scenario } from '../formats/scenario';
-import type { FieldRecord } from '../formats/field';
 
 export interface MapPreview { x: number; y: number; width: number; height: number; valid: boolean; originalOutline?: boolean }
 
 /** Native render pass, independent of React and UI state management. */
 export function drawWorld(context: CanvasRenderingContext2D, scenario: Scenario, tiles: CanvasImageSource,
-  maskedTiles: CanvasImageSource, field?: FieldRecord, selection: number | null = null, preview?: MapPreview, workerPhase=0, townEventTiles?: CanvasImageSource): void {
+  maskedTiles: CanvasImageSource, preview?: MapPreview, workerPhase=0, townEventTiles?: CanvasImageSource): void {
   context.imageSmoothingEnabled = false;
   const paintCell=(i:number,base:CanvasImageSource,mask:CanvasImageSource,events?:CanvasImageSource)=>{
     const cell = scenario.cells[i], tile = terrainTile(cell), { x, y } = worldPosition(i);
@@ -23,16 +22,6 @@ export function drawWorld(context: CanvasRenderingContext2D, scenario: Scenario,
     }
   };
   for(let i=0;i<scenario.cells.length;i++)paintCell(i,tiles,maskedTiles,townEventTiles);
-  context.strokeStyle = '#fff6a2';
-  if (field && !preview?.originalOutline) {
-    context.lineWidth = 2;
-    context.strokeRect(field.x * 16 + 1, field.y * 16 + 1, field.width * 16 - 2, field.height * 16 - 2);
-  }
-  if (selection !== null && !preview?.originalOutline) {
-    const { x, y } = worldPosition(selection);
-    context.lineWidth = 1;
-    context.strokeRect(x * 16 + 0.5, y * 16 + 0.5, 15, 15);
-  }
   if (preview?.originalOutline) {
     context.save();
     clipPlacementOutline(context,preview);

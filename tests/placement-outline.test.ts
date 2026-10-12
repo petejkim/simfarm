@@ -28,3 +28,21 @@ test('placement clipping keeps the asymmetric edges and cancels double-drawn cor
     [126,142,0],[127,143,0],[125,143,1],[127,141,1],[128,140,0],[20,20,0]])
     expect(covered(x,y)).toBe(expected);
 });
+
+
+test('View and Spray use one tile from original dimensions, independent of field size',()=>{
+  const exe=readFileSync(new URL('../../simfarm-dos/SIMFARM.EXE',import.meta.url));
+  for(const [start,end,hash] of [
+    [0x21688,0x21726,'54036ee66febc90a4d36bccb94dc3c4dc74b1ae173ae0195494ce34629308bc8'],
+    [0x3821c,0x3826d,'c40ea427fbf6aa1bafdaea4828964deba28eded676c10e270960302a9eadc5d7'],
+    [0x383ce,0x384f1,'7031693e850fe4f45ba8866c7d671733ceefbd664084985fe9c50f3526de7765'],
+  ] as const)expect(createHash('sha256').update(exe.subarray(start,end)).digest('hex')).toBe(hash);
+  expect(exe.subarray(0x2161d,0x21620).toString('hex')).toBe('b91000');
+  expect(exe.subarray(0x21632,0x21635).toString('hex')).toBe('b90100');
+  expect(exe.subarray(0x216e4,0x216e7).toString('hex')).toBe('b81000');
+  // Popup node bytes12/13 are width/height, converted to pixels by SHL4.
+  for(const node of [0x54a2,0x5494,0x5486,0x5478])
+    expect([...exe.subarray(0x846f0+node+12,0x846f0+node+14)]).toEqual([1,1]);
+  expect(exe.subarray(0x3822d,0x38239).toString('hex')).toBe('268a470c98c1e0048e0606cc');
+  expect(exe.subarray(0x3823f,0x3824b).toString('hex')).toBe('268a470d98c1e0048e0608cc');
+});

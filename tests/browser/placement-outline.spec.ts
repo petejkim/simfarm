@@ -61,7 +61,9 @@ test('Plant outline matches source XOR pixels across weather, masked objects, re
       await hover(page,x,y);
       expect(await pixels(page,region),`${palette} at ${x},${y}`).toEqual(expected(world,region,palette,{x,y,width:8,height:8}));
     }
-    await page.keyboard.press('Escape');expect(await pixels(page,region)).toEqual(expected(world,region,palette));
+    await page.keyboard.press('Escape');
+    expect(await pixels(page,region)).toEqual(expected(world,region,palette,{x:12,y:21,width:1,height:1}));
+    await page.mouse.move(0,0);expect(await pixels(page,region)).toEqual(expected(world,region,palette));
     // The footprint extends beyond the map; only the surviving source edges draw.
     await page.getByRole('button',{name:'Plant',exact:true}).click();await page.locator('[data-field-tool="0"]').click();
     await hover(page,95,95);const edge={x:94*16,y:94*16,width:32,height:32};
@@ -86,8 +88,44 @@ test('Buy uses the definition footprint, retains an unfilled border after reject
   await page.mouse.down();await page.mouse.up();await expect(page.locator('#buy-result')).not.toHaveText('Tractor purchased.');
   expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal',footprint));
   await page.screenshot({path:'artifacts/browser-placement-outline.png'});
-  // Cancel restores the native selected-tile highlight, so leaving the tool is
-  // checked against a reload of the unchanged checkpoint instead of ignoring it.
-  await page.keyboard.press('Escape');expect(await save(page)).toEqual(JSON.parse(text));
+  await page.keyboard.press('Escape');
+  expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal',{x:10,y:20,width:1,height:1}));
+  await page.mouse.move(0,0);expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal'));
+  expect(await save(page)).toEqual(JSON.parse(text));
   await load(page,text);expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal'));
+});
+
+
+test('View, Spray and Bulldoze follow one tile over whole fields and erase on pointer exit or dialog occlusion',async({page})=>{
+  await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const f=shopFixture();f.state.paused=true;f.state.scenario.farm.autoScroll=false;
+  Object.assign(f.state.weather,{current:0,temperature:70});
+  // An active field on a uniform source-tile background isolates outline geometry.
+  const field=f.state.scenario.fields[1];field.bytes[7]|=1;field.bytes[10]=10;field.bytes[11]=20;
+  field.bytes[12]=field.bytes[13]=8;
+  const game=f.load().withAllCrops(browserCrops),text=game.save(4),world=game.getSnapshot().scenario;
+  await load(page,text);const region={x:9*16,y:19*16,width:160,height:160};
+  const check=async(x:number,y:number)=>{
+    await hover(page,x,y);
+    expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal',{x,y,width:1,height:1}));
+  };
+  await page.getByRole('button',{name:'View object',exact:true}).click();await check(12,21);await check(15,22);
+  await page.mouse.move(0,0);expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal'));
+  for(const label of ['Fertilize','Pesticide','Herbicide','Fungicide']){
+    await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:label,exact:true}).click();
+    await check(12,21);await check(9,19); // Field presence does not enlarge or tint the outline.
+    await page.keyboard.press('Escape');await page.mouse.move(0,0);
+    expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal'));
+  }
+  await page.getByRole('button',{name:'Bulldoze',exact:true}).click();await check(12,21);
+  await page.keyboard.press('Escape');await page.mouse.move(0,0);
+  expect(await save(page)).toEqual(JSON.parse(text));
+  await check(12,21);
+  // A real View click opens Schedule. It must not leave a field-sized persistent
+  // yellow highlight; moving over the dialog leaves the terrain untouched.
+  await page.mouse.down();await page.mouse.up();await expect(page.getByRole('dialog',{name:'Schedule',exact:true})).toBeVisible();
+  await page.getByRole('dialog',{name:'Schedule',exact:true}).hover();
+  expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal'));
+  await page.screenshot({path:'artifacts/browser-view-outline.png'});
+  expect(await save(page)).toEqual(JSON.parse(text));
 });

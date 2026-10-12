@@ -464,3 +464,6 @@ Plant/Buy cursor follow-up: original Plant inherits the palette arrow; non-aircr
 
 
 Placement outlines now reconstruct the eight XOR15 source lines for Plant/Buy/construction/Bulldoze using palette-index companion atlases and even-odd clipping. Normal/rain/frost terrain, transparent masked objects and recreation tiles retain their source pixels beneath untouched interiors; source call/geometry checks and browser pixel/erasure tests cover the implementation. Next trace View/Spray footprint ownership and remaining Move/aircraft input; separately audit the global weather palette on masked graphics/UI/sprites. Current masked artwork still retains its pre-existing normal palette. Broader original gameplay completeness remains unproven; these renderer changes do not complete the preservation goal.
+
+
+View/Spray footprint audit is now implemented: View explicitly sets16×16pixels, and shared popup selection reads Spray node width/height01,01. Both use a transient one-tile source XOR border; removed persistent yellow map selections. Bulldoze also retains a one-tile hover footprint even over a larger removal target. Selection/commands, whole-field treatment, persistent Spray and confirmations are unchanged. Next audit Move/aircraft input and the separate global weather-palette gap; those remain explicit preservation work, not mobile/enhancement tasks.

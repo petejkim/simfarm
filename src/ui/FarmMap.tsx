@@ -6,7 +6,6 @@ import type { AircraftFlight, FlightControl } from '../simulation/aircraft-fligh
 import { flightKey } from './FlightControls';
 import { useCallback, useEffect, useLayoutEffect, useRef, type MouseEvent, type RefObject } from 'react';
 import { WORLD_SIZE, worldIndex, type Scenario } from '../formats/scenario';
-import type { FieldRecord } from '../formats/field';
 import { drawWorld, type MapPreview } from '../render/world-renderer';
 
 export interface MapFocus { x: number; y: number }
@@ -27,8 +26,6 @@ interface Props {
   maskedTiles: CanvasImageSource;
   zoom: number;
   focus: MapFocus;
-  field?: FieldRecord;
-  selection: number | null;
   preview?: MapPreview;
   onSelect: (index: number) => void;
   onSecondarySelect: (index: number) => void;
@@ -45,7 +42,7 @@ const directions: Record<string, [number, number]> = {
   ArrowLeft: [-64, 0], ArrowRight: [64, 0], ArrowUp: [0, -64], ArrowDown: [0, 64],
 };
 
-export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scenario, tiles, townEventTiles, maskedTiles, zoom, focus, field, selection, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
+export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scenario, tiles, townEventTiles, maskedTiles, zoom, focus, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stroke=useRef<{pointer:number;last:number|null}|null>(null),suppressClick=useRef(false);
   const stopPainting=useCallback(()=>{
@@ -68,6 +65,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
     const x = Math.floor((p.clientX - rect.left) / (16 * zoom)), y = Math.floor((p.clientY - rect.top) / (16 * zoom));
     onPointer(p.clientX >= bounds.left && p.clientX < bounds.left + viewport.clientWidth &&
       p.clientY >= bounds.top && p.clientY < bounds.top + viewport.clientHeight &&
+      document.elementFromPoint(p.clientX,p.clientY)===canvas &&
       x >= 0 && y >= 0 && x < WORLD_SIZE && y < WORLD_SIZE ? { x, y } : null);
   }, [zoom, onPointer]);
   const clearPointer = useCallback(() => { pointerRef.current = null; onPointer(null); }, [onPointer]);
@@ -124,11 +122,11 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
   useLayoutEffect(() => {
     paint.current=()=>{
       const context = canvasRef.current!.getContext('2d')!;
-      drawWorld(context, scenario, tiles, maskedTiles, flight ? undefined : field, flight ? null : selection, flight ? undefined : preview,workerAnimation.current.phase,townEventTiles);
+      drawWorld(context, scenario, tiles, maskedTiles, flight ? undefined : preview,workerAnimation.current.phase,townEventTiles);
       if (flight) drawAircraft(context, flight, flightSprites);
       if (disasters) drawDisasters(context, disasters, disasterSprites);
     };paint.current();
-  }, [scenario, tiles, townEventTiles, maskedTiles, field, selection, preview, flight, flightSprites, disasters, disasterSprites]);
+  }, [scenario, tiles, townEventTiles, maskedTiles, preview, flight, flightSprites, disasters, disasterSprites]);
   useLayoutEffect(() => {
     const viewport = viewportRef.current!;
     const measure = () => {

@@ -100,8 +100,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
   function closeMessage(){setMessages(previous=>previous.slice(1));}
   const onMapPointer = useCallback((pointer: MapFocus | null) => {
     simulation?.dispatch({ type: 'set-map-pointer', pointer });
-    if (buyPlacement || fieldMapTool || objectMove.active || construction.tool || bulldoze.active) setToolPointer(old => old?.x === pointer?.x && old?.y === pointer?.y ? old : pointer);
-  }, [simulation, buyPlacement, fieldMapTool, objectMove.active,construction.tool,bulldoze.active]);
+    setToolPointer(old => old?.x === pointer?.x && old?.y === pointer?.y ? old : pointer);
+  }, [simulation]);
   useEffect(() => simulation?.subscribeEvents(event=>{
     if(event.type==='finance-notice'||event.type==='disaster-notice'||event.type==='field-notice'||event.type==='building-notice'){
       const message={...event,serial:++messageSerial.current};
@@ -198,7 +198,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
   const constructionQuote=position?construction.quote(position.x,position.y):null;
   const preview = bulldoze.active ? bulldoze.preview(position) : construction.tool&&position ? {...position,width:1,height:1,valid:construction.enabled&&Boolean(constructionQuote?.ok)} : objectMove.active ? objectMove.preview(position) : fieldMapTool && position && data ? fieldMapTool.kind==='plant'
     ? {...position,width:8,height:8,valid:checkFieldPlacement(data.scenario,position.x,position.y).ok}
-    : hoveredField ? {x:hoveredField.x,y:hoveredField.y,width:hoveredField.width,height:hoveredField.height,valid:true}: {...position,width:1,height:1,valid:false}
+    : {...position,width:1,height:1,valid:Boolean(hoveredField)}
     : buyPlacement && buyPlacement.type < 8 && position && data && snapshot ? {...position,
       width:data.scenario.equipmentDefinitions[buyPlacement.type].width,height:data.scenario.equipmentDefinitions[buyPlacement.type].height,
       valid:checkEquipmentPurchase(data.scenario,buyPlacement.type,position.x,position.y,snapshot.weather.soilMoisture).ok}
@@ -213,7 +213,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     width: 1,
     height: 1,
     valid: checkCropSupplyPurchase(data.scenario,buyPlacement.type,position.x,position.y,snapshot.weather.soilMoisture).ok,
-  } : undefined;
+  } : toolPointer&&!fieldMenu&&!editHelpOpen ? {...toolPointer,width:1,height:1,valid:true} : undefined;
   function purchaseFeedback(result: { ok: boolean; reason?: string } | null, name: string) {
     if (!result) return;
     const reasons: Record<string,string> = {
@@ -408,7 +408,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
         <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") 0 0, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !editHelpOpen && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={tilesForWeather(data.tiles,snapshot?.weather)} townEventTiles={tilesForWeather(assets.townEventTiles[snapshot?.townEvent.artworkMode ?? 0],snapshot?.weather)} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;setInteractionMessage('');const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
-          field={field} selection={selection} preview={preview&&{...preview,originalOutline:Boolean(buyPlacement||fieldMapTool?.kind==='plant'||construction.tool||bulldoze.active)}} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {
+          preview={preview&&{...preview,originalOutline:!objectMove.active}} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {
             setInteractionMessage('');
             if(construction.tool||bulldoze.active)return;
             if(enterMapWindow(index))return;

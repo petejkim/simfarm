@@ -35,7 +35,7 @@ test('world composition animates only visible worker overlays without mutating s
     const before=structuredClone(scenario),calls:unknown[][]=[];
     const context={drawImage:(...args:unknown[])=>calls.push(args)} as unknown as CanvasRenderingContext2D;
     const base={} as CanvasImageSource,mask={} as CanvasImageSource;
-    drawWorld(context,scenario,base,mask,undefined,null,undefined,1);
+    drawWorld(context,scenario,base,mask,undefined,1);
     expect(calls).toHaveLength(terrain&0x800?2:1);
     if(terrain&0x800){const tile=harvestWorkerTile(overlay-848,1);expect(calls[1]).toEqual([mask,tile%32*16,Math.floor(tile/32)*16,16,16,0,0,16,16]);}
     expect(scenario).toEqual(before);

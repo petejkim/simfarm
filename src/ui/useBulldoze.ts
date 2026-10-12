@@ -34,8 +34,9 @@ export function useBulldoze(simulation:GameSimulation|null,snapshot:GameSnapshot
     dismiss(){setPending(null);if(pending?.kind==='confirm')setMessage('Removal cancelled.');},
     confirm(){if(pending?.kind==='confirm')remove(pending.target,pending.click);setPending(null);},
     preview(position:{x:number;y:number}|null){
-      const q=pending?.kind==='confirm'?pending.target:position&&snapshot?checkManualRemoval(snapshot.scenario,position.x,position.y):null;
-      return q&&('ok' in q?q.ok:true)&&'width' in q?{x:q.x,y:q.y,width:q.width,height:q.height,valid:!snapshot||!blocked(snapshot)}:undefined;
+      // Source2161d..21646 fixes the hover footprint at one tile; the
+      // clicked object's full extent belongs to removal/confirmation only.
+      return position&&!pending&&snapshot&&!blocked(snapshot)?{...position,width:1,height:1,valid:true}:undefined;
     },
   };
 }
