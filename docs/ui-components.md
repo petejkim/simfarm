@@ -1,11 +1,11 @@
 # Shared window chrome components
 
-Status: **in progress.** Done so far:
+Status: **complete (2026-10-12)** for every window and dialog. Done:
 - Step 1: shared chrome extracted from the toolbar and palette.
 - Step 2: `GameWindow framed` with the imported wood 9-slice.
 - Rebuilt windows: Examine, Buy, Sell, Bank, Map, Schedule, Balance, Evaluation, Weather, Market, Aircraft, Expert, About, message popups (shared `MessageDialog`), Town choice.
 
-Remaining windows follow one commit each.
+Each window was converted in its own commit. Remaining canvases are dynamic imagery only: the terrain map and the Map window overview and legend.
 
 **Layout rule (user, 2026-10-12):** use flexbox and avoid absolute positioning as much as possible. Pixel-perfect placement is not required: boxes may grow to fit their text, and items that overlapped in the original may sit side by side.
 
