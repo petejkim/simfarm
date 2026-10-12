@@ -71,3 +71,19 @@ test('Sell handles all24 crop identities, live prices, last-lot removal and sour
   expect(await catalog.boundingBox()).toMatchObject({x:138});
   await page.reload();await load(page,expected.save(4));
 });
+
+test('condition badges share one clean ring with a centred shadowed letter and 8px word in Sell and Schedule',async({page})=>{
+  const {chooseField}=await import('../support/workspace');
+  await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const check=async(badge:ReturnType<Page['locator']>)=>{
+    const b=(await badge.boundingBox())!;expect([b.width,b.height]).toEqual([32,32]);
+    expect(await badge.evaluate(el=>{const s=getComputedStyle(el);return [s.backgroundImage.includes('sell-condition.png'),s.backgroundPosition];})).toEqual([true,'0% 0%']);
+    const letter=badge.locator('.condition-letter'),word=badge.locator('.condition-word');
+    expect(await letter.boundingBox()).toEqual({x:b.x+10,y:b.y+8,width:12,height:11}); // ring interior
+    expect(await word.boundingBox()).toEqual({x:b.x,y:b.y+22,width:32,height:8});
+    expect(await letter.evaluate(el=>{const s=getComputedStyle(el);return [s.textShadow,s.justifyContent,s.alignItems];})).toEqual(['rgb(130, 130, 130) 1px 1px 0px','center','center']);
+    expect(await word.evaluate(el=>{const s=getComputedStyle(el);return [s.fontSize,s.justifyContent,s.alignItems];})).toEqual(['8px','center','center']);
+  };
+  await chooseField(page,1);await check(page.locator('.schedule-quality'));
+  await page.locator('#window-sell').click();await page.getByRole('button',{name:'Machinery',exact:true}).click();await check(page.locator('.sell-condition').first());
+});

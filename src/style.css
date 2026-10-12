@@ -289,10 +289,13 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window #sell-item-name{position:absolute;left:48px;top:80px;width:124px;height:12px;margin:0;overflow:hidden;white-space:nowrap;font:10px/12px monospace}
 .game-window .sell-window .sell-row{left:40px;width:136px;height:32px;border:1px solid #000;overflow:hidden}
 .game-window .sell-window .sell-row[aria-selected=true]{border:2px solid #fff304}
-.sell-condition{position:absolute;left:39px;top:-1px;width:32px;height:32px;image-rendering:pixelated}
+.sell-condition{position:absolute;left:39px;top:-1px}
 .sell-row[aria-selected=true] .sell-condition{left:38px;top:-2px}
-.condition-letter{position:absolute;left:10px;top:7px;width:12px;height:13px;color:#c20404!important;font:bold 14px/13px monospace}
-.condition-word{position:absolute;left:2px;top:22px;width:28px;height:9px;font:9px/9px Arial,sans-serif}
+/* Shared condition badge (ConditionBadge): source ring as background; letter centred in the ring interior
+   (x10..21, y8..18) with the ring's 1px grey drop shadow; word centred in rows 22..29. */
+.condition-badge{display:block;width:32px;height:32px;background:var(--condition-badge) no-repeat;image-rendering:pixelated}
+.condition-letter{position:absolute;left:10px;top:8px;width:12px;height:11px;display:flex;align-items:center;justify-content:center;color:#c20404!important;text-shadow:1px 1px #828282;font:bold 14px/1 monospace}
+.condition-word{position:absolute;left:0;top:22px;width:32px;height:8px;display:flex;align-items:center;justify-content:center;color:#414141;font:8px/1 Arial,sans-serif;white-space:nowrap}
 .sell-price{position:absolute;left:71px;top:11px;font:10px/10px monospace;white-space:nowrap}
 .sell-row[aria-selected=true] .sell-price{left:70px;top:10px}
 .game-window .sell-empty{position:absolute;left:40px;top:96px;margin:0;font:10px/10px monospace}
@@ -347,7 +350,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .schedule-window:has(#schedule-month:focus-visible):after{content:'';position:absolute;left:88px;top:88px;width:160px;height:16px;outline:1px dotted #000;pointer-events:none}
 .schedule-window .schedule-weather-number{position:absolute;left:0;font:8px/8px monospace;color:#fff;pointer-events:none}
 #schedule-value{position:absolute;left:120px;top:132px;font:10px/10px monospace}
-.schedule-quality{position:absolute;left:272px;top:128px;width:32px;height:32px;image-rendering:pixelated}
+.schedule-quality{position:absolute;left:272px;top:128px}
 
 .schedule-window .plan-calendar{position:absolute;inset:0;pointer-events:none}
 .schedule-window .plan-calendar>button{pointer-events:auto}
@@ -372,9 +375,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .examine-description{left:24px;width:160px;height:96px;padding:1px 2px;overflow:auto;overflow-wrap:anywhere;overscroll-behavior:contain;scrollbar-width:thin}
 .examine-name{left:24px;width:160px;padding:1px 2px}
 .examine-damage{position:absolute;left:24px;top:90px}
-.examine-condition{position:absolute;left:56px;top:88px;width:32px;height:32px;font:8px/8px monospace}
-.examine-condition .condition-letter{position:absolute;left:8px;top:4px;font:bold 16px/16px monospace}
-.examine-condition .condition-word{position:absolute;left:0;top:24px;width:32px;text-align:center;font:8px/8px monospace}
+.examine-condition{position:absolute;left:56px;top:88px}
 #examine-value{position:absolute;left:96px;top:100px}
 
 .map-panel[data-object-move=pick] #world{cursor:grab}

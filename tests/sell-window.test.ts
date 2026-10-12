@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { readArchive } from '../src/formats/archive';
 import { readPalette, readBitmap, decodePlanar } from '../src/formats/graphics';
-import { readSellArtwork, readSellConditions, SELL_TEXT_MASKS, SELL_CONDITION_MASKS } from '../src/formats/sell-window';
+import { readSellArtwork, readSellCondition, readSellConditionBadges, isConditionLettering, SELL_TEXT_MASKS } from '../src/formats/sell-window';
 import { readBuyCatalog } from '../src/formats/buy-window';
 import { sellProducts } from '../src/simulation/sell-products';
 import { checkManualAssetSale } from '../src/simulation/manual-asset-sale';
@@ -32,16 +32,25 @@ test('Sell descriptor, ten controls, callbacks, condition graphics and text mask
     assert.deepEqual(live.rgba.subarray(p,p+4),mask?Uint8Array.from([...palette[12],255]):original.rgba.subarray(p,p+4));
   }
   assert.deepEqual(Uint8Array.from(bytes),before);
-  const badges=readSellConditions(asset('ega16til.til'),palette);
+  // Four source badges, each assembled from tile539+4*(27-quality); one shared ring under per-grade lettering.
+  const til=asset('ega16til.til'),badges=readSellConditionBadges(til,palette),clean=readSellCondition(til,palette);
+  assert.deepEqual([clean.width,clean.height],[32,32]);
   for(let q=0;q<4;q++)for(let t=0;t<4;t++){
-    const n=539+4*(27-q)+t,original=decodePlanar(asset('ega16til.til').subarray(n*128,(n+1)*128),16,16,palette);
-    for(let y=0;y<16;y++)for(let x=0;x<16;x++){
-      const dx=t%2*16+x,dy=Math.floor(t/2)*16+y,p=(dy*128+q*32+dx)*4,mask=SELL_CONDITION_MASKS.some(r=>dx>=r.x&&dx<r.x+r.width&&dy>=r.y&&dy<r.y+r.height);
-      assert.deepEqual(badges.rgba.subarray(p,p+4),mask?Uint8Array.from([...palette[12],255]):original.rgba.subarray((y*16+x)*4,(y*16+x+1)*4));
-    }
+    const n=539+4*(27-q)+t,original=decodePlanar(til.subarray(n*128,(n+1)*128),16,16,palette);
+    for(let y=0;y<16;y++)for(let x=0;x<16;x++){const p=((Math.floor(t/2)*16+y)*32+t%2*16+x)*4;assert.deepEqual(badges[q].rgba.subarray(p,p+4),original.rgba.subarray((y*16+x)*4,(y*16+x+1)*4));}
   }
+  // Outside lettering, the clean badge matches at least three of the four sources at every pixel
+  // (the BAD badge's word background clips a few ring pixels); letter box and lower rows are face/shadow only.
+  for(let y=0;y<32;y++)for(let x=0;x<32;x++){
+    const p=(y*32+x)*4,c=[...clean.rgba.subarray(p,p+3)].join(),agree=badges.filter(b=>!isConditionLettering(b,x,y,palette)&&[...b.rgba.subarray(p,p+3)].join()===c).length;
+    const visible=badges.filter(b=>!isConditionLettering(b,x,y,palette)).length;
+    if(visible>=3)assert.ok(agree>=visible-1,`pixel ${x},${y}`);
+    assert.ok([palette[3],palette[12],palette[13],palette[7],palette[11]].some(k=>k.join()===c)||visible===4,`unexpected colour at ${x},${y}`);
+  }
+  // Ring completeness: the rebuilt lower arc is left-right symmetric about x=15.5 (red pixels).
+  for(let y=19;y<24;y++)for(let x=0;x<32;x++){const red=(px:number)=>[...clean.rgba.subarray((y*32+px)*4,(y*32+px)*4+3)].join()===palette[3].join();assert.equal(red(x),red(31-x),`ring ${x},${y}`);}
   for(const n of [0,7,8,bytes.length-1])assert.throws(()=>readSellArtwork(bytes.subarray(0,n),palette));
-  for(const n of [0,539*128,651*128-1])assert.throws(()=>readSellConditions(asset('ega16til.til').subarray(0,n),palette));
+  for(const n of [0,539*128,651*128-1])assert.throws(()=>readSellCondition(asset('ega16til.til').subarray(0,n),palette));
   const wrong=Uint8Array.from(bytes);wrong[0]=16;wrong[2]=128;wrong[3]=1;assert.throws(()=>readSellArtwork(wrong,palette));
 });
 

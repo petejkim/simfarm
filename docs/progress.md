@@ -2862,3 +2862,7 @@ Flake: "New Game ignores extreme soil" intermittently timed out waiting for File
 ## 2026-10-12 — removed File → Save As
 
 User request. Hidden like Load Crop; the Save As dialog, filename state and custom-name validation in SaveControls/FileMenu were removed. Save keeps the dated default filename. main-menu spec updated (menu order; Save filename and repeat-save check replace the Save As case). Decoded source menu data unchanged. main-menu, file-loading, file-errors and terrain-design specs pass 14/14; type checking passes.
+
+## 2026-10-12 — clean condition badge, shared ConditionBadge
+
+Replaced the four-frame `sell-conditions.png` sprite sheet with one rebuilt `sell-condition.png` that keeps the full red ring; the method is in sell-dialog.md. Added a shared `ConditionBadge` for Sell, Examine and Schedule: centred letter with grey drop shadow, centred 8px word. This fixes Schedule's off-centre letter and word. New browser case checks single-image background, letter/word boxes, shadow and font size in Schedule and Sell. Validation: sell-window decoder 3/3; Sell/manual-sales/Examine/Schedule/weekly-aging specs 16/16; type checking/build/import pass.

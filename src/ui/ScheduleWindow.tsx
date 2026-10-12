@@ -7,6 +7,7 @@ import { SCHEDULE_ACTIONS } from '../formats/schedule-window';
 import { scheduleCropHint, scheduleFieldView } from '../simulation/schedule-view';
 import type { FieldPlanEdit } from '../simulation/field-plan-edit';
 import { drawSchedulePreview } from '../render/schedule-preview';
+import { ConditionBadge } from './ConditionBadge';
 import { GameWindow, useWindows } from './GameWindow';
 
 const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -90,9 +91,7 @@ function ScheduleEditor({assets,snapshot,tiles,field,inspection,focusRef,onComma
         <span className="schedule-season">{view.season} {view.year}</span>
         <output id="schedule-value">{view.value}</output>
         <span role="meter" aria-label="Crop maturity" aria-valuemin={0} aria-valuemax={80} aria-valuenow={view.maturityPixels} className="sale-accessible-detail"/>
-        <span className="schedule-quality" aria-label={`Crop quality: ${['Bad','Poor','Fair','High'][view.quality]}`} style={{backgroundImage:`url("${assets.sellConditions.src}")`,backgroundPosition:`-${view.quality*32}px 0`}}>
-          <span className="condition-letter">{['X','C','B','A'][view.quality]}</span><span className="condition-word">{['BAD','POOR','FAIR','HIGH'][view.quality]}</span>
-        </span>
+        <ConditionBadge className="schedule-quality" quality={view.quality} artwork={assets.sellCondition} label={`Crop quality: ${['Bad','Poor','Fair','High'][view.quality]}`}/>
       </>}
       {[['CurrentValue',10,130,92],['Maturity',42,145,60],['Crop',216,130,36],['Quality',204,145,58],
         ['Disease',18,200,50],['Pests',78,200,42],['Weeds',132,200,44],['Water',218,200,40],['Soil',276,200,32]].map(([label,left,top,width])=><span key={label} className="schedule-label" style={{left:Number(left),top:Number(top),width:Number(width)}}>{label}</span>)}

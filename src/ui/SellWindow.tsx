@@ -3,10 +3,11 @@ import { assetUrl, type GameAssets } from '../assets/game-assets';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
 import { sellProducts, type SellCategory } from '../simulation/sell-products';
 import { drawSellPreview } from '../render/sell-preview';
+import { ConditionBadge, CONDITION_WORDS } from './ConditionBadge';
 import { GameWindow, useWindows } from './GameWindow';
 
 const categories: {kind:SellCategory;label:string}[]=[{kind:'harvest',label:'Harvest'},{kind:'equipment',label:'Machinery'},{kind:'animal',label:'Livestock'}];
-const grades=['BAD','POOR','FAIR','HIGH'], letters=['X','C','B','A'];
+const grades=CONDITION_WORDS;
 export function SellWindow({assets,snapshot,tiles,onCommand,focusRef}:{assets:GameAssets;snapshot:GameSnapshot;tiles:CanvasImageSource;onCommand:(command:GameCommand)=>void;focusRef:Ref<HTMLElement>}) {
   const windows=useWindows(),[category,setCategory]=useState<SellCategory>('harvest'),[selection,setSelection]=useState({index:0,offset:0});
   const items=sellProducts(snapshot.scenario,snapshot.finances,assets.catalog.crops,assets.buyCatalog,assets.itemText,category,snapshot.weather.soilMoisture);
@@ -36,7 +37,7 @@ export function SellWindow({assets,snapshot,tiles,onCommand,focusRef}:{assets:Ga
       <div id="harvest-items" role="listbox" aria-label="Items for sale">
         {rows.map((p,row)=><button key={`${p.kind}-${p.slot}`} role="option" aria-selected={index===offset+row} className="sell-row" data-slot={p.slot} data-value={p.value} data-name={p.name} style={{top:96+row*32}}
           aria-label={`${p.name}, ${p.kind==='harvest'?'lot':'item'} ${p.slot}, ${grades[p.quality]}, $${p.value.toLocaleString('en-US')}`} onClick={()=>select(offset+row)}>
-          <span className="sell-condition" style={{backgroundImage:`url("${assets.sellConditions.src}")`,backgroundPosition:`-${p.quality*32}px 0`}}><span className="condition-letter">{letters[p.quality]}</span><span className="condition-word">{grades[p.quality]}</span></span>
+          <ConditionBadge className="sell-condition" quality={p.quality} artwork={assets.sellCondition}/>
           <span className="sell-price">$ {p.value.toLocaleString('en-US')}</span>
           <span className="sale-accessible-detail">{p.name}{p.quantity!==undefined?` · Quantity ${p.quantity} · Loss ${Math.floor(p.loss!*100/65535)}%`:''}</span>
         </button>)}

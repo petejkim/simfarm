@@ -45,3 +45,19 @@ Removed AssetSaleControls from the interim Machinery/Livestock inventories. Sour
 Migrated manual-sale browser checks preserve source quotes, exact cash/ledger/storage/map cleanup, rental exclusion, blocked-sale nonmutation, reload mid-sale sequence, seven-day continuation, aircraft repurchase and source terrain pixels. No canonical sale/save rule changed; original defect records remain in manual-sales.md/original-bugs.md.
 
 2026-10-11 user follow-up: the interim feedback area below this window (unsellable reason and sale result) was removed; outcomes show through the disabled Sell button, item counts and Funds. See progress.md.
+
+## Condition badge rebuilt (2026-10-12)
+
+User report: caption erasure in `sell-conditions.png` removed too much of the red ring. The old mask (rows 22..30) wiped the ring's lower arc and drop shadow, which the source words overlap.
+
+The four source badges (tile 539+4×(27−quality)) share one ring, so import now writes a single 32×32 `sell-condition.png`, built per pixel:
+- **Uncovered pixels:** the strict majority of the badges whose lettering does not cover the pixel. Lettering means the letter box x10..21, y8..18, plus palette-14 word pixels in rows 22..29.
+- **Ties, and pixels covered in all four:** the ring's own drop-shadow rule (palette 13 one pixel below-right of red), else face grey.
+
+The BAD badge's word background clips three ring pixels, so it is outvoted. The rebuilt lower arc is left-right symmetric. Unit tests check exact source decoding, agreement with uncovered source pixels and arc symmetry.
+
+`ConditionBadge` (src/ui/ConditionBadge.tsx) now renders the badge in Sell, Examine and Schedule with one CSS rule set:
+- **Letter:** centred in the ring interior (12×11 at 10,8), source red with the ring's 1px grey drop shadow.
+- **Word:** 8px, centred across rows 22..29.
+
+Schedule previously lacked the centring rules and inherited the schedule font, which misaligned both. Examine's separate overrides were removed.
