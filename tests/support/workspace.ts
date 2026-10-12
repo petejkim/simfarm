@@ -1,5 +1,5 @@
 import { aircraftMapEntry } from '../../src/simulation/aircraft-view';
-import { farmSnapshot } from './field-checkpoint';
+import { farmSnapshot, selectedFieldSlot } from './field-checkpoint';
 import { expect, type Page } from '@playwright/test';
 
 /** Existing subsystem tests acknowledge real informational dialogs before
@@ -15,14 +15,10 @@ export async function openWindow(page: Page, key: string) {
   await acknowledgeFinanceMessages(page);
   if(key==='schedule'){
     if(await page.locator('[data-window="schedule"]').isVisible()){await page.locator('[data-window="schedule"] .game-window-title').focus();return;}
-    const selected=Number(await page.locator('#planner-field').inputValue()),snapshot=await farmSnapshot(page);
+    const snapshot=await farmSnapshot(page),selected=await selectedFieldSlot(page,snapshot);
     const field=snapshot.scenario.fields.find(f=>f.active&&f.slot===selected)??snapshot.scenario.fields.find(f=>f.active);
     if(!field)throw new Error('Schedule requires an existing field; create one with Plant first.');
-    await uncoverMap(page);await page.getByRole('button',{name:'View object',exact:true}).click();
-    const size=16*Number(await page.locator('#zoom').inputValue());
-    await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-3)*p.size,Math.max(0,p.y-3)*p.size),{x:field.x,y:field.y,size});
-    const bounds=(await page.locator('#world').boundingBox())!;
-    await page.mouse.click(bounds.x+(field.x+0.5)*size,bounds.y+(field.y+0.5)*size);return;
+    await viewField(page,field);return;
   }
   if (key === 'edit') { await focusEdit(page); return; }
   if (await page.locator(`[data-window="${key}"]`).isVisible()) {await page.locator(`[data-window="${key}"] .game-window-title`).focus();return;}
@@ -55,6 +51,27 @@ export async function openWindow(page: Page, key: string) {
 /** Edit has no toolbar launcher (user request); its Windows-menu entry focuses the permanent terrain. */
 export async function focusEdit(page:Page){
   await page.locator('#windows-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Edit',exact:true}).click();
+}
+/** Original field entry: View object, then click the field on the map; opens its Schedule window. */
+async function viewField(page:Page,field:{x:number;y:number}){
+  await uncoverMap(page);await page.getByRole('button',{name:'View object',exact:true}).click();
+  const size=16*Number(await page.locator('#zoom').inputValue());
+  await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-3)*p.size,Math.max(0,p.y-3)*p.size),{x:field.x,y:field.y,size});
+  const bounds=(await page.locator('#world').boundingBox())!;
+  await page.mouse.click(bounds.x+(field.x+0.5)*size,bounds.y+(field.y+0.5)*size);
+}
+/** Select a field by its slot through the map (the interim field chooser was removed). */
+export async function chooseField(page:Page,slot:number){
+  const field=(await farmSnapshot(page)).scenario.fields.find(f=>f.active&&f.slot===slot);
+  if(!field)throw new Error(`No active field in slot ${slot}`);
+  await viewField(page,field);await expectSelectedField(page,slot);
+}
+/** The Schedule window names the selected field ("Field N schedule"); null expects no selection. */
+export async function expectSelectedField(page:Page,slot:number|null){
+  const planner=page.locator('#field-planner');
+  if(slot===null){if(await planner.count())await expect(planner).toHaveAttribute('aria-label','Field schedule');return;}
+  const field=(await farmSnapshot(page)).scenario.fields.find(f=>f.active&&f.slot===slot);
+  await expect(planner).toHaveAttribute('aria-label',`Field ${field?.number} schedule`);
 }
 async function uncoverMap(page:Page){
   await openWindow(page,'edit');

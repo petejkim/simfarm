@@ -1,13 +1,14 @@
 import {readSaveText} from '../support/save-file';
 import {test,expect} from '@playwright/test';
-import {openWindow} from '../support/workspace';
+import {readFileSync} from 'node:fs';
+import {openWindow, chooseField } from '../support/workspace';
 import {FIXED_HARVEST_MESSAGE} from '../../src/formats/field-message';
 
 test('Schedule fixed harvest opens the original mandatory Message and returns to the unchanged plan',async({page})=>{
   await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
   await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Messages',exact:true}).click();
   async function save(){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
-  const before=await save();await openWindow(page,'schedule');await page.locator('#planner-field').selectOption('1');
+  const before=await save();await openWindow(page,'schedule');await chooseField(page,1);
   const calendar=before.scenario.farm.calendar,week=calendar.month*4+calendar.week+1;
   await page.locator('[data-plan-action="harvest"]').click();await page.locator(`[data-plan-week="${week}"]`).click();
   const win=page.locator('[data-window=field-message]');await expect(win).toBeVisible();await expect(page.locator('#field-message-text')).toHaveText(FIXED_HARVEST_MESSAGE);

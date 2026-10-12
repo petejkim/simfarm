@@ -355,9 +355,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .schedule-window .schedule-weather-number{position:absolute;left:0;font:8px/8px monospace;color:#fff;pointer-events:none}
 #schedule-value{position:absolute;left:120px;top:132px;font:10px/10px monospace}
 .schedule-quality{position:absolute;left:272px;top:128px;width:32px;height:32px;image-rendering:pixelated}
-.schedule-feedback{padding:4px;font:11px/14px Arial,sans-serif}
-.game-window .schedule-feedback p{margin:3px 0;font:11px/14px Arial,sans-serif}
-.game-window .schedule-feedback select{font:11px Arial,sans-serif;max-width:280px;padding:1px}
 
 .schedule-window .plan-calendar{position:absolute;inset:0;pointer-events:none}
 .schedule-window .plan-calendar>button{pointer-events:auto}
@@ -386,8 +383,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .examine-condition .condition-letter{position:absolute;left:8px;top:4px;font:bold 16px/16px monospace}
 .examine-condition .condition-word{position:absolute;left:0;top:24px;width:32px;text-align:center;font:8px/8px monospace}
 #examine-value{position:absolute;left:96px;top:100px}
-.examine-actions{padding:3px;display:flex;gap:3px;flex-wrap:wrap}
-.examine-actions button{font:10px/12px Arial,sans-serif;padding:2px 4px}
 
 .map-panel[data-object-move=pick] #world{cursor:grab}
 .map-panel[data-object-move=drop] #world{cursor:grabbing}
@@ -420,9 +415,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .aircraft-label{position:absolute;left:86px;width:78px;height:10px;text-align:center;font:bold 10px/10px monospace}
 .aircraft-gauge{position:absolute;left:104px;width:48px;height:24px;image-rendering:pixelated}
 .game-window .aircraft-window output{position:absolute;left:24px;width:32px;height:10px;font:8px/10px monospace;color:#000;text-align:left}
-.aircraft-feedback{padding:4px 8px;background:#c3c3c3;color:#000;font:11px/14px Arial,sans-serif}
-.game-window .aircraft-feedback p{margin:3px 0}
-.game-window .aircraft-feedback button,.game-window .aircraft-feedback select{font:11px Arial,sans-serif;padding:2px 4px}
 
 /* Market descriptor DSbbfa:320×208 client below its sixteen-pixel title. */
 .game-window[data-window=market]{left:144px;top:112px;right:auto;width:320px;border:0;max-height:calc(100% - 128px)}

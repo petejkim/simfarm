@@ -8,7 +8,7 @@ import {purchaseAircraft} from '../../src/simulation/aircraft';
 import {readArchive} from '../../src/formats/archive';
 import {decodePlanar,readPalette} from '../../src/formats/graphics';
 import {readNativeSave,writeNativeSave} from '../../src/formats/native-save';
-import {openWindow,reveal, focusEdit } from '../support/workspace';
+import {openWindow,reveal, focusEdit, expectFarmCash } from '../support/workspace';
 import {AIRCRAFT_CONTROLS} from '../../src/formats/aircraft-window';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'aircraft.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
@@ -17,6 +17,12 @@ async function mapClick(page:Page,x:number,y:number,button:'left'|'right'='left'
   await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-20)*16*p.zoom,Math.max(0,p.y-15)*16*p.zoom),{x,y,zoom});
   const r=(await page.locator('#world').boundingBox())!;
   await page.mouse.click(r.x+(x+.5)*16*zoom,r.y+(y+.5)*16*zoom,{button});
+}
+/** The plane chooser was removed; pick a plane by clicking its parked tile, as in the original. */
+async function selectPlane(page:Page,slot:1|2){
+  const win=page.getByRole('dialog',{name:'AIRPLANE',exact:true});
+  if(await win.isVisible())await page.locator('.aircraft-window').getByRole('button',{name:'CLOSE',exact:true}).click();
+  await mapClick(page,slot===1?21:19,slot===1?22:23);await expect(win).toBeVisible();
 }
 function fixture(){const f=aircraftFixture();f.state.disasters.enabled=false;expect(purchaseAircraft(f.state.scenario,f.state.finances).ok).toBe(true);return f;}
 
@@ -46,11 +52,13 @@ test('AIRPLANE source layout, gauges and real text stay1x, move independently an
 
 test('all four parked tiles select the right plane with primary and secondary input at both zooms; construction entry preserves the primary Bulldoze bypass',async({page})=>{
   const f=fixture(),w=f.state.scenario;w.regionalConditions[(2*12+2)*7]&=~0x20;expect(purchaseAircraft(w,f.state.finances).ok).toBe(true);
+  // Plane 1 carries full fuel so the Fuel meter identifies which plane the window selected.
+  const e=w.equipment[1];new DataView(e.bytes.buffer,e.bytes.byteOffset,e.bytes.byteLength).setUint16(20,255,true);
   const game=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,game.save(4));
   for(const zoom of ['1','2']){
     await reveal(page,'#zoom');await page.locator('#zoom').selectOption(zoom);await focusEdit(page);
     for(const [slot,x,y] of [[1,21,22],[1,22,22],[2,19,23],[2,20,23]]){
-      await mapClick(page,x,y,slot===1?'left':'right');await expect(page.locator('#aircraft-selection')).toHaveValue(String(slot));
+      await mapClick(page,x,y,slot===1?'left':'right');await expect(page.getByRole('meter',{name:'Fuel',exact:true})).toHaveAttribute('aria-valuenow',slot===1?'255':'0');
       await page.locator('.aircraft-window').getByRole('button',{name:'CLOSE',exact:true}).click();
     }
   }
@@ -68,14 +76,14 @@ test('all four parked tiles select the right plane with primary and secondary in
 test('chemical icon order and full-width payload price match paid service across two aircraft and saved selection',async({page})=>{
   const f=fixture(),w=f.state.scenario;w.regionalConditions[(2*12+2)*7]&=~0x20;expect(purchaseAircraft(w,f.state.finances).ok).toBe(true);w.chemicalDefinitions[1].price=2580;
   const game=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,game.save(4));await openWindow(page,'aircraft');
-  await page.locator('#aircraft-selection').selectOption('1'); // Map entry selects the clicked plane; this case services slot1 first.
+  await selectPlane(page,1); // Map entry selects the clicked plane; this case services slot1 first.
   await expect(page.locator('#aircraft-load-price')).toHaveText('65790');await expect(page.locator('#aircraft-load')).toHaveAccessibleName('Load chemicals · $65,790');
-  await page.locator('#aircraft-load').click();game.dispatch({type:'service-aircraft',slot:1,action:{kind:'load'}});await expect(page.locator('#aircraft-service-result')).toHaveText('Service completed for $65,790.');
+  await page.locator('#aircraft-load').click();game.dispatch({type:'service-aircraft',slot:1,action:{kind:'load'}});await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);await expect(page.getByRole('meter',{name:'Payload',exact:true})).toHaveAttribute('aria-valuenow','255');
   for(const type of [222,223,221]){
     await page.locator(`[data-aircraft-chemical="${type}"]`).click();game.dispatch({type:'service-aircraft',slot:1,action:{kind:'chemical',chemicalType:type}});
     await expect(page.locator(`[data-aircraft-chemical="${type}"]`)).toHaveAttribute('aria-pressed','true');
   }
-  await page.locator('#aircraft-selection').selectOption('2');await page.locator('[data-aircraft-chemical="223"]').click();game.dispatch({type:'service-aircraft',slot:2,action:{kind:'chemical',chemicalType:223}});
-  await page.locator('#aircraft-selection').selectOption('1');await expect(page.locator('[data-aircraft-chemical="223"]')).toHaveAttribute('aria-pressed','true');
+  await selectPlane(page,2);await expect(page.getByRole('meter',{name:'Payload',exact:true})).toHaveAttribute('aria-valuenow','0');await page.locator('[data-aircraft-chemical="223"]').click();game.dispatch({type:'service-aircraft',slot:2,action:{kind:'chemical',chemicalType:223}});
+  await selectPlane(page,1);await expect(page.locator('[data-aircraft-chemical="223"]')).toHaveAttribute('aria-pressed','true');
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));await page.reload();await load(page,game.save(4));await openWindow(page,'aircraft');await expect(page.locator('[data-aircraft-chemical="223"]')).toHaveAttribute('aria-pressed','true');expect(await save(page)).toEqual(JSON.parse(game.save(4)));
 });

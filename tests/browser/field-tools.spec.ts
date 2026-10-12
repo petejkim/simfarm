@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import {disasterFixture} from '../support/disasters';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
-import { reveal, openWindow, focusEdit, expectPaletteAction } from '../support/workspace';
+import { reveal, openWindow, focusEdit, expectPaletteAction, expectSelectedField } from '../support/workspace';
 import { readArchive } from '../../src/formats/archive';
 import { readPalette, decodePlanar } from '../../src/formats/graphics';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'field-tools.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
@@ -66,7 +66,7 @@ test('Plant creates all24 crop fields directly, guards boundaries and occupied f
   await page.keyboard.press('Escape');expect(await save(page)).toEqual(before);
   await page.reload();await load(page,JSON.stringify(before));expect(await save(page)).toEqual(before);
   await page.getByRole('button',{name:'View object',exact:true}).click();await point(page,6,41);
-  await expect(page.getByRole('dialog',{name:'Schedule',exact:true})).toBeVisible();await expect(page.locator('#planner-field')).toHaveValue('1');
+  await expect(page.getByRole('dialog',{name:'Schedule',exact:true})).toBeVisible();await expectSelectedField(page,1);
 });
 
 test('Spray applies all four treatments through canonical supplies and busy guards with continued field work',async({page})=>{

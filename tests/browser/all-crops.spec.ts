@@ -1,4 +1,5 @@
 import {readSaveText} from '../support/save-file';
+import { expectWeekPlan } from '../support/schedule-window';
 import { browseSupply } from '../support/supply-actions';
 import { plantField } from '../support/field-actions';
 import { reveal, openWindow, expectPaletteAction } from '../support/workspace';
@@ -31,7 +32,7 @@ test('all crops are immediately plantable and plannable with source artwork and 
   const slot = 23, file = game.getSnapshot().scenario.cropFiles[slot], crop = browserCrops.find(c => `${c.id}.crp` === file)!;
   await plantField(page,40,40,slot);await expectPaletteAction(page,'View object');
   game.dispatch({ type: 'create-field', x: 40, y: 40, cropSlot: slot });
-  await expect(page.locator('#planner-field option:checked')).toContainText(crop.name);
+  await expect(page.locator('#field-planner .schedule-crop-name')).toContainText(crop.name);
   await expect(page.locator('#plant-crop')).toHaveCount(0);
   const archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
   const palette = readPalette(archive.find(e => e.name === 'simfarm.pal')!.bytes);
@@ -45,7 +46,7 @@ test('all crops are immediately plantable and plannable with source artwork and 
   await expect(page.locator('[data-plan-crop]')).toHaveCount(8);
   await page.locator('[data-plan-crop="22"]').click(); await page.locator('[data-plan-week="1"]').click();
   game.dispatch({ type: 'edit-field-plan', fieldSlot: 1, week: 1, action: { kind: 'plant', cropSlot: 22 } });
-  await expect(page.locator('#plan-result')).toContainText('Plan updated');
+  await expectWeekPlan(page,1,/Plant /);
   await page.screenshot({ path: 'artifacts/browser-all-crops.png', fullPage: true });
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await browseSupply(page,215);await expect(page.locator('#buy-owned')).toHaveText('0');

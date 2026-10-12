@@ -44,3 +44,13 @@ Primary map selection and secondary press now use this entry. Construction check
 The interim disclosure/purchase form is removed. Purchase is **Buy → Machinery → Crop Duster → BUY**, using existing canonical airport/parking/cash rules. The interim **? → Aircraft** access shortcut has been removed; click a parked plane to open AIRPLANE through the source257b0 map interceptor. Map entry selects the actual clicked plane. A small native footer provides Show on map, a selector when multiple planes exist, transaction/error feedback and no-plane instructions. It extends the original client height without moving/scaling its controls. Exact quantities are also accessible meter/status text. Disabled unaffordable/unneeded services, keyboard focus outlines, persistent dragging and the footer are explicit native usability choices. Source click.voc callback3099a and exact cross-window/audio arbitration remain future work; this increment does not claim complete window-manager or aircraft fidelity.
 
 Four unit cases pin the descriptor/control chain/code, compare every imported pixel, reject malformed dimensions/truncation, enumerate all byte gauge thresholds and2048 tile IDs, check map bounds/orphan/type/first-record behavior, read-only saves and full-width quotes. Browser checks cover original geometry and all three rendered gauge frames, actual text, movement/reopening, both buttons and zoom levels, multiple aircraft/shared chemicals, exact service costs/refunds/repair age, canonical saves, failed purchases, takeoff/flight/crash/repurchase and audio lifetime. The broader native game reconstruction remains incomplete.
+
+## Interim feedback section removed (2026-10-11)
+
+User request: removed the `aircraft-feedback` area below the source frame. That covers:
+- the multi-aircraft chooser and Show on map button;
+- the hidden fuel/payload/wear sentence;
+- service result and failure messages;
+- the "buy a Crop Duster" hint and the flight-start error line.
+
+The aircraft shown is the one clicked on the map (source entry). Fuel, payload and damage remain as source gauges and meters; disabled service buttons and Funds reflect service outcomes. Tests distinguish planes by a fixture fuel level and verify services through gauges and Funds.

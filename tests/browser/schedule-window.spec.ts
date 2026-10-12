@@ -2,14 +2,14 @@ import {readSaveText} from '../support/save-file';
 import { declineTownEventDialogs } from '../support/town-event-dialogs';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { setDisastersEnabled } from '../support/disaster-menu';
-import { openWindow, expectPaletteAction } from '../support/workspace';
+import { openWindow, expectPaletteAction, chooseField, expectSelectedField } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readScenario } from '../../src/formats/scenario';
 import { readArchive } from '../../src/formats/archive';
 import { readPalette, decodePlanar } from '../../src/formats/graphics';
 import { browserCrops } from '../support/crop-catalog';
-import { scheduleMonth } from '../support/schedule-window';
+import { scheduleMonth, expectWeekPlan } from '../support/schedule-window';
 import { buyPlot, setAutoDoze, plantField, sprayField, clickFarmTile } from '../support/field-actions';
 import { reveal } from '../support/workspace';
 import { selectSaleOffer } from '../support/sell-window';
@@ -31,7 +31,7 @@ test('original map and Schedule controls complete harvest, storage, sale and rep
   async function examine(){
     await reveal(page,'#viewport');await page.getByRole('button',{name:'View object',exact:true}).click();
     await clickFarmTile(page,0,16);await expect(page.getByRole('dialog',{name:'Schedule',exact:true})).toBeVisible();
-    await expect(page.locator('#planner-field')).toHaveValue('9');
+    await expectSelectedField(page,9);
   }
   await days(2);await sprayField(page,0,16,'fertilizer');
   await days(82);await examine();
@@ -40,7 +40,7 @@ test('original map and Schedule controls complete harvest, storage, sale and rep
   const harvestWeek=calendar.month*4+calendar.week+1;
   await scheduleMonth(page,Math.floor(harvestWeek/4));
   await page.locator('[data-plan-action="harvest"]').click();await page.locator(`[data-plan-week="${harvestWeek}"]`).click();
-  await expect(page.locator('#plan-result')).toContainText('Plan updated');
+  await expectWeekPlan(page,harvestWeek,/Harvest/);
   const scheduled=await save(page);
   const snapshot=(checkpoint:unknown)=>GameSimulation.load(JSON.stringify(checkpoint),browserCrops).simulation.getSnapshot();
   expect(snapshot(scheduled).scenario.fields[9].state).toBe(4);
@@ -48,7 +48,7 @@ test('original map and Schedule controls complete harvest, storage, sale and rep
   // Remove the generated repeat-plant plan so this cycle waits for our explicit replant order.
   await page.getByRole('button',{name:'Clear remaining plan',exact:true}).click();
   await page.locator(`[data-plan-week="${harvestWeek+1}"]`).click();
-  await expect(page.locator('#plan-result')).toContainText('Plan updated');
+  await expectWeekPlan(page,harvestWeek+1,/Fallow/);
   // Seven days reach the next weekly order; allow the source machinery/delivery stages to finish.
   await days(10);
   const harvested=snapshot(await save(page)).scenario;
@@ -67,9 +67,9 @@ test('original map and Schedule controls complete harvest, storage, sale and rep
   const plantWeek=now.month*4+now.week+1;
   await scheduleMonth(page,Math.floor(plantWeek/4));
   await page.locator('[data-plan-crop="0"]').click();await page.locator(`[data-plan-week="${plantWeek}"]`).click();
-  await expect(page.locator('#plan-result')).toContainText('Plan updated');
+  await expectWeekPlan(page,plantWeek,/Plant /);
   await days(12);await examine();
-  await expect(page.locator('#planner-field option:checked')).toContainText('Corn');
+  await expect(page.locator('#field-planner .schedule-crop-name')).toContainText('Corn');
   // Read the persisted simulation, not the interim Field orders panel.
   const replanted=await save(page);
   expect(snapshot(replanted).scenario.fields[9].state).toBe(4);
@@ -81,7 +81,7 @@ test('Schedule restores source geometry, field artwork, gauges, all24 crops and 
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');const before=await save(page);
   const world=readScenario(source('SCEN0.SSM')),field=world.fields[1],firstWeek=world.farm.calendar.month*4;
-  await openWindow(page,'schedule');await page.locator('#planner-field').selectOption('1');
+  await openWindow(page,'schedule');await chooseField(page,1);
   const dialog=page.getByRole('dialog',{name:'Schedule',exact:true});
   expect(await dialog.locator('.game-window-title').boundingBox()).toEqual({x:160,y:80,width:336,height:16});
   expect(await page.locator('.schedule-window').boundingBox()).toEqual({x:160,y:96,width:336,height:224});
@@ -115,7 +115,7 @@ test('Schedule restores source geometry, field artwork, gauges, all24 crops and 
   await page.getByRole('button',{name:'View object',exact:true}).click();
   const rect=(await page.locator('#world').boundingBox())!;
   await page.mouse.click(rect.x+(field.x+2)*16+8,rect.y+(field.y+2)*16+8);
-  await expect(dialog).toBeVisible();await expect(page.locator('#planner-field')).toHaveValue('1');
+  await expect(dialog).toBeVisible();await expectSelectedField(page,1);
   expect(await save(page)).toEqual(before);expect(errors).toEqual([]);
 });
 
@@ -130,7 +130,7 @@ test('reexamining the same field resets Schedule to today without editing its pl
   await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
   const before=await save(page),world=readScenario(source('SCEN0.SSM')),field=world.fields[1];
-  await openWindow(page,'schedule');await page.locator('#planner-field').selectOption('1');
+  await openWindow(page,'schedule');await chooseField(page,1);
   await page.locator('[data-plan-action="harvest"]').click();await page.getByRole('button',{name:'Water overlay',exact:true}).click();
   await scheduleMonth(page,57);await page.getByRole('button',{name:'CLOSE',exact:true}).click();
   // Reopening through map inspection resets browsing to today.
@@ -139,7 +139,7 @@ test('reexamining the same field resets Schedule to today without editing its pl
   const rect=(await page.locator('#world').boundingBox())!;
   await page.mouse.click(rect.x+(field.x+2)*16+8,rect.y+(field.y+2)*16+8);
   await expect(page.getByRole('dialog',{name:'Schedule',exact:true})).toBeVisible();
-  await expect(page.locator('#planner-field')).toHaveValue('1');await expect(page.locator('#schedule-month')).toHaveValue(String(world.farm.calendar.month));
+  await expectSelectedField(page,1);await expect(page.locator('#schedule-month')).toHaveValue(String(world.farm.calendar.month));
   await expect(page.locator('[data-plan-action="harvest"]')).toHaveAttribute('aria-pressed','true');
   await expect(page.getByRole('button',{name:'Water overlay',exact:true})).toHaveAttribute('aria-pressed','true');
   // Browsing after entry must remain possible; snapshots do not repeatedly reset the month.

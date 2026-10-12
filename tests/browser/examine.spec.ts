@@ -7,7 +7,7 @@ import { browserCrops } from '../support/crop-catalog';
 import { readArchive } from '../../src/formats/archive';
 import { readPalette,decodePlanar } from '../../src/formats/graphics';
 async function save(page:Page){const d=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await d).path())!));}
-async function point(page:Page,x:number,y:number){await focusEdit(page);await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-30)*16,Math.max(0,p.y-20)*16),{x,y});const r=(await page.locator('#world').boundingBox())!;await page.mouse.click(r.x+x*16+8,r.y+y*16+8);}
+async function point(page:Page,x:number,y:number,button:'left'|'right'='left'){await focusEdit(page);await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-30)*16,Math.max(0,p.y-20)*16),{x,y});const r=(await page.locator('#world').boundingBox())!;await page.mouse.click(r.x+x*16+8,r.y+y*16+8,{button});}
 async function load(page:Page,text:string){await page.goto('/');await page.locator('#load-farm-file').setInputFiles({name:'examine.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 
 test('View object shows original building card, exact1× photo, HTML captions and canonical interior controls',async({page})=>{
@@ -24,14 +24,15 @@ test('View object shows original building card, exact1× photo, HTML captions an
   const pixels=decodePlanar(asset('alltiles.btl').subarray(22+card*3586,22+card*3586+3584),112,64,readPalette(asset('simfarm.pal'))).rgba;
   expect(await dialog.locator('canvas').evaluate((c:HTMLCanvasElement)=>[...c.getContext('2d')!.getImageData(48,8,112,64).data])).toEqual([...pixels]);
   await page.screenshot({path:'artifacts/browser-examine-building.png'});expect(await save(page)).toEqual(JSON.parse(initial));
-  await page.locator('#examine-building').click();g.dispatch({type:'toggle-building-interior',x:40,y:40,slot:1});
+  // Right-click opens the building on the map (source interaction); Examine then shows its contents.
+  await point(page,40,40,'right');g.dispatch({type:'toggle-building-interior',x:40,y:40,slot:1});
   await expect(dialog.locator('[data-kind=equipment]')).toBeVisible();await expect(page.locator('#examine-text')).toHaveText('Tractor');
   await expect(page.locator('#examine-value')).toHaveText(`$${g.getSnapshot().scenario.equipmentDefinitions[0].price}`);
   expect(await save(page)).toEqual(JSON.parse(g.save(4)));await page.screenshot({path:'artifacts/browser-examine-equipment.png'});
   const title=dialog.locator('.game-window-title');await title.focus();await page.keyboard.press('ArrowRight');expect(await dialog.boundingBox()).toMatchObject({x:42,y:64});
   await page.keyboard.press('Escape');await expect(dialog).toBeHidden();await point(page,40,40);expect(await dialog.boundingBox()).toMatchObject({x:42,y:64});
-  await page.locator('#examine-building').click();g.dispatch({type:'toggle-building-interior',x:40,y:40,slot:1});expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  await expect(page.getByRole('button',{name:'Object actions',exact:true})).toHaveCount(0);
+  await point(page,40,40,'right');g.dispatch({type:'toggle-building-interior',x:40,y:40,slot:1});expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  await expect(page.getByRole('button',{name:'Object actions',exact:true})).toHaveCount(0);await expect(page.locator('#examine-building')).toHaveCount(0);
 });
 
 test('Examine covers ground machinery, livestock, chemicals and terrain without mutating farm state',async({page})=>{

@@ -1,19 +1,14 @@
 import type { GameAssets } from '../assets/game-assets';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
-import { aircraftChemical, checkAircraftService, type AircraftServiceAction } from '../simulation/aircraft';
+import { checkAircraftService, type AircraftServiceAction } from '../simulation/aircraft';
 import { aircraftWindowView } from '../simulation/aircraft-view';
 import { AIRCRAFT_CONTROLS } from '../formats/aircraft-window';
 import { GameWindow, useWindows } from './GameWindow';
 const money=(n:number)=>`$${n.toLocaleString('en-US')}`;
 const names:Record<number,string>={221:'Pesticide',222:'Herbicide',223:'Fungicide'};
-const messages={
-  'insufficient-cash':'There is not enough cash.', 'not-aircraft':'Choose an aircraft.',
-  'not-parked':'The aircraft must be parked at its airport for service.',
-  'invalid-service':'Choose an available service.', 'invalid-supplies':'This aircraft has invalid fuel or payload quantities.',
-};
-export function AircraftWindow({assets,snapshot,selectedSlot,onSelect,onCommand,onLocate,onFly}:{
-  assets:GameAssets;snapshot:GameSnapshot;selectedSlot:number|null;onSelect:(slot:number)=>void;
-  onCommand:(command:GameCommand)=>void;onLocate:(x:number,y:number)=>void;onFly:(slot:number)=>boolean;
+export function AircraftWindow({assets,snapshot,selectedSlot,onCommand,onFly}:{
+  assets:GameAssets;snapshot:GameSnapshot;selectedSlot:number|null;
+  onCommand:(command:GameCommand)=>void;onFly:(slot:number)=>boolean;
 }){
   const windows=useWindows(),planes=snapshot.scenario.equipment.filter(e=>e.active&&e.type===8);
   const plane=planes.find(e=>e.slot===selectedSlot)??planes[0];
@@ -21,8 +16,7 @@ export function AircraftWindow({assets,snapshot,selectedSlot,onSelect,onCommand,
   const blocked=Boolean(snapshot.pendingTown||snapshot.townEvent.pending||snapshot.finances.defaultDecision||snapshot.aircraftFlight);
   const quote=(action:AircraftServiceAction)=>plane?checkAircraftService(snapshot.scenario,snapshot.finances,snapshot.aircraftService,plane.slot,action):null;
   const service=(action:AircraftServiceAction)=>plane&&onCommand({type:'service-aircraft',slot:plane.slot,action});
-  const base=quote({kind:'fuel'}),result=snapshot.lastAircraftServiceResult;
-  const failures=[...new Set((['fuel','load','repair'] as const).map(kind=>quote({kind})).flatMap(q=>q&&!q.ok?[messages[q.reason]]:[]))];
+  const base=quote({kind:'fuel'});
   return <GameWindow windowKey="aircraft" title="AIRPLANE">
     <section id="aircraft-panel" aria-label="Aircraft service">
       <div className="aircraft-window">
@@ -44,18 +38,6 @@ export function AircraftWindow({assets,snapshot,selectedSlot,onSelect,onCommand,
             :<button key={c.id} className="aircraft-caption" style={style} onClick={()=>windows.close('aircraft')}>CLOSE</button>;
         })}
         {(['fuel','load','repair'] as const).map((kind,i)=><output key={kind} id={`aircraft-${kind}-price`} aria-label={`${kind} cost`} style={{top:44+i*55}}>{view?.prices?.[kind]??'—'}</output>)}
-      </div>
-      <div className="aircraft-feedback">
-        {plane?<>
-          {planes.length>1&&<label>Aircraft <select id="aircraft-selection" value={plane.slot} onChange={e=>onSelect(Number(e.target.value))}>
-            {planes.map(e=><option key={e.slot} value={e.slot}>{e.slot} · {e.x}, {e.y}</option>)}
-          </select></label>}
-          <span id="aircraft-status" className="sale-accessible-detail">Fuel: {view!.fuel} / 255 · Payload: {view!.payload} / 255{view!.payload?` (${names[aircraftChemical(plane)]??'Unknown chemical'})`:''} · Wear: {Math.floor(plane.condition*100/255)}%</span>
-          <button id="locate-aircraft" onClick={()=>{onLocate(plane.x,plane.y);windows.show(null);}}>Show on map</button>
-          {failures.map(message=><p key={message} role="status">{message}</p>)}
-          {result&&<p id="aircraft-service-result" role="status">{result.ok?result.changed?result.refund?`Payload sold for ${money(result.refund)}. Loading chemical changed.`:`Service completed for ${money(result.price)}.`:'No service was needed.':messages[result.reason]}</p>}
-        </>:<p>Buy a Crop Duster from Buy → Machinery at an available airport.</p>}
-        {snapshot.lastFlightStartResult&&!snapshot.lastFlightStartResult.ok&&<p id="flight-start-error" role="status">{snapshot.lastFlightStartResult.reason==='invalid-viewport'?'The map is too small to start a flight.':snapshot.lastFlightStartResult.reason==='not-parked'?'The aircraft must be parked before takeoff.':'The aircraft or its airport parking is inconsistent.'}</p>}
       </div>
     </section>
   </GameWindow>;

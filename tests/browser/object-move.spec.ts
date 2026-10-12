@@ -13,7 +13,7 @@ import { reveal, expectPaletteAction } from '../support/workspace';
 import { GameSimulation } from '../support/game';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'move.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
-async function point(page:Page,x:number,y:number){await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-20)*16,Math.max(0,p.y-15)*16),{x,y});const r=(await page.locator('#world').boundingBox())!;await page.mouse.click(r.x+x*16+8,r.y+y*16+8);}
+async function point(page:Page,x:number,y:number,button:'left'|'right'='left'){await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-20)*16,Math.max(0,p.y-15)*16),{x,y});const r=(await page.locator('#world').boundingBox())!;await page.mouse.click(r.x+x*16+8,r.y+y*16+8,{button});}
 async function move(page:Page){await page.getByRole('button',{name:'Move object',exact:true}).click();await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');await expect(page.locator('#world')).toHaveCSS('cursor',/move-pick\.png.*8 8, crosshair/);}
 
 test('Move object picks stored machinery directly, cancels without withdrawal, rejects unowned land and queues saved travel',async({page})=>{
@@ -22,7 +22,7 @@ test('Move object picks stored machinery directly, cancels without withdrawal, r
   const g=f.load().withAllCrops(browserCrops);g.dispatch({type:'build',buildingType:67,x:20,y:20});g.dispatch({type:'build',buildingType:67,x:40,y:40});g.dispatch({type:'buy-equipment',equipmentType:4,x:20,y:20});
   await page.goto('/');await load(page,g.save(4));await move(page);await point(page,20,21);
   await expect.poll(()=>warnings.length).toBe(1);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  await page.getByRole('button',{name:'View object',exact:true}).click();await point(page,20,21);await page.locator('#examine-building').click();g.dispatch({type:'toggle-building-interior',x:20,y:21,slot:1});
+  await page.getByRole('button',{name:'View object',exact:true}).click();await point(page,20,21,'right');g.dispatch({type:'toggle-building-interior',x:20,y:21,slot:1});
   await move(page);await point(page,20,21);await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','drop');await expect(page.locator('#world')).toHaveCSS('cursor',/move-drop\.png.*8 8, crosshair/);await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Choose a destination.');
   await expect(page.locator('[data-window=actions]')).toBeHidden();expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await page.keyboard.press('Escape');await expectPaletteAction(page,'View object');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);expect(await save(page)).toEqual(JSON.parse(g.save(4)));

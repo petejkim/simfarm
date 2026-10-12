@@ -75,3 +75,18 @@ This verifies the usable scheduled replacement for the interim immediate orders.
 The interim immediate planting form is now removed. Browser checks enter Schedule by View object on the field, select a crop, and choose the next week. Planning itself leaves cash/market unchanged; weekly execution consumes stored seed or buys seed, rents machinery and produces the source crop pixels. Exact native checkpoint comparisons cover this execution and later chemical application. The market check preserves ordering: weekly quotes are sampled before planting adjusts the current history sample (fixture corn quote150 versus adjusted sample113). This is existing source-backed simulation behavior, not a new market rule.
 
 Immediate harvest UI retirement: browser farming flows now queue Harvest through the original window rather than invoking the provisional immediate command. Waiting for the future week is distinct from waiting for machinery and delivery afterward. Original SCEN0 grapes have crop byte76=36 and an existing week36 harvest code440; attempts to move their harvest correctly fail, then seven grape and six almond fields deliver13 lots by the test observation date. This restriction was already recovered in editor2e11a; removing the native button removes a UI bypass rather than changing the original rule. Generated farms, supplied farms and a farm reloaded during fertilizer work use the same scheduled route. Canonical immediate adapters remain for isolated reconstruction fixtures.
+
+## Interim feedback section removed (2026-10-11)
+
+User request: removed the `schedule-feedback` area below the source frame. That covers:
+- the field chooser select (`#planner-field`) and the "Create a field" fallback;
+- the hovered-week status line and plan-result messages, along with the hover-week state and failure-message table they used.
+
+Fields are chosen by View object + clicking the field on the map (source entry). The window's accessible name ("Field N schedule") identifies the field, and each week button's label ("date: plan") shows edits; rejected edits leave the label unchanged.
+
+Browser helpers:
+- `chooseField` and `expectSelectedField` in `tests/support/workspace.ts`;
+- `selectedFieldSlot` in `field-checkpoint.ts`;
+- `expectWeekPlan` in `schedule-window.ts`.
+
+One native.spec check of the chooser's map centring was dropped with the chooser.

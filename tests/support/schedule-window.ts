@@ -13,15 +13,16 @@ export async function scheduleNextHarvest(page:Page,x:number,y:number,fixedWeek?
   await clickFarmTile(page,x,y);await scheduleMonth(page,Math.floor(week/4));
   await page.locator('[data-plan-action="harvest"]').click();await page.locator(`[data-plan-week="${week}"]`).click();
   if(fixedWeek!==undefined){
-    await expect(page.locator('#plan-result')).toHaveText('This crop has a fixed annual harvest week.');
+    // Fixed harvest week: the chosen week is rejected and keeps its existing plan.
+    await expect(page.locator(`[data-plan-week="${week}"]`)).not.toHaveAttribute('aria-label',/Harvest/);
     await scheduleMonth(page,Math.floor(fixedWeek/4));
     await expect(page.locator(`[data-plan-week="${fixedWeek}"]`)).toHaveAttribute('aria-label',/Harvest/);
     return {week:fixedWeek,daysUntil:(fixedWeek-calendar.month*4-calendar.week)*7-calendar.day};
   }
-  await expect(page.locator('#plan-result')).toContainText('Plan updated');
+  await expectWeekPlan(page,week,/Harvest/);
   await page.getByRole('button',{name:'Clear remaining plan',exact:true}).click();
   await page.locator(`[data-plan-week="${week+1}"]`).click();
-  await expect(page.locator('#plan-result')).toContainText('Plan updated');
+  await expectWeekPlan(page,week+1,/Fallow/);
   return {week,daysUntil:7-calendar.day};
 }
 /** Enter the original field window from the map, then queue a crop for a supplied future week. */
@@ -44,4 +45,9 @@ export async function scheduleWeek(page:Page,week:number){
   await openWindow(page,'schedule');
   if(!await page.locator(`[data-plan-week="${week}"]`).count())await scheduleMonth(page,Math.min(57,Math.floor(week/4)));
   return page.locator(`[data-plan-week="${week}"]`);
+}
+
+/** Each week button is labelled "date: plan", so a plan edit is visible on the week itself. */
+export async function expectWeekPlan(page:Page,week:number,plan:RegExp){
+  await expect(page.locator(`[data-plan-week="${week}"]`)).toHaveAttribute('aria-label',plan);
 }

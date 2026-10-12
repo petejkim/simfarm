@@ -2808,3 +2808,26 @@ The user reported Buy's buttons losing 1px of bevel to caption erasure. An audit
 ## 2026-10-11 — no empty scroll space in Sell/Weather
 
 Screen-reader-only `.sale-accessible-detail` elements had `position:absolute` but no offsets. Each therefore sat at its static position below the window art and extended the body's scrollable area by about 15px: Sell's `#harvest-stock`, and Weather's summary and forecast list. The class is now pinned at `top:0;left:0`. A new window-viewport browser case asserts that every launcher window and Farm Expert has a body with no scroll overflow. 38/38 window specs pass.
+
+## 2026-10-11 — removed interim Aircraft, Schedule and Examine sections
+
+Removed by user request:
+- Aircraft's `aircraft-feedback` (aircraft chooser, Show on map, status sentence, service/failure messages);
+- Schedule's `schedule-feedback` (field chooser, status and plan-result messages);
+- Examine's Open/Close building footer.
+
+Map secondary-click still opens buildings and selects aircraft or fields. About 110 test references migrated:
+- aircraft meters, Funds and fixture fuel levels;
+- `chooseField`/`expectSelectedField`/`selectedFieldSlot`;
+- week labels via `expectWeekPlan`;
+- right-clicks for building interiors.
+
+Full browser suite 279/279 (artifacts/window-sections-browser.log); type checking/build pass.
+
+Remaining interim sections attached to windows (not yet removed; awaiting user decision):
+- Map `overview-feedback`: insufficient-cash note and land result.
+- Bank `bank-feedback`: help paragraph, overdue-installment notice, loan result and finance notices.
+- Sell `sell-feedback`: unsellable reason and sale result.
+- New Game region chooser `setup-footer`: region status, Help disclosure and Cancel. The seed/year fields are user-required.
+
+Native panels that are not window attachments: the in-terrain `flight-controls` panel during aircraft flight, plus the native Settings and Speed windows.

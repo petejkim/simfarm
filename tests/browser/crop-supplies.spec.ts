@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { selectSupply } from '../support/supply-actions';
-import { schedulePlant } from '../support/schedule-window';
+import { schedulePlant, expectWeekPlan } from '../support/schedule-window';
 import { buyBuilding } from '../support/building-actions';
 import { clickFarmTile, sprayField } from '../support/field-actions';
 import { reveal, expectFarmCash } from '../support/workspace';
@@ -87,7 +87,7 @@ test('supply controls buy original stock, plays feedback, preserves checkpoints 
   const sounds=(await played(page)).length;await load(page,g.save(4));
   expect((await played(page)).length).toBe(sounds);
   await schedulePlant(page,20,20,1,4);g.dispatch({type:'edit-field-plan',fieldSlot:1,week:1,action:{kind:'plant',cropSlot:4}});
-  await expect(page.locator('#plan-result')).toContainText('Plan updated');
+  await expectWeekPlan(page,1,/Plant /);
   for(let n=0;n<7;n++){await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}
   expect(g.getSnapshot().scenario.inventory.some(i=>i.active&&i.type===196)).toBe(false);
   for(let n=0;n<10 && g.getSnapshot().scenario.fields[1].state!==4;n++){await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}

@@ -1,16 +1,13 @@
 import { useEffect, useRef } from 'react';
 import type { GameAssets } from '../assets/game-assets';
-import type { GameSnapshot,GameCommand } from '../simulation/game';
+import type { GameSnapshot } from '../simulation/game';
 import { examineObject } from '../simulation/examine-object';
-import { findBuilding } from '../simulation/building-storage';
 import { drawExamine } from '../render/examine';
 import { GameWindow } from './GameWindow';
-export function ExamineWindow({assets,snapshot,tiles,position,onCommand}:{assets:GameAssets;snapshot:GameSnapshot;tiles:CanvasImageSource;
-  position:{x:number;y:number}|null;onCommand:(c:GameCommand)=>void}){
+export function ExamineWindow({assets,snapshot,tiles,position}:{assets:GameAssets;snapshot:GameSnapshot;tiles:CanvasImageSource;
+  position:{x:number;y:number}|null}){
   const canvas=useRef<HTMLCanvasElement>(null),world=snapshot.scenario;
   const view=position?examineObject(world,snapshot.finances,assets.catalog.crops,assets.buyCatalog,assets.examineData,assets.itemText,position.x,position.y):null;
-  const building=position&&findBuilding(world,position.x,position.y);
-  const blocked=Boolean(snapshot.pendingTown||snapshot.townEvent.pending||snapshot.finances.defaultDecision||snapshot.aircraftFlight);
   useEffect(()=>{if(view&&canvas.current)drawExamine(canvas.current.getContext('2d')!,view,assets.examineArtwork,assets.buyCards,tiles,assets.maskedTiles,assets.catalog.palette);},[snapshot,position,tiles,assets]);
   return <GameWindow windowKey="examine" title="Examine">
     {view&&<section className="examine-window" aria-label="Object information" data-kind={view.kind}>
@@ -23,8 +20,5 @@ export function ExamineWindow({assets,snapshot,tiles,position,onCommand}:{assets
       </div>}
       {view.value!==undefined&&<span id="examine-value">${view.value}</span>}
     </section>}
-    {building&&![70,71].includes(building.type)&&<div className="examine-actions">
-      <button id="examine-building" disabled={blocked} onClick={()=>onCommand({type:'toggle-building-interior',...position!,slot:building.slot})}>{building.flags&1?'Close building':'Open building'}</button>
-    </div>}
   </GameWindow>;
 }
