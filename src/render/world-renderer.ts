@@ -1,9 +1,9 @@
 import { invertedTiles } from '../assets/inverted-tiles';
-import { clipPlacementOutline } from './placement-outline';
+import { clipPlacementOutline, type PlacementFootprint } from './placement-outline';
 import { harvestWorkerTile } from './harvest-workers';
 import { maskedTile, terrainTile, worldPosition, worldIndex, WORLD_SIZE, type Scenario } from '../formats/scenario';
 
-export interface MapPreview { x: number; y: number; width: number; height: number; valid: boolean; originalOutline?: boolean }
+export type MapPreview = PlacementFootprint;
 
 /** Native render pass, independent of React and UI state management. */
 export function drawWorld(context: CanvasRenderingContext2D, scenario: Scenario, tiles: CanvasImageSource,
@@ -22,7 +22,7 @@ export function drawWorld(context: CanvasRenderingContext2D, scenario: Scenario,
     }
   };
   for(let i=0;i<scenario.cells.length;i++)paintCell(i,tiles,maskedTiles,townEventTiles);
-  if (preview?.originalOutline) {
+  if (preview) {
     context.save();
     clipPlacementOutline(context,preview);
     const base=invertedTiles(tiles),mask=invertedTiles(maskedTiles),events=townEventTiles?invertedTiles(townEventTiles):undefined;
@@ -31,11 +31,5 @@ export function drawWorld(context: CanvasRenderingContext2D, scenario: Scenario,
       for(let x=Math.max(0,preview.x-1);x<Math.min(WORLD_SIZE,preview.x+preview.width);x++)
         paintCell(worldIndex(x,y),base,mask,events);
     context.restore();
-  } else if (preview) {
-    context.fillStyle = preview.valid ? '#a4e98633' : '#f4898933';
-    context.strokeStyle = preview.valid ? '#b3f898' : '#ff9a9a';
-    context.lineWidth = 2;
-    context.fillRect(preview.x * 16, preview.y * 16, preview.width * 16, preview.height * 16);
-    context.strokeRect(preview.x * 16 + 1, preview.y * 16 + 1, preview.width * 16 - 2, preview.height * 16 - 2);
   }
 }

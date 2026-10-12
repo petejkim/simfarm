@@ -47,11 +47,11 @@ async function png(name: string, raster: Raster) {
 }
 await mkdir(join(output, 'raw/crops'), { recursive: true });
 const [index, data, exe] = await Promise.all([read('MEGADATA.IDX'), read('MEGADATA.EEA'), read('SIMFARM.EXE')]);
-for(const kind of ['pick','drop'] as const)await png(`move-${kind}.png`,readEditCursor(exe,kind));
-for(const kind of ['view','bulldoze','spray','buy'] as const)await png(`edit-${kind}.png`,readEditCursor(exe,kind));
 const entries = readArchive(index, data);
 const assets = new Map(entries.map(e => [e.name, e.bytes]));
 function asset(name: string) { const bytes = assets.get(name); if (!bytes) throw new Error(`Missing ${name}`); return bytes; }
+for(const kind of ['pick','drop'] as const)await png(`move-${kind}.png`,readEditCursor(exe,asset('cursors.til'),kind));
+for(const kind of ['view','bulldoze','spray','buy'] as const)await png(`edit-${kind}.png`,readEditCursor(exe,asset('cursors.til'),kind));
 readExpertDeck(id=>asset(`card${id}.hc`));
 const palette = readPalette(asset('simfarm.pal'));
 await png('about-window.png',readAboutArtwork(asset('about.bmp'),palette));

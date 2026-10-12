@@ -1,9 +1,8 @@
 import type {GameEvent} from '../simulation/events';
 import { useCallback,useState } from 'react';
 import type { GameSimulation,GameSnapshot } from '../simulation/game';
-import { checkEquipmentPickup,checkEquipmentMove,type EquipmentMoveTarget } from '../simulation/manual-equipment-move';
-import { checkSupplyPickup,checkSupplyMove,type SupplyMoveTarget } from '../simulation/manual-supply-move';
-import type { MapPreview } from '../render/world-renderer';
+import { checkEquipmentPickup,type EquipmentMoveTarget } from '../simulation/manual-equipment-move';
+import { checkSupplyPickup,type SupplyMoveTarget } from '../simulation/manual-supply-move';
 
 type Selection={kind:'equipment';target:EquipmentMoveTarget}|{kind:'supply';target:SupplyMoveTarget};
 const reasons:Record<string,string>={
@@ -30,11 +29,6 @@ export function useObjectMove(simulation:GameSimulation|null,snapshot:GameSnapsh
     const supply=checkSupplyPickup(snapshot.scenario,snapshot.finances,x,y);
     return supply.ok?{ok:true as const,selection:{kind:'supply' as const,target:supply}}:supply;
   }
-  function dropQuote(x:number,y:number){
-    if(!snapshot||!selected)return null;
-    return selected.kind==='equipment'?checkEquipmentMove(snapshot.scenario,selected.target,x,y)
-      :checkSupplyMove(snapshot.scenario,snapshot.finances,selected.target,x,y,snapshot.weather.soilMoisture);
-  }
   function click(x:number,y:number){
     if(!active||blocked||!simulation)return;
     if(!selected){
@@ -60,14 +54,7 @@ export function useObjectMove(simulation:GameSimulation|null,snapshot:GameSnapsh
       setMessage(reasons[result.reason]??'This object cannot be moved.');
     }
   }
-  function preview(pointer:{x:number;y:number}|null):MapPreview|undefined{
-    if(!active||!snapshot||!pointer)return;
-    if(selected)return {...pointer,width:selected.kind==='equipment'?selected.target.width:1,height:selected.kind==='equipment'?selected.target.height:1,valid:!blocked&&Boolean(dropQuote(pointer.x,pointer.y)?.ok)};
-    const result=pickup(pointer.x,pointer.y);
-    if(result?.ok){const target=result.selection.target;return {x:target.x,y:target.y,width:result.selection.kind==='equipment'?result.selection.target.width:1,height:result.selection.kind==='equipment'?result.selection.target.height:1,valid:!blocked};}
-    return {...pointer,width:1,height:1,valid:false};
-  }
-  return {active,selected,message,click,preview,
+  return {active,selected,message,click,
     start(){setSelected(null);setMessage('');setActive(true);},
     cancel,
     hint:selected?`${selected.kind==='equipment'?'Move machinery':`Move ${selected.target.kind}`}: click a destination · Escape cancels`:'Move object: click machinery or a supply · Escape cancels',

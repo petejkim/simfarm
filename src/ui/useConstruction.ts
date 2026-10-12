@@ -1,9 +1,6 @@
 import { useCallback,useState } from 'react';
 import type { GameSimulation,GameSnapshot } from '../simulation/game';
-import { checkNetworkPlacement,type NetworkTool } from '../simulation/network-placement';
-import { checkIrrigationPlacement } from '../simulation/irrigation-placement';
-import { checkTreePlacement } from '../simulation/tree-placement';
-import { checkSupplyPurchase } from '../simulation/livestock-purchase';
+import type { NetworkTool } from '../simulation/network-placement';
 import { mapObjectInteraction } from '../simulation/map-interaction';
 
 export type ConstructionTool=NetworkTool|'ditch'|'valve'|'trees'|'hay'|'trough';
@@ -20,14 +17,6 @@ const blocked=(s:GameSnapshot)=>Boolean(s.pendingTown||s.finances.defaultDecisio
 export function useConstruction(simulation:GameSimulation|null,snapshot:GameSnapshot|null){
   const [tool,setTool]=useState<ConstructionTool|null>(null),[message,setMessage]=useState('');
   const cancel=useCallback(()=>{setTool(null);setMessage('');},[]);
-  function quote(x:number,y:number){
-    if(!tool||!snapshot)return null;
-    if(tool==='trees')return checkTreePlacement(snapshot.scenario,snapshot.finances,x,y,snapshot.weather.soilMoisture);
-    if(tool==='hay'||tool==='trough')return checkSupplyPurchase(snapshot.scenario,snapshot.finances,tool==='hay'?300:299,x,y,snapshot.weather.soilMoisture);
-    return tool==='ditch'||tool==='valve'
-      ?checkIrrigationPlacement(snapshot.scenario,snapshot.finances,tool,x,y,snapshot.weather.soilMoisture)
-      :checkNetworkPlacement(snapshot.scenario,snapshot.finances,tool,x,y,snapshot.weather.soilMoisture);
-  }
   function paint(x:number,y:number,initial:boolean){
     if(!tool||!simulation)return false;
     const current=simulation.getSnapshot();if(blocked(current))return false;
@@ -50,7 +39,7 @@ export function useConstruction(simulation:GameSimulation|null,snapshot:GameSnap
     if(result)setMessage(result.ok?`${labels[tool]} placed for $${result.price+result.clearingCost}.`:reasons[result.reason]??'Cannot build here.');
     return true;
   }
-  return {tool,message,cancel,quote,paint,enabled:Boolean(tool&&snapshot&&!blocked(snapshot)),
+  return {tool,message,cancel,paint,enabled:Boolean(tool&&snapshot&&!blocked(snapshot)),
     start(next:ConstructionTool){setTool(next);setMessage('');},
     hint:tool?`${labels[tool]}: click or drag to build · Escape stops construction`:'',
   };

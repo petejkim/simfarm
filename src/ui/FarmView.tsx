@@ -29,7 +29,6 @@ import { GameWindow, useWindows } from './GameWindow';
 import { EditPalette, type EditTool } from './EditPalette';
 import type { GameWindow as WindowCommand } from './ControlBar';
 import { NewFarmControls } from './NewFarmControls';
-import { checkCropSupplyPurchase } from '../simulation/crop-supply-purchase';
 import { FlightControls } from './FlightControls';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
@@ -42,16 +41,12 @@ import { GameSimulation, type GameCommand } from '../simulation/game';
 import { TimeControls } from './TimeControls';
 import { SaveControls, type LoadedFarm } from './SaveControls';
 import { SellWindow } from './SellWindow';
-import { checkFieldPlacement } from '../simulation/field-placement';
 import { LoanPanel } from './LoanPanel';
-import { checkEquipmentPurchase } from '../simulation/equipment-purchase';
 import { AircraftWindow } from './AircraftWindow';
 import { aircraftMapEntry } from '../simulation/aircraft-view';
 import { TownChoicePanel } from './TownChoicePanel';
 import type { GameEvent } from '../simulation/events';
-import { checkBuildingPlacement } from '../simulation/building-placement';
 import { DISASTER_MENU_KINDS, disasterMenuChecks } from '../simulation/disaster-menu';
-import { checkLivestockPurchase } from '../simulation/livestock-purchase';
 
 const subscribeEmpty = () => () => {};
 const emptySnapshot = () => null;
@@ -194,26 +189,16 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
   const field = data?.scenario.fields.find(f => f.slot === fieldSlot && f.active);
   const cell = selection !== null ? data?.scenario.cells[selection] : undefined;
   const position = buyPlacement || fieldMapTool || objectMove.active || construction.tool || bulldoze.active ? toolPointer : selection !== null ? worldPosition(selection) : null;
-  const hoveredField=position?data?.scenario.fields.find(f=>f.contains(position.x,position.y)):undefined;
-  const constructionQuote=position?construction.quote(position.x,position.y):null;
-  const preview = bulldoze.active ? bulldoze.preview(position) : construction.tool&&position ? {...position,width:1,height:1,valid:construction.enabled&&Boolean(constructionQuote?.ok)} : objectMove.active ? objectMove.preview(position) : fieldMapTool && position && data ? fieldMapTool.kind==='plant'
-    ? {...position,width:8,height:8,valid:checkFieldPlacement(data.scenario,position.x,position.y).ok}
-    : {...position,width:1,height:1,valid:Boolean(hoveredField)}
-    : buyPlacement && buyPlacement.type < 8 && position && data && snapshot ? {...position,
-      width:data.scenario.equipmentDefinitions[buyPlacement.type].width,height:data.scenario.equipmentDefinitions[buyPlacement.type].height,
-      valid:checkEquipmentPurchase(data.scenario,buyPlacement.type,position.x,position.y,snapshot.weather.soilMoisture).ok}
-    : buyPlacement && buyPlacement.type >= 64 && buyPlacement.type <= 72 && position && data && snapshot ? { ...position,
-      width:data.scenario.buildingDefinitions[buyPlacement.type-64].width,height:data.scenario.buildingDefinitions[buyPlacement.type-64].height,
-      valid:checkBuildingPlacement(data.scenario,buyPlacement.type,position.x,position.y,snapshot.weather.soilMoisture).ok }
-    : buyPlacement && buyPlacement.type >= 160 && buyPlacement.type <= 163 && position && data && snapshot ? {...position,width:1,height:1,
-      valid:checkLivestockPurchase(data.scenario,snapshot.finances,buyPlacement.type,position.x,position.y,snapshot.weather.soilMoisture).ok}
-    : buyPlacement && buyPlacement.type >= 192 && position && data && snapshot ? {
-    x: position.x,
-    y: position.y,
-    width: 1,
-    height: 1,
-    valid: checkCropSupplyPurchase(data.scenario,buyPlacement.type,position.x,position.y,snapshot.weather.soilMoisture).ok,
-  } : toolPointer&&!fieldMenu&&!editHelpOpen ? {...toolPointer,width:1,height:1,valid:true} : undefined;
+  // Source mode11 uses only hand cursors; other tools draw their footprint
+  // regardless of placement validity. Canonical commands validate actual clicks.
+  const preview = objectMove.active ? undefined : bulldoze.active ? bulldoze.preview(position)
+    : !toolPointer||fieldMenu||editHelpOpen ? undefined
+    : fieldMapTool?.kind==='plant' ? {...toolPointer,width:8,height:8}
+    : buyPlacement&&data&&buyPlacement.type<8 ? {...toolPointer,
+      width:data.scenario.equipmentDefinitions[buyPlacement.type].width,height:data.scenario.equipmentDefinitions[buyPlacement.type].height}
+    : buyPlacement&&data&&buyPlacement.type>=64&&buyPlacement.type<=72 ? {...toolPointer,
+      width:data.scenario.buildingDefinitions[buyPlacement.type-64].width,height:data.scenario.buildingDefinitions[buyPlacement.type-64].height}
+    : {...toolPointer,width:1,height:1};
   function purchaseFeedback(result: { ok: boolean; reason?: string } | null, name: string) {
     if (!result) return;
     const reasons: Record<string,string> = {
@@ -324,6 +309,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
   }
   const mapCursor=snapshot?.aircraftFlight?null:bulldoze.active||construction.tool?'bulldoze':objectMove.active?(objectMove.selected?'drop':'pick'):
     fieldMapTool?(fieldMapTool.kind==='plant'?'bulldoze':'spray'):buyPlacement?'buy':'view';
+  const cursorHotspot=mapCursor==='pick'||mapCursor==='drop'?8:0;
   return <>
     {simulation && <SaveControls debug={{
       checked:[],
@@ -405,10 +391,10 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
         onChoose={tool=>{simulation?.dispatch({type:'edit-status',code:tool.kind==='plant'?17:SPRAY_STATUSES[tool.kind]});setFieldMenu(null);setFieldMapTool(tool);setSelection(null);viewportRef.current?.focus({preventScroll:true});}}/>}
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
-        <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") 0 0, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !editHelpOpen && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
+        <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") ${cursorHotspot} ${cursorHotspot}, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !editHelpOpen && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={tilesForWeather(data.tiles,snapshot?.weather)} townEventTiles={tilesForWeather(assets.townEventTiles[snapshot?.townEvent.artworkMode ?? 0],snapshot?.weather)} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;setInteractionMessage('');const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
-          preview={preview&&{...preview,originalOutline:!objectMove.active}} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {
+          preview={preview} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {
             setInteractionMessage('');
             if(construction.tool||bulldoze.active)return;
             if(enterMapWindow(index))return;

@@ -1,6 +1,6 @@
 # Original Edit cursors
 
-The original cursor raster renderer is at file8062..8145 (0416:1d02). The shared decoder reads three header words32,2,16, followed by32 write-mask bytes and32 monochrome color bytes. For each visible mask bit, color0 paints black and1 paints white; zero mask preserves the background. Native transparent RGBA replaces the VGA read/modify/write. All six cursor records decode to16×16 CSS images at1×, independent of map zoom, with top-left hotspot0,0 established by the renderer's unadjusted171b/171d coordinates. No executable instructions run in the browser.
+The original cursor raster renderer is at file8062..8145 (0416:1d02). The shared decoder validates the initialized header words32,2,16, then reproduces startup replacement of32 write-mask bytes and32 monochrome color bytes from cursors.til where applicable. For each visible mask bit, color0 paints black and1 paints white; zero mask preserves the background. Native transparent RGBA replaces the VGA read/modify/write. All six cursor records decode to16×16 CSS images at1×, independent of map zoom, with top-left hotspot0,0 for View/Bulldoze/construction/Plant/Spray/Buy and centered8,8 for Move. The renderer uses raw171b/171d, while Move's event path adds1726/1728=8; see manual-movement.md. No executable instructions run in the browser.
 
 Source: immutable SIMFARM.EXE SHA256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`. Addresses below are hexadecimal file offsets; initialized DS6190 begins846f0.
 
@@ -8,10 +8,10 @@ Source: immutable SIMFARM.EXE SHA256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af1
 | --- | --- | --- |
 | Bulldoze | action1, table22352→215ea;21649 loads18d2 and2164c loads6190; stores window+58/+5a and current pointer1888/188a | DS18d2/file85fc2, original arrow |
 | View object | action2, table22354→21688;21692 sets Edit mode2;21698/2169e assign6190:19a4 | DS19a4/file86094, magnifying glass |
-| Move pickup | action26→21726;2173e assigns6190:1a2e | DS1a2e/file8611e, FROM |
-| Move destination | successful pickup137e5 assigns6190:19ea | DS19ea/file860da, TO |
+| Move pickup | action26→21726;2173e assigns6190:1a2e | DS1a2e/file8611e, hand (resource offset0) |
+| Move destination | successful pickup137e5 assigns6190:19ea | DS19ea/file860da, pinching hand (resource offset100h) |
 
-The earlier Move reconstruction's renderer and transition evidence remains in manual-movement.md. Decoder/source tests pin selectors and compare every composited pixel over all16 original background colors. Header corruption and every truncated70-byte read span reject. The Move records' final color word overlaps adjacent initialized data, but its empty mask row hides it; this remains a bounded observation, not an asserted original defect. View/Bulldoze use the same verified decoder.
+The earlier Move reconstruction's renderer and transition evidence remains in manual-movement.md. Decoder/source tests pin selectors and compare every composited pixel over all16 original background colors. Header corruption and every truncated70-byte read span reject. The earlier empty-row argument applied only to placeholders; the startup loading correction below supersedes it. View/Bulldoze use the same verified decoder.
 
 Additional range SHA256 (end exclusive):
 
@@ -40,7 +40,7 @@ All nine exposed construction actions selectDS18d2, the same arrow as Bulldoze. 
 
 Each loadsAX=18d2/CX=6190 and writes the window cursor at+58/+5a. Dirt road reloadsES:BX before those stores. React now reuses the existing arrow asset for every construction tool; placement rules, prices and drag behavior are unchanged.
 
-Spray's four selection branches at383fb,38449,3848f,384d7 assign6190:188c. That record is byte-identical toDS18d2 over the70 bytes read by the renderer, despite the separate source identity. The importer preserves it as edit-spray.png, using the same decoder. Persistent spraying retains this arrow until cancellation/another control, per the user's existing adaptation. Restoring inspection selects the magnifier. All five source record decodes retain boundary/header/pixel tests.
+Spray's four selection branches at383fb,38449,3848f,384d7 assign6190:188c. Its initialized placeholder is byte-identical toDS18d2, but startup49783..497bf replaces it with the spray-can resource. The importer preserves it as edit-spray.png, using the same decoder. Persistent spraying retains this spray can until cancellation/another control, per the user's existing adaptation. Restoring inspection selects the magnifier. All five source record decodes retain boundary/header/pixel tests.
 
 Plant3834a..3836c sets pixel dimensions0x80×0x80 and tile dimensions8×8; it does **not** select an8-pixel bitmap. The current8×8-tile placement preview has the right footprint. The follow-up trace below establishes cursor inheritance and original border drawing; the border is now implemented for Plant, Buy, construction and Bulldoze.
 
@@ -51,11 +51,11 @@ Range SHA256 (end exclusive):
 - 85f7c..85fc2, Spray pointer: `280d1918fc7beca2ba26a651a523e1e884d8e62fe2f46d31ff2e788ed3bfa6e5`
 
 
-## Plant inheritance and Buy hourglass
+## Plant inheritance and Buy cursor
 
 Palette action22's table entry2237c resolves to21eec. At21f23..21f3f the handler assigns6190:18d2 to window+58/+5a and current1888/188a, then sets mode1 at21f41. Choosing a crop through38310..38397 changes mode to4 and installs the128×128pixel/8×8tile footprint, definition and tool, without replacing that cursor pointer. Plant therefore retains the arrow; native now selects the existing original arrow until a successful field command or cancellation returns to View.
 
-Non-aircraft BUY47cc4..47d08 reads definition bytes8/9 into tile dimensions and shifts them by4 into pixel dimensions. The existing-window branch47d55 and newly-created-window branch47e3a both load6190:1aba, store window+58/+5a at47d60/47e49 and current1888/188a at47d6c/47e55, then set Edit mode9 at47d7e/47e67. DS1aba/file861aa is a16×16 monochrome **hourglass**, not the placement object's sprite. It is now imported as edit-buy.png and remains selected across successful/rejected repeated purchases; cancellation restores View. Aircraft's separate47c08 branch is excluded. Boundary and all-background pixel tests cover the sixth record.
+Non-aircraft BUY47cc4..47d08 reads definition bytes8/9 into tile dimensions and shifts them by4 into pixel dimensions. The existing-window branch47d55 and newly-created-window branch47e3a both load6190:1aba, store window+58/+5a at47d60/47e49 and current1888/188a at47d6c/47e55, then set Edit mode9 at47d7e/47e67. DS1aba/file861aa initially contains an hourglass placeholder; startup49727..49760 replaces it with the16×16 dollar-sign resource. It is now imported as edit-buy.png and remains selected across successful/rejected repeated purchases; cancellation restores View. Aircraft's separate47c08 branch is excluded. Boundary and all-background pixel tests cover the sixth record.
 
 Range SHA256 (end exclusive):
 
@@ -80,7 +80,7 @@ Range SHA256 (end exclusive):
 - 68ff..69f1: `16a19c1b3270968f9d277187386cf6297d88155d70925f1b9a38b59ea21ae8a3`
 
 
-The interim persistent yellow selected-field/cell highlights have been removed from the world renderer. Selection remains in React for Schedule and other commands; the source map outline follows the pointer and erases on exit. Validity still controls canonical commands and readable rejection feedback; it no longer invents a red/green fill for these source modes. Move retains its existing provisional footprint presentation pending its distinct input/selection audit. View and Spray hover ownership is covered below. Browser map-edge clipping and zoom remain native adaptations. Current masked atlas artwork retains its existing normal palette independently of weather-colored terrain; the inverse companion follows that same palette. This increment does not claim restoration of the original global VGA palette on every UI/object/sprite. Review that remaining palette gap separately.
+The interim persistent yellow selected-field/cell highlights have been removed from the world renderer. Selection remains in React for Schedule and other commands; the source map outline follows the pointer and erases on exit. Validity still controls canonical commands and readable rejection feedback; it no longer invents a red/green fill for these source modes. Move mode11 is excluded from the rectangle path and now uses only its centered hand/pinching-hand cursors; its provisional colored footprint has been removed (manual-movement.md). View and Spray hover ownership is covered below. Browser map-edge clipping and zoom remain native adaptations. Current masked atlas artwork retains its existing normal palette independently of weather-colored terrain; the inverse companion follows that same palette. This increment does not claim restoration of the original global VGA palette on every UI/object/sprite. Review that remaining palette gap separately.
 
 Verification compares browser canvas pixels against independent four-bit reads of supplied terrain/masked/recreation data for normal/rain/frost palettes, both border positions, untouched interiors, overlapping corner strokes, rejected placement, off-map footprints, cancellation and reload. Existing all24 Plant, repeated Buy, direct construction/Bulldoze and worker-animation flows retain command/save behavior. Source routine hashes and primitive calls are pinned in placement-outline.test.ts. Companion atlases are weakly owned presentation assets, reclaimed with their farm artwork; no new generated files or save fields are introduced.
 
@@ -100,3 +100,24 @@ Additional range SHA256 (end exclusive):
 - 21688..21726: `54036ee66febc90a4d36bccb94dc3c4dc74b1ae173ae0195494ce34629308bc8`
 - 3821c..3826d: `c40ea427fbf6aa1bafdaea4828964deba28eded676c10e270960302a9eadc5d7`
 - 383ce..384f1: `7031693e850fe4f45ba8866c7d671733ceefbd664084985fe9c50f3526de7765`
+
+
+## Startup resource correction (2026-10-11)
+
+The user identified the Move artwork mismatch. Direct inspection confirms FROM/TO in the executable, but those are **initialized placeholders**, not the cursors used after successful startup. Loader495ba..497c1 reads `cursors.til` (five filename strings atDSb817/b823/b82f/b83b/b847). Archive open1f788 seeks to the named resource; read1f892 copies from the shared file. Relative seek1f930 pushes origin1; absolute resource seek1f900 adds the archive entry base. Each mask/color read copies32bytes and relative seek skips96bytes, selecting the first plane of consecutive128-byte tiles. Confidence high from these direct calls and visually inspected decoded artwork.
+
+| Runtime pointer | Resource mask/color offsets (hex) | Artwork |
+| --- | --- | --- |
+|1a2e (Move pickup)|000/080|Hand|
+|19ea (Move destination)|100/180|Pinching hand|
+|19a4 (View)|200/280|Magnifier|
+|195e (not currently exposed)|300/380|Scissors|
+|1aba (Buy)|400/480|Dollar sign|
+|188c (Spray)|500/580|Spray can|
+|18d2 (Bulldoze, construction, Plant)|No replacement in this loader|Executable arrow|
+
+Move copies targetDS1a34/1a54 and19f0/1a10; View19aa/19ca; Buy1ac0/1ae0; Spray1892/18b2. Import reconstructs these planes without modifying the executable or sharing overlapping mutable buffers. Resource length is1536bytes; every truncated resource and extra data reject. Existing pointer selectors still apply. The executable-record hashes above identify placeholders only; they do not identify runtime artwork. Earlier progress entries describing FROM/TO, Spray arrow and Buy hourglass are superseded by this correction.
+
+Move's70-byte spans overlap the next initialized header by2bytes. Startup writes those color bytes too. The raster routine loads but immediately replaces all three header words with constants, so header validation applies to the immutable executable, not a hypothetical mutated runtime record. This bounded static observation establishes no visible original defect or vulnerability; native decoding keeps planes separate. Revisit only if another consumer depends on mutated headers.
+
+SHA256: resource `84e9dbb9a5453ccea46f4ffb89a47751fee3a5322978090dd31d5fd8871efbc1`; loader495ba..497c2 `6b0cc8067311002010e1d346a67712dd89566829094e40aea9e6df5dba59610f`; seek helpers1f900..1f951 `8e136f35b9c063915fecdae5a9bce4f35260ba3a0ac117d7440aa224d3761385` (end exclusive).

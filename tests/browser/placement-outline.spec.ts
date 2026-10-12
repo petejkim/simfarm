@@ -129,3 +129,28 @@ test('View, Spray and Bulldoze follow one tile over whole fields and erase on po
   await page.screenshot({path:'artifacts/browser-view-outline.png'});
   expect(await save(page)).toEqual(JSON.parse(text));
 });
+
+test('Move shows only centered hand cursors without altering terrain on hover, pickup or rejected drop',async({page})=>{
+  await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const f=shopFixture();f.state.paused=true;f.state.scenario.farm.autoScroll=false;
+  Object.assign(f.state.weather,{current:0,temperature:70});
+  f.state.scenario.cells[worldIndex(14,20)].overlay=0;
+  const game=f.load().withAllCrops(browserCrops);game.dispatch({type:'buy-equipment',equipmentType:0,x:10,y:20});
+  expect(game.getSnapshot().lastEquipmentPurchaseResult?.ok).toBe(true);
+  const text=game.save(4),world=game.getSnapshot().scenario,region={x:9*16,y:19*16,width:128,height:48};
+  await load(page,text);await page.getByRole('button',{name:'Move object',exact:true}).click();
+  for(const [x,y] of [[13,20],[10,20]]){await hover(page,x,y);expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal'));}
+  await expect(page.locator('#world')).toHaveCSS('cursor',/move-pick\.png.*8 8, crosshair/);
+  await page.mouse.down();await page.mouse.up();
+  await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','drop');
+  await expect(page.locator('#world')).toHaveCSS('cursor',/move-drop\.png.*8 8, crosshair/);
+  expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal'));
+  await hover(page,14,20);await page.mouse.down();await page.mouse.up();
+  await expect(page.locator('#object-move-result')).toHaveText('Choose a destination on your land.');
+  await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','drop');
+  expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal'));
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
+  expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal',{x:14,y:20,width:1,height:1}));
+  expect(await save(page)).toEqual(JSON.parse(text));
+});

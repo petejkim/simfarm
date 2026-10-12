@@ -453,7 +453,7 @@ User resumed the goal, then requested music100% / effects75%; applied these gain
 
 ## 2026-10-11 — View/Bulldoze cursor restoration
 
-Restored source View magnifier and Bulldoze arrow alongside Move FROM/TO; other source cursor modes remain incomplete. All affected map actions retain canonical commands/checkpoints. Browser validation must start a server from this checkout on its own port; port5173 can belong to a different checkout and is not proof of current code. Make that isolation the default test configuration, then continue original interaction coverage.
+Restored source View magnifier and Bulldoze arrow alongside Move hand/pinching-hand; other source cursor modes remain incomplete. All affected map actions retain canonical commands/checkpoints. Browser validation must start a server from this checkout on its own port; port5173 can belong to a different checkout and is not proof of current code. Make that isolation the default test configuration, then continue original interaction coverage.
 
 ## 2026-10-11 — construction/Spray cursor coverage
 
@@ -467,3 +467,8 @@ Placement outlines now reconstruct the eight XOR15 source lines for Plant/Buy/co
 
 
 View/Spray footprint audit is now implemented: View explicitly sets16×16pixels, and shared popup selection reads Spray node width/height01,01. Both use a transient one-tile source XOR border; removed persistent yellow map selections. Bulldoze also retains a one-tile hover footprint even over a larger removal target. Selection/commands, whole-field treatment, persistent Spray and confirmations are unchanged. Next audit Move/aircraft input and the separate global weather-palette gap; those remain explicit preservation work, not mobile/enhancement tasks.
+
+
+Move hover audit is complete for the represented pickup/drop flow: mode11 skips rectangle drawing and retains only hand/pinching-hand cursor feedback. Removed the last red/green footprint renderer and its unused hover-only validity calculations. Corrected Move CSS hotspot to8,8 from the event-coordinate offsets1726/1728; prior0,0 inference only traced raster placement. Commands and saved movement remain canonical. Next audit aircraft input/cursor, then global weather palette application to masked/UI/sprite artwork. Overall source-backed gameplay coverage is still incomplete.
+
+User correction exposed missing startup495ba..497c1 resource loading. Restore Move hand/pinching hand and resource View/Buy/Spray artwork before further cursor work; initialized executable pixel labels are superseded by edit-cursors.md. Boundary/source/pixel checks must include cursors.til, not just executable records.

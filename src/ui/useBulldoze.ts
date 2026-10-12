@@ -36,7 +36,7 @@ export function useBulldoze(simulation:GameSimulation|null,snapshot:GameSnapshot
     preview(position:{x:number;y:number}|null){
       // Source2161d..21646 fixes the hover footprint at one tile; the
       // clicked object's full extent belongs to removal/confirmation only.
-      return position&&!pending&&snapshot&&!blocked(snapshot)?{...position,width:1,height:1,valid:true}:undefined;
+      return position&&!pending&&snapshot&&!blocked(snapshot)?{...position,width:1,height:1}:undefined;
     },
   };
 }
