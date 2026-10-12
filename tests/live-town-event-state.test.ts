@@ -20,7 +20,7 @@ test('all original farms expose and checkpoint their event bytes with detached s
     const { raw, game, crops } = fixture(id), expected = { ...coldTownEvent(), ...readTownEvent(raw) };
     assert.deepEqual(game.getSnapshot().townEvent, expected);
     const text = game.save(id), saved = JSON.parse(text);
-    assert.equal(saved.version, 27); assert.deepEqual(saved.runtime.townEvent, expected);
+    assert.equal(saved.version, 28); assert.deepEqual(saved.runtime.townEvent, expected);
     const copy = GameSimulation.load(text, crops).simulation;
     copy.getSnapshot().townEvent.rodeoFrame = 3;
     assert.deepEqual(JSON.parse(copy.save(id)), JSON.parse(text));

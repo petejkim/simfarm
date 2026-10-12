@@ -442,3 +442,7 @@ Use libadlmidi-js light/bank39 (AIL/SimFarm) for converted `.mid` playback, supe
 ## 2026-10-11 — compressed checkpoints
 
 User requested browser Compression Streams API gzip downloads while the broader reconstruction goal is paused. Keep checkpoint semantics and legacy JSON/SSM loading; change only file transport. Follow with the separately requested Debug menu for non-disaster events. Do not resume the general reconstruction audit without a resume request.
+
+## 2026-10-11 — native Debug event controls
+
+Completed the separately requested Debug menu with rodeo, fair/carnival and event-week triggers, leaving disasters in their existing menu. Reuse recovered rules/dialogs/music while bypassing only the natural event date and Messages option. Version28 preserves the separate same-date debug continuation so a saved debug dialog cannot run weekly farming updates on acknowledgement. General reconstruction remains paused; no next background task is started.

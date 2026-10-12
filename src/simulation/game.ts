@@ -183,6 +183,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'resolve-default'; choice: 'restart' | 'exit' }
   | { type: 'choose-town'; choice: TownChoice }
   | { type: 'resolve-town-event'; accept: boolean }
+  | { type: 'debug-town-event'; action: 'rodeo' | 'fair' | 'advance-week' }
   | { type: 'edit-field-plan'; fieldSlot: number; week: number; action: FieldPlanEdit }
   | { type: 'set-speed'; speed: number }
   | { type: 'start-disaster'; kind: MovingDisasterKind | WaterDisasterKind | StationaryDisasterKind | 'wind' }
@@ -487,6 +488,7 @@ export class GameSimulation {
         this.townEvent, this.finances.annual, command.accept));
       this.townEvent.continuation = null;
       this.paused = !continuation.resumeRunning; this.elapsed = 0;
+      if(continuation.phase==='debug'){this.publish();return;}
       const next = advanceCalendarDay(continuation.before);
       if (continuation.phase === 'weekly-water') this.finishWeeklyWater(continuation.before, next);
       else this.finishWeeklyRollover(continuation.before, next);
@@ -520,6 +522,26 @@ export class GameSimulation {
     }
     if (this.finances.defaultDecision) return; // Terminal choice/end state freezes every gameplay command.
     if (this.aircraftFlight && !['flight-control', 'step-flight', 'set-paused', 'set-speed'].includes(command.type)) return;
+    if(command.type==='debug-town-event'){
+      if(!['rodeo','fair','advance-week'].includes(command.action))throw new Error('Invalid debug event');
+      if(!this.finances.town.recreationCount)return;
+      if(command.action==='advance-week'){
+        if(!this.townEvent.mode||!this.townEvent.weeksRemaining)return;
+        this.applyTownEventEffects(advanceTownEventWeek(this.scenario,this.finances.town,this.townEvent,this.random));
+      }else{
+        if(this.townEvent.mode||this.townEvent.weeksRemaining)return;
+        if(command.action==='rodeo'&&this.scenario.farm.cash<1000)return;
+        // Explicit debug trigger bypasses calendar/Messages only. Reuse original
+        // event rules, artwork, fees, outcomes and random draws; do not time-warp.
+        this.applyTownEventEffects(beginTownCalendarEvent(this.scenario,this.finances.town,this.townEvent,
+          command.action==='rodeo'?5:8,4,true,this.random));
+      }
+      if(this.townEvent.pending){
+        this.townEvent.continuation={phase:'debug',before:{...this.scenario.farm.calendar},resumeRunning:!this.paused};
+        this.paused=true;this.elapsed=0;
+      }
+      this.publish();return;
+    }
     if (command.type === 'start-flight') {
       const result = beginFlight(this.scenario, this.finances, command.slot, command.columns, command.rows,
         this.weather.soilMoisture, this.paused);

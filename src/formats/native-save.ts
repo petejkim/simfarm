@@ -179,9 +179,14 @@ function decodeWaterDisasters(value: unknown): WaterDisasterState {
 function validateTownEventContinuation(state: SimulationState): void {
   const { pending, continuation: c } = encodeTownEventCheckpoint(state.townEvent);
   if (!pending && !c) return;
-  if (!pending || !c || !state.paused || state.elapsed !== 0 || state.dayTicks !== 0 ||
+  if (!pending || !c || !state.paused || state.elapsed !== 0 || (c.phase !== 'debug' && state.dayTicks !== 0) ||
     state.pendingTown || state.finances.defaultDecision || state.aircraftFlight || !state.finances.town.recreationCount)
     fail('town event continuation');
+  if(c.phase==='debug'){
+    const current=state.scenario.farm.calendar;
+    if(Object.keys(c.before).some(key=>c.before[key as keyof typeof current]!==current[key as keyof typeof current]))fail('debug event continuation date');
+    return;
+  }
   const isResult = pending.kind === 'fair-result' || pending.kind === 'rodeo-result';
   if (c.phase !== (isResult ? 'weekly-water' : 'weekly-rollover')) fail('town event continuation phase');
   const next = advanceCalendarDay(c.before).calendar, current = state.scenario.farm.calendar;
@@ -199,7 +204,7 @@ export function writeNativeSave(state: SimulationState, scenarioId: number | nul
   validateTownEventContinuation(state);
   if (state.townEvent.mode) validateTownEventMap(state.scenario, state.finances.town, state.townEvent);
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 27, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 28, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, townEvent: encodeTownEventCheckpoint(state.townEvent), setup: { ...state.setup, sourceArchive: state.setup.sourceArchive ? hex(state.setup.sourceArchive) : null }, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -209,7 +214,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28].includes(save.version)) fail('unsupported format or version');
   const s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const scenarioId = s.origin === 'generated' || (save.version >= 18 && save.scenarioId === null) ? null : number(save.scenarioId, 0, 7, 'scenario ID');
   if (s.origin === 'generated' && save.scenarioId !== null) fail('generated scenario ID');

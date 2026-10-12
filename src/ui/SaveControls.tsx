@@ -8,8 +8,8 @@ import { ControlBar, type GameWindow as WindowCommand } from './ControlBar';
 
 export interface LoadedFarm { scenarioId: number | null; simulation: GameSimulation; tiles: HTMLImageElement }
 
-export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, onLoad, onNewGame, onWindow, options, disasters }: {
-  options: MenuChoices; disasters: MenuChoices;
+export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, onLoad, onNewGame, onWindow, options, disasters, debug }: {
+  options: MenuChoices; disasters: MenuChoices; debug: MenuChoices;
   simulation: GameSimulation; scenarioId: number | null; assets: GameAssets; tiles: CanvasImageSource | null; loaded: boolean;
   onLoad: (farm: LoadedFarm) => void;
   onNewGame: () => void; onWindow: (window: WindowCommand, source: 'menu' | 'toolbar') => void;
@@ -67,7 +67,7 @@ export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, on
   }
   return <div className="farm-file-controls">
     <div className="original-controls">
-      <FileMenu about={assets.about} options={options} disasters={disasters} data={assets.mainMenus} palette={assets.catalog.palette} busy={busy||saving} filename={filename} error={message.startsWith('Could not save') ? message : null} onSave={save}
+      <FileMenu debug={debug} about={assets.about} options={options} disasters={disasters} data={assets.mainMenus} palette={assets.catalog.palette} busy={busy||saving} filename={filename} error={message.startsWith('Could not save') ? message : null} onSave={save}
         onLoad={() => input.current?.click()} onNewGame={onNewGame} onWindow={window=>onWindow(window,'menu')}
         onQuit={() => { simulation.dispatch({ type: 'set-paused', paused: true }); setMessage('Farm paused. Save before closing this tab.'); }} />
       <ControlBar tiles={tiles} artwork={assets.controlBar} menus={assets.mainMenus} snapshot={simulation.getSnapshot()} onWindow={window=>onWindow(window,'toolbar')} />

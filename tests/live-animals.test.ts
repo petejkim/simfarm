@@ -53,7 +53,7 @@ test('odd-day needs use the prior signed display temperature before daily weathe
 });
 
 test('v10 strictly persists overlapping herd bytes and both ticks; versions1–9 migrate once to cold frame state', () => {
-  const f = livestockFixture(), game = f.load(), saved = JSON.parse(game.save(4)); assert.equal(saved.version, 27);
+  const f = livestockFixture(), game = f.load(), saved = JSON.parse(game.save(4)); assert.equal(saved.version, 28);
   for (let version = 1; version <= 9; version++) {
     const old = structuredClone(saved); old.version = version; delete old.runtime.animalFrame;
     const loaded = GameSimulation.load(JSON.stringify(old), f.crops).simulation;

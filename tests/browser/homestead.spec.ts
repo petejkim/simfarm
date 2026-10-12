@@ -73,7 +73,7 @@ test('annual homestead updates repaint original tiles, persist once, and play or
   await page.screenshot({ path: 'artifacts/browser-homestead.png', fullPage: true });
   const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = 'artifacts/browser-homestead.simfarm.json'; await (await download).saveAs(path);
-  const saved = JSON.parse(readSaveText(path)); expect(saved.version).toBe(27);
+  const saved = JSON.parse(readSaveText(path)); expect(saved.version).toBe(28);
   expect(saved.runtime.finances.homestead).toEqual({ x: 56, y: 48, rank: 5 });
   const world = Buffer.from(saved.scenario.world, 'hex');
   expect(world.readUInt16LE(((59 * 96) + 51) * 5)).toBe(524);

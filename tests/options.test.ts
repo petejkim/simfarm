@@ -54,7 +54,7 @@ test('six canonical options save/load exactly without advancing time, changing R
 test('v25 validates preferences and migrates v23/v24 originals and generated farms with known source defaults',()=>{
   for(const expanded of [false,true]){
     const base=make(),game=expanded?base.withAllCrops(browserCrops):base;
-    const save=JSON.parse(game.save(1));expect(save.version).toBe(27);
+    const save=JSON.parse(game.save(1));expect(save.version).toBe(28);
     for(const key of ['autoScroll','autoGoto','messages'])for(const value of [undefined,0,1,null,'true']){
       const bad=structuredClone(save);bad.scenario.farm[key]=value;
       expect(()=>GameSimulation.load(JSON.stringify(bad),browserCrops)).toThrow(key);

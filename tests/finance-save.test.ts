@@ -43,7 +43,7 @@ test('financial cold import pins original runtime initializers, sequential town 
 test('all original farms save and restore financial state independently of UI snapshots', () => {
   for (let id = 0; id < 8; id++) {
     const { game, crops } = setup(id), text = game.save(id), saved = JSON.parse(text);
-    assert.equal(saved.version, 27);
+    assert.equal(saved.version, 28);
     assert.deepEqual(saved.runtime.finances, encodeFinancialState(readFinancialState(source(`SCEN${id}.SSM`))));
     const view = game.getSnapshot().finances;
     view.accounts.assets.animalDefinitions[0].bytes.fill(255); view.accounts.otherDefinitions[0].bytes.fill(0);
@@ -92,7 +92,7 @@ test('v7 statistics persist raw history and reject malformed members; v1–6 ini
     if (version < 4 && old.runtime.finances) delete old.runtime.finances.defaultDecision;
     const loaded = GameSimulation.load(JSON.stringify(old), crops).simulation;
     assert.deepEqual(loaded.getSnapshot().finances.statistics, initial);
-    assert.equal(JSON.parse(loaded.save(4)).version, 27);
+    assert.equal(JSON.parse(loaded.save(4)).version, 28);
     assert.deepEqual(JSON.parse(GameSimulation.load(loaded.save(4), crops).simulation.save(4)), JSON.parse(loaded.save(4)));
   }
   const changed = structuredClone(base), stats = changed.runtime.finances.statistics;

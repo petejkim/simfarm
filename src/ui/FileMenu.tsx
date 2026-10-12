@@ -13,11 +13,11 @@ function MenuDialog({ title, children, onClose }: { title: string; children: Rea
   </dialog>;
 }
 
-export interface MenuChoices { actions?:readonly {label:string;choose:()=>void}[]; extraLabels?:readonly string[]; checked: readonly boolean[]; choose: (index: number) => void; disabled?: boolean }
+export interface MenuChoices { actions?:readonly {label:string;choose:()=>void}[]; extraLabels?:readonly string[]; checked: readonly boolean[]; choose: (index: number) => void; disabled?: boolean; disabledItems?:readonly boolean[]; hints?:readonly string[] }
 
 /** Recovered File/Options/Windows/Disasters chains; file-system/exit operations use browser policies. */
-export function FileMenu({ about, data, palette, busy, filename, error, onSave, onLoad, onNewGame, onQuit, onWindow, options, disasters }: {
-  about:AboutAssets; options: MenuChoices; disasters: MenuChoices;
+export function FileMenu({ about, data, palette, busy, filename, error, onSave, onLoad, onNewGame, onQuit, onWindow, options, disasters, debug }: {
+  about:AboutAssets; options: MenuChoices; disasters: MenuChoices; debug: MenuChoices;
   data: MainMenus; palette: number[][]; busy: boolean; filename: string; error: string | null;
   onSave: (filename?: string) => Promise<boolean>; onLoad: () => void; onNewGame: () => void; onQuit: () => void; onWindow: (window: GameWindow) => void;
 }) {
@@ -25,8 +25,11 @@ export function FileMenu({ about, data, palette, busy, filename, error, onSave, 
   const [open, setOpen] = useState<number | null>(null), [dialog, setDialog] = useState<'about' | 'save-as' | 'quit' | null>(null);
   const [name, setName] = useState(filename);
   const button = useRef<HTMLButtonElement>(null), menu = useRef<HTMLDivElement>(null), root = useRef<HTMLElement>(null);
-  const file = data.menus[0], active = open === null ? null : data.menus[open];
-  const choices:MenuChoices|null = open === 1 ? options : open === 4 ? disasters : open === 3
+  const last=data.menus.at(-1)!,debugX=last.header.x+last.header.width;
+  const menus=[...data.menus,{offset:-1,title:'Debug',header:{x:debugX,width:48},popup:{x:debugX,width:192,height:38},
+    items:['Start rodeo','Start fair (carnival)','Advance event week'].map((label,i)=>({label,offset:-100-i}))}];
+  const file = data.menus[0], active = open === null ? null : menus[open];
+  const choices:MenuChoices|null = open === 5 ? debug : open === 1 ? options : open === 4 ? disasters : open === 3
     ? {checked:GAME_WINDOWS.map(key=>key==='edit'||windows.order.includes(key)),choose:index=>onWindow(GAME_WINDOWS[index])} : null;
   function closeMenu(focus = true) { if (focus && active) root.current?.querySelector<HTMLButtonElement>(`#${active.title.toLowerCase()}-menu-button`)?.focus(); setOpen(null); }
   function closeDialog() { setDialog(null); button.current?.focus(); }
@@ -51,7 +54,7 @@ export function FileMenu({ about, data, palette, busy, filename, error, onSave, 
     <nav ref={root} className="original-menu-bar" aria-label="Original game menus"
       style={{ backgroundColor: color(data.background), color: color(data.foreground) }}
       onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
-      {data.menus.map((entry, index) => <button key={entry.offset} ref={index === 0 ? button : undefined}
+      {menus.map((entry, index) => <button key={entry.offset} ref={index === 0 ? button : undefined}
         id={`${entry.title.toLowerCase()}-menu-button`} disabled={busy}
         style={{ left: entry.header.x, width: entry.header.width, paddingLeft: index === 0 ? 8 : 0 }}
         title={undefined}
@@ -73,10 +76,10 @@ export function FileMenu({ about, data, palette, busy, filename, error, onSave, 
             buttons[next]?.focus();
           }
         }}>
-        {[...active.items,...(choices?.extraLabels??[]).map((label,i)=>({label,offset:-i-1}))].map((item, index) => open === 0 && index === 5 ? null : <button key={item.offset} role={choices ? 'menuitemcheckbox' : 'menuitem'} aria-checked={choices?.checked[index]} tabIndex={-1}
-          disabled={busy || choices?.disabled}
+        {[...active.items,...(choices?.extraLabels??[]).map((label,i)=>({label,offset:-i-1}))].map((item, index) => open === 0 && index === 5 ? null : <button key={item.offset} role={choices && open!==5 ? 'menuitemcheckbox' : 'menuitem'} aria-checked={open===5?undefined:choices?.checked[index]} tabIndex={-1}
+          disabled={busy || choices?.disabled || choices?.disabledItems?.[index]} title={choices?.hints?.[index]}
           onPointerMove={event=>{if(event.pointerType==='mouse'&&document.activeElement!==event.currentTarget)event.currentTarget.focus({preventScroll:true});}}
-          onClick={() => { if (open === 0) select(index); else if (choices) { closeMenu(); choices.choose(index); } else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{choices && <span className="menu-check" aria-hidden="true">{choices.checked[index] ? '✓' : ''}</span>}{item.label}</button>)}
+          onClick={() => { if (open === 0) select(index); else if (choices) { closeMenu(); choices.choose(index); } else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{choices && open!==5 && <span className="menu-check" aria-hidden="true">{choices.checked[index] ? '✓' : ''}</span>}{item.label}</button>)}
         {choices?.actions?.map(action=><button key={action.label} role="menuitem" tabIndex={-1} disabled={busy || choices.disabled}
           onPointerMove={event=>{if(event.pointerType==='mouse'&&document.activeElement!==event.currentTarget)event.currentTarget.focus({preventScroll:true});}}
           onClick={()=>{closeMenu();action.choose();}}><span className="menu-check" aria-hidden="true" />{action.label}</button>)}

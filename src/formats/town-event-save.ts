@@ -5,7 +5,7 @@ import type { TownEventMode } from './town-event-graphics';
 /** Native exact continuation includes fields omitted from original SSM and the
  * uploaded bank, which can differ from mode after insufficient rodeo funds. */
 export interface TownEventContinuation {
-  phase: 'weekly-water' | 'weekly-rollover';
+  phase: 'weekly-water' | 'weekly-rollover' | 'debug';
   before: FarmCalendar;
   resumeRunning: boolean;
 }
@@ -16,11 +16,11 @@ export interface TownEventCheckpoint extends TownEventState {
 function decodeContinuation(value: unknown): TownEventContinuation | null {
   if (value === null) return null;
   const o = object(value), c = object(o.before);
-  if ((o.phase !== 'weekly-water' && o.phase !== 'weekly-rollover') || typeof o.resumeRunning !== 'boolean') fail();
+  if ((o.phase !== 'weekly-water' && o.phase !== 'weekly-rollover' && o.phase !== 'debug') || typeof o.resumeRunning !== 'boolean') fail();
   const before = { day: number(c.day, 6), week: number(c.week, 3), month: number(c.month, 11),
     year: number(c.year, 65535), season: number(c.season, 3) };
   validateCalendar(before);
-  if (before.day !== 6) fail();
+  if (o.phase !== 'debug' && before.day !== 6) fail();
   return { phase: o.phase, before, resumeRunning: o.resumeRunning };
 }
 function fail(): never { throw new Error('Invalid native save: town event'); }
