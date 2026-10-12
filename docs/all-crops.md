@@ -34,3 +34,11 @@ Restart and SSM import perform the recovered sixteen-slot phases first, then the
 Expanded farms write native v24:24 filenames,24 crop definitions,24 prices/history rows,24 seed/harvest goods records and32 crop trade records (24 active definitions plus the retained eight unnamed original records). Non-expanded research simulations still write v23; readers accept1–24. V24 validates the complete unique supplied filename set, original first16 identities for SSM-backed farms, table lengths, field references, definitions and matching assets. Loading older saves in the browser explicitly expands their restored state; the old decoder itself retains its historical behavior.
 
 Coverage includes all eight original farms, all eight appended slots, seed purchasing/consumption, planting/growth and badges, plan creation/projection, exact checkpoint continuation, storage/movement/sale, source pixel ranges, invalid boundaries, missing assets, and generated/restarted/imported farms. Browser regression fixtures now explicitly use the same catalog policy. Historical-version fixtures first restore genuine16-slot table sizes before assigning their historical version. No original-game defect is claimed by this feature; original defect entries remain retained in `original-bugs.md`.
+
+## Favicon (2026-10-12, user request)
+
+The browser favicon uses the Apples crop artwork from `CROPS/APPLES.CRP`, so no new artwork is drawn:
+- **16×16:** the Edit plant icon at file offset 0x1480 (uploaded to tile `cropPlantTile`).
+- **32×32:** the crop badge, four tiles at 0x1200..0x13ff arranged as part = row × 2 + column (uploaded to `cropBadgeTile`; same order as `field-status.ts`).
+
+`readCropIcons` in `src/formats/crop-graphics.ts` decodes both with the gameplay palette and no transparency. The importer writes them to the ignored `public/assets/favicon-16.png` and `favicon-32.png`, and `index.html` links both sizes. A unit test checks the icons pixel-for-pixel against the same tiles patched into the 24-crop atlas.

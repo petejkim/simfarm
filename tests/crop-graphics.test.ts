@@ -1,7 +1,9 @@
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { patchCropGraphics, cropTilePatches } from '../src/formats/crop-graphics';
+import { patchCropGraphics, cropTilePatches, readCropIcons } from '../src/formats/crop-graphics';
+import { decodePlanar, readPalette } from '../src/formats/graphics';
+import { SHIPPED_CROP_IDS, cropBadgeTile, cropPlantTile } from '../src/formats/crop-slots';
 import { readScenario } from '../src/formats/scenario';
 import { readArchive } from '../src/formats/archive';
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
@@ -50,4 +52,19 @@ test('world coordinates are column-major and masked layers use the original flag
       assert.ok(tile === null || (tile >= 0 && tile < 200));
     }
   }
+});
+
+test('favicon icons are the Apples crop plant tile and 2×2 badge exactly as patched into the all-crops atlas', () => {
+  const archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA')), asset = (n: string) => archive.find(e => e.name === n)!.bytes;
+  const palette = readPalette(asset('simfarm.pal')), names = SHIPPED_CROP_IDS.map(id => source(`CROPS/${id.toUpperCase()}.CRP`));
+  const slot = SHIPPED_CROP_IDS.indexOf('apples'), apples = names[slot], atlas = patchCropGraphics(asset('ega16til.til'), names);
+  const tile = (n: number) => decodePlanar(atlas.subarray(n * 128, n * 128 + 128), 16, 16, palette).rgba;
+  const icons = readCropIcons(apples, palette);
+  assert.deepEqual([icons.plant.width, icons.plant.height, icons.badge.width, icons.badge.height], [16, 16, 32, 32]);
+  assert.deepEqual(icons.plant.rgba, tile(cropPlantTile(slot)));
+  for (let part = 0; part < 4; part++) for (let row = 0; row < 16; row++) {
+    const at = (((part >> 1) * 16 + row) * 32 + part % 2 * 16) * 4;
+    assert.deepEqual(icons.badge.rgba.subarray(at, at + 64), tile(cropBadgeTile(slot, part)).subarray(row * 64, row * 64 + 64));
+  }
+  assert.throws(() => readCropIcons(apples.subarray(1), palette));
 });

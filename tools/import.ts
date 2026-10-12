@@ -15,7 +15,7 @@ import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { PNG } from 'pngjs';
-import { patchCropGraphics } from '../src/formats/crop-graphics';
+import { patchCropGraphics, readCropIcons } from '../src/formats/crop-graphics';
 import { spriteAtlas } from '../src/formats/sprite';
 import { readScenario } from '../src/formats/scenario';
 import { readArchive } from '../src/formats/archive';
@@ -125,6 +125,10 @@ for (const name of (await readdir(join(source, 'CROPS'))).filter(n => /\.crp$/i.
   await png(`${id}.png`, tileAtlas(bytes.subarray(0, 0x400), palette, 8));
   await png(`${id}.card.png`, decodePlanar(bytes.subarray(0x400, 0x1200), 112, 64, palette));
 }
+// Favicons: the Apples crop's 16×16 plant icon and 32×32 badge, decoded from the crop file.
+const appleIcons = readCropIcons(cropBytes.get('apples.crp')!, palette);
+await png('favicon-16.png', appleIcons.plant);
+await png('favicon-32.png', appleIcons.badge);
 for (let i = 0; i < 8; i++) {
   const name = `SCEN${i}.SSM`, bytes = await read(name);
   inputs.push({ name, size: bytes.length, sha256: sha256(bytes) });

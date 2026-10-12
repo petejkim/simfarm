@@ -3039,3 +3039,7 @@ A Debug menu item now opens the town development choice mid-year when a free sit
 ## 2026-10-12 — Debug: Grow town districts
 
 Investigated a report that residential districts added through Debug never gained buildings. A user save confirmed the original rule: weekly growth only raises the most recently chosen district, so earlier debug districts stay at level 0. A new Debug item raises every unfinished district one original level per use, without spending town revenue, moving the active district or advancing the date. Save format unchanged. Details and validation are in debug-menu.md; full suites not rerun.
+
+## 2026-10-12 — Apple favicon
+
+Added 16×16 and 32×32 favicons from the Apples crop file: the Edit plant icon and the 2×2 crop badge. The importer writes them; `index.html` links both. Details in all-crops.md. Validation: crop-graphics unit tests 3/3 (new pixel test against the patched atlas), import, production build with both icons in `dist`.
