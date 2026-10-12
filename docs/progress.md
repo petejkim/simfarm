@@ -3031,3 +3031,7 @@ Every scrolling box (e.g. the Buy description) now uses the Schedule-style brows
 ## 2026-10-12 — Farm Expert toolbar launcher
 
 Added a native Farm Expert launcher whose face is the expert head from portrait 66, halved from even pixels (the user chose option F1). The importer writes it as `expert-launcher.png`, and a unit test pins it. Details are in control-bar.md. The related specs pass.
+
+## 2026-10-12 — Debug: Start town expansion
+
+A Debug menu item now opens the town development choice mid-year when a free site exists. It skips the town fund, builds without year-end phases, and is never saved, so the save format is unchanged. Details are in debug-menu.md. Related unit and browser tests pass.

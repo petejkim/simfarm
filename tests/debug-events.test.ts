@@ -56,3 +56,30 @@ test('debug continuation validation rejects changed dates, unpaused ownership an
  const older=JSON.parse(f.load().save(4));older.version=27;
  expect(GameSimulation.load(JSON.stringify(older),f.crops).simulation.getSnapshot().townEvent).toEqual(f.load().getSnapshot().townEvent);
 });
+
+test('debug town expansion opens the choice at any date without the town fund, is never saved, and builds without year-end phases',()=>{
+ for(const running of [false,true]){
+  const f=shopFixture();f.state.paused=!running;f.state.finances.town.expansionFunds=0; // bypasses the $15,000 fund gate
+  const game=f.load(),before=game.getSnapshot(),saved=game.save(4);
+  game.dispatch({type:'debug-town-expansion'});
+  const pending=game.getSnapshot();expect(pending.pendingTown?.phase).toBe('debug');expect(pending.paused).toBe(true);
+  const site=pending.pendingTown!.site,flag=(site.regionX*12+site.regionY)*7+1;
+  expect(pending.scenario.regionalConditions[flag]).toBe(before.scenario.regionalConditions[flag]); // nothing reserved yet
+  expect(game.save(4)).toBe(saved); // the debug choice is not kept in saves
+  game.dispatch({type:'advance-day'});game.dispatch({type:'debug-town-expansion'});expect(game.getSnapshot().pendingTown?.site).toEqual(site);
+  game.dispatch({type:'choose-town',choice:'airport'});
+  const after=game.getSnapshot();expect(after.lastTownResult?.ok).toBe(true);expect(after.pendingTown).toBeNull();
+  const result=after.lastTownResult as {ok:true;type:number;site:typeof site};expect([result.type,result.site]).toEqual([5,site]);expect(after.scenario.regionalConditions[flag-1]&15).toBe(5);
+  expect(after.scenario.farm.calendar).toEqual(before.scenario.farm.calendar);expect(after.daysAdvanced).toBe(before.daysAdvanced);
+  expect(after.finances.town.expansionFunds).toBe(0);expect(after.paused).toBe(!running);
+ }
+});
+
+test('a failed debug town choice keeps the choice open and restores the site exactly',()=>{
+ const f=shopFixture();f.state.finances.town.recreationCount=7;
+ const game=f.load();game.dispatch({type:'debug-town-expansion'});
+ const site=game.getSnapshot().pendingTown!.site,flag=(site.regionX*12+site.regionY)*7+1,before=game.getSnapshot();
+ game.dispatch({type:'choose-town',choice:'recreational'});
+ const after=game.getSnapshot();expect(after.lastTownResult).toEqual({ok:false,reason:'recreation-limit'});expect(after.pendingTown?.phase).toBe('debug');
+ expect(after.scenario.regionalConditions[flag]).toBe(before.scenario.regionalConditions[flag]);expect(after.finances.town.activeSite).toEqual(before.finances.town.activeSite);
+});

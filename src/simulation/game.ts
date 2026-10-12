@@ -72,6 +72,9 @@ import { projectFieldScheduleYear } from './field-projection';
 import { editFieldPlan, type FieldPlanEdit, type FieldPlanEditResult } from './field-plan-edit';
 
 import { SIMULATION_SPEEDS, type SimulationState, type PendingTownExpansion } from './save-state';
+/** The open town choice: the original year-end expansion (saved), or a native Debug-menu choice that is never
+ * saved, reserves nothing until a district is chosen, and resumes without year-end phases. */
+export type ActiveTownChoice = PendingTownExpansion | { phase: 'debug'; site: TownSite; resumeRunning: boolean; resumeTickTail?: never };
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
 import { copyFinancialState, readFinancialState, type FinancialState } from '../formats/finance';
 import { borrowLoan, repayLoanInFull, loanCreditLimit, payScheduledLoan, isLoanPaymentMonth, type BorrowResult, type RepayResult } from './loan';
@@ -83,7 +86,8 @@ import { developTown } from './town-development';
 import { assessAnnualTax, settleAnnualTax, type TaxAssessment, type TaxSettlement } from './tax';
 import { resetAnnualLedgers, updateAnnualReport } from './annual-ledger';
 import { summarizeFieldStatus, type FieldReport } from './field-report';
-import { beginTownExpansion } from './town';
+import { beginTownExpansion, findTownExpansionSite } from './town';
+import type { TownSite } from './town';
 import { resolveTownChoice, type TownChoice, type TownConstructionResult } from './town-construction';
 import { updateClearingEffects } from './clearing-effects';
 import { updateHomestead, type HomesteadChange } from './homestead';
@@ -131,7 +135,7 @@ export interface GameSnapshot {
   paused: boolean;
   speed: number;
   finances: FinancialState;
-  pendingTown: PendingTownExpansion | null;
+  pendingTown: ActiveTownChoice | null;
   townEvent: TownEventCheckpoint;
   lastTownResult: TownConstructionResult | null;
   lastHomesteadChange: HomesteadChange | null;
@@ -184,6 +188,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'choose-town'; choice: TownChoice }
   | { type: 'resolve-town-event'; accept: boolean }
   | { type: 'debug-town-event'; action: 'rodeo' | 'fair' | 'advance-week' }
+  | { type: 'debug-town-expansion' }
   | { type: 'edit-field-plan'; fieldSlot: number; week: number; action: FieldPlanEdit }
   | { type: 'set-speed'; speed: number }
   | { type: 'start-disaster'; kind: MovingDisasterKind | WaterDisasterKind | StationaryDisasterKind | 'wind' }
@@ -303,7 +308,7 @@ export class GameSimulation {
   private lastLoanResult: GameSnapshot['lastLoanResult'] = null;
   private financeNotices: number[] = [];
   private readonly townEvent: TownEventCheckpoint;
-  private pendingTown: PendingTownExpansion | null = null;
+  private pendingTown: ActiveTownChoice | null = null;
   private lastTownResult: TownConstructionResult | null = null;
   private lastTaxSettlement: TaxSettlement | null = null;
   private lastHomesteadChange: HomesteadChange | null = null;
@@ -380,11 +385,11 @@ export class GameSimulation {
   /** Exact native checkpoint, including partial ticks. Does not mutate or advance the farm. */
   save(scenarioId: number | null): string {
     return writeNativeSave({ scenario: this.scenario, setup: this.setup, originalPause: this.originalPause, newFarm: this.newFarm, retainedSetup: this.retainedSetup, crops: this.crops, random: this.random.snapshot(), weather: this.weather,
-      daysAdvanced: this.daysAdvanced, paused: this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
+      daysAdvanced: this.daysAdvanced, paused: this.pendingTown?.phase === 'debug' ? !this.pendingTown.resumeRunning : this.paused, speed: this.speed, elapsed: this.elapsed, dayTicks: this.dayTicks,
       disasters: this.disasters, waterDisasters: this.waterDisasters, grassTravelCount: this.equipmentRuntime.grassTravelCount,
       equipmentAnimationTick: this.equipmentRuntime.animationTick, cropMarketPrices: this.cropMarketPrices, market: this.market, traffic: snapshotTraffic(this.traffic),
       animalFrame: this.animalFrame, aircraftService: this.aircraftService, aircraftFlight: this.aircraftFlight,
-      townEvent: encodeTownEventCheckpoint(this.townEvent), finances: this.finances, pendingTown: this.pendingTown, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
+      townEvent: encodeTownEventCheckpoint(this.townEvent), finances: this.finances, pendingTown: this.pendingTown?.phase === 'debug' ? null : this.pendingTown, townLayoutBytes: [...this.townLayouts.bytes] }, scenarioId);
   }
 
   static load(text: string, crops: readonly CropDefinition[], townLayouts: TownLayouts): { scenarioId: number | null; simulation: GameSimulation } {
@@ -494,7 +499,7 @@ export class GameSimulation {
       else this.finishWeeklyRollover(continuation.before, next);
       // Imported countdowns can expire at year-end and transfer ownership to
       // the annual town chooser. Its acknowledgement must finish this tick.
-      if (this.pendingTown) this.pendingTown.resumeTickTail = true;
+      if (this.pendingTown?.phase === 'annual-reset') this.pendingTown.resumeTickTail = true;
       this.finishTick();
       this.publish(); return;
     }
@@ -502,6 +507,17 @@ export class GameSimulation {
     if (command.type === 'choose-town') {
       const pending = this.pendingTown;
       if (!pending) return;
+      if (pending.phase === 'debug') {
+        // Debug choice: reserve the site as 0x3c03f/0x3c04a do (no town-fund check or deduction), build, and resume
+        // without any year-end phases. A failed choice restores the reservation so the farm is unchanged.
+        const s = this.scenario, flag = (pending.site.regionX * 12 + pending.site.regionY) * 7 + 1;
+        const before = { flag: s.regionalConditions[flag], activeSite: { ...this.finances.town.activeSite } };
+        s.regionalConditions[flag] = 2; this.finances.town.activeSite = { ...pending.site };
+        this.lastTownResult = resolveTownChoice(s, this.finances.town, this.townLayouts, pending.site, command.choice, this.random);
+        if (this.lastTownResult.ok) { this.pendingTown = null; this.paused = !pending.resumeRunning; this.elapsed = 0; }
+        else { s.regionalConditions[flag] = before.flag; this.finances.town.activeSite = before.activeSite; }
+        this.publish(); return;
+      }
       this.lastTownResult = resolveTownChoice(this.scenario, this.finances.town, this.townLayouts,
         pending.site, command.choice, this.random);
       if (this.lastTownResult.ok) {
@@ -522,6 +538,14 @@ export class GameSimulation {
     }
     if (this.finances.defaultDecision) return; // Terminal choice/end state freezes every gameplay command.
     if (this.aircraftFlight && !['flight-control', 'step-flight', 'set-paused', 'set-speed'].includes(command.type)) return;
+    if (command.type === 'debug-town-expansion') {
+      // Native debug trigger: open the town choice at any date when a free expansion site exists. Not saved.
+      if (this.townEvent.pending) return;
+      const site = findTownExpansionSite(this.scenario); if (!site) return;
+      this.pendingTown = { phase: 'debug', site, resumeRunning: !this.paused };
+      this.lastTownResult = null; this.paused = true; this.elapsed = 0;
+      this.publish(); return;
+    }
     if(command.type==='debug-town-event'){
       if(!['rodeo','fair','advance-week'].includes(command.action))throw new Error('Invalid debug event');
       if(!this.finances.town.recreationCount)return;

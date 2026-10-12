@@ -12,7 +12,7 @@ test('Debug triggers original event dialogs/music without a time jump or duplica
  const date=await page.locator('#farm-date').textContent();
  await page.locator('#debug-menu-button').focus();await page.keyboard.press('ArrowDown');
  const menu=page.getByRole('menu',{name:'Debug',exact:true});
- expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['Start rodeo','Start fair (carnival)','Advance event week']);
+ expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['Start rodeo','Start fair (carnival)','Advance event week','Start town expansion']);
  await expect(menu.getByRole('menuitem',{name:'Advance event week'})).toBeDisabled();
  await expect(menu.getByRole('menuitem',{name:'Start rodeo',exact:true})).toBeFocused();
  await page.keyboard.press('Escape');await expect(menu).toHaveCount(0);
@@ -47,4 +47,19 @@ test('Debug explains missing prerequisites and enables only valid event controls
  await expect(menu.getByRole('menuitem',{name:'Start rodeo',exact:true})).toBeDisabled();
  await expect(menu.getByRole('menuitem',{name:'Start fair (carnival)',exact:true})).toBeEnabled();
  await page.screenshot({path:'artifacts/browser-debug-menu.png'});
+});
+
+test('Debug opens the town expansion choice mid-year without the town fund, leaves saves untouched, and builds without a time jump',async({page})=>{
+ const save=async()=>{const d=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await(await d).path())!));};
+ await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+ const f=shopFixture();f.state.finances.town.expansionFunds=0;const game=f.load().withAllCrops(browserCrops);
+ await page.locator('#load-farm-file').setInputFiles({name:'debug.json',mimeType:'application/json',buffer:Buffer.from(game.save(4))});
+ await expect(page.locator('#save-status')).toHaveText('Farm loaded.');const before=await save(),date=await page.locator('#farm-date').textContent();
+ await page.locator('#debug-menu-button').click();await page.getByRole('menuitem',{name:'Start town expansion',exact:true}).click();game.dispatch({type:'debug-town-expansion'});
+ const win=page.getByRole('dialog',{name:'Town development',exact:true});await expect(win).toBeVisible();await expect(page.locator('#farm-date')).toHaveText(date!);
+ expect(await save()).toEqual(before); // the open debug choice is not saved
+ await page.locator('#debug-menu-button').click();await expect(page.getByRole('menuitem',{name:'Start town expansion',exact:true})).toBeDisabled();await page.keyboard.press('Escape');
+ await page.locator('#town-airport').click();game.dispatch({type:'choose-town',choice:'airport'});
+ await expect(win).toBeHidden();await expect(page.locator('#farm-date')).toHaveText(date!);
+ expect(await save()).toEqual(JSON.parse(game.save(4)));
 });

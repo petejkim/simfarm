@@ -13,6 +13,7 @@ import {EvaluationWindow} from './EvaluationWindow';
 import { MarketWindow } from './MarketWindow';
 import { WeatherWindow } from './WeatherWindow';
 import { townWindowAt } from '../simulation/town-window';
+import { findTownExpansionSite } from '../simulation/town';
 import { useBulldoze } from './useBulldoze';
 import { BulldozeDialog } from './BulldozeDialog';
 import { useConstruction } from './useConstruction';
@@ -289,9 +290,10 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
         !snapshot?.finances.town.recreationCount||Boolean(snapshot.townEvent.mode||snapshot.townEvent.weeksRemaining)||snapshot.scenario.farm.cash<1000,
         !snapshot?.finances.town.recreationCount||Boolean(snapshot.townEvent.mode||snapshot.townEvent.weeksRemaining),
         !snapshot?.townEvent.mode||!snapshot.townEvent.weeksRemaining,
+        !snapshot||!findTownExpansionSite(snapshot.scenario),
       ],
-      hints:['Requires a recreation district, $1,000 and no active event.','Requires a recreation district and no active event.','Advances only the active event countdown; the farm date stays unchanged.'],
-      choose:index=>{const action=(['rodeo','fair','advance-week'] as const)[index];if(action)simulation.dispatch({type:'debug-town-event',action});},
+      hints:['Requires a recreation district, $1,000 and no active event.','Requires a recreation district and no active event.','Advances only the active event countdown; the farm date stays unchanged.','Opens the town expansion choice now (requires a free site; skips the town fund). Not kept in saves.'],
+      choose:index=>{if(index===3){simulation.dispatch({type:'debug-town-expansion'});return;}const action=(['rodeo','fair','advance-week'] as const)[index];if(action)simulation.dispatch({type:'debug-town-event',action});},
     }} options={{
       checked: [audioOptions.music, audioOptions.sound, ...FARM_OPTIONS.map(key=>simulation.getSnapshot().scenario.farm[key]),audioOptions.buttonClicks],
       extraLabels:['Button Click Sounds'],
