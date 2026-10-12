@@ -21,7 +21,14 @@ async function start(page: Page) {
 test('original Buy catalog keeps source geometry and ordering, exposes all crops and leaves browsing out of saves', async ({ page }) => {
   await start(page); const before = await save(page);
   await page.locator('#window-buy').click(); const catalog = page.getByRole('region', { name: 'Buy catalog' });
-  expect(await catalog.boundingBox()).toMatchObject({ width: 256, height: 224 });
+  // Shared frame around a 240×216 client built from components: no background bitmap or canvas.
+  expect(await catalog.boundingBox()).toMatchObject({ width: 240, height: 216 });
+  expect(await page.locator('[data-window=buy]').boundingBox()).toMatchObject({ x: 128, y: 96, width: 256, height: 240 });
+  await expect(catalog.locator('img,canvas')).toHaveCount(0);
+  expect(await catalog.locator('.bevel-button').count()).toBe(9); // 5 categories, 2 arrows, BUY, CLOSE
+  expect(await catalog.locator('.sunken-inset').count()).toBe(5); // photo, description, preview, price, own
+  expect(await catalog.getByRole('button', { name: 'Machinery', exact: true }).evaluate(el => [getComputedStyle(el).backgroundColor, getComputedStyle(el).boxShadow])).toEqual(['rgb(0, 0, 0)', 'rgb(130, 130, 130) 1px 1px 0px 0px']);
+  await expect(catalog.getByRole('button', { name: 'BUY', exact: true })).toHaveText('BUY');
   await expect(catalog.getByRole('button', { name: 'Livestock', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await catalog.getByRole('button', { name: 'Machinery', exact: true }).click();
   await expect(page.locator('#buy-description')).toContainText('Tractor');
@@ -33,7 +40,7 @@ test('original Buy catalog keeps source geometry and ordering, exposes all crops
   const names = new Set<string>(); const first = await page.locator('#buy-description').textContent();
   for (let i = 0; i < 24; i++) {
     names.add((await page.locator('#buy-description').textContent())!);
-    await expect(catalog.getByRole('img')).toHaveCount(1);
+    await expect(catalog.getByRole('img', { name: /illustration$/ })).toHaveCount(1);
     await catalog.getByRole('button', { name: 'Next item' }).click();
   }
   expect(names.size).toBe(24); await expect(page.locator('#buy-description')).toHaveText(first!);

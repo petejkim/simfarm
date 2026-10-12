@@ -2892,3 +2892,7 @@ Tests use `@playwright/test` with Chromium launched without the pickers (`--disa
 Commit 1 extracted the palette tokens, `SunkenInset`, `BevelButton` and `Sprite` (src/ui/chrome) from the toolbar and palette with no visual change. Existing structural specs pass unchanged (34/34).
 
 Commit 2 added the importer's `window-frame.png` 9-slice from Sell, an importer test checking grain periodicity and corners across 11 windows, `GameWindow framed` (border-image), and the Examine rebuild (flex layout) (no canvas or background bitmap; see examine-window.md). `ConditionBadge` now lays out its letter and word with a grid stack instead of absolute positioning. Examine/Sell/Schedule/window specs pass (13 + 21); frame test passes.
+
+## 2026-10-12 — Buy rebuilt on shared chrome
+
+Buy is a framed flex window with BevelButton categories/arrows/captions, SunkenInset photo/description/preview/readouts, and a tile-grid preview (no background image or canvas). Added a shared TileSprite (also used by Examine). Generic window button styles now skip bevel buttons. Buy-related specs pass 36/36, including new structural assertions in buy-window.spec.

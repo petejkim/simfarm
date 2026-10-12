@@ -33,3 +33,15 @@ Machinery form retirement: removed EquipmentShop and its interim category/launch
 Livestock shop retirement: original Buy retains source livestock order161,162,163,160. Hay/type300 and Trough/type299 remain original palette actions (callbacks21920/219dc; shared mode4), not additions to the Buy catalog. Removed LivestockShop, its category and launcher. Options AutoDoze covers clearing. Moved its existing supply quantity summary into the still-interim livestock overview beside stored water; that informational summary is native, not a recovered original panel. Animal placement previews now use the selected Buy product directly. See tree-placement.md/livestock.md for canonical supply rules.
 
 Crop-supply form retirement: removed CropSupplyShop, its product/selected-storage state, Build storage/Review supplies shortcuts and interim category. Original Buy Seeds/Chemicals uses direct map delivery to storage, source OWN/PRICE display, all24 native crop identities and the four source chemical entries220..223. Buildings are purchased from the same original catalog; storage opens through right-click/Examine. Existing canonical purchases retain capacity, compatibility, price, clearing, audio and accounting rules. Source catalog/callback evidence above and crop-supplies.md remain authoritative. No new original defect or save change.
+
+## Rebuilt on shared chrome (2026-10-12)
+
+User request (ui-components.md). Buy no longer shows `buy-window.png` with transparent buttons, absolutely positioned text and a preview canvas over it. It is a framed `GameWindow` (shared wooden frame) around a 240×216 client in three flex columns. The layout follows the source bitmap but is not pixel-perfect (user rule).
+
+- **Categories:** five 28×28 `BevelButton`s with drop shadows. Their faces are sprites cut from the source bitmap, and Livestock etc. show as pressed.
+- **Middle:** the photo `SunkenInset` (116×68, buy-cards or crop card sprite) and the description inset (116×116, scrollable).
+- **Right:** the map-graphic preview inset (68×52), the Next/Previous arrow buttons (source glyph sprites), PRICE and OWN labels with sunken readouts that may widen for long values, and BUY/CLOSE caption buttons.
+
+The preview is a 4×3 grass tile grid with the definition graphic layered in the same grid cell, centred 4px right of centre as in the source (478df). `src/render/shop-preview.ts` was removed. `buy-window.png` now serves only as the sprite source for icon and arrow faces; its caption masks remain.
+
+Also fixed while converting: generic `.game-window` button rules (outset border, 5px padding, hover) now exclude `.bevel-button`, so shared buttons keep their bevel inside windows.

@@ -5,6 +5,7 @@ import { GameWindow } from './GameWindow';
 import { ConditionBadge, CONDITION_WORDS } from './ConditionBadge';
 import { SunkenInset } from './chrome/SunkenInset';
 import { Sprite } from './chrome/Sprite';
+import { TileSprite } from './chrome/TileSprite';
 
 /** Original Examine card (overlay12 38b4a): wooden frame, a sunken photo box and a sunken information box,
  * rebuilt from shared components. The photo comes from the buy-cards atlas; machinery, animal, chemical and
@@ -49,9 +50,6 @@ function TileGrid({tiles,assets,atlas}:{tiles:ExamineTile[];assets:GameAssets;at
   const shown=tiles.filter(t=>t.tile>=0&&t.tile<1392);
   if(!shown.length)return null;
   const x0=Math.min(...shown.map(t=>t.x)),y0=Math.min(...shown.map(t=>t.y));
-  return <div className="examine-tiles">{shown.map((t,i)=>{
-    const masked=t.tile>=848&&t.tile<1048,index=masked?t.tile-848:t.tile;
-    return <Sprite key={i} className="examine-sprite" image={masked?assets.maskedTiles.src:atlas.src} x={index%32*16} y={Math.floor(index/32)*16} width={16} height={16}
-      style={{gridColumn:(t.x-x0)/16+1,gridRow:(t.y-y0)/16+1}}/>;
-  })}</div>;
+  return <div className="examine-tiles">{shown.map((t,i)=><TileSprite key={i} className="examine-sprite" tile={t.tile} atlas={atlas.src} masked={assets.maskedTiles.src}
+    style={{gridColumn:(t.x-x0)/16+1,gridRow:(t.y-y0)/16+1}}/>)}</div>;
 }
