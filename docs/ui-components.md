@@ -1,6 +1,15 @@
 # Shared window chrome components
 
-Status: **in progress.** Step 1 (shared chrome extracted from the toolbar and palette) is done; windows follow one commit each. This document records the agreed design for reusable UI chrome. The toolbar (`ControlBar`), Edit palette and every reconstructed window will share it. Implement it incrementally, following the migration order below.
+Status: **in progress.** Done so far:
+- Step 1: shared chrome extracted from the toolbar and palette.
+- Step 2: `GameWindow framed` with the imported wood 9-slice.
+- Examine rebuilt.
+
+Remaining windows follow one commit each.
+
+**Layout rule (user, 2026-10-12):** use flexbox and avoid absolute positioning as much as possible. Pixel-perfect placement is not required: boxes may grow to fit their text, and items that overlapped in the original may sit side by side.
+
+**Frame implementation notes (2026-10-12).** The wooden sides are not uniform: their grain repeats every 8 rows in every window. `window-frame.png` therefore takes the first 8-row period below Sell's title bar. CSS `border-image-repeat: repeat` centres its tiles, so a window's grain phase may differ from its source by a few pixels. The importer test checks periodicity rather than fixed rows. Bottom corners match exactly for Sell, Market and Evaluation, and within 6 of 128 pixels elsewhere. Examine (9-row bottom) and Sell/Bank/Examine (a grey130 line just inside the left frame) differ by 1px under the common frame; accepted per decision 3. This document records the agreed design for reusable UI chrome. The toolbar (`ControlBar`), Edit palette and every reconstructed window will share it. Implement it incrementally, following the migration order below.
 
 ## Decisions (user, 2026-10-11)
 

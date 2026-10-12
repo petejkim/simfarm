@@ -26,13 +26,15 @@ export function WindowDesktop({ children, artwork, onButtonClick }: { children: 
     if(button&&!button.matches(':disabled')&&button.getAttribute('aria-disabled')!=='true')onButtonClick?.();
   }} style={{
     '--window-title': `url("${artwork.title.src}")`, '--window-inactive': `url("${artwork.inactive.src}")`, '--window-close': `url("${artwork.close.src}")`,
-    '--window-title-end': `url("${artwork.end.src}")`, '--window-title-end-inactive': `url("${artwork.endInactive.src}")`,
+    '--window-frame': `url("${artwork.frame.src}")`, '--window-title-end': `url("${artwork.end.src}")`, '--window-title-end-inactive': `url("${artwork.endInactive.src}")`,
   } as CSSProperties}>{children}</div></Context>;
 }
 interface Position { left: number; top: number }
 /** Shared movable frame; optional native modal dialog keeps Edit mounted. */
-export function GameWindow({ windowKey, title, children, forced = false, modal = false, descriptionId, onClose, titleArtwork }: {
+export function GameWindow({ windowKey, title, children, forced = false, modal = false, framed = false, descriptionId, onClose, titleArtwork }: {
   windowKey: string; title: string; children: ReactNode; forced?: boolean; modal?: boolean; descriptionId?: string; onClose?: () => void; titleArtwork?: string;
+  /** Shared wooden frame (border-image) around the body; the window sizes to its client. */
+  framed?: boolean;
 }) {
   const { active, order, close:closeWindow, raise } = useWindows(), open = forced || order.includes(windowKey);
   const ref = useRef<HTMLDivElement>(null);
@@ -92,7 +94,7 @@ export function GameWindow({ windowKey, title, children, forced = false, modal =
   }, [open,modal]);
   function close() { if (onClose) onClose(); else if (!forced) closeWindow(windowKey); }
   const Frame = modal ? 'dialog' : 'section';
-  return <Frame ref={element=>{frame.current=element;}} data-window={windowKey} data-front={forced||active===windowKey} hidden={!open} role="dialog" aria-modal={modal||undefined} aria-label={title} aria-describedby={descriptionId} className="game-window"
+  return <Frame ref={element=>{frame.current=element;}} data-window={windowKey} data-front={forced||active===windowKey} hidden={!open} role="dialog" aria-modal={modal||undefined} aria-label={title} aria-describedby={descriptionId} className="game-window" data-framed={framed || undefined}
     style={{zIndex:forced?90:30+order.indexOf(windowKey),...(position?{left:position.left,top:position.top,right:'auto'}:{})}}
     onPointerDownCapture={()=>{if(!forced)raise(windowKey);}} onFocusCapture={()=>{if(!forced)raise(windowKey);}}
     onCancel={event=>{event.preventDefault();event.stopPropagation();close();}}
@@ -111,6 +113,6 @@ export function GameWindow({ windowKey, title, children, forced = false, modal =
           top: start.top + (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0) });
       }}><span>{title}</span>
       <button aria-label={`Close ${title}`} title={`Close ${title}`} disabled={forced && !onClose} onClick={close} /></div>
-    <div className="game-window-body">{children}</div>
+    <div className={`game-window-body${framed ? ' window-frame' : ''}`}>{children}</div>
   </Frame>;
 }

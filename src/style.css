@@ -101,6 +101,22 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .bevel-button:active:not(:disabled) .bevel-button-face,.bevel-button.is-pressed .bevel-button-face{border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
 .bevel-button:disabled .bevel-button-face[style*=background-image]::after{content:'';position:absolute;inset:0;background:#c2c2c260}
 .sprite{display:block;flex:none;background-repeat:no-repeat;image-rendering:pixelated}
+/* Wooden frame: 9-slice of Sell's frame (window-frame.png), 8px sides and bottom under the shared title bar. */
+.game-window[data-framed]{width:max-content;border:0}
+.game-window-body.window-frame{padding:0;overflow:visible;border-style:solid;border-width:0 8px 8px;border-image:var(--window-frame) 0 8 8 / 0 8px 8px repeat;background:var(--face);image-rendering:pixelated}
+/* Examine: client 192×184 inside the frame; photo inset 116×68 at (38,6), information inset 164×100 at (14,78). */
+.game-window[data-window=examine]{left:32px;right:auto;top:64px}
+.examine-window{display:flex;flex-direction:column;align-items:center;gap:4px;width:192px;height:184px;padding-top:6px;font:10px/10px monospace;color:var(--ink)}
+.examine-photo{width:116px;height:68px}
+.examine-info{width:164px;height:100px}
+.examine-info p{margin:0;font:10px/10px monospace;color:var(--ink);white-space:pre-line}
+.examine-description{width:160px;height:96px;padding:1px 2px;overflow:auto;overflow-wrap:anywhere;overscroll-behavior:contain;scrollbar-width:thin}
+.examine-detail{display:flex;flex-direction:column;gap:2px;width:160px;height:96px;padding:1px 2px;overflow:hidden}
+.examine-row{display:flex;align-items:center;gap:8px}
+.examine-tiles{display:grid;grid-auto-columns:16px;grid-auto-rows:16px;flex:none}
+.examine-name{flex:none}
+.examine-damage-meter{display:block;width:64px;height:8px;background:var(--bevel-shadow)}
+.examine-damage-meter>span{display:block;height:8px;background:#c20404}
 .original-control-bar{position:relative;z-index:1;display:flex;align-items:stretch;height:32px;font:10px/1 Arial,Helvetica,sans-serif;color:var(--ink);background:var(--face);box-shadow:inset 0 1px var(--ink)}
 .toolbar-launchers{display:flex;flex:none}
 .window-launcher{width:32px;height:32px}
@@ -289,9 +305,9 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 /* Shared condition badge (ConditionBadge): source ring as background; letter centred in the ring interior
    (x10..21, y8..18) with the ring's 1px grey drop shadow; word centred in rows 22..29, bold with a 2px face-grey stroke painted under the fill so it
    reads cleanly over the ring's lower arc. */
-.condition-badge{display:block;width:32px;height:32px;background:var(--condition-badge) no-repeat;image-rendering:pixelated}
-.condition-letter{position:absolute;left:10px;top:8px;width:12px;height:11px;display:flex;align-items:center;justify-content:center;color:#c20404!important;text-shadow:1px 1px #828282;font:bold 14px/1 monospace}
-.condition-word{position:absolute;left:0;top:23px;width:32px;height:8px;display:flex;align-items:center;justify-content:center;color:#414141;font:bold 8px/1 Arial,sans-serif;white-space:nowrap;-webkit-text-stroke:2px #c2c2c2;paint-order:stroke fill}
+.condition-badge{display:grid;width:32px;height:32px;background:var(--condition-badge) no-repeat;image-rendering:pixelated}
+.condition-letter{grid-area:1/1;margin:8px 0 0 10px;width:12px;height:11px;display:flex;align-items:center;justify-content:center;color:#c20404!important;text-shadow:1px 1px #828282;font:bold 14px/1 monospace}
+.condition-word{grid-area:1/1;margin-top:23px;width:32px;height:8px;display:flex;align-items:center;justify-content:center;color:#414141;font:bold 8px/1 Arial,sans-serif;white-space:nowrap;-webkit-text-stroke:2px #c2c2c2;paint-order:stroke fill}
 .sell-price{position:absolute;left:71px;top:11px;font:10px/10px monospace;white-space:nowrap}
 .sell-row[aria-selected=true] .sell-price{left:70px;top:10px}
 .game-window .sell-empty{position:absolute;left:40px;top:96px;margin:0;font:10px/10px monospace}
@@ -362,17 +378,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 
 
 /* Overlay12 Examine: source208×208 frame; HTML replaces every dynamic label. */
-.game-window[data-window=examine]{left:32px;right:auto;top:64px;width:208px;border:0}
-.game-window[data-window=examine] .game-window-body{padding:0}
-.examine-window{position:relative;width:208px;height:192px;font:10px/10px monospace;color:#000}
-.examine-window>canvas{position:absolute;inset:0;width:208px;height:192px;image-rendering:pixelated}
 /* Text fills the sunken inset interior: artwork x24..183, y96..191 (canvas y80..175). */
-.examine-window p{position:absolute;top:80px;margin:0;font:10px/10px monospace;color:#000;white-space:pre-line}
-.examine-description{left:24px;width:160px;height:96px;padding:1px 2px;overflow:auto;overflow-wrap:anywhere;overscroll-behavior:contain;scrollbar-width:thin}
-.examine-name{left:24px;width:160px;padding:1px 2px}
-.examine-damage{position:absolute;left:24px;top:90px}
-.examine-condition{position:absolute;left:56px;top:88px}
-#examine-value{position:absolute;left:96px;top:100px}
 
 .map-panel[data-object-move=pick] #world{cursor:grab}
 .map-panel[data-object-move=drop] #world{cursor:grabbing}

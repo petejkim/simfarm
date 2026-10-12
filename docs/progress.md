@@ -2886,3 +2886,9 @@ Implemented the agreed plan (details in autosave.md):
 A StrictMode double-mount initially removed the flush listeners. Fixed by a side-effect-free constructor plus an idempotent `connect()`.
 
 Tests use `@playwright/test` with Chromium launched without the pickers (`--disable-blink-features=FileSystemAccessLocal`) rather than a fixture, at user request. The 99 download helpers now use "Save to File..."; main-menu's Quit test was removed. Validation: unit 937/937; full browser suite 294/296 on the first run. The two failures were reload tests expecting a fresh Scenario 1, now updated to expect the restored game and passing; autosave spec 7/7 (21/21 over three repeats). Type checking and build pass.
+
+## 2026-10-12 — window chrome steps 1–2: shared components, wooden frame, Examine
+
+Commit 1 extracted the palette tokens, `SunkenInset`, `BevelButton` and `Sprite` (src/ui/chrome) from the toolbar and palette with no visual change. Existing structural specs pass unchanged (34/34).
+
+Commit 2 added the importer's `window-frame.png` 9-slice from Sell, an importer test checking grain periodicity and corners across 11 windows, `GameWindow framed` (border-image), and the Examine rebuild (flex layout) (no canvas or background bitmap; see examine-window.md). `ConditionBadge` now lays out its letter and word with a grid stack instead of absolute positioning. Examine/Sell/Schedule/window specs pass (13 + 21); frame test passes.

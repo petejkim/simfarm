@@ -25,6 +25,7 @@ import { readNewFarmRuntimeDefaults } from '../src/formats/new-farm-runtime';
 import { readTrafficDefaults } from '../src/formats/traffic';
 import { readOriginalMainMenus } from '../src/formats/main-menus';
 import { readSellArtwork, readSellCondition } from '../src/formats/sell-window';
+import { readWindowFrame } from '../src/formats/window-frame';
 import { readBuyArtwork, readBuyCards, readBuyCatalog } from '../src/formats/buy-window';
 import { readBankArtwork } from '../src/formats/bank-artwork';
 import { readEditPalette } from '../src/formats/edit-palette';
@@ -86,6 +87,7 @@ await png('schedule-window.png', readScheduleArtwork(asset('fdstatus.bmp'), pale
 await png('field-gauges.png', readFieldGauges(asset('fldgrph.til'), palette));
 await png('map-window.png', readMapArtwork(asset('mapwndo.bmp'), palette));
 await png('sell-window.png', readSellArtwork(asset('sellwndo.bmp'), palette));
+await png('window-frame.png', readWindowFrame(readBitmap(asset('sellwndo.bmp'), palette)));
 await png('sell-condition.png', readSellCondition(asset('ega16til.til'), palette));
 await png('buy-window.png', readBuyArtwork(asset('buywndo.bmp'), palette));
 await png('bank-terminal.png', readBankArtwork(asset('bankterm.bmp'), palette));

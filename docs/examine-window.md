@@ -49,3 +49,21 @@ Validation covers source instructions/hash, string/table boundaries, every artwo
 2026-10-11 user follow-up: removed the transitional Object actions button. Examine keeps only the applicable building open/close control; objects without that control have no action footer. Other interim windows are being audited for their remaining exclusive actions before removal.
 
 2026-10-11 user follow-up: removed the Open/Close building footer. Buildings open and close through the source secondary-click map interaction; Examine refreshes to the building's contents. Examine now has no native additions outside its 208×208 frame besides the shared title bar.
+
+## Rebuilt on shared chrome (2026-10-12)
+
+User request (ui-components.md step 2). Examine no longer draws `examine.bmp` and sprites onto a canvas with HTML laid over it. It is a framed `GameWindow`: the shared wooden `border-image` frame around a 192×184 flex client. The client holds:
+- **Photo:** a `SunkenInset` (116×68 at client 38,6; source 46,22) holding the buy-cards photo as a `Sprite`.
+- **Information:** a `SunkenInset` (164×100 at client 14,78; source 22,94) holding either the scrollable description or the named-object detail.
+
+The detail is flex rows (user layout rule: flexbox, no absolute positioning, not pixel-perfect):
+- the name;
+- then "Damage:" with the 64×8 damage meter (palette 13 with a palette 3 fill) and the building contents grid;
+- or, for items, the sprite grid, `ConditionBadge` and value side by side.
+
+Sprite grids keep the source tile arrangement. Items that overlapped in the original (wide machinery under the badge) now sit side by side. `src/render/examine.ts` was removed. `examine.bmp` is no longer used at runtime; its import, hash and pixel test remain as preservation evidence.
+
+Accepted 1px differences:
+- The common frame has an 8-row bottom where Examine's source is 9 rows.
+- The source's grey130 line just inside the left frame (column 8) is not drawn.
+- The wood grain's phase can differ by a few pixels (see ui-components.md).
