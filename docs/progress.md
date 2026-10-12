@@ -2804,3 +2804,7 @@ The user reported Buy's buttons losing 1px of bevel to caption erasure. An audit
 - **Schedule:** one mask's top row y103 → y104..114, and another's left column x10 → x11.
 
 `message-button.png` erased x2..45, removing the inner side-bevel column. It now uses the exported `MESSAGE_BUTTON_FACE` x3..44, y4..19. The remaining flagged pixels (Bank keypad, Map "?") are glyph shading inside faces. Corrected ui-components.md: there is one uniform 2px raised bevel, and the earlier "thin caption variant" came from the damaged images. Decoder tests 27/27 pass after re-import.
+
+## 2026-10-11 — no empty scroll space in Sell/Weather
+
+Screen-reader-only `.sale-accessible-detail` elements had `position:absolute` but no offsets. Each therefore sat at its static position below the window art and extended the body's scrollable area by about 15px: Sell's `#harvest-stock`, and Weather's summary and forecast list. The class is now pinned at `top:0;left:0`. A new window-viewport browser case asserts that every launcher window and Farm Expert has a body with no scroll overflow. 38/38 window specs pass.

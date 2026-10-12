@@ -17,3 +17,14 @@ test('opening windows after Market Value preserves the game viewport and map scr
     if(key==='edit')await focusEdit(page);else await page.locator(`#window-${key}`).click();expect(await position(),`After opening ${key}`).toEqual(before);
   }
 });
+
+test('window bodies fit their source artwork without scrollable empty space',async({page})=>{
+  await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const fits=(key:string)=>page.locator(`[data-window=${key}] .game-window-body`).evaluate(b=>[b.scrollHeight-b.clientHeight,b.scrollWidth-b.clientWidth]);
+  for(const key of ['buy','sell','evaluation','map','weather','balance','bank','market']){
+    await page.locator(`#window-${key}`).click();await expect(page.locator(`[data-window=${key}]`)).toBeVisible();
+    expect(await fits(key),key).toEqual([0,0]);
+  }
+  await page.locator('#windows-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Farm Expert',exact:true}).click();
+  await expect(page.locator('[data-window=expert]')).toBeVisible();expect(await fits('expert')).toEqual([0,0]);
+});

@@ -301,7 +301,8 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window .sell-empty{position:absolute;left:40px;top:96px;margin:0;font:10px/10px monospace}
 .game-window #sell-position{position:absolute;left:40px;top:200px;width:136px;height:12px;margin:0;font:10px/12px monospace}
 .game-window .sell-window .sell-caption{top:216px;height:24px;font:bold 10px Arial,sans-serif}
-.sale-accessible-detail{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+/* Screen-reader-only text: pinned to the window's origin so its static position never extends the scrollable area. */
+.sale-accessible-detail{position:absolute!important;top:0;left:0;width:1px!important;height:1px!important;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .sell-feedback{padding:4px;font:11px Arial,sans-serif}
 .sell-feedback p{margin:2px 0}
 
