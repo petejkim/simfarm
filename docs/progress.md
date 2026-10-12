@@ -2789,3 +2789,7 @@ Removed the "?" palette button with its legend component, state, decoder, import
 ## 2026-10-11 — Examine text inside its inset
 
 Examine's description box sat at x16, so text ran over the sunken inset's left bevel and edge. The name box was 168px wide and ran past the right bevel. Both now match the inset interior measured from `examine-window.png`: x24..183, artwork y96..191 (canvas y80..175), with 1px/2px padding. The browser test now asserts the exact interior box instead of only the window frame. Examine specs pass 5/5.
+
+## 2026-10-11 — documented shared window chrome design
+
+Recorded the user's decisions in ui-components.md: CSS-border bevels, a `border-image` wooden frame, and Weather on the common frame. The doc also covers measurements (8px frame sides and bottom, top from the title bar; identical across sampled windows; Weather 1px narrower), button variants, palette tokens (indices 0/15/12/13/14 verified against simfarm.pal), planned components and migration order. Documentation only; no runtime or test changes.
