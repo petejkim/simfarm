@@ -30,7 +30,7 @@ test('source menu order uses selectable text, keyboard navigation and original d
   expect(await bar.locator(':scope > button').allTextContents()).toEqual(['File', 'Options', 'Speed', 'Windows', 'Disasters', 'Debug']);
   await reveal(page, '#file-menu-button'); await page.locator('#file-menu-button').focus(); await page.keyboard.press('ArrowDown');
   const menu = page.getByRole('menu', { name: 'File' });
-  expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['About SimFarm', 'New Game', 'Save', 'Save As', 'Load Game', 'Quit']);
+  expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['About SimFarm', 'New Game', 'Save', 'Load Game', 'Quit']); // source Save As and Load Crop are omitted
   await expect(page.getByRole('menuitem', { name: 'About SimFarm' })).toBeFocused();
   await expect(page.getByRole('menuitem', { name: 'Load Crop' })).toHaveCount(0);
   await page.keyboard.press('End'); await expect(page.getByRole('menuitem', { name: 'Quit' })).toBeFocused();
@@ -53,13 +53,10 @@ test('source menu order uses selectable text, keyboard navigation and original d
   await command(page, 'New Game'); await expect(page.getByRole('region', { name: 'New farm', exact: true })).toBeVisible();
 });
 
-test('File Save As names downloads, Save retains that name, and Load Game restores the exact native checkpoint', async ({ page }) => {
+test('File Save downloads a dated gzip checkpoint and Load Game restores the exact native checkpoint', async ({ page }) => {
   await start(page); await reveal(page, '#next-day'); await page.locator('#next-day').click(); const before = await save(page);
-  await command(page, 'Save As'); await page.getByLabel('Filename', { exact: true }).fill('Preserved farm');
-  const pending = page.waitForEvent('download'); await page.getByRole('button', { name: 'Download save' }).click();
-  const download = await pending; expect(download.suggestedFilename()).toBe('Preserved farm.simfarm.json.gz');
-  expect(JSON.parse(readSaveText((await download.path())!))).toEqual(before.data);
-  expect((await save(page)).filename).toBe('Preserved farm.simfarm.json.gz');
+  expect(before.filename).toMatch(/^simfarm-1-\d+-\d+-\d+\.simfarm\.json\.gz$/);
+  expect((await save(page))).toEqual(before); // saving again repeats the same name and checkpoint
   await reveal(page, '#next-day'); await page.locator('#next-day').click();
   await pick(page, 'checkpoint.json', Buffer.from(JSON.stringify(before.data))); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   expect((await save(page)).data).toEqual(before.data);

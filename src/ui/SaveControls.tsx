@@ -19,27 +19,23 @@ export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, on
   const [saving,setSaving]=useState(false);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(loaded ? 'Farm loaded.' : '');
   const [fileError,setFileError]=useState<string|null>(null);
-  const [chosenFilename, setChosenFilename] = useState<string | null>(null);
   const date = simulation.getSnapshot().scenario.farm.calendar;
-  const filename = chosenFilename ?? `simfarm-${scenarioId === null ? simulation.getSnapshot().scenario.origin === 'generated' ? 'new-farm' : 'imported-farm' : scenarioId + 1}-${date.year}-${date.month + 1}-${date.week * 7 + date.day + 1}.simfarm.json.gz`;
+  const filename = `simfarm-${scenarioId === null ? simulation.getSnapshot().scenario.origin === 'generated' ? 'new-farm' : 'imported-farm' : scenarioId + 1}-${date.year}-${date.month + 1}-${date.week * 7 + date.day + 1}.simfarm.json.gz`;
   useEffect(() => () => pending.current?.abort(), []);
-  async function save(name?: string): Promise<boolean> {
+  async function save(): Promise<boolean> {
     if(savingRef.current)return false;
     savingRef.current=true;setSaving(true);
     setFileError(null);
     try {
-      const selected = name === undefined ? filename : name.trim().replace(/(?:\.simfarm)?\.json(?:\.gz)?$/i, '') + '.simfarm.json.gz';
-      if (!selected || /[/\\]/.test(selected) || (name !== undefined && !name.trim())) throw new Error('Choose a filename without directory separators.');
       const text = simulation.save(scenarioId);
       const url = URL.createObjectURL(await compressSave(text));
       const link = document.createElement('a');
-      link.href = url; link.download = selected;
+      link.href = url; link.download = filename;
       document.body.append(link); link.click(); link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       setMessage('Farm saved to file.');
-      if (name !== undefined) setChosenFilename(selected);
       return true;
-    } catch (error) { const text=`Could not save farm: ${error instanceof Error ? error.message : String(error)}`;setMessage(text);if(name===undefined)setFileError(text);return false; }
+    } catch (error) { const text=`Could not save farm: ${error instanceof Error ? error.message : String(error)}`;setMessage(text);setFileError(text);return false; }
     finally{savingRef.current=false;setSaving(false);}
   }
   function cancelLoad() {
@@ -67,7 +63,7 @@ export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, on
   }
   return <div className="farm-file-controls">
     <div className="original-controls">
-      <FileMenu debug={debug} about={assets.about} options={options} disasters={disasters} data={assets.mainMenus} palette={assets.catalog.palette} busy={busy||saving} filename={filename} error={message.startsWith('Could not save') ? message : null} onSave={save}
+      <FileMenu debug={debug} about={assets.about} options={options} disasters={disasters} data={assets.mainMenus} palette={assets.catalog.palette} busy={busy||saving} error={message.startsWith('Could not save') ? message : null} onSave={save}
         onLoad={() => input.current?.click()} onNewGame={onNewGame} onWindow={window=>onWindow(window,'menu')}
         onQuit={() => { simulation.dispatch({ type: 'set-paused', paused: true }); setMessage('Farm paused. Save before closing this tab.'); }} />
       <ControlBar tiles={tiles} artwork={assets.controlBar} menus={assets.mainMenus} snapshot={simulation.getSnapshot()} onWindow={window=>onWindow(window,'toolbar')} />

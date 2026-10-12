@@ -16,19 +16,18 @@ function MenuDialog({ title, children, onClose }: { title: string; children: Rea
 export interface MenuChoices { actions?:readonly {label:string;choose:()=>void}[]; extraLabels?:readonly string[]; checked: readonly boolean[]; choose: (index: number) => void; disabled?: boolean; disabledItems?:readonly boolean[]; hints?:readonly string[] }
 
 /** Recovered File/Options/Windows/Disasters chains; file-system/exit operations use browser policies. */
-export function FileMenu({ about, data, palette, busy, filename, error, onSave, onLoad, onNewGame, onQuit, onWindow, options, disasters, debug }: {
+export function FileMenu({ about, data, palette, busy, error, onSave, onLoad, onNewGame, onQuit, onWindow, options, disasters, debug }: {
   about:AboutAssets; options: MenuChoices; disasters: MenuChoices; debug: MenuChoices;
-  data: MainMenus; palette: number[][]; busy: boolean; filename: string; error: string | null;
-  onSave: (filename?: string) => Promise<boolean>; onLoad: () => void; onNewGame: () => void; onQuit: () => void; onWindow: (window: GameWindow) => void;
+  data: MainMenus; palette: number[][]; busy: boolean; error: string | null;
+  onSave: () => Promise<boolean>; onLoad: () => void; onNewGame: () => void; onQuit: () => void; onWindow: (window: GameWindow) => void;
 }) {
   const windows = useWindows();
-  const [open, setOpen] = useState<number | null>(null), [dialog, setDialog] = useState<'about' | 'save-as' | 'quit' | null>(null);
-  const [name, setName] = useState(filename);
+  const [open, setOpen] = useState<number | null>(null), [dialog, setDialog] = useState<'about' | 'quit' | null>(null);
   const button = useRef<HTMLButtonElement>(null), menu = useRef<HTMLDivElement>(null), root = useRef<HTMLElement>(null);
   const last=data.menus.at(-1)!,debugX=last.header.x+last.header.width;
   const menus=[...data.menus,{offset:-1,title:'Debug',header:{x:debugX,width:48},popup:{x:debugX,width:192,height:38},
     items:['Start rodeo','Start fair (carnival)','Advance event week'].map((label,i)=>({label,offset:-100-i}))}];
-  const file = data.menus[0], active = open === null ? null : menus[open];
+  const active = open === null ? null : menus[open];
   const choices:MenuChoices|null = open === 5 ? debug : open === 1 ? options : open === 4 ? disasters : open === 3
     ? {checked:GAME_WINDOWS.map(key=>key==='edit'||windows.order.includes(key)),choose:index=>onWindow(GAME_WINDOWS[index])} : null;
   function closeMenu(focus = true) { if (focus && active) root.current?.querySelector<HTMLButtonElement>(`#${active.title.toLowerCase()}-menu-button`)?.focus(); setOpen(null); }
@@ -45,7 +44,6 @@ export function FileMenu({ about, data, palette, busy, filename, error, onSave, 
     if (index === 0) setDialog('about');
     else if (index === 1) onNewGame();
     else if (index === 2) void onSave();
-    else if (index === 3) { setName(filename); setDialog('save-as'); }
     else if (index === 4) onLoad();
     else if (index === 6) setDialog('quit');
   }
@@ -77,7 +75,7 @@ export function FileMenu({ about, data, palette, busy, filename, error, onSave, 
             buttons[next]?.focus();
           }
         }}>
-        {[...active.items,...(choices?.extraLabels??[]).map((label,i)=>({label,offset:-i-1}))].map((item, index) => open === 0 && index === 5 ? null : <button key={item.offset} role={choices && open!==5 ? 'menuitemcheckbox' : 'menuitem'} aria-checked={open===5?undefined:choices?.checked[index]} tabIndex={-1}
+        {[...active.items,...(choices?.extraLabels??[]).map((label,i)=>({label,offset:-i-1}))].map((item, index) => open === 0 && (index === 3 || index === 5) ? null : <button key={item.offset} role={choices && open!==5 ? 'menuitemcheckbox' : 'menuitem'} aria-checked={open===5?undefined:choices?.checked[index]} tabIndex={-1}
           disabled={busy || choices?.disabled || choices?.disabledItems?.[index]} title={choices?.hints?.[index]}
           onPointerMove={event=>{if(event.pointerType==='mouse'&&document.activeElement!==event.currentTarget)event.currentTarget.focus({preventScroll:true});}}
           onClick={() => { if (open === 0) select(index); else if (choices) { closeMenu(); choices.choose(index); } else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{choices && open!==5 && <span className="menu-check" aria-hidden="true">{choices.checked[index] ? '✓' : ''}</span>}{item.label}</button>)}
@@ -87,14 +85,6 @@ export function FileMenu({ about, data, palette, busy, filename, error, onSave, 
       </div>}
     </nav>
     {dialog === 'about' && <AboutDialog assets={about} onClose={closeDialog} />}
-    {dialog === 'save-as' && <MenuDialog title={file.items[3].label} onClose={closeDialog}>
-      <form onSubmit={async event => { event.preventDefault(); if (await onSave(name)) closeDialog(); }}>
-        <label>Filename <input autoFocus value={name} required maxLength={120} pattern={String.raw`[^\/\\]+`} onChange={event => setName(event.target.value)} /></label>
-        <p>Saves a native checkpoint as a browser download. Your existing files stay intact.</p>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={busy}>Download save</button> <button type="button" onClick={closeDialog}>Cancel</button>
-      </form>
-    </MenuDialog>}
     {dialog === 'quit' && <MenuDialog title="Quit SimFarm?" onClose={closeDialog}>
       <p>Quitting pauses and keeps your farm in this tab. Save a copy before closing the tab.</p>
       {error && <p role="alert">{error}</p>}
