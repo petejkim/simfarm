@@ -1,11 +1,10 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page,type Locator} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {PNG} from 'pngjs';
 import {readArchive} from '../../src/formats/archive';
 import {decodePlanar,readPalette} from '../../src/formats/graphics';
-import {patchCropGraphics} from '../../src/formats/crop-graphics';
 import {allCropFiles} from '../../src/formats/crop-slots';
 import {readScenario} from '../../src/formats/scenario';
 import {readExpertDeck} from '../../src/formats/expert-cards';
@@ -19,24 +18,28 @@ const deck=readExpertDeck(id=>asset(`card${id}.hc`));
 const cropFiles=allCropFiles(readScenario(source('SCEN0.SSM')).cropFiles);
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
 async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
-async function pixels(page:Page,x:number,y:number,w:number,h:number){return page.locator('.expert-artwork').evaluate((c:HTMLCanvasElement,r)=>Array.from(c.getContext('2d')!.getImageData(...r).data),[x,y,w,h] as [number,number,number,number]);}
+const at=(x:number,y:number)=>`${-x}px ${-y}px`;
+/** Inline sprite offsets of a locator's sprites, in DOM order. */
+function offsets(l:Locator){return l.evaluateAll(es=>es.map(e=>(e as HTMLElement).style.backgroundPosition));}
 
 test('Expert restores original home geometry, all static chapters, field icons and movable real-text pages without farm mutations',async({page})=>{
   await start(page);const before=await save(page),edit=await page.locator('#viewport').boundingBox();await openWindow(page,'expert');
   const win=page.getByRole('dialog',{name:'Farm Expert',exact:true}),client=page.getByRole('region',{name:'Farm Expert'});
   expect(await win.boundingBox()).toEqual({x:128,y:96,width:400,height:240});
-  expect(await client.boundingBox()).toEqual({x:128,y:112,width:400,height:224});
+  expect(await client.boundingBox()).toEqual({x:136,y:112,width:384,height:216});
+  await expect(client.locator('canvas')).toHaveCount(0);
   await expect(client).toContainText("Welcome to the town's Farm Bureau.");
   expect(await client.getByRole('button').count()).toBe(7);
   for(const [name,x,y] of [['Field icons',24,16],['Crops',144,16],['Sprays',264,16],['Machinery',24,96],['Structures',144,96],['Livestock',264,96]] as const)
     expect(await client.getByRole('button',{name,exact:true}).boundingBox()).toEqual({x:128+x,y:112+y,width:112,height:64});
   await page.screenshot({path:'artifacts/browser-expert-home.png'});
   await client.getByRole('button',{name:'Field icons',exact:true}).click();
-  const tiles=patchCropGraphics(asset('ega16til.til'),cropFiles.map(f=>source(`CROPS/${f.toUpperCase()}`)));
   for(const c of deck.get(2)!){
     if(c.kind==='text')await expect(client.getByText(c.text,{exact:true})).toBeVisible();
-    if(c.kind==='tiles')for(let i=0;i<c.columns*c.rows;i++){
-      const tile=c.first+i;expect(await pixels(page,c.x+i%c.columns*16,c.y-16+Math.floor(i/c.columns)*16,16,16)).toEqual(Array.from(decodePlanar(tiles.subarray(tile*128,(tile+1)*128),16,16,palette).rgba));
+    if(c.kind==='tiles'){
+      const strip=client.locator('.expert-tiles').nth(deck.get(2)!.filter(d=>d.kind==='tiles').indexOf(c));
+      expect(await strip.boundingBox()).toEqual({x:128+c.x,y:96+c.y,width:c.columns*16,height:c.rows*16});
+      expect(await offsets(strip.locator('.sprite'))).toEqual(Array.from({length:c.columns*c.rows},(_,i)=>{const t=c.first+i;return at(t%32*16,Math.floor(t/32)*16);}));
     }
   }
   await client.getByRole('button',{name:'CANCEL',exact:true}).click();
@@ -47,8 +50,10 @@ test('Expert restores original home geometry, all static chapters, field icons a
       for(const c of deck.get(id)!){
         if(c.kind==='text')await expect(client.getByText(c.text,{exact:true})).toBeVisible();
         if(c.kind==='picture'&&c.card!==66){
-          // alltiles.btl:20-byte header,2-byte card header,3584 planar bytes.
-          expect(await pixels(page,c.x,c.y-16,112,64)).toEqual(Array.from(decodePlanar(asset('alltiles.btl').subarray(22+c.card*3586,22+c.card*3586+3584),112,64,palette).rgba));
+          // buy-cards.png is the imported alltiles.btl atlas, eight 112×64 cards per row.
+          const picture=client.locator('.expert-picture').nth(deck.get(id)!.filter(d=>d.kind==='picture'&&d.card!==66).indexOf(c));
+          expect(await picture.boundingBox()).toEqual({x:128+c.x,y:96+c.y,width:112,height:64});
+          expect(await picture.evaluate(e=>[(e as HTMLElement).style.backgroundImage.includes('buy-cards.png'),(e as HTMLElement).style.backgroundPosition])).toEqual([true,at(c.card%8*112,Math.floor(c.card/8)*64)]);
         }
       }
       await expect(client.getByRole('img',{name:'Farm Bureau expert',exact:true})).toBeVisible();

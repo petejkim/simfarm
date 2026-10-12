@@ -53,3 +53,14 @@ The user's all24-crops policy extends the source crop chapter: page25 gains Next
 Source evidence is high confidence for the supplied opcodes, positions, links, text blocks and sound callbacks. Browser wrapping, standard exclusive right/bottom hit boundaries, keyboard focus, close policy and extra eight crop pages are explicit native adaptations. Original sound arbitration, unused opcode behavior and the wider window manager remain incomplete. Other original dialog interiors and preservation of all game systems are still pending.
 
 Tests pin source ranges, source/imported pixels and captions; traverse the complete43-page graph; reject every truncated source prefix, malformed coordinate/target/string and excessive control count; verify16–24 crop-chain boundaries without altering the original deck; and read all24 CRP expert blocks. Browser coverage checks source geometry, static chapters and icon/illustration pixels, all24 crop photographs and actual text, forward/back navigation, keyboard/movement/reopening, save equality, enabled/muted/failed PCM and startup resource failures. Final results are recorded in progress.md.
+
+## Native rebuild on shared chrome (2026-10-12)
+
+`farmburo.bmp` holds only the frame and a plain face, so Farm Expert now uses the common frame around a 384×216 client, and the full-window bitmap and `src/render/expert-artwork.ts` canvas were removed.
+- **Placement:** card commands are positional source data, so each element is placed at its recorded coordinates less the 8px frame and 16px title. This is the one deliberate exception to the flex-layout rule.
+- **Pictures:** `buy-cards.png` cards and crop photos are `Sprite`s.
+- **Tile strips:** grids of `TileSprite`s.
+- **Captions:** NEXT, PREV, CANCEL and CLOSE are 48×24 `BevelButton`s, the same bevel as `message-button.png`.
+- **Unchanged:** text stays HTML, and topic and rooster links stay transparent hotspots. The portrait keeps its bitmap FARM BUREAU cap.
+
+Absolute screen positions of hotspots, pictures and tile strips are unchanged. The browser spec checks them structurally (sprite offsets and boxes). Validation: expert specs pass (4/4).

@@ -2932,3 +2932,7 @@ The window is now framed, with a CSS bar graph, gradient grid and reference line
 ## 2026-10-12 — AIRPLANE window rebuilt on shared chrome
 
 The window is now framed, with picture `BevelButton`s (sprite faces from the bitmap), price insets, a gauge inset with field-gauge sprites and HTML labels, and FLY!/CLOSE caption buttons. The source control rectangles are verified. Details are in aircraft-window.md. All aircraft specs pass (9/9).
+
+## 2026-10-12 — Farm Expert rebuilt on shared chrome
+
+The window is now framed. Card pictures and tile strips are sprites, and captions are `BevelButton`s. Card commands keep their recorded placement, because they are positional data. The expert-artwork canvas renderer was removed. Details are in farm-expert.md. Expert specs pass (4/4).
