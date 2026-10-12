@@ -2964,3 +2964,7 @@ The window is framed, with HTML title and labels, sunken climate meters and `Bev
 ## 2026-10-12 — Terrain designer on shared chrome
 
 The designer is now a flex client with HTML text, arrow `BevelButton`s with bitmap faces, sunken level bars, toggle/caption `BevelButton`s, and the preview image with grid-placed H/T markers. The defworld background and preview canvas were removed. Details are in new-farm.md. The New Game specs pass (19/19).
+
+## 2026-10-12 — File loading and File error dialogs on shared chrome
+
+Both dialogs are now framed, with a sunken message box and a `BevelButton` (Cancel loading / OK). The file-errors, file-loading, compressed-save and homestead specs pass.

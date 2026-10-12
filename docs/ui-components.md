@@ -122,3 +122,4 @@ Converted so far:
 - **Settings:** framed, with Zoom and Music `.chrome-select`s, the Volume `.chrome-range` and the audio status line.
 - **New Game:** region chooser rebuilt (see new-farm.md); the setup strip uses `.chrome-input` fields.
 - **Terrain designer:** rebuilt (see new-farm.md).
+- **File loading and File error:** framed dialogs with a sunken message box and a centred caption `BevelButton`, at 176,160.

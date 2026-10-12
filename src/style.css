@@ -78,6 +78,8 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .native-button{min-width:72px;height:24px;padding-inline:1px;font:bold 10px/1 Arial,sans-serif}
 .native-button .bevel-button-face{padding:0 6px}
 .native-note{overflow-wrap:anywhere}
+.native-dialog .native-status p{margin:0;overflow-wrap:anywhere}
+.game-window:is([data-window=file-loading],[data-window=file-error]){left:176px;right:auto;top:160px}
 .game-window select.chrome-select{flex:1;height:18px;padding:0 16px 0 3px;border:2px solid;border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow);border-radius:0;appearance:none;-webkit-appearance:none;
   background:var(--face) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4'%3E%3Cpath d='M0 0h7L3.5 4z'/%3E%3C/svg%3E") no-repeat right 4px center;color:var(--ink);font:10px/14px monospace}
 .game-window input.chrome-range{flex:1;height:16px;margin:0;padding:0;border:2px solid;border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow);border-radius:0;background:var(--lettering);appearance:none;-webkit-appearance:none}

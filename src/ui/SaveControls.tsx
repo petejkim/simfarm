@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { loadSavedFarmTiles, type GameAssets } from '../assets/game-assets';
 import { compressSave,readSaveFile } from '../formats/save-file';
 import { GameSimulation } from '../simulation/game';
+import { BevelButton } from './chrome/BevelButton';
+import { SunkenInset } from './chrome/SunkenInset';
 import { GameWindow } from './GameWindow';
 import { FileMenu, type MenuChoices } from './FileMenu';
 import { ControlBar, type GameWindow as WindowCommand } from './ControlBar';
@@ -106,13 +108,17 @@ export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, st
         if (file) void load(file);
       }} />
     <span id="save-status" className="file-status" role="status">{message}</span>
-    {busy&&<GameWindow windowKey="file-loading" title="Loading game" forced onClose={cancelLoad}>
-      <p>Loading farm…</p>
-      <button onClick={cancelLoad}>Cancel loading</button>
+    {busy&&<GameWindow windowKey="file-loading" title="Loading game" forced framed onClose={cancelLoad}>
+      <section className="native-window native-dialog" aria-label="Loading farm">
+        <SunkenInset as="div" className="native-status"><span role="status">Loading farm…</span></SunkenInset>
+        <div className="native-actions"><BevelButton className="native-button" onClick={cancelLoad}>Cancel loading</BevelButton></div>
+      </section>
     </GameWindow>}
-    {fileError&&<GameWindow windowKey="file-error" title="File error" forced descriptionId="file-error-text" onClose={()=>setFileError(null)}>
-      <p id="file-error-text">{fileError}</p>
-      <button id="file-error-ok" onClick={()=>setFileError(null)}>OK</button>
+    {fileError&&<GameWindow windowKey="file-error" title="File error" forced framed descriptionId="file-error-text" onClose={()=>setFileError(null)}>
+      <section className="native-window native-dialog" aria-label="File error">
+        <SunkenInset as="div" className="native-status"><p id="file-error-text">{fileError}</p></SunkenInset>
+        <div className="native-actions"><BevelButton id="file-error-ok" className="native-button" onClick={()=>setFileError(null)}>OK</BevelButton></div>
+      </section>
     </GameWindow>}
   </div>;
 }
