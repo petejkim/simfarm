@@ -3047,3 +3047,7 @@ Added 16×16 and 32×32 favicons from the Apples crop file: the Edit plant icon 
 ## 2026-10-12 — Stacked field condition badges
 
 Fields with several treatable conditions (weed, pest, fungus, plus toxicity) no longer flicker. The original cycles them through one badge slot; the native renderer now stacks them vertically in that column. Presentation only: simulation terrain writes and saves are unchanged. Details in reverse-engineering.md (field status section). Validation: new field-badges unit test, simulation tests (11), field-tools and field-message browser specs (7/7), production build, and a screenshot of a Scenario 1 field with three conditions.
+
+## 2026-10-12 — Treating several fields at once (SF-178)
+
+Fixed a reported stall where only one or two of six treated fields progressed at a time. The original treatment and planting FSMs end the whole field dispatcher while a field waits on its tractor timer. Tractors on different timer phases therefore starved later fields. Native code now waits per field. The step 0 stock-failure exit is unchanged. Recorded as SF-178 with the reproduced timings. Validation: full unit suite (946/947; the one failure was a stale render-test stub from the badge commit, fixed and committed separately), new staggered six-field regression (fails without the fix), field-tools, crop-supplies, tool-status and all-crops browser specs (10/10), production build.

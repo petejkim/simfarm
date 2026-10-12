@@ -27,7 +27,8 @@ export function orderTreatment(world: Scenario, slot: number, treatment: Treatme
   return { ...supply, fieldSlot: slot, treatment };
 }
 
-/** Shared treatment FSM, file 0x185ac..0x18c89. False exits the original whole field dispatcher.
+/** Shared treatment FSM, file 0x185ac..0x18c89. False exits the whole field dispatcher (step 0 stock
+ * failure only; the step 5 timer wait is per-field natively, SF-178).
  * Each treatment makes one non-painting tractor/type-3 sprayer pass, then returns the equipment.
  * Step 0 is the scheduled-order path; immediate commands already paid and start at step 1. */
 export function updateTreatmentField(field: FieldRecord, crop: readonly number[], world: Scenario,
@@ -74,7 +75,9 @@ export function updateTreatmentField(field: FieldRecord, crop: readonly number[]
       positionEquipmentAttachments(tractor, world.equipment, world.equipmentDefinitions);
       tractor.timestamp = tick; b[3] = 5; break;
     case 5: {
-      if (((tick - tractor.timestamp) & 0xffff) < 1) return false;
+      // SF-178: the original returns false here, ending the whole field dispatcher whenever this tractor's
+      // timer was just refreshed. Native code waits for this field only, so later fields keep their turn.
+      if (((tick - tractor.timestamp) & 0xffff) < 1) return true;
       const sprayer = world.equipment[tractor.attachment];
       if (!sprayer?.active) throw new Error('Treatment sprayer is missing');
       if (!traverseEquipmentField(tractor, field, -1, world, runtime)) break;

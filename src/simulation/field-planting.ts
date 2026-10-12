@@ -38,8 +38,8 @@ export function findBuildingEntry(building: BuildingRecord, world: Scenario): { 
 }
 
 /** Planting FSM 0x17d74..0x1843b, plus shared steps 0/1 at 0x18ae8/0x185c8.
- * Orders must already have passed the seed/contract handler. False requests the original early
- * return from the whole field dispatcher when the tractor's work timer is not ready. */
+ * Orders must already have passed the seed/contract handler. The original returns from the whole field
+ * dispatcher when the tractor's work timer is not ready; natively only this field waits (SF-178). */
 export function updatePlantingField(field: FieldRecord, definition: readonly number[], world: Scenario,
   runtime: EquipmentRuntime, tick: number, allocate: EquipmentAllocator = reserveOwnedEquipment): boolean {
   if (!field.active || field.state !== 3) return true;
@@ -87,7 +87,7 @@ export function updatePlantingField(field: FieldRecord, definition: readonly num
       if (tractor.flags & 2) break;
       placeAtOrigin(); b[3] = 5; break;
     case 5: {
-      if (((tick - tractor.timestamp) & 0xffff) < 1) return false;
+      if (((tick - tractor.timestamp) & 0xffff) < 1) return true; // SF-178: original exits the whole dispatcher.
       const implement = world.equipment[tractor.attachment];
       if (!implement?.active) throw new Error('Planting implement is missing');
       if (traverseEquipmentField(tractor, field, 12, world, runtime)) {
@@ -109,7 +109,7 @@ export function updatePlantingField(field: FieldRecord, definition: readonly num
       tractor.bytes[48] = field.slot; tractor.bytes[15] = 2; tractor.bytes[49] = 1;
       placeAtOrigin(); b[3] = 11; break;
     case 11: {
-      if (((tick - tractor.timestamp) & 0xffff) < 1) return false;
+      if (((tick - tractor.timestamp) & 0xffff) < 1) return true; // SF-178: original exits the whole dispatcher.
       if (definition.length !== 128) throw new Error('Invalid planting crop definition');
       const implement = world.equipment[tractor.attachment];
       if (!implement?.active) throw new Error('Planting implement is missing');

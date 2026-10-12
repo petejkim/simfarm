@@ -8,6 +8,8 @@ import { orderTreatment, updateTreatmentField, TREATMENTS, type Treatment } from
 import { updateEquipment } from '../src/simulation/equipment-dispatch';
 import { reserveEquipment } from '../src/simulation/equipment-rental';
 import type { EquipmentRuntime } from '../src/simulation/equipment-world';
+import { GameSimulation } from './support/game';
+import { browserCrops } from './support/crop-catalog';
 
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
 function setup(id = 4) {
@@ -103,11 +105,41 @@ test('waiting fields resume their saved substep and treatment timing survives th
   const tractor = world.equipment[field.equipment];
   tractor.timestamp = 65535;
   const before = JSON.stringify(world);
-  assert.equal(updateTreatmentField(field, crop, world, runtime, 65535, 8), false);
+  // SF-178: the timer wait leaves the field untouched but no longer ends the whole field dispatcher.
+  assert.equal(updateTreatmentField(field, crop, world, runtime, 65535, 8), true);
   assert.equal(JSON.stringify(world), before);
   // Last traversal position: completion on wrapped tick zero must restore the saved Waiting state.
   tractor.bytes[5] = field.x + field.width; tractor.bytes[6] = field.y + field.height - 1; tractor.bytes[49] = 1;
   assert.equal(updateTreatmentField(field, crop, world, runtime, 0, 8), true);
   assert.equal(field.state, 0); assert.equal(field.step, 7);
   assert.equal(field.bytes[29], 255); assert.equal(field.equipment, 0);
+});
+
+test('SF-178: a spraying field waiting on its tractor timer does not stall later fields ordered on other ticks', () => {
+  const run = (gap: number) => {
+    const game = new GameSimulation(readScenario(source('SCEN0.SSM')), browserCrops), snapshot = game.getSnapshot();
+    snapshot.scenario.farm.messages = false;
+    const oneTick = 4000 / (snapshot.scenario.farm.dayDelayTicks + 1) + 1e-6, s = () => game.getSnapshot().scenario;
+    const slots = s().fields.filter(f => f.active && [0, 4].includes(f.state)).slice(0, 6).map(f => f.slot);
+    game.dispatch({ type: 'set-paused', paused: false });
+    for (const fieldSlot of slots) {
+      game.dispatch({ type: 'treat-field', fieldSlot, treatment: 'pesticide' });
+      assert.equal(game.getSnapshot().lastTreatmentResult?.ok, true);
+      for (let i = 0; i < gap; i++) game.tick(oneTick);
+    }
+    let ticks = slots.length * gap, spraying = 0;
+    for (; ticks < 3000 && slots.some(n => s().fields[n].state >= 6); ticks++) {
+      game.tick(oneTick);
+      spraying = Math.max(spraying, slots.filter(n => s().fields[n].state >= 6 && s().fields[n].step === 5).length);
+    }
+    assert.ok(slots.every(n => s().fields[n].state < 6), `gap ${gap}: all treatments finish`);
+    return { ticks, spraying };
+  };
+  const together = run(0);
+  for (const gap of [1, 3, 7]) {
+    const staggered = run(gap);
+    // Before SF-178 these took ~720-770 ticks with mostly one or two fields spraying at once.
+    assert.equal(staggered.spraying, 6, `gap ${gap}: all six fields spray at the same time`);
+    assert.ok(staggered.ticks < together.ticks + 6 * gap + 60, `gap ${gap}: ${staggered.ticks} vs ${together.ticks}`);
+  }
 });
