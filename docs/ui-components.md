@@ -1,6 +1,6 @@
 # Shared window chrome components
 
-Status: **planned, not implemented.** This document records the agreed design for reusable UI chrome. The toolbar (`ControlBar`), Edit palette and every reconstructed window will share it. Implement it incrementally, following the migration order below.
+Status: **in progress.** Step 1 (shared chrome extracted from the toolbar and palette) is done; windows follow one commit each. This document records the agreed design for reusable UI chrome. The toolbar (`ControlBar`), Edit palette and every reconstructed window will share it. Implement it incrementally, following the migration order below.
 
 ## Decisions (user, 2026-10-11)
 

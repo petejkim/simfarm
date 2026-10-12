@@ -1,4 +1,7 @@
-import {useEffect,useRef,type CSSProperties,type ReactNode} from 'react';
+import {useEffect,useRef,type ReactNode} from 'react';
+import {BevelButton} from './chrome/BevelButton';
+import {SunkenInset} from './chrome/SunkenInset';
+import {spriteFace} from './chrome/Sprite';
 import {drawToolbarWeather} from '../render/toolbar-weather';
 import {WEATHER_SKIES} from '../simulation/weather-view';
 import {CONTROL_BAR_LAUNCHER} from '../formats/control-bar';
@@ -23,10 +26,9 @@ export function ControlBar({ artwork, menus, snapshot, tiles, onWindow }: {
 }) {
   const date = snapshot.scenario.farm.calendar, windows = useWindows();
   const forecast=[...snapshot.weather.forecast,...snapshot.weather.nextForecast].slice(date.day,date.day+3);
-  return <div className="original-control-bar" aria-label="Game toolbar" role="toolbar"
-    style={{ '--control-bar-sprite': `url("${artwork.src}")` } as CSSProperties}>
+  return <div className="original-control-bar" aria-label="Game toolbar" role="toolbar">
     <div className="toolbar-launchers">
-      {LAUNCHERS.map(({ window, face }) => <WindowLauncher key={window} window={window} face={face}
+      {LAUNCHERS.map(({ window, face }) => <WindowLauncher key={window} window={window} face={face} artwork={artwork.src}
         label={menus.menus[3].items[face].label} captioned={CAPTIONED.has(window)} pressed={windows.order.includes(window)} onWindow={onWindow} />)}
     </div>
     <div className="toolbar-forecast-area"><ToolbarForecast forecast={forecast} tiles={tiles} /></div>
@@ -39,21 +41,14 @@ export function ControlBar({ artwork, menus, snapshot, tiles, onWindow }: {
 
 /** One 32×32 launcher: black button background shows as a 1px frame around the 2px raised bevel;
  * the source picture face comes from sprite (face×32+3, 3). It stays depressed while its window is open. */
-export function WindowLauncher({ window, face, label, captioned, pressed, onWindow }: {
-  window: GameWindow; face: number; label: string; captioned: boolean; pressed: boolean; onWindow: (window: GameWindow) => void;
+export function WindowLauncher({ window, face, artwork, label, captioned, pressed, onWindow }: {
+  window: GameWindow; face: number; artwork: string; label: string; captioned: boolean; pressed: boolean; onWindow: (window: GameWindow) => void;
 }) {
   const { size, inset } = CONTROL_BAR_LAUNCHER;
-  return <button id={`window-${window}`} className={`window-launcher${pressed ? ' is-pressed' : ''}`} aria-pressed={pressed}
-    aria-label={label} title={label} onClick={() => onWindow(window)}>
-    <span className="window-launcher-face" style={{ backgroundPosition: `${-(face * size + inset)}px ${-inset}px` }}>
-      {captioned && <span className="toolbar-caption">{label.toUpperCase()}</span>}
-    </span>
-  </button>;
-}
-
-/** Sunken 2px bevel used by the forecast and Date/Funds boxes; size comes from the modifier class. */
-export function ToolbarInset({ className, children }: { className: string; children: ReactNode }) {
-  return <span className={`toolbar-inset ${className}`}>{children}</span>;
+  return <BevelButton id={`window-${window}`} className="window-launcher" faceClassName="window-launcher-face" pressed={pressed}
+    faceStyle={spriteFace(artwork, face * size + inset, inset)} aria-label={label} title={label} onClick={() => onWindow(window)}>
+    {captioned && <span className="toolbar-caption">{label.toUpperCase()}</span>}
+  </BevelButton>;
 }
 
 /** Source2a518..2a552: three 16×16 forecast tiles inside a 52×20 inset. */
@@ -61,15 +56,15 @@ export function ToolbarForecast({ forecast, tiles }: { forecast: readonly number
   const canvas=useRef<HTMLCanvasElement>(null);
   useEffect(()=>{if(canvas.current&&tiles)drawToolbarWeather(canvas.current.getContext('2d')!,tiles,forecast);},[tiles,...forecast]);
   const weatherLabel=forecast.map((code,i)=>`${['Today','Tomorrow','Day 3'][i]}: ${WEATHER_SKIES[code]}`).join('; ');
-  return <ToolbarInset className="toolbar-forecast">
+  return <SunkenInset className="toolbar-forecast">
     <canvas ref={canvas} className="toolbar-weather" width={48} height={16} role="img" aria-label={weatherLabel} title={weatherLabel}/>
-  </ToolbarInset>;
+  </SunkenInset>;
 }
 
 /** Right-aligned bold caption, then a 176×13 sunken value box. */
 export function ToolbarReadout({ id, label, children }: { id: string; label: string; children: ReactNode }) {
   return <div className="toolbar-readout-row">
     <span id={`${id}-label`} className="toolbar-readout-label">{label}</span>
-    <ToolbarInset className="toolbar-readout"><span id={id}>{children}</span></ToolbarInset>
+    <SunkenInset className="toolbar-readout"><span id={id}>{children}</span></SunkenInset>
   </div>;
 }
