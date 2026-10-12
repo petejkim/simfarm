@@ -454,3 +454,7 @@ User resumed the goal, then requested music100% / effects75%; applied these gain
 ## 2026-10-11 — View/Bulldoze cursor restoration
 
 Restored source View magnifier and Bulldoze arrow alongside Move FROM/TO; other source cursor modes remain incomplete. All affected map actions retain canonical commands/checkpoints. Browser validation must start a server from this checkout on its own port; port5173 can belong to a different checkout and is not proof of current code. Make that isolation the default test configuration, then continue original interaction coverage.
+
+## 2026-10-11 — construction/Spray cursor coverage
+
+All nine original construction tools and four spray choices now use their source-selected arrow bitmaps, with existing native persistence retained. Plant's original128×128-pixel footprint is established; exact border renderer and cursor inheritance remain unresolved, as do purchased-object/flight cursor presentation. Continue from those concrete source questions without mistaking this UI progress for complete game coverage.

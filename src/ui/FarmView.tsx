@@ -322,8 +322,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
       if (navigate) setFocus({ x: selected.x + selected.width / 2, y: selected.y + selected.height / 2 });
     }
   }
-  const mapCursor=snapshot?.aircraftFlight?null:bulldoze.active?'bulldoze':objectMove.active?(objectMove.selected?'drop':'pick'):
-    !buyPlacement&&!fieldMapTool&&!construction.tool?'view':null;
+  const mapCursor=snapshot?.aircraftFlight?null:bulldoze.active||construction.tool?'bulldoze':objectMove.active?(objectMove.selected?'drop':'pick'):
+    fieldMapTool&&fieldMapTool.kind!=='plant'?'spray':!buyPlacement&&!fieldMapTool?'view':null;
   return <>
     {simulation && <SaveControls debug={{
       checked:[],

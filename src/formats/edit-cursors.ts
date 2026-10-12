@@ -1,6 +1,6 @@
 import type {Raster} from './graphics';
 
-export const EDIT_CURSOR_OFFSETS={pick:0x1a2e,drop:0x19ea,view:0x19a4,bulldoze:0x18d2} as const;
+export const EDIT_CURSOR_OFFSETS={pick:0x1a2e,drop:0x19ea,view:0x19a4,bulldoze:0x18d2,spray:0x188c} as const;
 /** Source8062..8145: three skipped words,32 mask bytes,32 color bytes.
  * Move records overlap adjacent data in their last color word; their empty
  * final mask row hides it.

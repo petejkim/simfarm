@@ -45,7 +45,7 @@ test('original Plant and Spray popup geometry, real labels, source icons and key
   expect(await spray.boundingBox()).toEqual({x:48,y:192,width:112,height:88});
   expect(await spray.getByRole('menuitem').allTextContents()).toEqual(['Fertilize','Pesticide','Herbicide','Fungicide']);
   await page.screenshot({path:'artifacts/browser-spray-menu.png'});await page.keyboard.press('End');await page.keyboard.press('Enter');
-  await expect(page.locator('#map-tool-hint')).toContainText('Fungicide');await page.keyboard.press('Escape');
+  await expect(page.locator('#map-tool-hint')).toContainText('Fungicide');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-spray\.png.*0 0, crosshair/);await page.keyboard.press('Escape');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
   expect(await save(page)).toEqual(before);
 });
 

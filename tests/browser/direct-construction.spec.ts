@@ -12,7 +12,7 @@ async function save(page:Page){const p=page.waitForEvent('download');await page.
 async function coords(page:Page,x:number,y:number){const zoom=Number(await page.locator('#zoom').inputValue()),r=(await page.locator('#world').boundingBox())!;return {x:r.x+(x+.5)*16*zoom,y:r.y+(y+.5)*16*zoom};}
 async function move(page:Page,x:number,y:number,steps=1){const p=await coords(page,x,y);await page.mouse.move(p.x,p.y,{steps});}
 async function click(page:Page,x:number,y:number){await move(page,x,y);await page.mouse.down();await page.mouse.up();}
-async function tool(page:Page,name:string){await page.getByRole('button',{name,exact:true}).click();await expect(page.locator('#cancel-construction')).toBeVisible();}
+async function tool(page:Page,name:string){await page.getByRole('button',{name,exact:true}).click();await expect(page.locator('#cancel-construction')).toBeVisible();await expect(page.locator('#world')).toHaveCSS('cursor',/edit-bulldoze\.png.*0 0, crosshair/);}
 async function pixels(page:Page,x:number,y:number,tile:number){
   const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url)),archive=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),asset=(n:string)=>archive.find(a=>a.name===n)!.bytes;
   const expected=decodePlanar(asset('ega16til.til').subarray(tile*128,(tile+1)*128),16,16,readPalette(asset('simfarm.pal'))).rgba;
