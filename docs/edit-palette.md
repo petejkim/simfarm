@@ -22,3 +22,12 @@ User request: rebuild the palette like the control strip. `EditPalette` now comp
 The palette's right edge (x47) has no black frame in the source; the neighbouring cell's black is the separator between cells. The previous native hit regions (Plant top144/h24, Spray top168/h22, ? top190/h18) did not match the source cells and now follow them. Disabled tools overlay the face with translucent grey (previous native look); pressed cells swap bevel colours on `:active` as a native affordance. The ? caption erasure was narrowed from rows192..203 to the face rows191..201, so it no longer overwrites bevel rows 202..203 in the imported PNG.
 
 Validation was structural only, at the user's request (no pixel-diff tests): browser tests check cell bounds, black backgrounds, padding, sprite offsets, pixelated rendering, captions and pressed state. The old dashboard `box-shadow` on the terrain panel faintly darkened the palette and strip; it is now `none` inside the game desktop.
+
+## Depressed state and Examine closing (2026-10-11)
+
+User request: buttons show as depressed for as long as their action lasts.
+- **Toolbar launchers.** A launcher stays depressed (bevel colours swapped, `aria-pressed`) while its window is in the open-window list. That is the same `useWindows().order` source as the Windows-menu checkmarks.
+- **Palette buttons.** `FarmView` derives one `EditPaletteAction` from the existing tool state, with no new simulation or saved state: help legend open, then Move object, Bulldoze, the active construction tool (paved/dirt road, fence, gate, ditch, valve, hay, trough, trees), the Plant menu or plant map tool, the Spray menu or spray map tool. When none is running, View object (default examine mode) is depressed.
+- **Examine closing.** User request: choosing any palette action other than View object closes the Examine window. This covers the tools, Plant/Spray and the help button. View object leaves Examine open. Schedule and other windows are unaffected.
+
+Source evidence for the original depressed-button rendering has not been traced. This is a user-directed native presentation behaviour.

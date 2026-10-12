@@ -2752,3 +2752,11 @@ The terrain panel's dashboard shadow is removed inside the game desktop. At user
 - After the pixelated-rendering change, edit-workspace and control-bar pass 7/7.
 - Build and edit-palette/control-bar decoder tests pass.
 - Full browser suite not rerun (presentation-only change).
+
+## 2026-10-11 — depressed launcher/palette states; palette actions close Examine
+
+- Toolbar launchers stay depressed while their window is open.
+- Palette buttons stay depressed while their action runs, falling back to View object.
+- Choosing any non-View palette action closes Examine.
+
+Details are in edit-palette.md. New browser cases cover launcher press/release across Buy/Bank, palette transitions (Fence, Bulldoze, Plant, Spray, help) and Examine closing (Fence/Plant/help, with View object keeping it open). Validation: 127/127 browser cases pass across 32 toolbar/palette/window specs (artifacts/pressed-state-browser.log); type checking and build pass. No simulation/save changes; full suite not rerun.

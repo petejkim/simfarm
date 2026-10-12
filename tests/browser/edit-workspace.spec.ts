@@ -76,3 +76,22 @@ test('Edit palette rebuilds source cells with black backgrounds, CSS bevels, spr
   expect(await palette.getByRole('button', { name: 'Fence', exact: true }).locator('.edit-palette-face').evaluate(el => getComputedStyle(el).borderTopColor)).toBe('rgb(130, 130, 130)');
   await page.mouse.up(); await page.keyboard.press('Escape');
 });
+
+test('palette keeps the running action depressed and returns to View object when it ends', async ({ page }) => {
+  await page.goto('/'); await expect(page.locator('#viewport')).toBeVisible();
+  const palette = page.getByRole('toolbar', { name: 'Edit tools' });
+  const pressed = async () => palette.getByRole('button').evaluateAll(els => els.filter(el => el.getAttribute('aria-pressed') === 'true').map(el => el.getAttribute('aria-label') ?? el.textContent));
+  const bevel = (name: string) => palette.getByRole('button', { name, exact: true }).locator('.edit-palette-face').evaluate(el => getComputedStyle(el).borderTopColor);
+  expect(await pressed()).toEqual(['View object']);
+  await palette.getByRole('button', { name: 'Fence', exact: true }).click(); await page.mouse.move(900, 600);
+  expect(await pressed()).toEqual(['Fence']); expect(await bevel('Fence')).toBe('rgb(130, 130, 130)'); expect(await bevel('View object')).toBe('rgb(255, 255, 255)');
+  await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
+  await palette.getByRole('button', { name: 'Bulldoze', exact: true }).click(); expect(await pressed()).toEqual(['Bulldoze']);
+  await page.locator('#cancel-bulldoze').click(); await expect.poll(pressed).toEqual(['View object']);
+  await palette.getByRole('button', { name: 'Plant', exact: true }).click(); await expect.poll(pressed).toEqual(['Plant']);
+  await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
+  await palette.getByRole('button', { name: 'Spray', exact: true }).click(); await expect.poll(pressed).toEqual(['Spray']);
+  await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
+  await palette.getByRole('button', { name: 'Edit tools and help', exact: true }).click(); await expect.poll(pressed).toEqual(['Edit tools and help']);
+  await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
+});

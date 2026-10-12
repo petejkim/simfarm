@@ -100,7 +100,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .original-control-bar .window-launcher{display:flex;flex:none;width:32px;height:32px;margin:0;padding:1px;border:0;border-radius:0;background:var(--bar-ink);color:var(--bar-ink)}
 .original-control-bar .window-launcher-face{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;flex:1;border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light);background:var(--bar-face) var(--control-bar-sprite) no-repeat;image-rendering:pixelated}
 .original-control-bar .window-launcher:hover{background:var(--bar-ink)}
-.original-control-bar .window-launcher:active .window-launcher-face{border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
+.original-control-bar .window-launcher:active .window-launcher-face,.original-control-bar .window-launcher.is-pressed .window-launcher-face{border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
 .original-control-bar .window-launcher:focus-visible{outline:2px solid #0000eb;outline-offset:-4px}
 .toolbar-caption{display:flex;overflow:hidden;align-items:center;justify-content:center;width:26px;height:9px;color:#414141;text-shadow:1px 0 var(--bevel-light);font:bold 10px/1 Arial,Helvetica,sans-serif;pointer-events:none}
 .toolbar-forecast-area{display:flex;flex:1;align-items:center;justify-content:center}
@@ -125,7 +125,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .edit-palette .edit-help-button{height:16px}
 .edit-palette-face{display:flex;flex:1;align-items:center;justify-content:center;border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light);background:var(--bar-face) no-repeat;image-rendering:pixelated;overflow:hidden;line-height:1}
 .edit-tool .edit-palette-face{background-image:var(--edit-palette-sprite)}
-.edit-palette>button:active:not(:disabled) .edit-palette-face{border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
+.edit-palette>button:active:not(:disabled) .edit-palette-face,.edit-palette>button.is-pressed .edit-palette-face{border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
 .edit-tool:disabled .edit-palette-face{background-image:linear-gradient(#c2c2c260,#c2c2c260),var(--edit-palette-sprite)}
 .edit-palette-foot{flex:none;width:48px;height:4px;border-top:1px solid var(--bar-ink);border-left:1px solid var(--bar-ink)}
 .game-desktop .map-panel{grid-column:2;grid-row:2;display:flex;flex-direction:column;min-height:0;border:0;box-shadow:none;margin:0;padding:0;overflow:hidden}

@@ -2,6 +2,7 @@ import {useEffect,useRef,type CSSProperties,type ReactNode} from 'react';
 import {drawToolbarWeather} from '../render/toolbar-weather';
 import {WEATHER_SKIES} from '../simulation/weather-view';
 import {CONTROL_BAR_LAUNCHER} from '../formats/control-bar';
+import {useWindows} from './GameWindow';
 import type { GameSnapshot } from '../simulation/game';
 import type { MainMenus } from '../formats/main-menus';
 
@@ -20,13 +21,13 @@ const LAUNCHERS = GAME_WINDOWS.slice(0, 9).map((window, face) => ({ window, face
 export function ControlBar({ artwork, menus, snapshot, tiles, onWindow }: {
   artwork: HTMLImageElement; menus: MainMenus; snapshot: GameSnapshot; tiles: CanvasImageSource | null; onWindow: (window: GameWindow) => void;
 }) {
-  const date = snapshot.scenario.farm.calendar;
+  const date = snapshot.scenario.farm.calendar, windows = useWindows();
   const forecast=[...snapshot.weather.forecast,...snapshot.weather.nextForecast].slice(date.day,date.day+3);
   return <div className="original-control-bar" aria-label="Game toolbar" role="toolbar"
     style={{ '--control-bar-sprite': `url("${artwork.src}")` } as CSSProperties}>
     <div className="toolbar-launchers">
       {LAUNCHERS.map(({ window, face }) => <WindowLauncher key={window} window={window} face={face}
-        label={menus.menus[3].items[face].label} captioned={CAPTIONED.has(window)} onWindow={onWindow} />)}
+        label={menus.menus[3].items[face].label} captioned={CAPTIONED.has(window)} pressed={windows.order.includes(window)} onWindow={onWindow} />)}
     </div>
     <div className="toolbar-forecast-area"><ToolbarForecast forecast={forecast} tiles={tiles} /></div>
     <div className="toolbar-readouts">
@@ -37,12 +38,12 @@ export function ControlBar({ artwork, menus, snapshot, tiles, onWindow }: {
 }
 
 /** One 32×32 launcher: black button background shows as a 1px frame around the 2px raised bevel;
- * the source picture face comes from sprite (face×32+3, 3). */
-export function WindowLauncher({ window, face, label, captioned, onWindow }: {
-  window: GameWindow; face: number; label: string; captioned: boolean; onWindow: (window: GameWindow) => void;
+ * the source picture face comes from sprite (face×32+3, 3). It stays depressed while its window is open. */
+export function WindowLauncher({ window, face, label, captioned, pressed, onWindow }: {
+  window: GameWindow; face: number; label: string; captioned: boolean; pressed: boolean; onWindow: (window: GameWindow) => void;
 }) {
   const { size, inset } = CONTROL_BAR_LAUNCHER;
-  return <button id={`window-${window}`} className="window-launcher"
+  return <button id={`window-${window}`} className={`window-launcher${pressed ? ' is-pressed' : ''}`} aria-pressed={pressed}
     aria-label={label} title={label} onClick={() => onWindow(window)}>
     <span className="window-launcher-face" style={{ backgroundPosition: `${-(face * size + inset)}px ${-inset}px` }}>
       {captioned && <span className="toolbar-caption">{label.toUpperCase()}</span>}

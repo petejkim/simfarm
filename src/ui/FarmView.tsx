@@ -26,7 +26,9 @@ import { MapWindow } from './MapWindow';
 import { BuyWindow } from './BuyWindow';
 import type { ShopProduct } from '../simulation/shop-product';
 import { GameWindow, useWindows } from './GameWindow';
-import { EditPalette, type EditTool } from './EditPalette';
+import { EditPalette, type EditTool, type EditPaletteAction } from './EditPalette';
+import type { ConstructionTool } from './useConstruction';
+const CONSTRUCTION_TOOLS:Record<ConstructionTool,EditTool>={'road-150':'Paved road','road-161':'Dirt road',fence:'Fence',gate:'Gate',ditch:'Ditch',valve:'Valve',hay:'Hay',trough:'Trough',trees:'Trees'};
 import type { GameWindow as WindowCommand } from './ControlBar';
 import { NewFarmControls } from './NewFarmControls';
 import { FlightControls } from './FlightControls';
@@ -170,6 +172,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
   }
   function editTool(tool: EditTool) {
     simulation?.dispatch({type:'edit-status',code:EDIT_TOOL_STATUSES[tool]});
+    // Choosing any other palette action ends examining: the Examine window closes.
+    if (tool !== 'View object') windows.close('examine');
     setInteractionMessage('');
     objectMove.cancel();construction.cancel();bulldoze.cancel();
     setBuyPlacement(null); setFieldMenu(null); setFieldMapTool(null);
@@ -185,6 +189,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
       setSelection(null);setToolPointer(null);windows.show(null);viewportRef.current?.focus({preventScroll:true});
     }
   }
+  // Depressed palette button: the running action, else the default View object (examine) mode.
+  const paletteAction:EditPaletteAction = editHelpOpen ? 'Help' : objectMove.active ? 'Move object' : bulldoze.active ? 'Bulldoze'
+    : construction.tool ? CONSTRUCTION_TOOLS[construction.tool] : fieldMenu==='plant'||fieldMapTool?.kind==='plant' ? 'Plant' : fieldMenu||fieldMapTool ? 'Spray' : 'View object';
   const data = resource.status === 'ready' && snapshot ? { tiles: resource.value.tiles, scenario: snapshot.scenario } : null;
   const field = data?.scenario.fields.find(f => f.slot === fieldSlot && f.active);
   const cell = selection !== null ? data?.scenario.cells[selection] : undefined;
@@ -235,7 +242,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
   function openFieldMenu(kind:'plant'|'spray') {
     objectMove.cancel();construction.cancel();bulldoze.cancel();
     setBuyPlacement(null);setFieldMapTool(null);setToolPointer(null);setFieldToolMessage('');setNavigation(null);
-    windows.show(null);setFieldMenu(kind);
+    windows.close('examine');windows.show(null);setFieldMenu(kind);
   }
   function cancelFieldTool(){setFieldMenu(null);setFieldMapTool(null);setToolPointer(null);setFieldToolMessage('');}
   function applyFieldTool(x:number,y:number){
@@ -382,8 +389,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
         decision={snapshot.finances.defaultDecision} assets={assets} onCommand={command=>simulation.dispatch(command)}
         onRestart={()=>setNewFarmOpen(true)}/>}
     {data && <main className="edit-workspace" aria-label="Edit" onPointerDownCapture={activateEdit} onFocusCapture={activateEdit} onKeyDown={event => { if(objectMove.active&&event.key==='Escape'){event.preventDefault();cancelObjectMove();} if ((fieldMenu||fieldMapTool) && event.key==='Escape') {event.preventDefault();cancelFieldTool();} if (buyPlacement && event.key === 'Escape') { event.preventDefault(); cancelPurchase(); } }}>
-      <EditPalette artwork={assets.editPalette} disabled={Boolean(snapshot?.pendingTown || snapshot?.townEvent.pending || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}
-        onField={() => openFieldMenu('plant')} onSpray={() => openFieldMenu('spray')} onHelp={() => {objectMove.cancel();bulldoze.cancel();construction.cancel();setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);windows.show(null);setEditHelpOpen(open=>!open);}} />
+      <EditPalette artwork={assets.editPalette} active={paletteAction} disabled={Boolean(snapshot?.pendingTown || snapshot?.townEvent.pending || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}
+        onField={() => openFieldMenu('plant')} onSpray={() => openFieldMenu('spray')} onHelp={() => {windows.close('examine');objectMove.cancel();bulldoze.cancel();construction.cancel();setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);windows.show(null);setEditHelpOpen(open=>!open);}} />
       {snapshot&&<EditStatus codes={snapshot.editStatuses} text={assets.editStatusText}/>}
       {editHelpOpen&&<EditHelp artwork={assets.editHelp} onClose={()=>setEditHelpOpen(false)}/>}
       {fieldMenu&&snapshot&&<FieldToolMenu kind={fieldMenu} assets={assets} world={data.scenario} tiles={data.tiles}

@@ -113,3 +113,18 @@ test('flex-laid launchers and insets rebuild the source bevels with CSS around s
   expect(await page.locator('#window-buy .window-launcher-face').evaluate(el => getComputedStyle(el).borderTopColor)).toBe('rgb(130, 130, 130)');
   await page.mouse.up();
 });
+
+test('launchers stay depressed while their window is open and release when it closes', async ({ page }) => {
+  await start(page);
+  const buy = page.locator('#window-buy'), bank = page.locator('#window-bank');
+  const bevel = (button: typeof buy) => button.locator('.window-launcher-face').evaluate(el => getComputedStyle(el).borderTopColor);
+  await expect(buy).toHaveAttribute('aria-pressed', 'false'); expect(await bevel(buy)).toBe('rgb(255, 255, 255)');
+  await buy.click(); await page.mouse.move(600, 600);
+  await expect(buy).toHaveAttribute('aria-pressed', 'true'); expect(await bevel(buy)).toBe('rgb(130, 130, 130)');
+  await bank.click(); await page.mouse.move(600, 600);
+  await expect(buy).toHaveAttribute('aria-pressed', 'true'); await expect(bank).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Close Bank', exact: true }).click();
+  await expect(bank).toHaveAttribute('aria-pressed', 'false'); expect(await bevel(bank)).toBe('rgb(255, 255, 255)');
+  await page.getByRole('button', { name: 'Close Buy', exact: true }).click();
+  await expect(buy).toHaveAttribute('aria-pressed', 'false'); expect(await bevel(buy)).toBe('rgb(255, 255, 255)');
+});
