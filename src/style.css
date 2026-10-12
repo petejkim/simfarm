@@ -386,19 +386,19 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window-title:focus-visible{outline:1px dotted #fff;outline-offset:-2px}
 
 /* Direct twnchoic.bmp at96,96 includes its own sixteen-pixel wooden strip. */
-.game-window[data-window=town]{left:96px;top:96px;right:auto;width:368px;border:0;max-height:calc(100% - 112px)}
-.game-window[data-window=town] .game-window-body{padding:0}
-.town-choice-artwork{position:relative;width:368px;height:208px;overflow:hidden;color:#000}
-.town-choice-artwork>img{position:absolute;left:0;top:-16px;image-rendering:pixelated;pointer-events:none}
-.game-window .town-choice-artwork button{position:absolute;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;color:#000}
-.town-choice-artwork .town-picture{top:16px;width:73px;height:73px}
-.game-window .town-choice-artwork .town-picture:hover{background:transparent}
-.game-window .town-choice-artwork .town-picture:active{background:var(--town-pressed) no-repeat}
-.town-choice-artwork .town-caption{position:absolute;top:88px;width:88px;text-align:center;font:bold 11px/12px monospace;white-space:nowrap;pointer-events:none}
-.game-window .town-choice-artwork .town-instructions{position:absolute;left:80px;top:120px;width:216px;height:68px;margin:0;padding:0;font:bold 12px/9px monospace;color:#000}
-.game-window .town-choice-artwork #town-timeout{left:128px;top:100px;width:112px;height:12px;font:10px/12px monospace;text-decoration:underline}
-.game-window .town-choice-artwork #town-timeout:hover{background:#fff4}
-.game-window #town-choice-error{margin:0;padding:6px 8px;font:12px/16px Arial,sans-serif;color:#000}
+/* Town choice: 352×200 client; coordinates are client pixels (source x−8, y−16). */
+.game-window[data-window=town]{left:96px;top:96px;right:auto}
+.town-choice{display:flex;flex-direction:column;align-items:center;width:352px;min-height:200px;padding-top:16px;color:var(--ink)}
+.town-choices{display:flex;align-self:stretch}
+.town-choice-column{display:flex;flex-direction:column;align-items:center;width:88px}
+.town-picture{width:72px;height:72px}
+.town-caption{width:88px;height:12px;text-align:center;font:bold 11px/12px monospace;white-space:nowrap}
+.game-window .town-choice #town-timeout{width:112px;height:12px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--ink);font:10px/12px monospace;text-decoration:underline}
+.game-window .town-choice #town-timeout:hover{background:#fff4}
+.town-panel{width:240px;height:80px}
+.town-panel-face{padding:5px 0 0 13px}
+.town-instructions{width:216px;height:68px;margin:0;font:bold 12px/9px monospace}
+.game-window #town-choice-error{align-self:stretch;margin:0;padding:6px 8px;font:12px/16px Arial,sans-serif;color:var(--ink)}
 
 /* Balance Sheet DSaaf8:400×224 client, original1× row spacing. */
 

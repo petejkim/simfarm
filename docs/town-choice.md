@@ -21,3 +21,13 @@ The original artwork includes a blank wooden strip and fixed outer border. Nativ
 ## Validation
 
 Source tests pin the bitmap and callback hashes, click names, hitboxes and every pressed-overlay pixel. They compare every imported frame pixel, confirm caption glyph removal, reject every truncated bitmap prefix and reject other bitmap dimensions. Browser tests check source geometry, picture pixels, copyable text, text fit, pressed display, cancelled release, movement, forced pending state, each of the five canonical choices, exact full saves, lack of browser-time expiration, keyboard/reload continuation and SF-048 failure/resume. Existing annual tests cover unavailable manual recreation, saving pending annual reset, invalid saves, exactly-once annual continuation, taxes and statistics. Full regression status is recorded in [progress.md](progress.md).
+
+## Native rebuild on shared chrome (2026-10-12)
+
+The town choice window keeps the `twnchoic.bmp` plank as its title-bar artwork and now uses the common frame around a 352×200 flex client.
+- **Picture buttons:** four 72×72 `BevelButton`s with shadow, at their source positions. Their faces are the bitmap pictures inside the bevel (sprite at bitmap x+3, 35).
+- **Captions:** HTML text centred in 88px columns.
+- **Timeout:** the underlined "Let town decide" link.
+- **Instructions:** sit in a 240×80 `RaisedPanel`.
+
+The pressed state is now the shared bevel swap. `town-choice-pressed.png` is no longer used by the UI; it is still loaded (cleanup deferred). The browser spec checks button geometry, sprite face offsets, the pressed bevel and that no image or canvas remains. Previously the button box was 73×73 including its shadow; it is now 72×72 with a CSS shadow. Validation: town-choice and town specs pass.

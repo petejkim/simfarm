@@ -2944,3 +2944,7 @@ The dialog is now framed, with a SIMFARM ribbon sprite (a bitmap logo, by reques
 ## 2026-10-12 — Message popups rebuilt on a shared MessageDialog
 
 Finance, Disaster, Field, Building, Town event, Default and Bulldoze now share `MessageDialog`. It provides the plank title, common frame, portrait sprite, HTML text and `BevelButton` captions, with original positions. `BevelButton` now forwards `ref` (React 19 prop). Details are in financial-messages.md. Eight related specs pass.
+
+## 2026-10-12 — Town choice rebuilt on shared chrome
+
+The window is now framed under its plank title, with picture `BevelButton`s (bitmap faces), HTML captions and a `RaisedPanel` for the instructions. The pressed-image overlay was replaced by the shared bevel swap. The town-choice and town specs pass.

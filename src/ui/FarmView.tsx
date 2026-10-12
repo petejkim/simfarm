@@ -322,7 +322,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
     <GameWindow windowKey="speed" title="Speed">
     {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     </GameWindow>
-    <GameWindow windowKey="town" title="Town development" titleArtwork={assets.townChoiceArtwork.src} forced={Boolean(snapshot?.pendingTown)}>
+    <GameWindow windowKey="town" title="Town development" framed titleArtwork={assets.townChoiceArtwork.src} forced={Boolean(snapshot?.pendingTown)}>
     {simulation && snapshot && <TownChoicePanel assets={assets} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     </GameWindow>
     <GameWindow windowKey="bank" title="Bank" framed>
