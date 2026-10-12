@@ -24,7 +24,11 @@ async function save(page: Page) {
   const path = await (await pending).path(); return JSON.parse(readSaveText(path!));
 }
 async function pixels(page: Page) {
-  return page.locator('#terrain-preview').evaluate((canvas: HTMLCanvasElement) => Array.from(canvas.getContext('2d')!.getImageData(0, 0, 192, 192).data));
+  // The preview is generated simulation output shown as an image; decode it to compare with the reference renderer.
+  return page.locator('#terrain-preview').evaluate(async (img: HTMLImageElement) => {
+    await img.decode(); const c = document.createElement('canvas'); c.width = 192; c.height = 192;
+    const g = c.getContext('2d')!; g.drawImage(img, 0, 0); return Array.from(g.getImageData(0, 0, 192, 192).data);
+  });
 }
 async function expectPreview(page: Page, draft: CustomFarmSetup) {
   const p = draft.getSnapshot().preview;
@@ -33,18 +37,19 @@ async function expectPreview(page: Page, draft: CustomFarmSetup) {
   const panel = (await page.locator('#terrain-design').boundingBox())!;
   for (const [letter, site] of [['T', p.locations!.town], ['H', p.locations!.player]] as const) {
     const marker = (await page.locator('.terrain-marker').filter({ hasText: letter }).boundingBox())!;
-    expect((marker.x - panel.x) / panel.width).toBeCloseTo((264 + site.regionX * 16 - 128) / 352, 3);
-    expect((marker.y - panel.y) / panel.height).toBeCloseTo((72 + site.regionY * 16 - 32) / 304, 3);
+    // Source 264+16x, 72+16y; the client starts inside the frame at source 136,40.
+    expect([marker.x - panel.x, marker.y - panel.y]).toEqual([264 + site.regionX * 16 - 136, 72 + site.regionY * 16 - 40]);
   }
-  await expect(page.locator('#terrain-design .setup-title')).toHaveText('Design your terrain');
+  await expect(page.locator('#terrain-design .terrain-title')).toHaveText('Design your terrain');
+  await expect(page.locator('#terrain-design canvas')).toHaveCount(0);
   await expect(page.locator('#terrain-design label')).toHaveText(['Rainfall', 'Temperature', 'Wind speed']);
-  await expect(page.locator('#terrain-design .setup-button')).toHaveText(['River', 'Lake', 'Generate World', 'Play']);
+  await expect(page.locator('#terrain-design .terrain-button')).toHaveText(['River', 'Lake', 'Generate World', 'Play']);
   // Text remains selectable/copyable and fits at desktop and narrow widths.
-  expect(await page.locator('#terrain-design .setup-title').evaluate(el => {
+  expect(await page.locator('#terrain-design .terrain-title').evaluate(el => {
     const range = document.createRange(); range.selectNodeContents(el);
     return range.toString();
   })).toBe('Design your terrain');
-  expect(await page.locator('#terrain-design .setup-button, #terrain-design .setup-text').evaluateAll(els =>
+  expect(await page.locator('#terrain-design .terrain-button, #terrain-design .terrain-label, #terrain-design .terrain-range-labels').evaluateAll(els =>
     els.every(el => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight))).toBe(true);
 }
 async function start(page: Page) {

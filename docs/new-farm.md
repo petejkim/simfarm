@@ -347,3 +347,14 @@ New Game now uses the common frame. The region chooser is a 456×311 flex client
 - **Setup strip:** below the chooser, with chrome inputs for seed and year, a `BevelButton` Cancel, and Help.
 
 The browser spec checks the result structurally: text, meters, grid placement and outline strip offsets. Validation: region-artwork unit 4/4; browser region-artwork, region-selection and new-farm specs pass (13/13). Terrain Design still uses its bitmap and canvas; it is next.
+
+## Terrain designer on shared chrome (2026-10-12)
+
+Design Your Own now shows a 336×288 flex client: the defworld panel at 128,32, less its frame. Neither the full `defworld.png` background nor the canvas remains.
+- **Text:** title, labels and Low/High are HTML.
+- **Arrows:** decrease/increase are 16×16 `BevelButton`s with arrow faces cut from defworld (142,105 and 247,105).
+- **Level bars:** black sunken insets, 84×14, with 8px-truncated coloured fills. The keyboard range input is layered over the bar.
+- **Buttons:** River and Lake are pressed-state `BevelButton`s; Generate World and Play are caption buttons.
+- **Preview:** the generated miniature is a data-URL image in a sunken 196×196 inset. H and T markers sit on its 12×12 site grid at source positions (264+16x, 72+16y).
+
+Window rules that conflicted were removed: the fixed 472px New Game width and the cqw-scaled setup text. Validation: terrain-design, region-artwork, region-selection and new-farm specs pass (19/19). The preview is still compared with the reference renderer by decoding the image.

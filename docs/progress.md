@@ -2960,3 +2960,7 @@ Settings is now framed, with chrome-styled Zoom and Music selects, a Volume rang
 ## 2026-10-12 — New Game region chooser on shared chrome
 
 The window is framed, with HTML title and labels, sunken climate meters and `BevelButton` actions. The map sprite and XOR selection strips come from `renderRegionMaps`; a unit test proves them pixel-identical to the source renderer for every region. The setup strip uses chrome inputs. Details are in new-farm.md. Region specs pass.
+
+## 2026-10-12 — Terrain designer on shared chrome
+
+The designer is now a flex client with HTML text, arrow `BevelButton`s with bitmap faces, sunken level bars, toggle/caption `BevelButton`s, and the preview image with grid-placed H/T markers. The defworld background and preview canvas were removed. Details are in new-farm.md. The New Game specs pass (19/19).

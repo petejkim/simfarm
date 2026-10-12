@@ -34,38 +34,9 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .region-grid button:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
 .region-description { flex: 1; min-width: min(250px, 100%); max-width: 440px; }
 
-.terrain-design { position: relative; overflow: hidden; width: 352px; aspect-ratio: 352 / 304; background: #bcbcbc; }
-.terrain-design > img { position: absolute; width: 181.818182%; max-width: none; height: auto; left: -36.363636%; top: -10.526316%; image-rendering: pixelated; pointer-events: none; }
-.terrain-design canvas { position: absolute; max-width: none; image-rendering: pixelated; cursor: default; }
-.terrain-design canvas[hidden] { display: none; }
-.terrain-design .terrain-hit { position: absolute; padding: 0; border: 0; border-radius: 0; background: transparent; min-width: 0; min-height: 0; }
-.terrain-design .terrain-hit:hover:not(:disabled) { background: #ffffff30; }
-.terrain-design .terrain-hit:disabled { opacity: 1; cursor: default; }
-.terrain-design .terrain-hit:focus-visible,.terrain-design .terrain-range:focus-visible { outline: 2px solid #0024ff; outline-offset: -2px; }
-.terrain-design .terrain-toggle[aria-pressed=true] { box-shadow: inset 2px 2px #333, inset -2px -2px #fff; background: #0002; }
-.terrain-design .terrain-range { position: absolute; margin: 0; opacity: 1; appearance: none; background: transparent; cursor: pointer; border: 0; padding: 0; border-radius: 0; }
-.terrain-range::-webkit-slider-thumb { appearance: none; width: 1px; height: 100%; background: transparent; }
-.terrain-range::-moz-range-thumb { width: 1px; border: 0; background: transparent; }
-.terrain-range::-moz-range-track { background: transparent; }
-.terrain-level { position: absolute; pointer-events: none; }
-.terrain-level-background { background: #000; }
-.terrain-level-precipitation { background: #c20404; }
-.terrain-level-temperature { background: #fff304; }
-.terrain-level-wind { background: #00aa04; }
 
 /* Live setup text is HTML. Opaque source-colored surfaces cover the archived
    bitmap lettering; the underlying source art remains unchanged. */
-.terrain-design { container-type: inline-size; --setup-paper: #c2c2c2; }
-.setup-text { position: absolute; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0; background: var(--setup-paper); color: #000; text-align: center; white-space: nowrap; font-family: Arial, Helvetica, sans-serif; line-height: 1; }
-.terrain-design .setup-text, .terrain-design .setup-button { font-size: max(8px, 2.84cqw); }
-.new-farm-panel .setup-text { gap: 0; }
-.terrain-design .setup-title { font-size: 5cqw; }
-.setup-text.setup-title { color: #0000eb; font-weight: bold; text-shadow: 1px 1px #000; }
-.terrain-design .setup-button { background: var(--setup-paper); color: #000; border: 2px outset #eee; font-family: Arial, Helvetica, sans-serif; line-height: 1; white-space: nowrap; }
-.terrain-design .setup-button:hover:not(:disabled) { background: #ddd; }
-.terrain-design .setup-button:disabled { background: var(--setup-paper); color: #555; }
-.terrain-design .setup-button[aria-pressed=true] { background: #b0b0b0; border-style: inset; box-shadow: none; }
-.terrain-marker { position: absolute; color: #000; font: bold 2.84cqw/1 Arial, Helvetica, sans-serif; pointer-events: none; }
 
 /* Menu popup styling shared by the recovered main menus. */
 .farm-file-controls{flex:none;background:#263127}
@@ -358,7 +329,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-desktop #viewport{flex:1;height:auto;width:100%;overflow:auto;background:#000}
 .game-window{position:absolute;z-index:30;top:80px;right:16px;width:520px;max-height:calc(100% - 104px);display:flex;flex-direction:column;box-shadow:4px 4px #0008;border:3px ridge #eee;background:#c2c2c2;color:#000;font:14px Arial,sans-serif}
 .game-window-body{padding:12px;overflow:auto;min-height:0;line-height:1.4}
-.game-window[data-window=newgame]{left:80px;right:auto;top:48px}
+.game-window[data-window=newgame]{left:80px;right:auto;top:48px;max-height:calc(100% - 48px)}
 .game-window[data-window=town]{z-index:35}
 .game-window .toolbar,.game-window header,.game-window footer{padding:8px 0;margin:0;background:transparent;color:#000;border:0;display:flex;flex-wrap:wrap;gap:8px}
 .game-window .toolbar>div{flex-wrap:wrap}
@@ -372,15 +343,12 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window h2{font:bold 18px Arial,sans-serif;margin:8px 0}
 .game-window .music-controls{max-width:none;flex-wrap:wrap}.game-window .volume,.game-window .music-controls label:first-child{display:flex}
 .game-window #crop-card{float:none;box-sizing:content-box}
-.game-window .terrain-design{width:352px}
 .game-desktop .original-menu-bar{z-index:100}
 .game-desktop .homestead-notice{position:absolute;bottom:30px;left:60px;z-index:10;background:#c2c2c2;color:#000;padding:6px;font-size:12px}
 .game-window :is(#field-status,#field-growth,#farm-weather,#time-status,#crop-description,#schedule-status,#save-status){color:#000}
 .game-window[data-window=newgame]{z-index:40}
 
 /* Source artwork controls retain their source-sized hit areas and HTML text. */
-.game-window .terrain-design .setup-button{font-size:2.84cqw;padding:0}
-.game-window .terrain-design .terrain-hit,.game-window .terrain-design .terrain-range{padding:0}
 
 /* Original Bank terminal: DS:b32a window at176,96 with288×224 client art. */
 
@@ -601,16 +569,47 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window[data-front=false]>.game-window-title[data-title-artwork=false]::after{background-image:var(--window-title-end-inactive)}
 
 /* Setup is led by the original 1× panels, with a compact native options strip. */
-.game-window[data-window=newgame]{left:80px;right:auto;top:48px;width:472px;max-height:calc(100% - 48px);border:0}
-.game-window[data-window=newgame]:has(.terrain-design){width:352px;left:128px}
-.game-window[data-window=newgame] .game-window-body{padding:0}
 .game-window .new-farm-panel{margin:0;padding:0;border:0}
-.new-farm-panel .setup-title{margin:0;text-transform:uppercase;letter-spacing:normal}
-.new-farm-panel .setup-title:focus{outline:none}
+/* Terrain designer: 336×288 client (defworld panel 128,32 less frame); client pixels are source x−136, y−40. */
+.game-window[data-window=newgame]:has(.terrain-design){left:128px}
+.game-window .new-farm-panel:has(.terrain-design){width:336px}
+.terrain-design{display:flex;flex-direction:column;width:336px;height:288px;color:var(--ink)}
+.game-window .terrain-title{width:260px;height:24px;margin:4px 0 0 40px;text-align:center;text-transform:uppercase;color:#0000eb;font:bold 20px/24px "Times New Roman",Times,serif;letter-spacing:1px;text-shadow:1px 1px #000080;outline-offset:-2px}
+.terrain-body{display:flex}
+.terrain-controls{display:flex;flex-direction:column;align-items:flex-start;width:126px;padding-top:17px}
+.terrain-climate{display:flex;flex-direction:column;margin-bottom:9px}
+.terrain-label{display:block;width:94px;height:15px;margin-left:18px;text-align:center;text-transform:uppercase;font:bold 10px/15px Arial,sans-serif;letter-spacing:1px}
+.terrain-adjust{display:flex;align-items:flex-start;margin:2px 0 0 3px}
+.terrain-arrow{width:16px;height:16px}
+.terrain-bar{display:grid;width:84px;height:14px;margin:1px 2px 0 3px;background:#000}
+.terrain-bar>*{grid-area:1/1}
+.terrain-level{display:block;height:10px}
+.terrain-level-precipitation{background:#c20404}
+.terrain-level-temperature{background:#fff304}
+.terrain-level-wind{background:#00aa04}
+.game-window input.terrain-range{width:80px;height:10px;margin:0;padding:0;border:0;border-radius:0;opacity:1;appearance:none;-webkit-appearance:none;background:transparent;cursor:pointer}
+.terrain-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:1px;height:10px;background:transparent}
+.terrain-range::-moz-range-thumb{width:1px;border:0;background:transparent}
+.terrain-range::-moz-range-track{background:transparent}
+.terrain-range:focus-visible{outline:2px solid #0024ff;outline-offset:1px}
+.terrain-range-labels{display:flex;justify-content:space-between;width:91px;height:13px;margin:3px 0 0 20px;font:bold 10px/13px Arial,sans-serif}
+.terrain-button{height:25px;font:bold 10px/1 Arial,sans-serif;text-transform:uppercase;letter-spacing:1px}
+.terrain-toggle{width:49px;margin-left:40px}
+.terrain-climate:last-of-type{margin-bottom:7px}
+.terrain-toggle+.terrain-toggle{margin-top:2px}
+.terrain-side{display:flex;flex-direction:column;align-items:flex-start;padding-top:2px}
+.terrain-preview-box{width:196px;height:196px}
+.terrain-preview-grid{display:grid;grid-template-columns:repeat(12,16px);grid-template-rows:repeat(12,16px);width:192px;height:192px}
+.terrain-preview-grid>img{grid-area:1/1/13/13;display:block;image-rendering:pixelated}
+.terrain-marker{width:8px;height:8px;color:#000;font:bold 9px/8px Arial,sans-serif;pointer-events:none;z-index:1}
+.terrain-actions{display:flex;gap:12px;margin:19px 0 0 4px}
+.terrain-generate{width:123px}
+#play-farm{width:49px}
 /* New Game: region chooser client (456×311; source panel 80,16 less frame), then the native setup strip. */
 .game-window .new-farm-panel{width:456px;margin:0;padding:0;border:0;color:var(--ink)}
 .geographic-chooser{display:flex;width:456px;height:311px}
 .region-controls{display:flex;flex-direction:column;width:158px}
+.new-farm-panel :is(.region-title,.terrain-title):focus{outline:none}
 .game-window .region-title{width:136px;height:48px;margin:3px 0 0 14px;text-align:center;font:bold 20px/23px "Times New Roman",Times,serif;text-shadow:1px 1px #000080;outline-offset:-2px}
 .region-climate{display:flex;flex-direction:column;margin-top:6px}
 .region-title+.region-climate{margin-top:8px}

@@ -64,13 +64,12 @@ test('original geographic panel paints exact markers and bars, preserves selecti
   await page.locator('#geographic-chooser').screenshot({ path: 'artifacts/browser-region-artwork-mobile.png' });
   await reveal(page, '#region-design'); await page.locator('#region-design').focus(); await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: 'Design your terrain' })).toBeFocused();
-  expect(await page.locator('#terrain-design').boundingBox()).toMatchObject({ width: 352, height: 304 });
+  expect(await page.locator('#terrain-design').boundingBox()).toMatchObject({ width: 336, height: 288 });
   for (const key of ['precipitation', 'temperature', 'wind'] as const)
     await expect(page.locator(`#terrain-${key}`)).toHaveValue(String(selected[key]));
   // The source fill helper truncates both X edges to bytes:27/54 become24/48.
   await reveal(page, '#terrain-precipitation'); await page.locator('#terrain-precipitation').focus(); await page.keyboard.press('Home'); await page.keyboard.press('ArrowRight');
-  const ratio = await page.locator('.terrain-level-precipitation').evaluate(el => el.getBoundingClientRect().width / el.closest('.terrain-design')!.getBoundingClientRect().width);
-  expect(ratio).toBeCloseTo(24 / 352, 3);
+  expect(await page.locator('.terrain-level-precipitation').evaluate(el => el.getBoundingClientRect().width)).toBe(24);
   await page.getByRole('button', { name: 'Cancel', exact: true }).click(); expect(await save(page)).toEqual(before); expect(errors).toEqual([]);
 });
 
