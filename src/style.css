@@ -532,18 +532,38 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window .aircraft-window output{position:absolute;left:24px;width:32px;height:10px;font:8px/10px monospace;color:#000;text-align:left}
 
 /* Market descriptor DSbbfa:320×208 client below its sixteen-pixel title. */
-.game-window[data-window=market]{left:144px;top:112px;right:auto;width:320px;border:0;max-height:calc(100% - 128px)}
-.game-window[data-window=market] .game-window-body{padding:0}
-.market-window{position:relative;width:320px;height:208px;flex-shrink:0;color:#000}
-.market-window>img{display:block;image-rendering:pixelated;pointer-events:none}
-.market-preview{position:absolute;inset:0;width:320px;height:208px;pointer-events:none}
-.game-window .market-window button{position:absolute;padding:0;border:0;border-radius:0;background:transparent;color:#000}
-.game-window .market-window button:hover:not(:disabled){background:#fff3}
-.market-window .market-close{font:bold 10px/24px monospace}
-.market-label{position:absolute;height:11px;font:bold 10px/11px monospace;white-space:nowrap}
-.game-window .market-window output{position:absolute;height:10px;font:10px/10px Arial,sans-serif;color:#000;white-space:nowrap;overflow:hidden}
-.market-pages{display:flex;align-items:center;justify-content:center;gap:8px;background:#c3c3c3;color:#000;padding:2px;font:11px/16px Arial,sans-serif}
-.game-window .market-pages button{padding:0;width:20px;height:18px;font:14px/16px Arial,sans-serif}
+/* Market Value: 304×200 client; coordinates are client pixels (source x−8). */
+.game-window[data-window=market]{left:144px;top:112px;right:auto}
+.market-window{display:flex;flex-direction:column;width:304px;height:200px;padding-top:6px;color:var(--ink);font:10px/10px monospace}
+.market-label{flex:none;font:bold 10px/11px monospace;white-space:nowrap}
+.market-window output{display:block;flex:1;overflow:hidden;white-space:nowrap;padding-left:2px}
+.market-top{display:flex;align-items:flex-start;height:165px}
+.market-history-box{display:flex;flex-direction:column;width:143px;height:165px;margin-left:5px}
+.market-history-title{width:120px;margin-left:11px;text-align:center}
+.market-graph{display:grid;width:121px;height:144px;margin:1px 0 0 9px}
+.market-graph>*{grid-area:1/1}
+.market-bars{display:flex;align-items:flex-end;height:140px;padding-left:1px}
+.market-bars>span{display:block;width:4px}
+/* Source grid: verticals every 4px to row 161, horizontals every 4px to row 160, ticks every 20px below. */
+.market-grid{background-image:linear-gradient(to right,var(--lettering) 1px,transparent 1px),linear-gradient(var(--lettering) 1px,transparent 1px),linear-gradient(to right,var(--lettering) 1px,transparent 1px);
+  background-size:4px 142px,121px 4px,20px 2px;background-position:0 0,0 0,0 142px;background-repeat:repeat-x,repeat-y,repeat-x}
+.market-reference{height:2px;margin-top:72px}
+.market-side{display:flex;flex-direction:column;align-items:flex-start;margin-left:4px}
+.market-crops{display:grid;grid-template-columns:repeat(4,32px);grid-auto-rows:32px;width:132px;height:132px;margin-left:14px}
+.game-window .market-window button.market-crop{display:grid;width:32px;height:32px;padding:0;border:0;border-radius:0;background:transparent}
+.market-crop>*{grid-area:1/1}
+.market-badge{display:grid;grid-template-columns:16px 16px}
+.market-selection{border:2px solid;pointer-events:none}
+.market-field{display:flex;align-items:center;width:146px}
+.market-field:first-of-type{margin-top:7px}
+.market-field .market-label{width:38px}
+.market-value-box{display:flex;align-items:center;width:108px;height:13px}
+.market-bottom{display:flex;align-items:flex-start;height:29px}
+.market-bottom>.market-label{width:104px;margin:9px 0 0 4px}
+.market-owned-box{display:flex;align-items:center;width:48px;height:16px;margin-top:7px}
+.market-pages{display:flex;align-items:center;justify-content:center;gap:2px;width:94px;margin-top:6px;font:9px/16px monospace}
+.market-page{width:14px;height:16px;font:bold 10px/1 monospace}
+.market-close{width:48px;height:24px;margin-top:2px;font:bold 10px/1 monospace}
 
 .original-menu-popup button[role=menuitemcheckbox]{position:relative;padding-left:20px}
 .menu-check{position:absolute;left:2px;top:0;width:14px;text-align:center}

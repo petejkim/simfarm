@@ -2924,3 +2924,7 @@ The window is now framed flex rows built from `SunkenInset` gauges, sprite seaso
 ## 2026-10-12 — Weather window rebuilt on shared chrome
 
 The window now uses the common frame and a flex client on an imported 8×8 wallpaper tile. It has `SunkenInset` panels, value and caption boxes and forecast cells; the instruments are bitmap sprites with stacked scenes, needle and vane; the levels are coloured spans; all lettering is HTML. The weather-preview renderer was removed. Details are in weather-window.md. Unit weather-window 6/6 and browser weather-window 7/7 pass.
+
+## 2026-10-12 — Market Value window rebuilt on shared chrome
+
+The window is now framed, with a CSS bar graph, gradient grid and reference line inside a `SunkenInset`, crop badge buttons built from tile sprites, inset outputs, and `BevelButton` CLOSE and pager. The market-preview renderer was removed. Details are in market-window.md. The market-window and market specs pass (6/6).

@@ -1,34 +1,52 @@
-import {useEffect,useRef,useState} from 'react';
+import {useState} from 'react';
 import type {GameAssets} from '../assets/game-assets';
 import type {GameSnapshot} from '../simulation/game';
 import {marketWindowView} from '../simulation/market-view';
-import {drawMarketPreview} from '../render/market-preview';
+import {cropBadgeTile} from '../formats/crop-slots';
 import {GameWindow,useWindows} from './GameWindow';
+import {BevelButton} from './chrome/BevelButton';
+import {SunkenInset} from './chrome/SunkenInset';
+import {TileSprite} from './chrome/TileSprite';
 
-export function MarketWindow({assets,snapshot,tiles}:{assets:GameAssets;snapshot:GameSnapshot;tiles:CanvasImageSource}){
-  const windows=useWindows(),[slot,setSlot]=useState(0),[page,setPage]=useState(0),canvas=useRef<HTMLCanvasElement>(null);
-  const world=snapshot.scenario,view=marketWindowView(world,snapshot.market,assets.catalog.crops,slot);
-  useEffect(()=>{if(canvas.current)drawMarketPreview(canvas.current.getContext('2d')!,tiles,assets.catalog.palette,{page,cropCount:world.cropFiles.length,slot,history:view.history});},[assets,tiles,snapshot,page,slot]);
-  return <GameWindow windowKey="market" title="Market Value">
-    <section aria-label="Crop market">
-      <div className="market-window">
-        <img src={assets.marketArtwork.src} width={320} height={208} alt="" draggable={false}/>
-        <canvas ref={canvas} width={320} height={208} className="market-preview" aria-label={`${view.name} price history and crop graphics`}/>
-        <span className="market-label" style={{left:26,top:8,width:120}}>30 Week History</span>
-        <span className="market-label" style={{left:160,top:146}}>Crop</span>
-        <span className="market-label" style={{left:160,top:159}}>Price</span>
-        <span className="market-label" style={{left:12,top:180}}>Futures Owned</span>
-        <output id="market-crop-name" style={{left:200,top:147,width:103}}>{view.name}</output>
-        <output id="market-price" style={{left:200,top:160,width:103}}>{view.price}</output>
-        <output id="market-owned" style={{left:120,top:182,width:40}}>{view.futuresOwned}</output>
-        {world.cropFiles.slice(page*16,page*16+16).map((file,i)=>{const crop=assets.catalog.crops.find(c=>`${c.id}.crp`===file)!;return <button key={file} data-market-crop={page*16+i}
-          style={{left:176+i%4*32,top:8+Math.floor(i/4)*32,width:32,height:32}} aria-label={crop.name} title={crop.name} aria-pressed={slot===page*16+i} onClick={()=>setSlot(page*16+i)}/>;})}
-        <button className="market-close" style={{left:258,top:173,width:48,height:24}} onClick={()=>windows.close('market')}>CLOSE</button>
+/** Original Market Value window (source 4a750/4a776) rebuilt from shared chrome: the 30-week history
+ * inset with CSS bars, grid and reference line; the 4×4 crop badge buttons; crop and price insets;
+ * futures owned and CLOSE. A native pager pages the twenty-four crops sixteen at a time. */
+export function MarketWindow({assets,snapshot,tiles}:{assets:GameAssets;snapshot:GameSnapshot;tiles:HTMLImageElement}){
+  const windows=useWindows(),[slot,setSlot]=useState(0),[page,setPage]=useState(0);
+  const world=snapshot.scenario,view=marketWindowView(world,snapshot.market,assets.catalog.crops,slot),palette=assets.catalog.palette;
+  const rgb=(color:number)=>`rgb(${palette[color].join(',')})`,count=world.cropFiles.length;
+  return <GameWindow windowKey="market" title="Market Value" framed>
+    <section aria-label="Crop market" className="market-window">
+      <div className="market-top">
+        <SunkenInset className="market-history-box">
+          <span className="market-label market-history-title">30 Week History</span>
+          <span className="market-graph" role="img" aria-label={`${view.name} price history`}>
+            <span className="market-bars">{view.history.map((sample,i)=><span key={i} style={{height:sample.top===null?0:160-sample.top,background:rgb(3)}}/>)}</span>
+            <span className="market-grid"/>
+            <span className="market-reference" style={{background:rgb(1)}}/>
+          </span>
+        </SunkenInset>
+        <div className="market-side">
+          <SunkenInset className="market-crops" role="group" aria-label="Market crops">
+            {world.cropFiles.slice(page*16,page*16+16).map((file,i)=>{const crop=assets.catalog.crops.find(c=>`${c.id}.crp`===file)!,n=page*16+i;
+              return <button key={file} type="button" className="market-crop" data-market-crop={n} aria-label={crop.name} title={crop.name} aria-pressed={slot===n} onClick={()=>setSlot(n)}>
+                <span className="market-badge">{[0,1,2,3].map(part=><TileSprite key={part} tile={cropBadgeTile(n,part)} atlas={tiles.src} masked={assets.maskedTiles.src}/>)}</span>
+                {slot===n&&<span className="market-selection" style={{borderColor:rgb(8)}}/>}
+              </button>;})}
+          </SunkenInset>
+          <div className="market-field"><span className="market-label">Crop</span><SunkenInset className="market-value-box"><output id="market-crop-name">{view.name}</output></SunkenInset></div>
+          <div className="market-field"><span className="market-label">Price</span><SunkenInset className="market-value-box"><output id="market-price">{view.price}</output></SunkenInset></div>
+        </div>
       </div>
-      <div className="market-pages" aria-label="Market crop pages">
-        <button aria-label="Previous market crops" disabled={page===0} onClick={()=>setPage(page-1)}>‹</button>
-        <span>{page*16+1}–{Math.min((page+1)*16,world.cropFiles.length)} of {world.cropFiles.length} crops</span>
-        <button aria-label="Next market crops" disabled={(page+1)*16>=world.cropFiles.length} onClick={()=>setPage(page+1)}>›</button>
+      <div className="market-bottom">
+        <span className="market-label">Futures Owned</span>
+        <SunkenInset className="market-owned-box"><output id="market-owned">{view.futuresOwned}</output></SunkenInset>
+        <div className="market-pages" aria-label="Market crop pages">
+          <BevelButton className="market-page" aria-label="Previous market crops" disabled={page===0} onClick={()=>setPage(page-1)}>‹</BevelButton>
+          <span>{page*16+1}–{Math.min((page+1)*16,count)} of {count}</span>
+          <BevelButton className="market-page" aria-label="Next market crops" disabled={(page+1)*16>=count} onClick={()=>setPage(page+1)}>›</BevelButton>
+        </div>
+        <BevelButton className="market-close" shadow onClick={()=>windows.close('market')}>CLOSE</BevelButton>
       </div>
       <table className="sale-accessible-detail" id="market-history"><caption>{view.name}: 30 weeks, oldest to newest</caption><thead><tr><th>Week</th><th>Recorded price</th></tr></thead>
         <tbody>{view.history.map((sample,i)=><tr key={i}><th>{i+1}</th><td>{sample.price??'Not recorded'}</td></tr>)}</tbody>

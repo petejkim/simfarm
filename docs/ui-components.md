@@ -3,7 +3,7 @@
 Status: **in progress.** Done so far:
 - Step 1: shared chrome extracted from the toolbar and palette.
 - Step 2: `GameWindow framed` with the imported wood 9-slice.
-- Rebuilt windows: Examine, Buy, Sell, Bank, Map, Schedule, Balance, Evaluation, Weather.
+- Rebuilt windows: Examine, Buy, Sell, Bank, Map, Schedule, Balance, Evaluation, Weather, Market.
 
 Remaining windows follow one commit each.
 

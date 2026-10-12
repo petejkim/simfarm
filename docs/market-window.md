@@ -47,3 +47,18 @@ Town images now open the matching windows on primary or secondary press. Constru
 |25748..2591b|306b84a27dca800c69ef680bf9df21cdd8c72ae0853479fd1a7210c1608fbea3|
 
 Unit checks pin controls/code, compare all imported pixels, reject malformed/truncated bitmaps, compare all shipped ordinary price ranges against word-register source arithmetic, enumerate extreme clipping and all2048 image codes with flags, and verify all24 crops across eight farms without snapshot/save mutation. Browser checks compare the rendered chart and all24 source badges pixel-for-pixel, original client geometry/HTML text, movable/reopened selection, missing assets, weekly changes, null samples, separate trade/history values, exact saved continuation, both map buttons/zooms, all five town destinations and primary Bulldoze/default gates. The original Farm Expert interior is now restored separately in [farm-expert.md](farm-expert.md). Wider preservation and other original dialog interiors remain incomplete.
+
+## Native rebuild on shared chrome (2026-10-12)
+
+Market Value now uses the common frame (`GameWindow framed`) and a 304×200 flex client. There is no bitmap or canvas; `src/render/market-preview.ts` was removed.
+- **History inset:** a `SunkenInset` holding the title and the graph at client (16,20), 121×144. The graph stacks three layers:
+  - bar spans at 25+4i from `marketBarTop`, palette 3;
+  - a CSS gradient grid reproducing the source lines (verticals every 4px to row 161, horizontals every 4px to row 160, 2-row ticks every 20px);
+  - the palette 1 reference rows 92–93.
+- **Crop panel:** a 132×132 `SunkenInset` of 32×32 buttons. Each button holds its four `cropBadgeTile` sprites and, when selected, a 2px palette 8 frame.
+- **Crop and Price:** insets with real output text.
+- **Bottom row:** Futures Owned, CLOSE (a `BevelButton` with shadow), and the native ‹/› pager.
+
+Accepted difference: the pager, needed for twenty-four crops, moved from a strip below the window into the empty space between the futures box and CLOSE.
+
+Tests: the browser spec checks bar geometry against an independent source-formula reconstruction, the grid and reference styling, badge tile offsets and selection colour. Validation: market-window and market specs pass (6/6).
