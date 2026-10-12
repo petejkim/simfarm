@@ -29,7 +29,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 
 /* Main menu bar: headings and drop-down menus sized by their content with one set of paddings. The bar is
    dark grey with white lettering, as the original shows it (source fill index 8, text 15; see main-menus.md). */
-.original-menu-bar{position:relative;z-index:100;display:flex;flex:none;height:16px;padding-left:4px;background:#555;color:#fff;font:12px/16px var(--font-ui)}
+.original-menu-bar{position:relative;z-index:100;display:flex;flex-wrap:wrap;flex:none;min-height:16px;padding-left:4px;background:#555;color:#fff;font:12px/16px var(--font-ui)}
 .original-menu{position:relative}
 .original-menu-heading{display:block;height:16px;margin:0;padding:0 8px;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;white-space:nowrap}
 .original-menu-heading:disabled{opacity:.5;cursor:default}
@@ -298,19 +298,21 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .evaluation-pages{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px}
 .evaluation-page{width:48px;height:16px;font:10px/1 var(--font-ui)}
 .evaluation-close{width:48px;height:24px;font:10px/1 var(--font-ui)}
-.original-control-bar{position:relative;z-index:1;display:flex;align-items:stretch;height:32px;font:10px/1 var(--font-ui);color:var(--ink);background:var(--face);box-shadow:inset 0 1px var(--ink)}
-.toolbar-launchers{display:flex;flex:none}
+/* Wraps onto extra 32px rows on narrow screens (user request); one 32px row at desktop width. */
+.original-control-bar{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:stretch;min-height:32px;font:10px/1 var(--font-ui);color:var(--ink);background:var(--face);box-shadow:inset 0 1px var(--ink)}
+.toolbar-launchers{display:flex;flex-wrap:wrap;flex:0 1 auto;min-width:0}
 .window-launcher{width:32px;height:32px}
 .window-launcher-face{flex-direction:column;justify-content:flex-end}
 .edit-palette .bevel-button:focus-visible{outline-offset:-3px}
 .toolbar-caption{display:flex;overflow:hidden;align-items:center;justify-content:center;width:26px;height:9px;color:var(--lettering);text-shadow:1px 0 var(--bevel-light);font:bold 10px/1 var(--font-ui);pointer-events:none}
-.toolbar-forecast-area{display:flex;flex:1;align-items:center;justify-content:center}
-.toolbar-readouts{display:flex;flex-direction:column;gap:2px;flex:none;padding:2px 3px 0 0}
+.toolbar-forecast-area{display:flex;flex:1 1 60px;min-height:32px;align-items:center;justify-content:center}
+.toolbar-readouts{display:flex;flex-direction:column;gap:2px;flex:0 1 auto;min-width:0;padding:2px 3px 0 0}
+.toolbar-status{display:flex;flex:0 1 auto;max-width:100%;min-width:0;margin-left:auto}
 .toolbar-pause{flex:none}
-.toolbar-readout-row{display:flex;gap:4px;height:13px}
+.toolbar-readout-row{display:flex;gap:4px;height:13px;min-width:0}
 .toolbar-forecast{width:52px;height:20px}
 .toolbar-readout-label{display:flex;justify-content:flex-end;align-items:center;width:41px;font-weight:bold}
-.toolbar-readout{width:176px;height:13px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;padding-left:1px;font-size:9px}
+.toolbar-readout{width:176px;min-width:0;flex:0 1 176px;height:13px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;padding-left:1px;font-size:9px}
 
 /* Permanent desktop workspace. No phone breakpoint rearranges this frame. */
 .game-desktop{position:relative;display:flex;flex-direction:column;width:100%;height:100dvh;overflow:hidden;background:#c2c2c2;color:#000;color-scheme:light}

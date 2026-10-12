@@ -30,8 +30,8 @@ test('Edit fills the desktop permanently; windows close without resizing or unmo
   await focusEdit(page); expect(await map.boundingBox()).toEqual(before);
   await page.screenshot({ path: 'artifacts/browser-edit-workspace-final.png' });
   await page.setViewportSize({ width: 390, height: 844 });
-  // No minimum width: the terrain fills whatever remains right of the palette.
-  expect(await map.boundingBox()).toMatchObject({ x: before!.x, y: before!.y, width: 390 - before!.x });
+  // No minimum width: the terrain fills whatever remains right of the palette, below the toolbar's wrapped second row.
+  expect(await map.boundingBox()).toMatchObject({ x: before!.x, y: before!.y + 32, width: 390 - before!.x });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 

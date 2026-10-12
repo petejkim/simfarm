@@ -114,3 +114,18 @@ A native 32×32 launcher sits at the right end of the strip, right of the Date a
 - **Accessible name:** the button is named "Pause" or "Resume" in HTML; the faces carry no lettering.
 
 Validation: control-bar unit test (rotation pixel-for-pixel against `buywndo.bmp`, pause palette and bar columns) and control-bar browser spec (7/7). The spec checks placement right of the readouts, the faces for both states and the toggle with no farm change on a frozen clock, and updates the existing launcher and readout geometry for the new button. Production build passes.
+
+## Wrapping on narrow screens (2026-10-12, user request)
+
+The toolbar wraps so every control stays fully visible on small screens. This user request supersedes the earlier "no small-screen adaptation yet" scope for the menu bar and toolbar only.
+
+- **Desktop:** at desktop widths (anything that fits launchers + forecast + readouts, about 620px or more) the strip is still one 32px row with unchanged geometry.
+- **Toolbar wrapping:** narrower, `.original-control-bar` wraps onto further 32px rows.
+  - The Date/Funds readouts and the pause launcher form one `.toolbar-status` group, so they always wrap together and stay right-aligned.
+  - The forecast takes the remaining space on its row, at least 60px.
+  - The launchers themselves wrap below 288px.
+  - The readout value boxes may shrink from 176px instead of overflowing.
+- **Menu bar:** it wraps its headings the same way (`min-height:16px`).
+- **Work area:** the map moves down by the added rows; floating windows are unaffected.
+
+Validation: a new control-bar spec checks 620/400/320/240px. At each width the strip is whole 32px rows, nothing scrolls horizontally, every toolbar control and menu heading lies within the viewport, and the readouts stay on the pause button's row. The 390px expectations in the control-bar and edit-workspace specs were updated from single-row to wrapped. Control-bar, main-menu, edit-workspace, viewport-scrollbars, new-game-layout, debug-menu and window-movement specs pass, and the production build passes.

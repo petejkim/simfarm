@@ -43,9 +43,9 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
   await expect(page.locator('#farm-cash')).toHaveText(`$${(cash + 1000).toLocaleString('en-US')}`);
   await page.evaluate(() => scrollTo(0, 0));
   await page.screenshot({ path: 'artifacts/browser-control-bar-desktop.png' });
-  // No minimum width: narrow pages shrink the strip (mobile adaptation is out of scope) without page scrolling.
+  // No minimum width: narrow pages wrap the strip onto a second 32px row (user request) without page scrolling.
   await page.setViewportSize({ width: 390, height: 844 }); await page.evaluate(() => scrollTo(0, 0));
-  expect(await bar.boundingBox()).toEqual({ ...box, width: 390 });
+  expect(await bar.boundingBox()).toEqual({ ...box, width: 390, height: 64 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 
@@ -155,4 +155,22 @@ test('launchers stay depressed while their window is open and release when it cl
   await expect(bank).toHaveAttribute('aria-pressed', 'false'); expect(await bevel(bank)).toBe('rgb(255, 255, 255)');
   await page.getByRole('button', { name: 'Close Buy', exact: true }).click();
   await expect(buy).toHaveAttribute('aria-pressed', 'false'); expect(await bevel(buy)).toBe('rgb(255, 255, 255)');
+});
+
+test('on narrow screens the menu bar and toolbar wrap so every control stays fully visible', async ({ page }) => {
+  for (const width of [620, 400, 320, 240]) {
+    await page.setViewportSize({ width, height: 700 }); await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    const bar = page.getByRole('toolbar', { name: 'Game toolbar' }), box = (await bar.boundingBox())!;
+    expect(box.height % 32, `width ${width}`).toBe(0); // whole 32px rows
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    const controls = [...await bar.getByRole('button').all(), page.locator('#farm-date'), page.locator('#farm-cash'), page.locator('.toolbar-forecast'),
+      ...await page.locator('.original-menu-heading').all()];
+    for (const control of controls) {
+      const r = (await control.boundingBox())!;
+      expect(r.x >= 0 && r.x + r.width <= width + 0.5, `${width}: ${await control.evaluate(el => el.id || el.textContent)}`).toBe(true);
+    }
+    // Readouts and the pause launcher stay together on one row.
+    const pause = (await page.locator('#toolbar-pause').boundingBox())!, funds = (await page.locator('#farm-cash').locator('..').boundingBox())!;
+    expect(pause.y).toBeLessThanOrEqual(funds.y); expect(pause.y + pause.height).toBeGreaterThanOrEqual(funds.y + funds.height);
+  }
 });

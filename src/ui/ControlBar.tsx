@@ -21,6 +21,7 @@ const CAPTIONED = new Set<GameWindow>(['buy', 'sell']);
 const LAUNCHERS = [...GAME_WINDOWS.slice(0, 9).map((window, face) => ({ window, face })).filter(({ window }) => window !== 'edit'), { window: 'expert' as const, face: 9 }];
 
 /** Source toolbar at screen (0,16): window launchers, forecast inset and Date/Funds readouts, laid out with flexbox.
+ * It wraps onto extra 32px rows when the screen is too narrow (user request); at desktop width it is one row.
  * Bevels are CSS borders; cntlbtnh.bmp only supplies each launcher's 26×26 picture face. */
 export function ControlBar({ artwork, expertFace, timeToggle, menus, snapshot, tiles, onWindow, onTogglePause }: {
   artwork: HTMLImageElement; expertFace: HTMLImageElement; timeToggle: HTMLImageElement; menus: MainMenus; snapshot: GameSnapshot; tiles: HTMLImageElement | null;
@@ -35,12 +36,15 @@ export function ControlBar({ artwork, expertFace, timeToggle, menus, snapshot, t
         label={menus.menus[3].items[face].label} captioned={CAPTIONED.has(window)} pressed={windows.order.includes(window)} onWindow={onWindow} />)}
     </div>
     <div className="toolbar-forecast-area"><ToolbarForecast forecast={forecast} tiles={tiles} /></div>
-    <div className="toolbar-readouts">
-      <ToolbarReadout id="farm-date" label="Date">{months[date.month]} {date.week * 7 + date.day + 1}, {date.year}</ToolbarReadout>
-      <ToolbarReadout id="farm-cash" label="Funds">${snapshot.scenario.farm.cash.toLocaleString('en-US')}</ToolbarReadout>
+    {/* Readouts and the pause launcher wrap together as one group on narrow screens. */}
+    <div className="toolbar-status">
+      <div className="toolbar-readouts">
+        <ToolbarReadout id="farm-date" label="Date">{months[date.month]} {date.week * 7 + date.day + 1}, {date.year}</ToolbarReadout>
+        <ToolbarReadout id="farm-cash" label="Funds">${snapshot.scenario.farm.cash.toLocaleString('en-US')}</ToolbarReadout>
+      </div>
+      <PauseToggle sheet={timeToggle} paused={snapshot.paused} onToggle={onTogglePause}
+        disabled={Boolean(snapshot.finances.defaultDecision || snapshot.pendingTown || snapshot.townEvent.pending)} />
     </div>
-    <PauseToggle sheet={timeToggle} paused={snapshot.paused} onToggle={onTogglePause}
-      disabled={Boolean(snapshot.finances.defaultDecision || snapshot.pendingTown || snapshot.townEvent.pending)} />
   </div>;
 }
 
