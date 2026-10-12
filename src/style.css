@@ -2,7 +2,7 @@
 
 .field-care{border-bottom:1px solid #48563f;padding-bottom:4px}#field-treatment{max-width:100%}
 .land-panel{border-bottom:1px solid #48563f;margin-bottom:20px;padding-bottom:16px;font-size:12px;line-height:1.6;color:#c2cbb4}.clearing{align-items:flex-start}.clearing input{margin-top:4px}.land-panel select{max-width:100%}input:focus-visible{outline:2px solid #e4ce83;outline-offset:2px}
-.harvest-inventory{font-size:12px;line-height:1.6;color:#c2cbb4}.harvest-inventory{border-bottom:1px solid #48563f;margin-bottom:20px;padding-bottom:12px}#harvest-items{padding-left:18px}#harvest-items li{margin:8px 0}
+.harvest-inventory{font-size:12px;line-height:1.6;color:#c2cbb4}.harvest-inventory{border-bottom:1px solid #48563f;margin-bottom:20px;padding-bottom:12px}
 .time-controls{border-top:1px solid #44503b;font-size:12px;flex-wrap:wrap}.time-controls>div{flex-wrap:wrap}#farm-weather,#time-status,#field-growth{color:#c2cbb4;font-size:12px}#field-growth{line-height:1.6}#viewport{height:calc(100vh - 308px)}aside{max-height:calc(100vh - 268px)}@media(max-width:800px){#viewport{height:55vh}aside{max-height:none}}
 .toolbar{flex-wrap:wrap}
 .loan-panel{margin:0 0 16px;padding:12px 16px;border:1px solid #48563f;background:#20291d;color:#c2cbb4;line-height:1.5}.loan-panel summary{cursor:pointer;color:#ead6a1;font-weight:bold}.loan-panel dl{display:flex;gap:12px 30px;flex-wrap:wrap}.loan-panel dt{font-size:12px;color:#a8b598}.loan-panel dd{margin:0;color:#ead6a1}.loan-panel form{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.loan-panel input{width:125px;max-width:100%;padding:7px;color:#f3ecd9;background:#111b11;border:1px solid #7a8964}.loan-panel p{font-size:13px}
@@ -139,6 +139,36 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .buy-actions{display:flex;margin-top:13px}
 .buy-caption{height:24px;font:bold 10px Arial,sans-serif}
 .buy-caption-buy{width:32px}.buy-caption-close{width:48px}
+/* Sell: 176×248 client (source x−8): categories and photo; name; scroll column and sale list; position; SELL/CLOSE. */
+.game-window[data-window=sell]{left:128px;top:80px;right:auto}
+.sell-window{display:flex;flex-direction:column;width:176px;height:248px;padding-top:2px;color:var(--ink);font:10px/12px monospace}
+.sell-top{display:flex;padding-left:8px}
+.sell-categories{display:flex;flex-direction:column;gap:2px}
+.sell-category{width:28px;height:28px}
+.sell-heading{display:flex;flex-direction:column;gap:6px;margin:4px 0 0 10px}
+.sell-photo{width:116px;height:68px}
+.sell-card{width:112px;height:64px;overflow:hidden}
+#sell-item-name{width:124px;height:12px;margin:0;overflow:hidden;white-space:nowrap}
+.sell-middle{display:flex;gap:6px;margin:4px 0 0 8px}
+.sell-scroll-column{display:flex;flex-direction:column;margin-top:2px}
+.sell-scroll{width:16px;height:16px}
+.sell-track{display:block;width:16px;height:64px;background-repeat:no-repeat;image-rendering:pixelated}
+.game-window .sell-window input.sell-scrollbar{display:block;width:16px;height:64px;margin:0;padding:0;border:0;background:transparent;writing-mode:vertical-lr;direction:ltr;appearance:none;-webkit-appearance:none;cursor:pointer}
+.sell-scrollbar::-webkit-slider-runnable-track{background:transparent;border:0}
+.sell-scrollbar::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;box-sizing:border-box;background:var(--face);border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light);outline:1px solid var(--ink);outline-offset:-1px}
+.sell-scrollbar::-moz-range-thumb{width:16px;height:16px;box-sizing:border-box;border-radius:0;background:var(--face);border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light)}
+.sell-scrollbar:disabled::-webkit-slider-thumb{visibility:hidden}.sell-scrollbar:disabled::-moz-range-thumb{visibility:hidden}
+.sell-list-box{width:140px;height:100px}
+#harvest-items{display:flex;flex-direction:column}
+.game-window .sell-window button.sell-row{display:flex;align-items:center;width:136px;height:32px;margin:0;padding:0 0 0 7px;border:1px solid var(--ink);border-radius:0;background:transparent;color:var(--ink);overflow:hidden;font:10px/10px monospace}
+.game-window .sell-window button.sell-row[aria-selected=true]{border:2px solid #fff304;padding-left:6px}
+.sell-tiles{display:grid;flex:none;min-width:32px}
+.sell-price{margin-left:4px;white-space:nowrap}
+.sell-empty{margin:0;padding:2px;font:10px/10px monospace}
+#sell-position{height:12px;margin:6px 0 0 32px}
+.sell-actions{display:flex;justify-content:flex-end;margin:4px 8px 0 0}
+.sell-caption{height:24px;font:bold 10px Arial,sans-serif}
+.sell-caption-sell{width:40px}.sell-caption-close{width:48px}
 .original-control-bar{position:relative;z-index:1;display:flex;align-items:stretch;height:32px;font:10px/1 Arial,Helvetica,sans-serif;color:var(--ink);background:var(--face);box-shadow:inset 0 1px var(--ink)}
 .toolbar-launchers{display:flex;flex:none}
 .window-launcher{width:32px;height:32px}
@@ -290,35 +320,12 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window .expert-window .expert-hotspot:hover{background:#fff2}
 
 /* Original Sell descriptor DSbdbe:192×256 client below16px title. */
-.game-window[data-window=sell]{left:128px;top:80px;right:auto;width:192px;border:0;max-height:calc(100% - 96px)}
-.game-window[data-window=sell] .game-window-body{padding:0}
-.sell-window{position:relative;width:192px;height:256px;flex-shrink:0}
-.sell-window>img{display:block;image-rendering:pixelated;pointer-events:none}
-.sell-card{position:absolute;left:56px;top:8px;width:112px;height:64px;overflow:hidden}
-.sell-card>img{position:absolute;image-rendering:pixelated;max-width:none}
-.sell-preview{position:absolute;inset:0;width:192px;height:256px;pointer-events:none}
-.game-window .sell-window button{position:absolute;padding:0;border:0;border-radius:0;background:transparent;color:#000}
-.sell-category{left:16px;width:28px;height:28px}
-.sell-category[aria-pressed=true]{box-shadow:inset 1px 1px #000,inset -1px -1px #fff}
-.sell-scroll{left:16px;width:16px;height:16px}
-.game-window .sell-window button:hover:not(:disabled){background:#fff2}
-.game-window .sell-window .sell-scrollbar{position:absolute;left:16px;top:112px;width:16px;height:64px;margin:0;padding:0;border:0;writing-mode:vertical-lr;direction:ltr;accent-color:#828282}
-.game-window #sell-item-name{position:absolute;left:48px;top:80px;width:124px;height:12px;margin:0;overflow:hidden;white-space:nowrap;font:10px/12px monospace}
-.game-window .sell-window .sell-row{left:40px;width:136px;height:32px;border:1px solid #000;overflow:hidden}
-.game-window .sell-window .sell-row[aria-selected=true]{border:2px solid #fff304}
-.sell-condition{position:absolute;left:39px;top:-1px}
-.sell-row[aria-selected=true] .sell-condition{left:38px;top:-2px}
 /* Shared condition badge (ConditionBadge): source ring as background; letter centred in the ring interior
    (x10..21, y8..18) with the ring's 1px grey drop shadow; word centred in rows 22..29, bold with a 2px face-grey stroke painted under the fill so it
    reads cleanly over the ring's lower arc. */
 .condition-badge{display:grid;width:32px;height:32px;background:var(--condition-badge) no-repeat;image-rendering:pixelated}
 .condition-letter{grid-area:1/1;margin:8px 0 0 10px;width:12px;height:11px;display:flex;align-items:center;justify-content:center;color:#c20404!important;text-shadow:1px 1px #828282;font:bold 14px/1 monospace}
 .condition-word{grid-area:1/1;margin-top:23px;width:32px;height:8px;display:flex;align-items:center;justify-content:center;color:#414141;font:bold 8px/1 Arial,sans-serif;white-space:nowrap;-webkit-text-stroke:2px #c2c2c2;paint-order:stroke fill}
-.sell-price{position:absolute;left:71px;top:11px;font:10px/10px monospace;white-space:nowrap}
-.sell-row[aria-selected=true] .sell-price{left:70px;top:10px}
-.game-window .sell-empty{position:absolute;left:40px;top:96px;margin:0;font:10px/10px monospace}
-.game-window #sell-position{position:absolute;left:40px;top:200px;width:136px;height:12px;margin:0;font:10px/12px monospace}
-.game-window .sell-window .sell-caption{top:216px;height:24px;font:bold 10px Arial,sans-serif}
 /* Screen-reader-only text: pinned to the window's origin so its static position never extends the scrollable area. */
 .sale-accessible-detail{position:absolute!important;top:0;left:0;width:1px!important;height:1px!important;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 

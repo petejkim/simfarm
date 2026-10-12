@@ -20,7 +20,7 @@ test('original Sell browses three rows, excludes rentals, explains busy machiner
   const original=writeNativeSave(state,4),expected=GameSimulation.load(original,browserCrops).simulation;
   await start(page);await load(page,original);await page.locator('#window-sell').click();
   const catalog=page.getByRole('region',{name:'Sell catalog'});
-  expect(await catalog.boundingBox()).toEqual({x:128,y:96,width:192,height:256});
+  expect(await catalog.boundingBox()).toEqual({x:136,y:96,width:176,height:248}); // client inside the 8px frame
   await expect(catalog).toContainText('NOTHINGFOR SALE');await expect(page.locator('#catalog-sell')).toBeDisabled();
   await catalog.getByRole('button',{name:'Machinery',exact:true}).click();
   await expect(page.getByRole('option')).toHaveCount(3);
@@ -32,14 +32,15 @@ test('original Sell browses three rows, excludes rentals, explains busy machiner
   await catalog.focus();await page.keyboard.press('End');await expect(page.locator('#sell-position')).toHaveText('Item: 6 of 6');
   expect(await page.locator('.sell-row').evaluateAll(els=>els.map(e=>e.getAttribute('data-slot')))).toEqual(['5','6','7']);
   await expect(catalog.getByRole('button',{name:'Next item'})).toBeDisabled();
-  expect(await page.locator('.sell-preview').boundingBox()).toMatchObject({width:192,height:256});
-  await expect(page.locator('#catalog-sell')).toHaveCSS('font-size','10px');
-  const source=(name:string)=>readFileSync(new URL('../../../simfarm-dos/'+name,import.meta.url));
-  const archive=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),asset=(name:string)=>archive.find(e=>e.name===name)!.bytes;
-  const graphic=decodePlanar(asset('mskdtile.til').subarray(0,128),16,16,readPalette(asset('simfarm.pal')),7);
-  // Canvas compositing zeros RGB for fully transparent pixels.
-  for(let p=0;p<graphic.rgba.length;p+=4)if(!graphic.rgba[p+3])graphic.rgba.fill(0,p,p+4);
-  expect(await page.locator('.sell-preview').evaluate((el:HTMLCanvasElement)=>Array.from(el.getContext('2d')!.getImageData(48,104,16,16).data))).toEqual(Array.from(graphic.rgba));
+  // Shared frame around a 176×248 client built from components; no background bitmap or canvas.
+  expect(await catalog.boundingBox()).toMatchObject({width:176,height:248});
+  await expect(catalog.locator('img,canvas')).toHaveCount(0);
+  expect(await catalog.locator('.sunken-inset').count()).toBe(2); // photo, sale list
+  await expect(page.locator('#catalog-sell')).toHaveCSS('font-size','10px');await expect(page.locator('#catalog-sell')).toHaveText('SELL');
+  // Each row shows its item graphic as tile sprites (here masked tile 848 = masked atlas 0,0), then badge and price.
+  const tile=page.locator('.sell-row').first().locator('.sell-tiles .sprite').first();
+  expect(await tile.evaluate(el=>[getComputedStyle(el).backgroundImage.startsWith('url("data:image/png'),getComputedStyle(el).backgroundPosition])).toEqual([true,'0px 0px']); // masked atlas (generated data URL), tile 0
+  expect(await page.locator('.sell-row').first().evaluate(el=>[...el.children].map(c=>c.className.split(' ')[0]))).toEqual(['sell-tiles','condition-badge','sell-price','sale-accessible-detail']);
   await page.screenshot({path:'artifacts/browser-sell-catalog.png'});
   expect(await save(page)).toEqual(JSON.parse(original));
   await page.locator('#catalog-sell').click();expected.dispatch({type:'sell-asset',kind:'equipment',slot:7});
@@ -66,9 +67,9 @@ test('Sell handles all24 crop identities, live prices, last-lot removal and sour
   await expect(page.locator('#harvest-stock')).toHaveText('23 stored harvests');
   expect(await save(page)).toEqual(JSON.parse(expected.save(4)));
   await page.getByRole('dialog',{name:'Sell',exact:true}).locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');
-  expect(await catalog.boundingBox()).toMatchObject({x:138,width:192,height:256});
+  expect(await catalog.boundingBox()).toMatchObject({x:146,width:176,height:248});
   await catalog.getByRole('button',{name:'CLOSE',exact:true}).click();await page.locator('#window-sell').click();
-  expect(await catalog.boundingBox()).toMatchObject({x:138});
+  expect(await catalog.boundingBox()).toMatchObject({x:146});
   await page.reload();await load(page,expected.save(4));
 });
 

@@ -2896,3 +2896,7 @@ Commit 2 added the importer's `window-frame.png` 9-slice from Sell, an importer 
 ## 2026-10-12 — Buy rebuilt on shared chrome
 
 Buy is a framed flex window with BevelButton categories/arrows/captions, SunkenInset photo/description/preview/readouts, and a tile-grid preview (no background image or canvas). Added a shared TileSprite (also used by Examine). Generic window button styles now skip bevel buttons. Buy-related specs pass 36/36, including new structural assertions in buy-window.spec.
+
+## 2026-10-12 — Sell rebuilt on shared chrome
+
+Framed flex window with BevelButton categories/scroll arrows/captions, SunkenInset photo and list, tile-sprite rows with ConditionBadge, and a bevel-thumb range over the source track (no background image or canvas). Sell/manual-sales/weekly-aging/native/harvest-workers/window specs pass 33/33. sell-window.spec now asserts structure (frame client size, components, row composition) instead of canvas pixels.

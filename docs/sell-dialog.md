@@ -63,3 +63,13 @@ The BAD badge's word background clips three ring pixels, so it is outvoted. The 
 Schedule previously lacked the centring rules and inherited the schedule font, which misaligned both. Examine's separate overrides were removed.
 
 2026-10-12 follow-up (user, for visibility): the condition word is bold with a 2px face-grey `-webkit-text-stroke` painted under the fill (`paint-order: stroke fill`, reported by browsers as `stroke`), separating it from the ring arc it overlaps.
+
+## Rebuilt on shared chrome (2026-10-12)
+
+User request (ui-components.md). Sell is a framed `GameWindow` around a 176×248 flex client, with no background bitmap, transparent buttons or canvas:
+- **Top:** category `BevelButton`s (source icon sprites, drop shadow, pressed state) beside the photo `SunkenInset` and item name.
+- **Middle:** a scroll column (16px arrow buttons with source glyph sprites, the source dithered track behind a range input styled with a small raised-bevel thumb) beside the sale-list inset.
+- **List rows:** flex buttons containing the item's tile sprites, the shared `ConditionBadge` and the price. Wide items push the badge right instead of overlapping it.
+- **Bottom:** position text, and SELL/CLOSE caption buttons.
+
+`src/render/sell-preview.ts` was removed. `sell-window.png` now serves only as the sprite source. Leftover dashboard rules (`#harvest-items` padding) were removed. Sell's controls use selectors scoped under `.sell-window` so the generic native-window input/button styles don't apply.
