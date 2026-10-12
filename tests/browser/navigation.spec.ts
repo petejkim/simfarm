@@ -78,7 +78,7 @@ test('Map and Plant lead through land purchase, field creation and planning with
   await expectWeekPlan(page,239,/Fallow/);
   await openWindow(page,'bank');
   await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('1000'); await reveal(page, '#borrow-loan'); await page.locator('#borrow-loan').click();
-  await expect(page.locator('#loan-result')).toHaveText('Borrowed $1,000.');
+  await expect(page.locator('#loan-balance')).toHaveText('$1,000');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await expect(page.getByRole('dialog',{name:'Farm controls',exact:true})).toHaveCount(0);
   await expect(page.getByRole('dialog',{name:'Field information',exact:true})).toHaveCount(0);

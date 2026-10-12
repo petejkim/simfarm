@@ -38,7 +38,7 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); await expect(page.locator('#farm-date')).not.toHaveText(date!);
   await reveal(page, '#window-bank'); await page.locator('#window-bank').click(); await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('1000');
   const cash = Number((await page.locator('#farm-cash').textContent())!.replace(/[^\d-]/g, '')); await reveal(page, '#borrow-loan'); await page.locator('#borrow-loan').click();
-  await expect(page.locator('#loan-result')).toContainText('Borrowed');
+  await expect(page.locator('#loan-balance')).toHaveText('$1,000');
   await expect(page.locator('#farm-cash')).toHaveText(`$${(cash + 1000).toLocaleString('en-US')}`);
   await page.evaluate(() => scrollTo(0, 0));
   await page.screenshot({ path: 'artifacts/browser-control-bar-desktop.png' });

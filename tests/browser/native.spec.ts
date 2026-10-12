@@ -258,13 +258,11 @@ test('a planted original corn crop grows, is harvested and sold through browser 
   expect(amount).toBeGreaterThan(0);
   await sell.click();
   await expect(page.locator('#farm-cash')).toHaveText(`$${(cash + amount).toLocaleString('en-US')}`);
-  await expect(page.locator('#sale-result')).toHaveText(`Harvest sold for $${amount.toLocaleString('en-US')}.`);
   await expect(page.locator('#harvest-stock')).toHaveText('3 stored harvests');
   await expect(sell).toHaveCount(0);
   await expect(page.locator('#plant-field')).toHaveCount(0);
   await page.screenshot({ path: 'artifacts/browser-farming-cycle.png', fullPage: true });
   await loadScenarioCheckpoint(page,Number('0'));
-  await expect(page.locator('#sale-result')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
@@ -319,7 +317,7 @@ test('map tools buy original land and complete a new-field planting and harvest 
   await page.screenshot({ path: 'artifacts/browser-land-purchase.png', fullPage: true });
   await buyPlot(page,0,2);
   await expect(page.locator('#farm-cash')).toHaveText('$21,940');
-  await expect(page.locator('#map-land-result')).toHaveText('Bought plot at 0, 16 for $18,060.');
+  await expect(page.locator('#map-land-action')).toHaveText('SELL');
   await plantField(page,0,16);
   await expectPaletteAction(page,'Plant');
   await setAutoDoze(page,true);await clickFarmTile(page,0,16);
@@ -692,10 +690,9 @@ test('Loans panel borrows, quotes installments, saves balances and pays off thro
   const cash = await page.locator('#farm-cash').textContent();
   await openWindow(page, 'bank');
   await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('0'); await expect(page.locator('#borrow-loan')).toBeEnabled();
-  await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('1000'); await expect(page.locator('#loan-quote')).toContainText('$57');
+  await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('1000'); await expect(page.locator('#loan-amount')).toHaveAttribute('title',/Adds \$57 to each scheduled installment/);
   await reveal(page, '#borrow-loan'); await page.locator('#borrow-loan').click();
   await expect(page.locator('#loan-balance')).toHaveText('$1,000'); await expect(page.locator('#loan-installment')).toHaveText('$57');
-  await expect(page.locator('#loan-result')).toHaveText('Borrowed $1,000.');
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const download = await pending, path = 'artifacts/browser-loan.simfarm.json'; await download.saveAs(path);
   expect(JSON.parse(readSaveText(path)).runtime.finances.loan.principal).toBe(1000);
@@ -751,7 +748,7 @@ test('saved financial default stops time and actions, supports ending or restart
   await reveal(page, '#region-design'); await page.locator('#region-design').click(); await reveal(page, '#play-farm'); await page.locator('#play-farm').click();
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   await expect(page.locator('#next-day')).toBeEnabled(); await expect(page.locator('#time-status')).toContainText('0 days advanced');
-  await openWindow(page, 'bank'); await expect(page.locator('#loan-overdue')).toHaveCount(0);
+  await openWindow(page, 'bank'); await expect(page.locator('#loan-balance')).toHaveText('$0');
 });
 
 

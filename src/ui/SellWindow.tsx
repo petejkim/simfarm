@@ -7,7 +7,6 @@ import { GameWindow, useWindows } from './GameWindow';
 
 const categories: {kind:SellCategory;label:string}[]=[{kind:'harvest',label:'Harvest'},{kind:'equipment',label:'Machinery'},{kind:'animal',label:'Livestock'}];
 const grades=['BAD','POOR','FAIR','HIGH'], letters=['X','C','B','A'];
-const reasons: Record<string,string>={'asset-busy':'This machine is in use. Finish its work before selling.','inconsistent-asset':'This asset has inconsistent storage, ownership or links and cannot be sold.','invalid-asset':'This item is no longer available.','inconsistent-inventory':'Cannot sell: the inventory and storage records do not match.','invalid-item':'This harvest is no longer available.'};
 export function SellWindow({assets,snapshot,tiles,onCommand,focusRef}:{assets:GameAssets;snapshot:GameSnapshot;tiles:CanvasImageSource;onCommand:(command:GameCommand)=>void;focusRef:Ref<HTMLElement>}) {
   const windows=useWindows(),[category,setCategory]=useState<SellCategory>('harvest'),[selection,setSelection]=useState({index:0,offset:0});
   const items=sellProducts(snapshot.scenario,snapshot.finances,assets.catalog.crops,assets.buyCatalog,assets.itemText,category,snapshot.weather.soilMoisture);
@@ -16,7 +15,6 @@ export function SellWindow({assets,snapshot,tiles,onCommand,focusRef}:{assets:Ga
   const canvas=useRef<HTMLCanvasElement>(null);
   useEffect(()=>{if(canvas.current)drawSellPreview(canvas.current.getContext('2d')!,rows,tiles,assets.maskedTiles);},[snapshot,category,offset,tiles,assets.maskedTiles]);
   const blocked=Boolean(snapshot.pendingTown||snapshot.townEvent.pending||snapshot.finances.defaultDecision||snapshot.aircraftFlight);
-  const result=category==='harvest'?snapshot.lastSaleResult:snapshot.lastAssetSaleResult?.kind===category?snapshot.lastAssetSaleResult:null;
   const harvestCount=snapshot.scenario.inventory.filter(i=>i.active&&i.type>=168&&i.type<168+snapshot.scenario.cropFiles.length).length;
   function select(next:number){const i=Math.max(0,Math.min(items.length-1,next));setSelection({index:i,offset:Math.max(0,Math.min(Math.max(0,items.length-3),i<offset?i:i>offset+2?i-2:offset))});}
   return <GameWindow windowKey="sell" title="Sell">
@@ -50,9 +48,5 @@ export function SellWindow({assets,snapshot,tiles,onCommand,focusRef}:{assets:Ga
       <button className="sell-caption" style={{left:128,width:48}} onClick={()=>windows.close('sell')}>CLOSE</button>
       <p id="harvest-stock" className="sale-accessible-detail">{harvestCount?`${harvestCount} stored harvest${harvestCount===1?'':'s'}`:'No stored harvests.'}</p>
     </section>
-    {(product?.reason||result)&&<div className="sell-feedback">
-      {product?.reason&&<p role="status">{reasons[product.reason]??'This item cannot be sold.'}</p>}
-      {result&&<p id={category==='harvest'?'sale-result':'catalog-sale-result'} role="status">{result.ok?`${category==='harvest'?'Harvest':category==='animal'?'Animal':'Machine'} sold for $${result.value.toLocaleString('en-US')}.`:reasons[result.reason]??'This item cannot be sold.'}</p>}
-    </div>}
   </GameWindow>;
 }

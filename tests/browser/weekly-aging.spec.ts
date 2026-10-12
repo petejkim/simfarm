@@ -71,7 +71,7 @@ test('weekly worn machinery sale displays proceeds, original clearing pixels and
 test('busy worn machinery reports a deferred sale and remains owned through a browser checkpoint', async ({ page }) => {
   const f = weeklyAgingFixture(); f.equipment.flags |= 1; const game = f.load().withAllCrops(browserCrops);
   await page.goto('/'); await load(page, game.save(4)); await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
-  await selectAssetSale(page,'Machinery',1);await expect(page.locator('.sell-feedback')).toContainText('This machine is in use.');await expect(page.locator('#catalog-sell')).toBeDisabled();
+  await selectAssetSale(page,'Machinery',1);await expect(page.locator('#catalog-sell')).toBeDisabled(); // machine in use
   const snapshot=await farmSnapshot(page);expect(snapshot.scenario.equipment[1].active).toBe(true);expect(snapshot.scenario.equipment[1].condition).toBe(255);
   await reveal(page,'#viewport');await page.getByRole('button',{name:'View object',exact:true}).click();await clickFarmTile(page,10,10);
   await expect(page.locator('.examine-condition')).toHaveAttribute('aria-label','Condition BAD');

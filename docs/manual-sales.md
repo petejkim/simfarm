@@ -36,3 +36,5 @@ Three live tests connect an actual gestation completion to newborn sale income, 
 ## Original Sell catalog update
 
 The toolbar/Windows Sell launcher now opens the original192×256 client, with harvest/machinery/livestock categories, three-row navigation, original item/condition artwork and HTML titles, grade markers and prices. The recovered manual-sale list filters and canonical commands above supply this restored interface. Older livestock/machinery controls remain alternate access until their other dialog interactions are reconstructed. See [sell-dialog.md](sell-dialog.md) for layout evidence, checks and remaining presentation/event-loop adaptations; the original scan-boundary hazard is retained as SF-156.
+
+2026-10-11 user follow-up: the interim feedback area below this window was removed; outcomes show through the source controls, readouts and Funds. See progress.md.

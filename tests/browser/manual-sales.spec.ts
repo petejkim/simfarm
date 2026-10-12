@@ -35,12 +35,10 @@ test('Original Sell controls sell a live newborn and stored parent, show origina
     if (!quote.ok) throw new Error('Missing source animal quote');
     await expect(page.locator('[role=option][aria-selected=true]')).toHaveAttribute('data-value',String(quote.value));
     await page.locator('#catalog-sell').click(); game.dispatch({ type: 'sell-asset', kind: 'animal', slot });
-    await expect(page.locator('#catalog-sale-result')).toHaveText(`Animal sold for ${money(quote.value)}.`);
     await expect(page.locator('#farm-cash')).toHaveText(money(game.getSnapshot().scenario.farm.cash));
     expect(await save(page, 'artifacts/browser-animal-sale.simfarm.json')).toEqual(JSON.parse(game.save(4)));
     if (slot === 2) {
       await page.reload(); await load(page, game.save(4));
-      await expect(page.locator('#catalog-sale-result')).toHaveCount(0);
     }
   }
   expect((await farmSnapshot(page)).scenario.animals.filter(a=>a.active)).toHaveLength(0);
@@ -60,7 +58,7 @@ test('Original Sell machinery controls hide rentals, explain busy machines and s
   await page.goto('/'); const busy = writeNativeSave(state, 4); await load(page, busy);
   await selectAssetSale(page,'Machinery',2);
   await expect(page.locator('[role=option][data-slot="1"]')).toHaveCount(0);
-  await expect(page.locator('.sell-feedback')).toContainText('This machine is in use.');await expect(page.locator('#catalog-sell')).toBeDisabled();
+  await expect(page.locator('#catalog-sell')).toBeDisabled(); // machine in use
   expect(await save(page, 'artifacts/browser-equipment-sale.simfarm.json')).toEqual(JSON.parse(busy));
   await load(page, game.save(4));
   await page.setViewportSize({ width: 1280, height: 844 }); await openWindow(page,'sell');
@@ -73,7 +71,7 @@ test('Original Sell machinery controls hide rentals, explain busy machines and s
     await expect(page.locator('[role=option][aria-selected=true]')).toHaveAttribute('data-value',String(quote.value));
     await page.locator('#catalog-sell').click();
     game.dispatch({ type: 'sell-asset', kind: 'equipment', slot });
-    await expect(page.locator('#catalog-sale-result')).toHaveText(`Machine sold for ${money(quote.value)}.`);
+    await expect(page.locator('#farm-cash')).toHaveText(money(game.getSnapshot().scenario.farm.cash));
     expect(await save(page, 'artifacts/browser-equipment-sale.simfarm.json')).toEqual(JSON.parse(game.save(4)));
   }
   const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));

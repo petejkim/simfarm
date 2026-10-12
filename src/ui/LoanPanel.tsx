@@ -4,17 +4,12 @@ import { BANK_BUTTONS } from '../formats/bank-artwork';
 import { loanInstallment } from '../simulation/loan';
 
 const money = (n: number) => `$${n.toLocaleString('en-US')}`;
-const failures = { 'invalid-amount': 'Enter a positive whole-dollar amount.', 'no-credit': 'No borrowing credit is available.',
-  'cash-limit': 'Cash is already at its limit.', 'no-loan': 'There is no loan to repay.', 'insufficient-cash': 'There is not enough cash to pay off this loan.' };
-const notices: Record<number, string> = { 166: 'The scheduled installment is overdue.', 168: 'Assets were sold to pay the overdue installment.',
-  169: 'The overdue installment is still unpaid.', 170: 'The overdue installment has been paid.' };
-
 export function LoanPanel({ snapshot, onCommand, artwork, onClose, panelRef }: {
   snapshot: GameSnapshot; onCommand: (command: GameCommand) => void;
   artwork: HTMLImageElement; onClose: () => void; panelRef: Ref<HTMLElement>;
 }) {
   const [amount, setAmount] = useState(String(snapshot.finances.loan.selectedAmount)), [help, setHelp] = useState(false);
-  const { finances: f, availableLoan, lastLoanResult: result } = snapshot, decision = f.defaultDecision;
+  const { finances: f, availableLoan } = snapshot, decision = f.defaultDecision;
   const requested = Number(amount), valid = /^\d+$/.test(amount) && Number.isSafeInteger(requested) && requested <= availableLoan;
   const blocked = Boolean(decision || snapshot.pendingTown || snapshot.townEvent.pending || snapshot.aircraftFlight);
   function enter(value: string) {
@@ -59,7 +54,7 @@ export function LoanPanel({ snapshot, onCommand, artwork, onClose, panelRef }: {
       <form onSubmit={event => { event.preventDefault(); confirm(); }}>
         <label className="bank-label" htmlFor="loan-amount" style={{ left: 80, top: 127 }}>LOAN AMOUNT</label>
         <input id="loan-amount" aria-label="Amount to borrow" type="text" inputMode="numeric" pattern="[0-9]+" autoComplete="off"
-          value={amount} disabled={blocked} onChange={event => enter(event.target.value)} aria-describedby="loan-quote"
+          value={amount} disabled={blocked} onChange={event => enter(event.target.value)}
           title={installment === null ? 'Enter an amount within your available credit.' : `Adds ${money(installment)} to each scheduled installment.`}
           onKeyDown={event => { if (event.key === '.') { event.preventDefault(); setAmount('0'); } }} />
         {BANK_BUTTONS.map(button => <button key={button.id} type="button" className="bank-key"
@@ -72,14 +67,5 @@ export function LoanPanel({ snapshot, onCommand, artwork, onClose, panelRef }: {
       </form>
       {help && <div className="bank-help" role="note"><span>Loan Amount<br />Entry Pad</span><span>Borrow<br />Amount</span><span>Repay<br />Loan<br />In Full</span></div>}
     </section>
-    <div className="bank-feedback">
-      <span id="loan-quote" className="bank-accessible">{installment === null ? 'Enter an amount within your available credit.' : `Adds ${money(installment)} to each scheduled installment.`}</span>
-      {help && <p>Enter an amount, then OK to borrow. C clears the amount. OK with zero or Close returns to your farm. Installments are collected in January, March, July and October.</p>}
-      {f.debt.balanceDue > 0 && <p id="loan-overdue">Overdue installment: {money(f.debt.balanceDue)} · {f.debt.balanceCountdown} monthly retries remaining.
-        {' '}Paying off the main loan leaves this overdue installment payable separately.</p>}
-      <p id="loan-result" role="status">{result && (result.ok ? result.kind === 'borrow'
-        ? `Borrowed ${money(result.amount)}.` : `Paid off ${money(result.amount)}.` : failures[result.reason])}</p>
-      <p id="loan-notices" role="status">{snapshot.financeNotices.map(id => notices[id]).filter(Boolean).join(' ')}</p>
-    </div>
   </>;
 }

@@ -25,7 +25,7 @@ test('original Sell browses three rows, excludes rentals, explains busy machiner
   await catalog.getByRole('button',{name:'Machinery',exact:true}).click();
   await expect(page.getByRole('option')).toHaveCount(3);
   await expect(page.locator('#sell-position')).toHaveText('Item: 1 of 6');
-  await expect(page.locator('#catalog-sell')).toBeDisabled();await expect(page.getByRole('status')).toContainText(['This machine is in use. Finish its work before selling.']);
+  await expect(page.locator('#catalog-sell')).toBeDisabled(); // machine in use
   await catalog.getByRole('button',{name:'Next item'}).click();await expect(page.locator('#catalog-sell')).toBeEnabled();
   await expect(page.locator('.sell-row[aria-selected=true]')).toHaveAttribute('data-slot','3');
   await expect(page.locator('.condition-letter').first()).toHaveText('A');await expect(page.locator('.condition-word').first()).toHaveText('HIGH');
@@ -47,7 +47,7 @@ test('original Sell browses three rows, excludes rentals, explains busy machiner
   expect(await save(page)).toEqual(JSON.parse(expected.save(4)));
   await catalog.getByRole('button',{name:'Livestock',exact:true}).click();await expect(page.locator('#sell-item-name')).toHaveText('Cow');
   await page.locator('#catalog-sell').click();expected.dispatch({type:'sell-asset',kind:'animal',slot:1});
-  await expect(page.locator('#catalog-sell')).toBeDisabled();await expect(page.locator('#catalog-sale-result')).toContainText('Animal sold');
+  await expect(page.locator('#catalog-sell')).toBeDisabled();
   expect(await save(page)).toEqual(JSON.parse(expected.save(4)));
 });
 
@@ -63,11 +63,11 @@ test('Sell handles all24 crop identities, live prices, last-lot removal and sour
   for(let i=0;i<24;i++){names.add((await page.locator('#sell-item-name').textContent())!);if(i<23)await catalog.getByRole('button',{name:'Next item'}).click();}
   expect(names.size).toBe(24);await expect(page.locator('#sell-position')).toHaveText('Item: 24 of 24');
   await page.locator('#catalog-sell').click();expected.dispatch({type:'sell-harvest',inventorySlot:24});
-  await expect(page.locator('#sale-result')).toContainText('Harvest sold');await expect(page.locator('#harvest-stock')).toHaveText('23 stored harvests');
+  await expect(page.locator('#harvest-stock')).toHaveText('23 stored harvests');
   expect(await save(page)).toEqual(JSON.parse(expected.save(4)));
   await page.getByRole('dialog',{name:'Sell',exact:true}).locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');
   expect(await catalog.boundingBox()).toMatchObject({x:138,width:192,height:256});
   await catalog.getByRole('button',{name:'CLOSE',exact:true}).click();await page.locator('#window-sell').click();
   expect(await catalog.boundingBox()).toMatchObject({x:138});
-  await page.reload();await load(page,expected.save(4));await expect(page.locator('#sale-result')).toHaveCount(0);
+  await page.reload();await load(page,expected.save(4));
 });

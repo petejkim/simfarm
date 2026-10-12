@@ -59,3 +59,5 @@ Browser checks cover source geometry, all overlays, toggle-off, HTML help, actua
 The ordinary transaction path also exposes SF-158: occupied-region pricing includes the just-purchased plot, so an immediate qualifying resale quote rises100. Native preserves the source arithmetic and verifies it explicitly; this is an immediate cash result, not a claim about profit after annual tax. A balancing change is deferred and the original evidence remains in original-bugs.md.
 
 Interim UI retirement: the duplicate Land purchase form is removed. The subsequent Farm controls retirement removes its native Buy land shortcut too. Use the Map toolbar/menu and Property overlay. Map activation retains its selected overlay; trading continues through the same source-backed quote/buy/sell commands.
+
+2026-10-11 user follow-up: the interim feedback area below this window was removed; outcomes show through the source controls, readouts and Funds. See progress.md.

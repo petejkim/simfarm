@@ -28,14 +28,13 @@ test('Bank terminal preserves source geometry and HTML captions; keypad, clear, 
   await page.locator('#loan-panel').focus(); await page.keyboard.type('1000');
   await expect(page.locator('#loan-amount')).toHaveValue('1000');
   await page.keyboard.press('Enter');
-  await expect(page.locator('#loan-result')).toHaveText('Borrowed $1,000.');
   await expect(page.locator('#loan-amount')).toHaveValue('0');
   await expect(page.locator('#loan-balance')).toHaveText('$1,000');
   await expect(page.locator('#loan-installment')).toHaveText('$57');
   await page.screenshot({ path: 'artifacts/browser-bank-terminal.png' });
   const borrowed = await save(page);
   expect(borrowed.runtime.finances.loan.principal).toBe(1000);
-  await page.locator('#repay-loan').click(); await expect(page.locator('#loan-result')).toHaveText('Paid off $1,000.');
+  await page.locator('#repay-loan').click();
   await expect(page.locator('#loan-balance')).toHaveText('$0');
   await expect(page.locator('#loan-installment')).toHaveText('$0');
   expect((await save(page)).scenario.farm.cash).toBe(before.scenario.farm.cash);

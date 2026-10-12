@@ -30,7 +30,6 @@ test('original Map has all source overlays, HTML help and titles, source geometr
   await expect.poll(()=>page.locator('#viewport').evaluate(el=>[el.scrollLeft,el.scrollTop])).toEqual([128,192]);
   await expect.poll(()=>page.locator('.overview-edit-outline').evaluate(el=>[parseFloat((el as HTMLElement).style.left),parseFloat((el as HTMLElement).style.top)])).toEqual([16,24]);
   await panel.getByRole('button',{name:'Property',exact:true}).click();await plot(page,11,11);await canvas.press('ArrowRight');await canvas.press('ArrowDown');
-  await expect(page.locator('#map-land-selection')).toContainText('88, 88');
   await page.screenshot({path:'artifacts/browser-map-property.png'});
   const window=page.getByRole('dialog',{name:'Map',exact:true});await window.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');
   expect(await panel.boundingBox()).toMatchObject({x:90,width:288});
@@ -46,22 +45,22 @@ test('Map buys and sells the selected plot, protects home/fields, rejects other 
   state.scenario.cells[worldIndex(23,23)].overlay|=0x1000;
   const game=GameSimulation.load(writeNativeSave(state,4),browserCrops).simulation.withAllCrops(browserCrops),initial=game.save(4);
   await start(page);await load(page,initial);await page.locator('#window-map').click();await page.getByRole('button',{name:'Property',exact:true}).click();
-  await plot(page,0,0);await page.locator('#map-land-action').click();await expect(page.locator('#map-land-result')).toHaveText('You cannot sell your home plot.');
-  await plot(page,2,2);await page.locator('#map-land-action').click();await expect(page.locator('#map-land-result')).toContainText('Remove the fields');
+  await plot(page,0,0);await page.locator('#map-land-action').click();await expect(page.locator('#map-land-action')).toHaveText('SELL'); // home plot cannot be sold
+  await plot(page,2,2);await page.locator('#map-land-action').click();await expect(page.locator('#map-land-action')).toHaveText('SELL'); // fields block the sale
   await plot(page,3,3);await expect(page.locator('#map-land-action')).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(initial));
   await plot(page,1,1);await expect(page.locator('#map-land-action')).toHaveText('BUY');
   await page.locator('#map-land-action').click();game.dispatch({type:'buy-land',regionX:1,regionY:1});
-  await expect(page.locator('#map-land-result')).toContainText('Bought plot at 8, 8');await expect(page.locator('#map-land-action')).toHaveText('SELL');
+  await expect(page.locator('#map-land-action')).toHaveText('SELL');
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await page.locator('#map-land-action').click();game.dispatch({type:'sell-land',regionX:1,regionY:1});
-  await expect(page.locator('#map-land-result')).toContainText('Sold plot at 8, 8');expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+  await expect(page.locator('#map-land-action')).toHaveText('BUY');expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await page.reload();await load(page,game.save(4));await page.locator('#window-map').click();await page.getByRole('button',{name:'Property',exact:true}).click();await plot(page,1,1);
-  await expect(page.locator('#map-land-action')).toHaveText('BUY');await expect(page.locator('#map-land-result')).toHaveCount(0);
+  await expect(page.locator('#map-land-action')).toHaveText('BUY');
 });
 
 test('Map handles insufficient cash and missing original artwork',async({page})=>{
   const {state}=shopFixture();state.scenario.regionalConditions.fill(0);state.scenario.farm.cash=1;
   await start(page);await load(page,writeNativeSave(state,4));await page.locator('#window-map').click();await page.getByRole('button',{name:'Property',exact:true}).click();
-  await expect(page.locator('#map-land-action')).toBeDisabled();await expect(page.locator('.overview-feedback')).toContainText('not enough cash');
+  await expect(page.locator('#map-land-action')).toBeDisabled();
   await page.route('**/assets/map-window.png',r=>r.abort());await page.reload();await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('#world')).toHaveCount(0);
 });

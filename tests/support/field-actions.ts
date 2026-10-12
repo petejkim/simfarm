@@ -33,7 +33,7 @@ export async function selectProperty(page:Page,x:number,y:number){
 export async function buyPlot(page:Page,x:number,y:number){
   await selectProperty(page,x,y);await expect(page.locator('#map-land-action')).toHaveText('BUY');
   await page.locator('#map-land-action').click();
-  await expect(page.locator('#map-land-result')).toContainText(`Bought plot at ${x*8}, ${y*8}`);
+  await expect(page.locator('#map-land-action')).toHaveText('SELL'); // the plot is now owned
 }
 
 export async function sprayField(page:Page,x:number,y:number,treatment:string){

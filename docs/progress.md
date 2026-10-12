@@ -2831,3 +2831,12 @@ Remaining interim sections attached to windows (not yet removed; awaiting user d
 - New Game region chooser `setup-footer`: region status, Help disclosure and Cancel. The seed/year fields are user-required.
 
 Native panels that are not window attachments: the in-terrain `flight-controls` panel during aircraft flight, plus the native Settings and Speed windows.
+
+## 2026-10-11 — removed interim Map, Bank and Sell sections
+
+Removed by user request, with the state and message tables only they used:
+- Map's `overview-feedback`: hidden plot sentence, insufficient-cash note, land result, and the transaction state.
+- Bank's `bank-feedback`: hidden installment quote, help paragraph, overdue notice, loan result and finance notices. The quote remains as the amount field's title, and the in-terminal help overlay is kept.
+- Sell's `sell-feedback`: unsellable reason and sale result.
+
+Outcomes remain visible through source controls: the Map BUY/SELL toggle and Funds; the Bank loan balance, installment and Funds; the Sell disabled button, item counts and Funds. About 25 test references migrated accordingly. Full browser suite 279/279 (artifacts/window-feedback-browser.log); type checking/build pass. Remaining native additions: the New Game region chooser footer, the in-terrain flight-controls panel, and the Settings and Speed windows.
