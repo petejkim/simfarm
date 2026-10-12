@@ -56,7 +56,8 @@ export function FileMenu({ about, data, palette, busy, filename, error, onSave, 
       onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
       {menus.map((entry, index) => <button key={entry.offset} ref={index === 0 ? button : undefined}
         id={`${entry.title.toLowerCase()}-menu-button`} disabled={busy}
-        style={{ left: entry.header.x, width: entry.header.width, paddingLeft: index === 0 ? 8 : 0 }}
+        // Flex row: each heading keeps its source x by spacing from the previous heading's end.
+        style={{ marginLeft: entry.header.x - (index ? data.menus[index - 1].header.x + data.menus[index - 1].header.width : 0), width: entry.header.width, paddingLeft: index === 0 ? 8 : 0 }}
         title={undefined}
         aria-haspopup={index !== 2 ? 'menu' : undefined} aria-expanded={index !== 2 ? open === index : undefined}
         aria-controls={index !== 2 ? `original-${entry.title.toLowerCase()}-menu` : undefined}

@@ -20,7 +20,7 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
   await start(page);
   const bar = page.getByRole('toolbar', { name: 'Game toolbar' });
   const box = await bar.boundingBox();
-  expect(box).toEqual({ x: 0, y: 16, width: 640, height: 32 });
+  expect(box).toEqual({ x: 0, y: 16, width: 1280, height: 32 }); // spans the page
   expect(await bar.getByRole('button').evaluateAll(els => els.map(el => el.getAttribute('aria-label')))).toEqual(
     ['Buy', 'Sell', 'Evaluation', 'Map', 'Weather', 'Balance Sheet', 'Bank', 'Market Value']);
   await expect(page.locator('#window-edit')).toHaveCount(0);
@@ -42,10 +42,11 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
   await expect(page.locator('#farm-cash')).toHaveText(`$${(cash + 1000).toLocaleString('en-US')}`);
   await page.evaluate(() => scrollTo(0, 0));
   await page.screenshot({ path: 'artifacts/browser-control-bar-desktop.png' });
+  // No minimum width: narrow pages shrink the strip (mobile adaptation is out of scope) without page scrolling.
   await page.setViewportSize({ width: 390, height: 844 }); await page.evaluate(() => scrollTo(0, 0));
-  expect(await bar.boundingBox()).toEqual(box);
+  expect(await bar.boundingBox()).toEqual({ ...box, width: 390 });
   expect(await page.locator('#windows-menu-button').boundingBox()).toMatchObject({ x: 208, width: 56 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(640);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 
 test('Windows menu and toolbar route to the same controls; Edit focuses the map without changing the farm', async ({ page }) => {
@@ -102,10 +103,11 @@ test('flex-laid launchers and insets rebuild the source bevels with CSS around s
     expect(await launcher.locator('.window-launcher-face').evaluate(el => { const s = getComputedStyle(el); return [s.borderTopWidth, s.borderTopColor, s.borderRightColor, s.backgroundPositionX, s.backgroundPositionY, s.imageRendering]; }))
       .toEqual(['2px', 'rgb(255, 255, 255)', 'rgb(130, 130, 130)', `${-(faces[index] * 32 + 3)}px`, '-3px', 'pixelated']);
   }
-  // The forecast stays centred between the launchers (now ending x256) and the readout column (x416).
-  expect(await page.locator('.toolbar-forecast').boundingBox()).toEqual({ x: 310, y: 22, width: 52, height: 20 });
-  expect(await page.locator('#farm-date').locator('..').boundingBox()).toEqual({ x: 461, y: 18, width: 176, height: 13 });
-  expect(await page.locator('#farm-cash').locator('..').boundingBox()).toEqual({ x: 461, y: 33, width: 176, height: 13 });
+  // Full-width strip: readouts end 3px from the page's right edge; the forecast centres between launchers (x256) and readouts.
+  const right = page.viewportSize()!.width;
+  expect(await page.locator('#farm-date').locator('..').boundingBox()).toEqual({ x: right - 179, y: 18, width: 176, height: 13 });
+  expect(await page.locator('#farm-cash').locator('..').boundingBox()).toEqual({ x: right - 179, y: 33, width: 176, height: 13 });
+  expect(await page.locator('.toolbar-forecast').boundingBox()).toEqual({ x: (256 + right - 224) / 2 - 26, y: 22, width: 52, height: 20 });
   for (const id of ['#farm-date', '#farm-cash', '#farm-date-label', '#farm-cash-label']) expect(await page.locator(id).evaluate(el => getComputedStyle(el).color)).toBe('rgb(0, 0, 0)');
   await expect(page.locator('#farm-date-label')).toHaveText('Date'); await expect(page.locator('#farm-cash-label')).toHaveText('Funds');
   expect(await bar.locator('.toolbar-caption').allTextContents()).toEqual(['BUY', 'SELL']);

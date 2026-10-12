@@ -47,3 +47,15 @@ Browser tests now assert outcomes instead of footer text, using shared helpers i
 - `expectFarmCash` for purchases and rejections against the parallel simulation.
 - `.map-panel[data-object-move]` for move pick/drop state.
 - Save or simulation equality and the original Edit status line.
+
+## Flex desktop layout (2026-10-11)
+
+User request: lay out the main screen with flexbox and remove minimum sizes.
+- **Desktop.** `.game-desktop` is a flex column at `100dvh`, no longer `max(480px,100dvh)` with a 640px minimum width.
+- **Menu bar and strip.** Below the desktop come the menu bar (16px) and control strip (32px). Menu headings form a flex row; each keeps its source x as a margin from the previous heading's end, so Windows is still at 208/56. The control strip now spans the full page width, so Date/Funds sit 3px from the right edge and the forecast centres between launchers and readouts. This is a user-directed difference from the 640px source strip.
+- **Workspace.** `.edit-workspace` (flex:1, row) holds the 48px palette, then `.edit-main` (flex:1, column): the Edit message bar (now in normal flow, 16px) above the map panel (2px left margin, flex:1).
+- **Shrinking.** Overflow clipping lets the panels shrink without `min-height:0`.
+- **Overlays.** Floating windows, menus, popups and the Edit help stay as overlays anchored to the desktop or workspace.
+- **Viewport.** The terrain viewport has no min-height and no hover tooltip.
+
+At 1280×900 every element keeps its previous coordinates except the strip width, readouts and forecast. Narrow pages clip the strip's right side rather than scrolling. Mobile adaptation remains out of scope.

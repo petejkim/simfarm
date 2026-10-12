@@ -2771,3 +2771,9 @@ Full browser suite: 277/281 passed on the first run. Two failures were migration
 - Edit help's pressed state is "Edit tools and help" while open.
 
 The other two did not involve the footer: town-event-calendar's rodeo MIDI status and terrain-design's Save menu timeout. They failed only under full-suite load. Focused rechecks pass for all four cases (4/4). Full suite not repeated, since only test expectations changed after the run.
+
+## 2026-10-11 — flexbox desktop layout, full-width control strip
+
+Converted the main layout to flexbox and removed the desktop/menu 640px and 480px minimums. The control strip spans the page with Date/Funds at the right. The terrain viewport has no min-height and no tooltip. Details in edit-workspace.md; tests now assert viewport-relative readout/forecast positions and no minimum width.
+
+Full browser suite: 280/281 passed (artifacts/flex-layout-browser.log). The remaining failure, town-event-calendar "Playing rodeo", is an existing intermittent startup-music race. It also fails 2/4 runs at session-start commit 9364b6f, so it is not caused by UI changes and needs a separate fix. After the viewport/tooltip follow-up, 33/33 layout/window specs pass. Type checking and build pass.

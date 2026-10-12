@@ -180,7 +180,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
       if (offset) { event.preventDefault(); event.currentTarget.scrollBy(...offset); }
     }}>
     <canvas id="world" ref={canvasRef} width={1536} height={1536} data-paint-tool={paintTool??undefined} style={{ cursor, width: 1536 * zoom, height: 1536 * zoom,touchAction:paintTool?'none':undefined }}
-      aria-label="Original scenario terrain" title="Click town shops to open their windows or parked aircraft for service. Right-click buildings, gates or valves to open or close them."
+      aria-label="Original scenario terrain"
       onClick={event=>{if(suppressClick.current){suppressClick.current=false;return;}if(!paintTool)selectTile(event);}}
       onPointerDown={event=>{
         if(!event.isPrimary)return;

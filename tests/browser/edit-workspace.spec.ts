@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 test('Edit fills the desktop permanently; windows close without resizing or unmounting the map', async ({ page }) => {
   await page.goto('/'); const map = page.locator('#viewport'); await expect(map).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  expect(await page.locator('.original-control-bar').boundingBox()).toMatchObject({ width: 640, height: 32 });
+  expect(await page.locator('.original-control-bar').boundingBox()).toMatchObject({ width: page.viewportSize()!.width, height: 32 });
   expect(await page.locator('.window-launcher-face').first().evaluate(el => [el.clientWidth, el.clientHeight])).toEqual([26, 26]);
   expect(await page.locator('.edit-tool .edit-palette-face').first().evaluate(el => [el.clientWidth, el.clientHeight])).toEqual([19, 19]);
   for (const selector of ['#world']) {
@@ -30,8 +30,9 @@ test('Edit fills the desktop permanently; windows close without resizing or unmo
   await focusEdit(page); expect(await map.boundingBox()).toEqual(before);
   await page.screenshot({ path: 'artifacts/browser-edit-workspace-final.png' });
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await map.boundingBox()).toMatchObject({ x: before!.x, y: before!.y, width: before!.width - 640 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(640);
+  // No minimum width: the terrain fills whatever remains right of the palette.
+  expect(await map.boundingBox()).toMatchObject({ x: before!.x, y: before!.y, width: 390 - before!.x });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 
 test('palette opens field planning and real tools; Speed retains slower pacing and Save/Load stays available through File', async ({ page }) => {

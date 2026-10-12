@@ -350,11 +350,13 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     {data && <main className="edit-workspace" aria-label="Edit" onPointerDownCapture={activateEdit} onFocusCapture={activateEdit} onKeyDown={event => { if(objectMove.active&&event.key==='Escape'){event.preventDefault();cancelObjectMove();} if ((fieldMenu||fieldMapTool) && event.key==='Escape') {event.preventDefault();cancelFieldTool();} if (buyPlacement && event.key === 'Escape') { event.preventDefault(); cancelPurchase(); } }}>
       <EditPalette artwork={assets.editPalette} active={paletteAction} disabled={Boolean(snapshot?.pendingTown || snapshot?.townEvent.pending || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}
         onField={() => openFieldMenu('plant')} onSpray={() => openFieldMenu('spray')} onHelp={() => {windows.close('examine');objectMove.cancel();bulldoze.cancel();construction.cancel();setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);windows.show(null);setEditHelpOpen(open=>!open);}} />
-      {snapshot&&<EditStatus codes={snapshot.editStatuses} text={assets.editStatusText}/>}
       {editHelpOpen&&<EditHelp artwork={assets.editHelp} onClose={()=>setEditHelpOpen(false)}/>}
       {fieldMenu&&snapshot&&<FieldToolMenu kind={fieldMenu} assets={assets} world={data.scenario} tiles={data.tiles}
         onClose={()=>{setFieldMenu(null);viewportRef.current?.focus({preventScroll:true});}}
         onChoose={tool=>{simulation?.dispatch({type:'edit-status',code:tool.kind==='plant'?17:SPRAY_STATUSES[tool.kind]});setFieldMenu(null);setFieldMapTool(tool);setSelection(null);viewportRef.current?.focus({preventScroll:true});}}/>}
+      {/* Message bar above the terrain viewport; both fill the column right of the palette. */}
+      <div className="edit-main">
+      {snapshot&&<EditStatus codes={snapshot.editStatuses} text={assets.editStatusText}/>}
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
         <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") ${cursorHotspot} ${cursorHotspot}, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !editHelpOpen && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
@@ -374,6 +376,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
             windows.show(selected?'schedule':'examine');
           }} />
       </section>
+      </div>
       {bulldoze.pending&&<BulldozeDialog pending={bulldoze.pending} assets={assets} onConfirm={bulldoze.confirm} onCancel={bulldoze.dismiss}/>}
       {simulation&&snapshot?.townEvent.pending&&!messages.length&&!newFarmOpen&&<TownEventMessage state={snapshot.townEvent} assets={assets} onResolve={accept=>simulation.dispatch({type:'resolve-town-event',accept})}/>}
       {messages[0]&&(messages[0].type==='finance-notice'

@@ -88,7 +88,7 @@ test('missing Weather assets fail before creating a farm',async({page})=>{
 test('toolbar shows three original weather icons across week boundaries and updates after advancing a day',async({page})=>{
   const f=fixture();f.state.scenario.farm.calendar.day=6;
   const game=f.load().withAllCrops(browserCrops);await start(page);await load(page,game.save(4));const before=await save(page);
-  const icons=page.locator('.toolbar-weather');expect(await icons.boundingBox()).toEqual({x:312,y:24,width:48,height:16});
+  const icons=page.locator('.toolbar-weather');expect(await icons.boundingBox()).toEqual({x:(256+page.viewportSize()!.width-224)/2-24,y:24,width:48,height:16});
   async function check(codes:number[]){
     for(const [i,code] of codes.entries()){
       const pixels=await icons.evaluate((c:HTMLCanvasElement,i)=>Array.from(c.getContext('2d')!.getImageData(i*16,0,16,16).data),i);
