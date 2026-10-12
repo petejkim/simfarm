@@ -61,3 +61,12 @@ The ordinary transaction path also exposes SF-158: occupied-region pricing inclu
 Interim UI retirement: the duplicate Land purchase form is removed. The subsequent Farm controls retirement removes its native Buy land shortcut too. Use the Map toolbar/menu and Property overlay. Map activation retains its selected overlay; trading continues through the same source-backed quote/buy/sell commands.
 
 2026-10-11 user follow-up: the interim feedback area below this window was removed; outcomes show through the source controls, readouts and Funds. See progress.md.
+
+## Rebuilt on shared chrome (2026-10-12)
+
+User request (ui-components.md). Map is a framed `GameWindow` around a 272×232 flex client. `map-window.png` is no longer drawn with transparent buttons over it.
+- **Left column:** eight mode `BevelButton`s (source icon sprites, pressed for the active mode), the "?" help button, the Land Value label and a sunken readout.
+- **Map:** the 192×192 overview canvas sits in a `SunkenInset` that is open at the top, as in the source. The Edit-view outline and the help legend are layered in the map's own grid cell (offsets as margins, no absolute positioning).
+- **Footer:** the Low/High gradient (canvas) and mode name, BUY/SELL and CLOSE caption buttons.
+
+The overview and gradient remain canvases because they are rendered content, not backgrounds for controls. The layout follows the source but is not pixel-perfect.

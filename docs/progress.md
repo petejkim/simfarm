@@ -2904,3 +2904,7 @@ Framed flex window with BevelButton categories/scroll arrows/captions, SunkenIns
 ## 2026-10-12 — Bank terminal rebuilt in CSS
 
 Framed window; bezel/recess/screen/ledge/bay are CSS borders and backgrounds; keypad and actions are BevelButtons; no artwork image. bank-terminal.png is no longer a runtime asset. Bank/control-bar/native/navigation/finance/default/window specs pass 44/44.
+
+## 2026-10-12 — Map rebuilt on shared chrome
+
+Framed flex window with BevelButton modes/help/actions, SunkenInset land readout and map frame; overview outline and legend layered via grid (no absolute positioning, no background art). map-window/navigation/native map specs pass.

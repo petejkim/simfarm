@@ -14,8 +14,12 @@ async function plot(page:Page,x:number,y:number){await page.locator('.overview-v
 test('original Map has all source overlays, HTML help and titles, source geometry and usable Edit navigation without changing saved state',async({page})=>{
   await start(page);const before=await save(page);await page.locator('#window-map').click();
   const panel=page.getByRole('region',{name:'Farm overview'}),canvas=panel.locator('.overview-viewport canvas');
-  expect(await panel.boundingBox()).toEqual({x:80,y:80,width:288,height:240});
-  expect(await canvas.boundingBox()).toEqual({x:152,y:80,width:192,height:192});
+  // Shared frame around a 272×232 client of components; the map is the only canvas besides the legend gradient.
+  expect(await panel.boundingBox()).toEqual({x:88,y:80,width:272,height:232});
+  expect(await canvas.boundingBox()).toEqual({x:154,y:80,width:192,height:192});
+  await expect(panel.locator('img')).toHaveCount(0);
+  expect(await panel.locator('.overview-mode.bevel-button').count()).toBe(8);
+  expect(await panel.getByRole('button',{name:'Weeds',exact:true}).locator('.bevel-button-face').evaluate(el=>getComputedStyle(el).backgroundPosition)).toBe('-43px -6px');
   await expect(panel.locator('.overview-mode-name')).toHaveText('Overhead');
   const frames=new Set<string>();for(const name of MAP_MODES.slice(1)){
     await panel.getByRole('button',{name,exact:true}).click();await expect(panel.locator('.overview-mode-name')).toHaveText(name);
@@ -28,13 +32,13 @@ test('original Map has all source overlays, HTML help and titles, source geometr
   await panel.getByRole('button',{name:'Map help'}).click();await expect(page.getByRole('note',{name:'Map legend'})).toHaveCount(0);
   await canvas.click({position:{x:16,y:24}});
   await expect.poll(()=>page.locator('#viewport').evaluate(el=>[el.scrollLeft,el.scrollTop])).toEqual([128,192]);
-  await expect.poll(()=>page.locator('.overview-edit-outline').evaluate(el=>[parseFloat((el as HTMLElement).style.left),parseFloat((el as HTMLElement).style.top)])).toEqual([16,24]);
+  await expect.poll(()=>page.locator('.overview-edit-outline').evaluate(el=>[parseFloat((el as HTMLElement).style.marginLeft),parseFloat((el as HTMLElement).style.marginTop)])).toEqual([16,24]); // outline offset within the map's grid cell
   await panel.getByRole('button',{name:'Property',exact:true}).click();await plot(page,11,11);await canvas.press('ArrowRight');await canvas.press('ArrowDown');
   await page.screenshot({path:'artifacts/browser-map-property.png'});
   const window=page.getByRole('dialog',{name:'Map',exact:true});await window.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');
-  expect(await panel.boundingBox()).toMatchObject({x:90,width:288});
+  expect(await panel.boundingBox()).toMatchObject({x:98,width:272});
   await panel.getByRole('button',{name:'CLOSE',exact:true}).click();await page.locator('#windows-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Map',exact:true}).click();
-  expect(await panel.boundingBox()).toMatchObject({x:90,width:288});expect(await save(page)).toEqual(before);
+  expect(await panel.boundingBox()).toMatchObject({x:98,width:272});expect(await save(page)).toEqual(before);
 });
 
 test('Map buys and sells the selected plot, protects home/fields, rejects other owners and persists canonical ledgers',async({page})=>{

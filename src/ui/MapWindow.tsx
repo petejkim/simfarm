@@ -6,6 +6,9 @@ import { quoteLand } from '../simulation/land';
 import { paintTerrainPreview } from '../render/terrain-preview';
 import { renderOverview, renderOverviewLegend } from '../render/overview-map';
 import { GameWindow, useWindows } from './GameWindow';
+import { BevelButton } from './chrome/BevelButton';
+import { SunkenInset } from './chrome/SunkenInset';
+import { spriteFace } from './chrome/Sprite';
 
 export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLocate }: {
   assets: GameAssets; snapshot: GameSnapshot; onCommand: (command: GameCommand) => void;
@@ -32,29 +35,43 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
     if(x<0||x>=96||y<0||y>=96)return;
     if(mode===1){setSelected({x:x>>3,y:y>>3});}else onLocate(x,y);
   }
-  return <GameWindow windowKey="map" title="Map">
+  const art=assets.mapArtwork.src;
+  return <GameWindow windowKey="map" title="Map" framed>
     <section className="overview-window" aria-label="Farm overview">
-      <img src={assets.mapArtwork.src} width={288} height={240} alt="" />
-      {MAP_BUTTONS.map(b=><button key={b.mode} className="overview-mode" style={{left:b.x,top:b.y}} aria-label={MAP_MODES[b.mode]}
-        title={MAP_MODES[b.mode]} aria-pressed={mode===b.mode} onClick={()=>{setMode(mode===b.mode?0:b.mode);setHelp(false);}} />)}
-      <button className="overview-help-button" aria-label="Map help" aria-pressed={help} onClick={()=>setHelp(!help)}>?</button>
-      <span className="overview-land-label">Land<br/>Value</span><output className="overview-land-value" aria-label="Land value">{quote.price}</output>
-      <div className="overview-viewport">
-        <canvas ref={canvas} width={192} height={192} tabIndex={0} aria-label={mode===1?'Property map. Click a plot, or use arrow keys to select land.':'Overview map. Click or drag to move the Edit view.'}
-          onPointerDown={e=>{if(e.button!==0||!e.isPrimary)return;e.preventDefault();e.currentTarget.focus();e.currentTarget.setPointerCapture(e.pointerId);point(e);}}
-          onPointerMove={e=>{if(e.buttons===1&&e.currentTarget.hasPointerCapture(e.pointerId))point(e);}}
-          onPointerUp={e=>{if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);}}
-          onKeyDown={e=>{const offset=({ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]} as Record<string,number[]>)[e.key];if(!offset)return;
-            e.preventDefault();if(mode===1){setSelected(p=>({x:Math.max(0,Math.min(11,p.x+offset[0])),y:Math.max(0,Math.min(11,p.y+offset[1]))}));}
-            else onLocate(Math.max(0,Math.min(95,view.x/2+offset[0])),Math.max(0,Math.min(95,view.y/2+offset[1])));}} />
-        <div className="overview-edit-outline" style={{left:view.x,top:view.y,width:view.width,height:view.height}} />
-        {help&&<div className="overview-help" role="note" aria-label="Map legend">{['PROPERTY','WEEDS','TOXICITY','WATER','NUTRIENTS','FIELD PROFIT','DISEASE','PESTS'].map((s,i)=><span key={s} style={{top:4+Math.floor(i/2)*30+i%2*10,left:16}}>{s}</span>)}</div>}
+      <div className="overview-main">
+        <div className="overview-side">
+          <div className="overview-modes">
+            {MAP_BUTTONS.map(b=><BevelButton key={b.mode} className="overview-mode" aria-label={MAP_MODES[b.mode]} title={MAP_MODES[b.mode]} pressed={mode===b.mode}
+              faceStyle={spriteFace(art,b.x+3,b.y+3)} onClick={()=>{setMode(mode===b.mode?0:b.mode);setHelp(false);}} />)}
+          </div>
+          <BevelButton className="overview-help-button" aria-label="Map help" pressed={help} onClick={()=>setHelp(!help)}>?</BevelButton>
+          <span className="overview-land-label">Land<br/>Value</span>
+          <SunkenInset className="overview-land-box"><output className="overview-land-value" aria-label="Land value">{quote.price}</output></SunkenInset>
+        </div>
+        <SunkenInset className="overview-map-box">
+          <div className="overview-viewport">
+            <canvas ref={canvas} width={192} height={192} tabIndex={0} aria-label={mode===1?'Property map. Click a plot, or use arrow keys to select land.':'Overview map. Click or drag to move the Edit view.'}
+              onPointerDown={e=>{if(e.button!==0||!e.isPrimary)return;e.preventDefault();e.currentTarget.focus();e.currentTarget.setPointerCapture(e.pointerId);point(e);}}
+              onPointerMove={e=>{if(e.buttons===1&&e.currentTarget.hasPointerCapture(e.pointerId))point(e);}}
+              onPointerUp={e=>{if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);}}
+              onKeyDown={e=>{const offset=({ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]} as Record<string,number[]>)[e.key];if(!offset)return;
+                e.preventDefault();if(mode===1){setSelected(p=>({x:Math.max(0,Math.min(11,p.x+offset[0])),y:Math.max(0,Math.min(11,p.y+offset[1]))}));}
+                else onLocate(Math.max(0,Math.min(95,view.x/2+offset[0])),Math.max(0,Math.min(95,view.y/2+offset[1])));}} />
+            {/* Layered in the same grid cell as the map: the Edit view outline and the help legend. */}
+            <div className="overview-edit-outline" style={{marginLeft:view.x,marginTop:view.y,width:view.width,height:view.height}} />
+            {help&&<div className="overview-help" role="note" aria-label="Map legend">{['PROPERTY','WEEDS','TOXICITY','WATER','NUTRIENTS','FIELD PROFIT','DISEASE','PESTS'].map(label=><span key={label}>{label}</span>)}</div>}
+          </div>
+        </SunkenInset>
       </div>
-      {mode>1&&<><span className="overview-low">Low</span><span className="overview-high">High</span><canvas ref={legend} width={64} height={8} className="overview-gradient" aria-hidden="true" /></>}
-      <span className="overview-mode-name" style={{top:mode>1?222:216}}>{MAP_MODES[mode]}</span>
-      {mode===1&&quote.ownership<=1&&<button id="map-land-action" className="overview-trade" disabled={quote.ownership===0&&(quote.price>snapshot.scenario.farm.cash||quote.price===0)}
-        onClick={()=>{const sell=quote.ownership===1;onCommand({type:sell?'sell-land':'buy-land',regionX:selected.x,regionY:selected.y});}}>{quote.ownership===1?'SELL':'BUY'}</button>}
-      <button className="overview-close" onClick={()=>close('map')}>CLOSE</button>
+      <div className="overview-footer">
+        <div className="overview-legend">
+          {mode>1&&<div className="overview-scale"><span>Low</span><canvas ref={legend} width={64} height={8} className="overview-gradient" aria-hidden="true" /><span>High</span></div>}
+          <span className="overview-mode-name">{MAP_MODES[mode]}</span>
+        </div>
+        {mode===1&&quote.ownership<=1&&<BevelButton id="map-land-action" className="overview-trade" disabled={quote.ownership===0&&(quote.price>snapshot.scenario.farm.cash||quote.price===0)}
+          onClick={()=>{const sell=quote.ownership===1;onCommand({type:sell?'sell-land':'buy-land',regionX:selected.x,regionY:selected.y});}}>{quote.ownership===1?'SELL':'BUY'}</BevelButton>}
+        <BevelButton className="overview-close" onClick={()=>close('map')}>CLOSE</BevelButton>
+      </div>
     </section>
   </GameWindow>;
 }
