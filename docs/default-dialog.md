@@ -28,3 +28,7 @@ When actual foreclosure also emits optional notice39/36, those informational req
 ## Validation
 
 Source tests pin the default call, initialized text, main-loop exit routing and all YES/NO frame pixels outside caption masks. Existing default/loan cases retain asset ordering, protected-home behavior on all farms, single-use decisions, debt preservation and native save validation. Browser cases check original frame/button/portrait geometry, every portrait pixel, corrected real text and fit, movement/fixed Edit, Escape nonmutation, pending and terminal save/load, disabled controls, keyboard NO/focus, YES/cancel/reload, new-farm replacement after Play, loading a viable save and real foreclosure warning order. The old native default flow and financial-message suite also exercise the new window. Full regression results are recorded in progress.md.
+
+## Shared MessageDialog (2026-10-12)
+
+This popup now renders through the shared `MessageDialog` on shared chrome; see financial-messages.md.

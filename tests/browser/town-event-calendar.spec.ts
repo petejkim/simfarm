@@ -40,8 +40,8 @@ async function checkMessage(page: Page, game: InstanceType<typeof GameSimulation
   expect(await win.boundingBox()).toEqual({ x: 192, y: 150, width: 256, height: 192 });
   expect(await win.evaluate(el => el.matches(':modal'))).toBe(true);
   expect(await page.locator('#town-event-message-text').evaluate(el => el.scrollHeight <= el.clientHeight)).toBe(true);
-  expect(await win.locator('.message-portrait img').evaluate(el => [(el as HTMLElement).style.left, (el as HTMLElement).style.top]))
-    .toEqual([`${-(model.portrait % 8) * 112}px`, `${-Math.floor(model.portrait / 8) * 64}px`]);
+  expect(await win.locator('.message-portrait').evaluate(el => (el as HTMLElement).style.backgroundPosition))
+    .toBe(`${-(model.portrait % 8) * 112}px ${-Math.floor(model.portrait / 8) * 64}px`);
   for (const [i, button] of model.buttons.entries()) await expect(page.locator(`#town-event-${i}`)).toHaveText(button.caption);
   await expect(page.locator('#next-day')).toBeDisabled(); await expect(page.locator('#play-pause')).toBeDisabled();
   return win;

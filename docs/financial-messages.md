@@ -46,3 +46,12 @@ The nine mandatory notices are always shown. The two optional forced-sale warnin
 ## Validation
 
 Tests pin dispatcher/loader/render bytes, record/portrait mappings and popup geometry; reject unknown IDs and every short prefix within each referenced record; verify original text and raw-data immutability. Canonical tests assert ordered one-shot publication, exact identical saves with/without event observers, no snapshot/load replay and existing financial rules. Browser tests cover every notice, portrait pixels, real text fit, original geometry, movement, modal blocking, keyboard acknowledgement, queue order, save/load, default continuation and running-game suspension/resume. Existing annual and Bulldoze tests continue through their actual controls; subsystem helpers acknowledge informational popups before continuing an unrelated action. Full gate results are recorded in progress.md.
+
+## Shared MessageDialog on shared chrome (2026-10-12)
+
+Seven message popups now render through one `src/ui/MessageDialog.tsx`: Finance, Disaster, Field, Building (water storage), Town event, Default and Bulldoze. It keeps the `popup.bmp` plank as the title-bar artwork and puts the common frame around a 240×168 flex client.
+- **Portrait:** a 112×64 sprite at client (64,8).
+- **Text:** a 224×56 HTML paragraph at (8,80). Bulldoze keeps its own font.
+- **Buttons:** 48×24 caption `BevelButton`s at y 140, either one centred at x 96 or a pair at 32 and 160.
+
+Window, portrait and button positions are unchanged and asserted by the existing specs. The popup bitmap no longer backs the window, and the separate `message-button.png` caption image is no longer used by the UI (it is still loaded; cleanup deferred). Validation: default-dialog, direct-bulldoze, bulldoze, disaster-messages, field-message, finance-messages, town-event-calendar and water-storage specs pass.

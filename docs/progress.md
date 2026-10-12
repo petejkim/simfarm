@@ -2940,3 +2940,7 @@ The window is now framed. Card pictures and tile strips are sprites, and caption
 ## 2026-10-12 — About rebuilt on shared chrome
 
 The dialog is now framed, with a SIMFARM ribbon sprite (a bitmap logo, by request), a new shared `RaisedPanel` for the credits, and an apple sprite stacked over the panel's edge. The credit rectangle is verified. The about spec passes.
+
+## 2026-10-12 — Message popups rebuilt on a shared MessageDialog
+
+Finance, Disaster, Field, Building, Town event, Default and Bulldoze now share `MessageDialog`. It provides the plank title, common frame, portrait sprite, HTML text and `BevelButton` captions, with original positions. `BevelButton` now forwards `ref` (React 19 prop). Details are in financial-messages.md. Eight related specs pass.

@@ -38,3 +38,7 @@ As with financial notices, canonical commands/frames finish before publishing qu
 Source tests pin all rows/portraits/gates and coordinate pushes, including the shared drought tail. All256 truncation boundaries per record, NUL handling and input immutability are checked. Live tests cover all eight starts with Messages on/off, failed repeats, no replay and exact checkpoint continuation, four endings with both preferences and absence of invented frost/swarm popups.
 
 Browser tests check each of the twelve messages, decoded words, every portrait pixel against the local atlas, source geometry, text fit, mandatory/optional behavior, exact saves, reload, modal blocking, title movement, keyboard acknowledgement, running-time suspension/resume and interleaved financial notices. Related disaster, Options and financial flows are checked with focused regression. See progress.md for counts and corrections; full suites are intentionally not repeated for this bounded feature.
+
+## Shared MessageDialog (2026-10-12)
+
+This popup now renders through the shared `MessageDialog` on shared chrome; see financial-messages.md.

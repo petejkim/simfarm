@@ -21,7 +21,7 @@ async function message(page:Page,id:FinanceNoticeId){
   expect(await win.locator('.message-portrait').boundingBox()).toEqual({x:264,y:174,width:112,height:64});
   expect(await page.locator('#finance-message-ok').boundingBox()).toEqual({x:296,y:306,width:48,height:24});
   const portrait=FINANCE_MESSAGES[id].portrait;
-  expect(await win.locator('.message-portrait img').evaluate(el=>[parseFloat((el as HTMLElement).style.left),parseFloat((el as HTMLElement).style.top)])).toEqual([-(portrait%8)*112,-Math.floor(portrait/8)*64]);
+  expect(await win.locator('.message-portrait').evaluate(el=>(el as HTMLElement).style.backgroundPosition.split(' ').map(parseFloat))).toEqual([-(portrait%8)*112,-Math.floor(portrait/8)*64]);
   await page.locator('#finance-message-ok').click();
 }
 

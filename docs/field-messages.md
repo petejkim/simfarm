@@ -19,3 +19,7 @@ The Edit history renderer at22188..22194 calls24e6:1118, resolved through stub28
 Ten focused source/editor/live tests cover the literal and call bytes, existing calendar/contract/crop restrictions, mandatory transient requests, repeated rejection, unchanged checkpoints and no reload replay. Five browser cases cover the actual warning from Schedule with Messages off, original geometry/portrait coordinates, real text, movement, modal state, acknowledgement, reload and existing planner workflows. Original portrait/frame pixels were already verified by shared Message and financial tests. Screenshot browser-field-message.png reviewed at1×; build/type checking passes.
 
 Original Edit status history, other operation feedback and full window/audio lifecycle remain incomplete. The full port is not claimed complete. This integration establishes no new original-game defect; previously documented SF-018 and SF-039 remain retained.
+
+## Shared MessageDialog (2026-10-12)
+
+This popup now renders through the shared `MessageDialog` on shared chrome; see financial-messages.md.
