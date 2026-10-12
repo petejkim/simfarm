@@ -1,4 +1,4 @@
-import type {ReactNode} from 'react';
+import type {CSSProperties,ReactNode} from 'react';
 import {BevelButton} from './chrome/BevelButton';
 import {SunkenInset} from './chrome/SunkenInset';
 import {spriteFace} from './chrome/Sprite';
@@ -15,20 +15,22 @@ const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 /** Launchers whose source face carries lettering (erased from the sprite, rebuilt as text). */
 const CAPTIONED = new Set<GameWindow>(['buy', 'sell']);
 
-/** Source launcher order (cntlbtnh.bmp faces 0..8). Edit (face7) is omitted by user request:
- * the terrain is the permanent background, reached from the Windows menu or by focusing the map. */
-const LAUNCHERS = GAME_WINDOWS.slice(0, 9).map((window, face) => ({ window, face })).filter(({ window }) => window !== 'edit');
+/** Source launcher order (cntlbtnh.bmp faces 0..8), then a native Farm Expert launcher (user request) whose
+ * face is the halved expert head (expert-launcher.png). Edit (face7) is omitted by user request: the terrain is
+ * the permanent background, reached from the Windows menu or by focusing the map. */
+const LAUNCHERS = [...GAME_WINDOWS.slice(0, 9).map((window, face) => ({ window, face })).filter(({ window }) => window !== 'edit'), { window: 'expert' as const, face: 9 }];
 
 /** Source toolbar at screen (0,16): window launchers, forecast inset and Date/Funds readouts, laid out with flexbox.
  * Bevels are CSS borders; cntlbtnh.bmp only supplies each launcher's 26×26 picture face. */
-export function ControlBar({ artwork, menus, snapshot, tiles, onWindow }: {
-  artwork: HTMLImageElement; menus: MainMenus; snapshot: GameSnapshot; tiles: HTMLImageElement | null; onWindow: (window: GameWindow) => void;
+export function ControlBar({ artwork, expertFace, menus, snapshot, tiles, onWindow }: {
+  artwork: HTMLImageElement; expertFace: HTMLImageElement; menus: MainMenus; snapshot: GameSnapshot; tiles: HTMLImageElement | null; onWindow: (window: GameWindow) => void;
 }) {
   const date = snapshot.scenario.farm.calendar, windows = useWindows();
   const forecast=[...snapshot.weather.forecast,...snapshot.weather.nextForecast].slice(date.day,date.day+3);
   return <div className="original-control-bar" aria-label="Game toolbar" role="toolbar">
     <div className="toolbar-launchers">
-      {LAUNCHERS.map(({ window, face }) => <WindowLauncher key={window} window={window} face={face} artwork={artwork.src}
+      {LAUNCHERS.map(({ window, face }) => <WindowLauncher key={window} window={window}
+        faceStyle={window === 'expert' ? spriteFace(expertFace.src, 0, 0) : spriteFace(artwork.src, face * CONTROL_BAR_LAUNCHER.size + CONTROL_BAR_LAUNCHER.inset, CONTROL_BAR_LAUNCHER.inset)}
         label={menus.menus[3].items[face].label} captioned={CAPTIONED.has(window)} pressed={windows.order.includes(window)} onWindow={onWindow} />)}
     </div>
     <div className="toolbar-forecast-area"><ToolbarForecast forecast={forecast} tiles={tiles} /></div>
@@ -39,14 +41,13 @@ export function ControlBar({ artwork, menus, snapshot, tiles, onWindow }: {
   </div>;
 }
 
-/** One 32×32 launcher: black button background shows as a 1px frame around the 2px raised bevel;
- * the source picture face comes from sprite (face×32+3, 3). It stays depressed while its window is open. */
-export function WindowLauncher({ window, face, artwork, label, captioned, pressed, onWindow }: {
-  window: GameWindow; face: number; artwork: string; label: string; captioned: boolean; pressed: boolean; onWindow: (window: GameWindow) => void;
+/** One 32×32 launcher: black button background shows as a 1px frame around the 2px raised bevel around a
+ * 26×26 picture face (a cntlbtnh.bmp sprite, or the native Expert face). It stays depressed while its window is open. */
+export function WindowLauncher({ window, faceStyle, label, captioned, pressed, onWindow }: {
+  window: GameWindow; faceStyle: CSSProperties; label: string; captioned: boolean; pressed: boolean; onWindow: (window: GameWindow) => void;
 }) {
-  const { size, inset } = CONTROL_BAR_LAUNCHER;
   return <BevelButton id={`window-${window}`} className="window-launcher" faceClassName="window-launcher-face" pressed={pressed}
-    faceStyle={spriteFace(artwork, face * size + inset, inset)} aria-label={label} title={label} onClick={() => onWindow(window)}>
+    faceStyle={faceStyle} aria-label={label} title={label} onClick={() => onWindow(window)}>
     {captioned && <span className="toolbar-caption">{label.toUpperCase()}</span>}
   </BevelButton>;
 }

@@ -8,6 +8,19 @@ export function readExpertPortrait(bytes:Uint8Array,palette:Palette):Raster {
   return decodePlanar(b.slice(22+66*3586,3584),112,64,palette);
 }
 
+/** Native toolbar launcher face for the Farm Expert (user-chosen design, no source equivalent): the 52×52
+ * square around the expert's head in portrait 66 (x33,y1), halved by keeping every other pixel from the
+ * first column and row. The result is 26×26, the launcher face size, in original palette colours only. */
+export const EXPERT_LAUNCHER_CROP={x:33,y:1,size:52} as const;
+export function expertLauncherFace(portrait:Raster):Raster {
+  if(portrait.width!==112||portrait.height!==64)throw new Error('Invalid Expert portrait');
+  const {x,y}=EXPERT_LAUNCHER_CROP,rgba=new Uint8Array(26*26*4);
+  for(let row=0;row<26;row++)for(let col=0;col<26;col++){
+    const from=((y+row*2)*112+x+col*2)*4;rgba.set(portrait.rgba.subarray(from,from+4),(row*26+col)*4);
+  }
+  return {width:26,height:26,rgba};
+}
+
 /** Supplied CARD*.HC resources; overlay28 at4c820 interprets this data. */
 export const EXPERT_CARD_IDS = [1,2,5,6,7,8,...Array.from({length:28},(_,i)=>10+i),...Array.from({length:9},(_,i)=>40+i)];
 interface Point { x:number; y:number }

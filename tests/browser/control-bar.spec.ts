@@ -22,7 +22,7 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
   const box = await bar.boundingBox();
   expect(box).toEqual({ x: 0, y: 16, width: 1280, height: 32 }); // spans the page
   expect(await bar.getByRole('button').evaluateAll(els => els.map(el => el.getAttribute('aria-label')))).toEqual(
-    ['Buy', 'Sell', 'Evaluation', 'Map', 'Weather', 'Balance Sheet', 'Bank', 'Market Value']);
+    ['Buy', 'Sell', 'Evaluation', 'Map', 'Weather', 'Balance Sheet', 'Bank', 'Market Value', 'Farm Expert']);
   await expect(page.locator('#window-edit')).toHaveCount(0);
   for (const [index, button] of (await bar.getByRole('button').all()).entries()) {
     expect(await button.boundingBox()).toEqual({ x: index * 32, y: 16, width: 32, height: 32 });
@@ -77,11 +77,21 @@ test('Windows menu and toolbar route to the same controls; Edit focuses the map 
     await open('evaluation', 'Evaluation'); await expect(page.getByRole('region',{name:'Farm evaluation',exact:true})).toBeFocused();
     await open('balance', 'Balance Sheet'); await expect(page.getByRole('region',{name:'Farm balance sheet',exact:true})).toBeFocused();
     await open('market', 'Market Value'); await expect(page.getByRole('region', { name: 'Crop market' })).toBeVisible();
+    await open('expert', 'Farm Expert'); await expect(page.getByRole('region', { name: 'Farm Expert' })).toBeFocused();
     await open('edit', 'Edit'); await expect(page.locator('#viewport')).toBeFocused();
     await reveal(page, '#world'); await expect(page.locator('#world')).toBeVisible();
   }
   await windowMenu(page, 'Farm Expert'); await expect(page.getByRole('region', { name: 'Farm Expert' })).toBeFocused();
   expect(await save(page)).toEqual(before);
+});
+
+test('the native Farm Expert launcher shows the halved expert head and stays depressed while the Expert is open', async ({ page }) => {
+  await start(page); const launcher = page.locator('#window-expert');
+  expect(await launcher.boundingBox()).toEqual({ x: 8 * 32, y: 16, width: 32, height: 32 });
+  expect(await launcher.locator('.bevel-button-face').evaluate(el => [(el as HTMLElement).style.backgroundImage.includes('expert-launcher.png'), (el as HTMLElement).style.backgroundPosition])).toEqual([true, '0px 0px']);
+  await expect(launcher).toHaveAttribute('aria-pressed', 'false');
+  await launcher.click(); await expect(page.getByRole('region', { name: 'Farm Expert' })).toBeFocused(); await expect(launcher).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Escape'); await expect(launcher).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('missing control-bar artwork reports an asset error before starting the farm', async ({ page }) => {
@@ -96,18 +106,18 @@ test('flex-laid launchers and insets rebuild the source bevels with CSS around s
   const bar = page.getByRole('toolbar', { name: 'Game toolbar' });
   await expect(bar.locator('img')).toHaveCount(0);
   expect(await bar.locator('*').evaluateAll(els => els.filter(el => getComputedStyle(el).position === 'absolute').length)).toBe(0);
-  const faces = [0, 1, 2, 3, 4, 5, 6, 8]; // source face7 (Edit) has no launcher
+  const faces = [0, 1, 2, 3, 4, 5, 6, 8]; // source face7 (Edit) has no launcher; the last launcher is the native Expert face
   for (const [index, launcher] of (await bar.locator('.window-launcher').all()).entries()) {
     // The frame is the button's black background behind 1px padding, so fractional zoom cannot open a gap.
     expect(await launcher.evaluate(el => { const s = getComputedStyle(el); return [s.borderTopWidth, s.backgroundColor, s.paddingTop]; })).toEqual(['0px', 'rgb(0, 0, 0)', '1px']);
     expect(await launcher.locator('.window-launcher-face').evaluate(el => { const s = getComputedStyle(el); return [s.borderTopWidth, s.borderTopColor, s.borderRightColor, s.backgroundPositionX, s.backgroundPositionY, s.imageRendering]; }))
-      .toEqual(['2px', 'rgb(255, 255, 255)', 'rgb(130, 130, 130)', `${-(faces[index] * 32 + 3)}px`, '-3px', 'pixelated']);
+      .toEqual(['2px', 'rgb(255, 255, 255)', 'rgb(130, 130, 130)', ...(index < faces.length ? [`${-(faces[index] * 32 + 3)}px`, '-3px'] : ['0px', '0px']), 'pixelated']);
   }
-  // Full-width strip: readouts end 3px from the page's right edge; the forecast centres between launchers (x256) and readouts.
+  // Full-width strip: readouts end 3px from the page's right edge; the forecast centres between the launchers (nine, ending x288) and readouts.
   const right = page.viewportSize()!.width;
   expect(await page.locator('#farm-date').locator('..').boundingBox()).toEqual({ x: right - 179, y: 18, width: 176, height: 13 });
   expect(await page.locator('#farm-cash').locator('..').boundingBox()).toEqual({ x: right - 179, y: 33, width: 176, height: 13 });
-  expect(await page.locator('.toolbar-forecast').boundingBox()).toEqual({ x: (256 + right - 224) / 2 - 26, y: 22, width: 52, height: 20 });
+  expect(await page.locator('.toolbar-forecast').boundingBox()).toEqual({ x: (288 + right - 224) / 2 - 26, y: 22, width: 52, height: 20 });
   for (const id of ['#farm-date', '#farm-cash', '#farm-date-label', '#farm-cash-label']) expect(await page.locator(id).evaluate(el => getComputedStyle(el).color)).toBe('rgb(0, 0, 0)');
   await expect(page.locator('#farm-date-label')).toHaveText('Date'); await expect(page.locator('#farm-cash-label')).toHaveText('Funds');
   expect(await bar.locator('.toolbar-caption').allTextContents()).toEqual(['BUY', 'SELL']);

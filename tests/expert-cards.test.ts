@@ -5,7 +5,7 @@ import {PNG} from 'pngjs';
 import {readArchive} from '../src/formats/archive';
 import {decodePlanar,readBitmap,readPalette} from '../src/formats/graphics';
 import {readMessageButton,MESSAGE_BUTTON_FACE as F} from '../src/formats/message-dialog';
-import {EXPERT_CARD_IDS,readExpertPortrait,readExpertCard,readExpertDeck,expertPage,expertText} from '../src/formats/expert-cards';
+import {EXPERT_CARD_IDS,readExpertPortrait,readExpertCard,readExpertDeck,expertPage,expertText,expertLauncherFace} from '../src/formats/expert-cards';
 import {browserCrops} from './support/crop-catalog';
 const source=(n:string)=>readFileSync(new URL('../../simfarm-dos/'+n,import.meta.url));
 const exe=source('SIMFARM.EXE'),entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
@@ -114,4 +114,14 @@ test('Expert portrait retains every original pixel including the cap logo',()=>{
   const png=PNG.sync.read(readFileSync(new URL('../public/assets/expert-portrait.png',import.meta.url)));
   expect(Array.from(png.data)).toEqual(Array.from(actual.rgba));
   for(const length of [0,18,19,b.length-1,b.length+1])expect(()=>readExpertPortrait(new Uint8Array(length),palette)).toThrow();
+});
+
+test('the native Expert launcher face is the head square of portrait 66, halved from even pixels, as imported',()=>{
+  const portrait=decodePlanar(asset('alltiles.btl').subarray(22+66*3586,22+66*3586+3584),112,64,readPalette(asset('simfarm.pal')));
+  const face=expertLauncherFace(portrait);expect([face.width,face.height]).toEqual([26,26]);
+  for(let y=0;y<26;y++)for(let x=0;x<26;x++){
+    const i=((1+2*y)*112+33+2*x)*4;expect(Array.from(face.rgba.subarray((y*26+x)*4,(y*26+x)*4+4))).toEqual(Array.from(portrait.rgba.subarray(i,i+4)));
+  }
+  expect(Array.from(PNG.sync.read(readFileSync('public/assets/expert-launcher.png')).data)).toEqual(Array.from(face.rgba));
+  expect(()=>expertLauncherFace({width:111,height:64,rgba:new Uint8Array(111*64*4)})).toThrow();
 });

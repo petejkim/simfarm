@@ -95,3 +95,11 @@ The first browser run of the pixel test exposed four issues:
 ## Forecast tiles as sprites (2026-10-12)
 
 The toolbar forecast now shows its three tiles (204+code) as `TileSprite`s in the sunken inset instead of a 48×16 canvas, and `src/render/toolbar-weather.ts` was removed. The weather-window spec checks the tile offsets across the week boundary.
+
+## Farm Expert launcher (2026-10-12, user request)
+
+A ninth launcher after Market Value opens the Farm Expert. It has no source equivalent: `cntlbtnh.bmp` holds only the original nine faces. Its 26×26 face is the user-chosen design: the 52×52 square around the expert's head in portrait 66 (`alltiles.btl`, x33, y1), halved by keeping every other pixel from the first column and row, so only original palette colours appear.
+- **Importer:** `expertLauncherFace` in `src/formats/expert-cards.ts`; the importer writes it to the ignored `expert-launcher.png`. A unit test pins it pixel by pixel to the portrait and checks the imported file.
+- **Behaviour:** it uses the shared `WindowLauncher`/`BevelButton` chrome and stays depressed while the Expert window is open. The forecast inset re-centres between the launchers (now ending at x288) and the readouts.
+
+Validation: unit expert-cards 7/7; browser control-bar, weather-window, expert-window, native and edit-workspace specs pass.
