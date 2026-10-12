@@ -36,9 +36,11 @@ export function readBuyCards(bytes: Uint8Array, palette: Palette): Raster {
   }
   return { width, height, rgba };
 }
+/** PRICE/OWN labels on plain grey, then BUY/CLOSE lettering kept inside the button faces
+ * (x171..196 and x203..244) so both 2px side bevels survive. */
 export const BUY_TEXT_MASKS = [
   { x:168,y:110,width:44,height:12 }, { x:168,y:142,width:28,height:12 },
-  { x:170,y:190,width:28,height:12 }, { x:202,y:190,width:44,height:12 },
+  { x:171,y:190,width:26,height:12 }, { x:203,y:190,width:42,height:12 },
 ] as const;
 export function readBuyArtwork(bytes: Uint8Array, palette: Palette): Raster {
   const raster = readBitmap(bytes,palette);

@@ -2793,3 +2793,14 @@ Examine's description box sat at x16, so text ran over the sunken inset's left b
 ## 2026-10-11 — documented shared window chrome design
 
 Recorded the user's decisions in ui-components.md: CSS-border bevels, a `border-image` wooden frame, and Weather on the common frame. The doc also covers measurements (8px frame sides and bottom, top from the title bar; identical across sampled windows; Weather 1px narrower), button variants, palette tokens (indices 0/15/12/13/14 verified against simfarm.pal), planned components and migration order. Documentation only; no runtime or test changes.
+
+## 2026-10-11 — caption erasure masks kept inside button faces
+
+The user reported Buy's buttons losing 1px of bevel to caption erasure. An audit of every importer text mask against its source bitmap found bevel pixels inside five masks:
+- **Buy BUY:** x170..197 → face x171..196.
+- **Buy CLOSE:** x202..245 → face x203..244.
+- **Aircraft CLOSE:** x199..238 → x200..237.
+- **Map CLOSE:** x227..269 → x227..268.
+- **Schedule:** one mask's top row y103 → y104..114, and another's left column x10 → x11.
+
+`message-button.png` erased x2..45, removing the inner side-bevel column. It now uses the exported `MESSAGE_BUTTON_FACE` x3..44, y4..19. The remaining flagged pixels (Bank keypad, Map "?") are glyph shading inside faces. Corrected ui-components.md: there is one uniform 2px raised bevel, and the earlier "thin caption variant" came from the damaged images. Decoder tests 27/27 pass after re-import.

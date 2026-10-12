@@ -16,7 +16,7 @@ export const MAP_BUTTONS = [
 ] as const;
 export const MAP_TEXT_MASKS = [
   { x:31,y:127,width:16,height:19,color:12 }, { x:20,y:161,width:36,height:18,color:12 },
-  { x:227,y:209,width:43,height:11,color:12 },
+  { x:227,y:209,width:42,height:11,color:12 },
 ] as const;
 export function readMapArtwork(bytes: Uint8Array, palette: Palette): Raster {
   const raster = readBitmap(bytes, palette);

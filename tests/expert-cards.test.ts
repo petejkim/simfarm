@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {PNG} from 'pngjs';
 import {readArchive} from '../src/formats/archive';
 import {decodePlanar,readBitmap,readPalette} from '../src/formats/graphics';
-import {readMessageButton} from '../src/formats/message-dialog';
+import {readMessageButton,MESSAGE_BUTTON_FACE as F} from '../src/formats/message-dialog';
 import {EXPERT_CARD_IDS,readExpertPortrait,readExpertCard,readExpertDeck,expertPage,expertText} from '../src/formats/expert-cards';
 import {browserCrops} from './support/crop-catalog';
 const source=(n:string)=>readFileSync(new URL('../../simfarm-dos/'+n,import.meta.url));
@@ -102,7 +102,7 @@ test('all four Expert button frames share the retained caption-free bevel',()=>{
   const bytes=asset('buttons.til'),palette=readPalette(asset('simfarm.pal')),blank=readMessageButton(bytes,palette);
   for(const frame of [3,13,14,15]){
     const r=decodePlanar(bytes.subarray(frame*576,(frame+1)*576),48,24,palette);
-    for(let y=0;y<24;y++)for(let x=0;x<48;x++)if(y<4||y>=20||x<2||x>=46){const i=(y*48+x)*4;expect(r.rgba.subarray(i,i+4)).toEqual(blank.rgba.subarray(i,i+4));}
+    for(let y=0;y<24;y++)for(let x=0;x<48;x++)if(y<F.y||y>=F.y+F.height||x<F.x||x>=F.x+F.width){const i=(y*48+x)*4;expect(r.rgba.subarray(i,i+4)).toEqual(blank.rgba.subarray(i,i+4));}
   }
 });
 

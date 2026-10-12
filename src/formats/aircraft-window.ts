@@ -9,7 +9,7 @@ export const AIRCRAFT_CONTROLS = [
 ] as const;
 export const AIRCRAFT_TEXT_MASKS = [
   {x:110,y:41,width:30,height:10}, {x:102,y:89,width:44,height:10}, {x:98,y:137,width:54,height:10},
-  {x:200,y:130,width:38,height:10}, {x:199,y:151,width:40,height:10},
+  {x:200,y:130,width:38,height:10}, {x:200,y:151,width:38,height:10},
 ] as const;
 export function readAircraftArtwork(bytes:Uint8Array,palette:Palette):Raster {
   const r=readBitmap(bytes,palette);

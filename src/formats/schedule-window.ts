@@ -2,8 +2,8 @@ import { decodePlanar, readBitmap, type Palette, type Raster } from './graphics'
 
 export const SCHEDULE_TEXT_MASKS = [
   {x:30,y:42,width:36,height:12}, {x:272,y:42,width:32,height:12},
-  {x:276,y:64,width:42,height:11}, {x:280,y:80,width:34,height:11}, {x:276,y:103,width:42,height:12},
-  {x:10,y:130,width:92,height:12}, {x:42,y:145,width:60,height:12},
+  {x:276,y:64,width:42,height:11}, {x:280,y:80,width:34,height:11}, {x:276,y:104,width:42,height:11},
+  {x:11,y:130,width:91,height:12}, {x:42,y:145,width:60,height:12},
   {x:216,y:130,width:36,height:12}, {x:204,y:145,width:58,height:12},
   {x:18,y:200,width:50,height:12}, {x:78,y:200,width:42,height:12}, {x:132,y:200,width:44,height:12},
   {x:218,y:200,width:40,height:12}, {x:276,y:200,width:32,height:12},

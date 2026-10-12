@@ -4,7 +4,7 @@ Status: **planned, not implemented.** This document records the agreed design fo
 
 ## Decisions (user, 2026-10-11)
 
-1. **Bevels are CSS borders only.** Sunken insets and raised buttons, including the caption-button style, use plain CSS `border` colours and widths. No bevel uses images or `border-image`. Pixel details that CSS borders cannot express are accepted native differences (see *Caption button* below).
+1. **Bevels are CSS borders only.** Sunken insets and raised buttons use plain CSS `border` colours and widths. No bevel uses images or `border-image`. Pixel details that CSS borders cannot express are accepted native differences (see the corner note under *Raised button*).
 2. **The wooden window frame uses `border-image`.** It is a 9-slice of original frame pixels produced by the importer, so the wood grain and mitred corners stay source-exact at any window size.
 3. **Weather uses the common frame.** Its source frame is 1px narrower than every other window's; natively it gets the same frame as the others. This is a deliberate native difference.
 4. **No pixel-diff browser tests** (earlier user direction). Verify components structurally: geometry, computed borders and colours, sprite offsets, no absolute positioning in layout, real text. Importer unit tests may still compare source bytes and pixels.
@@ -51,23 +51,17 @@ Weather's left edge is `#o.oood`, 1px narrower; per decision 3 it is not reprodu
 
 A 2px border: `--bevel-shadow` top/left, `--bevel-light` bottom/right. Examples: the toolbar forecast and Date/Funds boxes, Examine's photo and text boxes, and Buy's catalog, description, quantity and price boxes.
 
-### Raised button: icon variant
+### Raised button
 
-Toolbar launchers, Edit palette tools and Buy's category and arrow buttons.
+One bevel style covers every raised button. Picture buttons: toolbar launchers, Edit palette tools, Buy's category and arrow buttons. Captioned buttons: `buttons.til` captions OK/Buy/Sell/Cancel…, message-dialog OK/YES/NO, and Buy, Aircraft, Map and Schedule caption buttons.
 - **Frame:** a 1px `--ink` frame, drawn as the button's own background behind padding. This avoids sub-pixel gaps at fractional zoom (earlier user correction).
-- **Face:** a 2px border, `--bevel-light` top/left and `--bevel-shadow` bottom/right, around a picture face.
+- **Face:** a 2px border, `--bevel-light` top/left and `--bevel-shadow` bottom/right, around the face. The face holds a picture sprite or real HTML caption text.
 - **Frame-side options:** frame on all four sides (toolbar, Buy), or top/left only (palette cells share their neighbour's black).
 - **Drop shadow:** Buy's category buttons add a 1px `--bevel-shadow` drop shadow right and below, as an optional modifier (a shadow, not a bevel).
 
 Where the light and shadow edges meet at a corner, the source paints the two diagonal pixels in face grey. CSS draws a diagonal blend of the two colours instead, which looks close (accepted).
 
-### Raised button: caption variant
-
-Buy's caption buttons, the message dialogs' OK/YES/NO buttons, and likely the `buttons.til` captions (OK/Buy/Sell/Cancel…), which need confirming when each is migrated.
-- **Frame:** a 1px `--ink` frame.
-- **Bevel widths:** a 2px top border (`--bevel-light`) and bottom border (`--bevel-shadow`); 1px left (`--bevel-light`) and right (`--bevel-shadow`) borders.
-- **Corner pixels:** the source widens the side bevel to 2px for the first and last few rows near each corner (e.g. `message-button.png` rows 3 and 20). Per decision 1, CSS borders do not reproduce this; accepted native difference.
-- **Caption:** real HTML text. Erase the source lettering in the importer, as already done for the toolbar and palette.
+**Correction (2026-10-11):** an earlier draft described a separate caption variant with 1px side bevels and corner pixels. That came from damaged imported images: the importer's caption erasure masks for `message-button.png` and Buy overlapped the inner bevel column. Original `buttons.til` records and window bitmaps use the same uniform 2px bevel. The masks are now fixed (see progress.md). For captions, erase the source lettering inside the face only; HTML text replaces it.
 
 ### Shared button behaviour
 
@@ -81,7 +75,7 @@ Buy's caption buttons, the message dialogs' OK/YES/NO buttons, and likely the `b
 | --- | --- |
 | `WindowFrame` | Wooden `border-image` frame around a `GameWindow` body, under the existing shared title bar. |
 | `SunkenInset` | Sunken bevel box; size from layout or modifier class. Replaces `ToolbarInset`. |
-| `BevelButton` | `variant: 'icon' \| 'caption'`, `pressed`, `frame: 'all' \| 'top-left'`, optional `shadow`. Replaces `WindowLauncher`'s and `EditToolButton`'s duplicated markup and CSS. |
+| `BevelButton` | Picture (sprite) or caption (HTML text) face, `pressed`, `frame: 'all' \| 'top-left'`, optional `shadow`. Replaces `WindowLauncher`'s and `EditToolButton`'s duplicated markup and CSS. |
 | `Sprite` | A `div` showing one atlas frame via `background-position`, with `image-rendering: pixelated`. |
 
 **Sprite atlases** (all plain images, so CSS sprites work):

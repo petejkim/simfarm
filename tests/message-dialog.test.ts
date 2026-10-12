@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { PNG } from 'pngjs';
 import { readArchive } from '../src/formats/archive';
 import { readBitmap,readPalette,decodePlanar } from '../src/formats/graphics';
-import { readBulldozeMessage,readMessageButton } from '../src/formats/message-dialog';
+import { readBulldozeMessage,readMessageButton,MESSAGE_BUTTON_FACE as F } from '../src/formats/message-dialog';
 const source=(n:string)=>readFileSync(new URL('../../simfarm-dos/'+n,import.meta.url));
 const archive=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),asset=(n:string)=>archive.find(a=>a.name===n)!.bytes;
 
@@ -40,11 +40,11 @@ test('message button preserves the original frame and removes all bitmap caption
   const p=readPalette(asset('simfarm.pal')),bytes=asset('buttons.til'),r=readMessageButton(bytes,p);
   const original=decodePlanar(bytes.subarray(0,576),48,24,p);assert.deepEqual([r.width,r.height],[48,24]);
   for(let y=0;y<24;y++)for(let x=0;x<48;x++){
-    const offset=(y*48+x)*4;assert.deepEqual([...r.rgba.subarray(offset,offset+4)],x>=2&&x<46&&y>=4&&y<20?[...p[12],255]:[...original.rgba.subarray(offset,offset+4)]);
+    const offset=(y*48+x)*4;assert.deepEqual([...r.rgba.subarray(offset,offset+4)],x>=F.x&&x<F.x+F.width&&y>=F.y&&y<F.y+F.height?[...p[12],255]:[...original.rgba.subarray(offset,offset+4)]);
   }
   for(const index of [3,10,11]){
     const frame=decodePlanar(bytes.subarray(index*576,(index+1)*576),48,24,p);
-    for(let y=0;y<24;y++)for(let x=0;x<48;x++)if(x<2||x>=46||y<4||y>=20){const o=(y*48+x)*4;assert.deepEqual(frame.rgba.subarray(o,o+4),original.rgba.subarray(o,o+4));}
+    for(let y=0;y<24;y++)for(let x=0;x<48;x++)if(x<F.x||x>=F.x+F.width||y<F.y||y>=F.y+F.height){const o=(y*48+x)*4;assert.deepEqual(frame.rgba.subarray(o,o+4),original.rgba.subarray(o,o+4));}
   }
   const imported=PNG.sync.read(readFileSync(new URL('../public/assets/message-button.png',import.meta.url)));assert.deepEqual([...imported.data],[...r.rgba]);
   assert.throws(()=>readMessageButton(bytes.subarray(1),p),/atlas/);
