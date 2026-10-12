@@ -65,8 +65,8 @@ test('long original crop descriptions stay inside Examine and remain keyboard-sc
   const initial=writeNativeSave(fixture.state,4);await load(page,initial);await point(page,55,40);
   const text=page.locator('#examine-text');await expect(text).toHaveText(crop.description);
   const box=(await text.boundingBox())!,frame=(await page.locator('.examine-window').boundingBox())!;
-  expect(box.x).toBeGreaterThanOrEqual(frame.x);expect(box.x+box.width).toBeLessThanOrEqual(frame.x+frame.width);
-  expect(box.y+box.height).toBeLessThanOrEqual(frame.y+frame.height-16);
+  // The scrolling text box is exactly the sunken inset interior (canvas x24..183, y80..175), clear of its bevel.
+  expect(box).toEqual({x:frame.x+24,y:frame.y+80,width:160,height:96});
   expect(await text.evaluate(e=>e.scrollWidth<=e.clientWidth)).toBe(true);
   expect(await text.evaluate(e=>e.scrollHeight>e.clientHeight)).toBe(true);
   await text.focus();await page.keyboard.press('End');await expect.poll(()=>text.evaluate(e=>e.scrollTop)).toBeGreaterThan(0);

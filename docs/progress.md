@@ -2785,3 +2785,7 @@ Cause: the calendar test's first user gesture was the `#next-day` click that als
 ## 2026-10-11 — remove palette help button, foot and help artwork
 
 Removed the "?" palette button with its legend component, state, decoder, import, asset, CSS and tests, plus the palette foot (user request; evidence retained in edit-help.md). The palette is 48×188. Validation: type checking/build, re-import (no edit-help.png), edit-palette decoder tests, and 47+4 browser cases across palette/window/tool specs pass.
+
+## 2026-10-11 — Examine text inside its inset
+
+Examine's description box sat at x16, so text ran over the sunken inset's left bevel and edge. The name box was 168px wide and ran past the right bevel. Both now match the inset interior measured from `examine-window.png`: x24..183, artwork y96..191 (canvas y80..175), with 1px/2px padding. The browser test now asserts the exact interior box instead of only the window frame. Examine specs pass 5/5.
