@@ -2874,3 +2874,15 @@ User request. View object on a field opens Schedule; examining any other object 
 ## 2026-10-12 — edge scrolling on all four sides
 
 User report: AutoScroll worked at the right/bottom edges but not left/top. Left/top only triggered within 2px (x<=1), a carry-over of the source's coordinate-zero test, which works on DOS because the pointer stops at the screen edge. In the browser those viewport edges border the palette and message bar, so the pointer left the terrain before triggering. All sides now use the 16px band; options-menu.md records the native difference. The options.spec AutoScroll case now checks 12px-inset left and top pointers and fails with the old rule. Full browser suite 290/290 (artifacts/edge-scroll-browser.log).
+
+## 2026-10-12 — IndexedDB autosave and File menu rework
+
+Implemented the agreed plan (details in autosave.md):
+- **One slot:** a single IndexedDB slot of the native checkpoint, restored paused at startup.
+- **Triggers:** saves on New Game, Load from File, calendar week rollover, manual Save, and tab hide/close flush.
+- **Robustness:** a Web Lock gives a single writing tab, and unreadable records are kept aside.
+- **File menu:** Save to File... and Load from File... use File System Access pickers with download/input fallbacks; Quit and its dialog are removed.
+
+A StrictMode double-mount initially removed the flush listeners. Fixed by a side-effect-free constructor plus an idempotent `connect()`.
+
+Tests use `@playwright/test` with Chromium launched without the pickers (`--disable-blink-features=FileSystemAccessLocal`) rather than a fixture, at user request. The 99 download helpers now use "Save to File..."; main-menu's Quit test was removed. Validation: unit 937/937; full browser suite 294/296 on the first run. The two failures were reload tests expecting a fresh Scenario 1, now updated to expect the restored game and passing; autosave spec 7/7 (21/21 over three repeats). Type checking and build pass.

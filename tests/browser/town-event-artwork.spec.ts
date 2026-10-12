@@ -13,7 +13,7 @@ const archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
 const asset = (name: string) => archive.find(a => a.name === name)!.bytes;
 async function save(page: Page) {
   const pending = page.waitForEvent('download');
-  await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   return JSON.parse(readSaveText((await (await pending).path())!));
 }
 async function load(page: Page, text: string) {

@@ -14,7 +14,7 @@ import { checkBuildingPlacement } from '../../src/simulation/building-placement'
 
 const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
 async function download(page: Page, path: string) {
-  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   await (await pending).saveAs(path); return readSaveText(path);
 }
 

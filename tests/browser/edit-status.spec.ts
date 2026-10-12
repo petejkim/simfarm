@@ -5,7 +5,7 @@ import {readScenario} from '../../src/formats/scenario';
 
 test('Plant shows original status text and a deduplicated recent history without changing failed-field checkpoints',async({page})=>{
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  async function save(){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
+  async function save(){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
   const before=await save(),field=readScenario(readFileSync('../simfarm-dos/SCEN0.SSM')).fields[1];
   await expect(page.getByRole('button',{name:'Edit message history'})).toBeVisible();
   await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('');

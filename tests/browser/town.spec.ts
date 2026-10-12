@@ -28,7 +28,7 @@ test('weekly town construction repaints the map and resumes exactly after a brow
   const before = await pixels();
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
   expect(await pixels()).not.toEqual(before);
-  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const download = await pending, path = 'artifacts/browser-town.simfarm.json'; await download.saveAs(path);
   const saved = JSON.parse(readSaveText(path));
   expect(saved).toEqual(JSON.parse(expected.save(4)));
@@ -37,7 +37,7 @@ test('weekly town construction repaints the map and resumes exactly after a brow
   const grown = await pixels(); await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); expect(await pixels()).toEqual(grown);
   for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); }
-  const nextDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const nextDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   await (await nextDownload).saveAs(path);
   expect(JSON.parse(readSaveText(path))).toEqual(JSON.parse(expected.save(4)));
   await page.locator('#viewport').evaluate(el => el.scrollTo(24 * 16, 0));

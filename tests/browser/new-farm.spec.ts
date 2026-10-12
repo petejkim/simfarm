@@ -16,7 +16,7 @@ import { CustomFarmSetup } from '../../src/simulation/custom-farm-setup';
 import { readNativeSave, writeNativeSave } from '../../src/formats/native-save';
 
 async function save(page: Page, name: string) {
-  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const download = await pending, path = `artifacts/${name}.simfarm.json`; await download.saveAs(path);
   return { data: JSON.parse(readSaveText(path)), path, filename: download.suggestedFilename() };
 }

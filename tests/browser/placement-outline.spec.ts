@@ -41,7 +41,7 @@ async function hover(page:Page,x:number,y:number){
   await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-10)*16,Math.max(0,p.y-10)*16),{x,y});
   const r=(await page.locator('#world').boundingBox())!;await page.mouse.move(r.x+x*16+8,r.y+y*16+8);
 }
-async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
+async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'outline.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 
 test('Plant outline matches source XOR pixels across weather, masked objects, recreation tiles, movement and clipping',async({page})=>{

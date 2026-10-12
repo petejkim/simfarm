@@ -6,12 +6,12 @@ import {GameSimulation} from '../support/game';
 import {browserCrops} from '../support/crop-catalog';
 async function save(page:Page){
   const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();
-  await page.getByRole('menuitem',{name:'Save',exact:true}).click();
+  await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();
   return readSaveText((await(await pending).path())!);
 }
 async function load(page:Page,text:string){
   const picker=page.waitForEvent('filechooser');await page.locator('#file-menu-button').click();
-  await page.getByRole('menuitem',{name:'Load Game',exact:true}).click();
+  await page.getByRole('menuitem',{name:'Load from File...',exact:true}).click();
   await(await picker).setFiles({name:'farm.simfarm.json',mimeType:'application/json',buffer:Buffer.from(text)});
 }
 for(const cancel of ['button','Escape','close'] as const)test(`File Load ${cancel} cancels pending assets and late completion cannot replace a newer farm`,async({page})=>{

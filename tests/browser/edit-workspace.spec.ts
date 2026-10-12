@@ -52,7 +52,7 @@ test('palette opens field planning and real tools; Speed retains slower pacing a
   await page.locator('#speed-menu-button').click(); await expect(page.locator('#simulation-speed-value')).toHaveText('1×');
   await page.locator('#play-pause').click(); await page.clock.runFor(3000); await expect(page.locator('#time-status')).toContainText('0 days advanced');
   await page.clock.runFor(1100); await expect(page.locator('#time-status')).toContainText('1 days advanced'); await page.locator('#play-pause').click();
-  await page.locator('#file-menu-button').click(); const download = page.waitForEvent('download'); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  await page.locator('#file-menu-button').click(); const download = page.waitForEvent('download'); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const saved = await download, buffer = readFileSync((await saved.path())!);
   await page.locator('#load-farm-file').setInputFiles({name:'checkpoint.json',mimeType:'application/json',buffer});
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await expect(page.locator('#world')).toBeVisible();

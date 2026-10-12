@@ -80,13 +80,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .original-menu-bar>button{flex:none;height:16px;margin-block:0;margin-right:0;padding:0;text-align:left;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;white-space:nowrap}
 .original-menu-bar>button:disabled{opacity:.65;cursor:default}
 .original-menu-bar>button:not(:disabled):hover,.original-menu-bar>button[aria-expanded=true]{background:#000;color:#fff}
-.file-dialog{max-width:min(500px,calc(100% - 24px));color:#000;background:#c2c2c2;border:2px solid #000;box-shadow:4px 4px #0008;padding:20px;line-height:1.5}
-.file-dialog::backdrop{background:#0007}
-.file-dialog h2{color:#000;font:700 20px Arial,sans-serif;margin:0 0 16px}
-.file-dialog button,.file-dialog input{color:#000;background:#fff;border:1px solid #000;border-radius:0;padding:8px}
-.file-dialog label{display:flex;flex-wrap:wrap;font-size:16px}
-.file-dialog input{min-width:0;max-width:100%;flex:1}
-.file-dialog button:focus-visible,.file-dialog input:focus-visible{outline:2px solid #000;outline-offset:2px}
 
 /* Original desktop coordinates at a fixed 1× display scale. Mobile redesign is
    deferred; retain the full control strip instead of compressing its spacing. */

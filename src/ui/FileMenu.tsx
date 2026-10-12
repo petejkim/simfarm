@@ -1,28 +1,26 @@
 import {AboutDialog} from './AboutDialog';
 import type {AboutAssets} from '../assets/game-assets';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { MainMenus } from '../formats/main-menus';
 import { useWindows } from './GameWindow';
 import { GAME_WINDOWS, type GameWindow } from './ControlBar';
 
-function MenuDialog({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => { ref.current?.showModal(); }, []);
-  return <dialog ref={ref} className="file-dialog" aria-labelledby="file-dialog-title" onCancel={event => { event.preventDefault(); onClose(); }}>
-    <h2 id="file-dialog-title">{title}</h2>{children}
-  </dialog>;
-}
+/** Native File menu over the source item order (About, New Game, Save, Save As, Load Game, Load Crop, Quit):
+ * Save writes the browser-stored game; the Save As slot becomes Save to File... and Load Game becomes
+ * Load from File... (user decisions); Load Crop and Quit are omitted. The decoded source labels are unchanged. */
+const FILE_LABELS: Record<number, string> = { 3: 'Save to File...', 4: 'Load from File...' };
+const FILE_HIDDEN = new Set([5, 6]);
 
 export interface MenuChoices { actions?:readonly {label:string;choose:()=>void}[]; extraLabels?:readonly string[]; checked: readonly boolean[]; choose: (index: number) => void; disabled?: boolean; disabledItems?:readonly boolean[]; hints?:readonly string[] }
 
 /** Recovered File/Options/Windows/Disasters chains; file-system/exit operations use browser policies. */
-export function FileMenu({ about, data, palette, busy, error, onSave, onLoad, onNewGame, onQuit, onWindow, options, disasters, debug }: {
+export function FileMenu({ about, data, palette, busy, onSave, onSaveToFile, onLoad, onNewGame, onWindow, options, disasters, debug }: {
   about:AboutAssets; options: MenuChoices; disasters: MenuChoices; debug: MenuChoices;
-  data: MainMenus; palette: number[][]; busy: boolean; error: string | null;
-  onSave: () => Promise<boolean>; onLoad: () => void; onNewGame: () => void; onQuit: () => void; onWindow: (window: GameWindow) => void;
+  data: MainMenus; palette: number[][]; busy: boolean;
+  onSave: () => Promise<boolean>; onSaveToFile: () => Promise<boolean>; onLoad: () => void; onNewGame: () => void; onWindow: (window: GameWindow) => void;
 }) {
   const windows = useWindows();
-  const [open, setOpen] = useState<number | null>(null), [dialog, setDialog] = useState<'about' | 'quit' | null>(null);
+  const [open, setOpen] = useState<number | null>(null), [dialog, setDialog] = useState<'about' | null>(null);
   const button = useRef<HTMLButtonElement>(null), menu = useRef<HTMLDivElement>(null), root = useRef<HTMLElement>(null);
   const last=data.menus.at(-1)!,debugX=last.header.x+last.header.width;
   const menus=[...data.menus,{offset:-1,title:'Debug',header:{x:debugX,width:48},popup:{x:debugX,width:192,height:38},
@@ -44,8 +42,8 @@ export function FileMenu({ about, data, palette, busy, error, onSave, onLoad, on
     if (index === 0) setDialog('about');
     else if (index === 1) onNewGame();
     else if (index === 2) void onSave();
+    else if (index === 3) void onSaveToFile();
     else if (index === 4) onLoad();
-    else if (index === 6) setDialog('quit');
   }
   const color = (index: number) => `rgb(${palette[index].join(',')})`;
   return <>
@@ -75,22 +73,15 @@ export function FileMenu({ about, data, palette, busy, error, onSave, onLoad, on
             buttons[next]?.focus();
           }
         }}>
-        {[...active.items,...(choices?.extraLabels??[]).map((label,i)=>({label,offset:-i-1}))].map((item, index) => open === 0 && (index === 3 || index === 5) ? null : <button key={item.offset} role={choices && open!==5 ? 'menuitemcheckbox' : 'menuitem'} aria-checked={open===5?undefined:choices?.checked[index]} tabIndex={-1}
+        {[...active.items,...(choices?.extraLabels??[]).map((label,i)=>({label,offset:-i-1}))].map((item, index) => open === 0 && FILE_HIDDEN.has(index) ? null : <button key={item.offset} role={choices && open!==5 ? 'menuitemcheckbox' : 'menuitem'} aria-checked={open===5?undefined:choices?.checked[index]} tabIndex={-1}
           disabled={busy || choices?.disabled || choices?.disabledItems?.[index]} title={choices?.hints?.[index]}
           onPointerMove={event=>{if(event.pointerType==='mouse'&&document.activeElement!==event.currentTarget)event.currentTarget.focus({preventScroll:true});}}
-          onClick={() => { if (open === 0) select(index); else if (choices) { closeMenu(); choices.choose(index); } else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{choices && open!==5 && <span className="menu-check" aria-hidden="true">{choices.checked[index] ? '✓' : ''}</span>}{item.label}</button>)}
+          onClick={() => { if (open === 0) select(index); else if (choices) { closeMenu(); choices.choose(index); } else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{choices && open!==5 && <span className="menu-check" aria-hidden="true">{choices.checked[index] ? '✓' : ''}</span>}{open === 0 ? FILE_LABELS[index] ?? item.label : item.label}</button>)}
         {choices?.actions?.map(action=><button key={action.label} role="menuitem" tabIndex={-1} disabled={busy || choices.disabled}
           onPointerMove={event=>{if(event.pointerType==='mouse'&&document.activeElement!==event.currentTarget)event.currentTarget.focus({preventScroll:true});}}
           onClick={()=>{closeMenu();action.choose();}}><span className="menu-check" aria-hidden="true" />{action.label}</button>)}
       </div>}
     </nav>
     {dialog === 'about' && <AboutDialog assets={about} onClose={closeDialog} />}
-    {dialog === 'quit' && <MenuDialog title="Quit SimFarm?" onClose={closeDialog}>
-      <p>Quitting pauses and keeps your farm in this tab. Save a copy before closing the tab.</p>
-      {error && <p role="alert">{error}</p>}
-      <button disabled={busy} onClick={async () => { if (await onSave()) { onQuit(); closeDialog(); } }}>Save and pause</button>{' '}
-      <button onClick={() => { onQuit(); closeDialog(); }}>Pause game</button>{' '}
-      <button onClick={closeDialog}>Cancel</button>
-    </MenuDialog>}
   </>;
 }

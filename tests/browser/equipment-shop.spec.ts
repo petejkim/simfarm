@@ -18,7 +18,7 @@ async function selectMachine(page:Page,type:number){
   await page.locator('#catalog-buy').click();await catalog.getByRole('button',{name:'CLOSE',exact:true}).click();
 }
 async function save(page: Page, path: string) {
-  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   await (await pending).saveAs(path); return JSON.parse(readSaveText(path));
 }
 async function load(page: Page, text: string) {

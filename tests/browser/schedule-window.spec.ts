@@ -15,7 +15,7 @@ import { reveal } from '../support/workspace';
 import { selectSaleOffer } from '../support/sell-window';
 import { GameSimulation } from '../support/game';
 const source=(name:string)=>readFileSync(new URL('../../../simfarm-dos/'+name,import.meta.url));
-async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
+async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
 
 test('original map and Schedule controls complete harvest, storage, sale and replanting without immediate field orders',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));

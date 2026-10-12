@@ -8,7 +8,7 @@ import { reveal, expectPaletteAction } from '../support/workspace';
 import { readArchive } from '../../src/formats/archive';
 import { decodePlanar,readPalette } from '../../src/formats/graphics';
 async function load(page:Page,text:string){await page.goto('/');await page.locator('#load-farm-file').setInputFiles({name:'palette-supplies.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');await page.locator('#viewport').evaluate(v=>v.scrollTo(0,0));}
-async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
+async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
 async function coords(page:Page,x:number,y:number){const zoom=Number(await page.locator('#zoom').inputValue()),r=(await page.locator('#world').boundingBox())!;return {x:r.x+(x+.5)*16*zoom,y:r.y+(y+.5)*16*zoom};}
 async function move(page:Page,x:number,y:number,steps=1){const p=await coords(page,x,y);await page.mouse.move(p.x,p.y,{steps});}
 async function click(page:Page,x:number,y:number){await move(page,x,y);await page.mouse.down();await page.mouse.up();}

@@ -11,7 +11,7 @@ import {readNativeSave,writeNativeSave} from '../../src/formats/native-save';
 import {openWindow,reveal, focusEdit, expectFarmCash } from '../support/workspace';
 import {AIRCRAFT_CONTROLS} from '../../src/formats/aircraft-window';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'aircraft.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
-async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
+async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
 async function mapClick(page:Page,x:number,y:number,button:'left'|'right'='left'){
   const zoom=Number(await page.locator('#zoom').inputValue());
   await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-20)*16*p.zoom,Math.max(0,p.y-15)*16*p.zoom),{x,y,zoom});

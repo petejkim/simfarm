@@ -20,7 +20,7 @@ const assets = { ...newFarmAssets, crops };
 const options = { ...newFarmOptions, climate: { precipitation: 1, temperature: 2, wind: 0 }, seeds: { visual: 9029, simulation: 9029, bounded: 9029 } };
 const miniature = miniTileAtlas(raw('far_mapc.mbm'), readPalette(raw('scenario.pal')));
 async function save(page: Page) {
-  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const path = await (await pending).path(); return JSON.parse(readSaveText(path!));
 }
 async function pixels(page: Page) {
@@ -166,7 +166,7 @@ test('the terrain designer finishing its load does not close a menu the player o
   let release=()=>{};const gate=new Promise<void>(resolve=>{release=resolve;});
   await page.route('**/assets/new-farm-setup.json',async route=>{await gate;await route.continue();});
   await reveal(page,'#region-design');await page.locator('#region-design').click();
-  await page.locator('#file-menu-button').click();const saveItem=page.getByRole('menuitem',{name:'Save',exact:true});await expect(saveItem).toBeVisible();
+  await page.locator('#file-menu-button').click();const saveItem=page.getByRole('menuitem',{name:'Save to File...',exact:true});await expect(saveItem).toBeVisible();
   release();await expect(page.getByRole('heading',{name:'Design your terrain'})).toBeVisible();
   await expect(saveItem).toBeVisible();await expect(page.locator('#file-menu-button')).toHaveAttribute('aria-expanded','true');
   const pending=page.waitForEvent('download');await saveItem.click();await pending;

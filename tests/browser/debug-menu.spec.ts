@@ -28,7 +28,7 @@ test('Debug triggers original event dialogs/music without a time jump or duplica
   }
   if(game.getSnapshot().townEvent.pending){await page.locator('#town-event-0').click();game.dispatch({type:'resolve-town-event',accept:true});}
   await expect(page.locator('#farm-date')).toHaveText(date!);
-  const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();
+  const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();
   expect(JSON.parse(readSaveText((await(await pending).path())!))).toEqual(JSON.parse(game.save(4)));
  }
 });

@@ -11,7 +11,7 @@ import {reveal, focusEdit } from '../support/workspace';
 const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url));
 const entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),palette=readPalette(entries.find(e=>e.name==='simfarm.pal')!.bytes);
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'market.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
-async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
+async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
 async function pixelRegion(page:Page,x:number,y:number,width:number,height:number){return page.locator('.market-preview').evaluate((canvas:HTMLCanvasElement,p)=>Array.from(canvas.getContext('2d')!.getImageData(p.x,p.y,p.width,p.height).data),{x,y,width,height});}
 async function mapClick(page:Page,x:number,y:number,button:'left'|'right'='left'){
   await reveal(page,'#viewport');

@@ -8,7 +8,7 @@ export async function farmSnapshot(page:Page){
   const notice=page.locator('#finance-message-ok,#disaster-message-ok,#field-message-ok,#building-message-ok');
   while(await notice.isVisible())await notice.click();
   const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();
-  await page.getByRole('menuitem',{name:'Save',exact:true}).click();
+  await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();
   const text=readSaveText((await (await pending).path())!);
   return GameSimulation.load(text,browserCrops).simulation.getSnapshot();
 }

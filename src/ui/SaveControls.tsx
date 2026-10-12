@@ -5,38 +5,71 @@ import { GameSimulation } from '../simulation/game';
 import { GameWindow } from './GameWindow';
 import { FileMenu, type MenuChoices } from './FileMenu';
 import { ControlBar, type GameWindow as WindowCommand } from './ControlBar';
+import type { SaveOutcome } from '../storage/autosave';
+
+// File System Access pickers (Chromium). Elsewhere the download link and file input are used.
+type FilePickerWindow = Window & {
+  showSaveFilePicker?: (options: object) => Promise<{ createWritable(): Promise<{ write(data: Blob): Promise<void>; close(): Promise<void> }> }>;
+  showOpenFilePicker?: (options: object) => Promise<{ getFile(): Promise<File> }[]>;
+};
+const SAVE_TYPES = [{ description: 'SimFarm save', accept: { 'application/gzip': ['.gz'] } }];
+const LOAD_TYPES = [{ description: 'SimFarm save or original scenario', accept: { 'application/gzip': ['.gz'], 'application/json': ['.json'], 'application/octet-stream': ['.ssm', '.SSM'] } }];
+const cancelled = (error: unknown) => error instanceof DOMException && error.name === 'AbortError';
 
 export interface LoadedFarm { scenarioId: number | null; simulation: GameSimulation; tiles: HTMLImageElement }
 
-export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, onLoad, onNewGame, onWindow, options, disasters, debug }: {
+export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, startMessage, onLoad, onSaveGame, onNewGame, onWindow, options, disasters, debug }: {
   options: MenuChoices; disasters: MenuChoices; debug: MenuChoices;
-  simulation: GameSimulation; scenarioId: number | null; assets: GameAssets; tiles: CanvasImageSource | null; loaded: boolean;
-  onLoad: (farm: LoadedFarm) => void;
+  simulation: GameSimulation; scenarioId: number | null; assets: GameAssets; tiles: CanvasImageSource | null; loaded: boolean; startMessage?: string;
+  onLoad: (farm: LoadedFarm) => void; onSaveGame: () => Promise<SaveOutcome>;
   onNewGame: () => void; onWindow: (window: WindowCommand, source: 'menu' | 'toolbar') => void;
 }) {
   const input = useRef<HTMLInputElement>(null), pending = useRef<AbortController | null>(null);
   const savingRef=useRef(false);
   const [saving,setSaving]=useState(false);
-  const [busy, setBusy] = useState(false), [message, setMessage] = useState(loaded ? 'Farm loaded.' : '');
+  const [busy, setBusy] = useState(false), [message, setMessage] = useState(startMessage ?? (loaded ? 'Farm loaded.' : ''));
   const [fileError,setFileError]=useState<string|null>(null);
   const date = simulation.getSnapshot().scenario.farm.calendar;
   const filename = `simfarm-${scenarioId === null ? simulation.getSnapshot().scenario.origin === 'generated' ? 'new-farm' : 'imported-farm' : scenarioId + 1}-${date.year}-${date.month + 1}-${date.week * 7 + date.day + 1}.simfarm.json.gz`;
   useEffect(() => () => pending.current?.abort(), []);
+  /** File → Save: the IndexedDB current-game slot. */
+  async function saveGame(): Promise<boolean> {
+    const outcome = await onSaveGame();
+    setMessage(outcome.ok ? 'Farm saved.' : outcome.reason === 'other-tab' ? 'Another SimFarm tab is saving this farm.'
+      : outcome.reason === 'unavailable' ? 'Saving is unavailable in this browser.' : `Could not save farm: ${outcome.error}`);
+    return outcome.ok;
+  }
+  /** File → Save to File...: a save-file dialog where supported, otherwise a browser download. */
   async function save(): Promise<boolean> {
     if(savingRef.current)return false;
     savingRef.current=true;setSaving(true);
     setFileError(null);
     try {
-      const text = simulation.save(scenarioId);
-      const url = URL.createObjectURL(await compressSave(text));
-      const link = document.createElement('a');
-      link.href = url; link.download = filename;
-      document.body.append(link); link.click(); link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const picker = (window as FilePickerWindow).showSaveFilePicker;
+      // Open the dialog first, while the menu click still counts as user activation.
+      const handle = picker ? await picker({ suggestedName: filename, types: SAVE_TYPES }) : null;
+      const blob = await compressSave(simulation.save(scenarioId));
+      if (handle) { const writable = await handle.createWritable(); await writable.write(blob); await writable.close(); }
+      else {
+        const url = URL.createObjectURL(blob), link = document.createElement('a');
+        link.href = url; link.download = filename;
+        document.body.append(link); link.click(); link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
       setMessage('Farm saved to file.');
       return true;
-    } catch (error) { const text=`Could not save farm: ${error instanceof Error ? error.message : String(error)}`;setMessage(text);setFileError(text);return false; }
+    } catch (error) {
+      if (cancelled(error)) { setMessage('Save to file cancelled.'); return false; }
+      const text=`Could not save farm: ${error instanceof Error ? error.message : String(error)}`;setMessage(text);setFileError(text);return false;
+    }
     finally{savingRef.current=false;setSaving(false);}
+  }
+  /** File → Load from File...: an open-file dialog where supported, otherwise the file input. */
+  async function chooseFile() {
+    const picker = (window as FilePickerWindow).showOpenFilePicker;
+    if (!picker) { input.current?.click(); return; }
+    try { const [handle] = await picker({ types: LOAD_TYPES, multiple: false }); if (handle) void load(await handle.getFile()); }
+    catch (error) { if (!cancelled(error)) setMessage(`Could not open file: ${error instanceof Error ? error.message : String(error)}`); }
   }
   function cancelLoad() {
     pending.current?.abort();pending.current=null;
@@ -63,9 +96,8 @@ export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, on
   }
   return <div className="farm-file-controls">
     <div className="original-controls">
-      <FileMenu debug={debug} about={assets.about} options={options} disasters={disasters} data={assets.mainMenus} palette={assets.catalog.palette} busy={busy||saving} error={message.startsWith('Could not save') ? message : null} onSave={save}
-        onLoad={() => input.current?.click()} onNewGame={onNewGame} onWindow={window=>onWindow(window,'menu')}
-        onQuit={() => { simulation.dispatch({ type: 'set-paused', paused: true }); setMessage('Farm paused. Save before closing this tab.'); }} />
+      <FileMenu debug={debug} about={assets.about} options={options} disasters={disasters} data={assets.mainMenus} palette={assets.catalog.palette} busy={busy||saving} onSave={saveGame} onSaveToFile={save}
+        onLoad={() => void chooseFile()} onNewGame={onNewGame} onWindow={window=>onWindow(window,'menu')} />
       <ControlBar tiles={tiles} artwork={assets.controlBar} menus={assets.mainMenus} snapshot={simulation.getSnapshot()} onWindow={window=>onWindow(window,'toolbar')} />
     </div>
     <input ref={input} id="load-farm-file" type="file" accept=".ssm,.SSM,.simfarm.json,.json,.gz,application/json,application/gzip" hidden

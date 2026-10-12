@@ -16,7 +16,7 @@ async function load(page: Page, text: string) {
 }
 async function save(page: Page, name: string) {
   await acknowledgeFinanceMessages(page);
-  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const path = `artifacts/browser-water-${name}.json`; await (await pending).saveAs(path);
   return JSON.parse(readSaveText(path));
 }

@@ -13,7 +13,7 @@ const archive=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
 const asset=(name:string)=>archive.find(entry=>entry.name===name)!.bytes;
 const palette=readPalette(asset('simfarm.pal'));
 const frames=[188,189].map(tile=>decodePlanar(asset('mskdtile.til').subarray(tile*128,(tile+1)*128),16,16,palette,7).rgba);
-async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
+async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'workers.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 function fixture(){
   const world=readScenario(source('SCEN0.SSM')),game=new GameSimulation(world,browserCrops).withAllCrops(browserCrops);

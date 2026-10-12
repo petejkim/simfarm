@@ -36,7 +36,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   await expect(page.locator('#simulation-speed')).toBeDisabled();
   await openWindow(page, 'bank'); await expect(page.locator('#borrow-loan')).toBeDisabled();
   await reveal(page, '#town-recreational'); await page.locator('#town-recreational').click(); await expect(page.locator('#town-choice-error')).toContainText('cannot support');
-  const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const path = 'artifacts/browser-pending-town.simfarm.json'; await (await download).saveAs(path);
   const checkpoint = JSON.parse(readSaveText(path));
   expect(checkpoint.runtime.pendingTown.phase).toBe('annual-reset'); expect(checkpoint.runtime.daysAdvanced).toBe(0);
@@ -60,7 +60,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   await expect(page.locator('#time-status')).toContainText('Paused · 1 days advanced');
   await expect(page.locator('#farm-cash')).toHaveText('$35,285');
   await openWindow(page,'balance');await expect(page.locator('#balance-expense-9')).toHaveText('4715');
-  const completedDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const completedDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const completedPath = 'artifacts/browser-annual-statistics.simfarm.json'; await (await completedDownload).saveAs(completedPath);
   const completed = JSON.parse(readSaveText(completedPath)), statistics = completed.runtime.finances.statistics;
   const regions = Buffer.from(completed.scenario.regions, 'hex'), owners = Array.from({ length: 144 }, (_, i) => regions[i * 7 + 1]);
@@ -71,7 +71,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(completedPath);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await expect(page.locator('#town-choice')).toHaveCount(0);
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); await expect(page.locator('#farm-date')).toContainText('January 2, 1994');
-  const continuedDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const continuedDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const continuedPath = 'artifacts/browser-annual-statistics-continued.simfarm.json'; await (await continuedDownload).saveAs(continuedPath);
   expect(JSON.parse(readSaveText(continuedPath)).runtime.finances.statistics).toEqual(statistics);
   await expect(page.locator('#farm-cash')).toHaveText('$35,285'); expect(errors).toEqual([]);
@@ -84,7 +84,7 @@ test('unpaid annual taxes show the original penalty, persist and retry at the ne
   await expect(page.locator('#finance-message-text')).toHaveText(readFinanceMessage(readFileSync('public/assets/raw/events.dat'),159));
   await page.locator('#finance-message-ok').click();
   const debt=(await farmSnapshot(page)).finances.debt;expect(debt.unpaidTaxes).toBe(5893);expect(debt.taxCountdown).toBe(3);
-  const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const path = 'artifacts/browser-tax-debt.simfarm.json'; await (await download).saveAs(path);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');

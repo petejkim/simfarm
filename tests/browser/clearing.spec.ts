@@ -30,14 +30,14 @@ test('saved field clearing advances original animation tiles, pauses and reloads
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
   const first = await pixels(); expect(first).not.toEqual(initial);
   await page.waitForTimeout(150); expect(await pixels()).toEqual(first); // Native Pause also freezes clearing.
-  const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const path = 'artifacts/browser-clearing.simfarm.json'; await (await download).saveAs(path);
   const saved = JSON.parse(readSaveText(path));
   expect(saved).toEqual(JSON.parse(expected.save(4))); expect(saved.runtime.finances.clearing.count).toBe(64);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); expect(await pixels()).toEqual(first);
   for (let day = 0; day < 9; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); }
-  const finalDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const finalDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   await (await finalDownload).saveAs(path);
   const done = JSON.parse(readSaveText(path));
   expect(done).toEqual(JSON.parse(expected.save(4))); expect(done.runtime.finances.clearing.count).toBe(0);

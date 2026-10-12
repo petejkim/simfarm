@@ -14,7 +14,7 @@ import {reveal} from '../support/workspace';
 const events=readFileSync('public/assets/raw/events.dat');
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'disaster.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
-async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
+async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
 async function message(page:Page,id:DisasterNoticeId){
   const win=page.locator('[data-window=disaster-message]');await expect(win.locator('[data-disaster-notice]')).toHaveAttribute('data-disaster-notice',id);
   await expect(page.locator('#disaster-message-text')).toHaveText(readDisasterMessage(events,id));

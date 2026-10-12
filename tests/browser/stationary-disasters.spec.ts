@@ -12,7 +12,7 @@ import { decodePlanar,readPalette } from '../../src/formats/graphics';
 import { decodeXmidi,encodeMidi } from '../../src/formats/xmidi';
 
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'stationary.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
-async function save(page:Page,suffix:string){await acknowledgeFinanceMessages(page);const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();const path=`artifacts/browser-stationary-${suffix}.json`;await(await pending).saveAs(path);return JSON.parse(readSaveText(path));}
+async function save(page:Page,suffix:string){await acknowledgeFinanceMessages(page);const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();const path=`artifacts/browser-stationary-${suffix}.json`;await(await pending).saveAs(path);return JSON.parse(readSaveText(path));}
 const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url));
 async function circles(page:Page){
   const a=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),asset=(n:string)=>a.find(a=>a.name===n)!.bytes,palette=readPalette(asset('simfarm.pal'));

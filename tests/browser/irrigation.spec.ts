@@ -26,7 +26,7 @@ function fixture(wind = 10, dig = false) {
   return { game: GameSimulation.load(JSON.stringify(checkpoint), browserCrops).simulation.withAllCrops(browserCrops), crops };
 }
 async function download(page: Page, path: string) {
-  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   await (await pending).saveAs(path); return JSON.parse(readSaveText(path));
 }
 

@@ -41,6 +41,7 @@ import { useResource } from './useResource';
 import { GameSimulation, type GameCommand } from '../simulation/game';
 import { TimeControls } from './TimeControls';
 import { SaveControls, type LoadedFarm } from './SaveControls';
+import type { Autosave } from '../storage/autosave';
 import { SellWindow } from './SellWindow';
 import { LoanPanel } from './LoanPanel';
 import { AircraftWindow } from './AircraftWindow';
@@ -58,6 +59,8 @@ interface Props {
   audioOptions: { music: boolean; sound: boolean; buttonClicks:boolean; toggleButtonClicks:()=>void; toggleMusic: () => void; toggleSound: () => void };
   id: number | null;
   loaded?: LoadedFarm;
+  /** Browser-stored current game: follows this farm; `autosaveNow` saves it as soon as it starts. */
+  autosave: Autosave; autosaveNow: boolean; startMessage?: string;
   onLoad: (farm: LoadedFarm) => void;
   onRetry: () => void;
   assets: GameAssets;
@@ -67,7 +70,7 @@ interface Props {
   onFlightRunning: (running: boolean) => void;
 }
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
-export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRetry, assets, zoom, onZoomChange, onGameEvent, onFlightRunning }: Props) {
+export function FarmView({ audioControls, audioOptions, id, loaded, autosave, autosaveNow, startMessage, onLoad, onRetry, assets, zoom, onZoomChange, onGameEvent, onFlightRunning }: Props) {
   const windows = useWindows();
   useEffect(() => windows.reset(), [windows.reset]);
   const [newFarmOpen, setNewFarmOpen] = useState(false);
@@ -81,6 +84,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
   }, [id, loaded, assets.catalog.crops, assets.townLayouts]);
   const resource = useResource(load);
   const simulation = resource.status === 'ready' ? resource.value.simulation : null;
+  useEffect(() => simulation ? autosave.attach(simulation, id, autosaveNow) : undefined, [simulation]);
   const [fieldMenu,setFieldMenu]=useState<'plant'|'spray'|null>(null),[fieldMapTool,setFieldMapTool]=useState<FieldMapTool|null>(null);
   const [aircraftSlot,setAircraftSlot]=useState<number|null>(null);
   const [buyPlacement, setBuyPlacement] = useState<Pick<ShopProduct, 'type' | 'name'> | null>(null);
@@ -303,7 +307,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
         const action=index===6?'disable':DISASTER_MENU_KINDS[index]; if(!action)return;
         simulation.dispatch({type:'disaster-menu',action});
       },
-    }} simulation={simulation} scenarioId={id} tiles={data?.tiles??null} assets={assets} loaded={Boolean(loaded)} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
+    }} simulation={simulation} scenarioId={id} tiles={data?.tiles??null} assets={assets} loaded={Boolean(loaded)} startMessage={startMessage} onSaveGame={() => autosave.save()} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
     <GameWindow windowKey="options" title="Settings"><section className="browser-settings" aria-label="View and audio settings">
       <label>Zoom <select id="zoom" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>

@@ -9,7 +9,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { shopFixture } from '../support/livestock';
 
 async function checkpoint(page: Page, name: string) {
-  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const path = `artifacts/navigation-${name}.json`; await (await pending).saveAs(path);
   return JSON.parse(readSaveText(path));
 }

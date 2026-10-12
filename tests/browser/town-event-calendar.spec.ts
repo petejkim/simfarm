@@ -29,7 +29,7 @@ async function load(page: Page, text: string) {
 }
 async function save(page: Page) {
   const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click();
-  await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   return JSON.parse(readSaveText((await (await download).path())!));
 }
 async function checkMessage(page: Page, game: InstanceType<typeof GameSimulation>) {

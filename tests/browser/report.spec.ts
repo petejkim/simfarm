@@ -33,7 +33,7 @@ test('Farm report displays original totals and field conditions, updates after p
   await openWindow(page, 'bank'); await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('1000'); await reveal(page, '#borrow-loan'); await page.locator('#borrow-loan').click();
   await reveal(page, '#repay-loan'); await page.locator('#repay-loan').click();
   await expect(page.locator('#balance-net')).toHaveText('-500'); await expect(page.locator('#balance-expense-7')).toHaveText('1040');
-  const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const path = 'artifacts/browser-report.simfarm.json'; await (await download).saveAs(path);
   const saved = JSON.parse(readSaveText(path)); expect(saved.runtime.finances.annual).toEqual(f.annual);expect(saved.scenario.farm.workerExpenses).toBe(20);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');

@@ -7,7 +7,7 @@ import {FIXED_HARVEST_MESSAGE} from '../../src/formats/field-message';
 test('Schedule fixed harvest opens the original mandatory Message and returns to the unchanged plan',async({page})=>{
   await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
   await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Messages',exact:true}).click();
-  async function save(){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
+  async function save(){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
   const before=await save();await openWindow(page,'schedule');await chooseField(page,1);
   const calendar=before.scenario.farm.calendar,week=calendar.month*4+calendar.week+1;
   await page.locator('[data-plan-action="harvest"]').click();await page.locator(`[data-plan-week="${week}"]`).click();

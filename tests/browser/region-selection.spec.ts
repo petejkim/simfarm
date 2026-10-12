@@ -14,7 +14,7 @@ import { readNativeSave } from '../../src/formats/native-save';
 const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
 const locations = readSetupMap(readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA')).find(e => e.name === 'scenario.odt')!.bytes).locations;
 async function save(page: Page, name: string) {
-  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const path = `artifacts/browser-region-${name}.json`; await (await pending).saveAs(path); return JSON.parse(readSaveText(path));
 }
 async function openMap(page: Page) {

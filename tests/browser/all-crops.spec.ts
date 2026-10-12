@@ -15,7 +15,7 @@ async function load(page: Page, text: string) {
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
 }
 async function save(page: Page) {
-  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   return JSON.parse(readSaveText((await (await pending).path())!));
 }
 
@@ -51,7 +51,7 @@ test('all crops are immediately plantable and plannable with source artwork and 
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await browseSupply(page,215);await expect(page.locator('#buy-owned')).toHaveText('0');
   await expect(page.locator('#buy-description')).toContainText(browserCrops.find(c=>`${c.id}.crp`===game.getSnapshot().scenario.cropFiles[23])!.description);
-  const checkpoint = await save(page); await page.reload(); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const checkpoint = await save(page); await page.reload(); await expect(page.locator('#save-status')).toHaveText('Saved farm restored (paused).'); // the browser-stored game reopens
   await load(page, JSON.stringify(checkpoint)); expect(await save(page)).toEqual(checkpoint);
   for (let day = 0; day < 8; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));

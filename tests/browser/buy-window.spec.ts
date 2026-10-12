@@ -6,7 +6,7 @@ import { browserCrops } from '../support/crop-catalog';
 
 async function save(page: Page) {
   const pending = page.waitForEvent('download');
-  await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
+  await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   return JSON.parse(readSaveText((await (await pending).path())!));
 }
 async function start(page: Page) {

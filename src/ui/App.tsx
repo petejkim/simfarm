@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { GameEvent } from '../simulation/events';
 import { loadGameAssets, type GameAssets } from '../assets/game-assets';
 import { WindowDesktop } from './GameWindow';
@@ -8,6 +8,8 @@ import { MusicControls } from './MusicControls';
 import { useMusic } from './useMusic';
 import { useSound } from './useSound';
 import { useResource } from './useResource';
+import { Autosave } from '../storage/autosave';
+import { restoreStoredGame } from '../storage/restore';
 
 export function App() {
   const assets = useResource(loadGameAssets);
@@ -19,8 +21,20 @@ export function App() {
   return <Game assets={assets.value} />;
 }
 function Game({ assets }: { assets: GameAssets }) {
-  const [farm, setFarm] = useState<{ id: number | null; serial: number; loaded?: LoadedFarm }>({ id: 0, serial: 0 });
-  const onLoad = (loaded: LoadedFarm) => setFarm(previous => ({ id: loaded.scenarioId, serial: previous.serial + 1, loaded }));
+  // The browser-stored current game is restored (paused) before the first farm mounts; otherwise Scenario 1.
+  const [autosave] = useState(() => new Autosave());
+  useEffect(() => autosave.connect(), [autosave]);
+  const [farm, setFarm] = useState<{ id: number | null; serial: number; loaded?: LoadedFarm; autosaveNow: boolean; notice?: string } | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    void restoreStoredGame(autosave, assets, controller.signal).then(({ farm: restored, notice }) => {
+      if (!controller.signal.aborted) setFarm(restored ? { id: restored.scenarioId, serial: 1, loaded: restored, autosaveNow: false, notice: 'Saved farm restored (paused).' }
+        : { id: 0, serial: 0, autosaveNow: false, notice });
+    });
+    return () => controller.abort();
+  }, [autosave, assets]);
+  // New Game and Load from File replace the current game and save it immediately.
+  const onLoad = (loaded: LoadedFarm) => setFarm(previous => ({ id: loaded.scenarioId, serial: (previous?.serial ?? 0) + 1, loaded, autosaveNow: true }));
   const [zoom, setZoom] = useState(1);
   const music = useMusic();
   const sound = useSound();
@@ -28,9 +42,10 @@ function Game({ assets }: { assets: GameAssets }) {
     if (event.type === 'music') music.requestTrack(event.track);
     else if(event.type==='sound') sound.play(event.sound);
   }, [music.requestTrack, sound.play]);
+  if (!farm) return <p className="loading">Loading SimFarm…</p>;
   return <WindowDesktop artwork={assets.windowArtwork} onButtonClick={sound.click}>
-    <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded}
-      onRetry={() => setFarm(previous => ({ ...previous, serial: previous.serial + 1 }))}
+    <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded} autosave={autosave} autosaveNow={farm.autosaveNow} startMessage={farm.notice}
+      onRetry={() => setFarm(previous => previous && ({ ...previous, serial: previous.serial + 1 }))}
       audioControls={<>
         <MusicControls tracks={assets.catalog.music} music={music} />
         <span id="audio-status" role="status">{music.message}</span>

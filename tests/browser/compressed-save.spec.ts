@@ -4,7 +4,7 @@ import {gunzipSync,gzipSync} from 'node:zlib';
 import {MAX_SAVE_BYTES} from '../../src/formats/native-save';
 async function save(page:Page){
   const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();
-  await page.getByRole('menuitem',{name:'Save',exact:true}).click();
+  await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();
   const download=await pending;return {name:download.suggestedFilename(),bytes:readFileSync((await download.path())!)};
 }
 test('compressed downloads shrink the checkpoint, reload exactly, and reject corrupt or oversized expansion',async({page})=>{

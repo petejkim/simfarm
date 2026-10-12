@@ -4,7 +4,7 @@ import {test,expect} from '@playwright/test';
 
 test('Windows displays source geometry and live open checks, preserving permanent Edit and full saves',async({page})=>{
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  async function save(){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await p).path())!));}
+  async function save(){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await(await p).path())!));}
   const before=await save(),menu=page.getByRole('menu',{name:'Windows',exact:true});
   async function checks(open:string[]){
     await page.locator('#windows-menu-button').click();

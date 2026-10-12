@@ -13,7 +13,7 @@ export async function loadScenarioCheckpoint(page:Page,id:number){
   const simulation=new GameSimulation(readScenario(bytes),browserCrops).withAllCrops(browserCrops);
   await acknowledgeFinanceMessages(page);await page.locator('#file-menu-button').click();
   const picker=page.waitForEvent('filechooser');
-  await page.getByRole('menuitem',{name:'Load Game',exact:true}).click();
+  await page.getByRole('menuitem',{name:'Load from File...',exact:true}).click();
   await (await picker).setFiles({name:`scenario-${id}.simfarm.json`,mimeType:'application/json',buffer:Buffer.from(simulation.save(id))});
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await expect(page.locator('#map-status')).toHaveText(`Scenario ${id+1} · original terrain`);

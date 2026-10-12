@@ -6,7 +6,7 @@ import { clickFarmTile } from './field-actions';
  * CUT prevents the generated repeat plan from planting again before a harvest assertion. */
 export async function scheduleNextHarvest(page:Page,x:number,y:number,fixedWeek?:number){
   const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();
-  await page.getByRole('menuitem',{name:'Save',exact:true}).click();
+  await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();
   const saved=JSON.parse(readSaveText((await (await pending).path())!));
   const calendar=saved.scenario.farm.calendar,week=calendar.month*4+calendar.week+1;
   await reveal(page,'#viewport');await page.getByRole('button',{name:'View object',exact:true}).click();

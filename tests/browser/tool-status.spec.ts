@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test';
 
 test('palette and Spray selections show source messages, retain recent order across wrap and do not perform farm work',async({page})=>{
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  async function save(){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
+  async function save(){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
   const before=await save(),status=page.getByRole('button',{name:'Edit message history'}),messages:string[]=[];
   for(const [tool,text] of [
     ['Move object','Choose an object to move.'],['View object','Examine'],['Paved road','Paved Road'],['Dirt road','Dirt Road'],

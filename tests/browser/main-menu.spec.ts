@@ -16,11 +16,11 @@ async function command(page: Page, name: string) {
   await reveal(page, '#file-menu-button'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name, exact: true }).click();
 }
 async function save(page: Page) {
-  const pending = page.waitForEvent('download'); await command(page, 'Save'); const download = await pending;
+  const pending = page.waitForEvent('download'); await command(page, 'Save to File...'); const download = await pending;
   return { data: JSON.parse(readSaveText((await download.path())!)), filename: download.suggestedFilename() };
 }
 async function pick(page: Page, name: string, buffer: Buffer) {
-  const pending = page.waitForEvent('filechooser'); await command(page, 'Load Game');
+  const pending = page.waitForEvent('filechooser'); await command(page, 'Load from File...');
   await (await pending).setFiles({ name, mimeType: 'application/octet-stream', buffer });
 }
 
@@ -30,11 +30,12 @@ test('source menu order uses selectable text, keyboard navigation and original d
   expect(await bar.locator(':scope > button').allTextContents()).toEqual(['File', 'Options', 'Speed', 'Windows', 'Disasters', 'Debug']);
   await reveal(page, '#file-menu-button'); await page.locator('#file-menu-button').focus(); await page.keyboard.press('ArrowDown');
   const menu = page.getByRole('menu', { name: 'File' });
-  expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['About SimFarm', 'New Game', 'Save', 'Load Game', 'Quit']); // source Save As and Load Crop are omitted
+  expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['About SimFarm', 'New Game', 'Save', 'Save to File...', 'Load from File...']); // source Load Crop and Quit are omitted
   await expect(page.getByRole('menuitem', { name: 'About SimFarm' })).toBeFocused();
   await expect(page.getByRole('menuitem', { name: 'Load Crop' })).toHaveCount(0);
-  await page.keyboard.press('End'); await expect(page.getByRole('menuitem', { name: 'Quit' })).toBeFocused();
-  await page.keyboard.press('ArrowUp'); await expect(page.getByRole('menuitem', { name: 'Load Game' })).toBeFocused();
+  await expect(page.getByRole('menuitem', { name: 'Quit' })).toHaveCount(0);
+  await page.keyboard.press('End'); await expect(page.getByRole('menuitem', { name: 'Load from File...' })).toBeFocused();
+  await page.keyboard.press('ArrowUp'); await expect(page.getByRole('menuitem', { name: 'Save to File...' })).toBeFocused();
   await page.keyboard.press('Escape'); await expect(menu).toHaveCount(0); await expect(page.locator('#file-menu-button')).toBeFocused();
   await command(page, 'About SimFarm'); await expect(page.getByRole('dialog')).toContainText('Eric Albers');
   await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -74,17 +75,4 @@ test('File Load Game follows ordinary original import without replaying chooser 
   expect((await save(page)).data).toEqual(JSON.parse(expected.save(null)));
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
   expect((await save(page)).data).toEqual(JSON.parse(expected.save(null)));
-});
-
-test('Quit cancellation retains running state; save-and-pause downloads and leaves a resumable farm', async ({ page }) => {
-  await start(page); await reveal(page, '#play-pause'); await page.locator('#play-pause').click();
-  await command(page, 'Quit'); await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await expect(page.locator('#time-status')).toContainText('Running');
-  const before = await save(page);
-  await command(page, 'Quit'); const pending = page.waitForEvent('download'); await page.getByRole('button', { name: 'Save and pause' }).click();
-  expect(JSON.parse(readSaveText((await (await pending).path())!))).toEqual(before.data);
-  await expect(page.locator('#time-status')).toContainText('Paused'); await expect(page.locator('#save-status')).toContainText('Farm paused');
-  const paused = (await save(page)).data;
-  expect(paused).toEqual({ ...before.data, runtime: { ...before.data.runtime, paused: true, elapsed: 0 } });
-  await reveal(page, '#play-pause'); await page.locator('#play-pause').click(); await expect(page.locator('#time-status')).toContainText('Running');
 });
