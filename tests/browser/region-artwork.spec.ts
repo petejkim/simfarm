@@ -44,7 +44,7 @@ async function pixels(page: Page, x: number, y: number) {
 
 test('original geographic panel paints exact markers and bars, preserves selection-only state, and opens custom design directly', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  await start(page); const before = await save(page); await chooser(page); await pixels(page, 2, 8);
+  await start(page); const before = await save(page); await chooser(page); await pixels(page, 8, 13); // native default: Region 9, 14
   await page.locator('[data-region="1,3"]').click(); await pixels(page, 1, 3);
   await expect(page.locator('#region-selection')).toContainText('Scenario 3');
   await page.mouse.move(0, 0); await page.locator('[data-region="1,3"]').evaluate((e: HTMLButtonElement) => e.blur());
@@ -105,5 +105,5 @@ test('truncated original artwork and palette fail atomically and original Quit c
   await expect(page.locator('#region-design')).toBeDisabled(); await expect(page.locator('#region-load')).toBeDisabled();
   await reveal(page, '#region-quit'); await page.locator('#region-quit').click(); finish();
   await page.unroute('**/assets/raw/SCEN7.SSM'); expect(await save(page)).toEqual(before);
-  await chooser(page); await pixels(page, 2, 8);
+  await chooser(page); await pixels(page, 8, 13); // native default: Region 9, 14
 });

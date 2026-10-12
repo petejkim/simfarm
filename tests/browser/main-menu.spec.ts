@@ -27,7 +27,7 @@ async function pick(page: Page, name: string, buffer: Buffer) {
 test('source menu order uses selectable text, keyboard navigation and original desktop spacing', async ({ page }) => {
   await start(page);
   const bar = page.getByRole('navigation', { name: 'Original game menus' });
-  expect(await bar.locator(':scope > button').allTextContents()).toEqual(['File', 'Options', 'Speed', 'Windows', 'Disasters', 'Debug']);
+  expect(await bar.locator('.original-menu-heading').allTextContents()).toEqual(['File', 'Options', 'Speed', 'Windows', 'Disasters', 'Debug']);
   await reveal(page, '#file-menu-button'); await page.locator('#file-menu-button').focus(); await page.keyboard.press('ArrowDown');
   const menu = page.getByRole('menu', { name: 'File' });
   expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['About SimFarm', 'New Game', 'Save', 'Save to File...', 'Load from File...']); // source Load Crop and Quit are omitted

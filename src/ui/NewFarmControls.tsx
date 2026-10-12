@@ -9,22 +9,12 @@ import type { LoadedFarm } from './SaveControls';
 import { RegionMap } from './RegionMap';
 import { TerrainDesign } from './TerrainDesign';
 import { BevelButton } from './chrome/BevelButton';
-
-/** Browser setup defaults are independent of the simulation's saved RNG streams. */
-function randomSetupSeeds(): NewFarmOptions['seeds'] {
-  const value = new Uint16Array(1);
-  do { crypto.getRandomValues(value); } while (value[0] === 0);
-  return { visual: value[0], simulation: value[0], bounded: value[0] };
-}
+import { defaultFarmOptions, defaultRegionIndex, randomSetupSeeds } from './default-farm';
 
 export function NewFarmControls({ assets, simulation: current, open, onOpenChange, onCreate }: {
   assets: GameAssets; simulation: GameSimulation; open: boolean; onOpenChange: (open: boolean) => void; onCreate: (farm: LoadedFarm) => void;
 }) {
-  const [options, setOptions] = useState<NewFarmOptions>(() => {
-    const date = new Date();
-    return { climate: { precipitation: 2, temperature: 2, wind: 1 }, river: true, lake: false,
-      date: { year: date.getFullYear(), dayOfWeek: date.getDay() }, seeds: randomSetupSeeds() };
-  });
+  const [options, setOptions] = useState<NewFarmOptions>(() => defaultFarmOptions());
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [draft, setDraft] = useState<{ setup: CustomFarmSetup; artwork: TerrainPreviewAssets; tiles: HTMLImageElement } | null>(null);
   const [region, setRegion] = useState<RegionAssets | null>(null);
@@ -48,7 +38,7 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
     setRegion(null); setRegionError('');
     try {
       const map = await loadRegionAssets(controller.signal);
-      if (!controller.signal.aborted) { setRegion(map); selectRegion(map.initialLocation.y * 18 + map.initialLocation.x, map); }
+      if (!controller.signal.aborted) { setRegion(map); selectRegion(defaultRegionIndex(map), map); }
     } catch (cause) { if (!controller.signal.aborted) setRegionError(cause instanceof Error ? cause.message : String(cause)); }
   }
   async function create(custom = false) {

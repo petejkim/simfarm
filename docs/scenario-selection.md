@@ -8,7 +8,7 @@ Source executable: size `0x917b9`, SHA-256 `8b86a2d3d07e0b6f77ce491e27e538feeccf
 
 `0x31ca0..0x32590` loads `scenario.pal`, `scenario.int` and the four planes in `scenario.odt`. The climate/selectability planes are already documented in [new-farm.md](new-farm.md). Screen coordinates within the map use `(mouseX-248)>>4`, `(mouseY-40)>>4`, with strict bounds `248<X<536`, `40<Y<320` and a positive selectability byte. Indexing is row-major `y*18+x`, unlike the farm world's column-major layout.
 
-Marker painting `0x31dc5..0x31e01` reads X from DS66ae and Y from DS66b6. Each is eight bytes; grid cells are16×16. Initial selected X/Y words are DS66c0/66c2, values2/8. Their file offsets are `0x8ad9e`, `0x8ada6`, `0x8adb0` and `0x8adb2`. `readScenarioChooser` reads these directly, validates grid bounds and returns detached metadata. The importer adds `farms` and `initialLocation` to ignored `new-farm-setup.json` alongside the existing location/climate data.
+Marker painting `0x31dc5..0x31e01` reads X from DS66ae and Y from DS66b6. Each is eight bytes; grid cells are16×16. Initial selected X/Y words are DS66c0/66c2, values2/8. Their file offsets are `0x8ad9e`, `0x8ada6`, `0x8adb0` and `0x8adb2`. `readScenarioChooser` reads these directly, validates grid bounds and returns detached metadata. The importer adds `farms` and `initialLocation` to ignored `new-farm-setup.json` alongside the existing location/climate data. **Native default (2026-10-12, user request):** New Game selects Region 9, 14 (grid 8,13; `DEFAULT_REGION` in `src/ui/default-farm.ts`) instead of the original 2,8 cursor. `initialLocation` is still decoded, validated and tested as evidence.
 
 | Supplied file | X | Y |
 | --- | --- | --- |

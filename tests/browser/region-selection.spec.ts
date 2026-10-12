@@ -26,7 +26,7 @@ test('region map selects source climate, supports keyboard and mobile layout, an
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   const before = await save(page, 'before'); await openMap(page);
-  await expect(page.locator('[data-region="2,8"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-region="8,13"]')).toHaveAttribute('aria-pressed', 'true'); // native default: Region 9, 14
   expect(await page.locator('#region-map button:not(:disabled)').count()).toBe(178);
   await expect(page.locator('[data-region="17,0"]')).toBeDisabled();
   await page.locator('[data-region="2,8"]').focus(); await page.keyboard.press('ArrowRight');
@@ -83,7 +83,7 @@ test('region asset failures allow custom creation or retry, and cancelled preset
   await reveal(page, '#region-use'); await page.locator('#region-use').click(); await started;
   await page.getByRole('button', { name: 'Cancel', exact: true }).click(); release();
   await page.unroute('**/assets/raw/SCEN7.SSM'); expect(await save(page, 'cancelled-preset')).toEqual(before);
-  await openMap(page); await expect(page.locator('[data-region="2,8"]')).toHaveAttribute('aria-pressed', 'true');
+  await openMap(page); await expect(page.locator('[data-region="8,13"]')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('[data-region="15,8"]').click(); await reveal(page, '#region-use'); await page.locator('#region-use').click();
   await expect(page.locator('#map-status')).toHaveText('Scenario 8 · original terrain');
 });

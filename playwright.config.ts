@@ -4,6 +4,9 @@ export default defineConfig({
   testDir: './tests/browser',
   use: {
     baseURL: 'http://127.0.0.1:5190', viewport: { width: 1280, height: 900 },
+    // Existing specs start from Scenario 1; the generated Region 9, 14 first start is opted out with this
+    // override (src/ui/default-farm.ts) and covered by first-start.spec.ts with empty storage.
+    storageState: { cookies: [], origins: [{ origin: 'http://127.0.0.1:5190', localStorage: [{ name: 'simfarm.startup.v1', value: 'scenario-1' }] }] },
     // Without the File System Access pickers (which Playwright cannot drive), Save to File... downloads
     // and Load from File... uses the file input, as in browsers that lack the API.
     launchOptions: { args: ['--disable-blink-features=FileSystemAccessLocal'] },

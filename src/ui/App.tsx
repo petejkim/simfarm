@@ -10,6 +10,7 @@ import { useSound } from './useSound';
 import { useResource } from './useResource';
 import { Autosave } from '../storage/autosave';
 import { restoreStoredGame } from '../storage/restore';
+import { createDefaultFarm, startsWithScenario1 } from './default-farm';
 
 export function App() {
   const assets = useResource(loadGameAssets);
@@ -21,15 +22,26 @@ export function App() {
   return <Game assets={assets.value} />;
 }
 function Game({ assets }: { assets: GameAssets }) {
-  // The browser-stored current game is restored (paused) before the first farm mounts; otherwise Scenario 1.
+  // The browser-stored current game is restored (paused) before the first farm mounts; otherwise a random
+  // farm is generated in the default region (Region 9, 14) and saved at once. Scenario 1 is the fallback.
   const [autosave] = useState(() => new Autosave());
   useEffect(() => autosave.connect(), [autosave]);
   const [farm, setFarm] = useState<{ id: number | null; serial: number; loaded?: LoadedFarm; autosaveNow: boolean; notice?: string } | null>(null);
   useEffect(() => {
     const controller = new AbortController();
-    void restoreStoredGame(autosave, assets, controller.signal).then(({ farm: restored, notice }) => {
-      if (!controller.signal.aborted) setFarm(restored ? { id: restored.scenarioId, serial: 1, loaded: restored, autosaveNow: false, notice: 'Saved farm restored (paused).' }
-        : { id: 0, serial: 0, autosaveNow: false, notice });
+    void restoreStoredGame(autosave, assets, controller.signal).then(async ({ farm: restored, notice }) => {
+      if (controller.signal.aborted) return;
+      if (restored) { setFarm({ id: restored.scenarioId, serial: 1, loaded: restored, autosaveNow: false, notice: 'Saved farm restored (paused).' }); return; }
+      // A notice means a stored record existed but could not be restored. It may still be in place (missing
+      // assets), so never replace it with an immediately saved new farm; open Scenario 1 unsaved as before.
+      if (notice || startsWithScenario1()) { setFarm({ id: 0, serial: 0, autosaveNow: false, notice }); return; }
+      try {
+        const loaded = await createDefaultFarm(assets, controller.signal);
+        if (!controller.signal.aborted) setFarm({ id: null, serial: 1, loaded, autosaveNow: true });
+      } catch (error) {
+        if (!controller.signal.aborted) setFarm({ id: 0, serial: 0, autosaveNow: false,
+          notice: `A new farm could not be generated (${error instanceof Error ? error.message : String(error)}); Scenario 1 opened instead.` });
+      }
     });
     return () => controller.abort();
   }, [autosave, assets]);
