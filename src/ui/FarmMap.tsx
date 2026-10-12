@@ -87,8 +87,12 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
       const p = pointerRef.current, viewport = viewportRef.current;
       if (!document.hidden && p && viewport && document.elementFromPoint(p.clientX, p.clientY) === canvasRef.current) {
         const bounds = viewport.getBoundingClientRect(), x = p.clientX - bounds.left, y = p.clientY - bounds.top;
-        const dx = x <= 1 ? -1 : x >= viewport.clientWidth - 16 ? 1 : 0;
-        const dy = y <= 1 ? -1 : y >= viewport.clientHeight - 16 ? 1 : 0;
+        // Source c6a0 tests screen coordinate 0 on the left/top, where the DOS pointer stops at the screen
+        // edge. The browser viewport edges border the palette and message bar instead, so every side uses
+        // the same 16px band as the source's right/bottom (display minus 17).
+        const band = 16;
+        const dx = x < band ? -1 : x >= viewport.clientWidth - band ? 1 : 0;
+        const dy = y < band ? -1 : y >= viewport.clientHeight - band ? 1 : 0;
         if (!dx && !dy) last = null;
         else if (last === null) last = now;
         else if (now - last >= 200) {

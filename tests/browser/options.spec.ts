@@ -39,6 +39,11 @@ test('AutoScroll moves two source tiles at the viewport edge, stops when disable
   await toggle(page,'AutoScroll');await page.mouse.move(b.x+b.width-6,b.y+180);const stopped=await position(page);await page.clock.runFor(500);expect(await position(page)).toEqual(stopped);
   await page.mouse.move(b.x+200,b.y+200);await page.locator('#viewport').focus();await page.keyboard.press('ArrowLeft');expect((await position(page))[0]).toBe(stopped[0]-64);
   await toggle(page,'AutoScroll');await page.mouse.move(b.x+1,b.y+1);await page.clock.runFor(500);expect(await position(page)).toEqual([0,32]);
+  // Left and top use the same 16px band as right and bottom, not just the outermost pixel.
+  await page.locator('#viewport').evaluate(el=>el.scrollTo(160,160));
+  await page.mouse.move(b.x+12,b.y+200);await page.clock.runFor(240);expect(await position(page)).toEqual([128,160]);
+  await page.mouse.move(b.x+200,b.y+12);await page.clock.runFor(240);expect(await position(page)).toEqual([128,128]);
+  await page.mouse.move(b.x+200,b.y+200);const centre=await position(page);await page.clock.runFor(500);expect(await position(page)).toEqual(centre);
   await page.mouse.move(300,8);const left=await position(page);await page.clock.runFor(500);expect(await position(page)).toEqual(left);
 });
 

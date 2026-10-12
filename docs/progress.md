@@ -2870,3 +2870,7 @@ Replaced the four-frame `sell-conditions.png` sprite sheet with one rebuilt `sel
 ## 2026-10-12 — examining a non-field closes Schedule
 
 User request. View object on a field opens Schedule; examining any other object now closes Schedule before showing Examine. A new examine.spec case covers field → building → field (it fails without the change). Examine/Schedule specs pass 10/10.
+
+## 2026-10-12 — edge scrolling on all four sides
+
+User report: AutoScroll worked at the right/bottom edges but not left/top. Left/top only triggered within 2px (x<=1), a carry-over of the source's coordinate-zero test, which works on DOS because the pointer stops at the screen edge. In the browser those viewport edges border the palette and message bar, so the pointer left the terrain before triggering. All sides now use the 16px band; options-menu.md records the native difference. The options.spec AutoScroll case now checks 12px-inset left and top pointers and fails with the old rule. Full browser suite 290/290 (artifacts/edge-scroll-browser.log).
