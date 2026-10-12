@@ -1,12 +1,12 @@
 import {readPreferences,rememberPreference} from './preferences';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MidiPlayer } from '../audio/midi-player';
+import { MidiPlayer,DEFAULT_MUSIC_VOLUME } from '../audio/midi-player';
 import { loadMusic } from '../assets/game-assets';
 
 type Playback = { status: 'idle' | 'loading' | 'playing' } | { status: 'error'; error: string };
 export function useMusic() {
   const [player] = useState(() => new MidiPlayer());
-  const [track, setTrack] = useState('amain'), [volume, setVolume] = useState(25);
+  const [track, setTrack] = useState('amain'), [volume, setVolume] = useState(DEFAULT_MUSIC_VOLUME*100);
   const [playback, setPlayback] = useState<Playback>({ status: 'idle' });
   const request = useRef<AbortController | null>(null);
   const [enabled,setEnabled]=useState(()=>readPreferences().music??true);

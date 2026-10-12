@@ -111,7 +111,7 @@ test('Settings opens from Options, keeps native view/audio controls together and
   const entry=page.getByRole('menuitem',{name:'Settings…',exact:true});
   await expect(entry).not.toHaveAttribute('aria-checked');await entry.focus();await page.keyboard.press('Enter');
   const dialog=page.getByRole('dialog',{name:'Settings',exact:true});await expect(dialog).toBeVisible();
-  await expect(dialog.locator('#audio-status')).toBeVisible();await expect(dialog.locator('#volume')).toBeVisible();
+  await expect(dialog.locator('#audio-status')).toBeVisible();await expect(dialog.locator('#volume')).toBeVisible();await expect(dialog.locator('#volume')).toHaveValue('100');
   await dialog.locator('#zoom').selectOption('2');await expect(page.locator('#world')).toHaveCSS('width','3072px');
   await dialog.locator('#volume').fill('40');await dialog.locator('#music').selectOption('ffarm');
   await expect(dialog.locator('#audio-status')).toContainText('Playing ffarm');

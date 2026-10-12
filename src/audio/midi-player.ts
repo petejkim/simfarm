@@ -2,6 +2,8 @@ import {AdlMidi} from 'libadlmidi-js/light';
 import processorUrl from 'libadlmidi-js/dist/libadlmidi.light.processor.js?url';
 import wasmUrl from 'libadlmidi-js/dist/libadlmidi.light.core.wasm?url';
 
+export const DEFAULT_MUSIC_VOLUME=1;
+
 /** User-selected light FM synthesizer; simulation never depends on audio. */
 export class MidiPlayer {
   private context?: AudioContext;
@@ -11,7 +13,7 @@ export class MidiPlayer {
   private pending: Promise<void> = Promise.resolve();
   private generation=0;
   private unsubscribe?:()=>void;
-  private volume=0.25;
+  private volume=DEFAULT_MUSIC_VOLUME;
   private active=false;
   get playing():boolean{return this.active;}
   async enable():Promise<void>{

@@ -446,3 +446,7 @@ User requested browser Compression Streams API gzip downloads while the broader 
 ## 2026-10-11 — native Debug event controls
 
 Completed the separately requested Debug menu with rodeo, fair/carnival and event-week triggers, leaving disasters in their existing menu. Reuse recovered rules/dialogs/music while bypassing only the natural event date and Messages option. Version28 preserves the separate same-date debug continuation so a saved debug dialog cannot run weekly farming updates on acknowledgement. General reconstruction remains paused; no next background task is started.
+
+## 2026-10-11 — resumed reconstruction and audio balance
+
+User resumed the goal, then requested music100% / effects75%; applied these gains as a separate increment. Continue original interaction fidelity with source-proven View/Bulldoze cursor restoration. The goal is active and incomplete; earlier paused notes describe the prior session state.
