@@ -1,5 +1,6 @@
 import {readAboutCredits} from '../formats/about';
 import { townEventTileBank } from '../formats/town-event-graphics';
+import {registerInvertedTiles} from './inverted-tiles';
 import {registerWeatherTiles} from './weather-tiles';
 import {readEditStatus} from '../formats/edit-status';
 import { readExamineDataJson, type ExamineData } from '../formats/examine';
@@ -9,7 +10,7 @@ import { readBuyCatalogData, type BuyCatalog } from '../formats/buy-window';
 import { allCropFiles } from '../formats/crop-slots';
 import { readRegionArtwork, type RegionArtwork } from '../formats/region-artwork';
 import { rasterImage } from '../render/raster-image';
-import { tileAtlas, miniTileAtlas, readPalette, type Raster } from '../formats/graphics';
+import { tileAtlas, miniTileAtlas, readPalette, type Palette, type Raster } from '../formats/graphics';
 import { patchCropGraphics } from '../formats/crop-graphics';
 import type { NewFarmAssets } from '../simulation/create-farm';
 import type { DisasterSprites } from '../render/disaster-renderer';
@@ -88,7 +89,7 @@ export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
     image('market-window.png',signal),image('aircraft-window.png',signal),image('popup.bmp.png',signal),image('message-button.png',signal),response('raw/events.dat',signal).then(r=>r.arrayBuffer()).then(b=>new Uint8Array(b)),response('raw/qmessage.dat',signal).then(r=>r.arrayBuffer()).then(b=>new Uint8Array(b)),
     image('examine-window.png', signal), response('examine.json', signal).then(r=>r.json()).then(readExamineDataJson),
     image('schedule-window.png', signal), image('field-gauges.png', signal),
-    response('catalog.json', signal).then(r => r.json()) as Promise<Catalog>, image('masked-tiles.png', signal),
+    response('catalog.json', signal).then(r => r.json()) as Promise<Catalog>, loadMaskedTiles(signal),
     response('raw/townly0.cmp', signal).then(r => r.arrayBuffer()).then(b => new TownLayouts(new Uint8Array(b))),
     image('airplane.sprites.png', signal), image('apshadow.sprites.png', signal), image('cropdust.sprites.png', signal), image('tornado.sprites.png', signal), image('swarm.sprites.png', signal),
     response('main-menus.json', signal).then(r => r.json()).then(readMainMenusData),
@@ -143,7 +144,7 @@ export async function loadGeneratedTiles(cropFiles: readonly string[], signal: A
   const binary = (path: string) => response(path, signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b));
   const [tiles, palette, rain, frost, ...crops] = await Promise.all([binary('raw/ega16til.til'), binary('raw/simfarm.pal'), binary('raw/rainpal.pal'), binary('raw/frostpal.pal'), ...cropFiles.map(file => binary(`raw/crops/${file}`))]);
   const patched=patchCropGraphics(tiles,crops);
-  const images=await Promise.all([palette,rain,frost].map(p=>rasterImage(tileAtlas(patched,readPalette(p)),signal)));
+  const images=await Promise.all([palette,rain,frost].map(p=>outlineAtlas(patched,readPalette(p),signal)));
   return registerWeatherTiles(images[0],images[1],images[2]);
 }
 /** Native checkpoints may require either bundled or recomposed original tiles. */
@@ -168,7 +169,19 @@ async function loadTownEventTiles(signal: AbortSignal): Promise<HTMLImageElement
     .map(name => response(`raw/${name}`, signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b))));
   return Promise.all(([0, 1, 2] as const).map(async mode => {
     const bank = townEventTileBank(raw, mode);
-    const images = await Promise.all(palettes.map(p => rasterImage(tileAtlas(bank, readPalette(p), 7), signal)));
+    const images = await Promise.all(palettes.map(p => outlineAtlas(bank,readPalette(p),signal,7)));
     return registerWeatherTiles(images[0], images[1], images[2]);
   }));
+}
+
+
+async function outlineAtlas(bytes:Uint8Array,palette:Palette,signal:AbortSignal,columns=32,transparentIndex?:number):Promise<HTMLImageElement>{
+  const [normal,inverse]=await Promise.all([palette,palette.map((_,index)=>palette[index^15])]
+    .map(colors=>rasterImage(tileAtlas(bytes,colors,columns,transparentIndex),signal)));
+  return registerInvertedTiles(normal,inverse);
+}
+async function loadMaskedTiles(signal:AbortSignal):Promise<HTMLImageElement>{
+  const [bytes,palette]=await Promise.all(['mskdtile.til','simfarm.pal'].map(name=>response(`raw/${name}`,signal)
+    .then(r=>r.arrayBuffer()).then(b=>new Uint8Array(b))));
+  return outlineAtlas(bytes,readPalette(palette),signal,32,7);
 }

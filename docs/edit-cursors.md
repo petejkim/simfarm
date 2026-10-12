@@ -42,7 +42,7 @@ Each loadsAX=18d2/CX=6190 and writes the window cursor at+58/+5a. Dirt road relo
 
 Spray's four selection branches at383fb,38449,3848f,384d7 assign6190:188c. That record is byte-identical toDS18d2 over the70 bytes read by the renderer, despite the separate source identity. The importer preserves it as edit-spray.png, using the same decoder. Persistent spraying retains this arrow until cancellation/another control, per the user's existing adaptation. Restoring inspection selects the magnifier. All five source record decodes retain boundary/header/pixel tests.
 
-Plant3834a..3836c sets pixel dimensions0x80×0x80 and tile dimensions8×8; it does **not** select an8-pixel bitmap. The current8×8-tile placement preview has the right footprint. The follow-up trace below establishes cursor inheritance and original border drawing; the latter is not yet implemented.
+Plant3834a..3836c sets pixel dimensions0x80×0x80 and tile dimensions8×8; it does **not** select an8-pixel bitmap. The current8×8-tile placement preview has the right footprint. The follow-up trace below establishes cursor inheritance and original border drawing; the border is now implemented for Plant, Buy, construction and Bulldoze.
 
 Range SHA256 (end exclusive):
 
@@ -64,13 +64,13 @@ Range SHA256 (end exclusive):
 - 47cc4..47eba: `5a11eb45da9848cfe65b77551f592c9d91c822c0ad3baf457dc70df8f12618c6`
 - 861aa..861f0: `91b36d09bde205b32acd33d4ae3132fb675fccf2d4e4f035544c1a3e3a0847cb`
 
-## Placement outline trace (implementation pending)
+## Placement outline reconstruction
 
 208d6..20a48 handles a moved pointer for Edit modes9,4,15,16,17,2,1. It restores a previous rectangle with22684, snaps coordinates to16pixel boundaries, then draws the next rectangle using that same routine. Bounds are left=x&~15, top=y&~15, right=((x+width)&~15)-1, bottom=((y+height)&~15)-1. No placement-validity/color branch occurs in this draw path.
 
 22684..2279d sets the Edit client clipping bounds and hides/restores the software cursor around eight inclusive lines. Four horizontal calls to0416:059f/file68ff draw from left through right at top, top-1, bottom, bottom-1. Four vertical calls to0416:0411/file6771 draw from top through bottom at left, left-1, right-1, right. These primitives enable all four VGA planes, set/reset all ones, select the XOR raster operation(1803h at67d7/696d), then latch-read/write each covered pixel. The effect is **palette-index XOR15**, with overlaps toggled twice. It is not white paint, RGB inversion or a filled validity tint. The original two-pixel geometry is asymmetric at top/left and its intersections cancel; preserve these details when implementing the source outline.
 
-Current native green/red filled previews remain provisional. Correct replacement needs index-preserving compositing with the current terrain/weather palette and masked overlays, plus clipping and erasure tests. Do not approximate this as Canvas difference-white: arbitrary VGA palettes need not have complementary RGB entries. Existing source primitive clipping uses inclusive bounds; modern viewport clipping and zoom are explicit browser adaptations. No new original-game defect is established by these normal raster operations.
+Plant, Buy, construction and Bulldoze now use this outline in place of the provisional green/red filled preview. Atlas loading retains an inverse companion decoded from the same source bitplanes using palette[index^15], preserving the original transparent index. The renderer uses even-odd clipping of all eight inclusive lines, then repaints only cells that can intersect the border with the inverse terrain, recreation and masked atlases. This preserves double-toggle intersections and leaves interiors unchanged. Existing browser redraws erase old borders and keep animation frame selection consistent. No simulation data or canonical commands change. Do not approximate this as Canvas difference-white: arbitrary VGA palettes need not have complementary RGB entries. Existing source primitive clipping uses inclusive bounds; modern viewport clipping and zoom are explicit browser adaptations. No new original-game defect is established by these normal raster operations.
 
 Range SHA256 (end exclusive):
 
@@ -78,3 +78,8 @@ Range SHA256 (end exclusive):
 - 22684..2279e: `ce3eaf01b112aef79a55564062de1617033a1952216c2e3b4297feffffc1ccc5`
 - 6771..681d: `dd06b6f5c3b30a1bde7afb70934ab065643ea1ab5aa82b01a70f58a11dd5e6a4`
 - 68ff..69f1: `16a19c1b3270968f9d277187386cf6297d88155d70925f1b9a38b59ea21ae8a3`
+
+
+The source-outline path suppresses the interim selected-field/cell highlights while a placement preview is present, so native yellow strokes do not contaminate source border pixels. Validity still controls canonical commands and readable rejection feedback; it no longer invents a red/green fill for these source modes. Move and Spray retain their existing provisional footprint presentation until their distinct footprint/selection ownership is traced; View hover behavior also remains to be restored. Browser map-edge clipping and zoom remain native adaptations. Current masked atlas artwork retains its existing normal palette independently of weather-colored terrain; the inverse companion follows that same palette. This increment does not claim restoration of the original global VGA palette on every UI/object/sprite. Review that remaining palette gap separately.
+
+Verification compares browser canvas pixels against independent four-bit reads of supplied terrain/masked/recreation data for normal/rain/frost palettes, both border positions, untouched interiors, overlapping corner strokes, rejected placement, off-map footprints, cancellation and reload. Existing all24 Plant, repeated Buy, direct construction/Bulldoze and worker-animation flows retain command/save behavior. Source routine hashes and primitive calls are pinned in placement-outline.test.ts. Companion atlases are weakly owned presentation assets, reclaimed with their farm artwork; no new generated files or save fields are introduced.
