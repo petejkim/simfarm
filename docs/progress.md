@@ -2956,3 +2956,7 @@ Per the user's consistency request, Speed is now a framed window: a sunken statu
 ## 2026-10-12 — Settings window on shared chrome
 
 Settings is now framed, with chrome-styled Zoom and Music selects, a Volume range and the audio status. The options spec passes (part of the Speed validation run).
+
+## 2026-10-12 — New Game region chooser on shared chrome
+
+The window is framed, with HTML title and labels, sunken climate meters and `BevelButton` actions. The map sprite and XOR selection strips come from `renderRegionMaps`; a unit test proves them pixel-identical to the source renderer for every region. The setup strip uses chrome inputs. Details are in new-farm.md. Region specs pass.

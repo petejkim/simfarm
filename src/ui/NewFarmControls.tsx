@@ -8,6 +8,7 @@ import type { NewFarmOptions } from '../simulation/new-farm-state';
 import type { LoadedFarm } from './SaveControls';
 import { RegionMap } from './RegionMap';
 import { TerrainDesign } from './TerrainDesign';
+import { BevelButton } from './chrome/BevelButton';
 
 /** Browser setup defaults are independent of the simulation's saved RNG streams. */
 function randomSetupSeeds(): NewFarmOptions['seeds'] {
@@ -123,21 +124,23 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
         onQuit={() => { pending.current?.abort(); current.dispatch({ type: 'set-paused', paused: true }); onOpenChange(false); }} />
         : <div className="setup-loading">
           {regionError ? <p id="region-error" role="alert">Could not load regions: {regionError}</p> : <p role="status">Loading regions…</p>}
-          <button id="choose-region" type="button" onClick={() => void chooseRegion()}>Retry region map</button>
-          <button id="design-farm" type="button" disabled={busy} onClick={() => { if(form.current?.reportValidity()) void create(true); }}>Design your own</button>
+          <div className="native-actions">
+            <BevelButton id="choose-region" className="native-button" onClick={() => void chooseRegion()}>Retry region map</BevelButton>
+            <BevelButton id="design-farm" className="native-button" disabled={busy} onClick={() => { if(form.current?.reportValidity()) void create(true); }}>Design your own</BevelButton>
+          </div>
         </div>}
       <fieldset className="setup-options" disabled={busy} aria-label="Farm options">
-        <label>Map seed <input id="new-farm-seed" type="number" min="1" max="65535" step="1" required value={options.seeds.simulation}
+        <label className="native-row"><span className="native-label">Map seed</span><input id="new-farm-seed" className="chrome-input" type="number" min="1" max="65535" step="1" required value={options.seeds.simulation}
           title="Reproduce a map using the same seed and settings."
           onChange={e => { const seed = Number(e.target.value); setOptions(o => ({ ...o, seeds: { visual: seed, simulation: seed, bounded: seed } })); }} /></label>
-        <label>Starting year <input id="new-farm-year" type="number" min="1" max="65535" step="1" required disabled={Boolean(preset)} value={options.date.year}
+        <label className="native-row"><span className="native-label">Starting year</span><input id="new-farm-year" className="chrome-input" type="number" min="1" max="65535" step="1" required disabled={Boolean(preset)} value={options.date.year}
           title={preset ? 'Original farms retain their saved year.' : 'Year for a generated farm.'}
           onChange={e => setOptions(o => ({ ...o, date: { ...o.date, year: Number(e.target.value) } }))} /></label>
       </fieldset>
       <div className="setup-footer">
         <span id="region-selection" role="status">{location ? `Region ${location.x + 1}, ${location.y + 1} · ${preset ? `Scenario ${preset.id + 1}` : 'New farm'}` : ''}</span>
         <details><summary>Help</summary><div id="region-map-help">Choose a location, then Use This Region. Yellow squares open original farms and retain their dates. Design Your Own opens the terrain designer. New Game starts a fresh farm. Enter a seed to reproduce a map. Cancel keeps your farm; Quit also pauses it. Save your current farm before replacing it.</div></details>
-        <button type="button" onClick={() => { pending.current?.abort(); regionPending.current?.abort(); onOpenChange(false); }}>Cancel</button>
+        <BevelButton className="native-button" onClick={() => { pending.current?.abort(); regionPending.current?.abort(); onOpenChange(false); }}>Cancel</BevelButton>
       </div>
       {error && <p id="new-farm-error" role="alert">Could not open farm: {error}</p>}
     </form>

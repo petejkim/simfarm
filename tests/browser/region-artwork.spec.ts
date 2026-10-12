@@ -1,16 +1,13 @@
 import {readSaveText} from '../support/save-file';
 import { newGame } from '../support/workspace';
-import {PNG} from 'pngjs';
 import { reveal, openWindow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readPalette } from '../../src/formats/graphics';
 import { readRegionArtwork } from '../../src/formats/region-artwork';
-import { readScenarioChooser, readSetupMap } from '../../src/formats/new-farm';
-import { renderRegionChooser } from '../../src/render/region-chooser';
+import { readSetupMap } from '../../src/formats/new-farm';
 const raw = (name: string) => readFileSync(new URL('../../public/assets/raw/' + name, import.meta.url));
-const exe = readFileSync(new URL('../../../simfarm-dos/SIMFARM.EXE', import.meta.url));
-const { farms } = readScenarioChooser(exe), locations = readSetupMap(raw('scenario.odt')).locations;
+const locations = readSetupMap(raw('scenario.odt')).locations;
 const artwork = readRegionArtwork(raw('scenario.int'), readPalette(raw('scenario.pal')));
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
@@ -23,17 +20,26 @@ async function start(page: Page) {
 async function chooser(page: Page) {
   await newGame(page); await page.locator('#new-farm-seed').fill('9029');  await reveal(page, '#geographic-chooser'); await expect(page.locator('#geographic-chooser')).toBeVisible();
 }
+/** Structural check of the rebuilt chooser for selected region x,y: real text, meters, and the XOR outline strips. */
 async function pixels(page: Page, x: number, y: number) {
-  // The source raster remains an exact reference under opaque HTML text surfaces.
-  await expect(page.locator('#geographic-chooser .setup-title')).toHaveText('SELECTA REGION');
-  await expect(page.locator('#geographic-chooser .setup-button')).toHaveText(['Use This Region', 'Design Your Own', 'Load a Saved Game', 'Quit']);
-  expect(await page.locator('#geographic-chooser .setup-title').evaluate(el => {
-    const range = document.createRange(); range.selectNodeContents(el); return range.toString();
-  })).toBe('SELECTA REGION');
-  expect(await page.locator('#geographic-chooser .setup-button, #geographic-chooser .setup-text').evaluateAll(els =>
+  const chooser = page.locator('#geographic-chooser'), p = locations[y * 18 + x];
+  await expect(chooser.locator('.region-title')).toHaveText('SELECTA REGION');
+  await expect(chooser.locator('.region-action')).toHaveText(['Use This Region', 'Design Your Own', 'Load a Saved Game', 'Quit']);
+  expect(await chooser.locator('.region-label, .region-range, .region-action').evaluateAll(els =>
     els.every(el => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight))).toBe(true);
-  const actual = await page.locator('#region-artwork').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data));
-  expect(actual).toEqual(Array.from(renderRegionChooser(artwork, farms, locations[y * 18 + x]).rgba));
+  await expect(chooser.locator('canvas, img')).toHaveCount(0);
+  // 31f53: 96×10 bars, 32 pixels per climate level, palette 6.
+  const meters = chooser.getByRole('meter');
+  for (const [i, level] of [p.precipitation, p.temperature, p.wind].entries()) {
+    await expect(meters.nth(i)).toHaveAttribute('aria-valuenow', String(level));
+    expect(await meters.nth(i).locator('span').evaluate(el => [el.getBoundingClientRect().width, el.getBoundingClientRect().height, getComputedStyle(el).backgroundColor]))
+      .toEqual([level * 32, 10, `rgb(${artwork.palette[6].join(', ')})`]);
+  }
+  await expect(page.locator(`[data-region="${x},${y}"]`)).toHaveAttribute('aria-pressed', 'true');
+  const grid = (await page.locator('#region-map').boundingBox())!, outline = page.locator('.region-selection');
+  expect(await outline.boundingBox()).toEqual({ x: grid.x + x * 16, y: grid.y + y * 16, width: 17, height: 17 });
+  expect(await outline.locator('.sprite').evaluateAll(els => els.map(e => (e as HTMLElement).style.backgroundPosition)))
+    .toEqual([[1, 0], [1, 16], [0, 1], [16, 0]].map(([dx, dy]) => `${-(x * 16 + dx)}px ${-(y * 16 + dy)}px`));
 }
 
 test('original geographic panel paints exact markers and bars, preserves selection-only state, and opens custom design directly', async ({ page }) => {
@@ -41,13 +47,11 @@ test('original geographic panel paints exact markers and bars, preserves selecti
   await start(page); const before = await save(page); await chooser(page); await pixels(page, 2, 8);
   await page.locator('[data-region="1,3"]').click(); await pixels(page, 1, 3);
   await expect(page.locator('#region-selection')).toContainText('Scenario 3');
-  expect(await page.locator('#geographic-chooser').boundingBox()).toMatchObject({ width: 472, height: 328 });
-  await page.mouse.move(0, 0);await page.locator('[data-region="1,3"]').evaluate((e:HTMLButtonElement)=>e.blur());
-  const mapBounds=(await page.locator('#region-map').boundingBox())!;
-  const composite=PNG.sync.read(await page.screenshot({clip:{x:Math.round(mapBounds.x),y:Math.round(mapBounds.y),width:288,height:288}}));
-  expect([composite.width,composite.height]).toEqual([288,288]);
-  const sourceMap=await page.locator('#region-artwork').evaluate((c:HTMLCanvasElement)=>Array.from(c.getContext('2d')!.getImageData(168,24,288,288).data));
-  expect(Array.from(composite.data)).toEqual(sourceMap);
+  await page.mouse.move(0, 0); await page.locator('[data-region="1,3"]').evaluate((e: HTMLButtonElement) => e.blur());
+  // Framed client: the source panel less its frame (456×311); the map grid sits at source 248,40.
+  expect(await page.locator('#geographic-chooser').boundingBox()).toMatchObject({ width: 456, height: 311 });
+  const chooserBox = (await page.locator('#geographic-chooser').boundingBox())!;
+  expect(await page.locator('#region-map').boundingBox()).toEqual({ x: chooserBox.x + 248 - 88, y: chooserBox.y + 40 - 25, width: 289, height: 289 });
   // Check enabled and disabled hit areas, not just the hidden underlying canvas.
   expect(await page.locator('.region-grid button').evaluateAll(els=>els.every(e=>{const s=getComputedStyle(e);return s.backgroundColor==='rgba(0, 0, 0, 0)'&&s.borderTopWidth==='0px'&&s.paddingTop==='0px';}))).toBe(true);
   await page.locator('#geographic-chooser').screenshot({ path: 'artifacts/browser-region-artwork-desktop.png' });

@@ -6,7 +6,7 @@ import { readArchive } from '../src/formats/archive';
 import { readPalette } from '../src/formats/graphics';
 import { readRegionArtwork } from '../src/formats/region-artwork';
 import { readScenarioChooser, readSetupMap } from '../src/formats/new-farm';
-import { renderRegionChooser } from '../src/render/region-chooser';
+import { renderRegionChooser, renderRegionMaps } from '../src/render/region-chooser';
 const source = (name: string) => readFileSync(new URL('../../simfarm-dos/' + name, import.meta.url));
 const exe = source('SIMFARM.EXE'), archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
 const asset = (name: string) => archive.find(a => a.name === name)!.bytes;
@@ -77,4 +77,22 @@ test('indexed region artwork respects typed-array boundaries and rejects invalid
     assert.throws(() => renderRegionChooser(bad, farms, p), /Invalid/);
   assert.throws(() => renderRegionChooser(artwork, farms.slice(1), p), /Invalid/);
   assert.throws(() => renderRegionChooser(artwork, farms.map(f => ({ ...f, x: 0.5 })), p), /Invalid/);
+});
+
+test('the map sprite plus four strips of the XORed map reproduce every source selection outline exactly', () => {
+  const { map, inverted } = renderRegionMaps(artwork, farms);
+  assert.equal(map.width, 289); assert.equal(inverted.height, 289);
+  for (const p of locations.filter(p => p.selectable)) {
+    const expected = renderRegionChooser(artwork, farms, p), composed = map.rgba.slice();
+    // The UI's strips (RegionMap): top/bottom x+1..x+15, left x at y+1..y+15, right x+16 at y..y+16.
+    for (const [dx, dy, w, h] of [[1, 0, 15, 1], [1, 16, 15, 1], [0, 1, 1, 15], [16, 0, 1, 17]])
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = ((p.y * 16 + dy + y) * 289 + p.x * 16 + dx + x) * 4; composed.set(inverted.rgba.subarray(i, i + 4), i);
+      }
+    for (let y = 0; y < 289; y++) for (let x = 0; x < 289; x++) {
+      const i = (y * 289 + x) * 4, j = ((24 + y) * 472 + 168 + x) * 4;
+      if (composed[i] !== expected.rgba[j] || composed[i + 1] !== expected.rgba[j + 1] || composed[i + 2] !== expected.rgba[j + 2])
+        assert.fail(`region ${p.x},${p.y} differs at ${x},${y}`);
+    }
+  }
 });
