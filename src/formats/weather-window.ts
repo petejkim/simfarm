@@ -51,3 +51,11 @@ export function readWeatherVane(bytes:Uint8Array,palette:Palette):Raster {
   }
   return {width:64,height:32,rgba};
 }
+/** The 8×8 wallpaper tile behind Weather's instruments, cut from the cleaned
+ * bitmap at client (0,26), just below the header panels. The pattern repeats
+ * every 8 pixels in both directions across the clean areas of weather.bmp. */
+export function readWeatherWallpaper(clean:Raster):Raster {
+  const rgba=new Uint8Array(8*8*4);
+  for(let y=0;y<8;y++)rgba.set(clean.rgba.subarray(((26+y)*clean.width+8)*4,((26+y)*clean.width+16)*4),y*32);
+  return {width:8,height:8,rgba};
+}

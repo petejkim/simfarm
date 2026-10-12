@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {PNG} from 'pngjs';
 import {readArchive} from '../src/formats/archive';
 import {readBitmap,readPalette,decodePlanar} from '../src/formats/graphics';
-import {readWeatherArtwork,readWeatherScenes,readWeatherVane,WEATHER_LABELS} from '../src/formats/weather-window';
+import {readWeatherArtwork,readWeatherScenes,readWeatherVane,readWeatherWallpaper,WEATHER_LABELS} from '../src/formats/weather-window';
 import {weatherWindowView} from '../src/simulation/weather-view';
 import {readScenario} from '../src/formats/scenario';
 import {GameSimulation} from './support/game';
@@ -100,4 +100,15 @@ test('all signed temperature and unsigned rainfall words preserve source numbers
   for(let sky=0;sky<5;sky++)expect(weatherWindowView(cal,{...w,current:sky},c).sky).toBe(sky===4?3:sky);
   const climate={...c,precipitation:Array(240).fill(0)};climate.precipitation[0]=1;climate.precipitation[48]=7;
   expect(weatherWindowView(cal,{...w,precipitationYear:1},climate).averageRain).toBe(0); // source bug, not7/4
+});
+
+test('the wallpaper tile repeats every 8 pixels across clean areas of the cleaned Weather bitmap',()=>{
+  // Fresh archive: earlier tests in this file leave the shared entries unusable for re-decoding.
+  const fresh=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),bytes=(n:string)=>fresh.find(e=>e.name===n)!.bytes;
+  const clean=readWeatherArtwork(bytes('weather.bmp'),readPalette(bytes('simfarm.pal'))),tile=readWeatherWallpaper(clean);
+  expect([tile.width,tile.height]).toEqual([8,8]);
+  for(const [x0,x1,y0,y1] of [[8,48,26,45],[96,224,168,184]])for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
+    const i=(y*336+x)*4,j=(((y-26)&7)*8+((x-8)&7))*4;
+    expect(Array.from(clean.rgba.subarray(i,i+4))).toEqual(Array.from(tile.rgba.subarray(j,j+4)));
+  }
 });

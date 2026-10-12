@@ -1,10 +1,11 @@
 import {readSaveText} from '../support/save-file';
 import { declineTownEventDialogs } from '../support/town-event-dialogs';
 import { declineTownEvents } from '../support/town-events';
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page,type Locator} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {readArchive} from '../../src/formats/archive';
 import {decodePlanar,readPalette} from '../../src/formats/graphics';
+
 import {weatherWindowView,WEATHER_SKIES} from '../../src/simulation/weather-view';
 import {WEATHER_LABELS} from '../../src/formats/weather-window';
 import {shopFixture} from '../support/livestock';
@@ -16,7 +17,10 @@ async function start(page:Page){await page.clock.install({time:new Date('1993-04
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'weather.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
 async function open(page:Page){const panel=page.getByRole('region',{name:'Weather conditions'});if(await panel.isVisible())await panel.focus();else await page.locator('#window-weather').click();await expect(page.getByRole('region',{name:'Weather conditions'})).toBeFocused();}
-async function pixels(page:Page,x:number,y:number,w:number,h:number){return page.locator('.weather-preview').evaluate((c:HTMLCanvasElement,r)=>Array.from(c.getContext('2d')!.getImageData(...r).data),[x,y,w,h] as [number,number,number,number]);}
+/** A sprite's image file name (or data URL) and atlas offset from its inline style. */
+function sprite(l:Locator){return l.evaluate((e:HTMLElement)=>({image:e.style.backgroundImage.replace(/^url\("?(?:.*\/)?([^/"]+)"?\)$/,'$1'),position:e.style.backgroundPosition}));}
+const at=(x:number,y:number)=>`${-x}px ${-y}px`,tileAt=(t:number)=>at(t%32*16,Math.floor(t/32)*16);
+async function tiles(l:Locator){return l.locator('.sprite').evaluateAll(es=>es.map(e=>(e as HTMLElement).style.backgroundPosition));}
 function fixture(){const f=shopFixture();f.state.disasters.enabled=false;Object.assign(f.state.scenario.farm.calendar,{month:8,week:3,day:5,season:2});
   Object.assign(f.state.weather,{current:4,displayTemperature:81,precipitationDays:100,wind:18,precipitationYear:2,forecast:[0,1,2,3,4,0,1],nextForecast:[4,3,2,1,0,4,3]});
   f.state.scenario.farm.precipitationDays=100;f.state.scenario.climate.precipitation.fill(3);return f;}
@@ -24,17 +28,29 @@ function fixture(){const f=shopFixture();f.state.disasters.enabled=false;Object.
 test('Weather restores source geometry, full actual-text values, scenes, gauges and forecasts; title movement and browsing preserve saves',async({page})=>{
   const game=fixture().load().withAllCrops(browserCrops);await start(page);await load(page,game.save(4));const before=await save(page),edit=await page.locator('#viewport').boundingBox();await open(page);
   const win=page.getByRole('dialog',{name:'Weather',exact:true}),client=page.getByRole('region',{name:'Weather conditions',exact:true});
-  expect(await win.boundingBox()).toEqual({x:160,y:128,width:336,height:208});expect(await client.boundingBox()).toEqual({x:160,y:144,width:336,height:192});
-  const labels=client.locator('.weather-label');expect(await labels.count()).toBe(WEATHER_LABELS.length);
-  for(let i=0;i<WEATHER_LABELS.length;i++){const l=WEATHER_LABELS[i];await expect(labels.nth(i)).toHaveText(l.text);expect(await labels.nth(i).boundingBox()).toEqual({x:160+l.x,y:144+l.y,width:l.width,height:l.height});}
+  expect(await win.boundingBox()).toEqual({x:160,y:128,width:336,height:208});expect(await client.boundingBox()).toEqual({x:168,y:144,width:320,height:184});
+  await expect(client.locator('img,canvas')).toHaveCount(0);
+  // Every lettering rectangle erased from the bitmap is real text.
+  expect((await client.locator('.weather-label').allTextContents()).sort()).toEqual(WEATHER_LABELS.map(l=>l.text).sort());
   for(const [id,text] of [['weather-calendar','Week 4 of Sep'],['weather-season-countdown','10 Weeks Till'],['weather-fahrenheit','81'],['weather-celsius','24'],['weather-average-rain','36'],['weather-rain','25'],['weather-wind','18 Mph'],['weather-evaporation','Average']])await expect(page.locator('#'+id)).toHaveText(text);
-  expect(await pixels(page,112,48,112,32)).toEqual(Array.from(decodePlanar(asset('wethsky.btl').subarray(22+3*1794,22+3*1794+1792),112,32,palette).rgba));
-  expect(await pixels(page,112,80,112,32)).toEqual(Array.from(decodePlanar(asset('wethgrnd.btl').subarray(22+2*1794,22+2*1794+1792),112,32,palette).rgba));
-  expect(await pixels(page,24,104,48,24)).toEqual(Array.from(decodePlanar(asset('fldgrph.til').subarray(17*576,18*576),48,24,palette).rgba));
-  expect(await pixels(page,272,104,32,32)).toEqual(Array.from(decodePlanar(asset('wethvane.til').subarray(0,512),32,32,palette).rgba));
-  for(const [i,code] of [0,1,4,3,2].entries())expect(await pixels(page,112+i*24,136,16,16)).toEqual(Array.from(decodePlanar(asset('ega16til.til').subarray((204+code)*128,(205+code)*128),16,16,palette).rgba));
-  for(const [x,bottom,height,color] of [[72,80,27,3],[248,91,25,6]]){
-    const data=await pixels(page,x,36,8,bottom-36);for(let y=36;y<bottom;y++)for(let xx=0;xx<8;xx++)expect(data.slice(((y-36)*8+xx)*4,((y-36)*8+xx+1)*4)).toEqual([...palette[y>=bottom-height?color:15],255]);
+  // Scenes stay at their source client positions (source 112,48 and 112,80 less the 8px frame).
+  expect(await sprite(client.locator('.weather-sky'))).toEqual({image:'weather-sky.png',position:at(3*112,0)});
+  expect(await client.locator('.weather-sky').boundingBox()).toEqual({x:168+104,y:144+48,width:112,height:32});
+  expect(await sprite(client.locator('.weather-ground'))).toEqual({image:'weather-ground.png',position:at(2*112,0)});
+  expect(await client.locator('.weather-ground').boundingBox()).toEqual({x:168+104,y:144+80,width:112,height:32});
+  expect(await sprite(client.locator('.weather-needle'))).toEqual({image:'field-gauges.png',position:at(17*48,0)});
+  expect(await client.locator('.weather-needle').boundingBox()).toEqual({x:168+16,y:144+104,width:48,height:24});
+  expect(await sprite(client.locator('.weather-vane'))).toEqual({image:'weather-vane.png',position:at(0,0)});
+  expect(await client.locator('.weather-vane').boundingBox()).toEqual({x:168+264,y:144+104,width:32,height:32});
+  expect(await tiles(client.locator('.weather-forecast'))).toEqual([0,1,4,3,2].map(code=>tileAt(204+code)));
+  expect(await client.locator('.weather-forecast .sprite').first().boundingBox()).toEqual({x:168+104,y:144+136,width:16,height:16});
+  // Column fills: white tracks of source height with palette 3/6 levels; the two tubes sit 8px nearer the centre.
+  for(const [name,x,height,level,color] of [['temperature',56,44,27,3],['rain',248,55,25,6]] as const){
+    const track=client.locator(`.weather-${name}-column`),fill=track.locator('span');
+    expect(await track.boundingBox()).toEqual({x:168+x,y:144+36,width:8,height});
+    expect(await fill.boundingBox()).toEqual({x:168+x,y:144+36+height-level,width:8,height:level});
+    expect(await track.evaluate(e=>getComputedStyle(e).backgroundColor)).toBe(`rgb(${palette[15].join(', ')})`);
+    expect(await fill.evaluate(e=>getComputedStyle(e).backgroundColor)).toBe(`rgb(${palette[color].join(', ')})`);
   }
   await page.screenshot({path:'artifacts/browser-weather-window.png'});
   await win.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');await page.keyboard.press('Shift+ArrowDown');
@@ -50,9 +66,9 @@ test('Weather follows all seasons and sky types, cross-week forecasts, signed ex
     const game=f.load().withAllCrops(browserCrops),s=game.getSnapshot(),view=weatherWindowView(s.scenario.farm.calendar,s.weather,s.scenario.climate);await load(page,game.save(4));await open(page);
     await expect(page.locator('#weather-fahrenheit')).toHaveText(String(view.fahrenheit));await expect(page.locator('#weather-rain')).toHaveText(String(view.rain));await expect(page.locator('#weather-summary')).toContainText(WEATHER_SKIES[sky]);
     const sourceSky=sky===4?3:sky;
-    expect(await pixels(page,112,48,112,32)).toEqual(Array.from(decodePlanar(asset('wethsky.btl').subarray(22+sourceSky*1794,22+sourceSky*1794+1792),112,32,palette).rgba));
-    expect(await pixels(page,112,80,112,32)).toEqual(Array.from(decodePlanar(asset('wethgrnd.btl').subarray(22+season*1794,22+season*1794+1792),112,32,palette).rgba));
-    for(const [x,tile] of [[16,200+season],[304,200+((season+1)&3)]])expect(await pixels(page,x,5,16,16)).toEqual(Array.from(decodePlanar(asset('ega16til.til').subarray(tile*128,(tile+1)*128),16,16,palette).rgba));
+    expect((await sprite(page.locator('.weather-sky'))).position).toBe(at(sourceSky*112,0));
+    expect((await sprite(page.locator('.weather-ground'))).position).toBe(at(season*112,0));
+    expect(await tiles(page.locator('.weather-header'))).toEqual([tileAt(200+season),tileAt(200+((season+1)&3))]);
     if(sky===4)expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   }
   const f=fixture(),game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));
@@ -68,11 +84,11 @@ test('Weather follows all seasons and sky types, cross-week forecasts, signed ex
 
 test('Weather animation stays presentation-only, pauses and closes cleanly while Speed keeps native pacing',async({page})=>{
   await start(page);const game=fixture().load().withAllCrops(browserCrops);await load(page,game.save(4));await open(page);
-  const initial=await pixels(page,272,104,32,32);await page.clock.runFor(1200);expect(await pixels(page,272,104,32,32)).toEqual(initial);expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+  const initial=(await sprite(page.locator('.weather-vane'))).position;await page.clock.runFor(1200);expect((await sprite(page.locator('.weather-vane'))).position).toEqual(initial);expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await reveal(page,'#play-pause');await page.locator('#play-pause').click();await open(page);await page.clock.runFor(300);
-  expect(await pixels(page,272,104,32,32)).not.toEqual(initial);
+  expect((await sprite(page.locator('.weather-vane'))).position).not.toEqual(initial);
   await reveal(page,'#play-pause');await page.locator('#play-pause').click();await open(page);
-  const stopped=await pixels(page,272,104,32,32),before=await save(page);await page.clock.runFor(2000);expect(await pixels(page,272,104,32,32)).toEqual(stopped);expect(await save(page)).toEqual(before);
+  const stopped=(await sprite(page.locator('.weather-vane'))).position,before=await save(page);await page.clock.runFor(2000);expect((await sprite(page.locator('.weather-vane'))).position).toEqual(stopped);expect(await save(page)).toEqual(before);
   await page.getByRole('button',{name:'Close Weather',exact:true}).click();await expect(page.getByRole('dialog',{name:'Weather',exact:true})).toBeHidden();
   await openWindow(page,'speed');await expect(page.getByRole('dialog',{name:'Speed',exact:true})).toBeVisible();await expect(page.locator('#simulation-speed-value')).toHaveText('1×');await expect(page.locator('#simulation-speed-value')).toHaveAttribute('title','At 1×, one full game day takes four real seconds.');
   await expect(page.locator('#next-day')).toBeEnabled();await expect(page.locator('#play-pause')).toHaveText('Play');

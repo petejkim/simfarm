@@ -2920,3 +2920,7 @@ Framed ledger of striped rows with header/total bars and a CLOSE BevelButton (no
 ## 2026-10-12 — Evaluation window rebuilt on shared chrome
 
 The window is now framed flex rows built from `SunkenInset` gauges, sprite season and problem badges, and `BevelButton` paging and CLOSE. The evaluation-preview renderer was removed. Details are in evaluation-window.md. The evaluation-window and annual specs pass (5/5).
+
+## 2026-10-12 — Weather window rebuilt on shared chrome
+
+The window now uses the common frame and a flex client on an imported 8×8 wallpaper tile. It has `SunkenInset` panels, value and caption boxes and forecast cells; the instruments are bitmap sprites with stacked scenes, needle and vane; the levels are coloured spans; all lettering is HTML. The weather-preview renderer was removed. Details are in weather-window.md. Unit weather-window 6/6 and browser weather-window 7/7 pass.

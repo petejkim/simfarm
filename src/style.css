@@ -402,13 +402,59 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 /* Evaluation DS44ac:352×192 client, original1× geometry. */
 
 /* Weather DS436e:336×192 client at source1× scale. */
-.game-window[data-window=weather]{left:160px;top:128px;right:auto;width:336px;border:0;max-height:calc(100% - 144px)}
-.game-window[data-window=weather] .game-window-body{padding:0}
-.weather-window{position:relative;width:336px;height:192px;color:#000}
-.weather-window>img{display:block;image-rendering:pixelated;pointer-events:none}
-.weather-preview{position:absolute;left:0;top:0;width:336px;height:192px;image-rendering:pixelated;pointer-events:none}
-.weather-window .weather-label{position:absolute;white-space:pre-line;overflow:hidden;text-align:center;font:9px/9px monospace}
-.weather-window output{position:absolute;white-space:nowrap;overflow:hidden;height:10px;line-height:10px;font-family:monospace;color:#000}
+/* Weather: 320×184 client on the source wallpaper tile (origin client 0,26). Coordinates below are
+   client pixels (source x−8); the thermometer and rain tube sit 8px from their source columns. */
+.game-window[data-window=weather]{left:160px;top:128px;right:auto}
+.weather-window{display:flex;flex-direction:column;width:320px;height:184px;color:var(--ink);background-color:var(--face);background-position:0 2px;font:9px/9px monospace}
+.weather-window .sunken-inset{background-color:var(--face)}
+.weather-window output{display:block;flex:1;overflow:hidden;white-space:nowrap;text-align:center;font:10px/10px monospace}
+.weather-label{display:block;flex:none;white-space:pre;text-align:center}
+.weather-stack{display:grid;flex:none}
+.weather-stack>*{grid-area:1/1}
+.weather-header{display:flex;flex:none}
+.weather-header-panel{display:flex;align-items:center;width:160px;height:26px;padding:0 4px}
+.weather-season-icon{width:20px;height:20px}
+.weather-body{display:flex;height:145px}
+.weather-left{display:flex;flex-direction:column;width:81px}
+.weather-temperature{display:flex;align-items:flex-start;height:64px;margin-top:4px}
+.weather-readings{display:flex;flex-direction:column;gap:3px;margin:15px 1px 0 4px}
+.weather-reading{display:flex;align-items:flex-start;gap:1px}
+.weather-readings .weather-label{width:7px;margin-top:2px}
+.weather-value-box{display:flex;align-items:center;width:24px;height:13px}
+.weather-scale{display:flex;flex-direction:column;align-items:flex-start;width:12px;margin-top:6px}
+.weather-scale-fahrenheit{align-items:flex-end;width:16px}
+.weather-column{display:flex;flex-direction:column;justify-content:flex-end;width:8px}
+.weather-column>span{display:block}
+.weather-temperature-column{height:44px;margin:6px 0 0 3px}
+.weather-evaporation-dial{margin:3px 0 0 9px}
+.weather-needle{margin:7px 0 0 7px}
+.weather-dial-marks{display:flex;gap:15px;margin:32px 0 0 11px;font:7px/6px monospace}
+.weather-dial-marks .weather-label:first-child{width:10px}
+.weather-dial-marks .weather-label:last-child{width:9px}
+.weather-left>.weather-label{width:73px;line-height:11px}
+.weather-center{display:flex;flex-direction:column;align-items:flex-start;width:153px}
+.weather-caption{display:flex;align-items:center;justify-content:center;width:132px;height:13px;margin-left:11px}
+.weather-forecast-caption{width:145px;margin:1px 0 0 7px}
+.weather-sky{margin:9px 0 0 23px}
+.weather-ground{margin:41px 0 0 23px}
+.weather-forecast{display:flex;gap:4px;margin:1px 0 0 21px}
+.weather-forecast-cell{width:20px;height:20px}
+.weather-right{display:flex;flex-direction:column;align-items:flex-start;width:86px}
+.weather-rainfall{display:flex;align-items:flex-start;height:64px;margin-top:4px}
+.weather-scale-rain{align-items:flex-end;margin-top:0;line-height:10px}
+.weather-rain-tube{margin-top:1px}
+.weather-rain-column{height:55px;margin:5px 0 0 2px}
+.weather-rain-readings{display:flex;flex-direction:column;gap:4px;margin:6px 0 0 2px}
+.weather-rain-readings .weather-label{width:29px}
+.weather-rain-readings .weather-reading{gap:3px}
+.weather-rain-box{display:flex;align-items:center;width:20px;height:19px;margin-top:6px}
+.weather-rain-readings .weather-reading:last-child .weather-rain-box{margin-top:9px}
+.weather-vane-dial{margin-left:22px}
+.weather-vane{margin:10px 0 0 8px}
+.weather-right>.weather-label{width:36px;line-height:10px}
+.weather-footer{display:flex;justify-content:space-between;height:13px}
+.weather-footer-box{display:flex;align-items:center;width:82px;height:13px}
+.weather-wind-box{width:72px}
 
 /* Expert DSbe9c:400×224 client, source card coordinates include16px title. */
 .game-window[data-window=expert]{left:128px;top:96px;right:auto;width:400px;border:0;max-height:calc(100% - 112px)}

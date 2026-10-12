@@ -57,3 +57,17 @@ The source toggles vane phase when its pause byte permits and chooses timing thr
 Confidence is high for supplied resource formats, draw positions and numeric branches. This is static-byte evidence, not a captured original execution. Unit checks pin descriptors/code/data; compare all imported/source pixels outside text replacements; reject every truncated scene/vane input and corrupted record size; enumerate all calendar weeks across five climate years/eight farms, all signed temperature bytes and every rainfall word; and prove display reads leave saves unchanged. Browser checks compare source scene/gauge/forecast pixels, all season/sky combinations, complete text, movement/reopening, paused/running animation, native speed controls, nine-day rollover/save continuation and missing assets. Final regression results are in progress.md.
 
 Original callback scheduling, stacking and sound arbitration remain incomplete; Weather restoration does not complete those systems or the full preservation project. Original Evaluation/Balance Sheet and other remaining dialog interactions follow. Raw resources and the supplied DOS distribution remain untouched.
+
+## Native rebuild on shared chrome (2026-10-12)
+
+Weather now uses the common wooden frame (`GameWindow framed`, per decision 3 in ui-components.md), with a 320×184 flex client. There is no full-window bitmap or canvas; `src/render/weather-preview.ts` was removed.
+- **Wallpaper:** the importer writes `weather-wallpaper.png`, the 8×8 tile at bitmap (8,26). A unit test checks that it repeats across clean areas; isolated source irregularities (e.g. bitmap 55,43) are not reproduced. It is the client's repeating background, positioned so its phase matches the source.
+- **Header:** two `SunkenInset` panels holding the season icon insets (tile sprites) and the calendar and countdown outputs.
+- **Instruments:** the thermometer, picture window and sill, rain tube, evaporation dial and vane dial are sprites cut from the cleaned `weather-window.png`. Scenes, needle and vane frames are stacked inside them with grid layering, at their source client positions. The temperature and rain levels are palette-coloured spans inside white tracks of the source heights.
+- **Text:** scale numbers and captions are HTML labels in flex columns. Value boxes, caption boxes and forecast cells are `SunkenInset`s.
+
+Accepted differences:
+- The thermometer sits 8px left and the rain tube 8px right of their source columns, so the HTML scales fit beside them. The shift is a multiple of 8 so the wallpaper inside the sprites stays in phase.
+- The F/C reading boxes are 24px wide (source 32).
+
+Tests: the browser spec checks structure (sprite offsets and positions, column geometry and colours, every erased label present as text, no img or canvas). Validation: weather-window unit 6/6, browser weather-window 7/7.
