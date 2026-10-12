@@ -119,3 +119,4 @@ At the user's request, native-only windows now match the original windows: they 
 
 Converted so far:
 - **Speed:** status box, speed slider with its value inset, and Play/Pause and Next day buttons.
+- **Settings:** framed, with Zoom and Music `.chrome-select`s, the Volume `.chrome-range` and the audio status line.

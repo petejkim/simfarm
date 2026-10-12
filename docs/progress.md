@@ -2952,3 +2952,7 @@ The window is now framed under its plank title, with picture `BevelButton`s (bit
 ## 2026-10-12 — Speed window on shared chrome
 
 Per the user's consistency request, Speed is now a framed window: a sunken status box (weather, run state, schedule status), a chrome-styled speed slider with a value inset, and Play/Pause and Next day `BevelButton`s. It adds shared native-window CSS (see ui-components.md, Native windows). The legacy dashboard font override on `#farm-weather` and `#time-status` was dropped. The options, weather-window, autosave, native and startup-music specs pass; `native.spec`'s Expert photo check was updated for the earlier Expert sprite change (separate test commit).
+
+## 2026-10-12 — Settings window on shared chrome
+
+Settings is now framed, with chrome-styled Zoom and Music selects, a Volume range and the audio status. The options spec passes (part of the Speed validation run).
