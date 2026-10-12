@@ -1,8 +1,8 @@
-import {useEffect,useRef,type ReactNode} from 'react';
+import type {ReactNode} from 'react';
 import {BevelButton} from './chrome/BevelButton';
 import {SunkenInset} from './chrome/SunkenInset';
 import {spriteFace} from './chrome/Sprite';
-import {drawToolbarWeather} from '../render/toolbar-weather';
+import {TileSprite} from './chrome/TileSprite';
 import {WEATHER_SKIES} from '../simulation/weather-view';
 import {CONTROL_BAR_LAUNCHER} from '../formats/control-bar';
 import {useWindows} from './GameWindow';
@@ -22,7 +22,7 @@ const LAUNCHERS = GAME_WINDOWS.slice(0, 9).map((window, face) => ({ window, face
 /** Source toolbar at screen (0,16): window launchers, forecast inset and Date/Funds readouts, laid out with flexbox.
  * Bevels are CSS borders; cntlbtnh.bmp only supplies each launcher's 26×26 picture face. */
 export function ControlBar({ artwork, menus, snapshot, tiles, onWindow }: {
-  artwork: HTMLImageElement; menus: MainMenus; snapshot: GameSnapshot; tiles: CanvasImageSource | null; onWindow: (window: GameWindow) => void;
+  artwork: HTMLImageElement; menus: MainMenus; snapshot: GameSnapshot; tiles: HTMLImageElement | null; onWindow: (window: GameWindow) => void;
 }) {
   const date = snapshot.scenario.farm.calendar, windows = useWindows();
   const forecast=[...snapshot.weather.forecast,...snapshot.weather.nextForecast].slice(date.day,date.day+3);
@@ -51,13 +51,13 @@ export function WindowLauncher({ window, face, artwork, label, captioned, presse
   </BevelButton>;
 }
 
-/** Source2a518..2a552: three 16×16 forecast tiles inside a 52×20 inset. */
-export function ToolbarForecast({ forecast, tiles }: { forecast: readonly number[]; tiles: CanvasImageSource | null }) {
-  const canvas=useRef<HTMLCanvasElement>(null);
-  useEffect(()=>{if(canvas.current&&tiles)drawToolbarWeather(canvas.current.getContext('2d')!,tiles,forecast);},[tiles,...forecast]);
+/** Source2a518..2a552: three 16×16 forecast tiles (204+code from the current day) inside a 52×20 inset. */
+export function ToolbarForecast({ forecast, tiles }: { forecast: readonly number[]; tiles: HTMLImageElement | null }) {
   const weatherLabel=forecast.map((code,i)=>`${['Today','Tomorrow','Day 3'][i]}: ${WEATHER_SKIES[code]}`).join('; ');
   return <SunkenInset className="toolbar-forecast">
-    <canvas ref={canvas} className="toolbar-weather" width={48} height={16} role="img" aria-label={weatherLabel} title={weatherLabel}/>
+    <span className="toolbar-weather" role="img" aria-label={weatherLabel} title={weatherLabel}>
+      {tiles&&forecast.slice(0,3).map((code,i)=><TileSprite key={i} tile={204+code} atlas={tiles.src} masked={tiles.src}/>)}
+    </span>
   </SunkenInset>;
 }
 

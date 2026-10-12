@@ -2972,3 +2972,7 @@ Both dialogs are now framed, with a sunken message box and a `BevelButton` (Canc
 ## 2026-10-12 — Plant/Spray popups on shared chrome
 
 The popups now use a grid of tile-sprite menu items with HTML captions; the canvas icon layer was removed. The field-tools, all-crops and edit-status specs pass.
+
+## 2026-10-12 — Toolbar forecast as sprites
+
+The three forecast icons are now tile sprites, replacing the canvas. The weather-window and control-bar specs pass.

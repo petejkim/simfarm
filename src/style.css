@@ -558,7 +558,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 
 .game-window[data-front=false]>.game-window-title{background-image:var(--window-inactive)}
 
-.original-control-bar .toolbar-weather{display:block;width:48px;height:16px;cursor:default;pointer-events:none;image-rendering:pixelated}
+.original-control-bar .toolbar-weather{display:flex;width:48px;height:16px;cursor:default;pointer-events:none;image-rendering:pixelated}
 
 /* Region cells are transparent hit areas over the original geographic artwork. */
 .game-window .geographic-chooser .region-grid button{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}

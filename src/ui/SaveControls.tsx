@@ -22,7 +22,7 @@ export interface LoadedFarm { scenarioId: number | null; simulation: GameSimulat
 
 export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, startMessage, onLoad, onSaveGame, onNewGame, onWindow, options, disasters, debug }: {
   options: MenuChoices; disasters: MenuChoices; debug: MenuChoices;
-  simulation: GameSimulation; scenarioId: number | null; assets: GameAssets; tiles: CanvasImageSource | null; loaded: boolean; startMessage?: string;
+  simulation: GameSimulation; scenarioId: number | null; assets: GameAssets; tiles: HTMLImageElement | null; loaded: boolean; startMessage?: string;
   onLoad: (farm: LoadedFarm) => void; onSaveGame: () => Promise<SaveOutcome>;
   onNewGame: () => void; onWindow: (window: WindowCommand, source: 'menu' | 'toolbar') => void;
 }) {

@@ -91,3 +91,7 @@ The first browser run of the pixel test exposed four issues:
 - **Readout text overflow.** Arial 10px over-ran the 172×9 interiors into the bevels. Per user direction, readout values now use a 9px font without padding offsets. The date fits completely. `overflow:hidden` clips only the 1px top of `$` in Funds.
 - **Caption shadow.** The 1px white text-shadow on SELL reached the right bevel. Captions now clip to their 26×9 box, and the test exempts that whole box.
 - **Panel shadow over the strip.** The terrain panel's `box-shadow:0 10px 30px` faintly darkened strip rows 27..30 from x50. The strip now has `position:relative; z-index:1`. Its children remain in normal flex flow.
+
+## Forecast tiles as sprites (2026-10-12)
+
+The toolbar forecast now shows its three tiles (204+code) as `TileSprite`s in the sunken inset instead of a 48×16 canvas, and `src/render/toolbar-weather.ts` was removed. The weather-window spec checks the tile offsets across the week boundary.

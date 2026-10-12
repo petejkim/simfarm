@@ -106,10 +106,7 @@ test('toolbar shows three original weather icons across week boundaries and upda
   const game=f.load().withAllCrops(browserCrops);await start(page);await load(page,game.save(4));const before=await save(page);
   const icons=page.locator('.toolbar-weather');expect(await icons.boundingBox()).toEqual({x:(256+page.viewportSize()!.width-224)/2-24,y:24,width:48,height:16});
   async function check(codes:number[]){
-    for(const [i,code] of codes.entries()){
-      const pixels=await icons.evaluate((c:HTMLCanvasElement,i)=>Array.from(c.getContext('2d')!.getImageData(i*16,0,16,16).data),i);
-      expect(pixels).toEqual(Array.from(decodePlanar(asset('ega16til.til').subarray((204+code)*128,(205+code)*128),16,16,palette).rgba));
-    }
+    expect(await icons.locator('.sprite').evaluateAll(es=>es.map(e=>(e as HTMLElement).style.backgroundPosition))).toEqual(codes.map(code=>tileAt(204+code)));
   }
   await expect(icons).toHaveAttribute('aria-label','Today: Partly cloudy; Tomorrow: Snow; Day 3: Rain');await check([1,4,3]);
   expect(await save(page)).toEqual(before);
