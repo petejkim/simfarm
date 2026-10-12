@@ -31,7 +31,7 @@ test('native worker presentation clock preserves remainder across pause and skip
 });
 test('world composition animates only visible worker overlays without mutating saved cells',()=>{
   for(const terrain of [15,15|0x800])for(const overlay of [1035,1036,1037,1038]){
-    const scenario={cells:[{terrain,overlay:overlay|0xf800,attribute:0}]} as Scenario;
+    const scenario={cells:[{terrain,overlay:overlay|0xf800,attribute:0}],fields:[]} as unknown as Scenario;
     const before=structuredClone(scenario),calls:unknown[][]=[];
     const context={drawImage:(...args:unknown[])=>calls.push(args)} as unknown as CanvasRenderingContext2D;
     const base={} as CanvasImageSource,mask={} as CanvasImageSource;
