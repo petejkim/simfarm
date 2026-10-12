@@ -31,3 +31,7 @@ User request: buttons show as depressed for as long as their action lasts.
 - **Examine closing.** User request: choosing any palette action other than View object closes the Examine window. This covers the tools, Plant/Spray and the help button. View object leaves Examine open. Schedule and other windows are unaffected.
 
 Source evidence for the original depressed-button rendering has not been traced. This is a user-directed native presentation behaviour.
+
+## ? cell and foot removed (2026-10-11)
+
+User request: the source "?" help cell (y188, 48×16) and the 4px foot (y204..207) are omitted. The palette is now 48×188 with no fixed height (`align-self:flex-start`). `EDIT_PALETTE_TEXT` erases only Plant/Spray captions; the undisplayed ? face is left as source pixels in the imported PNG. See edit-help.md for the removed legend.

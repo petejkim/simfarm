@@ -21,3 +21,11 @@ The original200-pixel legend now stands alone, without the former Advanced contr
 ## Focused validation
 
 Tests pin source ID/table mapping, filename, coordinates and button-wait bytes. Decoder checks cover all8808 truncation points, malformed dimensions and exact retained/cleared pixels without source mutation. Browser checks cover original geometry and leader pixels, real text, keyboard focus, Escape/toggle/outside dismissal, advanced access, tool cancellation, unchanged checkpoints and missing-asset failure. Related Edit workspace, Options and Plant/Spray flows remain covered. See progress.md for results and rechecks.
+
+## Removed from the native game (2026-10-11)
+
+User request: remove the palette's "?" help button, its legend and the `edithelp.bmp` artwork. Removed:
+- The button, `EditHelp`, its open state (including its auto-scroll suppression) and its 'Help' palette action.
+- The `edit-help` decoder, its import step, asset loading, CSS and tests.
+
+The static evidence above (filename DS5729, palette ID30 paint/hold behavior and literal captions) remains as preservation research. The supplied distribution is unchanged, and the asset can be restored from this record if wanted.

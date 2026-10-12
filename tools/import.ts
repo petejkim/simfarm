@@ -1,6 +1,5 @@
 import {readEditCursor} from '../src/formats/edit-cursors';
 import {readAboutArtwork,readAboutLogo,readAboutCredits} from '../src/formats/about';
-import {readEditHelp} from '../src/formats/edit-help';
 import {readTownChoiceArtwork,townChoicePressedArtwork} from '../src/formats/town-choice';
 import {readBalanceArtwork} from '../src/formats/balance-window';
 import {readEvaluationArtwork} from '../src/formats/evaluation-window';
@@ -90,7 +89,6 @@ await png('sell-window.png', readSellArtwork(asset('sellwndo.bmp'), palette));
 await png('sell-conditions.png', readSellConditions(asset('ega16til.til'), palette));
 await png('buy-window.png', readBuyArtwork(asset('buywndo.bmp'), palette));
 await png('bank-terminal.png', readBankArtwork(asset('bankterm.bmp'), palette));
-await png('edit-help.png',readEditHelp(asset('edithelp.bmp'),palette));
 await png('edit-palette.png', readEditPalette(asset('editeasy.lzs'), palette));
 await png('control-bar.png', readControlBar(asset('cntlbtnh.bmp'), palette));
 await png('tiles.png', tileAtlas(asset('ega16til.til'), palette));

@@ -5,7 +5,6 @@ import {tilesForWeather} from '../assets/weather-tiles';
 import {EDIT_TOOL_STATUSES,SPRAY_STATUSES} from '../simulation/edit-status';
 import {EditStatus} from './EditStatus';
 import {FieldMessage} from './FieldMessage';
-import {EditHelp} from './EditHelp';
 import {BalanceWindow} from './BalanceWindow';
 import {DisasterMessage} from './DisasterMessage';
 import {FinanceMessage} from './FinanceMessage';
@@ -120,7 +119,6 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [simulation,Boolean(bulldoze.pending),Boolean(messages.length)]);
-  const [editHelpOpen,setEditHelpOpen]=useState(false);
   const [fieldInspection,setFieldInspection]=useState<{month:number}|null>(null);
   const [selection, setSelection] = useState<number | null>(null), [fieldSlot, setFieldSlot] = useState<number | null>(null);
   const [focus, setFocus] = useState<MapFocus>(() => {
@@ -187,7 +185,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     }
   }
   // Depressed palette button: the running action, else the default View object (examine) mode.
-  const paletteAction:EditPaletteAction = editHelpOpen ? 'Help' : objectMove.active ? 'Move object' : bulldoze.active ? 'Bulldoze'
+  const paletteAction:EditPaletteAction = objectMove.active ? 'Move object' : bulldoze.active ? 'Bulldoze'
     : construction.tool ? CONSTRUCTION_TOOLS[construction.tool] : fieldMenu==='plant'||fieldMapTool?.kind==='plant' ? 'Plant' : fieldMenu||fieldMapTool ? 'Spray' : 'View object';
   const data = resource.status === 'ready' && snapshot ? { tiles: resource.value.tiles, scenario: snapshot.scenario } : null;
   const field = data?.scenario.fields.find(f => f.slot === fieldSlot && f.active);
@@ -195,7 +193,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
   // Source mode11 uses only hand cursors; other tools draw their footprint
   // regardless of placement validity. Canonical commands validate actual clicks.
   const preview = objectMove.active ? undefined : bulldoze.active ? bulldoze.preview(position)
-    : !toolPointer||fieldMenu||editHelpOpen ? undefined
+    : !toolPointer||fieldMenu ? undefined
     : fieldMapTool?.kind==='plant' ? {...toolPointer,width:8,height:8}
     : buyPlacement&&data&&buyPlacement.type<8 ? {...toolPointer,
       width:data.scenario.equipmentDefinitions[buyPlacement.type].width,height:data.scenario.equipmentDefinitions[buyPlacement.type].height}
@@ -349,8 +347,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
         onRestart={()=>setNewFarmOpen(true)}/>}
     {data && <main className="edit-workspace" aria-label="Edit" onPointerDownCapture={activateEdit} onFocusCapture={activateEdit} onKeyDown={event => { if(objectMove.active&&event.key==='Escape'){event.preventDefault();cancelObjectMove();} if ((fieldMenu||fieldMapTool) && event.key==='Escape') {event.preventDefault();cancelFieldTool();} if (buyPlacement && event.key === 'Escape') { event.preventDefault(); cancelPurchase(); } }}>
       <EditPalette artwork={assets.editPalette} active={paletteAction} disabled={Boolean(snapshot?.pendingTown || snapshot?.townEvent.pending || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}
-        onField={() => openFieldMenu('plant')} onSpray={() => openFieldMenu('spray')} onHelp={() => {windows.close('examine');objectMove.cancel();bulldoze.cancel();construction.cancel();setBuyPlacement(null);setFieldMenu(null);setFieldMapTool(null);windows.show(null);setEditHelpOpen(open=>!open);}} />
-      {editHelpOpen&&<EditHelp artwork={assets.editHelp} onClose={()=>setEditHelpOpen(false)}/>}
+        onField={() => openFieldMenu('plant')} onSpray={() => openFieldMenu('spray')} />
       {fieldMenu&&snapshot&&<FieldToolMenu kind={fieldMenu} assets={assets} world={data.scenario} tiles={data.tiles}
         onClose={()=>{setFieldMenu(null);viewportRef.current?.focus({preventScroll:true});}}
         onChoose={tool=>{simulation?.dispatch({type:'edit-status',code:tool.kind==='plant'?17:SPRAY_STATUSES[tool.kind]});setFieldMenu(null);setFieldMapTool(tool);setSelection(null);viewportRef.current?.focus({preventScroll:true});}}/>}
@@ -359,7 +356,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
       {snapshot&&<EditStatus codes={snapshot.editStatuses} text={assets.editStatusText}/>}
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
         {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
-        <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") ${cursorHotspot} ${cursorHotspot}, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !editHelpOpen && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
+        <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") ${cursorHotspot} ${cursorHotspot}, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
           onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={tilesForWeather(data.tiles,snapshot?.weather)} townEventTiles={tilesForWeather(assets.townEventTiles[snapshot?.townEvent.artworkMode ?? 0],snapshot?.weather)} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
           preview={preview} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {

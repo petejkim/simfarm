@@ -45,8 +45,7 @@ test('palette opens field planning and real tools; Speed retains slower pacing a
   await focusEdit(page);
   await page.getByRole('button', { name: 'Dirt road', exact: true }).click();
   await expectPaletteAction(page,'Dirt road');
-  await page.getByRole('button', { name: 'Edit tools and help', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Advanced controls', exact: true })).toHaveCount(0);await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Edit tools and help', exact: true })).toHaveCount(0);await page.keyboard.press('Escape');
   await expect(page.locator('#map-tool')).toHaveCount(0);
   await expectPaletteAction(page,'View object');
   await expect(page.locator('#map-tool option[value=network],#network-panel')).toHaveCount(0);
@@ -64,15 +63,15 @@ test('Edit palette rebuilds source cells with black backgrounds, CSS bevels, spr
   const palette = page.getByRole('toolbar', { name: 'Edit tools' });
   await expect(palette.locator('img')).toHaveCount(0);
   expect(await palette.locator('*').evaluateAll(els => els.filter(el => getComputedStyle(el).position === 'absolute').length)).toBe(0);
-  const box = (await palette.boundingBox())!; expect([box.width, box.height]).toEqual([48, 208]);
-  const cells: [number, number, number, number][] = [...Array.from({ length: 12 }, (_, i) => [i % 2 * 24, Math.floor(i / 2) * 24, 24, 24] as [number, number, number, number]), [0, 144, 48, 22], [0, 166, 48, 22], [0, 188, 48, 16]];
+  const box = (await palette.boundingBox())!; expect([box.width, box.height]).toEqual([48, 188]); // source ? cell and foot omitted
+  const cells: [number, number, number, number][] = [...Array.from({ length: 12 }, (_, i) => [i % 2 * 24, Math.floor(i / 2) * 24, 24, 24] as [number, number, number, number]), [0, 144, 48, 22], [0, 166, 48, 22]];
   for (const [index, button] of (await palette.getByRole('button').all()).entries()) {
     const [x, y, w, h] = cells[index];
     expect(await button.boundingBox()).toEqual({ x: box.x + x, y: box.y + y, width: w, height: h });
     expect(await button.evaluate(el => { const s = getComputedStyle(el); return [s.borderTopWidth, s.backgroundColor, s.paddingTop, s.paddingLeft, s.paddingRight]; })).toEqual(['0px', 'rgb(0, 0, 0)', '1px', '1px', '0px']);
     if (index < 12) expect(await button.locator('.edit-palette-face').evaluate(el => { const s = getComputedStyle(el); return [s.backgroundPosition, s.imageRendering]; })).toEqual([`${-(x + 3)}px ${-(y + 3)}px`, 'pixelated']);
   }
-  expect(await palette.getByRole('button').evaluateAll(els => els.slice(12).map(el => el.textContent))).toEqual(['Plant', 'Spray', '?']);
+  expect(await palette.getByRole('button').evaluateAll(els => els.slice(12).map(el => el.textContent))).toEqual(['Plant', 'Spray']);
   await palette.getByRole('button', { name: 'Fence', exact: true }).hover(); await page.mouse.down();
   expect(await palette.getByRole('button', { name: 'Fence', exact: true }).locator('.edit-palette-face').evaluate(el => getComputedStyle(el).borderTopColor)).toBe('rgb(130, 130, 130)');
   await page.mouse.up(); await page.keyboard.press('Escape');
@@ -92,7 +91,5 @@ test('palette keeps the running action depressed and returns to View object when
   await palette.getByRole('button', { name: 'Plant', exact: true }).click(); await expect.poll(pressed).toEqual(['Plant']);
   await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
   await palette.getByRole('button', { name: 'Spray', exact: true }).click(); await expect.poll(pressed).toEqual(['Spray']);
-  await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
-  await palette.getByRole('button', { name: 'Edit tools and help', exact: true }).click(); await expect.poll(pressed).toEqual(['Edit tools and help']);
   await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
 });

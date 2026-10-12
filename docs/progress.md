@@ -2781,3 +2781,7 @@ Full browser suite: 280/281 passed (artifacts/flex-layout-browser.log). The rema
 ## 2026-10-11 — fix intermittent town-event music test
 
 Cause: the calendar test's first user gesture was the `#next-day` click that also raised the fair/rodeo event. That gesture starts amain asynchronously. Per the explicit startup policy (`useMusic.requestTrack`), situational requests are ignored until amain has begun, so the event's rodeo/carnival request was intermittently dropped while amain loaded. Production behavior is correct and unchanged. The test now presses a key after page load and waits for "Playing amain" before loading fixtures and triggering events. Validation: town-event-calendar 24/24 across `--repeat-each=8` (previously 2/4 failures at 9364b6f).
+
+## 2026-10-11 — remove palette help button, foot and help artwork
+
+Removed the "?" palette button with its legend component, state, decoder, import, asset, CSS and tests, plus the palette foot (user request; evidence retained in edit-help.md). The palette is 48×188. Validation: type checking/build, re-import (no edit-help.png), edit-palette decoder tests, and 47+4 browser cases across palette/window/tool specs pass.

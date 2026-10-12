@@ -116,19 +116,18 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-desktop [hidden]{display:none!important}
 .game-desktop .edit-workspace{position:relative;flex:1;display:flex;overflow:hidden;gap:0;margin:0;padding:0;border:0;background:#c2c2c2}
 .game-desktop .edit-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.edit-palette{--bevel-light:#fff;--bevel-shadow:#828282;--bar-face:#c2c2c2;--bar-ink:#000;flex:none;display:flex;flex-wrap:wrap;align-content:flex-start;width:48px;height:208px;margin:1px 0;background:var(--bar-face)}
+.edit-palette{--bevel-light:#fff;--bevel-shadow:#828282;--bar-face:#c2c2c2;--bar-ink:#000;flex:none;display:flex;flex-wrap:wrap;align-content:flex-start;align-self:flex-start;width:48px;margin:1px 0;background:var(--bar-face)}
 .edit-palette>button{display:flex;flex:none;margin:0;padding:1px 0 0 1px;border:0;border-radius:0;background:var(--bar-ink);color:var(--bar-ink)}
 .edit-palette>button:hover{background:var(--bar-ink)}
 .edit-palette>button:disabled{opacity:1;cursor:default}
 .edit-palette>button:focus-visible{outline:2px solid #0000eb;outline-offset:-3px}
 .edit-palette .edit-tool{width:24px;height:24px}
 .edit-palette .edit-caption{width:48px;height:22px;font:bold 12px Arial,sans-serif}
-.edit-palette .edit-help-button{height:16px}
 .edit-palette-face{display:flex;flex:1;align-items:center;justify-content:center;border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light);background:var(--bar-face) no-repeat;image-rendering:pixelated;overflow:hidden;line-height:1}
 .edit-tool .edit-palette-face{background-image:var(--edit-palette-sprite)}
 .edit-palette>button:active:not(:disabled) .edit-palette-face,.edit-palette>button.is-pressed .edit-palette-face{border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
 .edit-tool:disabled .edit-palette-face{background-image:linear-gradient(#c2c2c260,#c2c2c260),var(--edit-palette-sprite)}
-.edit-palette-foot{flex:none;width:48px;height:4px;border-top:1px solid var(--bar-ink);border-left:1px solid var(--bar-ink)}
+
 .game-desktop .map-panel{flex:1;display:flex;flex-direction:column;border:0;box-shadow:none;margin:0 0 0 2px;padding:0;overflow:hidden}
 .game-desktop #viewport{flex:1;height:auto;width:100%;overflow:auto;background:#000}
 .game-window{position:absolute;z-index:30;top:80px;right:16px;width:520px;max-height:calc(100% - 104px);display:flex;flex-direction:column;box-shadow:4px 4px #0008;border:3px ridge #eee;background:#c2c2c2;color:#000;font:14px Arial,sans-serif}
@@ -441,10 +440,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .menu-check{position:absolute;left:2px;top:0;width:14px;text-align:center}
 
 /* Palette help uses source x48, without the removed Edit title/frame. */
-.edit-help{position:absolute;left:48px;top:0;width:88px;z-index:80;padding:0;margin:0;border:0;border-radius:0;max-height:none;overflow:visible;color:#000;background:#c2c2c2;outline:none}
-.edit-help-artwork{position:relative;width:88px;height:200px}
-.edit-help-artwork img{display:block;image-rendering:pixelated;pointer-events:none}
-.edit-help-artwork span{position:absolute;left:20px;font:7px/8px monospace;white-space:nowrap}
 
 .edit-status{position:relative;flex:none;z-index:8;color:#000;font:10px/8px monospace}
 .edit-status-current{display:block;width:100%;height:16px;text-align:left;padding:2px 0 0 24px;border:0;border-radius:0;color:#000;background:#c2c2c2;font:inherit}
