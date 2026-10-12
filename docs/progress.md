@@ -2968,3 +2968,7 @@ The designer is now a flex client with HTML text, arrow `BevelButton`s with bitm
 ## 2026-10-12 — File loading and File error dialogs on shared chrome
 
 Both dialogs are now framed, with a sunken message box and a `BevelButton` (Cancel loading / OK). The file-errors, file-loading, compressed-save and homestead specs pass.
+
+## 2026-10-12 — Plant/Spray popups on shared chrome
+
+The popups now use a grid of tile-sprite menu items with HTML captions; the canvas icon layer was removed. The field-tools, all-crops and edit-status specs pass.

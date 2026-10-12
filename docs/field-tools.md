@@ -54,3 +54,12 @@ Validation pins source descriptors, chains and instruction call sites; compares 
 ## Interim treatment form retirement
 
 Removed FieldCare and its Field information props/callbacks. All four immediate treatments now use the original Spray popup and repeated field-click interaction exclusively. Canonical state/equipment/supply guards, stored-stock use, delivery payment and plan recording remain unchanged; the source route26c75/26d3c..26f86 above is the evidence for this replacement. Migrated stored-supply and full farming-cycle checks to actual Spray clicks. The subsequent Field orders retirement removed the immediate existing-field replant/harvest UI; their internal command adapters do not establish original-route fidelity.
+
+## Popups on shared chrome (2026-10-12)
+
+The Plant Crop and Spray Field popups no longer draw their icons on a canvas under transparent buttons. Each popup is a CSS grid: a 17px title row, then column-major 112×17 menu items. Each item holds its 16px `TileSprite` and its caption.
+- **Masked atlas:** 37b3c uses the masked atlas only for tiles above 848, so `maskStart` is 849.
+- **Unchanged:** popup positions and sizes still follow the source geometry.
+- **Removed:** `src/render/field-tool-menu.ts`.
+
+The spec checks each icon's box and tile offset (`cropPlantTile`). `crop-graphics.test.ts` covers the patched crop-atlas pixels. Validation: field-tools, all-crops and edit-status specs pass (10/10).

@@ -1,12 +1,10 @@
 import {readSaveText} from '../support/save-file';
 import { test, expect, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
 import {disasterFixture} from '../support/disasters';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
 import { reveal, openWindow, focusEdit, expectPaletteAction, expectSelectedField } from '../support/workspace';
-import { readArchive } from '../../src/formats/archive';
-import { readPalette, decodePlanar } from '../../src/formats/graphics';
+import { cropPlantTile } from '../../src/formats/crop-slots';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'field-tools.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
 async function point(page:Page,x:number,y:number){
@@ -23,23 +21,21 @@ test('original Plant and Spray popup geometry, real labels, source icons and key
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');const before=await save(page);
   await page.getByRole('button',{name:'Plant',exact:true}).click();const menu=page.getByRole('menu',{name:'Plant Field',exact:true});
   expect(await menu.boundingBox()).toEqual({x:48,y:112,width:336,height:160});
-  expect(await menu.locator('canvas').boundingBox()).toEqual({x:48,y:112,width:336,height:160});
+  await expect(menu.locator('canvas')).toHaveCount(0);
   await expect(menu.getByRole('menuitem')).toHaveCount(24);await expect(menu.getByRole('menuitem').first()).toBeFocused();
   await page.keyboard.press('ArrowRight');await expect(menu.getByRole('menuitem').nth(8)).toBeFocused();
   await page.keyboard.press('ArrowDown');await expect(menu.getByRole('menuitem').nth(9)).toBeFocused();
-  const source=(name:string)=>readFileSync(new URL('../../../simfarm-dos/'+name,import.meta.url));
-  const archive=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),palette=readPalette(archive.find(e=>e.name==='simfarm.pal')!.bytes);
-  // The selected crop icon is CRP's planting image (tile832 slot0), rendered at1×.
-  const file=before.scenario.cropFiles[0],bytes=source('CROPS/'+file.toUpperCase());
-  const pixels=decodePlanar(bytes.subarray(0x1480,0x1500),16,16,palette).rgba;
-  expect(await menu.locator('canvas').evaluate((c:HTMLCanvasElement)=>[...c.getContext('2d')!.getImageData(0,17,16,16).data])).toEqual([...pixels]);
+  // The crop's planting image is patched into the farm atlas at cropPlantTile(slot); each item shows that tile at 1×.
+  const icon=(slot:number)=>menu.locator(`[data-field-tool="${slot}"] .sprite`),tileAt=(t:number)=>`${-(t%32*16)}px ${-Math.floor(t/32)*16}px`;
+  expect(await icon(0).boundingBox()).toEqual({x:48,y:112+17,width:16,height:16});
+  expect(await icon(0).evaluate(el=>(el as HTMLElement).style.backgroundPosition)).toBe(tileAt(cropPlantTile(0)));
   await page.screenshot({path:'artifacts/browser-plant-menu.png'});
   await expect(menu.getByRole('button',{name:'Next crops'})).toHaveCount(0);
   await page.keyboard.press('ArrowRight');await expect(menu.getByRole('menuitem').nth(17)).toBeFocused();
   await page.keyboard.press('End');await expect(menu.getByRole('menuitem').nth(23)).toBeFocused();
   for(let slot=0;slot<24;slot++){
-    const expected=decodePlanar(source('CROPS/'+before.scenario.cropFiles[slot].toUpperCase()).subarray(0x1480,0x1500),16,16,palette).rgba;
-    expect(await menu.locator('canvas').evaluate((c:HTMLCanvasElement,i)=>[...c.getContext('2d')!.getImageData(Math.floor(i/8)*112,17+i%8*17,16,16).data],slot)).toEqual([...expected]);
+    expect(await icon(slot).boundingBox()).toEqual({x:48+Math.floor(slot/8)*112,y:112+17+slot%8*17,width:16,height:16});
+    expect(await icon(slot).evaluate(el=>(el as HTMLElement).style.backgroundPosition)).toBe(tileAt(cropPlantTile(slot)));
   }
   await page.keyboard.press('Escape');await expect(menu).toHaveCount(0);expect(await save(page)).toEqual(before);
   await page.getByRole('button',{name:'Spray',exact:true}).click();const spray=page.getByRole('menu',{name:'Spray Field',exact:true});
