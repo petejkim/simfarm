@@ -169,6 +169,33 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .sell-actions{display:flex;justify-content:flex-end;margin:4px 8px 0 0}
 .sell-caption{height:24px;font:bold 10px Arial,sans-serif}
 .sell-caption-sell{width:40px}.sell-caption-close{width:48px}
+/* Bank terminal: 272×216 client, all CSS. Raised bezel → 8px sunken recess → black-bordered dark screen,
+   light ledge, dark keypad bay. Green readouts use source palette 9 (#00aa04). */
+.game-window[data-window=bank]{left:176px;right:auto;top:96px}
+.bank-terminal{width:272px;height:216px;padding:3px 4px 0 3px;color:#00aa04;font:10px/10px monospace}
+.bank-bezel{height:100%;padding:3px 7px 6px 9px;border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) transparent var(--bevel-light)}
+.bank-recess{display:flex;flex-direction:column;height:100%;border:8px solid;border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow);background:var(--face)}
+.bank-screen{display:flex;flex-direction:column;height:128px;padding:2px 0 0 3px;border:4px solid var(--ink);border-radius:6px;background:var(--lettering);color:#00aa04}
+.bank-readouts{display:grid;grid-template-columns:152px auto;grid-template-rows:16px 16px 10px;align-items:start}
+.bank-box{border:1px solid #00aa04}
+.bank-readouts.bank-box{grid-template-columns:144px auto;grid-template-rows:16px 10px;width:210px;height:31px;margin:3px 0 0 1px;padding:2px 0 0 6px}
+.game-window .bank-terminal .bank-label,.game-window .bank-terminal .bank-value{color:#00aa04;font:10px/10px monospace;white-space:nowrap}
+.bank-terminal .bank-value{letter-spacing:-.6px}
+.bank-prompt{margin-top:12px}
+.bank-amount{display:flex;align-items:center;margin-top:2px}
+.bank-amount label{width:94px;margin-left:40px}
+.game-window .bank-terminal input#loan-amount{width:77px;height:16px;padding:0 2px;border:1px solid #00aa04;border-radius:0;background:var(--lettering);color:#00aa04;font:10px/12px monospace}
+.bank-help{display:grid;grid-template-columns:96px 56px 72px;width:216px;height:40px;margin:6px 0 0 -3px;color:var(--ink);background:var(--face);border:1px solid var(--ink)}
+.bank-help span{display:flex;align-items:center;justify-content:center;text-align:center;border-right:1px solid var(--ink);font:bold 10px/10px monospace}
+.bank-help span:last-child{border:0}
+.bank-ledge{flex:none;height:8px;margin:1px -2px 0;border-top:2px solid var(--bevel-light);border-bottom:2px solid var(--bevel-shadow);background:var(--face)}
+.bank-bay{display:flex;flex:1;align-items:flex-start;gap:32px;padding:2px 0 0 12px;border:3px solid var(--ink);background:var(--lettering)}
+.bank-keypad{display:grid;grid-template-columns:repeat(4,16px);grid-auto-rows:16px}
+.bank-actions{display:flex;flex-direction:column}
+.bank-action-row{display:flex}
+.bank-key{font:bold 10px/1 Arial,sans-serif}
+.bank-digit{width:16px;height:16px}
+.bank-repay{width:88px;height:24px}.bank-ok{width:40px;height:24px}.bank-close{width:48px;height:24px}
 .original-control-bar{position:relative;z-index:1;display:flex;align-items:stretch;height:32px;font:10px/1 Arial,Helvetica,sans-serif;color:var(--ink);background:var(--face);box-shadow:inset 0 1px var(--ink)}
 .toolbar-launchers{display:flex;flex:none}
 .window-launcher{width:32px;height:32px}
@@ -221,21 +248,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window .terrain-design .terrain-hit,.game-window .terrain-design .terrain-range{padding:0}
 
 /* Original Bank terminal: DS:b32a window at176,96 with288×224 client art. */
-.game-window[data-window=bank]{left:176px;right:auto;top:96px;width:288px;border:0;max-height:calc(100% - 112px)}
-.game-window[data-window=bank] .game-window-body{padding:0}
-.bank-terminal{position:relative;width:288px;height:224px;flex-shrink:0;color:#00aa04}
-.bank-terminal>img{display:block;image-rendering:pixelated;pointer-events:none}
-.game-window .bank-terminal .bank-label,.game-window .bank-terminal .bank-value{position:absolute;color:#00aa04;font:10px/10px monospace;white-space:nowrap}
-.bank-terminal .bank-value{left:192px;width:62px;letter-spacing:-.6px}
-.game-window .bank-terminal #loan-amount{position:absolute;left:176px;top:125px;width:73px;height:13px;padding:0;border:0;border-radius:0;background:#414141;color:#00aa04;font:10px/12px monospace}
-.game-window .bank-terminal .bank-key{position:absolute;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:#000;font:bold 10px/1 Arial,sans-serif}
-.game-window .bank-terminal .bank-key:hover:not(:disabled){background:#ffffff30}
-.game-window .bank-terminal .bank-key:active:not(:disabled){box-shadow:inset 1px 1px #000;background:#0002}
-.game-window .bank-terminal .bank-key:disabled{opacity:1;color:#666;cursor:default}
-.bank-terminal .bank-help{position:absolute;left:32px;top:104px;width:224px;height:40px;display:grid;grid-template-columns:96px 56px 72px;color:#000;background:#c2c2c2;border:1px solid #000;pointer-events:none}
-.bank-help span{display:flex;align-items:center;justify-content:center;text-align:center;border-right:1px solid #000;font:bold 10px/10px monospace}
-.bank-help span:last-child{border:0}
-.bank-accessible{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
 /* Original Buy descriptor DSb4a6 and its256×224 client bitmap. */
 

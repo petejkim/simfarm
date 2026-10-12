@@ -14,9 +14,12 @@ test('Bank terminal preserves source geometry and HTML captions; keypad, clear, 
   await start(page); const before = await save(page);
   const bank = page.getByRole('dialog', { name: 'Bank', exact: true });
   expect(await bank.boundingBox()).toMatchObject({ x: 176, y: 96, width: 288, height: 240 });
-  expect(await page.locator('.bank-terminal > img').boundingBox()).toEqual({ x: 176, y: 112, width: 288, height: 224 });
+  // Shared frame around a CSS-built 272×216 terminal: no artwork image; keys are shared bevel buttons.
+  expect(await page.locator('.bank-terminal').boundingBox()).toEqual({ x: 184, y: 112, width: 272, height: 216 });
+  await expect(bank.locator('img,canvas')).toHaveCount(0);
+  expect(await bank.locator('.bank-key.bevel-button').count()).toBe(15);
   const keys = bank.getByRole('button');
-  await expect(keys).toHaveText(['','C','0','?','1','2','3','4','5','6','7','8','9','OK','CLOSE','REPAY']);
+  await expect(keys).toHaveText(['','7','8','9','C','4','5','6','?','1','2','3','0','REPAY','OK','CLOSE']); // keypad order, then actions
   await keys.getByText('1', { exact: true }).click(); // Visible captions are real text.
   await bank.getByRole('button', { name: '0', exact: true }).click();
   await expect(page.locator('#loan-amount')).toHaveValue('10');
@@ -60,10 +63,4 @@ test('Bank entry clamps credit, keyboard period clears, zero OK and Close leave 
   await expect(page.locator('#loan-amount')).toHaveValue('999999'); await page.locator('#borrow-loan').click();
   await expect(page.locator('#farm-cash')).toHaveText('$9,999,999');
   await expect(page.locator('#loan-balance')).toHaveText('$999,999');
-});
-
-test('missing sanitized Bank artwork fails before starting a farm', async ({ page }) => {
-  await page.route('**/assets/bank-terminal.png', route => route.abort()); await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'SimFarm assets unavailable' })).toBeVisible();
-  await expect(page.locator('.loading')).toContainText('bank-terminal.png'); await expect(page.locator('#world')).toHaveCount(0);
 });

@@ -2900,3 +2900,7 @@ Buy is a framed flex window with BevelButton categories/arrows/captions, SunkenI
 ## 2026-10-12 — Sell rebuilt on shared chrome
 
 Framed flex window with BevelButton categories/scroll arrows/captions, SunkenInset photo and list, tile-sprite rows with ConditionBadge, and a bevel-thumb range over the source track (no background image or canvas). Sell/manual-sales/weekly-aging/native/harvest-workers/window specs pass 33/33. sell-window.spec now asserts structure (frame client size, components, row composition) instead of canvas pixels.
+
+## 2026-10-12 — Bank terminal rebuilt in CSS
+
+Framed window; bezel/recess/screen/ledge/bay are CSS borders and backgrounds; keypad and actions are BevelButtons; no artwork image. bank-terminal.png is no longer a runtime asset. Bank/control-bar/native/navigation/finance/default/window specs pass 44/44.

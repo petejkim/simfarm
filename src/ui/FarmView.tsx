@@ -325,9 +325,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
     <GameWindow windowKey="town" title="Town development" titleArtwork={assets.townChoiceArtwork.src} forced={Boolean(snapshot?.pendingTown)}>
     {simulation && snapshot && <TownChoicePanel assets={assets} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     </GameWindow>
-    <GameWindow windowKey="bank" title="Bank">
+    <GameWindow windowKey="bank" title="Bank" framed>
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
-      artwork={assets.bankArtwork} onClose={() => windows.close('bank')} panelRef={loansRef} />}
+      onClose={() => windows.close('bank')} panelRef={loansRef} />}
     </GameWindow>
     {snapshot && simulation && <AircraftWindow assets={assets} selectedSlot={aircraftSlot} snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
       onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); if (simulation.getSnapshot().aircraftFlight) windows.show(null); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}

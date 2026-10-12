@@ -31,3 +31,14 @@ Refresh47028 calls the original collateral limit. The native snapshot now expose
 Source tests pin the full control chain, dispatch destinations, artwork/hash, all pixels outside caption masks and invalid binary boundaries. Browser tests exercise source-sized geometry, keypad/keyboard entry, borrowing/payoff, credit limits, Help, zero OK, cancellation, save/load, launchers and missing-asset failure.
 
 2026-10-11 user follow-up: the interim feedback area below this window was removed; outcomes show through the source controls, readouts and Funds. See progress.md.
+
+## Rebuilt in CSS on shared chrome (2026-10-12)
+
+User request (ui-components.md). The terminal is no longer `bank-terminal.png` with text and transparent keys over it. It is a framed `GameWindow` around a 272×216 client built from CSS panels that follow the source's structure:
+- **Bezel and recess:** a 2px raised bezel, then an 8px sunken recess.
+- **Screen:** a 4px black, rounded-cornered dark screen (palette 14) with green (palette 9) monospace readouts on the source rows. A green-outlined box holds interest rate and quarterly payment, followed by the prompt and the green-outlined LOAN AMOUNT field. Help replaces the prompt and amount rows with the source's three-cell legend.
+- **Ledge and bay:** a light ledge with white/grey edges, then a black-bordered dark keypad bay. Its 4×3 keypad (7 8 9 C / 4 5 6 ? / 1 2 3 0) and REPAY / OK / CLOSE are shared `BevelButton`s with HTML captions.
+
+Proportions are approximate (user rule: not pixel-perfect). Key ids, labels and the source switch semantics are unchanged.
+
+`bank-terminal.png` is no longer loaded at runtime. Its import, mask constants and unit test remain as preservation evidence, and its browser missing-asset test was removed.
