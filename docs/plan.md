@@ -450,3 +450,7 @@ Completed the separately requested Debug menu with rodeo, fair/carnival and even
 ## 2026-10-11 — resumed reconstruction and audio balance
 
 User resumed the goal, then requested music100% / effects75%; applied these gains as a separate increment. Continue original interaction fidelity with source-proven View/Bulldoze cursor restoration. The goal is active and incomplete; earlier paused notes describe the prior session state.
+
+## 2026-10-11 — View/Bulldoze cursor restoration
+
+Restored source View magnifier and Bulldoze arrow alongside Move FROM/TO; other source cursor modes remain incomplete. All affected map actions retain canonical commands/checkpoints. Browser validation must start a server from this checkout on its own port; port5173 can belong to a different checkout and is not proof of current code. Make that isolation the default test configuration, then continue original interaction coverage.

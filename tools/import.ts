@@ -1,4 +1,4 @@
-import {readMoveCursor} from '../src/formats/move-cursors';
+import {readEditCursor} from '../src/formats/edit-cursors';
 import {readAboutArtwork,readAboutLogo,readAboutCredits} from '../src/formats/about';
 import {readEditHelp} from '../src/formats/edit-help';
 import {readTownChoiceArtwork,townChoicePressedArtwork} from '../src/formats/town-choice';
@@ -47,7 +47,8 @@ async function png(name: string, raster: Raster) {
 }
 await mkdir(join(output, 'raw/crops'), { recursive: true });
 const [index, data, exe] = await Promise.all([read('MEGADATA.IDX'), read('MEGADATA.EEA'), read('SIMFARM.EXE')]);
-for(const kind of ['pick','drop'] as const)await png(`move-${kind}.png`,readMoveCursor(exe,kind));
+for(const kind of ['pick','drop'] as const)await png(`move-${kind}.png`,readEditCursor(exe,kind));
+for(const kind of ['view','bulldoze'] as const)await png(`edit-${kind}.png`,readEditCursor(exe,kind));
 const entries = readArchive(index, data);
 const assets = new Map(entries.map(e => [e.name, e.bytes]));
 function asset(name: string) { const bytes = assets.get(name); if (!bytes) throw new Error(`Missing ${name}`); return bytes; }

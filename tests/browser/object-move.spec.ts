@@ -25,7 +25,7 @@ test('Move object picks stored machinery directly, cancels without withdrawal, r
   await page.getByRole('button',{name:'View object',exact:true}).click();await point(page,20,21);await page.locator('#examine-building').click();g.dispatch({type:'toggle-building-interior',x:20,y:21,slot:1});
   await move(page);await point(page,20,21);await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','drop');await expect(page.locator('#world')).toHaveCSS('cursor',/move-drop\.png.*0 0, crosshair/);await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Choose a destination.');
   await expect(page.locator('[data-window=actions]')).toBeHidden();expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  await page.keyboard.press('Escape');await expect(page.locator('#cancel-object-move')).toHaveCount(0);await expect(page.locator('#world')).toHaveCSS('cursor','crosshair');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  await page.keyboard.press('Escape');await expect(page.locator('#cancel-object-move')).toHaveCount(0);await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await move(page);await point(page,20,21);await point(page,60,60);await expect(page.locator('#object-move-result')).toHaveText('Choose a destination on your land.');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   const selected=checkEquipmentPickup(g.getSnapshot().scenario,20,21);if(!selected.ok)throw new Error('Missing machine');
   await point(page,40,40);g.dispatch({type:'move-equipment',selected,x:40,y:40});await expect(page.locator('#object-move-result')).toContainText('Movement ordered');await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');await expect(page.locator('#world')).toHaveCSS('cursor',/move-pick\.png.*0 0, crosshair/);
@@ -60,7 +60,7 @@ test('selection respects busy machinery and switching tools discards the draft w
   await page.goto('/');await load(page,busy);await move(page);await point(page,40,40);await expect(page.locator('#object-move-result')).toHaveText('This machine is in use or already moving.');await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Cannot move item in use.');await expect.poll(()=>warnings.length).toBe(1);expect(await save(page)).toEqual(JSON.parse(busy));
   await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true}).click();
   await point(page,40,40);await page.waitForTimeout(150);expect(warnings.length).toBe(1);
-  await load(page,g.save(4));await move(page);await point(page,40,40);await page.getByRole('button',{name:'View object',exact:true}).click();await point(page,40,40);await expect(page.getByRole('dialog',{name:'Examine',exact:true})).toBeVisible();await expect(page.locator('#world')).toHaveCSS('cursor','crosshair');
+  await load(page,g.save(4));await move(page);await point(page,40,40);await page.getByRole('button',{name:'View object',exact:true}).click();await point(page,40,40);await expect(page.getByRole('dialog',{name:'Examine',exact:true})).toBeVisible();await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
   expect(await save(page)).toEqual(JSON.parse(g.save(4)));await move(page);await point(page,40,40);await page.locator('#window-buy').click();await expect(page.locator('#cancel-object-move')).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
 });
 
