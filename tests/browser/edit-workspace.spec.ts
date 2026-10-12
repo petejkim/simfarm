@@ -5,7 +5,9 @@ import { readFileSync } from 'node:fs';
 test('Edit fills the desktop permanently; windows close without resizing or unmounting the map', async ({ page }) => {
   await page.goto('/'); const map = page.locator('#viewport'); await expect(map).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  for (const selector of ['.original-control-bar > img', '.edit-palette > img', '#world']) {
+  expect(await page.locator('.original-control-bar').boundingBox()).toMatchObject({ width: 640, height: 32 });
+  expect(await page.locator('.window-launcher-face').first().evaluate(el => [el.clientWidth, el.clientHeight])).toEqual([26, 26]);
+  for (const selector of ['.edit-palette > img', '#world']) {
     const sizes = await page.locator(selector).evaluate((el: HTMLImageElement | HTMLCanvasElement) => ({
       source: { width: el instanceof HTMLImageElement ? el.naturalWidth : el.width, height: el instanceof HTMLImageElement ? el.naturalHeight : el.height },
       display: { width: el.getBoundingClientRect().width, height: el.getBoundingClientRect().height },

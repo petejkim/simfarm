@@ -83,3 +83,11 @@ User corrections to the component strip:
 - **Flexbox layout.** Nothing in the strip is absolutely positioned. The flex row is: launchers (8×32 = 256px) | forecast area (flex:1, centred) | readout column (padding 2px top / 3px right, 2px row gap; 41px right-aligned label, 4px gap, 176×13 box).
 
 The readout column keeps source x416..636 and y2..14/17..29 exactly. In the source, the forecast inset is centred between the end of the launchers (x288) and x416. The native forecast remains centred, so with one fewer launcher it moves from outer x326 to x310, with tiles at x312..359.
+
+### Follow-up: browser verification fixes (2026-10-11)
+
+The first browser run of the pixel test exposed four issues:
+- **Stale sprite.** The local `control-bar.png` predated the narrowed erasure rectangles. Re-running `bun run import` fixed it.
+- **Readout text overflow.** Arial 10px over-ran the 172×9 interiors into the bevels. Per user direction, readout values now use a 9px font without padding offsets. The date fits completely. `overflow:hidden` clips only the 1px top of `$` in Funds.
+- **Caption shadow.** The 1px white text-shadow on SELL reached the right bevel. Captions now clip to their 26×9 box, and the test exempts that whole box.
+- **Panel shadow over the strip.** The terrain panel's `box-shadow:0 10px 30px` faintly darkened strip rows 27..30 from x50. The strip now has `position:relative; z-index:1`. Its children remain in normal flex flow.

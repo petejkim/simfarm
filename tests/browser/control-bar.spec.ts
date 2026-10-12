@@ -120,7 +120,7 @@ test('flex-laid launchers and insets rebuild the source bevels with CSS around s
   // Rendered x → source x: launchers 0..6 in place, Market from face8, forecast shifted 16px left; x300 is plain strip.
   const sourceX = (x: number) => x < 224 ? x : x < 256 ? x + 32 : x < 416 ? (x + 16 >= 288 ? x + 16 : 300) : x;
   // Live text replaces source lettering; the forecast interior is checked in weather-window.spec.
-  const live = [[3, 21, 26, 7], [35, 21, 26, 7], [400, 2, 58, 13], [400, 17, 58, 13], [463, 4, 172, 9], [463, 19, 172, 9], [312, 8, 48, 16]];
+  const live = [[3, 20, 26, 9], [35, 20, 26, 9], [400, 2, 58, 13], [400, 17, 58, 13], [463, 4, 172, 9], [463, 19, 172, 9], [312, 8, 48, 16]];
   // Corner pixels where light and shadow bevels meet; the source paints face grey, CSS miters blend.
   const miter = (x: number, y: number) => { const bx = x < 256 ? x % 32 : -1;
     return (bx >= 0 && ((bx === 30 && y === 1) || (bx === 29 && y === 2) || (bx === 1 && y === 30) || (bx === 2 && y === 29)))

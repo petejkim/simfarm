@@ -95,21 +95,21 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .original-menu-popup button{display:block;width:100%;height:12px;border:0;border-radius:0;padding:0 8px;text-align:left;background:#fff;color:#000;font:inherit}
 .original-menu-popup button:disabled{opacity:.5;cursor:not-allowed}
 .original-menu-popup button:focus{background:#000;color:#fff;outline:none}
-.original-control-bar{--bevel-light:#fff;--bevel-shadow:#828282;--bar-face:#c2c2c2;--bar-ink:#000;display:flex;align-items:stretch;height:32px;width:640px;font:10px/1 Arial,Helvetica,sans-serif;color:var(--bar-ink);background:var(--bar-face);box-shadow:inset 0 1px var(--bar-ink)}
+.original-control-bar{--bevel-light:#fff;--bevel-shadow:#828282;--bar-face:#c2c2c2;--bar-ink:#000;position:relative;z-index:1;display:flex;align-items:stretch;height:32px;width:640px;font:10px/1 Arial,Helvetica,sans-serif;color:var(--bar-ink);background:var(--bar-face);box-shadow:inset 0 1px var(--bar-ink)}
 .toolbar-launchers{display:flex;flex:none}
 .original-control-bar .window-launcher{display:flex;flex:none;width:32px;height:32px;margin:0;padding:1px;border:0;border-radius:0;background:var(--bar-ink);color:var(--bar-ink)}
 .original-control-bar .window-launcher-face{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;flex:1;border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light);background:var(--bar-face) var(--control-bar-sprite) no-repeat;image-rendering:pixelated}
 .original-control-bar .window-launcher:hover{background:var(--bar-ink)}
 .original-control-bar .window-launcher:active .window-launcher-face{border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
 .original-control-bar .window-launcher:focus-visible{outline:2px solid #0000eb;outline-offset:-4px}
-.toolbar-caption{display:flex;align-items:center;justify-content:center;width:26px;height:9px;color:#414141;text-shadow:1px 0 var(--bevel-light);font:bold 10px/1 Arial,Helvetica,sans-serif;pointer-events:none}
+.toolbar-caption{display:flex;overflow:hidden;align-items:center;justify-content:center;width:26px;height:9px;color:#414141;text-shadow:1px 0 var(--bevel-light);font:bold 10px/1 Arial,Helvetica,sans-serif;pointer-events:none}
 .toolbar-forecast-area{display:flex;flex:1;align-items:center;justify-content:center}
 .toolbar-readouts{display:flex;flex-direction:column;gap:2px;flex:none;padding:2px 3px 0 0}
 .toolbar-readout-row{display:flex;gap:4px;height:13px}
 .toolbar-inset{display:block;flex:none;border:2px solid;border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
 .toolbar-forecast{width:52px;height:20px}
 .toolbar-readout-label{display:flex;justify-content:flex-end;align-items:center;width:41px;font-weight:bold}
-.toolbar-readout{width:176px;height:13px;display:flex;align-items:center;overflow:clip visible;white-space:nowrap;padding-left:1px}
+.toolbar-readout{width:176px;height:13px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;padding-left:1px;font-size:9px}
 
 /* Permanent desktop workspace. No phone breakpoint rearranges this frame. */
 .game-desktop{position:relative;min-width:640px;width:100%;height:max(480px,100dvh);overflow:hidden;background:#c2c2c2;color:#000;color-scheme:light}
