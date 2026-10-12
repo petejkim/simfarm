@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { test,expect,type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { bulldozeFixture,bulldozeTargets } from '../support/bulldoze';
@@ -10,7 +11,7 @@ import { readScenario,worldIndex } from '../../src/formats/scenario';
 import { readCrop } from '../../src/formats/crop';
 import { reveal } from '../support/workspace';
 async function load(page:Page,text:string){await page.goto('/');await page.locator('#load-farm-file').setInputFiles({name:'direct-bulldoze.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
-async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await (await p).path())!,'utf8'));}
+async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
 async function point(page:Page,x:number,y:number,scroll=true){const zoom=Number(await page.locator('#zoom').inputValue());if(scroll)await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x*16*p.z-120),Math.max(0,p.y*16*p.z-120)),{x,y,z:zoom});const r=(await page.locator('#world').boundingBox())!;return{x:r.x+(x+.5)*16*zoom,y:r.y+(y+.5)*16*zoom};}
 async function click(page:Page,x:number,y:number){const p=await point(page,x,y);await page.mouse.click(p.x,p.y);}
 async function tool(page:Page){await page.getByRole('button',{name:'Bulldoze',exact:true}).click();await expect(page.locator('#cancel-bulldoze')).toBeVisible();await expect(page.locator('[data-window=actions]')).toBeHidden();}

@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { declineTownEventDialogs } from '../support/town-event-dialogs';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import {toggleOption} from '../support/options-menu';
@@ -179,7 +180,7 @@ test('scheduled planting buys seed, rents machinery and renders original crop pi
   await expect(page.locator('#farm-cash')).toHaveText(`$${game.getSnapshot().scenario.farm.cash.toLocaleString('en-US')}`);
   const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();
   await page.getByRole('menuitem',{name:'Save',exact:true}).click();
-  expect(JSON.parse(readFileSync((await (await pending).path())!,'utf8'))).toEqual(JSON.parse(game.save(1)));
+  expect(JSON.parse(readSaveText((await (await pending).path())!))).toEqual(JSON.parse(game.save(1)));
   const actual=await page.locator('#world').evaluate((canvas:HTMLCanvasElement,point)=>
     Array.from(canvas.getContext('2d')!.getImageData(point.x*16,point.y*16,16,16).data),{x:field.x+3,y:field.y+4});
   expect(actual).toEqual(Array.from(expected));
@@ -224,7 +225,7 @@ for (const id of [0, 4]) test(`scheduled harvest controls complete ${id === 0 ? 
   await expect(page.locator('#harvest-items')).toContainText(`${crop.name} · Quantity ${quantity} · Loss ${Math.floor(lot.loss*100/65535)}%`);
   const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();
   await page.getByRole('menuitem',{name:'Save',exact:true}).click();
-  expect(JSON.parse(readFileSync((await (await pending).path())!,'utf8'))).toEqual(JSON.parse(expectedGame.save(id)));
+  expect(JSON.parse(readSaveText((await (await pending).path())!))).toEqual(JSON.parse(expectedGame.save(id)));
   await expect(page.locator('#harvest-progress')).toHaveCount(0);
   await expect(page.locator('#plant-field')).toHaveCount(0);
   if (!(crop.rawDefinition[62] & 1)) await expect(page.locator('#harvest-field')).toHaveCount(0);
@@ -434,9 +435,9 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/\.simfarm\.json$/);
+  expect(download.suggestedFilename()).toMatch(/\.simfarm\.json\.gz$/);
   const path = 'artifacts/browser-farm.simfarm.json'; await download.saveAs(path);
-  const saved = JSON.parse(readFileSync(path, 'utf8'));
+  const saved = JSON.parse(readSaveText(path));
   const schedule = Buffer.from(saved.scenario.schedule, 'hex');
   const newFieldPlan = (week: number) => schedule.readUInt16LE((week * 98 + 8) * 2);
   // SCEN4 starts at week 15/day 6: planting records week 15, fertilizer two days later records week 16.
@@ -458,7 +459,7 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const restoredPath = 'artifacts/browser-restored-plan.simfarm.json';
   await (await restoredDownload).saveAs(restoredPath);
-  expect(JSON.parse(readFileSync(restoredPath, 'utf8')).scenario.schedule).toBe(saved.scenario.schedule);
+  expect(JSON.parse(readSaveText(restoredPath)).scenario.schedule).toBe(saved.scenario.schedule);
   await page.screenshot({ path: 'artifacts/browser-load.png', fullPage: true });
   for (let day = 2; day < 84; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); await declineTownEventDialogs(page); }
   expect((await selectedFieldSnapshot(page)).estimate?.value).toBeGreaterThan(0); // Event animation now participates in the source RNG stream.
@@ -483,7 +484,7 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
   await reveal(page, '#play-pause'); await page.locator('#play-pause').click(); await page.clock.runFor(1748);
   async function saved() {
     const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-    const file = await pending; return readFileSync((await file.path())!, 'utf8');
+    const file = await pending; return readSaveText((await file.path())!);
   }
   const text = await saved(), expected = JSON.parse(text);
   expect(expected.runtime.paused).toBe(false); expect(expected.runtime.speed).toBe(4);
@@ -650,7 +651,7 @@ test('calendar planner edits five years, preserves saved plans and dispatches th
   const pending = page.waitForEvent('download');
   await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = 'artifacts/browser-edited-plan.simfarm.json'; await (await pending).saveAs(path);
-  const saved = JSON.parse(readFileSync(path, 'utf8')), plan = Buffer.from(saved.scenario.schedule, 'hex');
+  const saved = JSON.parse(readSaveText(path)), plan = Buffer.from(saved.scenario.schedule, 'hex');
   expect([16, 17, 239].map(w => plan.readUInt16LE(w * 196))).toEqual([847, 915, 839]);
   await page.reload();
   await page.locator('#load-farm-file').setInputFiles(path);
@@ -708,7 +709,7 @@ test('Loans panel borrows, quotes installments, saves balances and pays off thro
   await expect(page.locator('#loan-result')).toHaveText('Borrowed $1,000.');
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const download = await pending, path = 'artifacts/browser-loan.simfarm.json'; await download.saveAs(path);
-  expect(JSON.parse(readFileSync(path, 'utf8')).runtime.finances.loan.principal).toBe(1000);
+  expect(JSON.parse(readSaveText(path)).runtime.finances.loan.principal).toBe(1000);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await openWindow(page, 'bank'); await expect(page.locator('#loan-balance')).toHaveText('$1,000');

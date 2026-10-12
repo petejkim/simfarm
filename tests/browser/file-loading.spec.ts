@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {readScenario} from '../../src/formats/scenario';
@@ -6,7 +7,7 @@ import {browserCrops} from '../support/crop-catalog';
 async function save(page:Page){
   const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();
   await page.getByRole('menuitem',{name:'Save',exact:true}).click();
-  return readFileSync((await(await pending).path())!,'utf8');
+  return readSaveText((await(await pending).path())!);
 }
 async function load(page:Page,text:string){
   const picker=page.waitForEvent('filechooser');await page.locator('#file-menu-button').click();

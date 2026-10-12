@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { newGame } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
@@ -18,7 +19,7 @@ async function start(page: Page) {
 }
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  return JSON.parse(readFileSync((await (await pending).path())!, 'utf8'));
+  return JSON.parse(readSaveText((await (await pending).path())!));
 }
 async function chooser(page: Page) {
   await newGame(page); await page.locator('#new-farm-seed').fill('9029');

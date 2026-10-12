@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { plantField, clickFarmTile } from '../support/field-actions';
 import { reveal, openWindow } from '../support/workspace';
@@ -19,7 +20,7 @@ async function load(page: Page, text: string) {
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const file = 'artifacts/browser-removal.simfarm.json'; await (await pending).saveAs(file);
-  return JSON.parse(readFileSync(file, 'utf8'));
+  return JSON.parse(readSaveText(file));
 }
 async function selectTile(page:Page,x:number,y:number){
   await reveal(page,'#viewport');await page.getByRole('button',{name:'Bulldoze',exact:true}).click();await clickFarmTile(page,x,y);

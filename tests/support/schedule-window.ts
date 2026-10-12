@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
+import {readSaveText} from './save-file';
 import { openWindow, reveal } from './workspace';
 import { clickFarmTile } from './field-actions';
 /** Use a real checkpoint to locate next week; all changes go through original controls.
@@ -7,7 +7,7 @@ import { clickFarmTile } from './field-actions';
 export async function scheduleNextHarvest(page:Page,x:number,y:number,fixedWeek?:number){
   const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();
   await page.getByRole('menuitem',{name:'Save',exact:true}).click();
-  const saved=JSON.parse(readFileSync((await (await pending).path())!,'utf8'));
+  const saved=JSON.parse(readSaveText((await (await pending).path())!));
   const calendar=saved.scenario.farm.calendar,week=calendar.month*4+calendar.week+1;
   await reveal(page,'#viewport');await page.getByRole('button',{name:'View object',exact:true}).click();
   await clickFarmTile(page,x,y);await scheduleMonth(page,Math.floor(week/4));

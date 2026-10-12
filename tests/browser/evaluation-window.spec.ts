@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {readArchive} from '../../src/formats/archive';
@@ -10,7 +11,7 @@ const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.m
 const entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),asset=(n:string)=>entries.find(e=>e.name===n)!.bytes,palette=readPalette(asset('simfarm.pal'));
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'evaluation.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
-async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await (await pending).path())!,'utf8'));}
+async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
 async function open(page:Page){const panel=page.getByRole('region',{name:'Farm evaluation'});if(await panel.isVisible())await panel.focus();else await page.locator('#window-evaluation').click();await expect(page.getByRole('region',{name:'Farm evaluation'})).toBeFocused();}
 async function pixels(page:Page,x:number,y:number,w:number,h:number){return page.locator('.evaluation-preview').evaluate((c:HTMLCanvasElement,r)=>Array.from(c.getContext('2d')!.getImageData(...r).data),[x,y,w,h] as [number,number,number,number]);}
 function fixture(){const f=shopFixture();f.state.disasters.enabled=false;

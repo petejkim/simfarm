@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { clickFarmTile, setAutoDoze } from '../support/field-actions';
 import { buyBuilding, selectBuilding } from '../support/building-actions';
@@ -14,7 +15,7 @@ import { checkBuildingPlacement } from '../../src/simulation/building-placement'
 const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
 async function download(page: Page, path: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  await (await pending).saveAs(path); return readFileSync(path, 'utf8');
+  await (await pending).saveAs(path); return readSaveText(path);
 }
 
 test('original Buy purchases storage roofs and usable records and persists accounts', async ({ page }) => {

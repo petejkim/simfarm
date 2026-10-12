@@ -1,5 +1,5 @@
+import {readSaveText} from '../support/save-file';
 import { test,expect,type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
 import { readNativeSave,writeNativeSave } from '../../src/formats/native-save';
@@ -7,7 +7,7 @@ import { worldIndex } from '../../src/formats/scenario';
 import { checkEquipmentPickup } from '../../src/simulation/manual-equipment-move';
 import { reveal } from '../support/workspace';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'interaction.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
-async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await (await p).path())!,'utf8'));}
+async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
 async function pointer(page:Page,x:number,y:number){const zoom=Number(await page.locator('#zoom').inputValue());await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-20)*16*p.zoom,Math.max(0,p.y-15)*16*p.zoom),{x,y,zoom});const r=(await page.locator('#world').boundingBox())!;await page.mouse.move(r.x+(x+.5)*16*zoom,r.y+(y+.5)*16*zoom);}
 async function right(page:Page,x:number,y:number){await pointer(page,x,y);await page.mouse.down({button:'right'});await page.mouse.up({button:'right'});}
 

@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -12,7 +13,7 @@ async function start(page: Page) {
 }
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  return JSON.parse(readFileSync((await (await pending).path())!, 'utf8'));
+  return JSON.parse(readSaveText((await (await pending).path())!));
 }
 async function load(page: Page, name: string, buffer: Buffer) {
   await page.locator('#load-farm-file').setInputFiles({ name, mimeType: 'application/octet-stream', buffer });

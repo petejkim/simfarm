@@ -1,12 +1,12 @@
+import {readSaveText} from '../support/save-file';
 import {test,expect,type Page} from '@playwright/test';
-import {readFileSync} from 'node:fs';
 import {shopFixture} from '../support/livestock';
 import {browserCrops} from '../support/crop-catalog';
 import {GameSimulation} from '../support/game';
 import {writeNativeSave} from '../../src/formats/native-save';
 import {worldIndex} from '../../src/formats/scenario';
 import {MAP_MODES} from '../../src/formats/map-window';
-async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await(await pending).path())!,'utf8'));}
+async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'map.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function plot(page:Page,x:number,y:number){await page.locator('.overview-viewport canvas').click({position:{x:x*16+8,y:y*16+8}});}

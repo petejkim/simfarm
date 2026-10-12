@@ -1,5 +1,5 @@
+import {readSaveText} from '../support/save-file';
 import { test, expect, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
 
 async function start(page: Page) {
   await page.goto('/'); await expect(page.locator('#world')).toBeVisible(); await page.locator('#window-bank').click();
@@ -7,7 +7,7 @@ async function start(page: Page) {
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click();
   await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  return JSON.parse(readFileSync((await (await pending).path())!, 'utf8'));
+  return JSON.parse(readSaveText((await (await pending).path())!));
 }
 
 test('Bank terminal preserves source geometry and HTML captions; keypad, clear, help, borrow and full repayment work', async ({ page }) => {

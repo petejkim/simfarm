@@ -1,9 +1,9 @@
+import {readSaveText} from '../support/save-file';
 import { browseSupply, selectSupply } from '../support/supply-actions';
 import { clickFarmTile } from '../support/field-actions';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
 import { disasterFixture } from '../support/disasters';
 import { GameSimulation } from '../support/game';
 import { schedulePlant } from '../support/schedule-window';
@@ -14,7 +14,7 @@ async function load(page: Page, text: string) {
 async function save(page: Page, name: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = `artifacts/browser-market-${name}.json`; await (await pending).saveAs(path);
-  return JSON.parse(readFileSync(path, 'utf8'));
+  return JSON.parse(readSaveText(path));
 }
 
 test('scheduled planting keeps trade quotes until weekly execution updates seed purchases, with exact restored continuation', async ({ page }) => {

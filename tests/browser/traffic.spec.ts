@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
@@ -14,7 +15,7 @@ async function load(page: Page, text: string) {
 async function save(page: Page, name: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = `artifacts/browser-traffic-${name}.json`; await (await pending).saveAs(path);
-  return JSON.parse(readFileSync(path, 'utf8'));
+  return JSON.parse(readSaveText(path));
 }
 
 test('traffic paints original vehicle pixels and continues through weekly spawning and browser save/load', async ({ page }) => {

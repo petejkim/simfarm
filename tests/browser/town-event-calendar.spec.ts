@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { livestockFixture, shopFixture } from '../support/livestock';
@@ -26,7 +27,7 @@ async function load(page: Page, text: string) {
 async function save(page: Page) {
   const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click();
   await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  return JSON.parse(readFileSync((await (await download).path())!, 'utf8'));
+  return JSON.parse(readSaveText((await (await download).path())!));
 }
 async function checkMessage(page: Page, game: InstanceType<typeof GameSimulation>) {
   const state = game.getSnapshot().townEvent, model = townEventMessage(state, readFileSync('public/assets/raw/events.dat'))!;
@@ -45,6 +46,8 @@ async function checkMessage(page: Page, game: InstanceType<typeof GameSimulation
 
 test('calendar fair and rodeo entries use original modal choices, select MIDI and charge exactly once', async ({ page }) => {
   await start(page); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  // Startup has priority while the worklet and first MIDI are still loading.
+  await page.locator('#options-menu-button').click();await expect(page.locator('#audio-status')).toContainText('Playing amain');await page.keyboard.press('Escape');
   for (const [month, animal] of [[5, false], [8, true], [8, false]] as const) {
     const game = fixture(month, animal).load().withAllCrops(browserCrops); await load(page, game.save(4));
     await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });

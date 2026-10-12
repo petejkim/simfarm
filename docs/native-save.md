@@ -179,3 +179,11 @@ Expanded browser farms write v24 with24 filenames/definition blocks/prices/histo
 ## V25 — original Options preferences
 
 V25 now writes both16-slot research and24-slot playable checkpoints. It adds required boolean farm.autoScroll, farm.autoGoto and farm.messages alongside the existing autoBuySeeds/autoClear/autoRent. Versions1–24 recover these previously uneditable preferences from the retained original SSM runtime bytes, or true/false/true for generated farms. Original raw bytes and unknown fields remain intact. All catalog/count/identity validation stays in place. The preceding v23/v24 writing policy is historical. Browser audio enablement and viewport positions are not checkpoint state. See [options-menu.md](options-menu.md) for source offsets, duplicate reads, defaults and explicit adaptations.
+
+## Gzip file transport (2026-10-11)
+
+Native downloads now use `.simfarm.json.gz` and `application/gzip`, produced by the browser's `CompressionStream('gzip')`. The canonical JSON checkpoint, version27 schema, unknown source bytes and simulation `save`/`load` APIs are unchanged. This is a user-requested browser file adaptation, not an original DOS format claim.
+
+Loading detects gzip magic1f8b from file contents and uses `DecompressionStream('gzip')`, accepting compressed downloads even after renaming. Legacy uncompressed native JSON and original SSM imports remain supported. Both input and streaming expanded output are bounded by the existing1,000,000-byte limit; invalid/truncated/checksum-failing data rejects before replacing the farm. Load cancellation also cancels the stream reader. Browser Save/Save As/Save and pause now await compression; a synchronous guard prevents duplicate concurrent downloads. The checkpoint is captured before compression, so simulation state ownership and saved timing remain unchanged.
+
+A representative bundled farm checkpoint measured572,505bytes as JSON and29,187bytes as gzip (94.9% reduction). Compression ratio varies by farm. Tests independently decompress with zlib and compare exact bytes, exercise browser save→load→save, legacy JSON, renamed gzip, corrupt/truncated streams, size limits and cancellation. Existing browser save assertions now use a shared gzip-aware reader; actual fixture/asset binary reads remain unchanged.

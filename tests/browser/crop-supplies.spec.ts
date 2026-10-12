@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { selectSupply } from '../support/supply-actions';
 import { schedulePlant } from '../support/schedule-window';
@@ -19,7 +20,7 @@ async function load(page: Page, text: string) {
 }
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  const file = 'artifacts/browser-crop-shop.simfarm.json'; await (await pending).saveAs(file); return JSON.parse(readFileSync(file, 'utf8'));
+  const file = 'artifacts/browser-crop-shop.simfarm.json'; await (await pending).saveAs(file); return JSON.parse(readSaveText(file));
 }
 async function selectTile(page: Page, x: number, y: number) {
   await page.locator('#viewport').evaluate((el, p) => el.scrollTo(p.x * 16, p.y * 16), { x, y });

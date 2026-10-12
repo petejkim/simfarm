@@ -1,9 +1,9 @@
+import {readSaveText} from '../support/save-file';
 import {test,expect} from '@playwright/test';
-import {readFileSync} from 'node:fs';
 
 test('independent windows retain positions and controls, raise on interaction and close without closing their neighbors',async({page})=>{
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  async function save(){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await(await p).path())!,'utf8'));}
+  async function save(){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await p).path())!));}
   const before=await save();await page.locator('#window-buy').click();const buy=page.locator('[data-window=buy]'),bank=page.locator('[data-window=bank]');
   const title=buy.locator('.game-window-title');await title.focus();for(let i=0;i<20;i++)await page.keyboard.press('ArrowRight');
   const position=await buy.boundingBox();await buy.getByRole('button',{name:'Machinery',exact:true}).click();
@@ -31,7 +31,7 @@ test('original launchers toggle only their own window and Edit remains permanent
 
 test('toolbar raises background windows without resetting controls, then toggles the front closed',async({page})=>{
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  async function save(){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await(await p).path())!,'utf8'));}
+  async function save(){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await p).path())!));}
   const before=await save();
   const buy=page.locator('[data-window=buy]'),bank=page.locator('[data-window=bank]');
   await page.locator('#window-buy').click();await buy.getByRole('button',{name:'Machinery',exact:true}).click();
@@ -50,7 +50,7 @@ test('toolbar raises background windows without resetting controls, then toggles
 
 test('the map stays behind floating windows without a title or stack entry, and Edit preserves them',async({page})=>{
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  async function save(){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await(await p).path())!,'utf8'));}
+  async function save(){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await p).path())!));}
   const before=await save(),map=page.locator('#viewport'),mapBox=await map.boundingBox();
   expect(mapBox!.y).toBe(64);await expect(page.locator('.edit-title,[data-window=edit]')).toHaveCount(0);
   const buy=page.locator('[data-window=buy]'),bank=page.locator('[data-window=bank]');

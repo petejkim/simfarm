@@ -1,10 +1,11 @@
+import {readSaveText} from '../support/save-file';
 import { test,expect,type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
 import { readArchive } from '../../src/formats/archive';
 import { readPalette,decodePlanar } from '../../src/formats/graphics';
-async function save(page:Page){const d=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await (await d).path())!,'utf8'));}
+async function save(page:Page){const d=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await d).path())!));}
 async function point(page:Page,x:number,y:number){await page.locator('#window-edit').click();await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-30)*16,Math.max(0,p.y-20)*16),{x,y});const r=(await page.locator('#world').boundingBox())!;await page.mouse.click(r.x+x*16+8,r.y+y*16+8);}
 async function load(page:Page,text:string){await page.goto('/');await page.locator('#load-farm-file').setInputFiles({name:'examine.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 

@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { clickFarmTile } from '../support/field-actions';
 import { reveal } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -15,7 +16,7 @@ async function load(page: Page, text: string) {
 }
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  const path = 'artifacts/browser-movement.simfarm.json'; await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
+  const path = 'artifacts/browser-movement.simfarm.json'; await (await pending).saveAs(path); return JSON.parse(readSaveText(path));
 }
 async function startMove(page:Page){await reveal(page,'#viewport');await page.getByRole('button',{name:'Move object',exact:true}).click();}
 async function toggleBuilding(page:Page,x:number,y:number){

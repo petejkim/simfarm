@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { readNativeSave } from '../../src/formats/native-save';
 import { reveal } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
@@ -13,7 +14,7 @@ const asset = (name: string) => archive.find(a => a.name === name)!.bytes;
 async function save(page: Page) {
   const pending = page.waitForEvent('download');
   await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  return JSON.parse(readFileSync((await (await pending).path())!, 'utf8'));
+  return JSON.parse(readSaveText((await (await pending).path())!));
 }
 async function load(page: Page, text: string) {
   await page.locator('#load-farm-file').setInputFiles({ name: 'town-event.json', mimeType: 'application/json', buffer: Buffer.from(text) });

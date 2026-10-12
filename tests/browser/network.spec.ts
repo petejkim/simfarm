@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import {clickFarmTile} from '../support/field-actions';
 import { reveal } from '../support/workspace';
@@ -15,7 +16,7 @@ async function load(page: Page, text: string) {
 }
 async function save(page: Page, suffix: string) {
   const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  const path=`artifacts/browser-network-${suffix}.simfarm.json`;await (await pending).saveAs(path);return JSON.parse(readFileSync(path,'utf8'));
+  const path=`artifacts/browser-network-${suffix}.simfarm.json`;await (await pending).saveAs(path);return JSON.parse(readSaveText(path));
 }
 const labels={'road-161':'Dirt road','road-150':'Paved road',fence:'Fence',gate:'Gate'} as const;
 async function tool(page:Page,name:string){await reveal(page,'#viewport');await page.getByRole('button',{name,exact:true}).click();}

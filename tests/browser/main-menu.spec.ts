@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -16,7 +17,7 @@ async function command(page: Page, name: string) {
 }
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await command(page, 'Save'); const download = await pending;
-  return { data: JSON.parse(readFileSync((await download.path())!, 'utf8')), filename: download.suggestedFilename() };
+  return { data: JSON.parse(readSaveText((await download.path())!)), filename: download.suggestedFilename() };
 }
 async function pick(page: Page, name: string, buffer: Buffer) {
   const pending = page.waitForEvent('filechooser'); await command(page, 'Load Game');
@@ -56,9 +57,9 @@ test('File Save As names downloads, Save retains that name, and Load Game restor
   await start(page); await reveal(page, '#next-day'); await page.locator('#next-day').click(); const before = await save(page);
   await command(page, 'Save As'); await page.getByLabel('Filename', { exact: true }).fill('Preserved farm');
   const pending = page.waitForEvent('download'); await page.getByRole('button', { name: 'Download save' }).click();
-  const download = await pending; expect(download.suggestedFilename()).toBe('Preserved farm.simfarm.json');
-  expect(JSON.parse(readFileSync((await download.path())!, 'utf8'))).toEqual(before.data);
-  expect((await save(page)).filename).toBe('Preserved farm.simfarm.json');
+  const download = await pending; expect(download.suggestedFilename()).toBe('Preserved farm.simfarm.json.gz');
+  expect(JSON.parse(readSaveText((await download.path())!))).toEqual(before.data);
+  expect((await save(page)).filename).toBe('Preserved farm.simfarm.json.gz');
   await reveal(page, '#next-day'); await page.locator('#next-day').click();
   await pick(page, 'checkpoint.json', Buffer.from(JSON.stringify(before.data))); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   expect((await save(page)).data).toEqual(before.data);
@@ -84,7 +85,7 @@ test('Quit cancellation retains running state; save-and-pause downloads and leav
   await expect(page.locator('#time-status')).toContainText('Running');
   const before = await save(page);
   await command(page, 'Quit'); const pending = page.waitForEvent('download'); await page.getByRole('button', { name: 'Save and pause' }).click();
-  expect(JSON.parse(readFileSync((await (await pending).path())!, 'utf8'))).toEqual(before.data);
+  expect(JSON.parse(readSaveText((await (await pending).path())!))).toEqual(before.data);
   await expect(page.locator('#time-status')).toContainText('Paused'); await expect(page.locator('#save-status')).toContainText('Farm paused');
   const paused = (await save(page)).data;
   expect(paused).toEqual({ ...before.data, runtime: { ...before.data.runtime, paused: true, elapsed: 0 } });

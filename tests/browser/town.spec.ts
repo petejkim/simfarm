@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
@@ -29,7 +30,7 @@ test('weekly town construction repaints the map and resumes exactly after a brow
   expect(await pixels()).not.toEqual(before);
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const download = await pending, path = 'artifacts/browser-town.simfarm.json'; await download.saveAs(path);
-  const saved = JSON.parse(readFileSync(path, 'utf8'));
+  const saved = JSON.parse(readSaveText(path));
   expect(saved).toEqual(JSON.parse(expected.save(4)));
   expect(Buffer.from(saved.scenario.regions, 'hex')[ri]).toBe(0x16);
   expect(saved.runtime.finances.town.townRevenue).toBe(4700);
@@ -38,7 +39,7 @@ test('weekly town construction repaints the map and resumes exactly after a brow
   for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); }
   const nextDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   await (await nextDownload).saveAs(path);
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toEqual(JSON.parse(expected.save(4)));
+  expect(JSON.parse(readSaveText(path))).toEqual(JSON.parse(expected.save(4)));
   await page.locator('#viewport').evaluate(el => el.scrollTo(24 * 16, 0));
   await page.screenshot({ path: 'artifacts/browser-town.png', fullPage: true });
   expect(errors).toEqual([]);

@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { fieldDescription } from '../support/field-checkpoint';
 import { buyPlot, selectProperty, setAutoDoze, clickFarmTile } from '../support/field-actions';
@@ -5,13 +6,12 @@ import { scheduleMonth, scheduleWeek } from '../support/schedule-window';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
 import { shopFixture } from '../support/livestock';
 
 async function checkpoint(page: Page, name: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = `artifacts/navigation-${name}.json`; await (await pending).saveAs(path);
-  return JSON.parse(readFileSync(path, 'utf8'));
+  return JSON.parse(readSaveText(path));
 }
 
 test('Schedule and Bank remain accessible without Farm controls and navigation preserves the farm checkpoint', async ({ page }) => {

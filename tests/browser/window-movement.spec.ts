@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { test, expect, type Page, type Locator } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
@@ -9,7 +10,7 @@ async function start(page: Page) {
 async function save(page: Page) {
   const pending = page.waitForEvent('download');
   await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  return JSON.parse(readFileSync((await (await pending).path())!, 'utf8'));
+  return JSON.parse(readSaveText((await (await pending).path())!));
 }
 async function drag(page: Page, title: Locator, dx: number, dy: number) {
   const box = (await title.boundingBox())!;

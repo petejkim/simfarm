@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { newGame } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
@@ -25,7 +26,7 @@ async function load(page: Page, text: string) {
 async function save(page: Page, name: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const download = await pending, path = `artifacts/browser-restart-${name}.json`;
-  await download.saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
+  await download.saveAs(path); return JSON.parse(readSaveText(path));
 }
 
 test('accepted custom preview survives browser import and retains exact continuation and wrapper bytes', async ({ page }) => {

@@ -1,9 +1,10 @@
+import {readSaveText} from '../support/save-file';
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {PNG} from 'pngjs';
 import {EDIT_HELP_LABELS} from '../../src/formats/edit-help';
 async function start(page:Page){await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
-async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await(await pending).path())!,'utf8'));}
+async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
 
 test('Edit help restores source-size leaders and real text, supports dismissal and leaves checkpoints untouched',async({page})=>{
   await start(page);const before=await save(page),button=page.getByRole('button',{name:'Edit tools and help',exact:true});

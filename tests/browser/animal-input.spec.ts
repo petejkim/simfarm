@@ -1,8 +1,8 @@
+import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
 import { livestockFixture } from '../support/livestock';
 
 async function load(page: Page, text: string) {
@@ -12,7 +12,7 @@ async function load(page: Page, text: string) {
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = 'artifacts/browser-animal-input.simfarm.json'; await (await pending).saveAs(path);
-  return JSON.parse(readFileSync(path, 'utf8'));
+  return JSON.parse(readSaveText(path));
 }
 
 test('map hover steers original livestock through zoom and scrolling, and clears on pointer exit or window blur', async ({ page }) => {

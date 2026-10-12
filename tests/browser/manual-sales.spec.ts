@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { selectAssetSale } from '../support/sell-window';
 import { aircraftCatalog } from '../support/aircraft-browser';
@@ -18,7 +19,7 @@ async function load(page: Page, text: string) {
 }
 async function save(page: Page, file: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  await (await pending).saveAs(file); return JSON.parse(readFileSync(file, 'utf8'));
+  await (await pending).saveAs(file); return JSON.parse(readSaveText(file));
 }
 
 test('Original Sell controls sell a live newborn and stored parent, show original quotes/income and continue exact saved state', async ({ page }) => {

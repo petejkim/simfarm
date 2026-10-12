@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { buyBuilding, selectBuilding } from '../support/building-actions';
 import {clickFarmTile} from '../support/field-actions';
 import { reveal } from '../support/workspace';
@@ -26,7 +27,7 @@ function fixture(wind = 10, dig = false) {
 }
 async function download(page: Page, path: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
+  await (await pending).saveAs(path); return JSON.parse(readSaveText(path));
 }
 
 test('purchased water pump wets original ditch pixels, refreshes fields and continues its saved wave', async ({ page }) => {

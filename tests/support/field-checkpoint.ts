@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
+import {readSaveText} from './save-file';
 import { GameSimulation } from './game';
 import { browserCrops } from './crop-catalog';
 
@@ -9,7 +9,7 @@ export async function farmSnapshot(page:Page){
   while(await notice.isVisible())await notice.click();
   const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();
   await page.getByRole('menuitem',{name:'Save',exact:true}).click();
-  const text=readFileSync((await (await pending).path())!,'utf8');
+  const text=readSaveText((await (await pending).path())!);
   return GameSimulation.load(text,browserCrops).simulation.getSnapshot();
 }
 export async function selectedFieldSnapshot(page:Page){

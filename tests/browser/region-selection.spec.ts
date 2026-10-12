@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { newGame } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -14,7 +15,7 @@ const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + 
 const locations = readSetupMap(readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA')).find(e => e.name === 'scenario.odt')!.bytes).locations;
 async function save(page: Page, name: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  const path = `artifacts/browser-region-${name}.json`; await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
+  const path = `artifacts/browser-region-${name}.json`; await (await pending).saveAs(path); return JSON.parse(readSaveText(path));
 }
 async function openMap(page: Page) {
   await newGame(page); await page.locator('#new-farm-seed').fill('9029');

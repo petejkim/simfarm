@@ -1,5 +1,5 @@
+import {readSaveText} from '../support/save-file';
 import {test,expect} from '@playwright/test';
-import {readFileSync} from 'node:fs';
 
 test('New Game opens the original chooser directly, keeps native options, and fits both source panels at 1x',async({page})=>{
   await page.setViewportSize({width:640,height:480});await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
@@ -20,7 +20,7 @@ test('New Game opens the original chooser directly, keeps native options, and fi
   await page.screenshot({path:'artifacts/browser-new-game-terrain.png'});
   await page.locator('#play-farm').click();await expect(page.locator('#map-status')).toContainText('Generated farm');
   const download=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();
-  const state=JSON.parse(readFileSync((await(await download).path())!,'utf8'));
+  const state=JSON.parse(readSaveText((await(await download).path())!));
   expect(state.runtime.newFarm.provenance.options.seeds).toEqual({visual:37,simulation:37,bounded:37});
   expect(state.scenario.farm.calendar.year).toBe(2001);
 });
@@ -34,7 +34,7 @@ test('each New Game suggests a new seed, keeps edits within setup, and leaves th
     });
   });
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  async function save(){const download=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await(await download).path())!,'utf8'));}
+  async function save(){const download=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await(await download).path())!));}
   async function open(){await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'New Game',exact:true}).click();await expect(page.locator('#region-map')).toBeVisible();}
   const before=await save();await open();const first=Number(await page.locator('#new-farm-seed').inputValue());expect(first).toBeGreaterThan(100);
   await page.locator('#new-farm-seed').fill('65535');await page.locator('[data-region="3,8"]').click();await expect(page.locator('#new-farm-seed')).toHaveValue('65535');

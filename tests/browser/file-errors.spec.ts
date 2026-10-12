@@ -1,6 +1,6 @@
+import {readSaveText} from '../support/save-file';
 import {test,expect,type Page} from '@playwright/test';
-import {readFileSync} from 'node:fs';
-async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return readFileSync((await(await pending).path())!,'utf8');}
+async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return readSaveText((await(await pending).path())!);}
 test('File Load reports failure visibly, keeps the farm intact, and supports dismissal and retry without Game files',async({page})=>{
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');const before=await save(page);
   await expect(page.locator('[data-window=session],#save-farm,#load-farm')).toHaveCount(0);

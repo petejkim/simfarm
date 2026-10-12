@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { chooseDisaster, setDisastersEnabled, expectDisasterChecked } from '../support/disaster-menu';
 import { farmSnapshot, fieldDescription } from '../support/field-checkpoint';
@@ -17,7 +18,7 @@ async function save(page: Page, name: string) {
   await acknowledgeFinanceMessages(page);
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = `artifacts/browser-water-${name}.json`; await (await pending).saveAs(path);
-  return JSON.parse(readFileSync(path, 'utf8'));
+  return JSON.parse(readSaveText(path));
 }
 async function originalTile(page: Page, x: number, y: number, tile: number) {
   const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));

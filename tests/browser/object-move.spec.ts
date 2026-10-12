@@ -1,5 +1,5 @@
+import {readSaveText} from '../support/save-file';
 import { test,expect,type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
 import { shopFixture } from '../support/livestock';
 import { supplyMovementFixture } from '../support/supply-movement';
 import { browserCrops } from '../support/crop-catalog';
@@ -12,7 +12,7 @@ import { worldIndex } from '../../src/formats/scenario';
 import { reveal } from '../support/workspace';
 import { GameSimulation } from '../support/game';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'move.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
-async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await (await p).path())!,'utf8'));}
+async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
 async function point(page:Page,x:number,y:number){await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-20)*16,Math.max(0,p.y-15)*16),{x,y});const r=(await page.locator('#world').boundingBox())!;await page.mouse.click(r.x+x*16+8,r.y+y*16+8);}
 async function move(page:Page){await page.getByRole('button',{name:'Move object',exact:true}).click();await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');await expect(page.locator('#world')).toHaveCSS('cursor',/move-pick\.png.*0 0, crosshair/);}
 

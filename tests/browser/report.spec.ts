@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
@@ -34,7 +35,7 @@ test('Farm report displays original totals and field conditions, updates after p
   await expect(page.locator('#balance-net')).toHaveText('-500'); await expect(page.locator('#balance-expense-7')).toHaveText('1040');
   const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = 'artifacts/browser-report.simfarm.json'; await (await download).saveAs(path);
-  const saved = JSON.parse(readFileSync(path, 'utf8')); expect(saved.runtime.finances.annual).toEqual(f.annual);expect(saved.scenario.farm.workerExpenses).toBe(20);
+  const saved = JSON.parse(readSaveText(path)); expect(saved.runtime.finances.annual).toEqual(f.annual);expect(saved.scenario.farm.workerExpenses).toBe(20);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await openWindow(page, 'balance'); await expect(page.locator('#balance-net')).toHaveText('-500');
   await expect(page.locator('#balance-expense-7')).toHaveText('1040');

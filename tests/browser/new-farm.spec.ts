@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { newGame } from '../support/workspace';
 import { fieldDescription } from '../support/field-checkpoint';
@@ -7,7 +8,6 @@ import { setAutoDoze, plantField, clickFarmTile } from '../support/field-actions
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
 import { GameSimulation } from '../../src/simulation/game';
 import { newFarmAssets, newFarmOptions } from '../support/new-farm';
 import { checkFieldPlacement } from '../../src/simulation/field-placement';
@@ -18,7 +18,7 @@ import { readNativeSave, writeNativeSave } from '../../src/formats/native-save';
 async function save(page: Page, name: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const download = await pending, path = `artifacts/${name}.simfarm.json`; await download.saveAs(path);
-  return { data: JSON.parse(readFileSync(path, 'utf8')), path, filename: download.suggestedFilename() };
+  return { data: JSON.parse(readSaveText(path)), path, filename: download.suggestedFilename() };
 }
 async function load(page: Page, text: string) {
   await page.locator('#load-farm-file').setInputFiles({ name: 'generated.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(text) });

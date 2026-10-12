@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { newGame } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -20,7 +21,7 @@ const options = { ...newFarmOptions, climate: { precipitation: 1, temperature: 2
 const miniature = miniTileAtlas(raw('far_mapc.mbm'), readPalette(raw('scenario.pal')));
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  const path = await (await pending).path(); return JSON.parse(readFileSync(path!, 'utf8'));
+  const path = await (await pending).path(); return JSON.parse(readSaveText(path!));
 }
 async function pixels(page: Page) {
   return page.locator('#terrain-preview').evaluate((canvas: HTMLCanvasElement) => Array.from(canvas.getContext('2d')!.getImageData(0, 0, 192, 192).data));

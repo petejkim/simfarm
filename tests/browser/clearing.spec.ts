@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
@@ -31,14 +32,14 @@ test('saved field clearing advances original animation tiles, pauses and reloads
   await page.waitForTimeout(150); expect(await pixels()).toEqual(first); // Native Pause also freezes clearing.
   const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = 'artifacts/browser-clearing.simfarm.json'; await (await download).saveAs(path);
-  const saved = JSON.parse(readFileSync(path, 'utf8'));
+  const saved = JSON.parse(readSaveText(path));
   expect(saved).toEqual(JSON.parse(expected.save(4))); expect(saved.runtime.finances.clearing.count).toBe(64);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); expect(await pixels()).toEqual(first);
   for (let day = 0; day < 9; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); }
   const finalDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   await (await finalDownload).saveAs(path);
-  const done = JSON.parse(readFileSync(path, 'utf8'));
+  const done = JSON.parse(readSaveText(path));
   expect(done).toEqual(JSON.parse(expected.save(4))); expect(done.runtime.finances.clearing.count).toBe(0);
   expect(await pixels()).not.toEqual(first);
   await page.locator('#viewport').evaluate((el, p) => el.scrollTo(p.x * 16, p.y * 16), { x, y });

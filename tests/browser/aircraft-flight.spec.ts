@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { aircraftCatalog } from '../support/aircraft-browser';
 import { reveal, openWindow } from '../support/workspace';
@@ -19,7 +20,7 @@ async function load(page: Page, text: string) {
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = 'artifacts/browser-flight.simfarm.json'; await (await pending).saveAs(path);
-  return JSON.parse(readFileSync(path, 'utf8'));
+  return JSON.parse(readSaveText(path));
 }
 function prepared() {
   const f = aircraftFixture(), game = f.load().withAllCrops(browserCrops); game.dispatch({ type: 'buy-aircraft' });

@@ -19,7 +19,7 @@ export interface MenuChoices { actions?:readonly {label:string;choose:()=>void}[
 export function FileMenu({ about, data, palette, busy, filename, error, onSave, onLoad, onNewGame, onQuit, onWindow, options, disasters }: {
   about:AboutAssets; options: MenuChoices; disasters: MenuChoices;
   data: MainMenus; palette: number[][]; busy: boolean; filename: string; error: string | null;
-  onSave: (filename?: string) => boolean; onLoad: () => void; onNewGame: () => void; onQuit: () => void; onWindow: (window: GameWindow) => void;
+  onSave: (filename?: string) => Promise<boolean>; onLoad: () => void; onNewGame: () => void; onQuit: () => void; onWindow: (window: GameWindow) => void;
 }) {
   const windows = useWindows();
   const [open, setOpen] = useState<number | null>(null), [dialog, setDialog] = useState<'about' | 'save-as' | 'quit' | null>(null);
@@ -41,7 +41,7 @@ export function FileMenu({ about, data, palette, busy, filename, error, onSave, 
     closeMenu();
     if (index === 0) setDialog('about');
     else if (index === 1) onNewGame();
-    else if (index === 2) onSave();
+    else if (index === 2) void onSave();
     else if (index === 3) { setName(filename); setDialog('save-as'); }
     else if (index === 4) onLoad();
     else if (index === 6) setDialog('quit');
@@ -84,17 +84,17 @@ export function FileMenu({ about, data, palette, busy, filename, error, onSave, 
     </nav>
     {dialog === 'about' && <AboutDialog assets={about} onClose={closeDialog} />}
     {dialog === 'save-as' && <MenuDialog title={file.items[3].label} onClose={closeDialog}>
-      <form onSubmit={event => { event.preventDefault(); if (onSave(name)) closeDialog(); }}>
+      <form onSubmit={async event => { event.preventDefault(); if (await onSave(name)) closeDialog(); }}>
         <label>Filename <input autoFocus value={name} required maxLength={120} pattern={String.raw`[^\/\\]+`} onChange={event => setName(event.target.value)} /></label>
         <p>Saves a native checkpoint as a browser download. Your existing files stay intact.</p>
         {error && <p role="alert">{error}</p>}
-        <button type="submit">Download save</button> <button type="button" onClick={closeDialog}>Cancel</button>
+        <button type="submit" disabled={busy}>Download save</button> <button type="button" onClick={closeDialog}>Cancel</button>
       </form>
     </MenuDialog>}
     {dialog === 'quit' && <MenuDialog title="Quit SimFarm?" onClose={closeDialog}>
       <p>Quitting pauses and keeps your farm in this tab. Save a copy before closing the tab.</p>
       {error && <p role="alert">{error}</p>}
-      <button onClick={() => { if (onSave()) { onQuit(); closeDialog(); } }}>Save and pause</button>{' '}
+      <button disabled={busy} onClick={async () => { if (await onSave()) { onQuit(); closeDialog(); } }}>Save and pause</button>{' '}
       <button onClick={() => { onQuit(); closeDialog(); }}>Pause game</button>{' '}
       <button onClick={closeDialog}>Cancel</button>
     </MenuDialog>}

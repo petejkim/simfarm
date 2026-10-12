@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -15,7 +16,7 @@ async function save(page: Page, name: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const download = await pending, path = `artifacts/browser-original-import-${name}.json`;
   await download.saveAs(path);
-  return { data: JSON.parse(readFileSync(path, 'utf8')), filename: download.suggestedFilename() };
+  return { data: JSON.parse(readSaveText(path)), filename: download.suggestedFilename() };
 }
 
 test('original SSM import retains the active session, continues and restores without fetching a scenario', async ({ page }) => {

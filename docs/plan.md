@@ -438,3 +438,7 @@ Supply drop source warning coverage now includes unowned, invalid/occupied terra
 ## 2026-10-11 — requested MIDI synthesizer replacement
 
 Use libadlmidi-js light/bank39 (AIL/SimFarm) for converted `.mid` playback, superseding the earlier no-FM restriction. Preserve startup amain-once, situation-selected music, volume/mute preferences and source genfarm loop boundaries. Keep original PCM effects independent. See adlmidi-playback.md for integration, evidence and loop-tail fidelity limits. Original About/Expert bitmap-logo exceptions remain implemented in5fa35e2. Continue the broader remaining gameplay/UI audit after this increment; the full preservation port is still incomplete.
+
+## 2026-10-11 — compressed checkpoints
+
+User requested browser Compression Streams API gzip downloads while the broader reconstruction goal is paused. Keep checkpoint semantics and legacy JSON/SSM loading; change only file transport. Follow with the separately requested Debug menu for non-disaster events. Do not resume the general reconstruction audit without a resume request.

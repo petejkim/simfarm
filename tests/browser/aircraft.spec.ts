@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { aircraftCatalog } from '../support/aircraft-browser';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -13,7 +14,7 @@ async function load(page: Page, text: string) {
 }
 async function save(page: Page, path: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
+  await (await pending).saveAs(path); return JSON.parse(readSaveText(path));
 }
 
 test('Aircraft catalog buys at the original airport pad, refuels, changes and loads payload, and continues current saves', async ({ page }) => {

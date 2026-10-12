@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { readFinanceMessage } from '../../src/formats/finance-message';
 import { reveal, openWindow } from '../support/workspace';
@@ -37,7 +38,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   await reveal(page, '#town-recreational'); await page.locator('#town-recreational').click(); await expect(page.locator('#town-choice-error')).toContainText('cannot support');
   const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const path = 'artifacts/browser-pending-town.simfarm.json'; await (await download).saveAs(path);
-  const checkpoint = JSON.parse(readFileSync(path, 'utf8'));
+  const checkpoint = JSON.parse(readSaveText(path));
   expect(checkpoint.runtime.pendingTown.phase).toBe('annual-reset'); expect(checkpoint.runtime.daysAdvanced).toBe(0);
   expect(checkpoint.version).toBe(27);
   expect(checkpoint.runtime.finances.statistics.words).toEqual(Array.from({ length: 14 }, (_, i) => 100 + i));
@@ -61,7 +62,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   await openWindow(page,'balance');await expect(page.locator('#balance-expense-9')).toHaveText('4715');
   const completedDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const completedPath = 'artifacts/browser-annual-statistics.simfarm.json'; await (await completedDownload).saveAs(completedPath);
-  const completed = JSON.parse(readFileSync(completedPath, 'utf8')), statistics = completed.runtime.finances.statistics;
+  const completed = JSON.parse(readSaveText(completedPath)), statistics = completed.runtime.finances.statistics;
   const regions = Buffer.from(completed.scenario.regions, 'hex'), owners = Array.from({ length: 144 }, (_, i) => regions[i * 7 + 1]);
   const town = owners.filter(o => o === 2).length, player = owners.filter(o => o === 1).length;
   expect(statistics.regions).toEqual([5, 6, town, player]);
@@ -72,7 +73,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   await reveal(page, '#next-day'); await page.locator('#next-day').click(); await expect(page.locator('#farm-date')).toContainText('January 2, 1994');
   const continuedDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
   const continuedPath = 'artifacts/browser-annual-statistics-continued.simfarm.json'; await (await continuedDownload).saveAs(continuedPath);
-  expect(JSON.parse(readFileSync(continuedPath, 'utf8')).runtime.finances.statistics).toEqual(statistics);
+  expect(JSON.parse(readSaveText(continuedPath)).runtime.finances.statistics).toEqual(statistics);
   await expect(page.locator('#farm-cash')).toHaveText('$35,285'); expect(errors).toEqual([]);
 });
 

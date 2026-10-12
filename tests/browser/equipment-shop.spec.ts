@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { clickFarmTile, setAutoDoze } from '../support/field-actions';
 import { reveal } from '../support/workspace';
@@ -18,7 +19,7 @@ async function selectMachine(page:Page,type:number){
 }
 async function save(page: Page, path: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
+  await (await pending).saveAs(path); return JSON.parse(readSaveText(path));
 }
 async function load(page: Page, text: string) {
   await page.locator('#load-farm-file').setInputFiles({ name: 'equipment.json', mimeType: 'application/json', buffer: Buffer.from(text) });

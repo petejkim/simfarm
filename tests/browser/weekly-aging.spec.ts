@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { selectAssetSale } from '../support/sell-window';
@@ -16,7 +17,7 @@ async function load(page: Page, text: string) {
 }
 async function save(page: Page, path: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
+  await (await pending).saveAs(path); return JSON.parse(readSaveText(path));
 }
 
 test('weekly worn machinery sale displays proceeds, original clearing pixels and audible PCM while chemical bytes and saves continue exactly', async ({ page }) => {

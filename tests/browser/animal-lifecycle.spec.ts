@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { reveal } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -13,7 +14,7 @@ import { replacementBirthFixture } from '../support/animal-lifecycle';
 
 async function download(page: Page, path: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
+  await (await pending).saveAs(path); return JSON.parse(readSaveText(path));
 }
 
 test('a cow matures into the original adult sprite, begins monthly breeding and preserves saved age and gestation', async ({ page }) => {

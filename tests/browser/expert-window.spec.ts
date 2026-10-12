@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
@@ -17,7 +18,7 @@ const asset=(n:string)=>entries.find(e=>e.name===n)!.bytes,palette=readPalette(a
 const deck=readExpertDeck(id=>asset(`card${id}.hc`));
 const cropFiles=allCropFiles(readScenario(source('SCEN0.SSM')).cropFiles);
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
-async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readFileSync((await (await pending).path())!,'utf8'));}
+async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
 async function pixels(page:Page,x:number,y:number,w:number,h:number){return page.locator('.expert-artwork').evaluate((c:HTMLCanvasElement,r)=>Array.from(c.getContext('2d')!.getImageData(...r).data),[x,y,w,h] as [number,number,number,number]);}
 
 test('Expert restores original home geometry, all static chapters, field icons and movable real-text pages without farm mutations',async({page})=>{

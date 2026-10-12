@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { browseSupply } from '../support/supply-actions';
 import { plantField } from '../support/field-actions';
 import { reveal, openWindow } from '../support/workspace';
@@ -14,7 +15,7 @@ async function load(page: Page, text: string) {
 }
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  return JSON.parse(readFileSync((await (await pending).path())!, 'utf8'));
+  return JSON.parse(readSaveText((await (await pending).path())!));
 }
 
 test('all crops are immediately plantable and plannable with source artwork and exact expanded save continuation', async ({ page }) => {

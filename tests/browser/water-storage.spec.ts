@@ -1,3 +1,4 @@
+import {readSaveText} from '../support/save-file';
 import { storedWater } from '../../src/simulation/water-storage';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { buyBuilding } from '../support/building-actions';
@@ -14,7 +15,7 @@ import { waterStorageFixture } from '../support/water-storage';
 
 async function download(page: Page, path: string) {
   const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save', exact: true }).click();
-  await (await pending).saveAs(path); return JSON.parse(readFileSync(path, 'utf8'));
+  await (await pending).saveAs(path); return JSON.parse(readSaveText(path));
 }
 
 test('Build water storage collects from live irrigation, refills distant troughs weekly and saves the original building pixels and state', async ({ page }) => {
