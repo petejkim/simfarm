@@ -35,7 +35,9 @@ export function AircraftWindow({assets,snapshot,selectedSlot,onCommand,onFly}:{
       <div className="aircraft-services">{refill('fuel',6)}{refill('load',61)}{refill('repair',116)}</div>
       <SunkenInset className="aircraft-gauges">
         {['Gas','Spray','Damage'].map((label,i)=><div key={label} className="aircraft-gauge-row">
-          {view?.gauges?<Sprite className="aircraft-gauge" image={assets.fieldGauges.src} x={view.gauges[i]*48} y={0} width={48} height={24}/>:<span className="aircraft-gauge"/>}
+          {/* The 56×32 dial rim is bitmap art (96, 8+48i); the 48×24 field-gauge frame covers its inner part at 8,8. */}
+          <span className="aircraft-gauge"><Sprite image={assets.aircraftArtwork.src} x={96} y={8+i*48} width={56} height={32}/>
+            {view?.gauges&&<Sprite className="aircraft-gauge-frame" image={assets.fieldGauges.src} x={view.gauges[i]*48} y={0} width={48} height={24}/>}</span>
           <span className="aircraft-label">{label}</span>
           {view&&<span className="sale-accessible-detail" role="meter" aria-label={['Fuel','Payload','Damage'][i]} aria-valuemin={0} aria-valuemax={255} aria-valuenow={[view.fuel,view.payload,view.damage][i]}/>}
         </div>)}

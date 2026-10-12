@@ -68,3 +68,7 @@ Every control keeps its source rectangle (bitmap coordinates less the 8px frame)
 - Disabled picture buttons get the shared translucent overlay.
 
 Validation: all aircraft browser specs pass (9/9).
+
+## Whole gauge dials (2026-10-12)
+
+The same cropping fixed in Schedule affected AIRPLANE's gauges. Each gauge now stacks the bitmap's 56×32 dial (96, 8+48i) with the 48×24 field-gauge frame at offset 8,8. The spec checks the dial size, the frame offset and the frame pixels. All aircraft specs pass (9/9).

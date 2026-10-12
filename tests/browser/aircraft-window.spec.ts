@@ -42,7 +42,10 @@ test('AIRPLANE source layout, gauges and real text stay1x, move independently an
   const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url)),entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
   const asset=(n:string)=>entries.find(e=>e.name===n)!.bytes,palette=readPalette(asset('simfarm.pal'));
   for(const [i,frame] of [14,12,1].entries()){
-    const actual=PNG.sync.read(await page.locator('.aircraft-gauge').nth(i).screenshot());
+    // Whole 56×32 dial: the frame sits at 8,8 inside the bitmap rim.
+    const dial=page.locator('.aircraft-gauge').nth(i),box=(await dial.boundingBox())!;expect([box.width,box.height]).toEqual([56,32]);
+    expect(await dial.locator('.aircraft-gauge-frame').boundingBox()).toEqual({x:box.x+8,y:box.y+8,width:48,height:24});
+    const actual=PNG.sync.read(await dial.locator('.aircraft-gauge-frame').screenshot());
     const expected=decodePlanar(asset('fldgrph.til').subarray(frame*576,(frame+1)*576),48,24,palette);
     expect(Array.from(actual.data)).toEqual(Array.from(expected.rgba));
   }

@@ -3011,3 +3011,7 @@ At the user's request, the Schedule crop pager was replaced by a third row of cr
 ## 2026-10-12 — Schedule crop inset flush; gauges uncropped
 
 The crop inset now fits its icons exactly. Gauges now combine the bitmap's 56×32 dial rim with the 48×24 field-gauge frame at 8,8, as the source does; before, only the frame showed. The schedule specs pass.
+
+## 2026-10-12 — AIRPLANE gauges uncropped
+
+The gauges now show the whole dial (bitmap rim plus field-gauge frame), matching the Schedule fix. The aircraft specs pass.
