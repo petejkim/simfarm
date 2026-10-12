@@ -54,3 +54,17 @@ User request: removed the `aircraft-feedback` area below the source frame. That 
 - the "buy a Crop Duster" hint and the flight-start error line.
 
 The aircraft shown is the one clicked on the map (source entry). Fuel, payload and damage remain as source gauges and meters; disabled service buttons and Funds reflect service outcomes. Tests distinguish planes by a fixture fuel level and verify services through gauges and Funds.
+
+## Native rebuild on shared chrome (2026-10-12)
+
+AIRPLANE now uses the common frame and a 240×168 flex client, with no full-window bitmap.
+- **Service buttons:** Refuel, Load and Repair are 38×38 `BevelButton`s with shadow, faced with their 32×32 pictures cut from the cleaned bitmap. Price outputs sit in `SunkenInset`s below them.
+- **Gauge inset:** holds the three field-gauge sprites with Gas/Spray/Damage HTML labels. Meters stay accessible as `role="meter"` elements.
+- **Chemicals:** Pesticide, Herbicide and Fungicide are picture `BevelButton`s. The selected chemical uses the shared pressed bevel instead of the earlier inset outline.
+- **FLY! and CLOSE:** caption `BevelButton`s, 44×20.
+
+Every control keeps its source rectangle (bitmap coordinates less the 8px frame); the browser spec checks each one. Accepted differences:
+- Drop shadows use the shared 1px offset; the source starts its shadow 2–3px along the edge.
+- Disabled picture buttons get the shared translucent overlay.
+
+Validation: all aircraft browser specs pass (9/9).

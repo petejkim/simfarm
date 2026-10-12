@@ -31,11 +31,14 @@ test('AIRPLANE source layout, gauges and real text stay1x, move independently an
   const game=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,game.save(4));await mapClick(page,21,22);
   const win=page.getByRole('dialog',{name:'AIRPLANE',exact:true}),client=page.locator('.aircraft-window');await expect(win).toBeVisible();
   const b=(await client.boundingBox())!,desktop=(await page.locator('.game-desktop').boundingBox())!;
-  expect(b).toMatchObject({x:desktop.x+192,y:desktop.y+176,width:256,height:176});
+  expect(b).toMatchObject({x:desktop.x+200,y:desktop.y+176,width:240,height:168});await expect(client.locator('img,canvas')).toHaveCount(0);
   expect(await win.locator('.game-window-title').textContent()).toBe('AIRPLANE');
   for(const label of ['Gas','Spray','Damage','FLY!','CLOSE'])await expect(client.getByText(label,{exact:true})).toBeVisible();
   const controls=client.locator('button');expect(await controls.count()).toBe(8);
-  for(let i=0;i<8;i++){const c=AIRCRAFT_CONTROLS[i];expect(await controls.nth(i).boundingBox()).toMatchObject({x:b.x+c.x,y:b.y+c.y,width:c.width,height:c.height});}
+  // Every source control rectangle (bitmap coordinates, 8px frame included) holds its native control.
+  const byId:Record<number,string>={1:'#aircraft-fuel',7:'#aircraft-load',8:'#aircraft-repair',2:'[data-aircraft-chemical="221"]',4:'[data-aircraft-chemical="222"]',3:'[data-aircraft-chemical="223"]',5:'#fly-aircraft'};
+  for(const c of AIRCRAFT_CONTROLS){const control=c.id===6?client.getByRole('button',{name:'CLOSE',exact:true}):client.locator(byId[c.id]);
+    expect(await control.boundingBox()).toEqual({x:b.x+c.x-8,y:b.y+c.y,width:c.width,height:c.height});}
   const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url)),entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
   const asset=(n:string)=>entries.find(e=>e.name===n)!.bytes,palette=readPalette(asset('simfarm.pal'));
   for(const [i,frame] of [14,12,1].entries()){

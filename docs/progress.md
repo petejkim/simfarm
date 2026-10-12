@@ -2928,3 +2928,7 @@ The window now uses the common frame and a flex client on an imported 8×8 wallp
 ## 2026-10-12 — Market Value window rebuilt on shared chrome
 
 The window is now framed, with a CSS bar graph, gradient grid and reference line inside a `SunkenInset`, crop badge buttons built from tile sprites, inset outputs, and `BevelButton` CLOSE and pager. The market-preview renderer was removed. Details are in market-window.md. The market-window and market specs pass (6/6).
+
+## 2026-10-12 — AIRPLANE window rebuilt on shared chrome
+
+The window is now framed, with picture `BevelButton`s (sprite faces from the bitmap), price insets, a gauge inset with field-gauge sprites and HTML labels, and FLY!/CLOSE caption buttons. The source control rectangles are verified. Details are in aircraft-window.md. All aircraft specs pass (9/9).

@@ -2,10 +2,14 @@ import type { GameAssets } from '../assets/game-assets';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
 import { checkAircraftService, type AircraftServiceAction } from '../simulation/aircraft';
 import { aircraftWindowView } from '../simulation/aircraft-view';
-import { AIRCRAFT_CONTROLS } from '../formats/aircraft-window';
 import { GameWindow, useWindows } from './GameWindow';
+import { BevelButton } from './chrome/BevelButton';
+import { SunkenInset } from './chrome/SunkenInset';
+import { Sprite, spriteFace } from './chrome/Sprite';
 const money=(n:number)=>`$${n.toLocaleString('en-US')}`;
 const names:Record<number,string>={221:'Pesticide',222:'Herbicide',223:'Fungicide'};
+/** Original AIRPLANE window (airpwndo.bmp) rebuilt from shared chrome: refuel/load/repair picture buttons
+ * with price insets; the gauge inset with field-gauge sprites; chemical picture buttons; FLY!/CLOSE. */
 export function AircraftWindow({assets,snapshot,selectedSlot,onCommand,onFly}:{
   assets:GameAssets;snapshot:GameSnapshot;selectedSlot:number|null;
   onCommand:(command:GameCommand)=>void;onFly:(slot:number)=>boolean;
@@ -17,27 +21,30 @@ export function AircraftWindow({assets,snapshot,selectedSlot,onCommand,onFly}:{
   const quote=(action:AircraftServiceAction)=>plane?checkAircraftService(snapshot.scenario,snapshot.finances,snapshot.aircraftService,plane.slot,action):null;
   const service=(action:AircraftServiceAction)=>plane&&onCommand({type:'service-aircraft',slot:plane.slot,action});
   const base=quote({kind:'fuel'});
-  return <GameWindow windowKey="aircraft" title="AIRPLANE">
-    <section id="aircraft-panel" aria-label="Aircraft service">
-      <div className="aircraft-window">
-        <img src={assets.aircraftArtwork.src} width={256} height={176} alt="" draggable={false}/>
-        {['Gas','Spray','Damage'].map((label,i)=><span key={label} className="aircraft-label" style={{top:41+i*48}}>{label}</span>)}
-        {view?.gauges?.map((frame,i)=><span key={i} className="aircraft-gauge" role="meter" aria-label={['Fuel','Payload','Damage'][i]} aria-valuemin={0} aria-valuemax={255}
-          aria-valuenow={[view.fuel,view.payload,view.damage][i]} style={{top:16+i*48,backgroundImage:`url("${assets.fieldGauges.src}")`,backgroundPosition:`-${frame*48}px 0`}}/>)}
-        {AIRCRAFT_CONTROLS.map(c=>{
-          const style={left:c.x,top:c.y,width:c.width,height:c.height};
-          const kind=c.id===1?'fuel':c.id===7?'load':c.id===8?'repair':null;
-          if(kind){const q=quote({kind}),price=view?.prices?.[kind],label=kind==='fuel'?'Refuel':kind==='load'?'Load chemicals':'Repair';
-            return <button key={c.id} id={`aircraft-${kind}`} style={style} disabled={blocked||!q?.ok||!q.changed} aria-label={`${label}${price!==undefined?` · ${money(price)}`:''}`} title={`${label}${price!==undefined?` · ${money(price)}`:''}`} onClick={()=>service({kind})}/>;
-          }
-          const chemical=c.id===2?221:c.id===4?222:c.id===3?223:null;
-          if(chemical){const q=quote({kind:'chemical',chemicalType:chemical});return <button key={c.id} data-aircraft-chemical={chemical} style={style} aria-label={names[chemical]} title={names[chemical]}
-            aria-pressed={snapshot.aircraftService.selectedChemical===chemical} disabled={blocked||!q?.ok} onClick={()=>service({kind:'chemical',chemicalType:chemical})}/>;}
-          return c.id===5?<button key={c.id} id="fly-aircraft" className="aircraft-caption" style={style} aria-label="Fly aircraft" disabled={blocked||!plane||Boolean(base&&!base.ok&&base.reason!=='insufficient-cash')}
-            onClick={()=>{if(plane)onFly(plane.slot);}}>FLY!</button>
-            :<button key={c.id} className="aircraft-caption" style={style} onClick={()=>windows.close('aircraft')}>CLOSE</button>;
-        })}
-        {(['fuel','load','repair'] as const).map((kind,i)=><output key={kind} id={`aircraft-${kind}-price`} aria-label={`${kind} cost`} style={{top:44+i*55}}>{view?.prices?.[kind]??'—'}</output>)}
+  const art=assets.aircraftArtwork.src;
+  const refill=(kind:'fuel'|'load'|'repair',faceY:number)=>{const q=quote({kind}),price=view?.prices?.[kind],label=`${kind==='fuel'?'Refuel':kind==='load'?'Load chemicals':'Repair'}${price!==undefined?` · ${money(price)}`:''}`;
+    return <div className="aircraft-service" key={kind}>
+      <BevelButton id={`aircraft-${kind}`} className="aircraft-picture" shadow faceStyle={spriteFace(art,24,faceY)} disabled={blocked||!q?.ok||!q.changed} aria-label={label} title={label} onClick={()=>service({kind})}/>
+      <SunkenInset className="aircraft-price-box"><output id={`aircraft-${kind}-price`} aria-label={`${kind} cost`}>{price??'—'}</output></SunkenInset>
+    </div>;};
+  const chemicalButton=(chemical:221|222|223,faceY:number)=>{const q=quote({kind:'chemical',chemicalType:chemical});
+    return <BevelButton key={chemical} data-aircraft-chemical={chemical} className="aircraft-picture" shadow faceStyle={spriteFace(art,200,faceY)} aria-label={names[chemical]} title={names[chemical]}
+      pressed={snapshot.aircraftService.selectedChemical===chemical} disabled={blocked||!q?.ok} onClick={()=>service({kind:'chemical',chemicalType:chemical})}/>;};
+  return <GameWindow windowKey="aircraft" title="AIRPLANE" framed>
+    <section id="aircraft-panel" aria-label="Aircraft service" className="aircraft-window">
+      <div className="aircraft-services">{refill('fuel',6)}{refill('load',61)}{refill('repair',116)}</div>
+      <SunkenInset className="aircraft-gauges">
+        {['Gas','Spray','Damage'].map((label,i)=><div key={label} className="aircraft-gauge-row">
+          {view?.gauges?<Sprite className="aircraft-gauge" image={assets.fieldGauges.src} x={view.gauges[i]*48} y={0} width={48} height={24}/>:<span className="aircraft-gauge"/>}
+          <span className="aircraft-label">{label}</span>
+          {view&&<span className="sale-accessible-detail" role="meter" aria-label={['Fuel','Payload','Damage'][i]} aria-valuemin={0} aria-valuemax={255} aria-valuenow={[view.fuel,view.payload,view.damage][i]}/>}
+        </div>)}
+      </SunkenInset>
+      <div className="aircraft-controls">
+        {chemicalButton(221,8)}{chemicalButton(222,48)}{chemicalButton(223,88)}
+        <BevelButton id="fly-aircraft" className="aircraft-caption" shadow aria-label="Fly aircraft" disabled={blocked||!plane||Boolean(base&&!base.ok&&base.reason!=='insufficient-cash')}
+          onClick={()=>{if(plane)onFly(plane.slot);}}>FLY!</BevelButton>
+        <BevelButton className="aircraft-caption" shadow onClick={()=>windows.close('aircraft')}>CLOSE</BevelButton>
       </div>
     </section>
   </GameWindow>;
