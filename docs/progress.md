@@ -2737,3 +2737,18 @@ Checks: type checking (including tests) and production build pass; control-bar d
 Follow-up corrections: launcher frames are now the black button background behind 1px padding, removing the gap at fractional zoom. The date is black after removing a stale dashboard colour rule. The Edit launcher is removed by user request; Windows→Edit and map focus remain. The strip now uses flexbox with no absolute positioning, and the forecast stays centred at x310 (tiles x312). Browser specs now reach Edit through a `focusEdit` Windows-menu helper. Pixel test remaps Market face8 and the shifted forecast and asserts no absolute positioning; weather toolbar bounds are updated. Type checking/build and decoder tests pass. Browser suites were again not runnable in this sandbox (port binding and Chromium launch denied). Affected specs to run: control-bar, weather-window, window-stacking, window-viewport, window-menu-checks, edit-workspace, window-movement, examine, field-tools, aircraft-window, market-window and map-interaction.
 
 Browser verification, now possible with sandbox disabled: re-imported assets; readouts use 9px text (user direction); captions and readouts clip to their interiors; strip z-index stops terrain panel shadow bleed. The edit-workspace spec now checks strip and face sizes instead of the removed `<img>`. Results: 48/48 pass across control-bar, weather-window, window-stacking, window-viewport, window-menu-checks, edit-workspace, window-movement, examine, field-tools, aircraft-window, market-window and map-interaction plus main-menu (artifacts/control-strip-browser.log). Button-sounds 3/3, build and decoder tests pass. Full browser suite not rerun (presentation-only change).
+
+## 2026-10-11 — rebuild Edit palette as bevelled flex components
+
+The Edit palette is rebuilt like the control strip:
+- Black-background buttons.
+- 2px CSS bevels.
+- Pixelated sprite faces from `edit-palette.png`.
+- HTML Plant/Spray/? captions.
+- Flex-wrap layout at the source cell geometry. Plant/Spray/? hit regions are corrected to 22/22/16 at y144/166/188.
+
+The terrain panel's dashboard shadow is removed inside the game desktop. At user request, pixel-diff browser assertions were removed from the control-strip and palette tests; the structural checks remain. Toolbar faces also assert pixelated rendering. Validation:
+- 97/97 browser cases pass across 25 palette/toolbar-using specs (artifacts/edit-palette-browser.log).
+- After the pixelated-rendering change, edit-workspace and control-bar pass 7/7.
+- Build and edit-palette/control-bar decoder tests pass.
+- Full browser suite not rerun (presentation-only change).

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { readArchive } from '../src/formats/archive';
 import { readBitmap, readPalette } from '../src/formats/graphics';
-import { decodeEditPalette, readEditPalette } from '../src/formats/edit-palette';
+import { decodeEditPalette, readEditPalette, EDIT_PALETTE_TEXT } from '../src/formats/edit-palette';
 const source = (name: string) => readFileSync(new URL('../../simfarm-dos/' + name, import.meta.url));
 const archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
 const bytes = archive.find(e => e.name === 'editeasy.lzs')!.bytes;
@@ -14,7 +14,7 @@ test('source Edit palette expands to the 48×208 bitmap; only caption interiors 
   expect([...decoded.subarray(0, 8)]).toEqual([6, 0, 208, 0, 4, 0, 1, 0]);
   expect([original.width, original.height, decoded.length]).toEqual([48, 208, 5000]);
   for (let y = 0; y < 208; y++) for (let x = 0; x < 48; x++) {
-    const p = (y * 48 + x) * 4, text = x >= 4 && x < 44 && [148, 172, 192].some(top => y >= top && y < top + 12);
+    const p = (y * 48 + x) * 4, text = x >= 4 && x < 44 && EDIT_PALETTE_TEXT.some(r => y >= r.y && y < r.y + r.height);
     expect([...live.rgba.subarray(p, p + 4)]).toEqual(text ? [194, 194, 194, 255] : [...original.rgba.subarray(p, p + 4)]);
   }
 });

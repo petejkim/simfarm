@@ -115,14 +115,20 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-desktop{position:relative;min-width:640px;width:100%;height:max(480px,100dvh);overflow:hidden;background:#c2c2c2;color:#000;color-scheme:light}
 .game-desktop [hidden]{display:none!important}
 .game-desktop .edit-workspace{position:absolute;inset:48px 0 0;display:grid;grid-template-columns:50px minmax(0,1fr);grid-template-rows:16px minmax(0,1fr);gap:0;margin:0;padding:0;border:0;background:#c2c2c2}
-.edit-palette{grid-column:1;grid-row:1 / span 2;position:relative;width:48px;height:208px;margin:1px 0}
-.edit-palette>img{display:block;image-rendering:pixelated;pointer-events:none}
-.edit-palette>button{position:absolute;padding:0;border:0;border-radius:0;background:transparent;color:#000}
-.edit-palette>button:hover:not(:disabled){box-shadow:inset 0 0 0 2px #000;background:#ffffff30}
+.edit-palette{--bevel-light:#fff;--bevel-shadow:#828282;--bar-face:#c2c2c2;--bar-ink:#000;grid-column:1;grid-row:1 / span 2;display:flex;flex-wrap:wrap;align-content:flex-start;width:48px;height:208px;margin:1px 0;background:var(--bar-face)}
+.edit-palette>button{display:flex;flex:none;margin:0;padding:1px 0 0 1px;border:0;border-radius:0;background:var(--bar-ink);color:var(--bar-ink)}
+.edit-palette>button:hover{background:var(--bar-ink)}
+.edit-palette>button:disabled{opacity:1;cursor:default}
 .edit-palette>button:focus-visible{outline:2px solid #0000eb;outline-offset:-3px}
-.edit-palette>button:disabled{background:#c2c2c260;opacity:1;cursor:default}
-.edit-palette .edit-caption{left:0;width:48px;background:transparent;border:0;font:bold 12px Arial,sans-serif}
-.game-desktop .map-panel{grid-column:2;grid-row:2;display:flex;flex-direction:column;min-height:0;border:0;margin:0;padding:0;overflow:hidden}
+.edit-palette .edit-tool{width:24px;height:24px}
+.edit-palette .edit-caption{width:48px;height:22px;font:bold 12px Arial,sans-serif}
+.edit-palette .edit-help-button{height:16px}
+.edit-palette-face{display:flex;flex:1;align-items:center;justify-content:center;border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light);background:var(--bar-face) no-repeat;image-rendering:pixelated;overflow:hidden;line-height:1}
+.edit-tool .edit-palette-face{background-image:var(--edit-palette-sprite)}
+.edit-palette>button:active:not(:disabled) .edit-palette-face{border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
+.edit-tool:disabled .edit-palette-face{background-image:linear-gradient(#c2c2c260,#c2c2c260),var(--edit-palette-sprite)}
+.edit-palette-foot{flex:none;width:48px;height:4px;border-top:1px solid var(--bar-ink);border-left:1px solid var(--bar-ink)}
+.game-desktop .map-panel{grid-column:2;grid-row:2;display:flex;flex-direction:column;min-height:0;border:0;box-shadow:none;margin:0;padding:0;overflow:hidden}
 .game-desktop #viewport{flex:1;height:auto;min-height:0;width:100%;overflow:auto;background:#000}
 .game-desktop .map-footer{flex-shrink:0;align-items:center;min-height:24px;padding:3px 8px;background:#c2c2c2;color:#000;font:12px Arial,sans-serif}
 .game-desktop .map-footer button{padding:2px 6px;font-size:12px}

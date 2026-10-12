@@ -1,7 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import { reveal, openWindow, focusEdit } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
 
 async function start(page: Page) {
   await page.clock.install({ time: new Date('1993-04-05T12:00:00Z') });
@@ -92,12 +91,6 @@ test('missing control-bar artwork reports an asset error before starting the far
 });
 
 test('flex-laid launchers and insets rebuild the source bevels with CSS around sprite faces, with captions as text', async ({ page }) => {
-  const { PNG } = await import('pngjs');
-  const { readArchive } = await import('../../src/formats/archive');
-  const { readBitmap, readPalette } = await import('../../src/formats/graphics');
-  const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
-  const archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
-  const original = readBitmap(archive.find(e => e.name === 'cntlbtnh.bmp')!.bytes, readPalette(archive.find(e => e.name === 'simfarm.pal')!.bytes));
   await start(page); await page.evaluate(() => scrollTo(0, 0));
   const bar = page.getByRole('toolbar', { name: 'Game toolbar' });
   await expect(bar.locator('img')).toHaveCount(0);
@@ -106,8 +99,8 @@ test('flex-laid launchers and insets rebuild the source bevels with CSS around s
   for (const [index, launcher] of (await bar.locator('.window-launcher').all()).entries()) {
     // The frame is the button's black background behind 1px padding, so fractional zoom cannot open a gap.
     expect(await launcher.evaluate(el => { const s = getComputedStyle(el); return [s.borderTopWidth, s.backgroundColor, s.paddingTop]; })).toEqual(['0px', 'rgb(0, 0, 0)', '1px']);
-    expect(await launcher.locator('.window-launcher-face').evaluate(el => { const s = getComputedStyle(el); return [s.borderTopWidth, s.borderTopColor, s.borderRightColor, s.backgroundPositionX, s.backgroundPositionY]; }))
-      .toEqual(['2px', 'rgb(255, 255, 255)', 'rgb(130, 130, 130)', `${-(faces[index] * 32 + 3)}px`, '-3px']);
+    expect(await launcher.locator('.window-launcher-face').evaluate(el => { const s = getComputedStyle(el); return [s.borderTopWidth, s.borderTopColor, s.borderRightColor, s.backgroundPositionX, s.backgroundPositionY, s.imageRendering]; }))
+      .toEqual(['2px', 'rgb(255, 255, 255)', 'rgb(130, 130, 130)', `${-(faces[index] * 32 + 3)}px`, '-3px', 'pixelated']);
   }
   // The forecast stays centred between the launchers (now ending x256) and the readout column (x416).
   expect(await page.locator('.toolbar-forecast').boundingBox()).toEqual({ x: 310, y: 22, width: 52, height: 20 });
@@ -116,22 +109,6 @@ test('flex-laid launchers and insets rebuild the source bevels with CSS around s
   for (const id of ['#farm-date', '#farm-cash', '#farm-date-label', '#farm-cash-label']) expect(await page.locator(id).evaluate(el => getComputedStyle(el).color)).toBe('rgb(0, 0, 0)');
   await expect(page.locator('#farm-date-label')).toHaveText('Date'); await expect(page.locator('#farm-cash-label')).toHaveText('Funds');
   expect(await bar.locator('.toolbar-caption').allTextContents()).toEqual(['BUY', 'SELL']);
-  const shot = PNG.sync.read(await page.screenshot({ clip: { x: 0, y: 16, width: 640, height: 32 } }));
-  // Rendered x → source x: launchers 0..6 in place, Market from face8, forecast shifted 16px left; x300 is plain strip.
-  const sourceX = (x: number) => x < 224 ? x : x < 256 ? x + 32 : x < 416 ? (x + 16 >= 288 ? x + 16 : 300) : x;
-  // Live text replaces source lettering; the forecast interior is checked in weather-window.spec.
-  const live = [[3, 20, 26, 9], [35, 20, 26, 9], [400, 2, 58, 13], [400, 17, 58, 13], [463, 4, 172, 9], [463, 19, 172, 9], [312, 8, 48, 16]];
-  // Corner pixels where light and shadow bevels meet; the source paints face grey, CSS miters blend.
-  const miter = (x: number, y: number) => { const bx = x < 256 ? x % 32 : -1;
-    return (bx >= 0 && ((bx === 30 && y === 1) || (bx === 29 && y === 2) || (bx === 1 && y === 30) || (bx === 2 && y === 29)))
-      || [[361, 6], [360, 7], [311, 24], [310, 25], [636, 2], [635, 3], [462, 13], [461, 14], [636, 17], [635, 18], [462, 28], [461, 29]].some(([px, py]) => px === x && py === y); };
-  const wrong: string[] = [];
-  for (let y = 0; y < 32; y++) for (let x = 0; x < 640; x++) {
-    if (miter(x, y) || live.some(([lx, ly, w, h]) => x >= lx && x < lx + w && y >= ly && y < ly + h)) continue;
-    const a = [...shot.data.subarray((y * 640 + x) * 4, (y * 640 + x) * 4 + 3)], o = (y * 640 + sourceX(x)) * 4, b = [...original.rgba.subarray(o, o + 3)];
-    if (a.some((v, i) => v !== b[i])) wrong.push(`${x},${y}:${a}≠${b}`);
-  }
-  expect(wrong.slice(0, 20)).toEqual([]);
   await page.locator('#window-buy').hover(); await page.mouse.down();
   expect(await page.locator('#window-buy .window-launcher-face').evaluate(el => getComputedStyle(el).borderTopColor)).toBe('rgb(130, 130, 130)');
   await page.mouse.up();

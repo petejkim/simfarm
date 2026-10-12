@@ -24,11 +24,16 @@ export function decodeEditPalette(bytes: Uint8Array): Uint8Array {
   if (output !== result.length || input !== bytes.length) throw new Error('Invalid edit palette length');
   return result;
 }
+/** Tool cell geometry: 24px pitch, 1px black top/left, 2px bevel, then a 19×19 face. */
+export const EDIT_PALETTE_CELL = { size: 24, inset: 3, face: 19 } as const;
+/** Caption interiors replaced by HTML text, kept inside each 43px-wide face (rows 147..163, 169..185, 191..201). */
+export const EDIT_PALETTE_TEXT = [{ y: 148, height: 12 }, { y: 172, height: 12 }, { y: 191, height: 11 }] as const;
+
 export function readEditPalette(bytes: Uint8Array, palette: Palette): Raster {
   const raster = readBitmap(decodeEditPalette(bytes), palette);
   if (raster.width !== 48 || raster.height !== 208) throw new Error('Invalid edit palette dimensions');
   // Keep icon art and bevels; all three button captions are HTML.
-  for (const y0 of [148, 172, 192]) for (let y = y0; y < y0 + 12; y++) for (let x = 4; x < 44; x++)
+  for (const { y: y0, height } of EDIT_PALETTE_TEXT) for (let y = y0; y < y0 + height; y++) for (let x = 4; x < 44; x++)
     raster.rgba.set([...palette[12], 255], (y * 48 + x) * 4);
   return raster;
 }

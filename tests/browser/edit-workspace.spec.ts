@@ -7,7 +7,8 @@ test('Edit fills the desktop permanently; windows close without resizing or unmo
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(await page.locator('.original-control-bar').boundingBox()).toMatchObject({ width: 640, height: 32 });
   expect(await page.locator('.window-launcher-face').first().evaluate(el => [el.clientWidth, el.clientHeight])).toEqual([26, 26]);
-  for (const selector of ['.edit-palette > img', '#world']) {
+  expect(await page.locator('.edit-tool .edit-palette-face').first().evaluate(el => [el.clientWidth, el.clientHeight])).toEqual([19, 19]);
+  for (const selector of ['#world']) {
     const sizes = await page.locator(selector).evaluate((el: HTMLImageElement | HTMLCanvasElement) => ({
       source: { width: el instanceof HTMLImageElement ? el.naturalWidth : el.width, height: el instanceof HTMLImageElement ? el.naturalHeight : el.height },
       display: { width: el.getBoundingClientRect().width, height: el.getBoundingClientRect().height },
@@ -55,4 +56,23 @@ test('palette opens field planning and real tools; Speed retains slower pacing a
   const saved = await download, buffer = readFileSync((await saved.path())!);
   await page.locator('#load-farm-file').setInputFiles({name:'checkpoint.json',mimeType:'application/json',buffer});
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await expect(page.locator('#world')).toBeVisible();
+});
+
+test('Edit palette rebuilds source cells with black backgrounds, CSS bevels, sprite faces and HTML captions', async ({ page }) => {
+  await page.goto('/'); await expect(page.locator('#viewport')).toBeVisible();
+  const palette = page.getByRole('toolbar', { name: 'Edit tools' });
+  await expect(palette.locator('img')).toHaveCount(0);
+  expect(await palette.locator('*').evaluateAll(els => els.filter(el => getComputedStyle(el).position === 'absolute').length)).toBe(0);
+  const box = (await palette.boundingBox())!; expect([box.width, box.height]).toEqual([48, 208]);
+  const cells: [number, number, number, number][] = [...Array.from({ length: 12 }, (_, i) => [i % 2 * 24, Math.floor(i / 2) * 24, 24, 24] as [number, number, number, number]), [0, 144, 48, 22], [0, 166, 48, 22], [0, 188, 48, 16]];
+  for (const [index, button] of (await palette.getByRole('button').all()).entries()) {
+    const [x, y, w, h] = cells[index];
+    expect(await button.boundingBox()).toEqual({ x: box.x + x, y: box.y + y, width: w, height: h });
+    expect(await button.evaluate(el => { const s = getComputedStyle(el); return [s.borderTopWidth, s.backgroundColor, s.paddingTop, s.paddingLeft, s.paddingRight]; })).toEqual(['0px', 'rgb(0, 0, 0)', '1px', '1px', '0px']);
+    if (index < 12) expect(await button.locator('.edit-palette-face').evaluate(el => { const s = getComputedStyle(el); return [s.backgroundPosition, s.imageRendering]; })).toEqual([`${-(x + 3)}px ${-(y + 3)}px`, 'pixelated']);
+  }
+  expect(await palette.getByRole('button').evaluateAll(els => els.slice(12).map(el => el.textContent))).toEqual(['Plant', 'Spray', '?']);
+  await palette.getByRole('button', { name: 'Fence', exact: true }).hover(); await page.mouse.down();
+  expect(await palette.getByRole('button', { name: 'Fence', exact: true }).locator('.edit-palette-face').evaluate(el => getComputedStyle(el).borderTopColor)).toBe('rgb(130, 130, 130)');
+  await page.mouse.up(); await page.keyboard.press('Escape');
 });
