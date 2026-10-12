@@ -82,7 +82,7 @@ import { loanPaymentAccounts, taxAccounts } from './finance-accounts';
 import { retryMonthlyDebts } from './monthly-finance';
 import { resolveDefaultDecision } from './default';
 import { TownLayouts } from '../formats/town';
-import { developTown } from './town-development';
+import { changeTownLevel, developTown, growableTownSites } from './town-development';
 import { assessAnnualTax, settleAnnualTax, type TaxAssessment, type TaxSettlement } from './tax';
 import { resetAnnualLedgers, updateAnnualReport } from './annual-ledger';
 import { summarizeFieldStatus, type FieldReport } from './field-report';
@@ -189,6 +189,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'resolve-town-event'; accept: boolean }
   | { type: 'debug-town-event'; action: 'rodeo' | 'fair' | 'advance-week' }
   | { type: 'debug-town-expansion' }
+  | { type: 'debug-town-grow' }
   | { type: 'edit-field-plan'; fieldSlot: number; week: number; action: FieldPlanEdit }
   | { type: 'set-speed'; speed: number }
   | { type: 'start-disaster'; kind: MovingDisasterKind | WaterDisasterKind | StationaryDisasterKind | 'wind' }
@@ -544,6 +545,13 @@ export class GameSimulation {
       const site = findTownExpansionSite(this.scenario); if (!site) return;
       this.pendingTown = { phase: 'debug', site, resumeRunning: !this.paused };
       this.lastTownResult = null; this.paused = true; this.elapsed = 0;
+      this.publish(); return;
+    }
+    if (command.type === 'debug-town-grow') {
+      // Native debug: one original growth step (0x3b3ac, direction +1) for every unfinished owned district,
+      // not only activeSite. No town revenue/spending change, no date change; activeSite is untouched.
+      const sites = growableTownSites(this.scenario); if (!sites.length) return;
+      for (const site of sites) changeTownLevel(this.scenario, this.finances.town, this.townLayouts, site, 1, this.weather.soilMoisture, this.random);
       this.publish(); return;
     }
     if(command.type==='debug-town-event'){

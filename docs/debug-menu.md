@@ -21,3 +21,12 @@ The trigger reserves nothing. Choosing a district reserves the site as the origi
 **Saves:** the debug choice is never written to saves (user decision). While it is open, a save records the farm as if the window were closed, so no save-format change was needed and every existing save loads unchanged. A reload simply drops an open debug choice. The original year-end choice is saved as before.
 
 Validation: unit debug-events 5/5 plus live-annual, game, native-save, live-town-event-calendar and town-construction (43 tests); browser debug-menu and town-choice specs pass (7/7).
+
+## Grow town districts (2026-10-12, user request)
+
+**Why:** weekly growth (`developTown`, 0x3b162) only raises `activeSite`, the most recently chosen district, and never revisits an earlier one. Several **Start town expansion** choices in a row therefore leave every district but the last at level 0 (roads, no buildings) permanently. A user save from 2036 showed exactly this: (4,1), (4,2) and (5,2) were owned at level 0 while revenue was $234,624. This is original behavior, not a defect; the debug trigger only makes it reachable within one year.
+
+**What it does:** each use applies the original level step `changeTownLevel(…, +1)` (0x3b3ac, repaint 0x3b4ce) once to every owned district (flag 2) below level 13, scanned x-first. `growableTownSites` excludes level 13+ (0x3b3ac refuses), raw byte 5 (returned untouched) and type 15. Houses appear from level 1, as in normal weekly growth, and the visual RNG is consumed by the repaint as usual. It does not spend town revenue or change `developmentSpent`, does not move `activeSite`, and does not advance the date. The item is disabled when no district can grow, and with the rest of the Debug menu during modal decisions or flight. Nothing new is saved: the result is ordinary town state, so the save format is unchanged.
+
+Validation: unit debug-events 6/6 (two stuck debug districts reach level 13 with buildings; revenue, date and activeSite unchanged; no-op once complete), town-development, live-annual and game (29); browser debug-menu and town-choice specs 7/7; production build. The user save's four unfinished districts reach level 13 after 13 uses.
+

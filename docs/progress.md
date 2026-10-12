@@ -3035,3 +3035,7 @@ Added a native Farm Expert launcher whose face is the expert head from portrait 
 ## 2026-10-12 — Debug: Start town expansion
 
 A Debug menu item now opens the town development choice mid-year when a free site exists. It skips the town fund, builds without year-end phases, and is never saved, so the save format is unchanged. Details are in debug-menu.md. Related unit and browser tests pass.
+
+## 2026-10-12 — Debug: Grow town districts
+
+Investigated a report that residential districts added through Debug never gained buildings. A user save confirmed the original rule: weekly growth only raises the most recently chosen district, so earlier debug districts stay at level 0. A new Debug item raises every unfinished district one original level per use, without spending town revenue, moving the active district or advancing the date. Save format unchanged. Details and validation are in debug-menu.md; full suites not rerun.

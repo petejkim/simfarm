@@ -12,7 +12,7 @@ test('Debug triggers original event dialogs/music without a time jump or duplica
  const date=await page.locator('#farm-date').textContent();
  await page.locator('#debug-menu-button').focus();await page.keyboard.press('ArrowDown');
  const menu=page.getByRole('menu',{name:'Debug',exact:true});
- expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['Start rodeo','Start fair (carnival)','Advance event week','Start town expansion']);
+ expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['Start rodeo','Start fair (carnival)','Advance event week','Start town expansion','Grow town districts']);
  await expect(menu.getByRole('menuitem',{name:'Advance event week'})).toBeDisabled();
  await expect(menu.getByRole('menuitem',{name:'Start rodeo',exact:true})).toBeFocused();
  await page.keyboard.press('Escape');await expect(menu).toHaveCount(0);
@@ -62,4 +62,7 @@ test('Debug opens the town expansion choice mid-year without the town fund, leav
  await page.locator('#town-airport').click();game.dispatch({type:'choose-town',choice:'airport'});
  await expect(win).toBeHidden();await expect(page.locator('#farm-date')).toHaveText(date!);
  expect(await save()).toEqual(JSON.parse(game.save(4)));
+ // Grow town districts: one original level for every unfinished district, same date, same saved result as the simulation.
+ await page.locator('#debug-menu-button').click();await page.getByRole('menuitem',{name:'Grow town districts',exact:true}).click();game.dispatch({type:'debug-town-grow'});
+ await expect(page.locator('#farm-date')).toHaveText(date!);expect(await save()).toEqual(JSON.parse(game.save(4)));
 });

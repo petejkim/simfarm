@@ -141,6 +141,17 @@ export function changeTownLevel(world: Scenario, state: TownDevelopmentState, la
   return true;
 }
 
+/** Native debug helper: owned districts (flag 2) that weekly growth could still raise, x-first like
+ * the region tables. Excludes level 13+ (0x3b3ac refuses), raw byte 5 (returns untouched) and type 15. */
+export function growableTownSites(world: Pick<Scenario, 'regionalConditions'>): TownSite[] {
+  const sites: TownSite[] = [];
+  for (let regionX = 0; regionX < 12; regionX++) for (let regionY = 0; regionY < 12; regionY++) {
+    const index = regionIndex({ regionX, regionY }), value = world.regionalConditions[index];
+    if (world.regionalConditions[index + 1] === 2 && value !== 5 && (value & 15) !== 15 && value >>> 4 < 13) sites.push({ regionX, regionY });
+  }
+  return sites;
+}
+
 /** 0x3b162..0x3b218, called weekly through 24e6:0ff6 at 0xcbb3,
  * before field orders and monthly/annual financial receipts. */
 export function developTown(world: Scenario, state: TownDevelopmentState, layouts: TownLayouts,

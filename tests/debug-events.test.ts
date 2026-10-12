@@ -2,6 +2,8 @@ import {test,expect} from 'bun:test';
 import {shopFixture,livestockFixture} from './support/livestock';
 import {GameSimulation} from './support/game';
 import type {GameEvent} from '../src/simulation/events';
+import {growableTownSites} from '../src/simulation/town-development';
+import {terrainTile,worldIndex} from '../src/formats/scenario';
 function fixture(animal=false){
  const f=animal?livestockFixture(1):shopFixture();
  f.state.finances.town.recreationCount=1;f.state.finances.town.recreationCoordinates.set([72,72]);
@@ -82,4 +84,20 @@ test('a failed debug town choice keeps the choice open and restores the site exa
  game.dispatch({type:'choose-town',choice:'recreational'});
  const after=game.getSnapshot();expect(after.lastTownResult).toEqual({ok:false,reason:'recreation-limit'});expect(after.pendingTown?.phase).toBe('debug');
  expect(after.scenario.regionalConditions[flag]).toBe(before.scenario.regionalConditions[flag]);expect(after.finances.town.activeSite).toEqual(before.finances.town.activeSite);
+});
+
+test('debug grow raises every unfinished town district one original level without spending revenue or moving time',()=>{
+ const f=shopFixture();f.state.scenario.farm.messages=false;const game=f.load(),sites=[];
+ for(let i=0;i<2;i++){game.dispatch({type:'debug-town-expansion'});sites.push(game.getSnapshot().pendingTown!.site);game.dispatch({type:'choose-town',choice:'residential'});}
+ const level=(site:{regionX:number;regionY:number})=>game.getSnapshot().scenario.regionalConditions[(site.regionX*12+site.regionY)*7]>>>4;
+ const houses=(site:{regionX:number;regionY:number})=>{let n=0;const s=game.getSnapshot();for(let dx=0;dx<8;dx++)for(let dy=0;dy<8;dy++){const t=terrainTile(s.scenario.cells[worldIndex(site.regionX*8+dx,site.regionY*8+dy)]);if(t>=252&&t<=280)n++;}return n;};
+ const before=game.getSnapshot(),growable=growableTownSites(before.scenario);
+ expect(sites.map(level)).toEqual([0,0]);expect(growable).toEqual(expect.arrayContaining(sites));expect(houses(sites[0])).toBe(0);
+ game.dispatch({type:'debug-town-grow'});
+ const after=game.getSnapshot();expect(sites.map(level)).toEqual([1,1]);for(const site of sites)expect(houses(site)).toBeGreaterThan(0);
+ for(const site of growable)expect(level(site)).toBe((before.scenario.regionalConditions[(site.regionX*12+site.regionY)*7]>>>4)+1);
+ expect(after.finances.town).toEqual(before.finances.town);expect(after.scenario.farm.calendar).toEqual(before.scenario.farm.calendar);expect(after.daysAdvanced).toBe(before.daysAdvanced);
+ for(let i=0;i<20&&growableTownSites(game.getSnapshot().scenario).length;i++)game.dispatch({type:'debug-town-grow'});
+ expect(sites.map(level)).toEqual([13,13]);expect(growableTownSites(game.getSnapshot().scenario)).toEqual([]);
+ const done=game.save(4);game.dispatch({type:'debug-town-grow'});expect(game.save(4)).toBe(done); // nothing left to grow
 });
