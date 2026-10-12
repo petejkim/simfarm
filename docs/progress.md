@@ -2840,3 +2840,15 @@ Removed by user request, with the state and message tables only they used:
 - Sell's `sell-feedback`: unsellable reason and sale result.
 
 Outcomes remain visible through source controls: the Map BUY/SELL toggle and Funds; the Bank loan balance, installment and Funds; the Sell disabled button, item counts and Funds. About 25 test references migrated accordingly. Full browser suite 279/279 (artifacts/window-feedback-browser.log); type checking/build pass. Remaining native additions: the New Game region chooser footer, the in-terrain flight-controls panel, and the Settings and Speed windows.
+
+## 2026-10-12 — rebased cc onto main (8b82bd0)
+
+Rebased the 16 UI-chrome/interim-removal commits onto main's cursor, placement-outline, gzip-save, debug-event, volume and test-isolation work. Conflicts were resolved by keeping main's behavior and re-applying this branch's removals:
+- `readSaveText` gzip save readers;
+- `main`'s edit-cursor assets and assertions (8×8 hotspots);
+- `main`'s new preview logic, without the removed hook `quote`/`preview`, message and hint state;
+- help removal applied to the new cursor and asset code.
+
+Main's new placement-outline spec was migrated off the removed `#buy-result`/`#object-move-result` text. One intermediate rebased commit kept a duplicate workspace import in control-bar.spec, fixed in the following commit; the final tree type-checks.
+
+Validation: import, type checking/build, unit 937/937. Full browser suite: 286/287 passed (artifacts/rebase-main-browser.log). The one failure is terrain-design "New Game ignores extreme soil", a Save-menu timeout under full-suite load, also seen before the rebase; it passes 3/3 in isolation. Not pushed.
