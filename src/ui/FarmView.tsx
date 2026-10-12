@@ -323,7 +323,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, onLoad, onRe
     }
   }
   const mapCursor=snapshot?.aircraftFlight?null:bulldoze.active||construction.tool?'bulldoze':objectMove.active?(objectMove.selected?'drop':'pick'):
-    fieldMapTool&&fieldMapTool.kind!=='plant'?'spray':!buyPlacement&&!fieldMapTool?'view':null;
+    fieldMapTool?(fieldMapTool.kind==='plant'?'bulldoze':'spray'):buyPlacement?'buy':'view';
   return <>
     {simulation && <SaveControls debug={{
       checked:[],

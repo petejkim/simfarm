@@ -14,7 +14,7 @@ test('Edit cursors match source pointer transitions and VGA mask/color reads',()
   expect(exe[0x808e]).toBe(0xad);expect(exe[0x8098]).toBe(0xad);
   expect(exe.subarray(0x80f5,0x80f7).toString('hex')).toBe('8a3c');
   expect(exe.subarray(0x8108,0x810b).toString('hex')).toBe('8a6420');
-  for(const kind of ['pick','drop','view','bulldoze','spray'] as const){
+  for(const kind of ['pick','drop','view','bulldoze','spray','buy'] as const){
     const offset=0x846f0+EDIT_CURSOR_OFFSETS[kind],r=readEditCursor(exe,kind);
     expect([r.width,r.height]).toEqual([16,16]);
     // Compare composited pixels for every possible four-bit background color.
@@ -42,4 +42,19 @@ test('all nine construction selectors and four spray choices pin their original 
   }
   for(const address of [0x383fb,0x38449,0x3848f,0x384d7])
     expect(exe.subarray(address,address+12).toString('hex')).toBe('26c747588c1826c7475a9061');
+});
+
+
+test('Plant inherits its palette arrow and both Buy branches assign the original hourglass',()=>{
+  expect(0x1f950+exe.readUInt16LE(0x22352+21*2)).toBe(0x21eec);
+  expect(exe.subarray(0x21f23,0x21f31).toString('hex')).toBe('b9d218be906126894f582689775a');
+  // Crop selection sets mode4/128px footprint without replacing window+58/+5a.
+  expect(createHash('sha256').update(exe.subarray(0x38310,0x38398)).digest('hex'))
+    .toBe('70c45321024d884a24db3efddc383fdd2f0e311090a40646e8b59ec9db5e484e');
+  for(const pointer of [0x47d55,0x47e3a])
+    expect(exe.subarray(pointer,pointer+6).toString('hex')).toBe('b8ba1ab99061');
+  for(const store of [0x47d60,0x47e49])
+    expect(exe.subarray(store,store+8).toString('hex')).toBe('2689475826894f5a');
+  for(const mode of [0x47d7e,0x47e67])
+    expect(exe.subarray(mode,mode+6).toString('hex')).toBe('26c747020900');
 });

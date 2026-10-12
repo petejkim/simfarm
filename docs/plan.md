@@ -458,3 +458,6 @@ Restored source View magnifier and Bulldoze arrow alongside Move FROM/TO; other 
 ## 2026-10-11 — construction/Spray cursor coverage
 
 All nine original construction tools and four spray choices now use their source-selected arrow bitmaps, with existing native persistence retained. Plant's original128×128-pixel footprint is established; exact border renderer and cursor inheritance remain unresolved, as do purchased-object/flight cursor presentation. Continue from those concrete source questions without mistaking this UI progress for complete game coverage.
+
+
+Plant/Buy cursor follow-up: original Plant inherits the palette arrow; non-aircraft Buy usesDS1aba's hourglass. Both are reconstructed with original pixels. The remaining filled placement preview is now source-traced to eight inclusive XOR15 palette-index lines at22684..2279d. Next implement that border with index-preserving weather/masked compositing and focused pixel/erasure checks, then resume broader gameplay/input coverage. Aircraft cursor and overall completeness remain unproven. See edit-cursors.md for addresses, hashes and exact geometry; avoid RGB-difference approximations.

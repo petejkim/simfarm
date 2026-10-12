@@ -16,6 +16,7 @@ async function point(page:Page,x:number,y:number){
 async function plant(page:Page,slot:number){
   await page.getByRole('button',{name:'Plant',exact:true}).click();
   await page.locator(`[data-field-tool="${slot}"]`).click();
+  await expect(page.locator('#world')).toHaveCSS('cursor',/edit-bulldoze\.png.*0 0, crosshair/);
 }
 
 test('original Plant and Spray popup geometry, real labels, source icons and keyboard cancellation preserve saves',async({page})=>{
@@ -57,6 +58,7 @@ test('Plant creates all24 crop fields directly, guards boundaries and occupied f
     await point(page,x,y);game.dispatch({type:'create-field',x,y,cropSlot:slot});
     expect(game.getSnapshot().lastNewFieldResult?.ok).toBe(true);
     await expect(page.locator('#field-tool-result')).toContainText('Field planted.');await expect(page.locator('#cancel-field-tool')).toHaveCount(0);
+    await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
   }
   const before=await save(page);expect(before).toEqual(JSON.parse(game.save(4)));
   await plant(page,0);await point(page,5,40);await expect(page.locator('#field-tool-result')).toContainText('Terrain blocks');

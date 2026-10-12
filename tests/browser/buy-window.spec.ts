@@ -47,6 +47,7 @@ test('Buy arms direct map placement, purchases repeatedly, reports blocked cells
   await expect(page.getByRole('region', { name: 'Buy catalog' })).toBeVisible();
   await page.getByRole('button', { name: 'Close Buy', exact: true }).click();
   await expect(page.locator('#cancel-buy-placement')).toBeVisible();
+  await expect(page.locator('#world')).toHaveCSS('cursor',/edit-buy\.png.*0 0, crosshair/);
   await page.locator('#viewport').evaluate(el => el.scrollTo(0, 0));
   const box = (await page.locator('#world').boundingBox())!;
   for (const x of [10, 12]) {
@@ -56,6 +57,8 @@ test('Buy arms direct map placement, purchases repeatedly, reports blocked cells
   }
   await page.mouse.click(box.x + 10 * 16 + 8, box.y + 10 * 16 + 8);
   await expect(page.locator('#buy-result')).not.toHaveText('Tractor purchased.');
+  await expect(page.locator('#world')).toHaveCSS('cursor',/edit-buy\.png.*0 0, crosshair/);
   await page.keyboard.press('Escape'); await expect(page.locator('#cancel-buy-placement')).toHaveCount(0);
+  await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
 });
