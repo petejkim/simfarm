@@ -499,7 +499,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 /* Market descriptor DSbbfa:320×208 client below its sixteen-pixel title. */
 /* Market Value: 304×200 client; coordinates are client pixels (source x−8). */
 .game-window[data-window=market]{left:144px;top:112px;right:auto}
-.market-window{display:flex;flex-direction:column;width:304px;height:200px;padding-top:6px;color:var(--ink);font:10px/10px monospace}
+.market-window{display:flex;flex-direction:column;width:368px;height:200px;padding-top:6px;color:var(--ink);font:10px/10px monospace}
 .market-label{flex:none;font:bold 10px/11px monospace;white-space:nowrap}
 .market-window output{display:block;flex:1;overflow:hidden;white-space:nowrap;padding-left:2px}
 .market-top{display:flex;align-items:flex-start;height:165px}
@@ -514,21 +514,19 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
   background-size:4px 142px,121px 4px,20px 2px;background-position:0 0,0 0,0 142px;background-repeat:repeat-x,repeat-y,repeat-x}
 .market-reference{height:2px;margin-top:72px}
 .market-side{display:flex;flex-direction:column;align-items:flex-start;margin-left:4px}
-.market-crops{display:grid;grid-template-columns:repeat(4,32px);grid-auto-rows:32px;width:132px;height:132px;margin-left:14px}
+.market-crops{display:grid;grid-template-columns:repeat(6,32px);grid-auto-rows:32px;width:196px;height:132px;margin-left:14px}
 .game-window .market-window button.market-crop{display:grid;width:32px;height:32px;padding:0;border:0;border-radius:0;background:transparent}
 .market-crop>*{grid-area:1/1}
 .market-badge{display:grid;grid-template-columns:16px 16px}
 .market-selection{border:2px solid;pointer-events:none}
-.market-field{display:flex;align-items:center;width:146px}
+.market-field{display:flex;align-items:center;width:210px}
 .market-field:first-of-type{margin-top:7px}
 .market-field .market-label{width:38px}
-.market-value-box{display:flex;align-items:center;width:108px;height:13px}
+.market-value-box{display:flex;align-items:center;width:172px;height:13px}
 .market-bottom{display:flex;align-items:flex-start;height:29px}
 .market-bottom>.market-label{width:104px;margin:9px 0 0 4px}
 .market-owned-box{display:flex;align-items:center;width:48px;height:16px;margin-top:7px}
-.market-pages{display:flex;align-items:center;justify-content:center;gap:2px;width:94px;margin-top:6px;font:9px/16px monospace}
-.market-page{width:14px;height:16px;font:bold 10px/1 monospace}
-.market-close{width:48px;height:24px;margin-top:2px;font:bold 10px/1 monospace}
+.market-close{width:48px;height:24px;margin:2px 6px 0 auto;font:bold 10px/1 monospace}
 
 .original-menu-popup button[role=menuitemcheckbox]{position:relative;padding-left:20px}
 .menu-check{position:absolute;left:2px;top:0;width:14px;text-align:center}

@@ -2999,3 +2999,7 @@ After the runtime asset cleanup, the full browser suite passes 293/293. That is 
 A scripted sweep removed CSS for thirteen classes that no source file references any more, leftovers from the old dashboard and setup panels: aircraft-selector/actions, eyebrow, panel-heading, crop-label, field-care, land-panel, harvest-inventory, farm-actions, homestead-notice, new-farm-action, region-mode and region-description. Classes built from template strings were kept (balance-left/right, schedule-weather-temperature, terrain-level-*).
 
 Validation: the production build passes, and the aircraft-window, options, default-dialog, new-game-layout and homestead specs pass (23/23).
+
+## 2026-10-12 — Market Value shows all 24 crops
+
+At the user's request, the crop pager was replaced by a 6×4 grid showing every crop at once. The window is now 64px wider. The market specs pass.

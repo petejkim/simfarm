@@ -10,11 +10,11 @@ import {TileSprite} from './chrome/TileSprite';
 
 /** Original Market Value window (source 4a750/4a776) rebuilt from shared chrome: the 30-week history
  * inset with CSS bars, grid and reference line; the 4×4 crop badge buttons; crop and price insets;
- * futures owned and CLOSE. A native pager pages the twenty-four crops sixteen at a time. */
+ * futures owned and CLOSE. All twenty-four crops show at once in a 6×4 grid (the source pages 4×4). */
 export function MarketWindow({assets,snapshot,tiles}:{assets:GameAssets;snapshot:GameSnapshot;tiles:HTMLImageElement}){
-  const windows=useWindows(),[slot,setSlot]=useState(0),[page,setPage]=useState(0);
+  const windows=useWindows(),[slot,setSlot]=useState(0);
   const world=snapshot.scenario,view=marketWindowView(world,snapshot.market,assets.catalog.crops,slot),palette=assets.catalog.palette;
-  const rgb=(color:number)=>`rgb(${palette[color].join(',')})`,count=world.cropFiles.length;
+  const rgb=(color:number)=>`rgb(${palette[color].join(',')})`;
   return <GameWindow windowKey="market" title="Market Value" framed>
     <section aria-label="Crop market" className="market-window">
       <div className="market-top">
@@ -28,7 +28,7 @@ export function MarketWindow({assets,snapshot,tiles}:{assets:GameAssets;snapshot
         </SunkenInset>
         <div className="market-side">
           <SunkenInset className="market-crops" role="group" aria-label="Market crops">
-            {world.cropFiles.slice(page*16,page*16+16).map((file,i)=>{const crop=assets.catalog.crops.find(c=>`${c.id}.crp`===file)!,n=page*16+i;
+            {world.cropFiles.map((file,n)=>{const crop=assets.catalog.crops.find(c=>`${c.id}.crp`===file)!;
               return <button key={file} type="button" className="market-crop" data-market-crop={n} aria-label={crop.name} title={crop.name} aria-pressed={slot===n} onClick={()=>setSlot(n)}>
                 <span className="market-badge">{[0,1,2,3].map(part=><TileSprite key={part} tile={cropBadgeTile(n,part)} atlas={tiles.src} masked={assets.maskedTiles.src}/>)}</span>
                 {slot===n&&<span className="market-selection" style={{borderColor:rgb(8)}}/>}
@@ -41,11 +41,6 @@ export function MarketWindow({assets,snapshot,tiles}:{assets:GameAssets;snapshot
       <div className="market-bottom">
         <span className="market-label">Futures Owned</span>
         <SunkenInset className="market-owned-box"><output id="market-owned">{view.futuresOwned}</output></SunkenInset>
-        <div className="market-pages" aria-label="Market crop pages">
-          <BevelButton className="market-page" aria-label="Previous market crops" disabled={page===0} onClick={()=>setPage(page-1)}>‹</BevelButton>
-          <span>{page*16+1}–{Math.min((page+1)*16,count)} of {count}</span>
-          <BevelButton className="market-page" aria-label="Next market crops" disabled={(page+1)*16>=count} onClick={()=>setPage(page+1)}>›</BevelButton>
-        </div>
         <BevelButton className="market-close" shadow onClick={()=>windows.close('market')}>CLOSE</BevelButton>
       </div>
       <table className="sale-accessible-detail" id="market-history"><caption>{view.name}: 30 weeks, oldest to newest</caption><thead><tr><th>Week</th><th>Recorded price</th></tr></thead>

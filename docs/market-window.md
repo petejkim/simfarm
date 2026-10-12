@@ -62,3 +62,7 @@ Market Value now uses the common frame (`GameWindow framed`) and a 304×200 flex
 Accepted difference: the pager, needed for twenty-four crops, moved from a strip below the window into the empty space between the futures box and CLOSE.
 
 Tests: the browser spec checks bar geometry against an independent source-formula reconstruction, the grid and reference styling, badge tile offsets and selection colour. Validation: market-window and market specs pass (6/6).
+
+## All crops at once (2026-10-12, user request)
+
+The native pager is gone. All twenty-four crop badges show together in a 6×4 grid (196×132 inset). The source pages sixteen crops at a time in a 4×4 grid; native shows the whole grid instead. To fit it, the client widens from 304 to 368px, the Crop/Price insets widen to 172px, and CLOSE stays aligned with the panel's right edge. Validation: market-window and market specs pass (5/5).
