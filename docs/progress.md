@@ -2976,3 +2976,7 @@ The popups now use a grid of tile-sprite menu items with HTML captions; the canv
 ## 2026-10-12 — Toolbar forecast as sprites
 
 The three forecast icons are now tile sprites, replacing the canvas. The weather-window and control-bar specs pass.
+
+## 2026-10-12 — Milestone regression after the window rebuilds
+
+Full regression: unit 940/940 passed. Browser: 294/295 passed. The one failure was `new-game-layout.spec.ts`, which still expected the old unframed panel boxes; it now expects the framed client boxes (456×311 chooser, 336×288 designer) and passes 2/2. Remaining canvases are dynamic imagery only: the terrain map and the Map window's overview and legend.

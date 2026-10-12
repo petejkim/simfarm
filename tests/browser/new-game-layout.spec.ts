@@ -6,7 +6,7 @@ test('New Game opens the original chooser directly, keeps native options, and fi
   const open=async()=>{await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'New Game',exact:true}).click();};
   await open();const win=page.locator('[data-window=newgame]'),region=page.locator('#geographic-chooser');
   await expect(region).toBeVisible();await expect(region.getByRole('heading')).toBeFocused();
-  expect(await region.boundingBox()).toEqual({x:80,y:64,width:472,height:328});
+  expect(await region.boundingBox()).toEqual({x:88,y:64,width:456,height:311}); // framed client: source panel less its frame
   const bounds=(await win.boundingBox())!;expect(bounds.y+bounds.height).toBeLessThanOrEqual(480);
   await expect(page.locator('#choose-region,#create-farm,#new-farm-temperature')).toHaveCount(0);
   await expect(page.locator('#new-farm-session')).toHaveCount(0);await expect(page.locator('#new-farm-seed')).toBeEnabled();
@@ -14,7 +14,7 @@ test('New Game opens the original chooser directly, keeps native options, and fi
   await page.locator('#new-farm-seed').fill('37');await page.locator('#new-farm-year').fill('2001');
   await page.screenshot({path:'artifacts/browser-new-game-region.png'});
   await page.locator('#region-design').click();const terrain=page.locator('#terrain-design');await expect(terrain).toBeVisible();
-  expect(await terrain.boundingBox()).toEqual({x:128,y:64,width:352,height:304});
+  expect(await terrain.boundingBox()).toEqual({x:136,y:64,width:336,height:288});
   await expect(win.getByRole('heading')).toHaveText('Design your terrain');await expect(win.getByRole('heading')).toHaveCount(1);
   await expect(page.locator('.terrain-footer')).toContainText('April 2001');
   await page.screenshot({path:'artifacts/browser-new-game-terrain.png'});
