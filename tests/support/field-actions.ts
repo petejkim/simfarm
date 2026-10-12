@@ -13,8 +13,10 @@ export async function selectPlant(page:Page,cropSlot=0){
   await page.getByRole('button',{name:'Plant',exact:true}).click();
   await page.locator(`[data-field-tool="${cropSlot}"]`).click();
 }
+/** Plant one field, then return to View object: Plant stays armed after a click (user request). */
 export async function plantField(page:Page,x:number,y:number,cropSlot=0){
   await selectPlant(page,cropSlot);await clickFarmTile(page,x,y);
+  await page.getByRole('button',{name:'View object',exact:true}).click();
 }
 export async function setAutoDoze(page:Page,enabled:boolean){
   await page.locator('#options-menu-button').click();

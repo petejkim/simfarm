@@ -3051,3 +3051,7 @@ Fields with several treatable conditions (weed, pest, fungus, plus toxicity) no 
 ## 2026-10-12 — Treating several fields at once (SF-178)
 
 Fixed a reported stall where only one or two of six treated fields progressed at a time. The original treatment and planting FSMs end the whole field dispatcher while a field waits on its tractor timer. Tractors on different timer phases therefore starved later fields. Native code now waits per field. The step 0 stock-failure exit is unchanged. Recorded as SF-178 with the reproduced timings. Validation: full unit suite (946/947; the one failure was a stale render-test stub from the badge commit, fixed and committed separately), new staggered six-field regression (fails without the fix), field-tools, crop-supplies, tool-status and all-crops browser specs (10/10), production build.
+
+## 2026-10-12 — Plant stays armed
+
+Plant now stays selected after a successful field, like Spray, so several fields of the same crop can be planted in a row. Escape or another control ends it. This deliberately departs from the original mode reset after new-field placement (field-tools.md). The `plantField` test helper now returns to View object after its click. Validation: production build; field-tools (new repeated-planting test), native, navigation, all-crops, new-farm, manual-removal, schedule-window, edit-status, edit-workspace and placement-outline specs all pass.

@@ -53,8 +53,8 @@ test('Plant creates all24 crop fields directly, guards boundaries and occupied f
     await plant(page,slot);const x=5+slot%8*10,y=40+Math.floor(slot/8)*10;
     await point(page,x,y);game.dispatch({type:'create-field',x,y,cropSlot:slot});
     expect(game.getSnapshot().lastNewFieldResult?.ok).toBe(true);
-    await expectPaletteAction(page,'View object');
-    await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
+    await expectPaletteAction(page,'Plant'); // stays armed after a successful field
+    await expect(page.locator('#world')).toHaveCSS('cursor',/edit-bulldoze\.png/);
   }
   const before=await save(page);expect(before).toEqual(JSON.parse(game.save(4)));
   await plant(page,0);await point(page,5,40);await expectPaletteAction(page,'Plant');
@@ -63,6 +63,20 @@ test('Plant creates all24 crop fields directly, guards boundaries and occupied f
   await page.reload();await load(page,JSON.stringify(before));expect(await save(page)).toEqual(before);
   await page.getByRole('button',{name:'View object',exact:true}).click();await point(page,6,41);
   await expect(page.getByRole('dialog',{name:'Schedule',exact:true})).toBeVisible();await expectSelectedField(page,1);
+});
+
+test('Plant stays armed to create several fields of the same crop until cancelled',async({page})=>{
+  const fixture=shopFixture();fixture.state.disasters.enabled=false;
+  const game=fixture.load().withAllCrops(browserCrops);await page.goto('/');await load(page,game.save(4));
+  await plant(page,3);
+  for(const [x,y] of [[5,40],[15,40],[25,40]] as const){
+    await point(page,x,y);game.dispatch({type:'create-field',x,y,cropSlot:3});
+    expect(game.getSnapshot().lastNewFieldResult?.ok).toBe(true);await expectPaletteAction(page,'Plant');
+  }
+  await page.keyboard.press('Escape');await expectPaletteAction(page,'View object');
+  await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
+  expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+  expect(game.getSnapshot().scenario.fields.filter(f=>f.active&&f.cropSlot===3)).toHaveLength(3);
 });
 
 test('Spray applies all four treatments through canonical supplies and busy guards with continued field work',async({page})=>{

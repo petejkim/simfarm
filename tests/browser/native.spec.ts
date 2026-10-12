@@ -4,7 +4,7 @@ import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import {toggleOption} from '../support/options-menu';
 import { setDisastersEnabled } from '../support/disaster-menu';
 import { fieldDescription, selectedFieldSnapshot, farmSnapshot } from '../support/field-checkpoint';
-import { sprayField, buyPlot, selectProperty, setAutoDoze, plantField, clickFarmTile } from '../support/field-actions';
+import { sprayField, buyPlot, selectProperty, setAutoDoze, plantField, selectPlant, clickFarmTile } from '../support/field-actions';
 import { scheduleWeek, schedulePlant, scheduleNextHarvest, expectWeekPlan } from '../support/schedule-window';
 import { saleOffers, selectSaleOffer } from '../support/sell-window';
 import { reveal, openWindow, expectPaletteAction, chooseField, expectSelectedField } from '../support/workspace';
@@ -312,7 +312,7 @@ test('map tools buy original land and complete a new-field planting and harvest 
   await loadScenarioCheckpoint(page,Number('4'));
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
-  await plantField(page,0,16);
+  await selectPlant(page);await clickFarmTile(page,0,16); // rejected: Plant stays armed
   await expectPaletteAction(page,'Plant');
   await selectProperty(page,0,2);
   await expect(page.locator('.overview-land-value')).toHaveText('18060');
@@ -320,10 +320,11 @@ test('map tools buy original land and complete a new-field planting and harvest 
   await buyPlot(page,0,2);
   await expect(page.locator('#farm-cash')).toHaveText('$21,940');
   await expect(page.locator('#map-land-action')).toHaveText('SELL');
-  await plantField(page,0,16);
+  await selectPlant(page);await clickFarmTile(page,0,16); // rejected: Plant stays armed
   await expectPaletteAction(page,'Plant');
   await setAutoDoze(page,true);await clickFarmTile(page,0,16);
-  await expectPaletteAction(page,'View object');
+  await expectPaletteAction(page,'Plant'); // success also stays armed
+  await page.getByRole('button',{name:'View object',exact:true}).click();await expectPaletteAction(page,'View object');
   await expectSelectedField(page,9);
   expect((await farmSnapshot(page)).scenario.fields.filter(f=>f.active).length).toBe(9);
   expect(await fieldDescription(page)).toBe('Field 9 · Planting · 8 × 8 tiles at 0, 16');

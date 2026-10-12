@@ -238,8 +238,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
     if(!result)return;
     if(result.ok){
       const slot=fieldMapTool.kind==='plant'&&'slot' in result?result.slot:selected?.slot;
+      // Plant, like Spray, stays armed for repeated field clicks until another control is chosen (user request).
       if(slot!==undefined)setFieldSlot(slot);
-      if(fieldMapTool.kind==='plant'){setFieldMapTool(null);setToolPointer(null);}
     }
   }
   const cancelObjectMove=useCallback(()=>{objectMove.cancel();setToolPointer(null);},[objectMove.cancel]);

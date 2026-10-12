@@ -69,6 +69,7 @@ test('Map and Plant lead through land purchase, field creation and planning with
   const plant=page.getByRole('menu',{name:'Plant Field',exact:true});await expect(plant).toBeVisible();
   await expect(page.getByRole('dialog',{name:'New field',exact:true})).toHaveCount(0);
   await page.locator('[data-field-tool="0"]').click();await clickFarmTile(page,0,16);
+  await expectPaletteAction(page,'Plant');await page.getByRole('button',{name:'View object',exact:true}).click(); // Plant stays armed
   await expectPaletteAction(page,'View object');
   expect(await fieldDescription(page)).toContain('Field 9 · Planting');
   await openWindow(page,'schedule');
@@ -104,6 +105,7 @@ test('an empty farm creates its first field with Plant and then opens Schedule',
   await page.locator('#viewport').evaluate(v=>v.scrollTo(30*16,30*16));
   const map=(await page.locator('#world').boundingBox())!;await page.mouse.click(map.x+40*16+8,map.y+40*16+8);
   game.dispatch({type:'create-field',x:40,y:40,cropSlot:0});expect(game.getSnapshot().lastNewFieldResult?.ok).toBe(true);
+  await expectPaletteAction(page,'Plant');await page.getByRole('button',{name:'View object',exact:true}).click(); // Plant stays armed
   await expectPaletteAction(page,'View object');
   expect(await checkpoint(page,'empty-planted')).toEqual(JSON.parse(game.save(4)));
   await openWindow(page,'schedule');await expectSelectedField(page,1);
