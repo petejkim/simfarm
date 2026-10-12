@@ -2936,3 +2936,7 @@ The window is now framed, with picture `BevelButton`s (sprite faces from the bit
 ## 2026-10-12 — Farm Expert rebuilt on shared chrome
 
 The window is now framed. Card pictures and tile strips are sprites, and captions are `BevelButton`s. Card commands keep their recorded placement, because they are positional data. The expert-artwork canvas renderer was removed. Details are in farm-expert.md. Expert specs pass (4/4).
+
+## 2026-10-12 — About rebuilt on shared chrome
+
+The dialog is now framed, with a SIMFARM ribbon sprite (a bitmap logo, by request), a new shared `RaisedPanel` for the credits, and an apple sprite stacked over the panel's edge. The credit rectangle is verified. The about spec passes.

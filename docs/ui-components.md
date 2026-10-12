@@ -3,7 +3,7 @@
 Status: **in progress.** Done so far:
 - Step 1: shared chrome extracted from the toolbar and palette.
 - Step 2: `GameWindow framed` with the imported wood 9-slice.
-- Rebuilt windows: Examine, Buy, Sell, Bank, Map, Schedule, Balance, Evaluation, Weather, Market, Aircraft, Expert.
+- Rebuilt windows: Examine, Buy, Sell, Bank, Map, Schedule, Balance, Evaluation, Weather, Market, Aircraft, Expert, About.
 
 Remaining windows follow one commit each.
 
@@ -86,6 +86,7 @@ Where the light and shadow edges meet at a corner, the source paints the two dia
 | `SunkenInset` | Sunken bevel box; size from layout or modifier class. Replaces `ToolbarInset`. |
 | `BevelButton` | Picture (sprite) or caption (HTML text) face, `pressed`, `frame: 'all' \| 'top-left'`, optional `shadow`. Replaces `WindowLauncher`'s and `EditToolButton`'s duplicated markup and CSS. |
 | `Sprite` | A `div` showing one atlas frame via `background-position`, with `image-rendering: pixelated`. |
+| `RaisedPanel` | Non-interactive raised panel with the `BevelButton` structure (ink frame, 2px raised bevel, optional shadow), e.g. About's credits panel. |
 
 **Sprite atlases** (all plain images, so CSS sprites work):
 - `control-bar.png` and `edit-palette.png` faces.

@@ -13,6 +13,10 @@ test('About restores source artwork, HTML credits, movement, cycling and close w
   await page.screenshot({path:'artifacts/browser-about.png'});
   await page.clock.fastForward(8000);await expect(dialog.locator('[data-credit-page="0"]')).toContainText('Michael Perry');
   await expect(dialog.locator('.about-logo')).toHaveCount(0);
+  // Source credit rectangle (client 136,72, 224×104), inside the raised panel; no full-window bitmap.
+  const moved=(await dialog.boundingBox())!;
+  expect(await dialog.locator('.about-credits').boundingBox()).toEqual({x:moved.x+8+136,y:moved.y+16+72,width:224,height:104});
+  await expect(dialog.locator('img,canvas')).toHaveCount(0);
   await page.screenshot({path:'artifacts/browser-about-credits.png'});
   // Every page stays inside the original credit rectangle and eventually loops.
   for(let i=0;i<30;i++){

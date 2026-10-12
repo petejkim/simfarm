@@ -17,3 +17,13 @@ Intro strings DSa3dd..a43e are Concept / Programming / And / Design / By / Eric 
 Native React presentation uses8seconds for the introductory page and6seconds per twelve-line credits page, then repeats. Original source delays512(3df90) and384(3e0bc/3e0e1) establish relative phases; exact interrupt timing is intentionally not ported under the user's pacing direction. Presentation does not own/change simulation state. Shared movable wooden titlebar provides close, Escape and keyboard movement. About is a native modal, matching the previous File-dialog input policy; exact original window/pause nesting remains unverified.
 
 Import is reproducible with `./tools/bun run import`; generated assets remain ignored. Credits parsing rejects missing sentinel, invalid bytes, oversized input and lines beyond79 characters instead of relying on source stream state. Tests pin descriptor/intro/12-line boundary and member hashes, verify mask pixels and unchanged inputs, and exercise truncated/wrong-size artwork. Browser checks cover original1× geometry, bitmap logo and HTML title/credits, omitted registration, credit cycling/bounds, movement and reopening/close. SF-175 records a separate source registration-decoder hazard; no native owner decoder is implemented.
+
+## Native rebuild on shared chrome (2026-10-12)
+
+About now uses the common frame and a 384×216 flex client. The full `about-window.png` image is gone.
+- **Ribbon:** the SIMFARM ribbon is a sprite cut from it (source 66,1, 268×59), kept as bitmap artwork per the user's logo exception.
+- **Credits panel:** a new shared `RaisedPanel` (342×118 with shadow), with the same frame, bevel and shadow structure as `BevelButton`.
+- **Apples:** a sprite (source 23,75, 120×90) grid-stacked over the panel's left edge at its source position.
+- **Text and logo:** credit text keeps its source rectangle (client 136,72, 224×104; checked by the browser spec). The Leaping Lizard logo and its HTML caption sit at the panel's right on the first page.
+
+Validation: about spec passes (1/1).
