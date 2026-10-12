@@ -23,9 +23,16 @@ test('Balance Sheet restores source geometry, every actual-text row, signed/full
   for(let i=1;i<=2;i++){const e=f.state.scenario.equipment[i];e.bytes.fill(0);e.flags=0x20;word(e.bytes,0,0);}word(f.state.scenario.equipmentDefinitions[0].bytes,6,20000);
   const game=f.load().withAllCrops(browserCrops);await start(page);await load(page,game.save(4));const before=await save(page),edit=await page.locator('#viewport').boundingBox();await open(page);
   const win=page.getByRole('dialog',{name:'Balance Sheet',exact:true}),client=page.getByRole('region',{name:'Farm balance sheet',exact:true});
-  expect(await win.boundingBox()).toEqual({x:128,y:96,width:400,height:240});expect(await client.boundingBox()).toEqual({x:128,y:112,width:400,height:224});
-  const labels=client.locator('.balance-label');expect(await labels.allTextContents()).toEqual(BALANCE_LABELS.slice(0,-1).map(l=>l.text));
-  for(let i=0;i<BALANCE_LABELS.length-1;i++){const l=BALANCE_LABELS[i];expect(await labels.nth(i).boundingBox()).toEqual({x:128+l.x,y:112+l.y,width:l.width,height:8});}
+  // Shared frame around a 384×216 ledger built from rows; no background bitmap.
+  expect(await win.boundingBox()).toEqual({x:128,y:96,width:400,height:240});expect(await client.boundingBox()).toEqual({x:136,y:112,width:384,height:216});
+  await expect(client.locator('img,canvas')).toHaveCount(0);
+  const labels=client.locator('.balance-label'),sources=BALANCE_LABELS.slice(0,-1);
+  expect((await labels.allTextContents()).sort()).toEqual(sources.map(l=>l.text).sort());
+  // Each label starts at its source position (rows are 8px from source y8).
+  for(const l of sources){const box=(await client.locator('.balance-label',{hasText:new RegExp(`^${l.text}$`)}).first().boundingBox())!;
+    if(['Machinery','Land','Livestock'].includes(l.text))continue; // repeated in both columns; checked by text set
+    expect({x:box.x,y:box.y},l.text).toEqual({x:128+l.x,y:112+l.y});}
+  expect(await client.locator('.balance-cell[data-fill=header]').evaluateAll(els=>els.map(e=>getComputedStyle(e).backgroundColor))).toEqual(['rgb(0, 170, 4)','rgb(0, 170, 4)','rgb(0, 170, 4)']);
   expect(await client.getByRole('button',{name:'CLOSE',exact:true}).boundingBox()).toEqual({x:456,y:296,width:48,height:24});
   await values(page,balanceWindowView(game.getSnapshot(),browserCrops));await expect(page.locator('#balance-asset-0')).toHaveText('-2147483648');await expect(page.locator('#balance-asset-1')).toHaveText('-25536');await expect(page.locator('#balance-expense-9')).toHaveText('4294967295');await expect(page.locator('#balance-loan')).toHaveText('-1');
   await page.screenshot({path:'artifacts/browser-balance-window.png'});

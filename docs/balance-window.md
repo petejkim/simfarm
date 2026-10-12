@@ -53,3 +53,15 @@ The old FarmReport component is removed. Field-condition indicators are in Evalu
 |4b23a..4b29e, futures sum||acaaa1a10cd96e953f770bcf2b265b7b40d244b53fba6dd080e963f22bb58117|
 
 Confidence is high for these source branches/geometry/formats, without an original runtime capture. Unit tests pin source ranges/descriptor/format strings, compare all original/import pixels, reject every truncated bitmap prefix, verify all eight supplied farms, exercise signed/unsigned/word boundaries, full livestock versus sale values, every displayed ledger mapping and unchanged caches. Browser checks cover geometry, real text, full extreme numerals, title movement/Close, estimated/prior tax rows, annual collection/town choice, borrowing/repayment, exact saves, missing resources and existing report/annual flows. Final results are in progress.md. No dependency installation, supplied-distribution modification, pacing change, crop swapping or MIDI-policy change.
+
+## Rebuilt as a ledger on shared chrome (2026-10-12)
+
+User request (ui-components.md). Balance Sheet is a framed `GameWindow` around a 384×216 ledger. It no longer shows `cashflow.bmp` with text over it.
+- **Rows:** 22 rows of 8px from source y8, striped grey (palette 12) and white across both halves. Each row has a left (176px) and right (168px) cell.
+- **Bars:** section headers are green bars (palette 8) and totals dark bars (palette 13), both with white lettering. Values are right-aligned in their cell.
+- **Footer:** Estimated Taxes and Quarterly Loan Payment sit beside the CLOSE `BevelButton`.
+- **Margins:** the punch-hole margins are source sprites (pure decoration).
+
+Every label starts at its source x/y. Lettering is 9px and clipped to its 8px row (not pixel-identical to the source font). Ids and values are unchanged.
+
+Also fixed: the generic window-button exclusion now uses `:where(:not(.bevel-button))`, so it keeps its old specificity. The earlier form had broken Town Choice's pressed-image rule.

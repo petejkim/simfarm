@@ -2912,3 +2912,7 @@ Framed flex window with BevelButton modes/help/actions, SunkenInset land readout
 ## 2026-10-12 — Schedule rebuilt on shared chrome
 
 Framed flex window replacing the background bitmap and canvas; details in schedule-window.md. Found and fixed a render-time component definition that remounted tiles every frame (native time-controls test timed out). Schedule/native/navigation/crops/field/new-farm/examine specs pass 50/50.
+
+## 2026-10-12 — Balance Sheet rebuilt as a ledger
+
+Framed ledger of striped rows with header/total bars and a CLOSE BevelButton (no background bitmap). Restored generic window-button specificity via :where (Town Choice regression). Balance/annual/town-choice 9/9 and earlier converted windows 34/34 pass.
