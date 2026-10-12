@@ -3043,3 +3043,7 @@ Investigated a report that residential districts added through Debug never gaine
 ## 2026-10-12 — Apple favicon
 
 Added 16×16 and 32×32 favicons from the Apples crop file: the Edit plant icon and the 2×2 crop badge. The importer writes them; `index.html` links both. Details in all-crops.md. Validation: crop-graphics unit tests 3/3 (new pixel test against the patched atlas), import, production build with both icons in `dist`.
+
+## 2026-10-12 — Stacked field condition badges
+
+Fields with several treatable conditions (weed, pest, fungus, plus toxicity) no longer flicker. The original cycles them through one badge slot; the native renderer now stacks them vertically in that column. Presentation only: simulation terrain writes and saves are unchanged. Details in reverse-engineering.md (field status section). Validation: new field-badges unit test, simulation tests (11), field-tools and field-message browser specs (7/7), production build, and a screenshot of a Scenario 1 field with three conditions.

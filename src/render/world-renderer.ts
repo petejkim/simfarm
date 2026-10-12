@@ -1,6 +1,7 @@
 import { invertedTiles } from '../assets/inverted-tiles';
 import { clipPlacementOutline, type PlacementFootprint } from './placement-outline';
 import { harvestWorkerTile } from './harvest-workers';
+import { drawFieldBadgeStacks, fieldBadgeStacks } from './field-badges';
 import { maskedTile, terrainTile, worldPosition, worldIndex, WORLD_SIZE, type Scenario } from '../formats/scenario';
 
 export type MapPreview = PlacementFootprint;
@@ -22,6 +23,8 @@ export function drawWorld(context: CanvasRenderingContext2D, scenario: Scenario,
     }
   };
   for(let i=0;i<scenario.cells.length;i++)paintCell(i,tiles,maskedTiles,townEventTiles);
+  const stacks=fieldBadgeStacks(scenario);
+  drawFieldBadgeStacks(context,stacks,tiles);
   if (preview) {
     context.save();
     clipPlacementOutline(context,preview);
@@ -30,6 +33,7 @@ export function drawWorld(context: CanvasRenderingContext2D, scenario: Scenario,
     for(let y=Math.max(0,preview.y-1);y<Math.min(WORLD_SIZE,preview.y+preview.height);y++)
       for(let x=Math.max(0,preview.x-1);x<Math.min(WORLD_SIZE,preview.x+preview.width);x++)
         paintCell(worldIndex(x,y),base,mask,events);
+    drawFieldBadgeStacks(context,stacks,base);
     context.restore();
   }
 }
