@@ -99,3 +99,5 @@ In **Disasters**, **Start frost** damages sensitive crops and disperses an activ
 Original UI artwork uses1× source pixels, matching default terrain zoom: the640×32 control strip and48×208 Edit palette retain their original spacing. Edit stays maximized. Small-screen layout changes remain a future task.
 
 Right-click an irrigation valve to open or close it directly on the map. This original interaction also preserves the source adjacent-field flag write; its orientation difference is documented in [SF-162](docs/original-bugs.md#sf-162--valve-orientations-write-the-adjacent-field-flag-differently).
+
+Browser tests start their own Vite server on port5190 and never reuse a running development server. Keep that port free for tests; the normal development server remains on its usual port.
