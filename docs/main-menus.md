@@ -89,3 +89,19 @@ Ordinary file loading now presents a native Loading game window with Cancel load
 2026-10-11/12 user follow-up: the native File menu omits **Save As** (as it already omits Load Crop). Its filename dialog and custom-name save path were removed; Save always downloads the dated `simfarm-<farm>-<year>-<month>-<day>.simfarm.json.gz` checkpoint. The decoded source menu still lists Save As as preservation evidence.
 
 2026-10-12 user follow-up: native File menu is About SimFarm, New Game, Save (browser-stored game), Save to File... (source Save As slot), Load from File... (source Load Game). Load Crop and Quit are omitted; see autosave.md.
+
+## Native menu bar cleanup (2026-10-12, user request)
+
+The bar and drop-downs no longer reproduce source coordinates with computed margins, fixed widths, absolute popup positions or fixed popup heights. Each heading wraps its own drop-down:
+- **Headings:** 8px side padding in a 16px bar with a 4px leading inset.
+- **Drop-downs:** sit directly under their heading (`top:100%`) and size to their content (at least the heading's width).
+- **Rows:** one shared row style (1px/16px/8px padding, 14px line); checkable menus add a 12px check column.
+- **Disabled state:** headings and items share one style.
+
+The recovered descriptor geometry above is still decoded and tested in `tests/main-menus.test.ts`.
+
+**Colour:** the bar is dark grey (85,85,85) with white lettering, matching the original as the user describes it. The header renderer fills with index 8 and draws text with index 15 (DS 5b01/5b02). Read through `simfarm.pal`, index 8 is green (0,170,4), which is what the bar showed before.
+
+Hypothesis (unverified, medium confidence): in 16-colour mode the attribute controller maps index 8 to DAC register 0x38 and 15 to 0x3F. If the palette loader programs only DAC 0–15, those two stay at the EGA defaults: dark grey and white. Revisit with the palette-loader disassembly.
+
+The browser specs now check that each drop-down is anchored under its heading, uses uniform rows, and that the bar has its grey background, instead of pinning source pixel boxes. Validation: control-bar, window-menu-checks, options, disaster-menu, debug-menu, autosave, file-errors, weather-window, disasters and town specs pass.

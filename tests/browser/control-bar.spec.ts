@@ -27,7 +27,8 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
   for (const [index, button] of (await bar.getByRole('button').all()).entries()) {
     expect(await button.boundingBox()).toEqual({ x: index * 32, y: 16, width: 32, height: 32 });
   }
-  expect(await page.locator('#windows-menu-button').boundingBox()).toMatchObject({ x: 208, y: 0, width: 56, height: 16 });
+  expect(await page.locator('#windows-menu-button').boundingBox()).toMatchObject({ y: 0, height: 16 }); // content-sized heading in the 16px bar
+  expect(await page.locator('.original-menu-bar').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(85, 85, 85)');
   await expect(page.locator('#window-market')).toBeEnabled();
   const caption = await page.locator('#window-buy .toolbar-caption').evaluate(el => {
     const range = document.createRange(); range.selectNodeContents(el);
@@ -45,7 +46,6 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
   // No minimum width: narrow pages shrink the strip (mobile adaptation is out of scope) without page scrolling.
   await page.setViewportSize({ width: 390, height: 844 }); await page.evaluate(() => scrollTo(0, 0));
   expect(await bar.boundingBox()).toEqual({ ...box, width: 390 });
-  expect(await page.locator('#windows-menu-button').boundingBox()).toMatchObject({ x: 208, width: 56 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 

@@ -3019,3 +3019,7 @@ The gauges now show the whole dial (bitmap rim plus field-gauge frame), matching
 ## 2026-10-12 — Terrain viewport scrollbars styled and always visible
 
 The browser scrollbars on `#viewport` are styled with CSS to match the Schedule scroll bar (checker track, bevel thumb and arrow buttons) and always shown. A new spec checks them with real scrollbars. Details are in edit-workspace.md.
+
+## 2026-10-12 — Menu bar cleanup and dark grey bar
+
+Menu headings and drop-downs are now content-sized, with consistent padding and anchoring; the absolute sizes and positions are gone. The bar is dark grey with white text, as in the original. The palette mismatch (index 8 is green in simfarm.pal) is recorded in main-menus.md as a hypothesis to revisit. The menu specs pass.

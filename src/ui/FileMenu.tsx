@@ -14,9 +14,9 @@ const FILE_HIDDEN = new Set([5, 6]);
 export interface MenuChoices { actions?:readonly {label:string;choose:()=>void}[]; extraLabels?:readonly string[]; checked: readonly boolean[]; choose: (index: number) => void; disabled?: boolean; disabledItems?:readonly boolean[]; hints?:readonly string[] }
 
 /** Recovered File/Options/Windows/Disasters chains; file-system/exit operations use browser policies. */
-export function FileMenu({ about, data, palette, busy, onSave, onSaveToFile, onLoad, onNewGame, onWindow, options, disasters, debug }: {
+export function FileMenu({ about, data, busy, onSave, onSaveToFile, onLoad, onNewGame, onWindow, options, disasters, debug }: {
   about:AboutAssets; options: MenuChoices; disasters: MenuChoices; debug: MenuChoices;
-  data: MainMenus; palette: number[][]; busy: boolean;
+  data: MainMenus; busy: boolean;
   onSave: () => Promise<boolean>; onSaveToFile: () => Promise<boolean>; onLoad: () => void; onNewGame: () => void; onWindow: (window: GameWindow) => void;
 }) {
   const windows = useWindows();
@@ -45,23 +45,9 @@ export function FileMenu({ about, data, palette, busy, onSave, onSaveToFile, onL
     else if (index === 3) void onSaveToFile();
     else if (index === 4) onLoad();
   }
-  const color = (index: number) => `rgb(${palette[index].join(',')})`;
-  return <>
-    <nav ref={root} className="original-menu-bar" aria-label="Original game menus"
-      style={{ backgroundColor: color(data.background), color: color(data.foreground) }}
-      onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
-      {menus.map((entry, index) => <button key={entry.offset} ref={index === 0 ? button : undefined}
-        id={`${entry.title.toLowerCase()}-menu-button`} disabled={busy}
-        // Flex row: each heading keeps its source x by spacing from the previous heading's end.
-        style={{ marginLeft: entry.header.x - (index ? data.menus[index - 1].header.x + data.menus[index - 1].header.width : 0), width: entry.header.width, paddingLeft: index === 0 ? 8 : 0 }}
-        title={undefined}
-        aria-haspopup={index !== 2 ? 'menu' : undefined} aria-expanded={index !== 2 ? open === index : undefined}
-        aria-controls={index !== 2 ? `original-${entry.title.toLowerCase()}-menu` : undefined}
-        onClick={() => { if (index !== 2) setOpen(value => value === index ? null : index); else { setOpen(null); windows.show('speed'); } }} onKeyDown={event => {
-          if ((index !== 2) && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) { event.preventDefault(); setOpen(index); }
-        }}>{entry.title}</button>)}
-      {active && <div ref={menu} id={`original-${active.title.toLowerCase()}-menu`} className="original-menu-popup" role="menu" tabIndex={-1} aria-label={active.title}
-        style={{ left: active.popup.x, width: choices?.extraLabels?.length || choices?.actions?.length ? Math.max(160,active.popup.width) : active.popup.width, ...(choices ? { height: active.popup.height+12*((choices.extraLabels?.length??0)+(choices.actions?.length??0)), padding: '1px 0' } : {}) }} onKeyDown={event => {
+  const popup = (active: typeof menus[number]) =>
+    <div ref={menu} id={`original-${active.title.toLowerCase()}-menu`} className="original-menu-popup" role="menu" tabIndex={-1} aria-label={active.title}
+      data-checks={choices && open!==5 ? true : undefined} onKeyDown={event => {
           const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
           const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
           if (event.key === 'Escape') { event.preventDefault(); closeMenu(); }
@@ -80,7 +66,20 @@ export function FileMenu({ about, data, palette, busy, onSave, onSaveToFile, onL
         {choices?.actions?.map(action=><button key={action.label} role="menuitem" tabIndex={-1} disabled={busy || choices.disabled}
           onPointerMove={event=>{if(event.pointerType==='mouse'&&document.activeElement!==event.currentTarget)event.currentTarget.focus({preventScroll:true});}}
           onClick={()=>{closeMenu();action.choose();}}><span className="menu-check" aria-hidden="true" />{action.label}</button>)}
-      </div>}
+      </div>;
+  return <>
+    <nav ref={root} className="original-menu-bar" aria-label="Original game menus"
+      onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
+      {menus.map((entry, index) => <div key={entry.offset} className="original-menu">
+        <button ref={index === 0 ? button : undefined} className="original-menu-heading"
+          id={`${entry.title.toLowerCase()}-menu-button`} disabled={busy}
+          aria-haspopup={index !== 2 ? 'menu' : undefined} aria-expanded={index !== 2 ? open === index : undefined}
+          aria-controls={index !== 2 ? `original-${entry.title.toLowerCase()}-menu` : undefined}
+          onClick={() => { if (index !== 2) setOpen(value => value === index ? null : index); else { setOpen(null); windows.show('speed'); } }} onKeyDown={event => {
+            if ((index !== 2) && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) { event.preventDefault(); setOpen(index); }
+          }}>{entry.title}</button>
+        {active && open === index && popup(active)}
+      </div>)}
     </nav>
     {dialog === 'about' && <AboutDialog assets={about} onClose={closeDialog} />}
   </>;

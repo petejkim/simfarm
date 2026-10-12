@@ -98,7 +98,7 @@ export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, st
   }
   return <div className="farm-file-controls">
     <div className="original-controls">
-      <FileMenu debug={debug} about={assets.about} options={options} disasters={disasters} data={assets.mainMenus} palette={assets.catalog.palette} busy={busy||saving} onSave={saveGame} onSaveToFile={save}
+      <FileMenu debug={debug} about={assets.about} options={options} disasters={disasters} data={assets.mainMenus} busy={busy||saving} onSave={saveGame} onSaveToFile={save}
         onLoad={() => void chooseFile()} onNewGame={onNewGame} onWindow={window=>onWindow(window,'menu')} />
       <ControlBar tiles={tiles} artwork={assets.controlBar} menus={assets.mainMenus} snapshot={simulation.getSnapshot()} onWindow={window=>onWindow(window,'toolbar')} />
     </div>
