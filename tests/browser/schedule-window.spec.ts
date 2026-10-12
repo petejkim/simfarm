@@ -85,7 +85,7 @@ test('Schedule restores source geometry, field artwork, gauges, all24 crops and 
   const dialog=page.getByRole('dialog',{name:'Schedule',exact:true});
   expect(await dialog.locator('.game-window-title').boundingBox()).toEqual({x:160,y:80,width:336,height:16});
   // Shared frame around a 320×216 client of components; no background bitmap or canvas.
-  expect(await page.locator('.schedule-window').boundingBox()).toEqual({x:168,y:96,width:320,height:216});
+  expect(await page.locator('.schedule-window').boundingBox()).toEqual({x:168,y:96,width:320,height:232});
   await expect(page.locator('.schedule-window').locator('img,canvas')).toHaveCount(0);
   await expect(page.locator('[data-plan-week]')).toHaveCount(12);await expect(page.locator('[data-plan-action]')).toHaveCount(6);
   await expect(page.locator('.schedule-label').filter({hasText:'Disease'})).toHaveText('Disease');
@@ -100,8 +100,11 @@ test('Schedule restores source geometry, field artwork, gauges, all24 crops and 
   await expect(page.getByRole('button',{name:'Water overlay',exact:true})).toHaveAttribute('aria-pressed','false');
   await expect(page.locator(`[data-plan-week="${firstWeek}"]`)).toHaveText(String(world.climate.temperature[firstWeek]));
   await page.getByRole('button',{name:'Temperature overlay',exact:true}).click();
-  await expect(page.locator('[data-plan-crop]')).toHaveCount(16);await page.getByRole('button',{name:'Next crops',exact:true}).click();
-  await expect(page.locator('[data-plan-crop]')).toHaveCount(8);await page.locator('[data-plan-crop="23"]').click();
+  // All twenty-four crops in three rows of eight; no crop pager.
+  await expect(page.locator('[data-plan-crop]')).toHaveCount(24);await expect(page.getByRole('button',{name:/^(Next|Previous) crops$/})).toHaveCount(0);
+  const crops=(await page.locator('.schedule-crops').boundingBox())!;
+  for(const slot of [0,7,8,23])expect(await page.locator(`[data-plan-crop="${slot}"]`).boundingBox()).toEqual({x:crops.x+4+slot%8*16,y:crops.y+2+Math.floor(slot/8)*16,width:16,height:16});
+  await page.locator('[data-plan-crop="23"]').click();
   await expect(page.locator('[data-plan-crop="23"]')).toHaveAttribute('aria-pressed','true');
   // CUT leaves the previous tool badge in place (source behaviour).
   const toolBadge=()=>page.locator('.schedule-badge-column').last().locator('.sprite').evaluateAll(els=>els.map(el=>getComputedStyle(el).backgroundPosition));
@@ -111,7 +114,6 @@ test('Schedule restores source geometry, field artwork, gauges, all24 crops and 
   await scheduleMonth(page,57);await expect(page.locator('[data-plan-week="239"]')).toBeVisible();
   await expect(page.getByRole('button',{name:'Next month',exact:true})).toBeDisabled();
   await page.getByRole('button',{name:'TODAY',exact:true}).click();await expect(page.locator('#schedule-month')).toHaveValue(String(world.farm.calendar.month));
-  await page.getByRole('button',{name:'Previous crops',exact:true}).click();
   await page.screenshot({path:'artifacts/browser-schedule-window.png'});
   await page.getByRole('button',{name:'CLOSE',exact:true}).click();
   await page.getByRole('button',{name:'View object',exact:true}).click();

@@ -24,7 +24,7 @@ export function ScheduleWindow(props:Props){
 }
 function ScheduleEditor({assets,snapshot,tiles,field,inspection,focusRef,onCommand}:Props){
   const windows=useWindows(),scenario=snapshot.scenario,calendar=scenario.farm.calendar,now=calendar.month*4+calendar.week;
-  const [month,setMonth]=useState(calendar.month),[cropPage,setCropPage]=useState(0),[action,setAction]=useState<FieldPlanEdit>({kind:'plant',cropSlot:0});
+  const [month,setMonth]=useState(calendar.month),[action,setAction]=useState<FieldPlanEdit>({kind:'plant',cropSlot:0});
   // View object38c52..38c5a assigns the current month on every field entry,
   // even when the same field is reopened. Merely raising the window does not.
   const previousInspection=useRef(inspection);
@@ -76,18 +76,14 @@ function ScheduleEditor({assets,snapshot,tiles,field,inspection,focusRef,onComma
         <div className="schedule-badge-column"><SunkenInset className="schedule-badge-box">{field&&badgeOf([0,1,2,3].map(i=>cropBadgeTile(field.cropSlot,i)))}</SunkenInset><span className="schedule-label">Crop</span></div>
         {weatherButton('water')}
         <SunkenInset className="schedule-crops">
-          {scenario.cropFiles.slice(cropPage*16,cropPage*16+16).map((_,i)=>{const slot=cropPage*16+i;return <button key={slot} data-plan-crop={slot}
+          {scenario.cropFiles.map((_,slot)=>{return <button key={slot} data-plan-crop={slot}
             className="schedule-icon" aria-label={`Plant ${crop(slot).name}`} title={`Plant ${crop(slot).name}`}
             aria-pressed={action.kind==='plant'&&action.cropSlot===slot} onClick={()=>chooseAction({kind:'plant',cropSlot:slot})}>
             {tile(cropPlantTile(slot))}
-            {overlay&&<span className="schedule-weather-number" style={{marginTop:2+i%2*6}}>{scheduleCropHint(crop(slot),overlay)}</span>}
+            {overlay&&<span className="schedule-weather-number" style={{marginTop:2+slot%2*6}}>{scheduleCropHint(crop(slot),overlay)}</span>}
           </button>;})}
         </SunkenInset>
         {weatherButton('temperature')}
-        <div className="schedule-pages">
-          <BevelButton className="schedule-page" aria-label="Previous crops" disabled={cropPage===0} onClick={()=>setCropPage(cropPage-1)}>‹</BevelButton>
-          <BevelButton className="schedule-page" aria-label="Next crops" disabled={(cropPage+1)*16>=scenario.cropFiles.length} onClick={()=>setCropPage(cropPage+1)}>›</BevelButton>
-        </div>
         <div className="schedule-badge-column"><SunkenInset className="schedule-badge-box">{badgeOf(toolBadge)}</SunkenInset><span className="schedule-label">Tool</span></div>
       </div>
       <div className="schedule-months">{[0,1,2].map(i=><SunkenInset key={i} className="schedule-month">{months[(month+i)%12].slice(0,3)}</SunkenInset>)}</div>

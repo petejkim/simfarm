@@ -3003,3 +3003,7 @@ Validation: the production build passes, and the aircraft-window, options, defau
 ## 2026-10-12 — Market Value shows all 24 crops
 
 At the user's request, the crop pager was replaced by a 6×4 grid showing every crop at once. The window is now 64px wider. The market specs pass.
+
+## 2026-10-12 — Schedule shows all 24 crops
+
+At the user's request, the Schedule crop pager was replaced by a third row of crop icons. The window is 16px taller. The schedule-window, all-crops and field-message specs pass.

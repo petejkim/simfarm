@@ -113,3 +113,7 @@ User request (ui-components.md). Schedule is a framed `GameWindow` around a 320Ã
 Gauges show the field-gauge frame when a field is selected, otherwise the source dial sprite. Tiles 849..1047 use the masked atlas, as in source 2d2b2.
 
 Performance note: tile helpers are plain functions, not components defined during render (which remounted every sprite on each animation frame and slowed time advancement).
+
+## All crops at once (2026-10-12, user request)
+
+The crop pager is gone. The crop inset holds all twenty-four planting icons in three rows of eight (134Ã—52), where the source pages sixteen at a time. The client grows 16px taller (232px). The Tool badge keeps its former position in the space the pager used. The browser spec checks the icon positions for slots 0, 7, 8 and 23. Validation: schedule-window, all-crops and field-message specs pass (6/6).

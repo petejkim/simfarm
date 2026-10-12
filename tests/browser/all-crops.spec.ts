@@ -41,9 +41,7 @@ test('all crops are immediately plantable and plannable with source artwork and 
   const interior = Array.from({ length: 12 }, (_, y) => [...pixels.slice(((y + 2) * 16 + 2) * 4, ((y + 2) * 16 + 14) * 4)]).flat();
   expect(await page.locator('#world').evaluate((canvas: HTMLCanvasElement) => Array.from(canvas.getContext('2d')!.getImageData(642, 642, 12, 12).data))).toEqual(interior);
   await openWindow(page, 'schedule');
-  await expect(page.locator('[data-plan-crop]')).toHaveCount(16);
-  await page.getByRole('button', { name:'Next crops',exact:true }).click();
-  await expect(page.locator('[data-plan-crop]')).toHaveCount(8);
+  await expect(page.locator('[data-plan-crop]')).toHaveCount(24);
   await page.locator('[data-plan-crop="22"]').click(); await page.locator('[data-plan-week="1"]').click();
   game.dispatch({ type: 'edit-field-plan', fieldSlot: 1, week: 1, action: { kind: 'plant', cropSlot: 22 } });
   await expectWeekPlan(page,1,/Plant /);
