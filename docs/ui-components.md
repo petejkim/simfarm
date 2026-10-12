@@ -123,3 +123,7 @@ Converted so far:
 - **New Game:** region chooser rebuilt (see new-farm.md); the setup strip uses `.chrome-input` fields.
 - **Terrain designer:** rebuilt (see new-farm.md).
 - **File loading and File error:** framed dialogs with a sunken message box and a centred caption `BevelButton`, at 176,160.
+
+## Typography (2026-10-12, user request)
+
+All UI text uses **Roboto** (400 and 700) through the `--font-ui` token on `:root`. That includes the former Arial, Georgia and monospace stacks and the one inline weather-scale font. The New Game titles **SELECT A REGION** and **DESIGN YOUR TERRAIN** use **DM Serif Display** through `--font-display`, at weight 400, its only weight. Both fonts are Google Fonts, self-hosted through the `@fontsource/roboto` and `@fontsource/dm-serif-display` packages imported in `src/main.tsx`, so no network font requests are made. Root `font-synthesis:none` remains, so bold Roboto uses the real 700 face. Text is still HTML; only the typeface changed, not the original bitmap-derived layout boxes. The weather window's thermometer and rain-gauge rows now have `flex:none` and a fixed 32px readings column, so wider glyphs cannot shift the source geometry.

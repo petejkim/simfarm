@@ -48,7 +48,7 @@ export function WeatherWindow({assets,snapshot,tiles,focusRef}:{assets:GameAsset
               <div className="weather-reading">{label('F')}<SunkenInset className="weather-value-box">{value('weather-fahrenheit',view.fahrenheit,'Temperature Fahrenheit')}</SunkenInset></div>
               <div className="weather-reading">{label('C')}<SunkenInset className="weather-value-box">{value('weather-celsius',view.celsius,'Approximate temperature Celsius')}</SunkenInset></div>
             </div>
-            <div className="weather-scale weather-scale-fahrenheit">{label('100')}{label('32',{marginTop:18})}{label('0',{marginTop:4,font:'7px/7px monospace'})}{label('F',{marginTop:9,font:'7px/7px monospace'})}</div>
+            <div className="weather-scale weather-scale-fahrenheit">{label('100')}{label('32',{marginTop:18})}{label('0',{marginTop:4,font:'7px/7px var(--font-ui)'})}{label('F',{marginTop:9,font:'7px/7px var(--font-ui)'})}</div>
             <span className="weather-stack weather-thermometer" role="img" aria-label="Thermometer">
               <Sprite image={bitmap} x={69} y={30} width={17} height={64}/>{column('weather-temperature-column',view.temperatureHeight,3)}
             </span>

@@ -1,4 +1,4 @@
-:root{font-family:Arial,Helvetica,sans-serif;color:#e9ebde;background:#171e19;font-synthesis:none;color-scheme:dark}*{box-sizing:border-box}body{margin:0}button,select,input{font:inherit}button,select{background:#303e31;border:1px solid #677457;border-radius:4px;color:#f1f0df;padding:8px 10px}button{cursor:pointer}button:hover{background:#43543b}button:disabled{opacity:.5;cursor:wait}button:focus-visible,select:focus-visible,#viewport:focus-visible{outline:2px solid #e4ce83;outline-offset:2px}header{display:flex;align-items:center;justify-content:space-between;padding:24px 28px 20px;border-bottom:1px solid #44503b;background:#202b22}h1{margin:5px 0 0;color:#ead6a1;font:700 35px Georgia,serif;letter-spacing:-1px}h1 span{font:12px Arial,sans-serif;letter-spacing:2px;color:#95a086;margin-left:16px}label{font-size:12px;display:inline-flex;gap:8px;align-items:center}.music-controls{display:flex;gap:10px;align-items:center}.volume{display:grid;gap:4px}input[type=range]{width:85px;accent-color:#d4c084}.toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;gap:12px;background:#263127}.toolbar>div{display:flex;align-items:center;gap:14px}#map-status{font-size:12px;color:#b3bea5}main{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;padding:20px 28px}.map-panel{min-width:0;border:1px solid #536146;background:#131a14;box-shadow:0 10px 30px #0003}#viewport{height:calc(100vh - 244px);overflow:auto;overscroll-behavior:contain}canvas{display:block;width:1536px;height:1536px;image-rendering:pixelated;cursor:crosshair;max-width:none}aside{border:1px solid #48563f;background:#222d23;padding:18px;max-height:calc(100vh - 204px);overflow:auto}h2{font:24px Georgia,serif;margin:7px 0 16px;color:#ead6a1}#crop-card{display:block;image-rendering:pixelated;width:112px;height:64px;margin:18px auto;border:1px solid #72805f}h3{color:#e3d2a2;margin:12px 0;font:22px Georgia,serif}#crop-description{white-space:pre-line;line-height:1.5;color:#c2cbb4;font-size:13px}details{font-size:12px;border-top:1px solid #48563f;padding-top:12px}summary{cursor:pointer}pre{font-size:11px;line-height:1.6}footer{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;padding:0 28px 18px;font-size:11px;color:#9caa8c}footer strong{color:#d4c084}footer>span:nth-child(2){flex:1}.loading{padding:30px}@media(max-width:800px){header{padding:16px;align-items:flex-start;gap:12px}.music-controls{flex-wrap:wrap;justify-content:flex-end;max-width:250px}.volume{display:none}.toolbar{padding:12px 16px;align-items:flex-start}.toolbar>div{flex-wrap:wrap;gap:8px}#map-status{width:100%}main{grid-template-columns:1fr;padding:12px 16px}#viewport{height:55vh}aside{max-height:none}#crop-card{float:right;margin:12px 0 12px 14px}footer{padding:4px 16px 16px}h1{font-size:28px}}@media(max-width:460px){#crop-card{float:none;margin:18px auto}.music-controls label:first-child{display:none}h1 span{display:none}}#field-treatment{max-width:100%}.clearing{align-items:flex-start}.clearing input{margin-top:4px}input:focus-visible{outline:2px solid #e4ce83;outline-offset:2px}
+:root{--font-ui:Roboto,Arial,Helvetica,sans-serif;--font-display:"DM Serif Display",Georgia,serif;font-family:var(--font-ui);color:#e9ebde;background:#171e19;font-synthesis:none;color-scheme:dark}*{box-sizing:border-box}body{margin:0}button,select,input{font:inherit}button,select{background:#303e31;border:1px solid #677457;border-radius:4px;color:#f1f0df;padding:8px 10px}button{cursor:pointer}button:hover{background:#43543b}button:disabled{opacity:.5;cursor:wait}button:focus-visible,select:focus-visible,#viewport:focus-visible{outline:2px solid #e4ce83;outline-offset:2px}header{display:flex;align-items:center;justify-content:space-between;padding:24px 28px 20px;border-bottom:1px solid #44503b;background:#202b22}h1{margin:5px 0 0;color:#ead6a1;font:700 35px var(--font-ui);letter-spacing:-1px}h1 span{font:12px var(--font-ui);letter-spacing:2px;color:#95a086;margin-left:16px}label{font-size:12px;display:inline-flex;gap:8px;align-items:center}.music-controls{display:flex;gap:10px;align-items:center}.volume{display:grid;gap:4px}input[type=range]{width:85px;accent-color:#d4c084}.toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;gap:12px;background:#263127}.toolbar>div{display:flex;align-items:center;gap:14px}#map-status{font-size:12px;color:#b3bea5}main{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;padding:20px 28px}.map-panel{min-width:0;border:1px solid #536146;background:#131a14;box-shadow:0 10px 30px #0003}#viewport{height:calc(100vh - 244px);overflow:auto;overscroll-behavior:contain}canvas{display:block;width:1536px;height:1536px;image-rendering:pixelated;cursor:crosshair;max-width:none}aside{border:1px solid #48563f;background:#222d23;padding:18px;max-height:calc(100vh - 204px);overflow:auto}h2{font:24px var(--font-ui);margin:7px 0 16px;color:#ead6a1}#crop-card{display:block;image-rendering:pixelated;width:112px;height:64px;margin:18px auto;border:1px solid #72805f}h3{color:#e3d2a2;margin:12px 0;font:22px var(--font-ui)}#crop-description{white-space:pre-line;line-height:1.5;color:#c2cbb4;font-size:13px}details{font-size:12px;border-top:1px solid #48563f;padding-top:12px}summary{cursor:pointer}pre{font-size:11px;line-height:1.6}footer{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;padding:0 28px 18px;font-size:11px;color:#9caa8c}footer strong{color:#d4c084}footer>span:nth-child(2){flex:1}.loading{padding:30px}@media(max-width:800px){header{padding:16px;align-items:flex-start;gap:12px}.music-controls{flex-wrap:wrap;justify-content:flex-end;max-width:250px}.volume{display:none}.toolbar{padding:12px 16px;align-items:flex-start}.toolbar>div{flex-wrap:wrap;gap:8px}#map-status{width:100%}main{grid-template-columns:1fr;padding:12px 16px}#viewport{height:55vh}aside{max-height:none}#crop-card{float:right;margin:12px 0 12px 14px}footer{padding:4px 16px 16px}h1{font-size:28px}}@media(max-width:460px){#crop-card{float:none;margin:18px auto}.music-controls label:first-child{display:none}h1 span{display:none}}#field-treatment{max-width:100%}.clearing{align-items:flex-start}.clearing input{margin-top:4px}input:focus-visible{outline:2px solid #e4ce83;outline-offset:2px}
 .time-controls{border-top:1px solid #44503b;font-size:12px;flex-wrap:wrap}.time-controls>div{flex-wrap:wrap}#field-growth{color:#c2cbb4;font-size:12px}#field-growth{line-height:1.6}#viewport{height:calc(100vh - 308px)}aside{max-height:calc(100vh - 268px)}@media(max-width:800px){#viewport{height:55vh}aside{max-height:none}}
 .toolbar{flex-wrap:wrap}
 .loan-panel{margin:0 0 16px;padding:12px 16px;border:1px solid #48563f;background:#20291d;color:#c2cbb4;line-height:1.5}.loan-panel summary{cursor:pointer;color:#ead6a1;font-weight:bold}.loan-panel dl{display:flex;gap:12px 30px;flex-wrap:wrap}.loan-panel dt{font-size:12px;color:#a8b598}.loan-panel dd{margin:0;color:#ead6a1}.loan-panel form{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.loan-panel input{width:125px;max-width:100%;padding:7px;color:#f3ecd9;background:#111b11;border:1px solid #7a8964}.loan-panel p{font-size:13px}
@@ -29,14 +29,14 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 
 /* Main menu bar: headings and drop-down menus sized by their content with one set of paddings. The bar is
    dark grey with white lettering, as the original shows it (source fill index 8, text 15; see main-menus.md). */
-.original-menu-bar{position:relative;z-index:100;display:flex;flex:none;height:16px;padding-left:4px;background:#555;color:#fff;font:12px/16px Arial,Helvetica,sans-serif}
+.original-menu-bar{position:relative;z-index:100;display:flex;flex:none;height:16px;padding-left:4px;background:#555;color:#fff;font:12px/16px var(--font-ui)}
 .original-menu{position:relative}
 .original-menu-heading{display:block;height:16px;margin:0;padding:0 8px;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;white-space:nowrap}
 .original-menu-heading:disabled{opacity:.5;cursor:default}
 .original-menu-heading:not(:disabled):hover,.original-menu-heading[aria-expanded=true]{background:#000;color:#fff}
 .original-menu-heading:focus-visible{outline:1px dotted #fff;outline-offset:-2px}
 .original-menu-popup{position:absolute;top:100%;left:0;display:flex;flex-direction:column;min-width:100%;width:max-content;padding:2px 0;border:1px solid #000;background:#fff;color:#000;box-shadow:3px 3px #0008}
-.original-menu-popup button{display:flex;align-items:center;gap:4px;margin:0;padding:1px 16px 1px 8px;border:0;border-radius:0;background:transparent;color:inherit;font:12px/14px Arial,Helvetica,sans-serif;text-align:left;white-space:nowrap}
+.original-menu-popup button{display:flex;align-items:center;gap:4px;margin:0;padding:1px 16px 1px 8px;border:0;border-radius:0;background:transparent;color:inherit;font:12px/14px var(--font-ui);text-align:left;white-space:nowrap}
 .original-menu-popup[data-checks] button{padding-left:4px}
 .original-menu-popup button:disabled{opacity:.5;cursor:default}
 .original-menu-popup button:focus{background:#000;color:#fff;outline:none}
@@ -61,19 +61,19 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .bevel-button:disabled .bevel-button-face[style*=background-image]::after{content:'';position:absolute;inset:0;background:#c2c2c260}
 /* Native windows on shared chrome (Speed, Settings, file dialogs): framed face client, bold monospace labels,
    sunken status/value insets, chrome-styled select and range controls, caption BevelButtons. */
-.native-window{display:flex;flex-direction:column;gap:6px;width:288px;padding:8px;color:var(--ink);font:10px/12px monospace}
+.native-window{display:flex;flex-direction:column;gap:6px;width:288px;padding:8px;color:var(--ink);font:10px/12px var(--font-ui)}
 .native-status{display:flex;flex-direction:column;gap:2px;padding:3px 4px;background:var(--face)}
 .native-row{display:flex;align-items:center;gap:6px;font:inherit}
 .native-label{flex:none;width:56px;font-weight:bold}
 .native-value{display:flex;align-items:center;justify-content:center;width:40px;height:16px}
 .native-actions{display:flex;justify-content:center;gap:16px;margin-top:2px}
-.native-button{min-width:72px;height:24px;padding-inline:1px;font:bold 10px/1 Arial,sans-serif}
+.native-button{min-width:72px;height:24px;padding-inline:1px;font:bold 10px/1 var(--font-ui)}
 .native-button .bevel-button-face{padding:0 6px}
 .native-note{overflow-wrap:anywhere}
 .native-dialog .native-status p{margin:0;overflow-wrap:anywhere}
 .game-window:is([data-window=file-loading],[data-window=file-error]){left:176px;right:auto;top:160px}
 .game-window select.chrome-select{flex:1;height:18px;padding:0 16px 0 3px;border:2px solid;border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow);border-radius:0;appearance:none;-webkit-appearance:none;
-  background:var(--face) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4'%3E%3Cpath shape-rendering='crispEdges' d='M0 0h7L3.5 4z'/%3E%3C/svg%3E") no-repeat right 4px center;color:var(--ink);font:10px/14px monospace}
+  background:var(--face) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4'%3E%3Cpath shape-rendering='crispEdges' d='M0 0h7L3.5 4z'/%3E%3C/svg%3E") no-repeat right 4px center;color:var(--ink);font:10px/14px var(--font-ui)}
 .game-window input.chrome-range{flex:1;height:16px;margin:0;padding:0;border:2px solid;border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow);border-radius:0;background:var(--lettering);appearance:none;-webkit-appearance:none}
 .chrome-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:12px;height:12px;box-sizing:border-box;background:var(--face);border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light);outline:1px solid var(--ink);outline-offset:-1px}
 .chrome-range::-moz-range-thumb{width:12px;height:12px;box-sizing:border-box;border-radius:0;background:var(--face);border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light)}
@@ -86,10 +86,10 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window-body.window-frame{padding:0;overflow:visible;border-style:solid;border-width:0 8px 8px;border-image:var(--window-frame) 0 8 8 / 0 8px 8px repeat;background:var(--face);image-rendering:pixelated}
 /* Examine: client 192×184 inside the frame; photo inset 116×68 at (38,6), information inset 164×100 at (14,78). */
 .game-window[data-window=examine]{left:32px;right:auto;top:64px}
-.examine-window{display:flex;flex-direction:column;align-items:center;gap:4px;width:192px;height:184px;padding-top:6px;font:10px/10px monospace;color:var(--ink)}
+.examine-window{display:flex;flex-direction:column;align-items:center;gap:4px;width:192px;height:184px;padding-top:6px;font:10px/10px var(--font-ui);color:var(--ink)}
 .examine-photo{width:116px;height:68px}
 .examine-info{width:164px;height:100px}
-.examine-info p{margin:0;font:10px/10px monospace;color:var(--ink);white-space:pre-line}
+.examine-info p{margin:0;font:10px/10px var(--font-ui);color:var(--ink);white-space:pre-line}
 .examine-description{width:160px;height:96px;padding:1px 2px;overflow:auto;overflow-wrap:anywhere;overscroll-behavior:contain}
 .examine-detail{display:flex;flex-direction:column;gap:2px;width:160px;height:96px;padding:1px 2px;overflow:hidden}
 .examine-row{display:flex;align-items:center;gap:8px}
@@ -106,7 +106,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .buy-photo{width:116px;height:68px}
 .buy-card{width:112px;height:64px;overflow:hidden}
 .buy-description-box{width:116px;height:116px}
-#buy-description{width:112px;height:112px;margin:0;padding:1px 2px;font:10px/12px Arial,sans-serif;white-space:pre-line;overflow:auto}
+#buy-description{width:112px;height:112px;margin:0;padding:1px 2px;font:10px/12px var(--font-ui);white-space:pre-line;overflow:auto}
 .buy-side{display:flex;flex-direction:column;align-items:flex-start;width:80px;margin:8px 0 0 6px}
 .buy-preview{width:68px;height:52px;align-self:center}
 .buy-preview-scene{display:grid;width:64px;height:48px;overflow:hidden}
@@ -114,14 +114,14 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .buy-item{grid-area:1/1;display:grid;place-self:center;margin-left:8px}
 .buy-arrows{display:flex;gap:3px;align-self:center;margin-top:6px}
 .buy-arrow{width:28px;height:28px}
-.buy-label{margin-top:9px;font:bold 10px/12px monospace}
-.buy-readout{display:flex;align-items:center;min-width:74px;height:14px;margin-top:3px;padding:0 2px;font:10px/1 Arial,sans-serif;white-space:nowrap}
+.buy-label{margin-top:9px;font:bold 10px/12px var(--font-ui)}
+.buy-readout{display:flex;align-items:center;min-width:74px;height:14px;margin-top:3px;padding:0 2px;font:10px/1 var(--font-ui);white-space:nowrap}
 .buy-actions{display:flex;margin-top:13px}
-.buy-caption{height:24px;font:bold 10px Arial,sans-serif}
+.buy-caption{height:24px;font:bold 10px var(--font-ui)}
 .buy-caption-buy{width:32px}.buy-caption-close{width:48px}
 /* Sell: 176×248 client (source x−8): categories and photo; name; scroll column and sale list; position; SELL/CLOSE. */
 .game-window[data-window=sell]{left:128px;top:80px;right:auto}
-.sell-window{display:flex;flex-direction:column;width:176px;height:248px;padding-top:2px;color:var(--ink);font:10px/12px monospace}
+.sell-window{display:flex;flex-direction:column;width:176px;height:248px;padding-top:2px;color:var(--ink);font:10px/12px var(--font-ui)}
 .sell-top{display:flex;padding-left:8px}
 .sell-categories{display:flex;flex-direction:column;gap:2px}
 .sell-category{width:28px;height:28px}
@@ -140,58 +140,58 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .sell-scrollbar:disabled::-webkit-slider-thumb{visibility:hidden}.sell-scrollbar:disabled::-moz-range-thumb{visibility:hidden}
 .sell-list-box{width:140px;height:100px}
 #harvest-items{display:flex;flex-direction:column}
-.game-window .sell-window button.sell-row{display:flex;align-items:center;width:136px;height:32px;margin:0;padding:0 0 0 7px;border:1px solid var(--ink);border-radius:0;background:transparent;color:var(--ink);overflow:hidden;font:10px/10px monospace}
+.game-window .sell-window button.sell-row{display:flex;align-items:center;width:136px;height:32px;margin:0;padding:0 0 0 7px;border:1px solid var(--ink);border-radius:0;background:transparent;color:var(--ink);overflow:hidden;font:10px/10px var(--font-ui)}
 .game-window .sell-window button.sell-row[aria-selected=true]{border:2px solid #fff304;padding-left:6px}
 .sell-tiles{display:grid;flex:none;min-width:32px}
 .sell-price{margin-left:4px;white-space:nowrap}
-.sell-empty{margin:0;padding:2px;font:10px/10px monospace}
+.sell-empty{margin:0;padding:2px;font:10px/10px var(--font-ui)}
 #sell-position{height:12px;margin:6px 0 0 32px}
 .sell-actions{display:flex;justify-content:flex-end;margin:4px 8px 0 0}
-.sell-caption{height:24px;font:bold 10px Arial,sans-serif}
+.sell-caption{height:24px;font:bold 10px var(--font-ui)}
 .sell-caption-sell{width:40px}.sell-caption-close{width:48px}
 /* Bank terminal: 272×216 client, all CSS. Raised bezel → 8px sunken recess → black-bordered dark screen,
    light ledge, dark keypad bay. Green readouts use source palette 9 (#00aa04). */
 .game-window[data-window=bank]{left:176px;right:auto;top:96px}
-.bank-terminal{width:272px;height:216px;padding:3px 4px 0 3px;color:#00aa04;font:10px/10px monospace}
+.bank-terminal{width:272px;height:216px;padding:3px 4px 0 3px;color:#00aa04;font:10px/10px var(--font-ui)}
 .bank-bezel{height:100%;padding:3px 7px 6px 9px;border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) transparent var(--bevel-light)}
 .bank-recess{display:flex;flex-direction:column;height:100%;border:8px solid;border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow);background:var(--face)}
 .bank-screen{display:flex;flex-direction:column;height:128px;padding:2px 0 0 3px;border:4px solid var(--ink);border-radius:6px;background:var(--lettering);color:#00aa04}
 .bank-readouts{display:grid;grid-template-columns:152px auto;grid-template-rows:16px 16px 10px;align-items:start}
 .bank-box{border:1px solid #00aa04}
 .bank-readouts.bank-box{grid-template-columns:144px auto;grid-template-rows:16px 10px;width:210px;height:31px;margin:3px 0 0 1px;padding:2px 0 0 6px}
-.game-window .bank-terminal .bank-label,.game-window .bank-terminal .bank-value{color:#00aa04;font:10px/10px monospace;white-space:nowrap}
+.game-window .bank-terminal .bank-label,.game-window .bank-terminal .bank-value{color:#00aa04;font:10px/10px var(--font-ui);white-space:nowrap}
 .bank-terminal .bank-value{letter-spacing:-.6px}
 .bank-prompt{margin-top:12px}
 .bank-amount{display:flex;align-items:center;margin-top:2px}
 .bank-amount label{width:94px;margin-left:40px}
-.game-window .bank-terminal input#loan-amount{width:77px;height:16px;padding:0 2px;border:1px solid #00aa04;border-radius:0;background:var(--lettering);color:#00aa04;font:10px/12px monospace}
+.game-window .bank-terminal input#loan-amount{width:77px;height:16px;padding:0 2px;border:1px solid #00aa04;border-radius:0;background:var(--lettering);color:#00aa04;font:10px/12px var(--font-ui)}
 .bank-help{display:grid;grid-template-columns:96px 56px 72px;width:216px;height:40px;margin:6px 0 0 -3px;color:var(--ink);background:var(--face);border:1px solid var(--ink)}
-.bank-help span{display:flex;align-items:center;justify-content:center;text-align:center;border-right:1px solid var(--ink);font:bold 10px/10px monospace}
+.bank-help span{display:flex;align-items:center;justify-content:center;text-align:center;border-right:1px solid var(--ink);font:bold 10px/10px var(--font-ui)}
 .bank-help span:last-child{border:0}
 .bank-ledge{flex:none;height:8px;margin:1px -2px 0;border-top:2px solid var(--bevel-light);border-bottom:2px solid var(--bevel-shadow);background:var(--face)}
 .bank-bay{display:flex;flex:1;align-items:flex-start;gap:32px;padding:2px 0 0 12px;border:3px solid var(--ink);background:var(--lettering)}
 .bank-keypad{display:grid;grid-template-columns:repeat(4,16px);grid-auto-rows:16px}
 .bank-actions{display:flex;flex-direction:column}
 .bank-action-row{display:flex}
-.bank-key{font:bold 10px/1 Arial,sans-serif}
+.bank-key{font:bold 10px/1 var(--font-ui)}
 .bank-digit{width:16px;height:16px}
 .bank-repay{width:88px;height:24px}.bank-ok{width:40px;height:24px}.bank-close{width:48px;height:24px}
 .game-window[data-window=map]{left:80px;right:auto;top:64px}
 /* Map: 272×232 client (source x−8): mode/help/land column beside the sunken 192×192 overview; footer. */
-.overview-window{display:flex;flex-direction:column;width:272px;height:232px;color:var(--ink);font:10px/10px monospace}
+.overview-window{display:flex;flex-direction:column;width:272px;height:232px;color:var(--ink);font:10px/10px var(--font-ui)}
 .overview-main{display:flex}
 .overview-side{display:flex;flex-direction:column;align-items:center;width:62px;padding-top:3px}
 .overview-modes{display:grid;grid-template-columns:28px 28px;column-gap:2px;row-gap:1px}
 .overview-mode{width:28px;height:29px}
-.overview-help-button{width:28px;height:28px;margin-top:1px;font:bold 20px/1 monospace}
-.overview-land-label{margin-top:10px;text-align:center;font:bold 10px/9px monospace}
+.overview-help-button{width:28px;height:28px;margin-top:1px;font:bold 20px/1 var(--font-ui)}
+.overview-land-label{margin-top:10px;text-align:center;font:bold 10px/9px var(--font-ui)}
 .overview-land-box{display:flex;align-items:center;justify-content:center;min-width:59px;height:15px;margin-top:1px}
 .overview-map-box{width:196px;height:194px;margin-left:2px;border-top-width:0}
 .overview-viewport{display:grid;width:192px;height:192px;overflow:hidden}
 .overview-viewport>*{grid-area:1/1}
 .overview-viewport canvas{display:block;width:192px;height:192px;image-rendering:pixelated;touch-action:none}
 .overview-edit-outline{align-self:start;justify-self:start;pointer-events:none;border:1px solid #fff;outline:1px solid #000;outline-offset:-2px}
-.overview-help{display:flex;flex-direction:column;align-self:start;justify-self:start;width:80px;height:120px;padding:4px 0 0 4px;background:var(--face);font:7px/10px monospace}
+.overview-help{display:flex;flex-direction:column;align-self:start;justify-self:start;width:80px;height:120px;padding:4px 0 0 4px;background:var(--face);font:7px/10px var(--font-ui)}
 .overview-help span{height:10px;white-space:nowrap}
 .overview-help span:nth-child(even){margin-bottom:10px}
 .overview-footer{display:flex;align-items:flex-start;gap:8px;margin-top:6px;padding-right:8px}
@@ -199,13 +199,13 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .overview-legend{display:flex;flex-direction:column;align-items:center;gap:2px;width:144px;padding-top:2px}
 .overview-scale{display:flex;align-items:center;gap:4px}
 .overview-gradient{width:64px;height:8px;image-rendering:pixelated;outline:2px groove #fff}
-.overview-trade,.overview-close{width:48px;height:24px;font:bold 10px Arial,sans-serif}
+.overview-trade,.overview-close{width:48px;height:24px;font:bold 10px var(--font-ui)}
 .overview-close{margin-left:auto}
 /* Schedule: 320×216 client (source x−8). Top row: crop badge, water, crop picker, pages, temperature, tool badge;
    month boxes; actions, calendar strip (ruler, weeks, month scroll) and season, buttons; two lower panels. */
 .game-window[data-window=schedule]{left:160px;top:80px;right:auto}
-.schedule-window{display:flex;flex-direction:column;width:320px;height:232px;padding-top:6px;color:var(--ink);font:10px/10px monospace}
-.schedule-label{font:bold 10px/12px monospace;text-align:center;white-space:nowrap}
+.schedule-window{display:flex;flex-direction:column;width:320px;height:232px;padding-top:6px;color:var(--ink);font:10px/10px var(--font-ui)}
+.schedule-label{font:bold 10px/12px var(--font-ui);text-align:center;white-space:nowrap}
 .schedule-top{display:flex;align-items:flex-start;padding-left:22px}
 .schedule-badge-column{display:flex;flex-direction:column;align-items:center}
 .schedule-badge-box{width:36px;height:36px}
@@ -219,10 +219,10 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .schedule-icon>*{grid-area:1/1}
 .schedule-window button.schedule-icon[aria-pressed=true]{outline:1px solid #ffff00;outline-offset:-1px}
 .schedule-window button.schedule-icon:focus-visible{outline:1px dotted #fff;outline-offset:-2px}
-.schedule-weather-number{align-self:start;justify-self:start;font:8px/8px monospace;color:#fff;pointer-events:none}
+.schedule-weather-number{align-self:start;justify-self:start;font:8px/8px var(--font-ui);color:#fff;pointer-events:none}
 .schedule-now{align-self:stretch;justify-self:start;width:3px;margin-left:6px;background:#fff304}
 .schedule-months{display:flex;gap:35px;margin:1px 0 0 85px}
-.schedule-month{display:flex;align-items:center;justify-content:center;width:29px;height:13px;font:8px/10px monospace}
+.schedule-month{display:flex;align-items:center;justify-content:center;width:29px;height:13px;font:8px/10px var(--font-ui)}
 .schedule-middle{display:flex;align-items:flex-start;margin-top:0}
 .schedule-actions{display:grid;grid-template-columns:16px 16px;grid-auto-rows:16px;width:36px;height:52px;margin:1px 0 0 14px}
 .schedule-center{display:flex;flex-direction:column;align-items:center;margin-left:13px}
@@ -238,7 +238,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .schedule-track:has(#schedule-month:focus-visible){outline:1px dotted #000}
 .schedule-season-box{display:flex;align-items:center;justify-content:center;width:134px;height:13px;margin-top:2px}
 .schedule-buttons{display:flex;flex-direction:column;gap:0;margin-left:7px}
-.schedule-caption{width:48px;height:16px;font:bold 10px/1 monospace}
+.schedule-caption{width:48px;height:16px;font:bold 10px/1 var(--font-ui)}
 .schedule-close{margin-top:8px}
 .schedule-panels{display:flex;flex:1;margin-top:3px;padding-left:1px}
 .schedule-panel{display:flex;flex-direction:column;border-bottom:0;padding-top:4px}
@@ -259,7 +259,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 /* Balance Sheet: 384×216 ledger client (source x−8). Rows 8px from y8; stripes grey (palette 12) / white (15);
    headers green (8), totals dark (13) with white lettering. */
 .game-window[data-window=balance]{left:128px;top:96px;right:auto}
-.balance-window{display:flex;width:384px;height:216px;background:var(--bevel-light);color:var(--ink);font:9px/8px monospace}
+.balance-window{display:flex;width:384px;height:216px;background:var(--bevel-light);color:var(--ink);font:9px/8px var(--font-ui)}
 .balance-ledger{display:flex;flex-direction:column;width:352px;padding-top:8px}
 .balance-row{display:flex;height:8px;overflow:hidden}
 .balance-row[data-stripe=grey]{background:var(--face)}
@@ -268,14 +268,14 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .balance-cell[data-fill]{color:var(--bevel-light)}
 .balance-cell[data-fill=header]{background:#00aa04}
 .balance-cell[data-fill=total]{background:var(--bevel-shadow)}
-.balance-row output{text-align:right;font:9px/8px monospace}
+.balance-row output{text-align:right;font:9px/8px var(--font-ui)}
 .balance-footer{display:flex;align-items:flex-start}
 .balance-footer-rows{display:flex;flex-direction:column;width:304px}
 .balance-wide{justify-content:space-between;padding-right:72px}
-.balance-close{width:48px;height:24px;font:10px/1 monospace}
+.balance-close{width:48px;height:24px;font:10px/1 var(--font-ui)}
 /* Evaluation: 336×184 client (source x−8): topic/gauge rows, season, Problems and Suggested Crops panels. */
 .game-window[data-window=evaluation]{left:128px;top:128px;right:auto}
-.evaluation-window{display:flex;flex-direction:column;width:336px;height:184px;padding:4px 0 0 6px;color:var(--ink);font:10px/10px monospace}
+.evaluation-window{display:flex;flex-direction:column;width:336px;height:184px;padding:4px 0 0 6px;color:var(--ink);font:10px/10px var(--font-ui)}
 .evaluation-top{display:flex}
 .evaluation-rows{display:flex;flex-direction:column;gap:2px}
 .evaluation-row{display:flex;align-items:center;gap:14px}
@@ -296,14 +296,14 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .evaluation-badge{display:grid;grid-template-columns:16px 16px}
 .evaluation-side{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:4px;width:56px;height:78px;padding-left:2px}
 .evaluation-pages{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px}
-.evaluation-page{width:48px;height:16px;font:10px/1 monospace}
-.evaluation-close{width:48px;height:24px;font:10px/1 monospace}
-.original-control-bar{position:relative;z-index:1;display:flex;align-items:stretch;height:32px;font:10px/1 Arial,Helvetica,sans-serif;color:var(--ink);background:var(--face);box-shadow:inset 0 1px var(--ink)}
+.evaluation-page{width:48px;height:16px;font:10px/1 var(--font-ui)}
+.evaluation-close{width:48px;height:24px;font:10px/1 var(--font-ui)}
+.original-control-bar{position:relative;z-index:1;display:flex;align-items:stretch;height:32px;font:10px/1 var(--font-ui);color:var(--ink);background:var(--face);box-shadow:inset 0 1px var(--ink)}
 .toolbar-launchers{display:flex;flex:none}
 .window-launcher{width:32px;height:32px}
 .window-launcher-face{flex-direction:column;justify-content:flex-end}
 .edit-palette .bevel-button:focus-visible{outline-offset:-3px}
-.toolbar-caption{display:flex;overflow:hidden;align-items:center;justify-content:center;width:26px;height:9px;color:var(--lettering);text-shadow:1px 0 var(--bevel-light);font:bold 10px/1 Arial,Helvetica,sans-serif;pointer-events:none}
+.toolbar-caption{display:flex;overflow:hidden;align-items:center;justify-content:center;width:26px;height:9px;color:var(--lettering);text-shadow:1px 0 var(--bevel-light);font:bold 10px/1 var(--font-ui);pointer-events:none}
 .toolbar-forecast-area{display:flex;flex:1;align-items:center;justify-content:center}
 .toolbar-readouts{display:flex;flex-direction:column;gap:2px;flex:none;padding:2px 3px 0 0}
 .toolbar-readout-row{display:flex;gap:4px;height:13px}
@@ -318,7 +318,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-desktop .edit-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .edit-palette{flex:none;display:flex;flex-wrap:wrap;align-content:flex-start;align-self:flex-start;width:48px;margin:1px 0;background:var(--face)}
 .edit-palette .edit-tool{width:24px;height:24px}
-.edit-palette .edit-caption{width:48px;height:22px;font:bold 12px Arial,sans-serif}
+.edit-palette .edit-caption{width:48px;height:22px;font:bold 12px var(--font-ui)}
 
 .game-desktop .map-panel{flex:1;display:flex;flex-direction:column;border:0;box-shadow:none;margin:0 0 0 2px;padding:0;overflow:hidden}
 .game-desktop #viewport{flex:1;height:auto;width:100%;overflow:scroll;background:#000}
@@ -339,7 +339,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 ::-webkit-scrollbar-button:vertical:end:increment{display:block;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath shape-rendering='crispEdges' d='M5 9 1 5h2.5V1h3v4H9z'/%3E%3C/svg%3E")}
 ::-webkit-scrollbar-corner{background:var(--face,#c2c2c2)}
 @supports not selector(::-webkit-scrollbar){*{scrollbar-color:var(--face,#c2c2c2) var(--bevel-shadow,#828282)}}
-.game-window{position:absolute;z-index:30;top:80px;right:16px;width:520px;max-height:calc(100% - 104px);display:flex;flex-direction:column;box-shadow:4px 4px #0008;border:3px ridge #eee;background:#c2c2c2;color:#000;font:14px Arial,sans-serif}
+.game-window{position:absolute;z-index:30;top:80px;right:16px;width:520px;max-height:calc(100% - 104px);display:flex;flex-direction:column;box-shadow:4px 4px #0008;border:3px ridge #eee;background:#c2c2c2;color:#000;font:14px var(--font-ui)}
 .game-window-body{padding:12px;overflow:auto;min-height:0;line-height:1.4}
 .game-window[data-window=newgame]{left:80px;right:auto;top:48px;max-height:calc(100% - 48px)}
 .game-window[data-window=town]{z-index:35}
@@ -347,11 +347,11 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window .toolbar>div{flex-wrap:wrap}
 .game-window .loan-panel,.game-window .new-farm-panel{background:transparent;color:#000;margin:0 0 10px;padding:8px 0;border-color:#888;border-radius:0}
 .game-window :is(p,h2,h3,summary,dt,dd,pre,label,span,strong,output){color:inherit}
-.game-window :is(button,input,select):where(:not(.bevel-button)){background:#eee;color:#000;border:2px outset #ddd;border-radius:0;padding:5px;font:14px Arial,sans-serif}
+.game-window :is(button,input,select):where(:not(.bevel-button)){background:#eee;color:#000;border:2px outset #ddd;border-radius:0;padding:5px;font:14px var(--font-ui)}
 .game-window input[type=range]{padding:0}
 .game-window button:where(:not(.bevel-button)):hover:not(:disabled){background:#fff}
 .game-window :is(button,input,select):where(:not(.bevel-button)):focus-visible{outline:2px solid #0000eb;outline-offset:1px}
-.game-window h2{font:bold 18px Arial,sans-serif;margin:8px 0}
+.game-window h2{font:bold 18px var(--font-ui);margin:8px 0}
 .game-window .music-controls{max-width:none;flex-wrap:wrap}.game-window .volume,.game-window .music-controls label:first-child{display:flex}
 .game-window #crop-card{float:none;box-sizing:content-box}
 .game-window :is(#field-status,#field-growth,#farm-weather,#time-status,#crop-description,#schedule-status,#save-status){color:#000}
@@ -364,7 +364,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 /* Original Buy descriptor DSb4a6 and its256×224 client bitmap. */
 
 /* Source2b09a: repeated16px wooden title tiles, with real centered text. */
-.game-window-title{position:relative;flex-shrink:0;height:16px;min-height:16px;background-color:#824104;background-image:var(--window-title);background-repeat:repeat-x;image-rendering:pixelated;color:#fff;text-align:center;text-transform:uppercase;font:bold 12px/16px monospace;white-space:nowrap}
+.game-window-title{position:relative;flex-shrink:0;height:16px;min-height:16px;background-color:#824104;background-image:var(--window-title);background-repeat:repeat-x;image-rendering:pixelated;color:#fff;text-align:center;text-transform:uppercase;font:bold 12px/16px var(--font-ui);white-space:nowrap}
 .game-window-title{display:flex;align-items:center;justify-content:center;padding:0 20px;cursor:grab;touch-action:none}
 .game-window-title:active{cursor:grabbing}
 .game-window-title>span{overflow:hidden;text-overflow:ellipsis;pointer-events:none}
@@ -380,13 +380,13 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .town-choices{display:flex;align-self:stretch}
 .town-choice-column{display:flex;flex-direction:column;align-items:center;width:88px}
 .town-picture{width:72px;height:72px}
-.town-caption{width:88px;height:12px;text-align:center;font:bold 11px/12px monospace;white-space:nowrap}
-.game-window .town-choice #town-timeout{width:112px;height:12px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--ink);font:10px/12px monospace;text-decoration:underline}
+.town-caption{width:88px;height:12px;text-align:center;font:bold 11px/12px var(--font-ui);white-space:nowrap}
+.game-window .town-choice #town-timeout{width:112px;height:12px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--ink);font:10px/12px var(--font-ui);text-decoration:underline}
 .game-window .town-choice #town-timeout:hover{background:#fff4}
 .town-panel{width:240px;height:80px}
 .town-panel-face{padding:5px 0 0 13px}
-.town-instructions{width:216px;height:68px;margin:0;font:bold 12px/9px monospace}
-.game-window #town-choice-error{align-self:stretch;margin:0;padding:6px 8px;font:12px/16px Arial,sans-serif;color:var(--ink)}
+.town-instructions{width:216px;height:68px;margin:0;font:bold 12px/9px var(--font-ui)}
+.game-window #town-choice-error{align-self:stretch;margin:0;padding:6px 8px;font:12px/16px var(--font-ui);color:var(--ink)}
 
 /* Balance Sheet DSaaf8:400×224 client, original1× row spacing. */
 
@@ -396,9 +396,9 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 /* Weather: 320×184 client on the source wallpaper tile (origin client 0,26). Coordinates below are
    client pixels (source x−8); the thermometer and rain tube sit 8px from their source columns. */
 .game-window[data-window=weather]{left:160px;top:128px;right:auto}
-.weather-window{display:flex;flex-direction:column;width:320px;height:184px;color:var(--ink);background-color:var(--face);background-position:0 2px;font:9px/9px monospace}
+.weather-window{display:flex;flex-direction:column;width:320px;height:184px;color:var(--ink);background-color:var(--face);background-position:0 2px;font:9px/9px var(--font-ui)}
 .weather-window .sunken-inset{background-color:var(--face)}
-.weather-window output{display:block;flex:1;overflow:hidden;white-space:nowrap;text-align:center;font:10px/10px monospace}
+.weather-window output{display:block;flex:1;overflow:hidden;white-space:nowrap;text-align:center;font:10px/10px var(--font-ui)}
 .weather-label{display:block;flex:none;white-space:pre;text-align:center}
 .weather-stack{display:grid;flex:none}
 .weather-stack>*{grid-area:1/1}
@@ -410,6 +410,9 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .weather-temperature{display:flex;align-items:flex-start;height:64px;margin-top:4px}
 .weather-readings{display:flex;flex-direction:column;gap:3px;margin:15px 1px 0 4px}
 .weather-reading{display:flex;align-items:flex-start;gap:1px}
+/* Fixed source geometry: never let font metrics shrink or grow the thermometer/rain-gauge rows. */
+.weather-temperature>*,.weather-rainfall>*,.weather-reading>*{flex:none}
+.weather-readings{width:32px}
 .weather-readings .weather-label{width:7px;margin-top:2px}
 .weather-value-box{display:flex;align-items:center;width:24px;height:13px}
 .weather-scale{display:flex;flex-direction:column;align-items:flex-start;width:12px;margin-top:6px}
@@ -419,7 +422,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .weather-temperature-column{height:44px;margin:6px 0 0 3px}
 .weather-evaporation-dial{margin:3px 0 0 9px}
 .weather-needle{margin:7px 0 0 7px}
-.weather-dial-marks{display:flex;gap:15px;margin:32px 0 0 11px;font:7px/6px monospace}
+.weather-dial-marks{display:flex;gap:15px;margin:32px 0 0 11px;font:7px/6px var(--font-ui)}
 .weather-dial-marks .weather-label:first-child{width:10px}
 .weather-dial-marks .weather-label:last-child{width:9px}
 .weather-left>.weather-label{width:73px;line-height:11px}
@@ -456,8 +459,8 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .expert-portrait{width:112px;height:64px;pointer-events:none;image-rendering:pixelated}
 .expert-picture{pointer-events:none}
 .expert-tiles{display:grid;pointer-events:none}
-.expert-window .expert-text{overflow:clip;margin:0;white-space:pre-line;font:10px/10px monospace}
-.expert-caption{width:48px;height:24px;font:bold 10px/1 Arial,sans-serif}
+.expert-window .expert-text{overflow:clip;margin:0;white-space:pre-line;font:10px/10px var(--font-ui)}
+.expert-caption{width:48px;height:24px;font:bold 10px/1 var(--font-ui)}
 .game-window .expert-window .expert-hotspot{margin:0;padding:0;border:0;border-radius:0;background:transparent}
 .game-window .expert-window .expert-hotspot:hover{background:#fff2}
 
@@ -466,8 +469,8 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
    (x10..21, y8..18) with the ring's 1px grey drop shadow; word centred in rows 22..29, bold with a 2px face-grey stroke painted under the fill so it
    reads cleanly over the ring's lower arc. */
 .condition-badge{display:grid;width:32px;height:32px;background:var(--condition-badge) no-repeat;image-rendering:pixelated}
-.condition-letter{grid-area:1/1;margin:8px 0 0 10px;width:12px;height:11px;display:flex;align-items:center;justify-content:center;color:#c20404!important;text-shadow:1px 1px #828282;font:bold 14px/1 monospace}
-.condition-word{grid-area:1/1;margin-top:23px;width:32px;height:8px;display:flex;align-items:center;justify-content:center;color:#414141;font:bold 8px/1 Arial,sans-serif;white-space:nowrap;-webkit-text-stroke:2px #c2c2c2;paint-order:stroke fill}
+.condition-letter{grid-area:1/1;margin:8px 0 0 10px;width:12px;height:11px;display:flex;align-items:center;justify-content:center;color:#c20404!important;text-shadow:1px 1px #828282;font:bold 14px/1 var(--font-ui)}
+.condition-word{grid-area:1/1;margin-top:23px;width:32px;height:8px;display:flex;align-items:center;justify-content:center;color:#414141;font:bold 8px/1 var(--font-ui);white-space:nowrap;-webkit-text-stroke:2px #c2c2c2;paint-order:stroke fill}
 /* Screen-reader-only text: pinned to the window's origin so its static position never extends the scrollable area. */
 .sale-accessible-detail{position:absolute!important;top:0;left:0;width:1px!important;height:1px!important;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
@@ -477,10 +480,10 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 
 
 /* Edit Plant/Spray popups DS545e/54b0, relative to fixed Edit origin. */
-.field-tool-menu{position:absolute;z-index:80;display:grid;grid-template-rows:repeat(9,17px);align-content:start;background:var(--face);color:var(--ink);box-shadow:4px 4px #0008;font:10px/10px monospace}
+.field-tool-menu{position:absolute;z-index:80;display:grid;grid-template-rows:repeat(9,17px);align-content:start;background:var(--face);color:var(--ink);box-shadow:4px 4px #0008;font:10px/10px var(--font-ui)}
 .field-tool-menu:after{content:'';position:absolute;inset:0;border:1px solid var(--ink);pointer-events:none}
-.field-tool-title{grid-column:1/-1;padding:4px 0 0 16px;font:10px/10px monospace}
-.game-window .field-tool-menu>button,.field-tool-menu>button{display:flex;align-items:flex-start;gap:0;width:112px;height:17px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--ink);text-align:left;font:10px/10px monospace}
+.field-tool-title{grid-column:1/-1;padding:4px 0 0 16px;font:10px/10px var(--font-ui)}
+.game-window .field-tool-menu>button,.field-tool-menu>button{display:flex;align-items:flex-start;gap:0;width:112px;height:17px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--ink);text-align:left;font:10px/10px var(--font-ui)}
 .field-tool-menu>button>span:last-child{padding-top:4px;white-space:nowrap}
 .field-tool-menu>button:hover:not(:disabled),.field-tool-menu>button:focus-visible{outline:1px solid var(--ink);outline-offset:-1px;background:#ffff0033}
 
@@ -496,21 +499,21 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window:has(>.game-window-body>.original-message-body)::backdrop{background:transparent}
 .game-window:has(>.game-window-body>.original-message-body)>.game-window-title>button{display:none}
 .original-message-body{display:flex;flex-direction:column;align-items:center;width:240px;height:168px;padding-top:8px;color:var(--ink)}
-.message-text{width:224px;height:56px;margin:8px 0 0;font:bold 11px/9px monospace;white-space:normal}
-#bulldoze-message-text{font:12px/14px 'Courier New',monospace;white-space:pre-line}
+.message-text{width:224px;height:56px;margin:8px 0 0;font:bold 11px/9px var(--font-ui);white-space:normal}
+#bulldoze-message-text{font:12px/14px 'Courier New',var(--font-ui);white-space:pre-line}
 .message-buttons{display:flex;justify-content:center;gap:80px;margin-top:4px}
-.message-button{width:48px;height:24px;font:bold 10px/1 Arial,sans-serif}
+.message-button{width:48px;height:24px;font:bold 10px/1 var(--font-ui)}
 .game-window[data-window=default]{z-index:35}
 
 /* Aircraft DS658c:256×176 client and sixteen-pixel wooden title. */
 /* Aircraft: 240×168 client; coordinates are client pixels (source x−8). */
 .game-window[data-window=aircraft]{left:192px;top:160px;right:auto}
-.aircraft-window{display:flex;align-items:flex-start;width:240px;height:168px;color:var(--ink);font:bold 10px/10px monospace}
+.aircraft-window{display:flex;align-items:flex-start;width:240px;height:168px;color:var(--ink);font:bold 10px/10px var(--font-ui)}
 .aircraft-services{display:flex;flex-direction:column;gap:4px;width:40px;margin:3px 0 0 13px}
 .aircraft-service{display:flex;flex-direction:column;align-items:flex-start;gap:1px}
 .aircraft-picture{width:38px;height:38px}
 .aircraft-price-box{display:flex;align-items:center;width:36px;height:12px;margin-left:1px}
-.aircraft-price-box output{display:block;flex:1;padding-left:1px;overflow:hidden;font:8px/8px monospace;white-space:nowrap}
+.aircraft-price-box output{display:block;flex:1;padding-left:1px;overflow:hidden;font:8px/8px var(--font-ui);white-space:nowrap}
 .aircraft-gauges{display:flex;flex-direction:column;width:82px;height:153px;margin:3px 0 0 22px;padding-top:3px}
 .aircraft-gauge-row{display:flex;flex-direction:column;height:48px}
 .aircraft-gauge{display:grid;width:56px;height:32px;margin-left:11px}
@@ -518,14 +521,14 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .aircraft-gauge-frame{margin:8px 0 0 8px}
 .aircraft-label{width:78px;height:10px;margin-top:1px;text-align:center}
 .aircraft-controls{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin:5px 0 0 32px}
-.aircraft-caption{width:44px;height:20px;font:bold 10px/1 monospace}
+.aircraft-caption{width:44px;height:20px;font:bold 10px/1 var(--font-ui)}
 .aircraft-caption:last-child{margin-top:-1px}
 
 /* Market descriptor DSbbfa:320×208 client below its sixteen-pixel title. */
 /* Market Value: 304×200 client; coordinates are client pixels (source x−8). */
 .game-window[data-window=market]{left:144px;top:112px;right:auto}
-.market-window{display:flex;flex-direction:column;width:368px;height:200px;padding-top:6px;color:var(--ink);font:10px/10px monospace}
-.market-label{flex:none;font:bold 10px/11px monospace;white-space:nowrap}
+.market-window{display:flex;flex-direction:column;width:368px;height:200px;padding-top:6px;color:var(--ink);font:10px/10px var(--font-ui)}
+.market-label{flex:none;font:bold 10px/11px var(--font-ui);white-space:nowrap}
 .market-window output{display:block;flex:1;overflow:hidden;white-space:nowrap;padding-left:2px}
 .market-top{display:flex;align-items:flex-start;height:165px}
 .market-history-box{display:flex;flex-direction:column;width:143px;height:165px;margin-left:5px}
@@ -551,12 +554,12 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .market-bottom{display:flex;align-items:flex-start;height:29px}
 .market-bottom>.market-label{width:104px;margin:9px 0 0 4px}
 .market-owned-box{display:flex;align-items:center;width:48px;height:16px;margin-top:7px}
-.market-close{width:48px;height:24px;margin:2px 6px 0 auto;font:bold 10px/1 monospace}
+.market-close{width:48px;height:24px;margin:2px 6px 0 auto;font:bold 10px/1 var(--font-ui)}
 
 
 /* Palette help uses source x48, without the removed Edit title/frame. */
 
-.edit-status{position:relative;flex:none;z-index:8;color:#000;font:10px/8px monospace}
+.edit-status{position:relative;flex:none;z-index:8;color:#000;font:10px/8px var(--font-ui)}
 .edit-status-current{display:block;width:100%;height:16px;text-align:left;padding:2px 0 0 24px;border:0;border-radius:0;color:#000;background:#c2c2c2;font:inherit}
 .edit-status-history{position:absolute;left:0;right:0;top:0;height:96px;margin:0;padding:2px 0 0 23px;border:1px solid #000;list-style:none;background:#c2c2c2;pointer-events:auto}
 .edit-status-history li{height:8px;line-height:8px;white-space:nowrap}
@@ -580,11 +583,11 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window[data-window=newgame]:has(.terrain-design){left:128px}
 .game-window .new-farm-panel:has(.terrain-design){width:336px}
 .terrain-design{display:flex;flex-direction:column;width:336px;height:288px;color:var(--ink)}
-.game-window .terrain-title{width:260px;height:24px;margin:4px 0 0 40px;text-align:center;text-transform:uppercase;color:#0000eb;font:bold 20px/24px "Times New Roman",Times,serif;letter-spacing:1px;text-shadow:1px 1px #000080;outline-offset:-2px}
+.game-window .terrain-title{width:260px;height:24px;margin:4px 0 0 40px;text-align:center;text-transform:uppercase;color:#0000eb;font:400 20px/24px var(--font-display);letter-spacing:1px;text-shadow:1px 1px #000080;outline-offset:-2px}
 .terrain-body{display:flex}
 .terrain-controls{display:flex;flex-direction:column;align-items:flex-start;width:126px;padding-top:17px}
 .terrain-climate{display:flex;flex-direction:column;margin-bottom:9px}
-.terrain-label{display:block;width:94px;height:15px;margin-left:18px;text-align:center;text-transform:uppercase;font:bold 10px/15px Arial,sans-serif;letter-spacing:1px}
+.terrain-label{display:block;width:94px;height:15px;margin-left:18px;text-align:center;text-transform:uppercase;font:bold 10px/15px var(--font-ui);letter-spacing:1px}
 .terrain-adjust{display:flex;align-items:flex-start;margin:2px 0 0 3px}
 .terrain-arrow{width:16px;height:16px}
 .terrain-bar{display:grid;width:84px;height:14px;margin:1px 2px 0 3px;background:#000}
@@ -598,8 +601,8 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .terrain-range::-moz-range-thumb{width:1px;border:0;background:transparent}
 .terrain-range::-moz-range-track{background:transparent}
 .terrain-range:focus-visible{outline:2px solid #0024ff;outline-offset:1px}
-.terrain-range-labels{display:flex;justify-content:space-between;width:91px;height:13px;margin:3px 0 0 20px;font:bold 10px/13px Arial,sans-serif}
-.terrain-button{height:25px;font:bold 10px/1 Arial,sans-serif;text-transform:uppercase;letter-spacing:1px}
+.terrain-range-labels{display:flex;justify-content:space-between;width:91px;height:13px;margin:3px 0 0 20px;font:bold 10px/13px var(--font-ui)}
+.terrain-button{height:25px;font:bold 10px/1 var(--font-ui);text-transform:uppercase;letter-spacing:1px}
 .terrain-toggle{width:49px;margin-left:40px}
 .terrain-climate:last-of-type{margin-bottom:7px}
 .terrain-toggle+.terrain-toggle{margin-top:2px}
@@ -607,7 +610,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .terrain-preview-box{width:196px;height:196px}
 .terrain-preview-grid{display:grid;grid-template-columns:repeat(12,16px);grid-template-rows:repeat(12,16px);width:192px;height:192px}
 .terrain-preview-grid>img{grid-area:1/1/13/13;display:block;image-rendering:pixelated}
-.terrain-marker{width:8px;height:8px;color:#000;font:bold 9px/8px Arial,sans-serif;pointer-events:none;z-index:1}
+.terrain-marker{width:8px;height:8px;color:#000;font:bold 9px/8px var(--font-ui);pointer-events:none;z-index:1}
 .terrain-actions{display:flex;gap:12px;margin:19px 0 0 4px}
 .terrain-generate{width:123px}
 #play-farm{width:49px}
@@ -616,29 +619,29 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .geographic-chooser{display:flex;width:456px;height:311px}
 .region-controls{display:flex;flex-direction:column;width:158px}
 .new-farm-panel :is(.region-title,.terrain-title):focus{outline:none}
-.game-window .region-title{width:136px;height:48px;margin:3px 0 0 14px;text-align:center;font:bold 20px/23px "Times New Roman",Times,serif;text-shadow:1px 1px #000080;outline-offset:-2px}
+.game-window .region-title{width:136px;height:48px;margin:3px 0 0 14px;text-align:center;font:400 20px/23px var(--font-display);text-shadow:1px 1px #000080;outline-offset:-2px}
 .region-climate{display:flex;flex-direction:column;margin-top:6px}
 .region-title+.region-climate{margin-top:8px}
-.region-label{width:112px;height:15px;margin-left:24px;text-align:center;text-transform:uppercase;font:bold 10px/15px Arial,sans-serif;letter-spacing:1px}
+.region-label{width:112px;height:15px;margin-left:24px;text-align:center;text-transform:uppercase;font:bold 10px/15px var(--font-ui);letter-spacing:1px}
 .region-bar{width:100px;height:14px;margin-left:30px}
 .region-bar>span{display:block;height:10px}
-.region-range{display:flex;justify-content:space-between;width:153px;height:13px;margin-left:2px;font:bold 10px/13px Arial,sans-serif}
+.region-range{display:flex;justify-content:space-between;width:153px;height:13px;margin-left:2px;font:bold 10px/13px var(--font-ui)}
 .region-actions{display:flex;flex-direction:column;margin:10px 0 0 8px}
-.region-action{width:141px;height:24px;text-transform:uppercase;letter-spacing:1px;font:bold 10px/1 Arial,sans-serif}
+.region-action{width:141px;height:24px;text-transform:uppercase;letter-spacing:1px;font:bold 10px/1 var(--font-ui)}
 .region-map-box{width:293px;height:293px;margin-top:13px}
 .region-grid{display:grid;grid-template-columns:repeat(18,16px) 1px;grid-template-rows:repeat(18,16px) 1px;width:289px;height:289px;background-repeat:no-repeat;image-rendering:pixelated}
 .region-selection{display:grid;width:17px;height:17px;pointer-events:none;z-index:1}
 .region-selection>*{grid-area:1/1}
-.new-farm-panel .setup-options{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0;padding:6px 8px 0;border:0;border-top:1px solid var(--bevel-shadow);box-shadow:inset 0 1px var(--bevel-light);font:10px/12px monospace}
+.new-farm-panel .setup-options{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0;padding:6px 8px 0;border:0;border-top:1px solid var(--bevel-shadow);box-shadow:inset 0 1px var(--bevel-light);font:10px/12px var(--font-ui)}
 .new-farm-panel .setup-options .native-label{width:auto}
-.game-window input.chrome-input{width:72px;height:18px;margin:0;padding:0 3px;border:2px solid;border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow);border-radius:0;background:var(--bevel-light);color:var(--ink);font:10px/14px monospace}
+.game-window input.chrome-input{width:72px;height:18px;margin:0;padding:0 3px;border:2px solid;border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow);border-radius:0;background:var(--bevel-light);color:var(--ink);font:10px/14px var(--font-ui)}
 .game-window input.chrome-input:disabled{background:var(--face);color:var(--bevel-shadow)}
-.new-farm-panel .setup-footer{position:relative;display:flex;align-items:center;gap:8px;min-height:36px;padding:4px 8px 6px;font:10px/12px monospace}
+.new-farm-panel .setup-footer{position:relative;display:flex;align-items:center;gap:8px;min-height:36px;padding:4px 8px 6px;font:10px/12px var(--font-ui)}
 .new-farm-panel .setup-footer>span{flex:1}
-.new-farm-panel .setup-footer details{border:0;padding:0;font:bold 10px/12px monospace}
-.new-farm-panel .setup-footer details>div{position:absolute;left:8px;right:8px;bottom:36px;z-index:2;padding:8px;background:#ffffd0;border:1px solid var(--ink);box-shadow:3px 3px #0006;font:12px/1.4 Arial,sans-serif}
-.new-farm-panel .setup-loading{padding:16px;min-height:160px;font:10px/12px monospace}
-.new-farm-panel :is(#new-farm-error,#restart-unavailable){margin:0;padding:0 8px 8px;font:10px/12px monospace}
+.new-farm-panel .setup-footer details{border:0;padding:0;font:bold 10px/12px var(--font-ui)}
+.new-farm-panel .setup-footer details>div{position:absolute;left:8px;right:8px;bottom:36px;z-index:2;padding:8px;background:#ffffd0;border:1px solid var(--ink);box-shadow:3px 3px #0006;font:12px/1.4 var(--font-ui)}
+.new-farm-panel .setup-loading{padding:16px;min-height:160px;font:10px/12px var(--font-ui)}
+.new-farm-panel :is(#new-farm-error,#restart-unavailable){margin:0;padding:0 8px 8px;font:10px/12px var(--font-ui)}
 
 /* File progress remains accessible without a duplicate file-management window. */
 .file-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
@@ -656,8 +659,8 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .about-panel{width:342px;height:118px;margin-left:21px}
 .about-panel-face{display:flex;align-items:flex-start;padding:8px 0 0 112px}
 .about-apples{margin:14px 0 0 15px;pointer-events:none}
-.about-credits{flex:1;height:104px;white-space:pre;overflow:hidden;font:10px/8px monospace}
+.about-credits{flex:1;height:104px;white-space:pre;overflow:hidden;font:10px/8px var(--font-ui)}
 .about-logo{display:grid;width:104px;height:112px;margin-top:-8px}
 .about-logo>*{grid-area:1/1}
 .about-logo img{display:block;image-rendering:pixelated;pointer-events:none}
-.about-logo span{align-self:start;margin-top:90px;text-align:center;font:bold 10px/9px monospace}
+.about-logo span{align-self:start;margin-top:90px;text-align:center;font:bold 10px/9px var(--font-ui)}
