@@ -80,9 +80,9 @@ test('condition badges share one clean ring with a centred shadowed letter and 8
     expect(await badge.evaluate(el=>{const s=getComputedStyle(el);return [s.backgroundImage.includes('sell-condition.png'),s.backgroundPosition];})).toEqual([true,'0% 0%']);
     const letter=badge.locator('.condition-letter'),word=badge.locator('.condition-word');
     expect(await letter.boundingBox()).toEqual({x:b.x+10,y:b.y+8,width:12,height:11}); // ring interior
-    expect(await word.boundingBox()).toEqual({x:b.x,y:b.y+22,width:32,height:8});
+    expect(await word.boundingBox()).toEqual({x:b.x,y:b.y+23,width:32,height:8});
     expect(await letter.evaluate(el=>{const s=getComputedStyle(el);return [s.textShadow,s.justifyContent,s.alignItems];})).toEqual(['rgb(130, 130, 130) 1px 1px 0px','center','center']);
-    expect(await word.evaluate(el=>{const s=getComputedStyle(el);return [s.fontSize,s.justifyContent,s.alignItems];})).toEqual(['8px','center','center']);
+    expect(await word.evaluate(el=>{const s=getComputedStyle(el);return [s.fontSize,s.fontWeight,s.webkitTextStroke||`${s.getPropertyValue('-webkit-text-stroke-width')} ${s.getPropertyValue('-webkit-text-stroke-color')}`,s.paintOrder,s.justifyContent,s.alignItems];})).toEqual(['8px','700','2px rgb(194, 194, 194)','stroke','center','center']);
   };
   await chooseField(page,1);await check(page.locator('.schedule-quality'));
   await page.locator('#window-sell').click();await page.getByRole('button',{name:'Machinery',exact:true}).click();await check(page.locator('.sell-condition').first());

@@ -61,3 +61,5 @@ The BAD badge's word background clips three ring pixels, so it is outvoted. The 
 - **Word:** 8px, centred across rows 22..29.
 
 Schedule previously lacked the centring rules and inherited the schedule font, which misaligned both. Examine's separate overrides were removed.
+
+2026-10-12 follow-up (user, for visibility): the condition word is bold with a 2px face-grey `-webkit-text-stroke` painted under the fill (`paint-order: stroke fill`, reported by browsers as `stroke`), separating it from the ring arc it overlaps.

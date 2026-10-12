@@ -292,10 +292,11 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .sell-condition{position:absolute;left:39px;top:-1px}
 .sell-row[aria-selected=true] .sell-condition{left:38px;top:-2px}
 /* Shared condition badge (ConditionBadge): source ring as background; letter centred in the ring interior
-   (x10..21, y8..18) with the ring's 1px grey drop shadow; word centred in rows 22..29. */
+   (x10..21, y8..18) with the ring's 1px grey drop shadow; word centred in rows 22..29, bold with a 2px face-grey stroke painted under the fill so it
+   reads cleanly over the ring's lower arc. */
 .condition-badge{display:block;width:32px;height:32px;background:var(--condition-badge) no-repeat;image-rendering:pixelated}
 .condition-letter{position:absolute;left:10px;top:8px;width:12px;height:11px;display:flex;align-items:center;justify-content:center;color:#c20404!important;text-shadow:1px 1px #828282;font:bold 14px/1 monospace}
-.condition-word{position:absolute;left:0;top:22px;width:32px;height:8px;display:flex;align-items:center;justify-content:center;color:#414141;font:8px/1 Arial,sans-serif;white-space:nowrap}
+.condition-word{position:absolute;left:0;top:23px;width:32px;height:8px;display:flex;align-items:center;justify-content:center;color:#414141;font:bold 8px/1 Arial,sans-serif;white-space:nowrap;-webkit-text-stroke:2px #c2c2c2;paint-order:stroke fill}
 .sell-price{position:absolute;left:71px;top:11px;font:10px/10px monospace;white-space:nowrap}
 .sell-row[aria-selected=true] .sell-price{left:70px;top:10px}
 .game-window .sell-empty{position:absolute;left:40px;top:96px;margin:0;font:10px/10px monospace}
