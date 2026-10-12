@@ -1,4 +1,5 @@
 import {readSaveText} from '../support/save-file';
+import { focusEdit } from '../support/workspace';
 import { test, expect, type Page, type Locator } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
@@ -39,7 +40,7 @@ test('source wooden titles use HTML text; dragging persists across closing witho
   expect(await bank.boundingBox()).toMatchObject({ x:376,y:207 });
   await page.screenshot({ path: 'artifacts/browser-movable-windows.png' });
   await page.keyboard.press('Escape');
-  await page.locator('#window-edit').click();
+  await focusEdit(page);
   expect(await page.locator('#viewport').boundingBox()).toEqual(map);
   await expect(page.getByRole('button', { name: 'Close Edit', exact: true })).toHaveCount(0);
   expect(await save(page)).toEqual(before);

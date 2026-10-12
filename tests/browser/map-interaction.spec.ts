@@ -5,7 +5,7 @@ import { browserCrops } from '../support/crop-catalog';
 import { readNativeSave,writeNativeSave } from '../../src/formats/native-save';
 import { worldIndex } from '../../src/formats/scenario';
 import { checkEquipmentPickup } from '../../src/simulation/manual-equipment-move';
-import { reveal } from '../support/workspace';
+import { reveal, focusEdit } from '../support/workspace';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'interaction.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
 async function pointer(page:Page,x:number,y:number){const zoom=Number(await page.locator('#zoom').inputValue());await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-20)*16*p.zoom,Math.max(0,p.y-15)*16*p.zoom),{x,y,zoom});const r=(await page.locator('#world').boundingBox())!;await page.mouse.move(r.x+(x+.5)*16*zoom,r.y+(y+.5)*16*zoom);}
@@ -55,7 +55,7 @@ test('secondary map coordinates follow zoom and scrolling, ignore middle clicks 
   const f=shopFixture();f.state.disasters.enabled=false;f.state.scenario.cells[worldIndex(80,80)].terrain=188;
   const g=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,g.save(4));
   for(const zoom of ['2','0.5']){
-    await reveal(page,'#zoom');await page.locator('#zoom').selectOption(zoom);await page.locator('#window-edit').click();
+    await reveal(page,'#zoom');await page.locator('#zoom').selectOption(zoom);await focusEdit(page);
     await pointer(page,80,80);await page.mouse.down({button:'middle'});await page.mouse.up({button:'middle'});expect(await save(page)).toEqual(JSON.parse(g.save(4)));
     await right(page,80,80);g.dispatch({type:'network',tool:zoom==='2'?'open-gate':'close-gate',x:80,y:80});
     expect(await save(page)).toEqual(JSON.parse(g.save(4)));

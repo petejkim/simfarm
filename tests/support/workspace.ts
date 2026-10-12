@@ -24,7 +24,7 @@ export async function openWindow(page: Page, key: string) {
     const bounds=(await page.locator('#world').boundingBox())!;
     await page.mouse.click(bounds.x+(field.x+0.5)*size,bounds.y+(field.y+0.5)*size);return;
   }
-  if (key === 'edit') { await page.locator('#window-edit').click(); return; }
+  if (key === 'edit') { await focusEdit(page); return; }
   if (await page.locator(`[data-window="${key}"]`).isVisible()) {await page.locator(`[data-window="${key}"] .game-window-title`).focus();return;}
   if(key==='aircraft'){
     const snapshot=await farmSnapshot(page),world=snapshot.scenario;
@@ -51,6 +51,10 @@ export async function openWindow(page: Page, key: string) {
 
   if(['buy','map','weather','market'].includes(key)){await page.locator(`#window-${key}`).click();return;}
   throw new Error(`No original window entry for ${key}`);
+}
+/** Edit has no toolbar launcher (user request); its Windows-menu entry focuses the permanent terrain. */
+export async function focusEdit(page:Page){
+  await page.locator('#windows-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Edit',exact:true}).click();
 }
 async function uncoverMap(page:Page){
   await openWindow(page,'edit');

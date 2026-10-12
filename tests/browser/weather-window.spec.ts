@@ -9,7 +9,7 @@ import {weatherWindowView,WEATHER_SKIES} from '../../src/simulation/weather-view
 import {WEATHER_LABELS} from '../../src/formats/weather-window';
 import {shopFixture} from '../support/livestock';
 import {browserCrops} from '../support/crop-catalog';
-import {openWindow,reveal} from '../support/workspace';
+import {openWindow,reveal, focusEdit } from '../support/workspace';
 const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url));
 const entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),asset=(n:string)=>entries.find(e=>e.name===n)!.bytes,palette=readPalette(asset('simfarm.pal'));
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
@@ -88,7 +88,7 @@ test('missing Weather assets fail before creating a farm',async({page})=>{
 test('toolbar shows three original weather icons across week boundaries and updates after advancing a day',async({page})=>{
   const f=fixture();f.state.scenario.farm.calendar.day=6;
   const game=f.load().withAllCrops(browserCrops);await start(page);await load(page,game.save(4));const before=await save(page);
-  const icons=page.locator('.toolbar-weather');expect(await icons.boundingBox()).toEqual({x:328,y:24,width:48,height:16});
+  const icons=page.locator('.toolbar-weather');expect(await icons.boundingBox()).toEqual({x:312,y:24,width:48,height:16});
   async function check(codes:number[]){
     for(const [i,code] of codes.entries()){
       const pixels=await icons.evaluate((c:HTMLCanvasElement,i)=>Array.from(c.getContext('2d')!.getImageData(i*16,0,16,16).data),i);
@@ -99,7 +99,7 @@ test('toolbar shows three original weather icons across week boundaries and upda
   expect(await save(page)).toEqual(before);
   await reveal(page,'#next-day');await page.locator('#next-day').click();await declineTownEventDialogs(page);await check([4,3,2]);
   await expect(icons).toHaveAttribute('aria-label','Today: Snow; Tomorrow: Rain; Day 3: Cloudy');
-  await page.locator('#window-edit').click();await page.screenshot({path:'artifacts/browser-toolbar-weather.png'});
+  await focusEdit(page);await page.screenshot({path:'artifacts/browser-toolbar-weather.png'});
 });
 
 
@@ -137,5 +137,5 @@ test('prolonged dry climate reaches the original cracked-soil artwork in the liv
   expect(game.getSnapshot().weather.soilMoisture).toBe(0);expect(game.getSnapshot().scenario.cells[0].terrain&2047).toBe(15);
   expect(await pixels()).toEqual(original(15));expect(await pixels()).not.toEqual(original(27));
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  await page.locator('#window-edit').click();await page.screenshot({path:'artifacts/browser-drought-cracked-soil.png'});
+  await focusEdit(page);await page.screenshot({path:'artifacts/browser-drought-cracked-soil.png'});
 });

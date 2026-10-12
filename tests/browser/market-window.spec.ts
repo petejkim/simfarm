@@ -7,7 +7,7 @@ import {readArchive} from '../../src/formats/archive';
 import {readPalette,decodePlanar} from '../../src/formats/graphics';
 import {worldIndex} from '../../src/formats/scenario';
 import {readNativeSave,writeNativeSave} from '../../src/formats/native-save';
-import {reveal} from '../support/workspace';
+import {reveal, focusEdit } from '../support/workspace';
 const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url));
 const entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),palette=readPalette(entries.find(e=>e.name==='simfarm.pal')!.bytes);
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'market.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
@@ -79,14 +79,14 @@ test('town shop footprints open original routes by both buttons and zooms while 
   routes.forEach((_,i)=>{for(let x=0;x<3;x++)for(let y=0;y<3;y++){const c=w.cells[worldIndex(10+i*8+x,30+y)];c.terrain=320+i*3+x+y*40;c.overlay=0x4000;}});
   const game=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,game.save(4));
   for(const zoom of ['1','2']){
-    await reveal(page,'#zoom');await page.locator('#zoom').selectOption(zoom);await page.locator('#window-edit').click();
+    await reveal(page,'#zoom');await page.locator('#zoom').selectOption(zoom);await focusEdit(page);
     for(let i=0;i<routes.length;i++)for(let part=0;part<3;part++){
-      await mapClick(page,10+i*8+part,30+part,part%2?'right':'left');await expect(page.locator(`[data-window="${routes[i]}"]`)).toBeVisible();await page.locator('#window-edit').click();
+      await mapClick(page,10+i*8+part,30+part,part%2?'right':'left');await expect(page.locator(`[data-window="${routes[i]}"]`)).toBeVisible();await focusEdit(page);
     }
   }
   await page.getByRole('button',{name:'Move object',exact:true}).click();await mapClick(page,10,30);await expect(page.locator('[data-window=market]')).toBeVisible();await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');
-  await page.locator('#window-edit').click();await page.getByRole('button',{name:'Paved road',exact:true}).click();await mapClick(page,27,31);await expect(page.locator('[data-window=bank]')).toBeVisible();
-  await page.locator('#window-edit').click();await page.getByRole('button',{name:'Bulldoze',exact:true}).click();await mapClick(page,10,30);await expect(page.locator('[data-window=market]')).toBeHidden();
+  await focusEdit(page);await page.getByRole('button',{name:'Paved road',exact:true}).click();await mapClick(page,27,31);await expect(page.locator('[data-window=bank]')).toBeVisible();
+  await focusEdit(page);await page.getByRole('button',{name:'Bulldoze',exact:true}).click();await mapClick(page,10,30);await expect(page.locator('[data-window=market]')).toBeHidden();
   await mapClick(page,10,30,'right');await expect(page.locator('[data-window=market]')).toBeVisible();expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   const state=readNativeSave(game.save(4)).state;state.finances.defaultDecision={status:'pending',originalExitCode:0};const blocked=writeNativeSave(state,4);await load(page,blocked);await mapClick(page,10,30,'right');await expect(page.locator('[data-window=market]')).toBeHidden();expect(await save(page)).toEqual(JSON.parse(blocked));
 });

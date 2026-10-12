@@ -1,4 +1,5 @@
 import {readSaveText} from '../support/save-file';
+import { focusEdit } from '../support/workspace';
 import {test,expect} from '@playwright/test';
 
 test('Windows displays source geometry and live open checks, preserving permanent Edit and full saves',async({page})=>{
@@ -21,5 +22,5 @@ test('Windows displays source geometry and live open checks, preserving permanen
     await page.locator('#windows-menu-button').click();await menu.getByRole('menuitemcheckbox',{name:label,exact:true}).click();
   }
   await checks(['Buy','Sell','Evaluation','Map','Weather','Balance Sheet','Bank','Market Value','Farm Expert']);await page.keyboard.press('Escape');
-  await page.locator('#window-edit').click();await checks(['Buy','Sell','Evaluation','Map','Weather','Balance Sheet','Bank','Market Value','Farm Expert']);await page.keyboard.press('Escape');expect(await save()).toEqual(before);
+  await focusEdit(page);await checks(['Buy','Sell','Evaluation','Map','Weather','Balance Sheet','Bank','Market Value','Farm Expert']);await page.keyboard.press('Escape');expect(await save()).toEqual(before);
 });

@@ -1,3 +1,4 @@
+import { focusEdit } from '../support/workspace';
 import {test,expect} from '@playwright/test';
 
 test('opening windows after Market Value preserves the game viewport and map scroll',async({page})=>{
@@ -13,6 +14,6 @@ test('opening windows after Market Value preserves the game viewport and map scr
   await page.locator('#window-market').click();await expect(page.getByRole('dialog',{name:'Market Value',exact:true})).toBeVisible();
   expect(await position()).toEqual(before);
   for(const key of ['bank','sell','evaluation','balance','weather','buy','map','edit']){
-    await page.locator(`#window-${key}`).click();expect(await position(),`After opening ${key}`).toEqual(before);
+    if(key==='edit')await focusEdit(page);else await page.locator(`#window-${key}`).click();expect(await position(),`After opening ${key}`).toEqual(before);
   }
 });

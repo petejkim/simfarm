@@ -1,4 +1,4 @@
-import { openWindow } from '../support/workspace';
+import { openWindow, focusEdit } from '../support/workspace';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
@@ -24,7 +24,7 @@ test('Edit fills the desktop permanently; windows close without resizing or unmo
   expect(await map.boundingBox()).toEqual(before);
   await page.getByRole('button', { name: 'Close Bank', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0); await expect(page.locator('#world')).toHaveAttribute('data-retained', stamp!);
-  await page.locator('#window-edit').click(); expect(await map.boundingBox()).toEqual(before);
+  await focusEdit(page); expect(await map.boundingBox()).toEqual(before);
   await page.screenshot({ path: 'artifacts/browser-edit-workspace-final.png' });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await map.boundingBox()).toMatchObject({ x: before!.x, y: before!.y, width: before!.width - 640 });
@@ -38,7 +38,7 @@ test('palette opens field planning and real tools; Speed retains slower pacing a
   await expect(page.getByRole('menu', { name: 'Plant Field', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await openWindow(page,'schedule');await expect(page.locator('#field-planner')).toBeVisible();
-  await page.locator('#window-edit').click();
+  await focusEdit(page);
   await page.getByRole('button', { name: 'Dirt road', exact: true }).click();
   await expect(page.locator('#map-tool-hint')).toContainText('Dirt road: click or drag');
   await page.getByRole('button', { name: 'Edit tools and help', exact: true }).click();

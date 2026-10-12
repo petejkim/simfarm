@@ -1,4 +1,5 @@
 import {readSaveText} from '../support/save-file';
+import { focusEdit } from '../support/workspace';
 import {test,expect} from '@playwright/test';
 
 test('independent windows retain positions and controls, raise on interaction and close without closing their neighbors',async({page})=>{
@@ -24,8 +25,8 @@ test('original launchers toggle only their own window and Edit remains permanent
   await expect(page.locator('[data-window=buy]')).toBeHidden();await expect(page.locator('[data-window=bank]')).toBeVisible();
   await page.locator('#window-bank').click();await expect(page.locator('[data-window=bank]')).toBeHidden();
   await page.locator('#window-buy').click();await page.locator('#window-map').click();
-  await page.locator('#window-edit').click();await expect(page.locator('.game-window:visible')).toHaveCount(2);await expect(page.locator('#viewport')).toBeVisible();
-  await page.locator('#window-edit').click();await expect(page.locator('#viewport')).toBeVisible();
+  await focusEdit(page);await expect(page.locator('.game-window:visible')).toHaveCount(2);await expect(page.locator('#viewport')).toBeVisible();
+  await focusEdit(page);await expect(page.locator('#viewport')).toBeVisible();
 });
 
 
@@ -57,9 +58,8 @@ test('the map stays behind floating windows without a title or stack entry, and 
   await page.locator('#window-buy').click();await buy.getByRole('button',{name:'Machinery',exact:true}).click();
   await buy.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');const position=await buy.boundingBox();
   await page.locator('#window-bank').click();
-  for(const route of ['toolbar','keyboard','menu'] as const){
-    if(route==='toolbar')await page.locator('#window-edit').click();
-    else if(route==='keyboard')await map.focus();
+  for(const route of ['keyboard','menu'] as const){
+    if(route==='keyboard')await map.focus();
     else {await page.locator('#windows-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Edit',exact:true}).click();}
     await expect(buy).toBeVisible();await expect(bank).toBeVisible();await expect(map).toBeFocused();
     expect(await map.boundingBox()).toEqual(mapBox);expect(await buy.boundingBox()).toEqual(position);

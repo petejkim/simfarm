@@ -8,7 +8,7 @@ import {purchaseAircraft} from '../../src/simulation/aircraft';
 import {readArchive} from '../../src/formats/archive';
 import {decodePlanar,readPalette} from '../../src/formats/graphics';
 import {readNativeSave,writeNativeSave} from '../../src/formats/native-save';
-import {openWindow,reveal} from '../support/workspace';
+import {openWindow,reveal, focusEdit } from '../support/workspace';
 import {AIRCRAFT_CONTROLS} from '../../src/formats/aircraft-window';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'aircraft.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
@@ -48,7 +48,7 @@ test('all four parked tiles select the right plane with primary and secondary in
   const f=fixture(),w=f.state.scenario;w.regionalConditions[(2*12+2)*7]&=~0x20;expect(purchaseAircraft(w,f.state.finances).ok).toBe(true);
   const game=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,game.save(4));
   for(const zoom of ['1','2']){
-    await reveal(page,'#zoom');await page.locator('#zoom').selectOption(zoom);await page.locator('#window-edit').click();
+    await reveal(page,'#zoom');await page.locator('#zoom').selectOption(zoom);await focusEdit(page);
     for(const [slot,x,y] of [[1,21,22],[1,22,22],[2,19,23],[2,20,23]]){
       await mapClick(page,x,y,slot===1?'left':'right');await expect(page.locator('#aircraft-selection')).toHaveValue(String(slot));
       await page.locator('.aircraft-window').getByRole('button',{name:'CLOSE',exact:true}).click();
