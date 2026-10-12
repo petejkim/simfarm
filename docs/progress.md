@@ -2777,3 +2777,7 @@ The other two did not involve the footer: town-event-calendar's rodeo MIDI statu
 Converted the main layout to flexbox and removed the desktop/menu 640px and 480px minimums. The control strip spans the page with Date/Funds at the right. The terrain viewport has no min-height and no tooltip. Details in edit-workspace.md; tests now assert viewport-relative readout/forecast positions and no minimum width.
 
 Full browser suite: 280/281 passed (artifacts/flex-layout-browser.log). The remaining failure, town-event-calendar "Playing rodeo", is an existing intermittent startup-music race. It also fails 2/4 runs at session-start commit 9364b6f, so it is not caused by UI changes and needs a separate fix. After the viewport/tooltip follow-up, 33/33 layout/window specs pass. Type checking and build pass.
+
+## 2026-10-11 — fix intermittent town-event music test
+
+Cause: the calendar test's first user gesture was the `#next-day` click that also raised the fair/rodeo event. That gesture starts amain asynchronously. Per the explicit startup policy (`useMusic.requestTrack`), situational requests are ignored until amain has begun, so the event's rodeo/carnival request was intermittently dropped while amain loaded. Production behavior is correct and unchanged. The test now presses a key after page load and waits for "Playing amain" before loading fixtures and triggering events. Validation: town-event-calendar 24/24 across `--repeat-each=8` (previously 2/4 failures at 9364b6f).

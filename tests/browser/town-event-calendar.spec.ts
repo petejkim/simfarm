@@ -19,6 +19,9 @@ function fixture(month: number, animal = false) {
 async function start(page: Page) {
   await page.clock.install({ time: new Date('1993-01-01') }); await page.clock.pauseAt(new Date('1993-01-01'));
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  // Startup amain has priority until it begins (user policy); event music requested earlier is ignored.
+  // Start music with a gesture and wait, so the first event's track request is not raced by startup.
+  await page.keyboard.press('Shift'); await expect(page.locator('#audio-status')).toContainText('Playing amain');
 }
 async function load(page: Page, text: string) {
   await page.locator('#load-farm-file').setInputFiles({ name: 'event.json', mimeType: 'application/json', buffer: Buffer.from(text) });
