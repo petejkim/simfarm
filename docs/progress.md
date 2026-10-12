@@ -3073,3 +3073,7 @@ The UI font is now Roboto everywhere. The two New Game titles use DM Serif Displ
 Instrumentation also showed a real but secondary race: the frame loop held time on React state (message queue, bulldoze prompt). That state commits later in real time, so under load time could keep running after a message opened, or stall after OK. The loop now reads synchronous refs, updated when the event arrives and when it is acknowledged. Open follow-up: per-tick full snapshot copies and map repaints make long runs CPU-heavy in production too.
 
 Validation: production build; full browser suite 300/300.
+
+## 2026-10-12 — Keyboard flight, no flight screens
+
+Removed the in-flight panel and the post-flight result line. Flight now uses S/W/A/D/E/Space from anywhere, with held keys throttled, at 0.5× speed; the previous speed returns afterwards. The aircraft shadow now draws beneath the plane. Details in aircraft.md.

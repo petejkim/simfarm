@@ -14,7 +14,11 @@ export interface AircraftFlight {
   lastFrameTick: number; lastWearTick: number; lastFuelTick: number; lastSprayTick: number;
   turbulence: boolean; turbulenceTick: number; spin: number;
   inputs: FlightControl[]; active: boolean; resumePaused: boolean;
+  /** Native: speed multiplier to restore after flight (flight itself runs at FLIGHT_SPEED). */
+  resumeSpeed: number;
 }
+/** Native flying pace (user request): the speed multiplier while airborne. */
+export const FLIGHT_SPEED = 0.5;
 export type FlightEnd = { kind: 'landed' | 'crashed'; slot: number; x: number; y: number; cause: 'pilot' | 'fuel' | 'wear' | 'tornado' };
 export type FlightStartResult = { ok: true; flight: AircraftFlight } | { ok: false; reason: 'not-parked' | 'invalid-aircraft' | 'invalid-viewport' };
 const clamp = (n: number, low: number, high: number) => Math.max(low, Math.min(high, n));
@@ -40,7 +44,7 @@ export function validFlightAircraft(world: Scenario, slot: number): boolean {
 /** 0x30f70 + centering0x22578. Native canvas has no DOS client-border offsets.
  * Preserve captured viewport dimensions across browser resizes and checkpoints. */
 export function beginFlight(world: Scenario, finances: FinancialState, slot: number, columns: number, rows: number,
-  soilMoisture: number, resumePaused: boolean): FlightStartResult {
+  soilMoisture: number, resumePaused: boolean, resumeSpeed = 1): FlightStartResult {
   if (![columns, rows].every(n => Number.isInteger(n) && n >= 8 && n <= 80)) return { ok: false, reason: 'invalid-viewport' };
   const check = checkAircraftService(world, finances, createAircraftServiceState(), slot, { kind: 'repair' });
   if (!check.ok && check.reason !== 'insufficient-cash') return { ok: false, reason: 'not-parked' };
@@ -53,7 +57,7 @@ export function beginFlight(world: Scenario, finances: FinancialState, slot: num
     cameraY: clamp(e.y - (rows >> 1), 0, 96 - rows), offsetX: 0, offsetY: 0, heading: 6, altitude: 10,
     spraying: false, sprayFrame: 0, lastFrameTick: tick, lastWearTick: tick, lastFuelTick: tick,
     lastSprayTick: tick, // SF-110: initialize the otherwise undefined first spraying timestamp at takeoff.
-    turbulence: false, turbulenceTick: tick, spin: 0, inputs: [], active: true, resumePaused };
+    turbulence: false, turbulenceTick: tick, spin: 0, inputs: [], active: true, resumePaused, resumeSpeed };
   // Generic map erase0x1d0e8: type8 replaces the complete footprint with soil grass.
   for (let dx = 0; dx < 2; dx++) for (let dy = 0; dy < 2; dy++) {
     const c = world.cells[worldIndex(e.x + dx, e.y + dy)];

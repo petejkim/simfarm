@@ -13,7 +13,8 @@ function ready(paused = true) {
   for (const kind of ['fuel', 'load'] as const) game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind } });
   return { ...f, game };
 }
-const launch = (game: ReturnType<typeof ready>['game']) => game.dispatch({ type: 'start-flight', slot: 1, columns: 20, rows: 16 });
+// Takeoff switches to the native 0.5× flight pace; these timing checks pin the original rules at 1×.
+const launch = (game: ReturnType<typeof ready>['game']) => { game.dispatch({ type: 'start-flight', slot: 1, columns: 20, rows: 16 }); game.dispatch({ type: 'set-speed', speed: 1 }); };
 const saved = (game: ReturnType<typeof ready>['game']) => JSON.parse(game.save(4));
 
 test('live flight advances both original clocks while suspending ordinary farm phases and commands', () => {
@@ -144,4 +145,29 @@ test('engine requests occur once per original flight iteration and audio subscri
   f.game.tick(4); assert.deepEqual(sounds, []); f.game.tick(20); silent.tick(24);
   assert.deepEqual(sounds, ['plane', 'plane', 'plane']); assert.deepEqual(saved(f.game), saved(silent));
   f.game.dispatch({ type: 'set-paused', paused: true }); f.game.tick(4000); assert.equal(sounds.length, 3);
+});
+
+test('takeoff flies at 0.5× and landing restores the previous speed, including across mid-flight saves', () => {
+  for (const speed of [0.25, 2, 16] as const) {
+    const { game, crops } = ready(); game.dispatch({ type: 'set-speed', speed });
+    game.dispatch({ type: 'start-flight', slot: 1, columns: 20, rows: 16 });
+    assert.equal(game.getSnapshot().speed, 0.5); assert.equal(game.getSnapshot().aircraftFlight?.resumeSpeed, speed);
+    // The saved flight remembers the return speed.
+    const restored = GameSimulation.load(game.save(4), crops).simulation;
+    assert.equal(restored.getSnapshot().speed, 0.5); assert.equal(restored.getSnapshot().aircraftFlight?.resumeSpeed, speed);
+    for (const g of [game, restored]) {
+      g.dispatch({ type: 'flight-control', control: 'end' }); g.tick(8000);
+      assert.equal(g.getSnapshot().aircraftFlight, null); assert.equal(g.getSnapshot().lastFlightEnd?.kind, 'landed');
+      assert.equal(g.getSnapshot().speed, speed);
+    }
+  }
+  // A speed chosen during flight applies to the flight only.
+  const { game } = ready(); game.dispatch({ type: 'start-flight', slot: 1, columns: 20, rows: 16 }); game.dispatch({ type: 'set-speed', speed: 4 });
+  game.dispatch({ type: 'flight-control', control: 'end' }); game.tick(8000); assert.equal(game.getSnapshot().speed, 1);
+  // Older mid-flight saves without the field return to the speed they were saved with.
+  const old = ready(); old.game.dispatch({ type: 'start-flight', slot: 1, columns: 20, rows: 16 });
+  const json = JSON.parse(old.game.save(4)); delete json.runtime.aircraftFlight.resumeSpeed; json.runtime.speed = 2;
+  const legacy = GameSimulation.load(JSON.stringify(json), old.crops).simulation;
+  assert.equal(legacy.getSnapshot().aircraftFlight?.resumeSpeed, 2);
+  json.runtime.aircraftFlight.resumeSpeed = 3; assert.throws(() => GameSimulation.load(JSON.stringify(json), old.crops));
 });

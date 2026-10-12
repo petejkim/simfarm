@@ -80,7 +80,7 @@ test('tornado continues during modal flight and feeds the original turbulence/cr
   const f = aircraftFixture(), game = f.load(); game.dispatch({ type: 'buy-aircraft' });
   game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind: 'fuel' } });
   game.dispatch({ type: 'start-disaster', kind: 'tornado' });
-  game.dispatch({ type: 'start-flight', slot: 1, columns: 20, rows: 16 });
+  game.dispatch({ type: 'start-flight', slot: 1, columns: 20, rows: 16 }); game.dispatch({ type: 'set-speed', speed: 1 }); // pin original 1× timing (takeoff flies at 0.5×)
   const state = readNativeSave(game.save(4)).state; Object.assign(state.disasters.tornado, { x: 60, y: 60 });
   const g = GameSimulation.load(writeNativeSave(state, 4), f.crops).simulation, before = g.save(4), days = g.getSnapshot().daysAdvanced;
   g.dispatch({ type: 'start-disaster', kind: 'swarm' }); g.dispatch({ type: 'set-disasters-enabled', enabled: false }); assert.equal(g.save(4), before);

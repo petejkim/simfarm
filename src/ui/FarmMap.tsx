@@ -2,8 +2,7 @@ import { HarvestWorkerAnimation } from '../render/harvest-workers';
 import { drawDisasters, type DisasterSprites } from '../render/disaster-renderer';
 import type { MovingDisasterState } from '../simulation/moving-disasters';
 import { drawAircraft, flightPixelPosition, type FlightSprites } from '../render/aircraft-renderer';
-import type { AircraftFlight, FlightControl } from '../simulation/aircraft-flight';
-import { flightKey } from './FlightControls';
+import type { AircraftFlight } from '../simulation/aircraft-flight';
 import { useCallback, useEffect, useLayoutEffect, useRef, type MouseEvent, type RefObject } from 'react';
 import { WORLD_SIZE, worldIndex, type Scenario } from '../formats/scenario';
 import { drawWorld, type MapPreview } from '../render/world-renderer';
@@ -20,7 +19,6 @@ interface Props {
   disasters: MovingDisasterState | null;
   disasterSprites: DisasterSprites;
   onViewportSize: (size: { columns: number; rows: number }) => void;
-  onFlightControl: (control: FlightControl) => void;
   tiles: CanvasImageSource;
   townEventTiles?: CanvasImageSource;
   maskedTiles: CanvasImageSource;
@@ -42,7 +40,7 @@ const directions: Record<string, [number, number]> = {
   ArrowLeft: [-64, 0], ArrowRight: [64, 0], ArrowUp: [0, -64], ArrowDown: [0, 64],
 };
 
-export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scenario, tiles, townEventTiles, maskedTiles, zoom, focus, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, onFlightControl }: Props) {
+export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scenario, tiles, townEventTiles, maskedTiles, zoom, focus, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stroke=useRef<{pointer:number;last:number|null}|null>(null),suppressClick=useRef(false);
   const stopPainting=useCallback(()=>{
@@ -179,7 +177,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
   }
   return <div id="viewport" ref={viewportRef} tabIndex={0} aria-label={flight ? "Farm map. Left and right arrows steer the aircraft. Home toggles spraying; End ends flight." : "Farm map. Scroll or use arrow keys to explore."}
     onKeyDown={event => {
-      if (flight) { flightKey(event, onFlightControl); return; }
+      if (flight) return; // Flight keys are handled globally by FarmView; the camera follows the aircraft.
       const offset = directions[event.key];
       if (offset) { event.preventDefault(); event.currentTarget.scrollBy(...offset); }
     }}>

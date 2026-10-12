@@ -38,7 +38,7 @@ import { supplyMoveHasSourceWarning, moveManualSupply, type SupplyMoveTarget, ty
 import { moveManualEquipment, toggleManualBuildingInterior, type EquipmentMoveTarget, type EquipmentMoveResult, type BuildingInteriorResult } from './manual-equipment-move';
 import { removeManualTarget, type RemovalTarget, type ManualRemovalResult } from './manual-removal';
 import { sellManualAsset, type AssetSaleKind, type ManualAssetSaleResult } from './manual-asset-sale';
-import { advanceFlight, beginFlight, FLIGHT_CONTROLS, MAX_FLIGHT_INPUTS, type AircraftFlight, type FlightControl, type FlightEnd, type FlightStartResult } from './aircraft-flight';
+import { advanceFlight, beginFlight, FLIGHT_CONTROLS, FLIGHT_SPEED, MAX_FLIGHT_INPUTS, type AircraftFlight, type FlightControl, type FlightEnd, type FlightStartResult } from './aircraft-flight';
 import type { CropDefinition } from '../formats/crop';
 import { FieldRecord } from '../formats/field';
 import { FieldSchedule } from '../formats/field-schedule';
@@ -576,9 +576,10 @@ export class GameSimulation {
     }
     if (command.type === 'start-flight') {
       const result = beginFlight(this.scenario, this.finances, command.slot, command.columns, command.rows,
-        this.weather.soilMoisture, this.paused);
+        this.weather.soilMoisture, this.paused, this.speed);
       this.lastFlightStartResult = result.ok ? { ok: true } : result;
-      if (result.ok) { this.aircraftFlight = result.flight; this.lastFlightEnd = null; this.paused = false; this.elapsed = 0; }
+      // Native pacing (user request): fly at 0.5×; the previous speed returns when the flight ends.
+      if (result.ok) { this.aircraftFlight = result.flight; this.lastFlightEnd = null; this.paused = false; this.speed = FLIGHT_SPEED; this.elapsed = 0; }
     } else if (command.type === 'flight-control') {
       if (!this.aircraftFlight) return;
       if (!FLIGHT_CONTROLS.includes(command.control)) throw new Error('Invalid flight control');
@@ -744,7 +745,7 @@ export class GameSimulation {
       if (result.advanced && (this.disasters.flags & 1)) this.advanceDisasters(); // Modal source call0x31730.
       if (result.advanced) this.events.push({ type: 'sound', sound: 'plane' }); // Original request0x3107e, before next frame.
       if (result.end) {
-        this.lastFlightEnd = result.end; this.aircraftFlight = null; this.paused = flight.resumePaused;
+        this.lastFlightEnd = result.end; this.aircraftFlight = null; this.paused = flight.resumePaused; this.speed = flight.resumeSpeed;
         if (this.paused) this.elapsed = 0;
       }
       return; // Original modal loop suspends ordinary calendar, machinery, clearing, irrigation and animals.

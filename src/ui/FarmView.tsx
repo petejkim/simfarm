@@ -32,7 +32,7 @@ import type { ConstructionTool } from './useConstruction';
 const CONSTRUCTION_TOOLS:Record<ConstructionTool,EditTool>={'road-150':'Paved road','road-161':'Dirt road',fence:'Fence',gate:'Gate',ditch:'Ditch',valve:'Valve',hay:'Hay',trough:'Trough',trees:'Trees'};
 import type { GameWindow as WindowCommand } from './ControlBar';
 import { NewFarmControls } from './NewFarmControls';
-import { FlightControls } from './FlightControls';
+import { FLIGHT_KEY_REPEAT_MS, flightControlForKey, flightKeyRepeats } from './flight-keys';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
 import { worldPosition, worldIndex } from '../formats/scenario';
@@ -113,6 +113,36 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
     else onGameEvent(event);
   }), [simulation, onGameEvent]);
   const flightRunning = Boolean(snapshot?.aircraftFlight && !snapshot.paused);
+  const flying = Boolean(snapshot?.aircraftFlight);
+  useEffect(() => {
+    if (!simulation || !flying) return;
+    // Flight keys work wherever focus is, except while typing in a form field. One control per press; a held
+    // turn/altitude key repeats only after the flight consumed the last control, so the queue never floods.
+    const held = new Map<string, number>();
+    const release = (code: string) => { const timer = held.get(code); if (timer !== undefined) { clearInterval(timer); held.delete(code); } };
+    const releaseAll = () => { for (const code of [...held.keys()]) release(code); };
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('input,textarea,select,[contenteditable="true"]')) return;
+      if (event.repeat && held.has(event.code)) { event.preventDefault(); return; }
+      const control = flightControlForKey(event); if (!control) return;
+      event.preventDefault(); event.stopPropagation();
+      simulation.dispatch({ type: 'flight-control', control });
+      if (flightKeyRepeats(control) && !held.has(event.code)) held.set(event.code, window.setInterval(() => {
+        const flight = simulation.getSnapshot().aircraftFlight;
+        if (!flight) { releaseAll(); return; }
+        if (!flight.inputs.length) simulation.dispatch({ type: 'flight-control', control });
+      }, FLIGHT_KEY_REPEAT_MS));
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      release(event.code);
+      // Space activates a focused button on key-up; while flying it only toggles spraying.
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest('input,textarea,select,[contenteditable="true"]') && flightControlForKey({ code: event.code, altKey: event.altKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey, repeat: false })) { event.preventDefault(); event.stopPropagation(); }
+    };
+    window.addEventListener('keydown', onKeyDown, true); window.addEventListener('keyup', onKeyUp, true); window.addEventListener('blur', releaseAll);
+    return () => { releaseAll(); window.removeEventListener('keydown', onKeyDown, true); window.removeEventListener('keyup', onKeyUp, true); window.removeEventListener('blur', releaseAll); };
+  }, [simulation, flying]);
   useEffect(() => { onFlightRunning(flightRunning); return () => onFlightRunning(false); }, [flightRunning, onFlightRunning]);
   const mapSize = useRef({ columns: 20, rows: 16 });
   const onViewportSize = useCallback((size: { columns: number; rows: number }) => { mapSize.current = size; }, []);
@@ -366,9 +396,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
       <div className="edit-main">
       {snapshot&&<EditStatus codes={snapshot.editStatuses} text={assets.editStatusText}/>}
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
-        {snapshot && simulation && <FlightControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
-        <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") ${cursorHotspot} ${cursorHotspot}, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize}
-          onFlightControl={control => simulation?.dispatch({ type: 'flight-control', control })} scenario={data.scenario} tiles={tilesForWeather(data.tiles,snapshot?.weather)} townEventTiles={tilesForWeather(assets.townEventTiles[snapshot?.townEvent.artworkMode ?? 0],snapshot?.weather)} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
+        <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") ${cursorHotspot} ${cursorHotspot}, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize} scenario={data.scenario} tiles={tilesForWeather(data.tiles,snapshot?.weather)} townEventTiles={tilesForWeather(assets.townEventTiles[snapshot?.townEvent.artworkMode ?? 0],snapshot?.weather)} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
           preview={preview} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {
             if(construction.tool||bulldoze.active)return;

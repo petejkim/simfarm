@@ -4,7 +4,7 @@
 .loan-panel{margin:0 0 16px;padding:12px 16px;border:1px solid #48563f;background:#20291d;color:#c2cbb4;line-height:1.5}.loan-panel summary{cursor:pointer;color:#ead6a1;font-weight:bold}.loan-panel dl{display:flex;gap:12px 30px;flex-wrap:wrap}.loan-panel dt{font-size:12px;color:#a8b598}.loan-panel dd{margin:0;color:#ead6a1}.loan-panel form{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.loan-panel input{width:125px;max-width:100%;padding:7px;color:#f3ecd9;background:#111b11;border:1px solid #7a8964}.loan-panel p{font-size:13px}
 
 header { flex-wrap: wrap; }
-.flight-controls,.flight-result{background:#263127;border:1px solid #75875b;padding:12px;margin:0 0 10px;font-size:12px;line-height:1.45}.flight-controls p{margin:6px 0}.flight-buttons{display:flex;flex-wrap:wrap;gap:6px}.flight-buttons button{font-size:12px;padding:7px 10px}.flight-controls details{padding-top:6px}.is-flying #viewport{height:50vh}
+
 
 
 

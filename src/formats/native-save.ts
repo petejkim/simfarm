@@ -255,7 +255,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
     animalFrame,
     aircraftService: save.version >= 11 ? { selectedChemical: number(object(r.aircraftService, 'aircraft service').selectedChemical, 221, 223, 'aircraft chemical') }
       : createAircraftServiceState(),
-    aircraftFlight: save.version >= 12 ? decodeFlight(r.aircraftFlight, s) : null,
+    aircraftFlight: save.version >= 12 ? decodeFlight(r.aircraftFlight, s, speed) : null,
     cropMarketPrices, market,
     traffic: save.version >= 17 ? decodeTraffic(r.traffic) : newFarm
       ? decodeTraffic(object(r.newFarm, 'new farm state').traffic) : coldTrafficDefaults(),
@@ -282,7 +282,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   return { scenarioId, state };
 }
 
-function decodeFlight(value: unknown, world: Scenario): AircraftFlight | null {
+function decodeFlight(value: unknown, world: Scenario, speed: number): AircraftFlight | null {
   if (value === null) return null;
   const f = object(value, 'aircraft flight');
   const columns = number(f.columns, 8, 80, 'flight columns'), rows = number(f.rows, 8, 80, 'flight rows');
@@ -302,7 +302,10 @@ function decodeFlight(value: unknown, world: Scenario): AircraftFlight | null {
     turbulence: boolean(f.turbulence, 'flight turbulence'), turbulenceTick: number(f.turbulenceTick, 0, 65535, 'flight turbulence tick'),
     spin: number(f.spin, 0, 65535, 'flight spin'), inputs: [...f.inputs], active: true,
     resumePaused: boolean(f.resumePaused, 'flight return pause'),
+    // Added without a version bump: older mid-flight saves return to the speed they were saved with.
+    resumeSpeed: f.resumeSpeed === undefined ? speed : number(f.resumeSpeed, 0.25, 16, 'flight return speed', false),
   };
+  if (!SIMULATION_SPEEDS.some(n => n === result.resumeSpeed)) fail('flight return speed');
   if (!validFlightAircraft(world, result.slot)) fail('flight aircraft/home');
   const tick = world.farm.animationTicks;
   if (((tick - result.lastFrameTick) & 65535) > 1 || ((tick - result.lastFuelTick) & 65535) > 33 ||
