@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import type { TerrainPreviewAssets } from '../assets/game-assets';
+import { focusUnlessClaimed } from './focus';
 import type { CustomFarmSetup } from '../simulation/custom-farm-setup';
 import { paintTerrainPreview, renderTerrainPreview } from '../render/terrain-preview';
 
@@ -16,7 +17,7 @@ export function TerrainDesign({ draft, assets, onPlay, onCancel, error }: {
   const state = useSyncExternalStore(draft.subscribe, draft.getSnapshot), { settings, preview } = state;
   const heading = useRef<HTMLHeadingElement>(null), canvas = useRef<HTMLCanvasElement>(null);
   const [actionError, setActionError] = useState('');
-  useEffect(() => { heading.current?.focus(); }, []);
+  useEffect(() => { focusUnlessClaimed(heading.current); }, []);
   const rendered = useMemo(() => {
     try {
       if (!preview.locations) throw new Error('No starting sites selected');

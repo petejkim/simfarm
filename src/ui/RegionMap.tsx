@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent } from 'react';
 import type { RegionAssets } from '../assets/game-assets';
+import { focusUnlessClaimed } from './focus';
 import { paintRegionChooser, renderRegionChooser, REGION_PANEL } from '../render/region-chooser';
 
 const position = (x: number, y: number, width: number, height: number): CSSProperties => ({
@@ -14,7 +15,7 @@ export function RegionMap({ assets, selected, disabled, unavailable, onSelect, o
   onDesign: () => void; onLoad: () => void; onQuit: () => void;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null), heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => { heading.current?.focus(); }, []);
+  useEffect(() => { focusUnlessClaimed(heading.current); }, []);
   const raster = useMemo(() => renderRegionChooser(assets.artwork, assets.farms, assets.locations[selected]), [assets, selected]);
   useEffect(() => { if (canvas.current) paintRegionChooser(canvas.current, raster); }, [raster]);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);

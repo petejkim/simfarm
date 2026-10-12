@@ -159,3 +159,15 @@ test('custom farms start with the selected climate and remembered Options',async
   await page.locator('#load-farm-file').setInputFiles({name:'accepted.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(accepted))});
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');expect(await save(page)).toEqual(accepted);
 });
+
+test('the terrain designer finishing its load does not close a menu the player opened meanwhile',async({page})=>{
+  await start(page);await newGame(page);
+  // Hold the designer's assets so the File menu is opened while it is still loading.
+  let release=()=>{};const gate=new Promise<void>(resolve=>{release=resolve;});
+  await page.route('**/assets/new-farm-setup.json',async route=>{await gate;await route.continue();});
+  await reveal(page,'#region-design');await page.locator('#region-design').click();
+  await page.locator('#file-menu-button').click();const saveItem=page.getByRole('menuitem',{name:'Save',exact:true});await expect(saveItem).toBeVisible();
+  release();await expect(page.getByRole('heading',{name:'Design your terrain'})).toBeVisible();
+  await expect(saveItem).toBeVisible();await expect(page.locator('#file-menu-button')).toHaveAttribute('aria-expanded','true');
+  const pending=page.waitForEvent('download');await saveItem.click();await pending;
+});
