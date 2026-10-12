@@ -106,3 +106,16 @@ Windows compose these with flex/grid layouts whose spacing derives from source c
    - keep that window's source-evidence tests.
 
 Record each step's measurements, accepted differences and validation in progress.md, and in the window's own doc.
+
+## Native windows (2026-10-12)
+
+At the user's request, native-only windows now match the original windows: they use the common wooden frame and shared chrome instead of the earlier ridge border and browser form controls. Shared CSS lives in the chrome section of `style.css`:
+- `.native-window`: a face client with bold monospace labels.
+- `.native-status`: a `SunkenInset` status box.
+- `.native-value`: a value inset.
+- `.chrome-select`: a sunken select with an ink arrow.
+- `.chrome-range`: a sunken track with a raised thumb.
+- `.native-button`: caption `BevelButton`s.
+
+Converted so far:
+- **Speed:** status box, speed slider with its value inset, and Play/Pause and Next day buttons.

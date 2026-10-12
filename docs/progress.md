@@ -2948,3 +2948,7 @@ Finance, Disaster, Field, Building, Town event, Default and Bulldoze now share `
 ## 2026-10-12 — Town choice rebuilt on shared chrome
 
 The window is now framed under its plank title, with picture `BevelButton`s (bitmap faces), HTML captions and a `RaisedPanel` for the instructions. The pressed-image overlay was replaced by the shared bevel swap. The town-choice and town specs pass.
+
+## 2026-10-12 — Speed window on shared chrome
+
+Per the user's consistency request, Speed is now a framed window: a sunken status box (weather, run state, schedule status), a chrome-styled speed slider with a value inset, and Play/Pause and Next day `BevelButton`s. It adds shared native-window CSS (see ui-components.md, Native windows). The legacy dashboard font override on `#farm-weather` and `#time-status` was dropped. The options, weather-window, autosave, native and startup-music specs pass; `native.spec`'s Expert photo check was updated for the earlier Expert sprite change (separate test commit).

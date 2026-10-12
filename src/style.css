@@ -3,7 +3,7 @@
 .field-care{border-bottom:1px solid #48563f;padding-bottom:4px}#field-treatment{max-width:100%}
 .land-panel{border-bottom:1px solid #48563f;margin-bottom:20px;padding-bottom:16px;font-size:12px;line-height:1.6;color:#c2cbb4}.clearing{align-items:flex-start}.clearing input{margin-top:4px}.land-panel select{max-width:100%}input:focus-visible{outline:2px solid #e4ce83;outline-offset:2px}
 .harvest-inventory{font-size:12px;line-height:1.6;color:#c2cbb4}.harvest-inventory{border-bottom:1px solid #48563f;margin-bottom:20px;padding-bottom:12px}
-.time-controls{border-top:1px solid #44503b;font-size:12px;flex-wrap:wrap}.time-controls>div{flex-wrap:wrap}#farm-weather,#time-status,#field-growth{color:#c2cbb4;font-size:12px}#field-growth{line-height:1.6}#viewport{height:calc(100vh - 308px)}aside{max-height:calc(100vh - 268px)}@media(max-width:800px){#viewport{height:55vh}aside{max-height:none}}
+.time-controls{border-top:1px solid #44503b;font-size:12px;flex-wrap:wrap}.time-controls>div{flex-wrap:wrap}#field-growth{color:#c2cbb4;font-size:12px}#field-growth{line-height:1.6}#viewport{height:calc(100vh - 308px)}aside{max-height:calc(100vh - 268px)}@media(max-width:800px){#viewport{height:55vh}aside{max-height:none}}
 .toolbar{flex-wrap:wrap}
 .loan-panel{margin:0 0 16px;padding:12px 16px;border:1px solid #48563f;background:#20291d;color:#c2cbb4;line-height:1.5}.loan-panel summary{cursor:pointer;color:#ead6a1;font-weight:bold}.loan-panel dl{display:flex;gap:12px 30px;flex-wrap:wrap}.loan-panel dt{font-size:12px;color:#a8b598}.loan-panel dd{margin:0;color:#ead6a1}.loan-panel form{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.loan-panel input{width:125px;max-width:100%;padding:7px;color:#f3ecd9;background:#111b11;border:1px solid #7a8964}.loan-panel p{font-size:13px}
 
@@ -103,6 +103,25 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .bevel-button-face{position:relative;display:flex;flex:1;align-items:center;justify-content:center;border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light);background-color:var(--face);background-repeat:no-repeat;image-rendering:pixelated;overflow:hidden;line-height:1}
 .bevel-button:active:not(:disabled) .bevel-button-face,.bevel-button.is-pressed .bevel-button-face{border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
 .bevel-button:disabled .bevel-button-face[style*=background-image]::after{content:'';position:absolute;inset:0;background:#c2c2c260}
+/* Native windows on shared chrome (Speed, Settings, file dialogs): framed face client, bold monospace labels,
+   sunken status/value insets, chrome-styled select and range controls, caption BevelButtons. */
+.native-window{display:flex;flex-direction:column;gap:6px;width:288px;padding:8px;color:var(--ink);font:10px/12px monospace}
+.native-status{display:flex;flex-direction:column;gap:2px;padding:3px 4px;background:var(--face)}
+.native-row{display:flex;align-items:center;gap:6px;font:inherit}
+.native-label{flex:none;width:56px;font-weight:bold}
+.native-value{display:flex;align-items:center;justify-content:center;width:40px;height:16px}
+.native-actions{display:flex;justify-content:center;gap:16px;margin-top:2px}
+.native-button{min-width:72px;height:24px;padding-inline:1px;font:bold 10px/1 Arial,sans-serif}
+.native-button .bevel-button-face{padding:0 6px}
+.native-note{overflow-wrap:anywhere}
+.game-window select.chrome-select{flex:1;height:18px;padding:0 16px 0 3px;border:2px solid;border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow);border-radius:0;appearance:none;-webkit-appearance:none;
+  background:var(--face) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4'%3E%3Cpath d='M0 0h7L3.5 4z'/%3E%3C/svg%3E") no-repeat right 4px center;color:var(--ink);font:10px/14px monospace}
+.game-window input.chrome-range{flex:1;height:16px;margin:0;padding:0;border:2px solid;border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow);border-radius:0;background:var(--lettering);appearance:none;-webkit-appearance:none}
+.chrome-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:12px;height:12px;box-sizing:border-box;background:var(--face);border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light);outline:1px solid var(--ink);outline-offset:-1px}
+.chrome-range::-moz-range-thumb{width:12px;height:12px;box-sizing:border-box;border-radius:0;background:var(--face);border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light)}
+.chrome-range:disabled{opacity:.6}
+.browser-settings .music-controls{display:flex;flex-direction:column;align-items:stretch;gap:6px}
+.browser-settings [role=status]{overflow-wrap:anywhere}
 .sprite{display:block;flex:none;background-repeat:no-repeat;image-rendering:pixelated}
 /* Wooden frame: 9-slice of Sell's frame (window-frame.png), 8px sides and bottom under the shared title bar. */
 .game-window[data-framed]{width:max-content;border:0}
@@ -613,12 +632,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .file-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
 /* Browser presentation preferences use the shared original-style movable frame. */
-.game-window[data-window=options]{width:320px}
-.browser-settings{display:grid;gap:12px;padding:8px;font:12px/16px Arial,sans-serif}
-.browser-settings .music-controls{display:grid;gap:12px;max-width:none}
-.browser-settings label,.browser-settings .music-controls label:first-child{display:flex;justify-content:space-between;gap:12px}
-.browser-settings .volume{display:flex}
-.browser-settings [role=status]{overflow-wrap:anywhere}
 
 /* About DSa452: original400×240 frame, registration intentionally omitted. */
 /* About: 384×216 client; coordinates are client pixels (source x−8). */
