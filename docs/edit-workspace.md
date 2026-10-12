@@ -59,3 +59,19 @@ User request: lay out the main screen with flexbox and remove minimum sizes.
 - **Viewport.** The terrain viewport has no min-height and no hover tooltip.
 
 At 1280×900 every element keeps its previous coordinates except the strip width, readouts and forecast. Narrow pages clip the strip's right side rather than scrolling. Mobile adaptation remains out of scope.
+
+## Terrain scrollbars (2026-10-12, user request)
+
+The terrain viewport keeps the browser's own scrollbars. It now uses `overflow: scroll`, so both bars are always visible, and CSS styles them like the Schedule window's scroll bar:
+- **Size and track:** 16px bars; the track is a 1px face/shadow checker (`repeating-conic-gradient`) between ink edges.
+- **Thumb and buttons:** the thumb and the four single arrow buttons (`:start:decrement`, `:end:increment`) are ink-framed 2px bevel faces, with the bevel swapping while pressed.
+- **Arrows:** inline crisp-edged SVG.
+
+No custom scrollbar was implemented.
+
+Limitations:
+- `::-webkit-scrollbar` styling applies in Chromium and Safari. Firefox gets a plain `scrollbar-color` fallback via `@supports`.
+- The old `scrollbar-color` on `#viewport` was removed, because current Chromium ignores `::-webkit-scrollbar` when it is set.
+- Playwright's headless Chromium hides scrollbars by default. `viewport-scrollbars.spec.ts` drops `--hide-scrollbars` and checks the 16px bars, button frame/bevel, track edges and checker. The other specs keep hidden scrollbars, so their geometry is unchanged.
+
+Validation: viewport-scrollbars, navigation, aircraft-flight, window-viewport, edit-workspace and placement-outline specs pass.

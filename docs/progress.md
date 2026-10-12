@@ -3015,3 +3015,7 @@ The crop inset now fits its icons exactly. Gauges now combine the bitmap's 56×3
 ## 2026-10-12 — AIRPLANE gauges uncropped
 
 The gauges now show the whole dial (bitmap rim plus field-gauge frame), matching the Schedule fix. The aircraft specs pass.
+
+## 2026-10-12 — Terrain viewport scrollbars styled and always visible
+
+The browser scrollbars on `#viewport` are styled with CSS to match the Schedule scroll bar (checker track, bevel thumb and arrow buttons) and always shown. A new spec checks them with real scrollbars. Details are in edit-workspace.md.
