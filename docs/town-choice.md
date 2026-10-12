@@ -30,4 +30,4 @@ The town choice window keeps the `twnchoic.bmp` plank as its title-bar artwork a
 - **Timeout:** the underlined "Let town decide" link.
 - **Instructions:** sit in a 240×80 `RaisedPanel`.
 
-The pressed state is now the shared bevel swap. `town-choice-pressed.png` is no longer used by the UI; it is still loaded (cleanup deferred). The browser spec checks button geometry, sprite face offsets, the pressed bevel and that no image or canvas remains. Previously the button box was 73×73 including its shadow; it is now 72×72 with a CSS shadow. Validation: town-choice and town specs pass.
+The pressed state is now the shared bevel swap. `town-choice-pressed.png` is no longer used by the UI; it is no longer loaded at runtime. The browser spec checks button geometry, sprite face offsets, the pressed bevel and that no image or canvas remains. Previously the button box was 73×73 including its shadow; it is now 72×72 with a CSS shadow. Validation: town-choice and town specs pass.

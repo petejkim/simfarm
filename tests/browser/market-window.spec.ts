@@ -98,7 +98,3 @@ test('town shop footprints open original routes by both buttons and zooms while 
   await mapClick(page,10,30,'right');await expect(page.locator('[data-window=market]')).toBeVisible();expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   const state=readNativeSave(game.save(4)).state;state.finances.defaultDecision={status:'pending',originalExitCode:0};const blocked=writeNativeSave(state,4);await load(page,blocked);await mapClick(page,10,30,'right');await expect(page.locator('[data-window=market]')).toBeHidden();expect(await save(page)).toEqual(JSON.parse(blocked));
 });
-
-test('missing Market artwork reports an asset error before creating a farm',async({page})=>{
-  await page.route('**/assets/market-window.png',route=>route.abort());await page.goto('/');await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('.loading')).toContainText('market-window.png');await expect(page.locator('#world')).toHaveCount(0);
-});

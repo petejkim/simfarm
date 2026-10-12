@@ -54,4 +54,4 @@ Seven message popups now render through one `src/ui/MessageDialog.tsx`: Finance,
 - **Text:** a 224×56 HTML paragraph at (8,80). Bulldoze keeps its own font.
 - **Buttons:** 48×24 caption `BevelButton`s at y 140, either one centred at x 96 or a pair at 32 and 160.
 
-Window, portrait and button positions are unchanged and asserted by the existing specs. The popup bitmap no longer backs the window, and the separate `message-button.png` caption image is no longer used by the UI (it is still loaded; cleanup deferred). Validation: default-dialog, direct-bulldoze, bulldoze, disaster-messages, field-message, finance-messages, town-event-calendar and water-storage specs pass.
+Window, portrait and button positions are unchanged and asserted by the existing specs. The popup bitmap no longer backs the window, and the separate `message-button.png` caption image is no longer used by the UI (no longer loaded at runtime). Validation: default-dialog, direct-bulldoze, bulldoze, disaster-messages, field-message, finance-messages, town-event-calendar and water-storage specs pass.

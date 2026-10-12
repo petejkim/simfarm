@@ -71,7 +71,3 @@ test('Evaluation follows season/year rollover, clears resolved problems and sugg
   await load(page,game.save(4));await open(page);await expect(page.locator('.evaluation-panel .sprite')).toHaveCount(0);
   await page.getByRole('dialog',{name:'Evaluation',exact:true}).locator('.game-window-title').focus();await page.keyboard.press('Escape');await expect(page.getByRole('dialog',{name:'Evaluation',exact:true})).toBeHidden();
 });
-
-test('missing Evaluation artwork fails before starting a farm',async({page})=>{
-  await page.route('**/assets/evaluation-window.png',route=>route.abort());await page.goto('/');await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('#world')).toHaveCount(0);
-});

@@ -116,7 +116,7 @@ test('Expert navigation and portrait play original PCM only when enabled, with m
 });
 
 test('missing or malformed Expert resources fail before creating a farm',async({page})=>{
-  for(const url of ['farmburo.bmp.png','expert-portrait.png','raw/card48.hc']){
+  for(const url of ['expert-portrait.png','raw/card48.hc']){
     await page.route(`**/assets/${url}`,r=>r.fulfill({status:404,body:'Missing Expert asset'}));await page.goto('/');
     await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('.loading')).toContainText(url);await expect(page.locator('#world')).toHaveCount(0);await page.unroute(`**/assets/${url}`);
   }

@@ -55,8 +55,8 @@ test('Examine covers ground machinery, livestock, chemicals and terrain without 
   await point(page,40,40);await expect(page.locator('#examine-text')).toHaveText('Tractor');expect(await save(page)).toEqual(JSON.parse(before));
 });
 
-test('missing Examine artwork stops asset loading before play',async({page})=>{
-  await page.route('**/assets/examine-window.png',r=>r.abort());await page.goto('/');
+test('missing Examine data stops asset loading before play',async({page})=>{
+  await page.route('**/assets/examine.json',r=>r.abort());await page.goto('/');
   await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('#world')).toHaveCount(0);
 });
 

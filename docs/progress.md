@@ -2980,3 +2980,14 @@ The three forecast icons are now tile sprites, replacing the canvas. The weather
 ## 2026-10-12 — Milestone regression after the window rebuilds
 
 Full regression: unit 940/940 passed. Browser: 294/295 passed. The one failure was `new-game-layout.spec.ts`, which still expected the old unframed panel boxes; it now expects the framed client boxes (456×311 chooser, 336×288 designer) and passes 2/2. Remaining canvases are dynamic imagery only: the terrain map and the Map window's overview and legend.
+
+## 2026-10-12 — Unused window artwork no longer loaded at runtime
+
+After the rebuilds, the UI no longer uses six imported images: `market-window.png`, `evaluation-window.png`, `examine-window.png`, `farmburo.bmp.png`, `message-button.png` and `town-choice-pressed.png`. The runtime no longer loads them. The importer still writes them and their unit tests still pin them as preservation evidence.
+
+Missing-asset browser tests were updated to match:
+- Market and Evaluation no longer depend on a window image, so their tests were removed.
+- Examine now checks `examine.json`.
+- Expert checks only the portrait and cards.
+
+The related specs pass (25/25).
