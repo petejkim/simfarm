@@ -2908,3 +2908,7 @@ Framed window; bezel/recess/screen/ledge/bay are CSS borders and backgrounds; ke
 ## 2026-10-12 — Map rebuilt on shared chrome
 
 Framed flex window with BevelButton modes/help/actions, SunkenInset land readout and map frame; overview outline and legend layered via grid (no absolute positioning, no background art). map-window/navigation/native map specs pass.
+
+## 2026-10-12 — Schedule rebuilt on shared chrome
+
+Framed flex window replacing the background bitmap and canvas; details in schedule-window.md. Found and fixed a render-time component definition that remounted tiles every frame (native time-controls test timed out). Schedule/native/navigation/crops/field/new-farm/examine specs pass 50/50.

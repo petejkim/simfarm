@@ -90,3 +90,26 @@ Browser helpers:
 - `expectWeekPlan` in `schedule-window.ts`.
 
 One native.spec check of the chooser's map centring was dropped with the chooser.
+
+## Rebuilt on shared chrome (2026-10-12)
+
+User request (ui-components.md). Schedule is a framed `GameWindow` around a 320×216 flex client. The canvas (`src/render/schedule-preview.ts`, removed) and the background bitmap are no longer used.
+
+**Top:**
+- The crop badge `SunkenInset` with "Crop" below.
+- The water and temperature `BevelButton`s (source icon sprites, pressed while their overlay shows) on either side of the 8×2 crop-picker inset.
+- The ‹ › page buttons, and the tool badge inset with "Tool".
+
+**Middle:**
+- Three month insets.
+- The action inset (2×3 tile buttons).
+- The black-bordered calendar strip: the source ruler sprite; 12 week tile buttons, with a 3px yellow bar marking the current week; and the month scroll (arrow buttons with source glyphs, the source track sprite with the tile-194 thumb, and a transparent range input on top for pointer and keyboard).
+- The season inset, and the TODAY / CUT / CLOSE buttons.
+
+**Bottom:** two sunken panels.
+- **Field panel:** value and maturity readouts (maturity is an 80×8 bar, palette 12 with a palette 6 fill), and the Disease, Pests and Weeds gauges.
+- **Crop panel:** the Crop/Quality labels with the condition badge inset, and the Water and Soil gauges.
+
+Gauges show the field-gauge frame when a field is selected, otherwise the source dial sprite. Tiles 849..1047 use the masked atlas, as in source 2d2b2.
+
+Performance note: tile helpers are plain functions, not components defined during render (which remounted every sprite on each animation frame and slowed time advancement).

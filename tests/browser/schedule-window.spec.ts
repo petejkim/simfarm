@@ -84,14 +84,14 @@ test('Schedule restores source geometry, field artwork, gauges, all24 crops and 
   await openWindow(page,'schedule');await chooseField(page,1);
   const dialog=page.getByRole('dialog',{name:'Schedule',exact:true});
   expect(await dialog.locator('.game-window-title').boundingBox()).toEqual({x:160,y:80,width:336,height:16});
-  expect(await page.locator('.schedule-window').boundingBox()).toEqual({x:160,y:96,width:336,height:224});
-  expect(await page.locator('.schedule-preview').boundingBox()).toEqual({x:160,y:96,width:336,height:224});
+  // Shared frame around a 320×216 client of components; no background bitmap or canvas.
+  expect(await page.locator('.schedule-window').boundingBox()).toEqual({x:168,y:96,width:320,height:216});
+  await expect(page.locator('.schedule-window').locator('img,canvas')).toHaveCount(0);
   await expect(page.locator('[data-plan-week]')).toHaveCount(12);await expect(page.locator('[data-plan-action]')).toHaveCount(6);
   await expect(page.locator('.schedule-label').filter({hasText:'Disease'})).toHaveText('Disease');
-  const archive=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),asset=(name:string)=>archive.find(e=>e.name===name)!.bytes;
-  const palette=readPalette(asset('simfarm.pal')),gauge=Math.floor(field.bytes[22]/52);
-  const pixels=decodePlanar(asset('fldgrph.til').subarray(gauge*576,(gauge+1)*576),48,24,palette).rgba;
-  expect(await page.locator('.schedule-preview').evaluate((c:HTMLCanvasElement)=>[...c.getContext('2d')!.getImageData(24,176,48,24).data])).toEqual([...pixels]);
+  // Disease gauge shows fldgrph.til frame floor(byte22/52) from the field-gauge sheet.
+  const gauge=Math.floor(field.bytes[22]/52),disease=page.locator('.schedule-gauge').first();
+  expect(await disease.evaluate(el=>[getComputedStyle(el).backgroundImage.includes('field-gauges'),getComputedStyle(el).backgroundPosition,el.getBoundingClientRect().width,el.getBoundingClientRect().height])).toEqual([true,`${-gauge*48}px 0px`,48,24]);
   await page.getByRole('button',{name:'Water overlay',exact:true}).click();
   const first=browserCrops.find(c=>`${c.id}.crp`===world.cropFiles[0])!;
   await expect(page.locator('[data-plan-crop="0"]')).toHaveText(String(first.rawDefinition[40]>>>1));
@@ -103,9 +103,11 @@ test('Schedule restores source geometry, field artwork, gauges, all24 crops and 
   await expect(page.locator('[data-plan-crop]')).toHaveCount(16);await page.getByRole('button',{name:'Next crops',exact:true}).click();
   await expect(page.locator('[data-plan-crop]')).toHaveCount(8);await page.locator('[data-plan-crop="23"]').click();
   await expect(page.locator('[data-plan-crop="23"]')).toHaveAttribute('aria-pressed','true');
-  const toolPixels=await page.locator('.schedule-preview').evaluate((c:HTMLCanvasElement)=>[...c.getContext('2d')!.getImageData(272,8,32,32).data]);
+  // CUT leaves the previous tool badge in place (source behaviour).
+  const toolBadge=()=>page.locator('.schedule-badge-column').last().locator('.sprite').evaluateAll(els=>els.map(el=>getComputedStyle(el).backgroundPosition));
+  const toolTiles=await toolBadge();expect(toolTiles).toHaveLength(4);
   await page.getByRole('button',{name:'Clear remaining plan',exact:true}).click();
-  expect(await page.locator('.schedule-preview').evaluate((c:HTMLCanvasElement)=>[...c.getContext('2d')!.getImageData(272,8,32,32).data])).toEqual(toolPixels);
+  expect(await toolBadge()).toEqual(toolTiles);
   await scheduleMonth(page,57);await expect(page.locator('[data-plan-week="239"]')).toBeVisible();
   await expect(page.getByRole('button',{name:'Next month',exact:true})).toBeDisabled();
   await page.getByRole('button',{name:'TODAY',exact:true}).click();await expect(page.locator('#schedule-month')).toHaveValue(String(world.farm.calendar.month));

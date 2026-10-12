@@ -221,6 +221,60 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .overview-gradient{width:64px;height:8px;image-rendering:pixelated;outline:2px groove #fff}
 .overview-trade,.overview-close{width:48px;height:24px;font:bold 10px Arial,sans-serif}
 .overview-close{margin-left:auto}
+/* Schedule: 320×216 client (source x−8). Top row: crop badge, water, crop picker, pages, temperature, tool badge;
+   month boxes; actions, calendar strip (ruler, weeks, month scroll) and season, buttons; two lower panels. */
+.game-window[data-window=schedule]{left:160px;top:80px;right:auto}
+.schedule-window{display:flex;flex-direction:column;width:320px;height:216px;padding-top:6px;color:var(--ink);font:10px/10px monospace}
+.schedule-label{font:bold 10px/12px monospace;text-align:center;white-space:nowrap}
+.schedule-top{display:flex;align-items:flex-start;padding-left:22px}
+.schedule-badge-column{display:flex;flex-direction:column;align-items:center}
+.schedule-badge-box{width:36px;height:36px}
+.schedule-badge{display:grid;grid-template-columns:16px 16px}
+.schedule-weather{width:18px;height:23px;margin:7px 0 0 14px}
+.schedule-weather-temperature{margin-left:2px}
+.schedule-crops+.schedule-weather{margin-left:2px}
+.schedule-crops{display:grid;grid-template-columns:repeat(8,16px);grid-auto-rows:16px;width:134px;height:36px;margin-left:2px;padding-left:2px}
+.schedule-pages{display:flex;flex-direction:column;margin-left:1px}
+.schedule-page{width:16px;height:16px;font:bold 14px/1 monospace}
+.schedule-top>.schedule-badge-column:last-child{margin-left:0}
+.game-window .schedule-window button.schedule-icon{display:grid;width:16px;height:16px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--ink)}
+.schedule-icon>*{grid-area:1/1}
+.schedule-window button.schedule-icon[aria-pressed=true]{outline:1px solid #ffff00;outline-offset:-1px}
+.schedule-window button.schedule-icon:focus-visible{outline:1px dotted #fff;outline-offset:-2px}
+.schedule-weather-number{align-self:start;justify-self:start;font:8px/8px monospace;color:#fff;pointer-events:none}
+.schedule-now{align-self:stretch;justify-self:start;width:3px;margin-left:6px;background:#fff304}
+.schedule-months{display:flex;gap:35px;margin:1px 0 0 85px}
+.schedule-month{display:flex;align-items:center;justify-content:center;width:29px;height:13px;font:8px/10px monospace}
+.schedule-middle{display:flex;align-items:flex-start;margin-top:0}
+.schedule-actions{display:grid;grid-template-columns:16px 16px;grid-auto-rows:16px;width:36px;height:52px;margin:1px 0 0 14px}
+.schedule-center{display:flex;flex-direction:column;align-items:center;margin-left:13px}
+.schedule-strip{display:flex;flex-direction:column;width:194px;border:1px solid var(--ink);background:var(--face)}
+.schedule-ruler{width:192px;height:9px;border-bottom:1px solid var(--ink)}
+.plan-calendar{display:flex}
+.schedule-scroll{display:flex}
+.schedule-scroll-button{width:16px;height:16px}
+.schedule-track{display:grid;width:160px;height:16px;background-repeat:no-repeat;image-rendering:pixelated}
+.schedule-track>*{grid-area:1/1}
+.schedule-thumb{display:block;width:16px;height:16px;pointer-events:none}
+.schedule-window #schedule-month{width:160px;height:16px;margin:0;padding:0;opacity:0;cursor:pointer}
+.schedule-track:has(#schedule-month:focus-visible){outline:1px dotted #000}
+.schedule-season-box{display:flex;align-items:center;justify-content:center;width:134px;height:13px;margin-top:2px}
+.schedule-buttons{display:flex;flex-direction:column;gap:0;margin-left:7px}
+.schedule-caption{width:48px;height:16px;font:bold 10px/1 monospace}
+.schedule-close{margin-top:8px}
+.schedule-panels{display:flex;flex:1;margin-top:3px;padding-left:1px}
+.schedule-panel{display:flex;flex-direction:column;border-bottom:0;padding-top:4px}
+.schedule-panel-field{width:188px}
+.schedule-panel-crop{width:131px}
+.schedule-readout-row{display:flex;align-items:center;justify-content:space-between;height:16px;padding:0 6px 0 4px}
+.schedule-readout{display:flex;align-items:center;width:86px;height:13px;padding:0 2px}
+.schedule-maturity-bar{display:block;width:80px;height:8px;background:var(--face)}
+.schedule-maturity-bar>span{display:block;height:8px;background:#0000eb}
+.schedule-gauges{display:flex;gap:8px;margin-top:auto;padding:0 0 2px 13px}
+.schedule-panel-crop .schedule-gauges{padding-left:17px}
+.schedule-gauge-cell{display:flex;flex-direction:column;align-items:center}
+.schedule-quality-row{display:flex;align-items:center;justify-content:space-between;padding:0 14px 0 6px}
+.schedule-quality-labels{display:flex;flex-direction:column}
 .original-control-bar{position:relative;z-index:1;display:flex;align-items:stretch;height:32px;font:10px/1 Arial,Helvetica,sans-serif;color:var(--ink);background:var(--face);box-shadow:inset 0 1px var(--ink)}
 .toolbar-launchers{display:flex;flex:none}
 .window-launcher{width:32px;height:32px}
@@ -369,29 +423,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 /* Map DS68ce:288×240 client, miniature at72,0; source UI scale1×. */
 
 /* Schedule DS5d8c:336×224 client at160,80 with original16px title. */
-.game-window[data-window=schedule]{left:160px;top:80px;right:auto;width:336px;border:0;max-height:calc(100% - 96px)}
-.game-window[data-window=schedule] .game-window-body{padding:0}
-.schedule-window{position:relative;width:336px;height:224px;color:#000;font:10px/10px monospace}
-.schedule-window>img{display:block;image-rendering:pixelated;pointer-events:none}
-.schedule-preview{position:absolute;inset:0;width:336px;height:224px;pointer-events:none;image-rendering:pixelated}
-.game-window .schedule-window button{position:absolute;border:0;border-radius:0;padding:0;background:transparent;color:#000;margin:0;font:bold 10px/12px monospace}
-.game-window .schedule-window button:hover:not(:disabled){background:#fff3}
-.schedule-icon{width:16px;height:16px}
-.schedule-window button[aria-pressed=true]{outline:1px solid #ffff00;outline-offset:-1px}
-.schedule-window button:focus-visible{outline:1px dotted #fff;outline-offset:-2px}
-.schedule-label{position:absolute;text-align:center;font:bold 10px/12px monospace}
-.schedule-month{position:absolute;top:50px;font:8px/10px monospace}
-.schedule-season{position:absolute;left:104px;top:108px;font:10px/10px monospace}
-.game-window .schedule-page{left:254px;width:16px;height:16px;font:bold 14px/16px monospace}
-.schedule-caption{left:272px;width:48px;height:16px}
-.schedule-window #schedule-month{position:absolute;left:88px;top:88px;width:160px;height:16px;opacity:0;margin:0;cursor:pointer}
-.schedule-window:has(#schedule-month:focus-visible):after{content:'';position:absolute;left:88px;top:88px;width:160px;height:16px;outline:1px dotted #000;pointer-events:none}
-.schedule-window .schedule-weather-number{position:absolute;left:0;font:8px/8px monospace;color:#fff;pointer-events:none}
-#schedule-value{position:absolute;left:120px;top:132px;font:10px/10px monospace}
-.schedule-quality{position:absolute;left:272px;top:128px}
 
-.schedule-window .plan-calendar{position:absolute;inset:0;pointer-events:none}
-.schedule-window .plan-calendar>button{pointer-events:auto}
 
 /* Edit Plant/Spray popups DS545e/54b0, relative to fixed Edit origin. */
 .field-tool-menu{position:absolute;z-index:80;background:#c2c2c2;color:#000;box-shadow:4px 4px #0008;font:10px/10px monospace}

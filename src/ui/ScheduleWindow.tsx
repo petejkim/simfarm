@@ -6,15 +6,19 @@ import { describeScheduleEntry } from '../formats/field-schedule';
 import { SCHEDULE_ACTIONS } from '../formats/schedule-window';
 import { scheduleCropHint, scheduleFieldView } from '../simulation/schedule-view';
 import type { FieldPlanEdit } from '../simulation/field-plan-edit';
-import { drawSchedulePreview } from '../render/schedule-preview';
+import { cropBadgeTile, cropPlantTile } from '../formats/crop-slots';
 import { ConditionBadge } from './ConditionBadge';
 import { GameWindow, useWindows } from './GameWindow';
+import { BevelButton } from './chrome/BevelButton';
+import { SunkenInset } from './chrome/SunkenInset';
+import { Sprite, spriteFace } from './chrome/Sprite';
+import { TileSprite } from './chrome/TileSprite';
 
 const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
-interface Props { assets:GameAssets; snapshot:GameSnapshot; tiles:CanvasImageSource; field?:FieldRecord;
+interface Props { assets:GameAssets; snapshot:GameSnapshot; tiles:HTMLImageElement; field?:FieldRecord;
   inspection:{month:number}|null; focusRef:Ref<HTMLElement>; onCommand:(command:GameCommand)=>void }
 export function ScheduleWindow(props:Props){
-  return <GameWindow windowKey="schedule" title="Schedule">
+  return <GameWindow windowKey="schedule" title="Schedule" framed>
     <ScheduleEditor key={`${props.field?.slot}-${props.snapshot.scenario.farm.calendar.year}`} {...props}/>
   </GameWindow>;
 }
@@ -32,7 +36,7 @@ function ScheduleEditor({assets,snapshot,tiles,field,inspection,focusRef,onComma
   const [badge,setBadge]=useState<FieldPlanEdit>({kind:'plant',cropSlot:0});
   function chooseAction(next:FieldPlanEdit){setAction(next);if(next.kind!=='clear')setBadge(next);}
   const [overlay,setOverlay]=useState<'water'|'temperature'|null>(null);
-  const canvas=useRef<HTMLCanvasElement>(null),crop=(slot:number)=>assets.catalog.crops.find(c=>`${c.id}.crp`===scenario.cropFiles[slot])!;
+  const crop=(slot:number)=>assets.catalog.crops.find(c=>`${c.id}.crp`===scenario.cropFiles[slot])!;
   const view=field?scheduleFieldView(scenario,field,crop(field.cropSlot),month):null;
   const weeks=Array.from({length:12},(_,i)=>month*4+i);
   const blocked=Boolean(snapshot.pendingTown||snapshot.townEvent.pending||snapshot.finances.defaultDecision||snapshot.aircraftFlight);
@@ -49,52 +53,92 @@ function ScheduleEditor({assets,snapshot,tiles,field,inspection,focusRef,onComma
       default:return SCHEDULE_ACTIONS.find(a=>a.kind===entry.kind)!.label;
     }
   }
-  useEffect(()=>{if(canvas.current)drawSchedulePreview(canvas.current.getContext('2d')!,tiles,assets.maskedTiles,assets.fieldGauges,
-    {cropPage,cropCount:scenario.cropFiles.length,action:badge,month,now,field:field&&view?{...view,cropSlot:field.cropSlot,weeks:weeks.map(w=>scenario.schedule.get(w,field.slot-1))}:undefined},assets.catalog.palette);
-  },[assets,tiles,snapshot,field,cropPage,badge,month]);
   const tool=action.kind==='plant'?`Plant ${crop(action.cropSlot).name}`:action.kind==='clear'?'Clear remaining plan':SCHEDULE_ACTIONS.find(a=>a.kind===action.kind)!.label;
+  const art=assets.scheduleArtwork.src;
+  // Schedule 2d2b2 draws tiles 849..1047 from the masked atlas (848 itself from the farm atlas).
+  // Plain render helpers (not components): defining components here would remount every tile on each render.
+  const tile=(code:number,key?:number)=><TileSprite key={key} tile={code} atlas={tiles.src} masked={assets.maskedTiles.src} maskStart={849}/>;
+  const badgeOf=(parts:number[])=><span className="schedule-badge">{parts.map((t,i)=>tile(t,i))}</span>;
+  const toolBadge=badge.kind==='plant'?[0,1,2,3].map(i=>cropBadgeTile(badge.cropSlot,i))
+    :(()=>{const a=SCHEDULE_ACTIONS.find(x=>x.kind===badge.kind);return a?[0,1,2,3].map(i=>539+a.badge*4+i):[];})();
+  const weatherButton=(kind:'water'|'temperature')=><BevelButton className={`schedule-weather schedule-weather-${kind}`}
+    title={kind==='water'?'Water requirements and rainfall':'Heat requirements and temperature'} aria-label={kind==='water'?'Water overlay':'Temperature overlay'} pressed={overlay===kind}
+    faceStyle={spriteFace(art,kind==='water'?83:239,16)} onClick={()=>setOverlay(overlay===kind?null:kind)}/>;
+  const gauges=[{label:'Disease',x:24},{label:'Pests',x:80},{label:'Weeds',x:136},{label:'Water',x:216},{label:'Soil',x:272}];
+  const gauge=(i:number)=>view?<Sprite className="schedule-gauge" image={assets.fieldGauges.src} x={view.gauges[i]*48} y={0} width={48} height={24}/>
+    :<Sprite className="schedule-gauge" image={art} x={gauges[i].x} y={176} width={48} height={24}/>;
+  const labelled=(i:number)=><span key={i} className="schedule-gauge-cell">{gauge(i)}<span className="schedule-label">{gauges[i].label}</span></span>;
   return <section id="field-planner" ref={focusRef} tabIndex={-1} aria-label={field?`Field ${field.number} schedule`:'Field schedule'}>
     <div className="schedule-window">
-      <img src={assets.scheduleArtwork.src} width={336} height={224} alt="" draggable={false}/>
-      <canvas ref={canvas} className="schedule-preview" width={336} height={224} aria-label="Field and schedule graphics"/>
-      <span className="schedule-label" style={{left:30,top:42,width:36}}>Crop</span>
-      <span className="schedule-label" style={{left:272,top:42,width:32}}>Tool</span>
       <span className="schedule-crop-name sale-accessible-detail">{field?crop(field.cropSlot).name:''}</span>
       <span className="sale-accessible-detail" id="schedule-tool">{tool}</span>
-      {(['water','temperature'] as const).map((kind,i)=><button key={kind} className="schedule-weather" style={{left:i?236:82,top:13,width:18,height:23}}
-        title={kind==='water'?'Water requirements and rainfall':'Heat requirements and temperature'} aria-label={kind==='water'?'Water overlay':'Temperature overlay'} aria-pressed={overlay===kind}
-        onClick={()=>setOverlay(overlay===kind?null:kind)}/>)}
-      {scenario.cropFiles.slice(cropPage*16,cropPage*16+16).map((_,i)=>{const slot=cropPage*16+i;return <button key={slot} data-plan-crop={slot}
-        className="schedule-icon" style={{left:104+i%8*16,top:8+Math.floor(i/8)*16}} aria-label={`Plant ${crop(slot).name}`} title={`Plant ${crop(slot).name}`}
-        aria-pressed={action.kind==='plant'&&action.cropSlot===slot} onClick={()=>chooseAction({kind:'plant',cropSlot:slot})}>
-        {overlay&&<span className="schedule-weather-number" style={{top:2+i%2*6}}>{scheduleCropHint(crop(slot),overlay)}</span>}
-      </button>;})}
-      <button className="schedule-page" style={{top:8}} aria-label="Previous crops" disabled={cropPage===0} onClick={()=>setCropPage(cropPage-1)}>‹</button>
-      <button className="schedule-page" style={{top:24}} aria-label="Next crops" disabled={(cropPage+1)*16>=scenario.cropFiles.length} onClick={()=>setCropPage(cropPage+1)}>›</button>
-      {SCHEDULE_ACTIONS.map((a,i)=><button key={a.kind} data-plan-action={a.kind} className="schedule-icon" style={{left:24+i%2*16,top:64+Math.floor(i/2)*16}}
-        aria-label={a.label} title={a.label} aria-pressed={action.kind===a.kind} onClick={()=>chooseAction({kind:a.kind})}/>)}
-      {[0,1,2].map(i=><span key={i} className="schedule-month" style={{left:96+i*64}}>{months[(month+i)%12].slice(0,3)}</span>)}
-      <div className="plan-calendar" aria-label="Twelve-week field plan">
-        {weeks.map((row,i)=><button key={row} data-plan-week={row} className="schedule-icon" style={{left:72+i*16,top:72}} disabled={!field||blocked}
-          aria-label={`${date(row)}: ${description(row)}`} title={`${date(row)}: ${description(row)}`} aria-current={row===now?'date':undefined}
-          onClick={()=>{if(field)onCommand({type:'edit-field-plan',fieldSlot:field.slot,week:row,action});}}>
-          {overlay&&<span className="schedule-weather-number" style={{top:2+i%2*6}}>{scenario.climate[overlay==='water'?'precipitation':'temperature'][row]}</span>}
-        </button>)}
+      <div className="schedule-top">
+        <div className="schedule-badge-column"><SunkenInset className="schedule-badge-box">{field&&badgeOf([0,1,2,3].map(i=>cropBadgeTile(field.cropSlot,i)))}</SunkenInset><span className="schedule-label">Crop</span></div>
+        {weatherButton('water')}
+        <SunkenInset className="schedule-crops">
+          {scenario.cropFiles.slice(cropPage*16,cropPage*16+16).map((_,i)=>{const slot=cropPage*16+i;return <button key={slot} data-plan-crop={slot}
+            className="schedule-icon" aria-label={`Plant ${crop(slot).name}`} title={`Plant ${crop(slot).name}`}
+            aria-pressed={action.kind==='plant'&&action.cropSlot===slot} onClick={()=>chooseAction({kind:'plant',cropSlot:slot})}>
+            {tile(cropPlantTile(slot))}
+            {overlay&&<span className="schedule-weather-number" style={{marginTop:2+i%2*6}}>{scheduleCropHint(crop(slot),overlay)}</span>}
+          </button>;})}
+        </SunkenInset>
+        {weatherButton('temperature')}
+        <div className="schedule-pages">
+          <BevelButton className="schedule-page" aria-label="Previous crops" disabled={cropPage===0} onClick={()=>setCropPage(cropPage-1)}>‹</BevelButton>
+          <BevelButton className="schedule-page" aria-label="Next crops" disabled={(cropPage+1)*16>=scenario.cropFiles.length} onClick={()=>setCropPage(cropPage+1)}>›</BevelButton>
+        </div>
+        <div className="schedule-badge-column"><SunkenInset className="schedule-badge-box">{badgeOf(toolBadge)}</SunkenInset><span className="schedule-label">Tool</span></div>
       </div>
-      <button style={{left:72,top:88,width:16,height:16}} aria-label="Previous month" disabled={month===0} onClick={()=>setMonth(month-1)}/>
-      <input id="schedule-month" type="range" min={0} max={57} value={month} aria-label="First displayed month" aria-valuetext={`${months[month%12]} ${(calendar.year+Math.floor(month/12))&65535}`} onChange={e=>setMonth(Number(e.target.value))}/>
-      <button style={{left:248,top:88,width:16,height:16}} aria-label="Next month" disabled={month===57} onClick={()=>setMonth(month+1)}/>
-      <button className="schedule-caption" style={{top:61}} onClick={()=>setMonth(calendar.month)}>TODAY</button>
-      <button className="schedule-caption" style={{top:77}} aria-label="Clear remaining plan" title="Choose CUT, then the first week to clear" aria-pressed={action.kind==='clear'} onClick={()=>chooseAction({kind:'clear'})}>CUT</button>
-      <button className="schedule-caption" style={{top:101}} onClick={()=>windows.close('schedule')}>CLOSE</button>
-      {view&&<>
-        <span className="schedule-season">{view.season} {view.year}</span>
-        <output id="schedule-value">{view.value}</output>
-        <span role="meter" aria-label="Crop maturity" aria-valuemin={0} aria-valuemax={80} aria-valuenow={view.maturityPixels} className="sale-accessible-detail"/>
-        <ConditionBadge className="schedule-quality" quality={view.quality} artwork={assets.sellCondition} label={`Crop quality: ${['Bad','Poor','Fair','High'][view.quality]}`}/>
-      </>}
-      {[['CurrentValue',10,130,92],['Maturity',42,145,60],['Crop',216,130,36],['Quality',204,145,58],
-        ['Disease',18,200,50],['Pests',78,200,42],['Weeds',132,200,44],['Water',218,200,40],['Soil',276,200,32]].map(([label,left,top,width])=><span key={label} className="schedule-label" style={{left:Number(left),top:Number(top),width:Number(width)}}>{label}</span>)}
+      <div className="schedule-months">{[0,1,2].map(i=><SunkenInset key={i} className="schedule-month">{months[(month+i)%12].slice(0,3)}</SunkenInset>)}</div>
+      <div className="schedule-middle">
+        <SunkenInset className="schedule-actions">
+          {SCHEDULE_ACTIONS.map(a=><button key={a.kind} data-plan-action={a.kind} className="schedule-icon"
+            aria-label={a.label} title={a.label} aria-pressed={action.kind===a.kind} onClick={()=>chooseAction({kind:a.kind})}>{tile(a.tile)}</button>)}
+        </SunkenInset>
+        <div className="schedule-center">
+          <div className="schedule-strip">
+            <Sprite className="schedule-ruler" image={art} x={72} y={62} width={192} height={9}/>
+            <div className="plan-calendar" aria-label="Twelve-week field plan">
+              {weeks.map((row,i)=><button key={row} data-plan-week={row} className="schedule-icon" disabled={!field||blocked}
+                aria-label={`${date(row)}: ${description(row)}`} title={`${date(row)}: ${description(row)}`} aria-current={row===now?'date':undefined}
+                onClick={()=>{if(field)onCommand({type:'edit-field-plan',fieldSlot:field.slot,week:row,action});}}>
+                {field&&tile(scenario.schedule.get(row,field.slot-1))}
+                {field&&row===now&&<span className="schedule-now" aria-hidden="true"/>}
+                {overlay&&<span className="schedule-weather-number" style={{marginTop:2+i%2*6}}>{scenario.climate[overlay==='water'?'precipitation':'temperature'][row]}</span>}
+              </button>)}
+            </div>
+            <div className="schedule-scroll">
+              <BevelButton className="schedule-scroll-button" aria-label="Previous month" faceStyle={spriteFace(art,75,91)} disabled={month===0} onClick={()=>setMonth(month-1)}/>
+              <span className="schedule-track" style={spriteFace(art,88,88)}>
+                <span className="schedule-thumb" style={{marginLeft:Math.floor(month/6)*16}}>{tile(194)}</span>
+                <input id="schedule-month" type="range" min={0} max={57} value={month} aria-label="First displayed month" aria-valuetext={`${months[month%12]} ${(calendar.year+Math.floor(month/12))&65535}`} onChange={e=>setMonth(Number(e.target.value))}/>
+              </span>
+              <BevelButton className="schedule-scroll-button" aria-label="Next month" faceStyle={spriteFace(art,251,91)} disabled={month===57} onClick={()=>setMonth(month+1)}/>
+            </div>
+          </div>
+          <SunkenInset className="schedule-season-box">{view&&<span className="schedule-season">{view.season} {view.year}</span>}</SunkenInset>
+        </div>
+        <div className="schedule-buttons">
+          <BevelButton className="schedule-caption" onClick={()=>setMonth(calendar.month)}>TODAY</BevelButton>
+          <BevelButton className="schedule-caption" aria-label="Clear remaining plan" title="Choose CUT, then the first week to clear" pressed={action.kind==='clear'} onClick={()=>chooseAction({kind:'clear'})}>CUT</BevelButton>
+          <BevelButton className="schedule-caption schedule-close" onClick={()=>windows.close('schedule')}>CLOSE</BevelButton>
+        </div>
+      </div>
+      <div className="schedule-panels">
+        <SunkenInset className="schedule-panel schedule-panel-field">
+          <div className="schedule-readout-row"><span className="schedule-label">CurrentValue</span><SunkenInset className="schedule-readout"><output id="schedule-value">{view?.value??''}</output></SunkenInset></div>
+          <div className="schedule-readout-row"><span className="schedule-label">Maturity</span><SunkenInset className="schedule-readout schedule-maturity">
+            {view&&<span role="meter" aria-label="Crop maturity" aria-valuemin={0} aria-valuemax={80} aria-valuenow={view.maturityPixels} className="schedule-maturity-bar"><span style={{width:view.maturityPixels}}/></span>}
+          </SunkenInset></div>
+          <div className="schedule-gauges">{[0,1,2].map(labelled)}</div>
+        </SunkenInset>
+        <SunkenInset className="schedule-panel schedule-panel-crop">
+          <div className="schedule-quality-row"><span className="schedule-quality-labels"><span className="schedule-label">Crop</span><span className="schedule-label">Quality</span></span>
+            <SunkenInset className="schedule-badge-box">{view&&<ConditionBadge className="schedule-quality" quality={view.quality} artwork={assets.sellCondition} label={`Crop quality: ${['Bad','Poor','Fair','High'][view.quality]}`}/>}</SunkenInset></div>
+          <div className="schedule-gauges">{[3,4].map(labelled)}</div>
+        </SunkenInset>
+      </div>
     </div>
   </section>;
 }
