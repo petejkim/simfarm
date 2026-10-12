@@ -15,3 +15,14 @@ test('terrain viewport keeps both styled browser scrollbars visible, like the Sc
   expect(px(0,20)).toEqual([0,0,0]);expect(px(15,20)).toEqual([0,0,0]); // track ink edges
   expect([px(1,20),px(2,20)].map(c=>c.join())).toEqual(px(1,20)[0]===194?['194,194,194','130,130,130']:['130,130,130','194,194,194']); // checker
 });
+
+test('the scrollbar style is global: an overflowing Buy description gets the same 16px bar, only when needed',async({page})=>{
+  await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');await page.locator('#window-buy').click();
+  const d=page.locator('#buy-description');await expect(d).toBeVisible();
+  const width=()=>d.evaluate((e:HTMLElement)=>e.offsetWidth-e.clientWidth);
+  if(await d.evaluate((e:HTMLElement)=>e.scrollHeight<=e.clientHeight))expect(await width()).toBe(0);
+  await d.evaluate(e=>{e.textContent=(e.textContent+' ').repeat(6);});expect(await width()).toBe(16);
+  const r=(await d.boundingBox())!,{PNG}=await import('pngjs'),png=PNG.sync.read(await page.screenshot({clip:{x:r.x+r.width-16,y:r.y,width:16,height:16}}));
+  const px=(x:number,y:number)=>Array.from(png.data.subarray((y*16+x)*4,(y*16+x)*4+3));
+  expect([px(0,0),px(1,1),px(14,14)]).toEqual([[0,0,0],[255,255,255],[130,130,130]]); // framed bevel arrow button
+});

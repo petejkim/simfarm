@@ -75,3 +75,13 @@ Limitations:
 - Playwright's headless Chromium hides scrollbars by default. `viewport-scrollbars.spec.ts` drops `--hide-scrollbars` and checks the 16px bars, button frame/bevel, track edges and checker. The other specs keep hidden scrollbars, so their geometry is unchanged.
 
 Validation: viewport-scrollbars, navigation, aircraft-flight, window-viewport, edit-workspace and placement-outline specs pass.
+
+## Global scrollbar style (2026-10-12, user request)
+
+The `::-webkit-scrollbar` rules now apply to every scrolling element, not only `#viewport`. Examples include the Buy and Examine descriptions and the Help popups.
+- Only the terrain uses `overflow: scroll`; other boxes show the bar only when their content overflows.
+- Token references carry literal fallbacks, so scrollers outside `.game-desktop` get the same colours.
+- Examine's `scrollbar-width: thin` was removed, because it would make Chromium ignore the styled bar.
+- The Firefox fallback `scrollbar-color` now applies to all elements.
+
+`viewport-scrollbars.spec.ts` also checks that an overflowing Buy description gets the same framed 16px bar, and no bar when it fits. Validation: viewport-scrollbars, buy and examine specs pass (10/10).

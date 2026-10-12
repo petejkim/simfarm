@@ -3023,3 +3023,7 @@ The browser scrollbars on `#viewport` are styled with CSS to match the Schedule 
 ## 2026-10-12 — Menu bar cleanup and dark grey bar
 
 Menu headings and drop-downs are now content-sized, with consistent padding and anchoring; the absolute sizes and positions are gone. The bar is dark grey with white text, as in the original. The palette mismatch (index 8 is green in simfarm.pal) is recorded in main-menus.md as a hypothesis to revisit. The menu specs pass.
+
+## 2026-10-12 — Scrollbar style applied globally
+
+Every scrolling box (e.g. the Buy description) now uses the Schedule-style browser scrollbar from the terrain viewport. The related specs pass.
