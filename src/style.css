@@ -80,6 +80,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .chrome-range:disabled{opacity:.6}
 .browser-settings .music-controls{display:flex;flex-direction:column;align-items:stretch;gap:6px}
 .browser-settings [role=status]{overflow-wrap:anywhere}
+.browser-settings .native-label{width:84px}
 .sprite{display:block;flex:none;background-repeat:no-repeat;image-rendering:pixelated}
 /* Wooden frame: 9-slice of Sell's frame (window-frame.png), 8px sides and bottom under the shared title bar. */
 .game-window[data-framed]{width:max-content;border:0}

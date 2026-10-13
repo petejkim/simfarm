@@ -8,7 +8,8 @@ import { loadMusic } from '../assets/game-assets';
 type Playback = { status: 'idle' | 'loading' | 'playing' } | { status: 'error'; error: string };
 export function useMusic() {
   const [player] = useState(() => new MidiPlayer());
-  const [track, setTrack] = useState('amain'), [volume, setVolume] = useState(DEFAULT_MUSIC_VOLUME*100);
+  const [track, setTrack] = useState('amain'), [volume, setVolume] = useState(()=>readPreferences().musicVolume??DEFAULT_MUSIC_VOLUME*100);
+  useEffect(()=>{player.setVolume(volume/100);},[player]); // Apply the remembered volume once.
   const [playback, setPlayback] = useState<Playback>({ status: 'idle' });
   const request = useRef<AbortController | null>(null);
   const [enabled,setEnabled]=useState(()=>readPreferences().music??true);
@@ -74,9 +75,9 @@ export function useMusic() {
     if (!started.current || !current.current.enabled || current.current.track === id) return;
     setTrack(id);current.current.track=id;if(activated.current)void play(id);
   }, [play]);
-  function changeVolume(value: number) { setVolume(value); player.setVolume(value / 100); }
+  function changeVolume(value: number) { setVolume(value); player.setVolume(value / 100); rememberPreference('musicVolume',value); }
   const message = playback.status === 'playing' ? `Playing ${track} · MIDI · FM bank ${MUSIC_BANK}`
     : playback.status === 'loading' ? `Loading ${track}…`
-    : playback.status === 'error' ? `Music unavailable: ${playback.error}` : enabled?'Music enabled · starts on interaction':'Music off';
+    : playback.status === 'error' ? `Music unavailable: ${playback.error}` : enabled?'':'Music off';
   return { enabled, toggleTrack, track, volume, playback, message, selectTrack, changeVolume, requestTrack };
 }

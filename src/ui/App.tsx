@@ -59,8 +59,10 @@ function Game({ assets }: { assets: GameAssets }) {
     <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded} autosave={autosave} autosaveNow={farm.autosaveNow} startMessage={farm.notice}
       onRetry={() => setFarm(previous => previous && ({ ...previous, serial: previous.serial + 1 }))}
       audioControls={<>
-        <MusicControls tracks={assets.catalog.music} music={music} />
-        <span id="audio-status" role="status">{music.message}</span>
+        <MusicControls tracks={assets.catalog.music} music={music} sound={sound} />
+        {/* Playback state stays in the DOM for tests and diagnostics but is not shown; only failures are. */}
+        <span id="audio-status" hidden>{music.message}</span>
+        {music.playback.status === 'error' && <span id="music-error" role="status">{music.message}</span>}
         {sound.error && <span id="sound-error" role="status">Sound unavailable: {sound.error}</span>}
       </>}
       audioOptions={{ music: music.enabled, sound: sound.enabled, buttonClicks:sound.buttonClicks, toggleButtonClicks:sound.toggleButtonClicks, toggleMusic: () => music.toggleTrack('genfarm'), toggleSound: () => { void sound.toggle(); } }}

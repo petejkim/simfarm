@@ -124,7 +124,7 @@ test('Settings opens from Options, keeps native view/audio controls together and
   const entry=page.getByRole('menuitem',{name:'Settings…',exact:true});
   await expect(entry).not.toHaveAttribute('aria-checked');await entry.focus();await page.keyboard.press('Enter');
   const dialog=page.getByRole('dialog',{name:'Settings',exact:true});await expect(dialog).toBeVisible();
-  await expect(dialog.locator('#audio-status')).toBeVisible();await expect(dialog.locator('#volume')).toBeVisible();await expect(dialog.locator('#volume')).toHaveValue('100');
+  await expect(dialog.locator('#audio-status')).toBeHidden();await expect(dialog.locator('#volume')).toBeVisible();await expect(dialog.locator('#volume')).toHaveValue('80');
   await dialog.locator('#zoom').selectOption('2');await expect(page.locator('#world')).toHaveCSS('width','3072px');
   await dialog.locator('#volume').fill('40');await dialog.locator('#music').selectOption('ffarm');
   await expect(dialog.locator('#audio-status')).toContainText('Playing ffarm');
@@ -142,4 +142,27 @@ test('first enable after a muted startup still plays amain before the Options ge
   await expect(page.locator('#audio-status')).toHaveText('Music off');expect(requests).toEqual([]);
   await page.getByRole('menuitemcheckbox',{name:'Music',exact:true}).click();
   await expect(page.locator('#audio-status')).toContainText('Playing amain');expect(requests).toEqual(['amain.mid']);
+});
+
+test('Settings adjusts and remembers separate music and sound volumes without an idle music notice',async({page})=>{
+  await page.addInitScript(()=>{
+    const Base=window.AudioContext,gains:GainNode[]=[];Object.assign(window,{volumeGains:gains});
+    window.AudioContext=class extends Base{constructor(options?:AudioContextOptions){super(options);const make=this.createGain.bind(this);this.createGain=()=>{const g=make();gains.push(g);return g;};}};
+  });
+  await start(page);
+  // Before the first gesture nothing is playing; no notice says so, and the status line is not displayed at all.
+  await expect(page.locator('#audio-status')).toHaveText('');await expect(page.getByText(/starts on interaction/)).toHaveCount(0);
+  await openWindow(page,'options');const dialog=page.getByRole('dialog',{name:'Settings',exact:true});
+  await expect(dialog.locator('#volume')).toHaveAccessibleName('Music volume');await expect(dialog.locator('#sound-volume')).toHaveAccessibleName('Sound volume');
+  await expect(dialog.locator('#volume')).toHaveValue('80');await expect(dialog.locator('#sound-volume')).toHaveValue('100'); // defaults
+  await dialog.locator('#volume').fill('25');await dialog.locator('#sound-volume').fill('40');
+  const gains=()=>page.evaluate(()=>(window as unknown as {volumeGains:GainNode[]}).volumeGains.map(g=>Math.round(g.gain.value*1000)/1000));
+  // Music master follows its slider; each effect voice (game sounds and button clicks) scales the original 0.75 mix level.
+  await dialog.locator('.game-window-title').click();
+  await expect.poll(async()=>(await gains()).filter(g=>g===0.25||g===0.3).sort()).toEqual([0.25,0.3,0.3]);
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('simfarm.options.v1')!))).toMatchObject({musicVolume:25,soundVolume:40});
+  await page.reload();await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  await openWindow(page,'options');await expect(dialog.locator('#volume')).toHaveValue('25');await expect(dialog.locator('#sound-volume')).toHaveValue('40');
+  await expect.poll(async()=>(await gains()).filter(g=>g===0.25||g===0.3).sort()).toEqual([0.25,0.3,0.3]);
+  await page.screenshot({path:'artifacts/browser-settings-volumes.png'});
 });

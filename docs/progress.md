@@ -3164,3 +3164,11 @@ Selling a just-bought plot paid $100 more than it cost: the original sale quote 
 Music uses libadlmidi bank 58 (The Fat Man 2op set) and now plays on mobile; the user confirmed it on their phone. Music and sound effects unlock on every activation event (`pointerup`/`touchend`/`click`/`keydown`), retrying until audio runs. iOS gets the playback audio session and a silent-buffer unlock. Without AudioWorklet (insecure contexts) synthesis falls back to the main thread. The short-lived MP3 plan was dropped by the user, so nothing references the untracked `public/assets/*.mp3` files. AGENTS.md, README and adlmidi-playback.md are updated.
 
 Validation: type check and production build; music unit tests 7/7; music, sound and debug browser specs 36/36, including the new mobile-audio spec. Remaining gap: Chromium cannot emulate iOS touch-activation timing, so that part rests on the user's device check.
+
+## 2026-10-12 — Settings volumes
+
+Settings no longer shows a music status line. "Music enabled · starts on interaction" and the playing/loading text are gone. `#audio-status` stays in the DOM as a hidden diagnostic that browser tests use to read playback state. Music load failures still appear as a visible `#music-error` line, matching `#sound-error`.
+
+Settings has two sliders, Music volume (`#volume`, default 80%) and Sound volume (`#sound-volume`, default 100%). Sound volume scales both effect voices, game sounds and button clicks, from the original 0.75 mix level. Both values are saved as whole percentages in the browser preferences (`musicVolume`/`soundVolume` in `simfarm.options.v1`), never in the farm save. The effects gain node is now created with its audio context. Effects volume is set directly, because a scheduled ramp stalls while a context is suspended.
+
+Validation: type check and production build. Browser: options (incl. a new volume/persistence spec checking the real gain values), mobile-audio, button-sounds, startup-music, midi-loop, stationary-disasters, homestead, town-event-calendar, debug-menu and native, 59 tests passing.

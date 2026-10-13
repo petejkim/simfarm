@@ -5,7 +5,7 @@ import coreUrl from 'libadlmidi-js/dist/libadlmidi.light.core.js?url';
 import {unlockAudioContext} from './user-activation';
 import {MUSIC_BANK} from './music-bank';
 
-export const DEFAULT_MUSIC_VOLUME=1;
+export const DEFAULT_MUSIC_VOLUME=0.8;
 /** Main-thread fallback buffer: large enough to ride out a busy frame on a phone. */
 const FALLBACK_FRAMES=4096;
 

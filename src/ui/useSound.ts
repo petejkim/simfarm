@@ -13,6 +13,8 @@ export function useSound() {
   const [enabled, setEnabled] = useState(()=>readPreferences().sound??true), [error, setError] = useState('');
   const [buttonClicks,setButtonClicks]=useState(()=>readPreferences().buttonClicks??true);
   const clicksActive=useRef(buttonClicks);
+  const [volume,setVolume]=useState(()=>readPreferences().soundVolume??100);
+  useEffect(()=>{player.setVolume(volume/100);clickPlayer.setVolume(volume/100);},[player,clickPlayer]); // Apply the remembered volume once.
   const active = useRef(enabled), activated=useRef(false), flightRunning = useRef(false), planeFailed = useRef(false);
   const planeSample = useRef<PcmSound | null>(null), playing = useRef<GameSound | null>(null);
   const request = useRef<{ id: GameSound; controller: AbortController } | null>(null);
@@ -84,5 +86,8 @@ export function useSound() {
     }).catch(error=>{if(!controller.signal.aborted)setError(String(error));})
       .finally(()=>{if(clickRequest.current===controller)clickRequest.current=null;});
   },[clickPlayer]);
-  return { enabled, buttonClicks, toggleButtonClicks, error, toggle, play, click, setFlightRunning };
+  const changeVolume=useCallback((value:number)=>{
+    setVolume(value);player.setVolume(value/100);clickPlayer.setVolume(value/100);rememberPreference('soundVolume',value);
+  },[player,clickPlayer]);
+  return { enabled, volume, changeVolume, buttonClicks, toggleButtonClicks, error, toggle, play, click, setFlightRunning };
 }
