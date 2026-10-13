@@ -3425,3 +3425,11 @@ In the same phone-portrait media query, the control bar has two centred rows:
 The forecast area keeps only an 8px gap on its right, so the visible group is centred. Landscape and desktop keep the wrapping single row.
 
 Validation: mobile-touch adds a two-row case (one launcher row, the status group below it, both centred on the bar, ±1px). Run with control-bar, window-movement and edit-workspace: 25/25.
+
+### Fixed app root (2026-10-13, user request)
+
+`#app` is now `position: fixed; inset: 0; overflow: hidden`, replacing `height: 100dvh`, and `html, body` have `overscroll-behavior: none`. Page scrolling, rubber-banding or a focused field can no longer shift the game. The iOS top band and the safe-area padding are unchanged.
+
+Validation: build. mobile-touch adds a case that scrolls a lengthened page and wheels it, checking `#app` stays put and is fixed. Run with window-movement, edit-workspace, mobile-audio and native: 42/42.
+
+Gap: the `document.documentElement.scrollWidth === 1280` checks in native, disasters, traffic and other specs can no longer detect horizontal overflow, because a fixed, clipped root never widens the document. To restore them, measure `.game-desktop`'s `scrollWidth` instead.

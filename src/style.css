@@ -699,7 +699,9 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none;background:#555}
    CSS or meta disables it, and env(safe-area-inset-top) can read 0 there (WebKit bug 301994). So only in the
    installed iOS app (touch-callout is iOS-only; display-mode is the installed app) the desktop starts below a flat
    menu-bar-grey band that the blur cannot smear. */
-#app{height:100dvh;background:#555}
+/* Fixed to the screen (user request) so page scrolling, rubber-banding or a focused field never shifts the game. */
+html,body{overscroll-behavior:none}
+#app{position:fixed;inset:0;overflow:hidden;background:#555}
 .game-desktop{height:100%}
 @supports (-webkit-touch-callout:none){@media (display-mode:standalone){#app{padding-top:var(--ios-edge-band,32px)}}}
 /* Safe area (user request): viewport-fit=cover lets the page reach the screen edges, so the desktop keeps its bars and

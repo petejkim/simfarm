@@ -92,6 +92,14 @@ test.describe('phone screen',()=>{
     expect(second.bottom).toBeLessThanOrEqual(bar.y+bar.height+0.5);expect(Math.abs((second.left+second.right)/2-centre)).toBeLessThan(1);
     await page.screenshot({path:'artifacts/browser-mobile-portrait-control-bar.png'});
   });
+  test('the game stays fixed to the screen when the page is scrolled',async({page})=>{
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    const before=(await page.locator('#app').boundingBox())!;
+    await page.evaluate(()=>{document.body.style.minHeight='300vh';scrollTo(0,500);});
+    await page.mouse.wheel(0,400);
+    expect(await page.locator('#app').boundingBox()).toEqual(before);
+    expect(await page.locator('#app').evaluate(el=>getComputedStyle(el).position)).toBe('fixed');
+  });
   test('the desktop keeps the palette strip and bars inside the bottom and side safe-area insets',async({page})=>{
     const session=await page.context().newCDPSession(page);
     await session.send('Emulation.setSafeAreaInsetsOverride' as never,{insets:{bottom:34,left:0,right:0,top:0}} as never);
