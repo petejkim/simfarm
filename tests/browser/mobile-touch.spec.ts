@@ -227,13 +227,18 @@ test.describe('phone screen',()=>{
     const lastOfFirst=(await items.nth(11).boundingBox())!,topOfSecond=(await items.nth(12).boundingBox())!;
     expect(Math.abs(first.height-28*Z)).toBeLessThan(1);expect(Math.abs(second.y-first.y-28*Z)).toBeLessThan(1);
     expect(Math.abs(topOfSecond.y-first.y)).toBeLessThan(1);expect(topOfSecond.x).toBeGreaterThan(lastOfFirst.x);
-    expect(Math.abs(plant.box.width-224*Z)).toBeLessThan(1);
+    expect(Math.abs(plant.box.width-(224+8)*Z)).toBeLessThan(1);
+    // Taller rows get matching 6px side padding: icon 6px in from its item (as above and below it), title aligned with the icons.
+    const inset=await plant.menu.evaluate(el=>{const item=el.querySelector('[role=menuitem]')!,icon=item.querySelector('.sprite')!.getBoundingClientRect(),box=item.getBoundingClientRect();
+      return [icon.left-box.left,icon.top-box.top,box.bottom-icon.bottom,(()=>{const range=document.createRange();range.selectNodeContents(el.querySelector('.field-tool-title')!);return range.getBoundingClientRect().left;})()-icon.left];});
+    for(const [i,v] of inset.slice(0,3).entries())expect(Math.abs(v-6*Z),String(i)).toBeLessThan(1);
+    expect(Math.abs(inset[3])).toBeLessThan(1);
     // Arrow keys move by the twelve rows.
     await page.keyboard.press('ArrowRight');await expect(items.nth(12)).toBeFocused();
     await page.screenshot({path:'artifacts/browser-mobile-portrait-plant-menu.png'});
     await page.keyboard.press('Escape');
     const spray=await open('SPRAY');inside(spray.box,spray.area);expect(Math.abs(spray.box.y+spray.box.height-spray.strip.y)).toBeLessThan(1);
-    expect(Math.abs(spray.box.width-112*Z)).toBeLessThan(1);expect(Math.abs(spray.box.x+spray.box.width/2-(spray.button.x+spray.button.width/2))).toBeLessThan(1);
+    expect(Math.abs(spray.box.width-(112+8)*Z)).toBeLessThan(1);expect(Math.abs(spray.box.x+spray.box.width/2-(spray.button.x+spray.button.width/2))).toBeLessThan(1);
     await page.keyboard.press('Escape');
     // Landscape: right of the side palette, level with the button where it fits, inside the workspace; Plant scrolls.
     await page.setViewportSize({width:844,height:390});

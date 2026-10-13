@@ -3580,3 +3580,17 @@ Clicking or dragging on the overview map now centres the Edit view on the tile u
 - The overview's arrow keys move the current view centre by one tile. They previously used its top-left corner, which would now jump half a view.
 
 Validation: map-window clicks (90, 110) and checks the view centre is tile 45.5, 55.5 with the outline matching the scroll. A drag moves the centre to 50.5, 45.5. Corner clicks clamp to the first and last scroll positions. ArrowRight moves the centre one tile. The phone-scaled locate case checks a centred 40.5, 20.5. map-window, mobile-touch, navigation, window-viewport and homestead: 29/29.
+
+### Plant/Spray popup padding and title (2026-10-13, user request)
+
+- **Box:** Plant and Spray popups now have a uniform 4px padding on all sides and size to their content, on desktop and phones. They no longer use the source's fixed box (Plant 336×160, Spray 112×88). That box left empty space below the items, put the title 4px down and 16px in, and left the icons against the left edge.
+- **Title:** bold, sitting in the padding with 4px below it.
+- **Phones:** the taller 28px rows leave 6px above and below each 16px icon, so items also get 6px side padding and the title is indented 6px to line up with the icons. Items stay 112px wide.
+- **Rows:** the grid has one row per item up to 8 (Spray 4, so no empty rows); phones use their computed rows. Desktop keeps the source popup position (x48 and the source y), 112px columns and 17px rows.
+- **Source note:** the original box sizes stay in `FIELD_TOOL_MENUS` as evidence.
+
+Validation: type check. field-tools checks:
+- Spray: title at 4, 4 and weight 700; items 4px from the left, right and bottom edges;
+- Plant: items 4px from the left, right and bottom.
+
+mobile-touch widths now include the padding (232 and 120 × zoom). mobile-touch also checks each phone item's icon is 6px in from its left, top and bottom, and the title text lines up with the icons. field-tools, mobile-touch, palette-supplies and edit-workspace: 32/32.

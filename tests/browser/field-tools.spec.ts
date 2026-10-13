@@ -30,6 +30,11 @@ test('original Plant and Spray popup geometry, real labels, source icons and key
   // 2px between each icon and its name (user request), in Plant and Spray alike.
   const gap=(item:ReturnType<typeof menu.locator>)=>item.evaluate(el=>el.querySelector('span:last-child')!.getBoundingClientRect().left-el.querySelector('.sprite')!.getBoundingClientRect().right);
   expect(await gap(menu.getByRole('menuitem').first())).toBe(2);
+  {
+    const p=await menu.evaluate(el=>{const box=el.getBoundingClientRect(),items=[...el.querySelectorAll('[role=menuitem]')].map(i=>i.getBoundingClientRect());
+      return [Math.min(...items.map(i=>i.left))-box.left,box.right-Math.max(...items.map(i=>i.right)),box.bottom-Math.max(...items.map(i=>i.bottom))];});
+    expect(p).toEqual([4,4,4]);
+  }
   await page.screenshot({path:'artifacts/browser-plant-menu.png'});
   await expect(menu.getByRole('button',{name:'Next crops'})).toHaveCount(0);
   await page.keyboard.press('ArrowRight');await expect(menu.getByRole('menuitem').nth(17)).toBeFocused();
@@ -41,6 +46,13 @@ test('original Plant and Spray popup geometry, real labels, source icons and key
   await page.getByRole('button',{name:'SPRAY',exact:true}).click();const spray=page.getByRole('menu',{name:'Spray Field',exact:true});
   expect(await spray.getByRole('menuitem').allTextContents()).toEqual(['Fertilizer','Pesticide','Herbicide','Fungicide']);
   expect(await gap(spray.getByRole('menuitem').first())).toBe(2);
+  // Uniform 4px padding around the bold title and the items, with no empty space below the last row (user request).
+  for(const popup of [spray]){
+    const p=await popup.evaluate(el=>{const box=el.getBoundingClientRect(),title=el.querySelector('.field-tool-title')!,items=[...el.querySelectorAll('[role=menuitem]')].map(i=>i.getBoundingClientRect());
+      return {title:[title.getBoundingClientRect().left-box.left,title.getBoundingClientRect().top-box.top],weight:getComputedStyle(title).fontWeight,
+        left:Math.min(...items.map(i=>i.left))-box.left,right:box.right-Math.max(...items.map(i=>i.right)),bottom:box.bottom-Math.max(...items.map(i=>i.bottom))};});
+    expect(p).toEqual({title:[4,4],weight:'700',left:4,right:4,bottom:4});
+  }
   await page.screenshot({path:'artifacts/browser-spray-menu.png'});await page.keyboard.press('End');await page.keyboard.press('Enter');
   await expectPaletteAction(page,'SPRAY');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-spray\.png.*0 0, crosshair/);await page.keyboard.press('Escape');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
   expect(await save(page)).toEqual(before);

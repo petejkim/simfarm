@@ -21,7 +21,7 @@ export function FieldToolMenu({kind,assets,world,tiles,onChoose,onClose}:{kind:'
   }):SPRAY_TOOLS.map(tool=>({...tool,caption:tool.label,tool:{kind:tool.kind}}));
   // Phones (native, user request): Plant in two columns, 28px rows for tapping, opened beside its palette button.
   // Desktop keeps the source 8-row columns, 17px rows and popup coordinates.
-  const columns=phone?Math.min(2,Math.ceil(items.length/8)):Math.max(1,Math.round(geometry.width/112)),rows=phone?Math.ceil(items.length/columns):8;
+  const columns=phone?Math.min(2,Math.ceil(items.length/8)):Math.max(1,Math.round(geometry.width/112)),rows=phone?Math.ceil(items.length/columns):Math.min(8,items.length);
   useLayoutEffect(()=>{root.current?.querySelector<HTMLButtonElement>('[role=menuitem]')?.focus({preventScroll:true});},[kind]);
   useLayoutEffect(()=>{
     const menu=root.current,workspace=menu?.closest('.edit-workspace'),palette=workspace?.querySelector('.edit-palette');
@@ -46,8 +46,7 @@ export function FieldToolMenu({kind,assets,world,tiles,onChoose,onClose}:{kind:'
   },[onClose]);
   // Keep source popup coordinates; the permanent map has no outer frame.
   return <div ref={root} className="field-tool-menu" role="menu" aria-label={geometry.title} data-phone={phone||undefined}
-    style={phone?{width:columns*112,gridTemplateColumns:`repeat(${columns},112px)`,gridTemplateRows:`17px repeat(${rows},28px)`}
-      :{left:geometry.x,top:geometry.y,width:geometry.width,height:geometry.height,gridTemplateColumns:`repeat(${columns},112px)`}}
+    style={{...(phone?{}:{left:geometry.x,top:geometry.y}),gridTemplateColumns:`repeat(${columns},112px)`,gridTemplateRows:`auto repeat(${rows},${phone?28:17}px)`}}
     onKeyDown={event=>{
       if(event.key==='Escape'){event.preventDefault();event.stopPropagation();onClose();return;}
       const buttons=[...root.current!.querySelectorAll<HTMLButtonElement>('[role=menuitem]')],i=buttons.indexOf(document.activeElement as HTMLButtonElement);
