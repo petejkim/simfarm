@@ -29,7 +29,7 @@ import { MapWindow } from './MapWindow';
 import { BuyWindow } from './BuyWindow';
 import type { ShopProduct } from '../simulation/shop-product';
 import { GameWindow, useWindows } from './GameWindow';
-import { EditPalette, type EditTool, type EditPaletteAction } from './EditPalette';
+import { EditPalette, editToolForKey, type EditTool, type EditPaletteAction } from './EditPalette';
 import type { ConstructionTool } from './useConstruction';
 const CONSTRUCTION_TOOLS:Record<ConstructionTool,EditTool>={'road-150':'Paved road','road-161':'Dirt road',fence:'Fence',gate:'Gate',ditch:'Ditch',valve:'Valve',hay:'Hay',trough:'Trough',trees:'Trees'};
 import type { GameWindow as WindowCommand } from './ControlBar';
@@ -290,6 +290,21 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
     window.addEventListener('keydown',cancel);
     return()=>window.removeEventListener('keydown',cancel);
   },[objectMove.active,cancelObjectMove,construction.tool,cancelConstruction,bulldoze.active,cancelBulldoze]);
+  // Tool hotkeys (native, user request). Same availability as the palette, which flight, town choice, events and
+  // default decisions disable; modal dialogs, menus, form fields and keys already handled elsewhere keep their input.
+  const paletteDisabled=Boolean(snapshot?.pendingTown || snapshot?.townEvent.pending || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight);
+  const editToolRef=useRef(editTool);editToolRef.current=editTool;
+  useEffect(()=>{
+    if(paletteDisabled)return;
+    const onKey=(event:KeyboardEvent)=>{
+      if(event.defaultPrevented||event.ctrlKey||event.metaKey||event.altKey||event.repeat)return;
+      const target=event.target as HTMLElement|null;
+      if(target?.closest('input,textarea,select,[contenteditable="true"],[role=menu]')||document.querySelector(':modal'))return;
+      const tool=editToolForKey(event.key);if(!tool)return;
+      event.preventDefault();editToolRef.current(tool);
+    };
+    window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey);
+  },[paletteDisabled]);
   function cancelPurchase() { setBuyPlacement(null); setToolPointer(null); }
   function enterMapWindow(index:number){
     if(!simulation)return false;
@@ -392,7 +407,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
         decision={snapshot.finances.defaultDecision} assets={assets} onCommand={command=>simulation.dispatch(command)}
         onRestart={()=>setNewFarmOpen(true)}/>}
     {data && <main className="edit-workspace" aria-label="Edit" onPointerDownCapture={activateEdit} onFocusCapture={activateEdit} onKeyDown={event => { if(objectMove.active&&event.key==='Escape'){event.preventDefault();cancelObjectMove();} if ((fieldMenu||fieldMapTool) && event.key==='Escape') {event.preventDefault();cancelFieldTool();} if (buyPlacement && event.key === 'Escape') { event.preventDefault(); cancelPurchase(); } }}>
-      <EditPalette artwork={assets.editPalette} active={paletteAction} disabled={Boolean(snapshot?.pendingTown || snapshot?.townEvent.pending || snapshot?.finances.defaultDecision || snapshot?.aircraftFlight)} onTool={editTool}
+      <EditPalette artwork={assets.editPalette} active={paletteAction} disabled={paletteDisabled} onTool={editTool}
         onField={() => openFieldMenu('plant')} onSpray={() => openFieldMenu('spray')} />
       {fieldMenu&&snapshot&&<FieldToolMenu kind={fieldMenu} assets={assets} world={data.scenario} tiles={data.tiles}
         onClose={()=>{setFieldMenu(null);viewportRef.current?.focus({preventScroll:true});}}

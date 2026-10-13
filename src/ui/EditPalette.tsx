@@ -5,6 +5,17 @@ import { spriteFace } from './chrome/Sprite';
 
 export const EDIT_TOOLS = ['Move object', 'View object', 'Paved road', 'Dirt road', 'Fence', 'Gate', 'Ditch', 'Valve', 'Hay', 'Trough', 'Trees', 'Bulldoze'] as const;
 export type EditTool = typeof EDIT_TOOLS[number];
+/** Native keyboard shortcuts (user request; not in the original). Letters match case-insensitively. */
+export const EDIT_TOOL_HOTKEYS: Record<EditTool, string> = {
+  'Move object': 'M', 'View object': 'E', 'Paved road': 'R', 'Dirt road': 'D', 'Fence': 'F', 'Gate': 'G',
+  'Ditch': 'I', 'Valve': 'V', 'Hay': 'L', 'Trough': 'W', 'Trees': 'T', 'Bulldoze': 'B',
+};
+/** Tooltip names; View object is presented as Examine. */
+const EDIT_TOOL_TITLES: Partial<Record<EditTool, string>> = { 'View object': 'Examine object' };
+export function editToolForKey(key: string): EditTool | null {
+  const letter = key.length === 1 ? key.toUpperCase() : '';
+  return EDIT_TOOLS.find(tool => EDIT_TOOL_HOTKEYS[tool] === letter) ?? null;
+}
 /** Palette action shown depressed: a tool or the Plant/Spray field action. */
 export type EditPaletteAction = EditTool | 'Plant' | 'Spray';
 
@@ -24,7 +35,7 @@ export function EditPalette({ artwork, active, onTool, onField, onSpray, disable
 /** One 24×24 tool cell; its 19×19 face is sprite (24·column+3, 24·row+3). */
 export function EditToolButton({ tool, index, artwork, pressed, disabled, onTool }: { tool: EditTool; index: number; artwork: string; pressed: boolean; disabled: boolean; onTool: (tool: EditTool) => void }) {
   const { size, inset } = EDIT_PALETTE_CELL;
-  return <BevelButton frame="top-left" className="edit-tool" faceClassName="edit-palette-face" pressed={pressed} title={tool} aria-label={tool} disabled={disabled}
+  return <BevelButton frame="top-left" className="edit-tool" faceClassName="edit-palette-face" pressed={pressed} title={`${EDIT_TOOL_TITLES[tool] ?? tool} (${EDIT_TOOL_HOTKEYS[tool]})`} aria-label={tool} disabled={disabled}
     faceStyle={spriteFace(artwork, index % 2 * size + inset, Math.floor(index / 2) * size + inset)} onClick={() => onTool(tool)} />;
 }
 

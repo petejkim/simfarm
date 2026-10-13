@@ -35,3 +35,26 @@ Source evidence for the original depressed-button rendering has not been traced.
 ## ? cell and foot removed (2026-10-11)
 
 User request: the source "?" help cell (y188, 48×16) and the 4px foot (y204..207) are omitted. The palette is now 48×188 with no fixed height (`align-self:flex-start`). `EDIT_PALETTE_TEXT` erases only Plant/Spray captions; the undisplayed ? face is left as source pixels in the imported PNG. See edit-help.md for the removed legend.
+
+## Tool hotkeys (2026-10-13, native enhancement)
+
+At the user's request, letters select palette tools case-insensitively:
+
+| Key | Tool |
+| --- | --- |
+| M | Move object |
+| E | View object, titled "Examine object" |
+| R | Paved road |
+| D | Dirt road |
+| F | Fence |
+| G | Gate |
+| I | Ditch |
+| V | Valve |
+| L | Feed (Hay) |
+| W | Trough |
+| T | Trees |
+| B | Bulldoze |
+
+The original has no such shortcuts. Tooltips read "Move object (M)", "Examine object (E)" and so on. Accessible names keep the tool names.
+
+Hotkeys share the palette's availability: none during flight, town choice, town events or default decisions. Modal dialogs, open menus, form controls, modified keys and keys another handler already consumed keep their input. During flight, letters that are original flight controls still steer. `tool-hotkeys.spec.ts` covers all of this.
