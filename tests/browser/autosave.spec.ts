@@ -72,6 +72,16 @@ test('hiding the tab flushes unsaved progress', async ({ page }) => {
   await page.reload(); await expect(page.locator('#farm-date')).toHaveText(date!);
 });
 
+test('a failed automatic save shows the storage error once', async ({ page }) => {
+  await page.addInitScript(() => { IDBObjectStore.prototype.put = function () { throw new DOMException('Storage is full', 'QuotaExceededError'); }; });
+  await start(page); await nextDay(page);
+  await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' }); document.dispatchEvent(new Event('visibilitychange')); });
+  await expect(page.locator('#save-problem-text')).toHaveText('Your farm could not be saved automatically (Storage is full). Use Save to File... to keep a copy.');
+  await page.locator('#save-problem-ok').click(); await nextDay(page);
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await page.waitForTimeout(300); await expect(page.locator('[data-save-problem]')).toHaveCount(0);
+});
+
 test('an unreadable stored game falls back to Scenario 1 and is kept aside', async ({ page }) => {
   await start(page);
   await page.evaluate(() => new Promise<void>(resolve => {
@@ -83,9 +93,18 @@ test('an unreadable stored game falls back to Scenario 1 and is kept aside', asy
   expect(await stored(page)).toBeNull(); expect((await stored(page, 'rejected'))?.text).toBe('{');
 });
 
-test('only one tab writes the stored game; another takes over when it closes', async ({ page, context }) => {
+test('only one tab writes the stored game, the other warns once that it is not saving, and takes over when the first closes', async ({ page, context }) => {
   await start(page);
   const second = await context.newPage(); await second.goto('/'); await expect(second.locator('#map-status')).toContainText('Scenario 1');
+  // Frustrated-farmer message popup (portrait 76, as the unpaid-tax warning).
+  const warning = second.locator('[data-save-problem=other-tab]');
+  await expect(warning).toBeVisible(); await expect(second.locator('#save-problem-text')).toHaveText(/only one window can save/);
+  expect(await warning.locator('.message-portrait').evaluate(el => (el as HTMLElement).style.backgroundPosition)).toBe('-448px -576px');
+  expect(await page.locator('[data-save-problem]').count()).toBe(0);
+  await second.locator('#save-problem-ok').click(); await expect(warning).toHaveCount(0);
+  // Refused automatic saves (tab hidden, new week) do not repeat the warning.
+  await second.evaluate(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' }); document.dispatchEvent(new Event('visibilitychange')); });
+  await nextDay(second); await second.waitForTimeout(300); await expect(warning).toHaveCount(0);
   await command(second, 'Save'); await expect(second.locator('#save-status')).toHaveText('Another SimFarm tab is saving this farm.');
   await page.close();
   await expect.poll(async () => { await command(second, 'Save'); return second.locator('#save-status').textContent(); }).toBe('Farm saved.');

@@ -3309,3 +3309,9 @@ The user saw New Game open on every refresh. First launch had been inferred from
 A single-tab reload already restored the saved farm without New Game, so this is the inferred cause, not a reproduction from the user's browser. Separately, while another tab holds the lock, each refresh still generates a new farm instead of keeping one. That is existing autosave behaviour and is not changed here.
 
 Validation: type check. Browser spec first-start, 3/3.
+
+## 2026-10-13 — Warning when automatic saves fail
+
+Automatic saves now show an original-style Message popup when they fail, with portrait 76 (the frustrated farmer of the unpaid-tax warning). This covers a second window without the save lock (shown as soon as that tab attaches a game) and storage errors. Each game shows a reason once, until a save succeeds. See autosave.md.
+
+Validation: type check. Browser specs autosave (including a new storage-error case), first-start and finance-messages, 16/16.

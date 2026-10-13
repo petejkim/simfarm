@@ -52,6 +52,9 @@ test('first-launch New Game does not reopen on refresh when another tab holds th
   await other.evaluate(() => new Promise<void>(held => { void navigator.locks.request('simfarm-current-game', () => { held(); return new Promise<void>(() => {}); }); }));
   const setup = page.getByRole('region', { name: 'New farm', exact: true });
   await page.goto('/'); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain'); await expect(setup).toBeVisible();
+  // The unsaved new farm's warning waits for New Game to close.
+  await expect(page.locator('[data-save-problem]')).toHaveCount(0);
+  await setup.getByRole('button', { name: 'Cancel', exact: true }).click(); await expect(page.locator('[data-save-problem=other-tab]')).toBeVisible();
   await page.reload(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   await expect(page.locator('#save-status')).not.toHaveText('Saved farm restored (paused).'); // nothing was stored
   await page.waitForTimeout(500); await expect(setup).toHaveCount(0);

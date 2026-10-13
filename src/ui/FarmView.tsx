@@ -10,6 +10,8 @@ import {BalanceWindow} from './BalanceWindow';
 import {DisasterMessage} from './DisasterMessage';
 import {CheatMessage} from './CheatMessage';
 import {FinanceMessage} from './FinanceMessage';
+import {SaveProblemMessage} from './SaveProblemMessage';
+import type {SaveProblem} from '../storage/autosave';
 import {DefaultDialog} from './DefaultDialog';
 import {EvaluationWindow} from './EvaluationWindow';
 import { MarketWindow } from './MarketWindow';
@@ -92,6 +94,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
   const simulation = resource.status === 'ready' ? resource.value.simulation : null;
   const openedNewGame = useRef(false);
   useEffect(() => { if (openNewGame && simulation && !openedNewGame.current) { openedNewGame.current = true; setNewFarmOpen(true); } }, [openNewGame, simulation]);
+  // Subscribed before attaching, so a problem found while attaching is shown.
+  const [saveProblem, setSaveProblem] = useState<SaveProblem | null>(null);
+  useEffect(() => autosave.onProblem(setSaveProblem), [autosave]);
   useEffect(() => simulation ? autosave.attach(simulation, id, autosaveNow) : undefined, [simulation]);
   const [fieldMenu,setFieldMenu]=useState<'plant'|'spray'|null>(null),[fieldMapTool,setFieldMapTool]=useState<FieldMapTool|null>(null);
   const [aircraftSlot,setAircraftSlot]=useState<number|null>(null);
@@ -466,6 +471,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
         : messages[0].type==='building-notice' ? <BuildingMessage key={messages[0].serial} assets={assets} onClose={closeMessage}/>
         : messages[0].type==='cheat-notice' ? <CheatMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>
         : <DisasterMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>)}
+      {saveProblem&&!messages.length&&!bulldoze.pending&&!newFarmOpen&&!snapshot?.townEvent.pending&&<SaveProblemMessage problem={saveProblem} assets={assets} onClose={()=>setSaveProblem(null)}/>}
     </main>}
   </>;
 }

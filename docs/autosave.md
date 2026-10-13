@@ -35,3 +35,13 @@ About SimFarm · New Game · **Save** (IndexedDB) · **Save to File...** (source
 - **Playwright config:** launches Chromium with `--disable-blink-features=FileSystemAccessLocal`, so existing tests use the download and file-input fallbacks.
 - **`tests/browser/autosave.spec.ts`:** covers the menu, manual save and paused restore, week rollover, New Game/Load saves, hide flush, the unreadable-record fallback, the second-tab lock, and the picker paths via stub pickers (save, load, cancel).
 - **Existing specs:** two that reloaded expecting a fresh Scenario 1 now expect the restored game.
+
+## Save problem warning (user request, 2026-10-13)
+
+Automatic saves used to drop their result: the save on New Game and Load from File, weekly saves, and the flushes on tab hide and page close. In a tab without the writer lock, or when IndexedDB failed, progress went unsaved with no sign. `Autosave.onProblem` now reports these failures. FarmView shows them in the original message popup with portrait 76, the frustrated farmer of the unpaid-tax warning (finance message 159), and an OK button:
+
+- `other-tab`: SimFarm is open in another window, and only one window can save. This is reported as soon as a tab attaches a game without the lock, including at startup.
+- `unavailable`: the browser cannot store the farm; use Save to File...
+- `error`: the farm could not be saved automatically (with the error); use Save to File...
+
+Each game reports a reason once: attaching a new game resets this, and so does a successful save. The warning waits for game messages, Bulldoze confirmation, New Game and town events to close. Manual File → Save keeps reporting through the status line. A tab that takes over the lock when the other closes resumes saving at its next automatic save.
