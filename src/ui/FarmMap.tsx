@@ -75,10 +75,12 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
   // Touch has no hover (native, user request): a tapped tile stays highlighted as the tool pointer in world
   // coordinates, so it does not drift while the map pans. A mouse pointer, when present, takes precedence.
   const armed = useRef<MapFocus | null>(null);
+  // The tile a touch went down on, highlighted before it is armed (user request); re-renders keep showing it.
+  const touched = useRef<MapFocus | null>(null);
   const touch = useRef<{ pointer: number; x: number; y: number; left: number; top: number; moved: boolean; held: boolean; pan: boolean; paint: boolean; timer: number } | null>(null);
   const updatePointer = useCallback(() => {
     const p = pointerRef.current, canvas = canvasRef.current, viewport = viewportRef.current;
-    if (!p || !canvas || !viewport) { onPointer(armed.current); return; }
+    if (!p || !canvas || !viewport) { onPointer(touched.current ?? armed.current); return; }
     const bounds = viewport.getBoundingClientRect(), rect = canvas.getBoundingClientRect(), s = cssZoom(canvas);
     const x = Math.floor((p.clientX - rect.left) / (16 * zoom * s)), y = Math.floor((p.clientY - rect.top) / (16 * zoom * s));
     onPointer(p.clientX >= bounds.left && p.clientX < bounds.left + viewport.clientWidth * s &&
@@ -86,9 +88,14 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
       document.elementFromPoint(p.clientX,p.clientY)===canvas &&
       x >= 0 && y >= 0 && x < WORLD_SIZE && y < WORLD_SIZE ? { x, y } : null);
   }, [zoom, onPointer]);
-  const clearPointer = useCallback(() => { pointerRef.current = null; onPointer(armed.current); }, [onPointer]);
-  useLayoutEffect(() => { armed.current = null; }, [toolKey, confirmTaps]);
+  const clearPointer = useCallback(() => { pointerRef.current = null; onPointer(touched.current ?? armed.current); }, [onPointer]);
+  useLayoutEffect(() => { armed.current = null; touched.current = null; }, [toolKey, confirmTaps]);
   const endTouch = useCallback(() => { if (touch.current) clearTimeout(touch.current.timer); touch.current = null; }, []);
+  /** A touch that becomes something else (pan, long press, pinch, cancel) puts the highlight back on the armed tile. */
+  const revertTouch = useCallback(() => {
+    if (!touched.current) return;
+    touched.current = null; onPointer(armed.current);
+  }, [onPointer]);
   useEffect(() => endTouch, [endTouch]);
   useEffect(() => {
     const hide = () => { if (document.hidden) clearPointer(); };
@@ -163,7 +170,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
     const start = (event: TouchEvent) => {
       if (event.touches.length !== 2 || flightRef.current) return;
       if (event.cancelable) event.preventDefault();
-      endTouch(); stopPainting(); suppressClick.current = true;
+      endTouch(); revertTouch(); stopPainting(); suppressClick.current = true;
       const m = measure(event.touches);
       pinch = { distance: m.distance, zoom, current: zoom,
         contentX: (viewport.scrollLeft + m.x) / zoom, contentY: (viewport.scrollTop + m.y) / zoom };
@@ -194,7 +201,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
       viewport.removeEventListener('gesturestart', gesture); viewport.removeEventListener('gesturechange', gesture);
       if (pinch) apply(zoom, viewport.scrollLeft, viewport.scrollTop);
     };
-  }, [zoom, endTouch, stopPainting, viewportRef]);
+  }, [zoom, endTouch, revertTouch, stopPainting, viewportRef]);
   useLayoutEffect(() => {
     paint.current=()=>{
       const context = canvasRef.current!.getContext('2d')!;
@@ -239,37 +246,44 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
   }
   function tap(clientX: number, clientY: number) {
     const tile = tileAt(clientX, clientY); if (!tile || flight) return;
-    if (confirmTaps && (armed.current?.x !== tile.x || armed.current?.y !== tile.y)) { armed.current = tile; onPointer(tile); return; }
+    if (confirmTaps && (armed.current?.x !== tile.x || armed.current?.y !== tile.y)) { armed.current = tile; touched.current = null; onPointer(tile); return; }
     onSelect(worldIndex(tile.x, tile.y));
   }
   function touchDown(event: PointerEvent<HTMLCanvasElement>) {
     endTouch(); suppressClick.current = true; // Taps are handled on pointerup; the compatibility click is ignored.
     const tile = tileAt(event.clientX, event.clientY), viewport = viewportRef.current!;
     // A paint tool owns touch-action: pressing its highlighted tile paints (a tap paints that tile once);
-    // pressing anywhere else pans the map by hand or taps to move the highlight. Painting waits until the finger
-    // moves or lifts, so a second finger arriving first (a pinch) cancels it without building anything.
+    // pressing anywhere else pans the map by hand or taps to move the highlight. Pressing the armed tile confirms at
+    // touchdown (user request): a paint tool starts its stroke there, other two-tap tools act at once. A pinch whose
+    // first finger lands on the armed tile therefore builds that tile; one starting elsewhere builds nothing.
+    const onArmed = Boolean(confirmTaps && !flight && tile && armed.current?.x === tile.x && armed.current?.y === tile.y);
     const paint = Boolean(paintTool && !flight && tile && armed.current?.x === tile.x && armed.current?.y === tile.y);
     if (paint) viewport.focus({ preventScroll: true });
     const pan = Boolean(paintTool);
     if (pan) event.currentTarget.setPointerCapture(event.pointerId);
     const { clientX, clientY } = event;
+    // Two-tap tools highlight the touched tile at once (user request); it is armed only when the touch ends as a tap.
+    if (confirmTaps && tile && !flight) { touched.current = tile; onPointer(tile); }
     touch.current = { pointer: event.pointerId, x: clientX, y: clientY, left: viewport.scrollLeft, top: viewport.scrollTop, moved: false, held: false, pan, paint,
       timer: paint ? 0 : window.setTimeout(() => {
         const active = touch.current; if (!active || active.moved || flight) return;
-        active.held = true; const held = tileAt(clientX, clientY); if (held) onSecondarySelect(worldIndex(held.x, held.y));
+        active.held = true; revertTouch(); const held = tileAt(clientX, clientY); if (held) onSecondarySelect(worldIndex(held.x, held.y));
       }, LONG_PRESS_MS) };
+    if (paint) { beginTouchStroke(touch.current); return; }
+    // A confirmed non-paint tool acts now; the lift is not another tap (held skips it).
+    if (onArmed) { clearTimeout(touch.current.timer); touch.current.held = true; onSelect(worldIndex(tile!.x, tile!.y)); }
   }
   function touchMove(event: PointerEvent<HTMLCanvasElement>) {
     if (stroke.current?.pointer === event.pointerId) {
       paintTile(event, false);
       const tile = tileAt(event.clientX, event.clientY);
-      if (tile && stroke.current) { armed.current = tile; onPointer(tile); }
+      if (tile && stroke.current) { armed.current = tile; touched.current = null; onPointer(tile); }
       return;
     }
     const active = touch.current; if (active?.pointer !== event.pointerId) return;
     const dx = event.clientX - active.x, dy = event.clientY - active.y;
     if (active.paint && Math.hypot(dx, dy) > TAP_SLOP) { beginTouchStroke(active); touchMove(event); return; }
-    if (!active.moved && Math.hypot(dx, dy) > TAP_SLOP) { active.moved = true; clearTimeout(active.timer); }
+    if (!active.moved && Math.hypot(dx, dy) > TAP_SLOP) { active.moved = true; clearTimeout(active.timer); revertTouch(); }
     if (active.moved && active.pan) { const s = cssZoom(viewportRef.current!); viewportRef.current!.scrollTo(active.left - dx / s, active.top - dy / s); }
   }
   function touchUp(event: PointerEvent<HTMLCanvasElement>) {
@@ -311,7 +325,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
       aria-label="Original scenario terrain"
       onClick={event=>{if(suppressClick.current){suppressClick.current=false;return;}if(!paintTool)selectTile(event);}}
       onPointerDown={event=>{
-        if(!event.isPrimary){endTouch();if(event.pointerType==='touch')stopPainting();return;}
+        if(!event.isPrimary){endTouch();revertTouch();if(event.pointerType==='touch')stopPainting();return;}
         if(event.pointerType==='touch'){touchDown(event);return;}
         if(event.button===2){stopPainting();event.preventDefault();selectTile(event,true);return;}
         if(event.button!==0)return;
@@ -328,7 +342,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
         pointerRef.current = { clientX: event.clientX, clientY: event.clientY }; updatePointer();
         if(stroke.current?.pointer===event.pointerId){if(event.buttons===1)paintTile(event,false);else stopPainting();}
       }}
-      onPointerLeave={event=>{if(event.pointerType!=='touch')clearPointer();}} onPointerCancel={event=>{stopPainting();if(event.pointerType==='touch')endTouch();else clearPointer();}} onLostPointerCapture={stopPainting}
+      onPointerLeave={event=>{if(event.pointerType!=='touch')clearPointer();}} onPointerCancel={event=>{stopPainting();if(event.pointerType==='touch'){endTouch();revertTouch();}else clearPointer();}} onLostPointerCapture={stopPainting}
       onPointerUp={event => { if (event.pointerType === 'touch') { touchUp(event); return; } if(stroke.current?.pointer===event.pointerId)stopPainting(); }} />
   </div>;
 }

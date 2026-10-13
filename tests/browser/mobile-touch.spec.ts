@@ -316,6 +316,56 @@ test('touch Buy placement highlights on the first tap and buys on a second tap o
   await session.detach();
 });
 
+test('a touch highlights its tile at touchdown, reverts to the armed tile if it becomes something else, and confirms the armed tile at touchdown',async({page})=>{
+  const f=shopFixture();f.state.disasters.enabled=false;const g=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,g.save(4));
+  await reveal(page,'#viewport');await page.locator('#window-buy').click();
+  const catalog=page.getByRole('region',{name:'Buy catalog'});await catalog.getByRole('button',{name:'Machinery',exact:true}).click();
+  await page.locator('#catalog-buy').click();await catalog.getByRole('button',{name:'CLOSE',exact:true}).click();
+  await page.locator('#viewport').evaluate(v=>v.scrollTo(0,0));
+  const session=await page.context().newCDPSession(page),plain=await tilePixels(page,12,12);
+  // Finger down on 12,12: highlighted while it is still down; lifting arms it without buying.
+  await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[await coords(page,12,12)]});
+  await expect.poll(()=>tilePixels(page,12,12)).not.toEqual(plain);
+  await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  expect(await tilePixels(page,12,12)).not.toEqual(plain);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  // A touch elsewhere moves the highlight there at once; when it turns into a pan, a cancelled touch or a long press,
+  // the highlight returns to the armed 12,12.
+  const plain16=await tilePixels(page,16,12),from=await coords(page,16,12);
+  const press=async()=>{await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[from]});
+    await expect.poll(()=>tilePixels(page,16,12)).not.toEqual(plain16);await expect.poll(()=>tilePixels(page,12,12)).toEqual(plain);};
+  const reverted=async()=>{await expect.poll(()=>tilePixels(page,16,12)).toEqual(plain16);await expect.poll(()=>tilePixels(page,12,12)).not.toEqual(plain);};
+  await press();await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:from.x-30,y:from.y-30}]});await reverted();
+  await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.locator('#viewport').evaluate(v=>v.scrollTo(0,0));
+  await press();await session.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await reverted();
+  await press();await page.waitForTimeout(700);await reverted();await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  if(await page.locator('[data-window=examine]').isVisible())await page.locator('[data-window=examine]').getByRole('button',{name:/^Close /}).first().click();
+  expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  // Touching the armed tile confirms at touchdown: bought while the finger is still down, and the lift buys nothing more.
+  await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[await coords(page,12,12)]});
+  g.dispatch({type:'buy-equipment',equipmentType:0,x:12,y:12});
+  await expect.poll(()=>save(page)).toEqual(JSON.parse(g.save(4)));
+  await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  await session.detach();
+});
+
+test('a paint tool paints the armed tile at touchdown and continues the stroke while dragging',async({page})=>{
+  const f=shopFixture();f.state.disasters.enabled=false;const g=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,g.save(4));
+  const session=await page.context().newCDPSession(page);
+  await page.locator('#viewport').evaluate(v=>v.scrollTo(0,0));
+  await page.getByRole('button',{name:'Dirt road',exact:true}).click();await expectPaletteAction(page,'Dirt road');
+  await tap(page,session,25,25);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  const a=await coords(page,25,25),b=await coords(page,27,25);
+  await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[a]});
+  g.dispatch({type:'network',tool:'road-161',x:25,y:25});await expect.poll(()=>save(page)).toEqual(JSON.parse(g.save(4)));
+  await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:(a.x+b.x)/2,y:a.y}]});
+  await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[b]});
+  await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  for(const x of [26,27])g.dispatch({type:'network',tool:'road-161',x,y:25});
+  await expect.poll(()=>save(page)).toEqual(JSON.parse(g.save(4)));
+  await session.detach();
+});
+
 test('touch paint tools pan the map from unhighlighted tiles and paint after a confirming tap; a long press toggles a gate',async({page})=>{
   const f=shopFixture();f.state.disasters.enabled=false;f.state.scenario.cells[worldIndex(14,24)].terrain=0x8000|188;
   const g=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,g.save(4));
@@ -392,15 +442,16 @@ test.describe('pinch zoom',()=>{
     await expect(page.locator('#zoom')).toHaveValue('1.4');
     expect(await page.locator('#zoom option:checked').textContent()).toBe('140%');
     expect(await world.evaluate(c=>c.getBoundingClientRect().width)).toBeCloseTo(1536*1.4*Z,0);
-    // A pinch that begins on the highlighted tile of a paint tool builds nothing.
+    // A pinch builds nothing when it begins away from the highlighted tile (pressing the highlighted tile confirms at touchdown).
     await page.getByRole('button',{name:'Dirt road',exact:true}).click();await expectPaletteAction(page,'Dirt road');
     const tile=await world.evaluate((c,m)=>{const r=c.getBoundingClientRect(),z=r.width/1536;return [Math.floor((m.x-40-r.left)/(16*z)),Math.floor((m.y-r.top)/(16*z))];},mid);
     const zoom=1.4,cell=(await world.boundingBox())!;
     const at={x:cell.x+(tile[0]+.5)*16*zoom,y:cell.y+(tile[1]+.5)*16*zoom};
     await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[at]});await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...at,id:0}]});
-    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...at,id:0},{x:at.x+80,y:at.y,id:1}]});
-    for(let i=1;i<=4;i++)await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:at.x-10*i,y:at.y,id:0},{x:at.x+80+10*i,y:at.y,id:1}]});
+    const away={x:at.x,y:at.y+3*16*zoom};
+    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...away,id:0}]});
+    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...away,id:0},{x:away.x+80,y:away.y,id:1}]});
+    for(let i=1;i<=4;i++)await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:away.x-10*i,y:away.y,id:0},{x:away.x+80+10*i,y:away.y,id:1}]});
     await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
     expect(await save(page)).toEqual(JSON.parse(g.save(4)));
     await session.detach();

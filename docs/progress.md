@@ -3614,3 +3614,23 @@ Validation: build. A mobile-touch case replays the iOS order with dispatched tou
 - a finger lifted off the button releases without a click.
 
 It passes in Chromium and WebKit and fails with the previous BevelButton. mobile-touch, control-bar, window-movement, edit-workspace, buy-window, sell-window, main-menu, field-tools, palette-supplies, map-window and new-farm: 62/62.
+
+### Touch highlight and confirm at touchdown (2026-10-13, user requests)
+
+Two-tap tools (Buy placement, Plant, construction, Bulldoze) now respond when the finger goes down, not when it lifts:
+- **Highlight at touchdown:** a touch on the terrain highlights its tile immediately. The tile is still armed only when the touch ends as a tap, so a first tap never commits.
+  - `FarmMap` keeps the touched tile in a ref (`touched`). The pointer fallback in `updatePointer`/`clearPointer` prefers it over the armed tile; without that, a layout effect rerunning after touchdown fell back to the armed tile (none yet) and wiped the highlight.
+  - Arming, a paint stroke, or a tool change clears it.
+- **Revert:** a touch that becomes something else puts the highlight back on the armed tile (`revertTouch`). That covers a pan past the tap slop, a long press, a second finger or pinch, and a cancelled touch. It is deliberately not part of `endTouch`, which React effect cleanups also call.
+- **Confirm at touchdown:** touching the armed tile confirms at once.
+  - Buy/Plant act at touchdown, and the lift is not another tap.
+  - Paint tools (construction, Bulldoze) start their stroke at touchdown, painting the tile and continuing as the finger drags.
+- **Trade-off:** previously a press on the armed tile waited for movement or lift, so a pinch starting there built nothing. Now a pinch whose first finger lands on the armed tile builds that tile; a pinch starting elsewhere still builds nothing. The pinch and direct-bulldoze cases were updated to this rule.
+
+Validation: type check. mobile-touch (1280×900 touch screen):
+- Buy placement: the touched tile's canvas pixels change while the CDP touch is still down, and lifting arms without buying;
+- touching 16,12 moves the highlight, and a pan, a cancel or a long press each return it to 12,12;
+- touching the armed tile buys while still down, and the lift buys nothing more;
+- Dirt road: the armed tile is painted at touchdown and the drag continues the road.
+
+direct-bulldoze now clears the highlighted tile at touchdown, even if the touch is cancelled. mobile-touch, direct-construction, direct-bulldoze, buy-window, field-tools, construction, bulldoze and animal-input: 47/47.
