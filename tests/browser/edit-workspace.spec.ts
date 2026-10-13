@@ -63,7 +63,9 @@ test('Edit palette rebuilds source cells with black backgrounds, CSS bevels, spr
   const palette = page.getByRole('toolbar', { name: 'Edit tools' });
   await expect(palette.locator('img')).toHaveCount(0);
   expect(await palette.locator('*').evaluateAll(els => els.filter(el => getComputedStyle(el).position === 'absolute').length)).toBe(0);
-  const box = (await palette.boundingBox())!; expect([box.width, box.height]).toEqual([48, 188]); // source ? cell and foot omitted
+  const box = (await palette.boundingBox())!; expect([box.width, box.height]).toEqual([49, 189]); // source ? cell and foot omitted; 48×188 cells plus right/bottom ink border
+  expect(await palette.evaluate(el => { const s = getComputedStyle(el); return [s.marginTop, s.borderRight, s.borderBottom]; })).toEqual(['0px', '1px solid rgb(0, 0, 0)', '1px solid rgb(0, 0, 0)']);
+  expect(await page.locator('.map-panel').evaluate(el => getComputedStyle(el).margin)).toBe('0px');
   const cells: [number, number, number, number][] = [...Array.from({ length: 12 }, (_, i) => [i % 2 * 24, Math.floor(i / 2) * 24, 24, 24] as [number, number, number, number]), [0, 144, 48, 22], [0, 166, 48, 22]];
   for (const [index, button] of (await palette.getByRole('button').all()).entries()) {
     const [x, y, w, h] = cells[index];
