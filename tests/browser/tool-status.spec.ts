@@ -13,9 +13,9 @@ test('palette and Spray selections show source messages, retain recent order acr
     await page.getByRole('button',{name:tool,exact:true}).click();await expect(status).toHaveText(text);messages.push(text);
   }
   for(const [tool,text] of [['Fertilize','Select field to fertilize.'],['Pesticide','Select field to spray with pesticide.'],['Herbicide','Select field to spray with herbicide.'],['Fungicide','Select field to spray with fungicide.']]){
-    await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:tool,exact:true}).click();await expect(status).toHaveText(text);messages.push(text);
+    await page.getByRole('button',{name:'SPRAY',exact:true}).click();await page.getByRole('menuitem',{name:tool,exact:true}).click();await expect(status).toHaveText(text);messages.push(text);
   }
-  await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:'Fungicide',exact:true}).click();
+  await page.getByRole('button',{name:'SPRAY',exact:true}).click();await page.getByRole('menuitem',{name:'Fungicide',exact:true}).click();
   await status.click();const history=page.getByRole('list',{name:'Recent Edit messages'});await expect(history.locator('li')).toHaveText(messages.slice(-10).reverse());
   await page.screenshot({path:'artifacts/browser-tool-status.png'});await page.keyboard.press('Escape');expect(await save()).toEqual(before);
 });

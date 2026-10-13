@@ -84,7 +84,7 @@ test('palette popups remain usable over open windows while the map stays behind 
   await bank.locator('.game-window-title').focus();
   for(let i=0;i<13;i++)await page.keyboard.press('ArrowLeft');
   for(let i=0;i<4;i++)await page.keyboard.press('ArrowUp');
-  for(const name of ['Plant','Spray']){
+  for(const name of ['PLANT','SPRAY']){
     await page.getByRole('button',{name,exact:true}).click();
     const item=page.getByRole('menuitem').first(),box=(await item.boundingBox())!;
     expect(await item.evaluate((e,p)=>e.contains(document.elementFromPoint(p.x+p.width/2,p.y+p.height/2)),box)).toBe(true);

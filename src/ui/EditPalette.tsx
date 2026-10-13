@@ -16,8 +16,8 @@ export function EditPalette({ artwork, active, onTool, onField, onSpray, disable
 }) {
   return <div className="edit-palette" role="toolbar" aria-label="Edit tools">
     {EDIT_TOOLS.map((tool, index) => <EditToolButton key={tool} tool={tool} index={index} artwork={artwork.src} pressed={active === tool} disabled={disabled} onTool={onTool} />)}
-    <EditCaptionButton className="edit-plant" pressed={active === 'Plant'} disabled={disabled} onClick={onField}>Plant</EditCaptionButton>
-    <EditCaptionButton className="edit-spray" pressed={active === 'Spray'} disabled={disabled} onClick={onSpray}>Spray</EditCaptionButton>
+    <EditCaptionButton className="edit-plant" pressed={active === 'Plant'} disabled={disabled} onClick={onField}>PLANT</EditCaptionButton>
+    <EditCaptionButton className="edit-spray" pressed={active === 'Spray'} disabled={disabled} onClick={onSpray}>SPRAY</EditCaptionButton>
   </div>;
 }
 

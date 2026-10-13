@@ -9,7 +9,7 @@ test('Plant shows original status text and a deduplicated recent history without
   const before=await save(),field=readScenario(readFileSync('../simfarm-dos/SCEN0.SSM')).fields[1];
   await expect(page.getByRole('button',{name:'Edit message history'})).toBeVisible();
   await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('');
-  await page.getByRole('button',{name:'Plant',exact:true}).click();await page.locator('[data-field-tool="0"]').click();
+  await page.getByRole('button',{name:'PLANT',exact:true}).click();await page.locator('[data-field-tool="0"]').click();
   const status=page.getByRole('button',{name:'Edit message history'});await expect(status).toHaveText('Choose a location for your field.');
   expect(await status.boundingBox()).toMatchObject({x:48,y:48,height:16});
   await page.locator('#viewport').evaluate((el,p)=>el.scrollTo(Math.max(0,p.x-10)*16,Math.max(0,p.y-10)*16),{x:field.x,y:field.y});

@@ -38,7 +38,7 @@ test('Edit fills the desktop permanently; windows close without resizing or unmo
 test('palette opens field planning and real tools; Speed retains slower pacing and Save/Load stays available through File', async ({ page }) => {
   await page.clock.install({ time: new Date('1993-04-05T12:00:00Z') }); await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));
   await page.goto('/'); await expect(page.locator('#world')).toBeVisible();
-  await page.getByRole('button', { name: 'Plant', exact: true }).click();
+  await page.getByRole('button', { name: 'PLANT', exact: true }).click();
   await expect(page.getByRole('menu', { name: 'Plant Field', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await openWindow(page,'schedule');await expect(page.locator('#field-planner')).toBeVisible();
@@ -71,7 +71,8 @@ test('Edit palette rebuilds source cells with black backgrounds, CSS bevels, spr
     expect(await button.evaluate(el => { const s = getComputedStyle(el); return [s.borderTopWidth, s.backgroundColor, s.paddingTop, s.paddingLeft, s.paddingRight]; })).toEqual(['0px', 'rgb(0, 0, 0)', '1px', '1px', '0px']);
     if (index < 12) expect(await button.locator('.edit-palette-face').evaluate(el => { const s = getComputedStyle(el); return [s.backgroundPosition, s.imageRendering]; })).toEqual([`${-(x + 3)}px ${-(y + 3)}px`, 'pixelated']);
   }
-  expect(await palette.getByRole('button').evaluateAll(els => els.slice(12).map(el => el.textContent))).toEqual(['Plant', 'Spray']);
+  expect(await palette.getByRole('button').evaluateAll(els => els.slice(12).map(el => el.textContent))).toEqual(['PLANT', 'SPRAY']);
+  expect(await palette.locator('.edit-caption').evaluateAll(els => els.map(el => [getComputedStyle(el).fontSize, getComputedStyle(el).fontWeight]))).toEqual([['10px', '700'], ['10px', '700']]);
   await palette.getByRole('button', { name: 'Fence', exact: true }).hover(); await page.mouse.down();
   expect(await palette.getByRole('button', { name: 'Fence', exact: true }).locator('.edit-palette-face').evaluate(el => getComputedStyle(el).borderTopColor)).toBe('rgb(130, 130, 130)');
   await page.mouse.up(); await page.keyboard.press('Escape');
@@ -88,8 +89,8 @@ test('palette keeps the running action depressed and returns to View object when
   await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
   await palette.getByRole('button', { name: 'Bulldoze', exact: true }).click(); expect(await pressed()).toEqual(['Bulldoze']);
   await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
-  await palette.getByRole('button', { name: 'Plant', exact: true }).click(); await expect.poll(pressed).toEqual(['Plant']);
+  await palette.getByRole('button', { name: 'PLANT', exact: true }).click(); await expect.poll(pressed).toEqual(['PLANT']);
   await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
-  await palette.getByRole('button', { name: 'Spray', exact: true }).click(); await expect.poll(pressed).toEqual(['Spray']);
+  await palette.getByRole('button', { name: 'SPRAY', exact: true }).click(); await expect.poll(pressed).toEqual(['SPRAY']);
   await page.keyboard.press('Escape'); await expect.poll(pressed).toEqual(['View object']);
 });

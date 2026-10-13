@@ -24,7 +24,7 @@ test('all crops are immediately plantable and plannable with source artwork and 
   const fixture = shopFixture(); fixture.state.disasters.enabled = false;
   const legacy = fixture.load().save(4), game = fixture.load().withAllCrops(browserCrops);
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  await page.getByRole('button',{name:'Plant',exact:true}).click();await expect(page.locator('[data-field-tool]')).toHaveCount(24);await page.keyboard.press('Escape');
+  await page.getByRole('button',{name:'PLANT',exact:true}).click();await expect(page.locator('[data-field-tool]')).toHaveCount(24);await page.keyboard.press('Escape');
   await load(page, legacy);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await reveal(page, '#file-menu-button'); await page.locator('#file-menu-button').click(); await expect(page.getByRole('menuitem', { name: 'Load Crop' })).toHaveCount(0);

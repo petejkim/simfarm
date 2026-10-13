@@ -319,7 +319,7 @@ test('map tools buy original land and complete a new-field planting and harvest 
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
   await selectPlant(page);await clickFarmTile(page,0,16); // rejected: Plant stays armed
-  await expectPaletteAction(page,'Plant');
+  await expectPaletteAction(page,'PLANT');
   await selectProperty(page,0,2);
   await expect(page.locator('.overview-land-value')).toHaveText('18060');
   await page.screenshot({ path: 'artifacts/browser-land-purchase.png', fullPage: true });
@@ -327,9 +327,9 @@ test('map tools buy original land and complete a new-field planting and harvest 
   await expect(page.locator('#farm-cash')).toHaveText('$21,940');
   await expect(page.locator('#map-land-action')).toHaveText('SELL');
   await selectPlant(page);await clickFarmTile(page,0,16); // rejected: Plant stays armed
-  await expectPaletteAction(page,'Plant');
+  await expectPaletteAction(page,'PLANT');
   await setAutoDoze(page,true);await clickFarmTile(page,0,16);
-  await expectPaletteAction(page,'Plant'); // success also stays armed
+  await expectPaletteAction(page,'PLANT'); // success also stays armed
   await page.getByRole('button',{name:'View object',exact:true}).click();await expectPaletteAction(page,'View object');
   await expectSelectedField(page,9);
   expect((await farmSnapshot(page)).scenario.fields.filter(f=>f.active).length).toBe(9);
@@ -410,7 +410,7 @@ test('all four field treatments use original stored supplies and restore crop wo
     for(let day=0;day<8;day++){await (await speedItem(page,'#next-day')).click();}
     expect(await fieldDescription(page)).toContain('Growing');
   }
-  await page.setViewportSize({width:1280,height:844});await reveal(page,'#viewport');await expect(page.getByRole('button',{name:'Spray',exact:true})).toBeVisible();
+  await page.setViewportSize({width:1280,height:844});await reveal(page,'#viewport');await expect(page.getByRole('button',{name:'SPRAY',exact:true})).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   expect(errors).toEqual([]);
 });

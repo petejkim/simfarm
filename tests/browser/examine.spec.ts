@@ -82,7 +82,7 @@ test('choosing another palette action closes Examine; View object keeps it open'
   const f=shopFixture();f.state.disasters.enabled=false;const g=f.load().withAllCrops(browserCrops);
   g.dispatch({type:'build',buildingType:67,x:40,y:40});await load(page,g.save(4));
   const dialog=page.getByRole('dialog',{name:'Examine',exact:true}),palette=page.getByRole('toolbar',{name:'Edit tools'});
-  for(const name of ['Fence','Plant','Spray']){
+  for(const name of ['Fence','PLANT','SPRAY']){
     await palette.getByRole('button',{name:'View object',exact:true}).click();await point(page,40,40);await expect(dialog).toBeVisible();
     await palette.getByRole('button',{name:'View object',exact:true}).click();await expect(dialog).toBeVisible();
     await palette.getByRole('button',{name,exact:true}).click();await expect(dialog).toHaveCount(0);

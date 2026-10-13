@@ -10,7 +10,7 @@ export async function clickFarmTile(page:Page,x:number,y:number){
 }
 export async function selectPlant(page:Page,cropSlot=0){
   await reveal(page,'#viewport');
-  await page.getByRole('button',{name:'Plant',exact:true}).click();
+  await page.getByRole('button',{name:'PLANT',exact:true}).click();
   await page.locator(`[data-field-tool="${cropSlot}"]`).click();
 }
 /** Plant one field, then return to View object: Plant stays armed after a click (user request). */
@@ -39,6 +39,6 @@ export async function buyPlot(page:Page,x:number,y:number){
 }
 
 export async function sprayField(page:Page,x:number,y:number,treatment:string){
-  await reveal(page,'#viewport');await page.getByRole('button',{name:'Spray',exact:true}).click();
+  await reveal(page,'#viewport');await page.getByRole('button',{name:'SPRAY',exact:true}).click();
   await page.locator(`[data-field-tool="${treatment}"]`).click();await clickFarmTile(page,x,y);
 }

@@ -57,7 +57,7 @@ test('Plant outline matches source XOR pixels across weather, masked objects, re
   for(const [current,temperature,palette] of [[0,70,'simfarm.pal'],[3,70,'rainpal.pal'],[3,20,'frostpal.pal']] as const){
     Object.assign(f.state.weather,{current,temperature});const game=f.load().withAllCrops(browserCrops),text=game.save(4),world=game.getSnapshot().scenario;
     await load(page,text);
-    await page.getByRole('button',{name:'Plant',exact:true}).click();await page.locator('[data-field-tool="0"]').click();
+    await page.getByRole('button',{name:'PLANT',exact:true}).click();await page.locator('[data-field-tool="0"]').click();
     for(const [x,y] of [[10,20],[12,21]]){
       await hover(page,x,y);
       expect(await pixels(page,region),`${palette} at ${x},${y}`).toEqual(expected(world,region,palette,{x,y,width:8,height:8}));
@@ -66,7 +66,7 @@ test('Plant outline matches source XOR pixels across weather, masked objects, re
     expect(await pixels(page,region)).toEqual(expected(world,region,palette,{x:12,y:21,width:1,height:1}));
     await page.mouse.move(0,0);expect(await pixels(page,region)).toEqual(expected(world,region,palette));
     // The footprint extends beyond the map; only the surviving source edges draw.
-    await page.getByRole('button',{name:'Plant',exact:true}).click();await page.locator('[data-field-tool="0"]').click();
+    await page.getByRole('button',{name:'PLANT',exact:true}).click();await page.locator('[data-field-tool="0"]').click();
     await hover(page,95,95);const edge={x:94*16,y:94*16,width:32,height:32};
     expect(await pixels(page,edge)).toEqual(expected(world,edge,palette,{x:95,y:95,width:8,height:8}));
     await hover(page,0,0);const origin={x:0,y:0,width:144,height:144};
@@ -113,7 +113,7 @@ test('View, Spray and Bulldoze follow one tile over whole fields and erase on po
   await page.getByRole('button',{name:'View object',exact:true}).click();await check(12,21);await check(15,22);
   await page.mouse.move(0,0);expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal'));
   for(const label of ['Fertilize','Pesticide','Herbicide','Fungicide']){
-    await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:label,exact:true}).click();
+    await page.getByRole('button',{name:'SPRAY',exact:true}).click();await page.getByRole('menuitem',{name:label,exact:true}).click();
     await check(12,21);await check(9,19); // Field presence does not enlarge or tint the outline.
     await page.keyboard.press('Escape');await page.mouse.move(0,0);
     expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal'));
