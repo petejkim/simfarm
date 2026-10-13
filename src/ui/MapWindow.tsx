@@ -12,7 +12,9 @@ import { spriteFace } from './chrome/Sprite';
 
 export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLocate }: {
   assets: GameAssets; snapshot: GameSnapshot; onCommand: (command: GameCommand) => void;
-  viewportRef: RefObject<HTMLDivElement | null>; zoom: number; onLocate: (x:number,y:number)=>void;
+  viewportRef: RefObject<HTMLDivElement | null>; zoom: number;
+  /** Centres the Edit view on a world point in tiles; scrolling clamps the view to the farm's edges. */
+  onLocate: (x:number,y:number)=>void;
 }) {
   const {active,order,close}=useWindows(),canvas=useRef<HTMLCanvasElement>(null);
   const legend=useRef<HTMLCanvasElement>(null);
@@ -36,7 +38,8 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
     const rect=event.currentTarget.getBoundingClientRect(),pixel=2*rect.width/event.currentTarget.offsetWidth;
     const x=Math.floor((event.clientX-rect.left)/pixel),y=Math.floor((event.clientY-rect.top)/pixel);
     if(x<0||x>=96||y<0||y>=96)return;
-    if(mode===1){setSelected({x:x>>3,y:y>>3});}else onLocate(x,y);
+    // The clicked tile becomes the centre of the Edit view (user request; the view's corner followed the pointer before).
+    if(mode===1){setSelected({x:x>>3,y:y>>3});}else onLocate(x+.5,y+.5);
   }
   const art=assets.mapArtwork.src;
   return <GameWindow windowKey="map" title="Map" framed>
@@ -58,7 +61,7 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
               onPointerUp={e=>{if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);}}
               onKeyDown={e=>{const offset=({ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]} as Record<string,number[]>)[e.key];if(!offset)return;
                 e.preventDefault();if(mode===1){setSelected(p=>({x:Math.max(0,Math.min(11,p.x+offset[0])),y:Math.max(0,Math.min(11,p.y+offset[1]))}));}
-                else onLocate(Math.max(0,Math.min(95,view.x/2+offset[0])),Math.max(0,Math.min(95,view.y/2+offset[1])));}} />
+                else onLocate(Math.max(0,Math.min(96,(view.x+view.width/2)/2+offset[0])),Math.max(0,Math.min(96,(view.y+view.height/2)/2+offset[1])));}} />
             {/* Layered in the same grid cell as the map: the Edit view outline. */}
             <div className="overview-edit-outline" style={{marginLeft:view.x,marginTop:view.y,width:view.width,height:view.height}} />
           </div>

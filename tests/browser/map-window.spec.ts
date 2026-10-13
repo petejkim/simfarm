@@ -25,9 +25,22 @@ test('original Map has all source overlays, HTML help and titles, source geometr
   }
   expect(frames.size).toBeGreaterThan(4);
   await panel.getByRole('button',{name:'Field Profit',exact:true}).click();await expect(panel.locator('.overview-mode-name')).toHaveText('Overhead');
-  await canvas.click({position:{x:16,y:24}});
-  await expect.poll(()=>page.locator('#viewport').evaluate(el=>[el.scrollLeft,el.scrollTop])).toEqual([128,192]);
-  await expect.poll(()=>page.locator('.overview-edit-outline').evaluate(el=>[parseFloat((el as HTMLElement).style.marginLeft),parseFloat((el as HTMLElement).style.marginTop)])).toEqual([16,24]); // outline offset within the map's grid cell
+  // A click centres the Edit view on the clicked tile (user request), clamped to the farm's edges.
+  const viewport=page.locator('#viewport'),centre=()=>viewport.evaluate(el=>[(el.scrollLeft+el.clientWidth/2)/16,(el.scrollTop+el.clientHeight/2)/16].map(v=>Math.round(v*10)/10));
+  await canvas.click({position:{x:90,y:110}});
+  await expect.poll(centre).toEqual([45.5,55.5]);
+  const scroll=await viewport.evaluate(el=>[el.scrollLeft,el.scrollTop]);
+  await expect.poll(()=>page.locator('.overview-edit-outline').evaluate(el=>[parseFloat((el as HTMLElement).style.marginLeft),parseFloat((el as HTMLElement).style.marginTop)])).toEqual([scroll[0]/8,scroll[1]/8]); // outline offset within the map's grid cell
+  // Dragging keeps the view centred under the pointer.
+  const box=(await canvas.boundingBox())!;await page.mouse.move(box.x+90,box.y+110);await page.mouse.down();await page.mouse.move(box.x+100,box.y+90,{steps:3});await page.mouse.up();
+  await expect.poll(centre).toEqual([50.5,45.5]);
+  // Corners clamp the view to the farm.
+  await canvas.click({position:{x:1,y:1}});await expect.poll(()=>viewport.evaluate(el=>[el.scrollLeft,el.scrollTop])).toEqual([0,0]);
+  await canvas.click({position:{x:191,y:191}});
+  await expect.poll(()=>viewport.evaluate(el=>[el.scrollWidth-el.clientWidth-el.scrollLeft,el.scrollHeight-el.clientHeight-el.scrollTop].map(Math.round))).toEqual([0,0]);
+  // Arrow keys move the centre one tile.
+  await canvas.click({position:{x:90,y:110}});await expect.poll(centre).toEqual([45.5,55.5]);
+  await canvas.press('ArrowRight');await expect.poll(centre).toEqual([46.5,55.5]);
   await panel.getByRole('button',{name:'Property',exact:true}).click();await plot(page,11,11);await canvas.press('ArrowRight');await canvas.press('ArrowDown');
   await page.screenshot({path:'artifacts/browser-map-property.png'});
   const window=page.getByRole('dialog',{name:'Map',exact:true});await window.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');

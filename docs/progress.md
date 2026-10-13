@@ -3572,3 +3572,11 @@ Validation: type check. A mobile-touch case covers both orientations:
 - landscape: both menus right of the palette and inside the workspace, Plant scrolling, Spray level with its button unless moved up to the workspace bottom.
 
 The portrait strip case now checks the menu sits over PLANT. mobile-touch 18/18; field-tools, palette-supplies, edit-workspace and edit-cursors 15/15.
+
+### 5. Map window centres the Edit view on the pointer
+
+Clicking or dragging on the overview map now centres the Edit view on the tile under the pointer, clamped by scrolling at the farm's edges. Before, the view's top-left corner followed the pointer. This is a native change (user request); the earlier behaviour is not claimed as the source's.
+- `onLocate(x, y)` means "centre on world point x, y in tiles". MapWindow passes the clicked tile's centre (x + 0.5). FarmView sets the existing centre-based `focus`.
+- The overview's arrow keys move the current view centre by one tile. They previously used its top-left corner, which would now jump half a view.
+
+Validation: map-window clicks (90, 110) and checks the view centre is tile 45.5, 55.5 with the outline matching the scroll. A drag moves the centre to 50.5, 45.5. Corner clicks clamp to the first and last scroll positions. ArrowRight moves the centre one tile. The phone-scaled locate case checks a centred 40.5, 20.5. map-window, mobile-touch, navigation, window-viewport and homestead: 29/29.

@@ -53,8 +53,8 @@ test.describe('phone screen',()=>{
     const scale=Number(await map.getAttribute('data-scale')),canvas=(await map.locator('canvas').first().boundingBox())!;
     await page.mouse.click(canvas.x+40.5*2*scale*Z,canvas.y+20.5*2*scale*Z);
     const viewport=page.locator('#viewport');
-    // Locate centres the Edit view on the tile one view right of and below it: the scroll origin is that tile.
-    await expect.poll(()=>viewport.evaluate(v=>[v.scrollLeft,v.scrollTop])).toEqual([40*16,20*16]);
+    // The tapped tile becomes the centre of the Edit view.
+    await expect.poll(()=>viewport.evaluate(v=>[(v.scrollLeft+v.clientWidth/2)/16,(v.scrollTop+v.clientHeight/2)/16].map(c=>Math.round(c*10)/10))).toEqual([40.5,20.5]);
   });
   test('portrait centres the palette below the terrain as two rows of launcher-sized tools with PLANT and SPRAY at the end',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
