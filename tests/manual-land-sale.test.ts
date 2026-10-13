@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {shopFixture} from './support/livestock';
 import {worldIndex} from '../src/formats/scenario';
 import {checkManualLandSale} from '../src/simulation/manual-land-sale';
-import {quoteLand} from '../src/simulation/land';
+import {quoteLand,quoteLandSale} from '../src/simulation/land';
 import {readNativeSave,writeNativeSave} from '../src/formats/native-save';
 import {browserCrops} from './support/crop-catalog';
 import {GameSimulation} from './support/game';
@@ -35,8 +35,10 @@ test('ordinary buy/sell commands credit taxable land income, retain home and sur
   const game=GameSimulation.load(writeNativeSave(state,4),browserCrops).simulation.withAllCrops(browserCrops);
   const before=game.getSnapshot(),cost=quoteLand(before.scenario,1,1,before.weather.soilMoisture)!.price;
   game.dispatch({type:'buy-land',regionX:1,regionY:1});assert.equal(game.getSnapshot().scenario.farm.cash,100000-cost);
-  const bought=game.getSnapshot(),price=quoteLand(bought.scenario,1,1,bought.weather.soilMoisture)!.price;
-  assert.equal(price,cost+100); // SF-158: the plot itself increases occupied-land pricing.
+  const bought=game.getSnapshot(),price=quoteLandSale(bought.scenario,1,1,bought.weather.soilMoisture)!.price;
+  // SF-158: the source quote counts the plot itself (+100), so selling paid $100 more than buying. The native sale
+  // quote treats the plot as unowned, so an immediate round trip returns exactly the purchase price.
+  assert.equal(quoteLand(bought.scenario,1,1,bought.weather.soilMoisture)!.price,cost+100);assert.equal(price,cost);
   const income=bought.finances.accounts.landIncome,sales=bought.scenario.farm.salesAccumulator,expenses=bought.scenario.farm.landExpenses;
   game.dispatch({type:'sell-land',regionX:1,regionY:1});const after=game.getSnapshot();assert.ok(after.lastLandSaleResult?.ok);
   assert.equal(after.scenario.farm.cash,100000-cost+price);assert.equal(after.scenario.farm.landExpenses,expenses);
@@ -46,4 +48,16 @@ test('ordinary buy/sell commands credit taxable land income, retain home and sur
   assert.equal(loaded.getSnapshot().lastLandSaleResult,null);assert.deepEqual(JSON.parse(loaded.save(4)),JSON.parse(text));
   game.dispatch({type:'sell-land',regionX:1,regionY:1});assert.deepEqual(game.getSnapshot().lastLandSaleResult,{ok:false,reason:'not-owned'});assert.equal(game.save(4),text);
   assert.equal(readNativeSave(text).state.finances.accounts.landIncome,(income+price)>>>0);
+});
+
+test('SF-158 correction: repeated buy/sell round trips can no longer create cash',()=>{
+  const {state}=shopFixture();state.scenario.regionalConditions.fill(0);
+  state.finances.accounts.homeRegionX=0;state.finances.accounts.homeRegionY=0;
+  const game=GameSimulation.load(writeNativeSave(state,4),browserCrops).simulation.withAllCrops(browserCrops);
+  const start=game.getSnapshot().scenario.farm.cash;
+  for(let i=0;i<20;i++){
+    game.dispatch({type:'buy-land',regionX:1,regionY:1});assert.ok(game.getSnapshot().lastLandResult?.ok);
+    game.dispatch({type:'sell-land',regionX:1,regionY:1});assert.ok(game.getSnapshot().lastLandSaleResult?.ok);
+  }
+  assert.equal(game.getSnapshot().scenario.farm.cash,start); // the original gained $100 per round trip
 });

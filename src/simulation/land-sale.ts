@@ -1,7 +1,7 @@
 import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
 import { prepareBuildingDemolitions, type BuildingDemolitionState } from './building-demolition';
 import { validateClearingEffects, type ClearingEffects } from './clearing-effects';
-import { fenceLandSaleNeighbors, quoteLand } from './land';
+import { fenceLandSaleNeighbors, quoteLandSale } from './land';
 
 export interface LandSaleState extends BuildingDemolitionState { landIncome: number }
 export type LandSaleResult = { ok: true; regionX: number; regionY: number; price: number; demolishedBuildings: number[] }
@@ -11,7 +11,7 @@ export type LandSaleResult = { ok: true; regionX: number; regionY: number; price
  * not this routine. Default passes taxable=false; ordinary sales may pass true. */
 export function sellLand(world: Scenario, state: LandSaleState, regionX: number, regionY: number,
   effects: ClearingEffects, soilMoisture: number, taxable: boolean): LandSaleResult {
-  const quote = quoteLand(world, regionX, regionY, soilMoisture);
+  const quote = quoteLandSale(world, regionX, regionY, soilMoisture);
   if (!quote) return { ok: false, reason: 'outside-map' };
   if (quote.ownership !== 1) return { ok: false, reason: 'not-owned' };
   validateClearingEffects(effects, soilMoisture);

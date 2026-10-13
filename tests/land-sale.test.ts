@@ -6,7 +6,7 @@ import { readAssetSaleState } from '../src/formats/asset-sale';
 import { readOtherGoodsDefinitions } from '../src/formats/inventory';
 import { createClearingEffects, updateClearingEffects } from '../src/simulation/clearing-effects';
 import { findOverlappingField, removeField } from '../src/simulation/field-removal';
-import { quoteLand } from '../src/simulation/land';
+import { quoteLand, quoteLandSale } from '../src/simulation/land';
 import { sellLand } from '../src/simulation/land-sale';
 const source = (name: string) => readFileSync(new URL(`../../simfarm-dos/${name}`, import.meta.url));
 const setup = (id = 4) => {
@@ -37,7 +37,8 @@ for (let id = 0; id < 8; id++) test(`every owned region in original farm ${id + 
     const original = setup(id).world;
     for (let rx = 0; rx < 12; rx++) for (let ry = 0; ry < 12; ry++) {
       if (original.regionalConditions[(rx * 12 + ry) * 7 + 1] !== 1) continue;
-      const { world, state, effects } = setup(id), quote = quoteLand(world, rx, ry, 8)!;
+      const { world, state, effects } = setup(id), quote = quoteLandSale(world, rx, ry, 8)!; // SF-158 native sale quote
+      assert.equal(quote.price, (quoteLand(world, rx, ry, 8)!.price - 100) & 0xffff);
       const farm = { ...world.farm }, fields = world.fields.map(f => Uint8Array.from(f.bytes));
       const schedule = Uint8Array.from(world.schedule.bytes), raw = Uint8Array.from(world.sourceBytes), oldIncome = state.landIncome;
       const result = sellLand(world, state, rx, ry, effects, 8, false);
@@ -60,7 +61,7 @@ test('sale preserves only the tree image range, keeps unknown map bits and appli
     const { world, state, effects } = setup(); world.buildings.forEach(b => b.flags &= ~32); world.regionalConditions.fill(0);
     world.regionalConditions[1] = 1; world.farm.cash = cash; world.farm.salesAccumulator = 0xfffffff0; state.landIncome = 0xfffffff0;
     for (let i = 0; i < 64; i++) { const c = world.cells[worldIndex(i >>> 3, i & 7)]; c.terrain = 0xa800 | (20 + i); c.overlay = 0xffff; c.attribute = 40; }
-    const price = quoteLand(world, 0, 0, 3)!.price;
+    const price = quoteLandSale(world, 0, 0, 3)!.price;
     sellLand(world, state, 0, 0, effects, 3, taxable);
     assert.equal(world.farm.cash, Math.min(9999999, (cash + price) >>> 0));
     assert.equal(world.farm.salesAccumulator, taxable ? (0xfffffff0 + price) >>> 0 : 0xfffffff0);

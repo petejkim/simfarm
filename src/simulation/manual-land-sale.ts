@@ -1,7 +1,7 @@
 import type { Scenario } from '../formats/scenario';
 import type { FinancialState } from '../formats/finance';
 import { worldIndex } from '../formats/scenario';
-import { quoteLand } from './land';
+import { quoteLandSale } from './land';
 import { sellLand, type LandSaleResult } from './land-sale';
 
 export type ManualLandSaleResult = LandSaleResult | { ok: false; reason: 'home-plot' | 'field-on-plot' };
@@ -9,7 +9,7 @@ export type ManualLandSaleResult = LandSaleResult | { ok: false; reason: 'home-p
  * the64 overlay words for field bit1000 before the taxable ordinary sale. */
 export function checkManualLandSale(world: Scenario, finances: FinancialState, regionX: number, regionY: number,
   soilMoisture: number): ManualLandSaleResult {
-  const quote = quoteLand(world, regionX, regionY, soilMoisture);
+  const quote = quoteLandSale(world, regionX, regionY, soilMoisture);
   if (!quote) return { ok: false, reason: 'outside-map' };
   if (quote.ownership !== 1) return { ok: false, reason: 'not-owned' };
   if (regionX === finances.accounts.homeRegionX && regionY === finances.accounts.homeRegionY)

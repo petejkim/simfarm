@@ -22,6 +22,15 @@ export function quoteLand(world: Scenario, regionX: number, regionY: number, soi
   return { price, ownership: ownership(world, regionX, regionY), fertility };
 }
 
+/** Sale price (SF-158 native correction). The source sale 0x3c9c2 calls quote 0x3c766 at 0x3ca05 while the plot still
+ * counts toward the occupied-region term (+100 per region), so selling paid $100 more than buying, an endless round
+ * trip. Natively a sale is quoted as if the plot were already unowned, i.e. what buying it back would cost now.
+ * Tax assessment (0x3cba8) keeps the source quote. */
+export function quoteLandSale(world: Scenario, regionX: number, regionY: number, soilMoisture: number): LandQuote | null {
+  const quote = quoteLand(world, regionX, regionY, soilMoisture);
+  return quote && quote.ownership === 1 ? { ...quote, price: (quote.price - 100) & 0xffff } : quote;
+}
+
 // DS 6190:59c4, indexed by N/E/S/W bits 1/2/4/8. DS 56c6 connects fences (177..187)
 // and gates (188..191); its gate flags 0x24 prevent rewriting gate graphics.
 const fenceShapes = [0, 0, 1, 2, 0, 0, 3, 4, 1, 5, 1, 6, 7, 8, 9, 10];

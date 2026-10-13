@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState, type PointerEvent, type RefObject } 
 import type { GameAssets } from '../assets/game-assets';
 import { MAP_BUTTONS, MAP_MODES, type MapMode } from '../formats/map-window';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
-import { quoteLand } from '../simulation/land';
+import { quoteLandSale } from '../simulation/land';
 import { paintTerrainPreview } from '../render/terrain-preview';
 import { renderOverview, renderOverviewLegend } from '../render/overview-map';
 import { GameWindow, useWindows } from './GameWindow';
@@ -18,7 +18,8 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
   const legend=useRef<HTMLCanvasElement>(null);
   const [mode,setMode]=useState<MapMode>(0),[selected,setSelected]=useState({x:0,y:0}),[help,setHelp]=useState(false);
   const [view,setView]=useState({x:0,y:0,width:40,height:32});
-  const quote=quoteLand(snapshot.scenario,selected.x,selected.y,snapshot.weather.soilMoisture)!;
+  // Owned plots show what SELL pays (SF-158 sale quote); other plots show the purchase quote.
+  const quote=quoteLandSale(snapshot.scenario,selected.x,selected.y,snapshot.weather.soilMoisture)!;
   useLayoutEffect(()=>{
     if(!order.includes('map'))return;
     paintTerrainPreview(canvas.current!,renderOverview(snapshot.scenario,assets.miniature,assets.catalog.palette,mode,snapshot.weather.soilMoisture,selected));

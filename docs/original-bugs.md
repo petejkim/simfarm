@@ -1367,11 +1367,21 @@ The native Map pointer handler rejects tile coordinates outside0..95 before divi
 
 ## SF-158 — a plot increases its own immediate resale quote
 
-**Status:** verified original transaction arithmetic and native reproduction; apparent gameplay pricing loophole retained. A balancing correction and full long-term tax analysis are deferred. No security vulnerability is claimed.
+**Status:** verified original transaction arithmetic. Reachable endless-cash loop in ordinary play (user report, 2026-10-12). **Native correction implemented 2026-10-12** (user decision); see the correction note at the end of this entry. No security vulnerability is claimed.
 
 Quote3c766 calls the free-region counter3c710, subtracts it from144 at3c81e..3c821, and adds100 per occupied region at3c826..3c829. Buy3c8fd quotes before setting ownership1 at3c933. Ordinary sale3ca05 quotes while the plot is still owned;3ca65 clears ownership only after crediting cash and posting income. Thus buying one empty, non-home plot raises its subsequent sale quote by100 when fertility, moisture, terrain surcharge and other ownership remain fixed and arithmetic/cash caps do not intervene. The Map callback permits the BUY→SELL sequence without a fee or holding-period gate; native browser tests exercise it through the actual controls. No original executable was run.
 
 The source-backed empty-grass fixture explicitly verifies resale price=purchase price+100, exact cash and retained land-expense/taxable-sales/land-income ledgers, and native save/load continuation. Native preserves this original result rather than silently changing the recovered economics. Immediate cash gain does not establish net long-term profit: sale posts gross taxable proceeds and later accounting/tax effects still apply. Revisit whether to add a deliberate enhancement rule after documenting those broader consequences; retain the original formula and evidence separately.
+
+**Correction (2026-10-12):** a user confirmed the loop in play: buying and immediately selling a plot repeatedly yields endless cash.
+- Natively, sales are quoted by `quoteLandSale` (`src/simulation/land.ts`), which prices a farm-owned plot as if it were already unowned. That equals the original quote minus the plot's own 100, wrapped to 16 bits like the source price word, and is what buying it back would cost at that moment.
+- `quoteLandSale` is used by ordinary and forced land sales (`sellLand`), the manual-sale check, and the Map window's price for an owned plot, so the displayed SELL price is what is paid.
+- An immediate round trip now returns exactly the purchase price. The sale still posts taxable land income, so repeating it costs tax and gains nothing.
+- The purchase quote, town-owned plot values and the annual tax land assessment (`ownedLandValue`, `0x3cba8`) keep the original `0x3c766` quote.
+- The original formula and its +100 relation stay pinned in the tests as evidence.
+- Remaining drift is legitimate pricing change between buying and selling: soil moisture (16 per signed unit), fertility, terrain surcharge, and other regions changing hands. It needs time and weather and is not an instant loop.
+
+Tests: `land-sale.test.ts` (every owned region of all eight farms, quote minus 100), `manual-land-sale.test.ts` (the original +100, round trip equal to cost, and 20 buy/sell round trips leaving cash unchanged), and the map-window/native browser specs.
 
 ## SF-159 — Schedule water gauge never selects its fourth step
 

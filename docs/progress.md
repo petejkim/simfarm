@@ -3154,3 +3154,7 @@ Validation: type check; debug-cheats unit tests 2/2; debug-menu browser spec 5/5
 ## 2026-10-12 — FUND charges the donation
 
 The original FUND cheat only credits the town expansion fund, despite saying "you just donated" (SF-180). Natively it now takes $10,000 from cash and is greyed out below $10,000. The fund is real development money, spent on expansions and maintenance shortfalls. Validation: type check; debug-cheats unit tests 2/2; debug-menu browser spec 5/5.
+
+## 2026-10-12 — Land buy/sell loop closed (SF-158)
+
+Selling a just-bought plot paid $100 more than it cost: the original sale quote counts the plot itself among occupied regions. That was already recorded as SF-158 with the fix deferred. Sales and the Map window's SELL price now quote the plot as unowned, so a round trip returns exactly the purchase price. Purchases and the tax assessment keep the original quote. Validation: type check; land, tax, default and asset-sale unit tests 60/60, including a new 20-round-trip regression; map-window and native browser specs 26/26.
