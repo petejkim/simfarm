@@ -23,6 +23,11 @@ test('a first start without saved data generates a random farm in Region 9, 14 a
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.clock.install({ time: new Date('2031-06-10T12:00:00Z') }); await page.clock.pauseAt(new Date('2031-06-10T12:00:00Z'));
   await page.goto('/'); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
+  // First launch opens New Game over the generated farm, which keeps starting behind it; Cancel keeps that farm.
+  const setup = page.getByRole('region', { name: 'New farm', exact: true });
+  await expect(setup).toBeVisible(); await reveal(page, '#region-map');
+  await expect(page.locator('[data-region="8,13"]')).toHaveAttribute('aria-pressed', 'true');
+  await setup.getByRole('button', { name: 'Cancel', exact: true }).click(); await expect(setup).toHaveCount(0);
   const first = await saveToFile(page), options = first.runtime.newFarm.provenance.options;
   expect(options.climate).toEqual({ precipitation: region.precipitation, temperature: region.temperature, wind: region.wind });
   expect([options.river, options.lake, options.date.year]).toEqual([true, false, 2031]);
@@ -32,6 +37,7 @@ test('a first start without saved data generates a random farm in Region 9, 14 a
   // Saved immediately: a reload restores the same farm instead of generating another one.
   await page.reload(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   await expect(page.locator('#save-status')).toHaveText('Saved farm restored (paused).');
+  await expect(setup).toHaveCount(0); // only the first launch
   expect(await saveToFile(page)).toEqual({ ...first, runtime: { ...first.runtime, paused: true } });
   // New Game opens on the same default region.
   await newGame(page); await reveal(page, '#region-map');

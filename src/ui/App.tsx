@@ -23,10 +23,11 @@ export function App() {
 }
 function Game({ assets }: { assets: GameAssets }) {
   // The browser-stored current game is restored (paused) before the first farm mounts; otherwise a random
-  // farm is generated in the default region (Region 9, 14) and saved at once. Scenario 1 is the fallback.
+  // farm is generated in the default region (Region 9, 14) and saved at once, and New Game opens over it
+  // (first launch, user request). Scenario 1 is the fallback.
   const [autosave] = useState(() => new Autosave());
   useEffect(() => autosave.connect(), [autosave]);
-  const [farm, setFarm] = useState<{ id: number | null; serial: number; loaded?: LoadedFarm; autosaveNow: boolean; notice?: string } | null>(null);
+  const [farm, setFarm] = useState<{ id: number | null; serial: number; loaded?: LoadedFarm; autosaveNow: boolean; notice?: string; firstStart?: boolean } | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     void restoreStoredGame(autosave, assets, controller.signal).then(async ({ farm: restored, notice }) => {
@@ -37,7 +38,7 @@ function Game({ assets }: { assets: GameAssets }) {
       if (notice || startsWithScenario1()) { setFarm({ id: 0, serial: 0, autosaveNow: false, notice }); return; }
       try {
         const loaded = await createDefaultFarm(assets, controller.signal);
-        if (!controller.signal.aborted) setFarm({ id: null, serial: 1, loaded, autosaveNow: true });
+        if (!controller.signal.aborted) setFarm({ id: null, serial: 1, loaded, autosaveNow: true, firstStart: true });
       } catch (error) {
         if (!controller.signal.aborted) setFarm({ id: 0, serial: 0, autosaveNow: false,
           notice: `A new farm could not be generated (${error instanceof Error ? error.message : String(error)}); Scenario 1 opened instead.` });
@@ -56,7 +57,7 @@ function Game({ assets }: { assets: GameAssets }) {
   }, [music.requestTrack, sound.play]);
   if (!farm) return <p className="loading">Loading SimFarm…</p>;
   return <WindowDesktop artwork={assets.windowArtwork} onButtonClick={sound.click}>
-    <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded} autosave={autosave} autosaveNow={farm.autosaveNow} startMessage={farm.notice}
+    <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded} openNewGame={farm.firstStart} autosave={autosave} autosaveNow={farm.autosaveNow} startMessage={farm.notice}
       onRetry={() => setFarm(previous => previous && ({ ...previous, serial: previous.serial + 1 }))}
       audioControls={<>
         <MusicControls tracks={assets.catalog.music} music={music} sound={sound} />

@@ -63,6 +63,8 @@ interface Props {
   audioOptions: { music: boolean; sound: boolean; buttonClicks:boolean; toggleButtonClicks:()=>void; toggleMusic: () => void; toggleSound: () => void };
   id: number | null;
   loaded?: LoadedFarm;
+  /** First launch: open New Game once over the default farm, which keeps starting behind it. */
+  openNewGame?: boolean;
   /** Browser-stored current game: follows this farm; `autosaveNow` saves it as soon as it starts. */
   autosave: Autosave; autosaveNow: boolean; startMessage?: string;
   onLoad: (farm: LoadedFarm) => void;
@@ -74,7 +76,7 @@ interface Props {
   onFlightRunning: (running: boolean) => void;
 }
 /** Each new/loaded farm has its own mount, subscriptions, clock and UI selection. */
-export function FarmView({ audioControls, audioOptions, id, loaded, autosave, autosaveNow, startMessage, onLoad, onRetry, assets, zoom, onZoomChange, onGameEvent, onFlightRunning }: Props) {
+export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame, autosave, autosaveNow, startMessage, onLoad, onRetry, assets, zoom, onZoomChange, onGameEvent, onFlightRunning }: Props) {
   const windows = useWindows();
   useEffect(() => windows.reset(), [windows.reset]);
   const [newFarmOpen, setNewFarmOpen] = useState(false);
@@ -88,6 +90,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
   }, [id, loaded, assets.catalog.crops, assets.townLayouts]);
   const resource = useResource(load);
   const simulation = resource.status === 'ready' ? resource.value.simulation : null;
+  const openedNewGame = useRef(false);
+  useEffect(() => { if (openNewGame && simulation && !openedNewGame.current) { openedNewGame.current = true; setNewFarmOpen(true); } }, [openNewGame, simulation]);
   useEffect(() => simulation ? autosave.attach(simulation, id, autosaveNow) : undefined, [simulation]);
   const [fieldMenu,setFieldMenu]=useState<'plant'|'spray'|null>(null),[fieldMapTool,setFieldMapTool]=useState<FieldMapTool|null>(null);
   const [aircraftSlot,setAircraftSlot]=useState<number|null>(null);

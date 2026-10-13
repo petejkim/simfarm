@@ -3289,3 +3289,9 @@ Validation: type check. Browser specs: control-bar, aircraft-flight, tool-hotkey
 At the user's request, `*` now has `user-select: none`, so rapid clicks in the game do not select text. `input` and `textarea` keep `user-select: text` so values such as the map seed and loan amount can still be selected while editing. The menu and control-bar tests used to select their caption text with `getSelection()`. They now check the HTML text directly.
 
 Validation: browser specs main-menu, control-bar, terrain-design and new-farm, 21/21.
+
+## 2026-10-13 — New Game opens on first launch
+
+On a first launch with no stored game, App still generates and saves the Region 9, 14 farm. It now also opens New Game once over that farm, which keeps starting behind it (user request). Cancel keeps the generated farm. Reloads that restore the saved game, and Scenario 1 starts, do not open New Game. A boot title screen was briefly committed for this batch and then removed at the user's request.
+
+Validation: type check. Browser specs first-start, new-farm, region-selection and original-startup, 16/16.
