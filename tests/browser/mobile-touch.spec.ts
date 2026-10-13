@@ -93,6 +93,12 @@ test.describe('phone screen',()=>{
     const status=await boxes('.toolbar-forecast, .toolbar-readouts, .toolbar-pause'),second=span(status);
     expect(status.length).toBe(3);for(const b of status)expect(b.y).toBeGreaterThanOrEqual(first.bottom-0.5);
     expect(second.bottom).toBeLessThanOrEqual(bar.y+bar.height+0.5);expect(Math.abs((second.left+second.right)/2-centre)).toBeLessThan(1);
+    // Menu headings as tall as the 32px launchers, in one row; items 28px.
+    const headings=await boxes('.original-menu-heading');
+    for(const h of headings){expect(Math.abs(h.height-launchers[0].height)).toBeLessThan(1);expect(Math.abs(h.y-headings[0].y)).toBeLessThan(1);}
+    await page.locator('#windows-menu-button').tap();
+    expect(Math.abs((await page.locator('.original-menu-popup [role^=menuitem]').first().boundingBox())!.height-launchers[0].height*28/32)).toBeLessThan(1);
+    await page.locator('#windows-menu-button').tap();
     await page.screenshot({path:'artifacts/browser-mobile-portrait-control-bar.png'});
   });
   test('landscape stacks the menus in a full-height left column beside the control bar and terrain',async({page})=>{
@@ -109,9 +115,23 @@ test.describe('phone screen',()=>{
     const headings=await Promise.all(['file','options','speed','windows'].map(async id=>(await page.locator(`#${id}-menu-button`).boundingBox())!));
     for(const [i,h] of headings.entries()){expect(Math.abs(h.x-nav.x)).toBeLessThan(1);if(i)expect(h.y).toBeGreaterThanOrEqual(headings[i-1].y+headings[i-1].height-0.5);}
     // A menu opens to the right of the column and stays on screen.
+    // Headings and items are taller for tapping.
+    for(const h of headings)expect(Math.round(h.height)).toBe(32);
+    // A menu that fits opens to the right of its heading, level with it.
+    await page.locator('#file-menu-button').tap();const file=(await page.locator('.original-menu-popup').boundingBox())!;
+    expect(Math.abs(file.x-(nav.x+nav.width))).toBeLessThan(1.5);expect(Math.abs(file.y-headings[0].y)).toBeLessThan(1.5);
+    await page.locator('#file-menu-button').tap();
+    // Windows (nine items) would run off the 325px-high screen beside its heading, so it moves up just enough.
     await page.locator('#windows-menu-button').tap();const popup=(await page.locator('.original-menu-popup').boundingBox())!;
-    expect(Math.abs(popup.x-(nav.x+nav.width))).toBeLessThan(1.5);expect(popup.y+popup.height).toBeLessThanOrEqual(desk.y+desk.height+0.5);
+    expect(Math.abs(popup.x-(nav.x+nav.width))).toBeLessThan(1.5);expect(popup.y).toBeLessThan(headings[3].y);
+    expect(popup.y+popup.height).toBeLessThanOrEqual(desk.y+desk.height+0.5);
+    expect(Math.round((await page.locator('.original-menu-popup [role^=menuitem]').first().boundingBox())!.height)).toBe(28);
     await page.screenshot({path:'artifacts/browser-mobile-landscape-menu.png'});
+    // The lowest heading's long menu moves up only far enough to fit between the band and the screen bottom.
+    await page.locator('#windows-menu-button').tap();await page.locator('#debug-menu-button').tap();
+    const debug=(await page.locator('.original-menu-popup').boundingBox())!,debugHeading=(await page.locator('#debug-menu-button').boundingBox())!;
+    expect(debug.y).toBeLessThan(debugHeading.y);expect(debug.y).toBeGreaterThanOrEqual(nav.y-0.5);expect(debug.y+debug.height).toBeLessThanOrEqual(desk.y+desk.height+0.5);
+    await page.screenshot({path:'artifacts/browser-mobile-landscape-debug-menu.png'});
     // Windows keep clear of the menu column.
     await page.locator('#windows-menu-button').tap();await page.locator('#window-bank').tap();
     await expect.poll(async()=>(await page.locator('[data-window=bank]').boundingBox())!.x).toBeGreaterThanOrEqual(nav.x+nav.width-0.5);

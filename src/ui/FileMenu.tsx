@@ -1,6 +1,6 @@
 import {AboutDialog} from './AboutDialog';
 import type {AboutAssets} from '../assets/game-assets';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { MainMenus } from '../formats/main-menus';
 import { useWindows } from './GameWindow';
 import { GAME_WINDOWS, type GameWindow } from './ControlBar';
@@ -40,6 +40,17 @@ export function FileMenu({ about, data, busy, onSave, onSaveToFile, onLoad, onNe
     ? {checked:GAME_WINDOWS.map(key=>key==='edit'||windows.order.includes(key)),choose:index=>onWindow(GAME_WINDOWS[index])} : null;
   function closeMenu(focus = true) { if (focus && active) root.current?.querySelector<HTMLButtonElement>(`#${active.title.toLowerCase()}-menu-button`)?.focus(); setOpen(null); }
   function closeDialog() { setDialog(null); button.current?.focus(); }
+  // Keep an open menu on the desktop: one beside a low heading (the phone landscape column) moves up just enough to
+  // fit, and a menu taller than the desktop scrolls. Menus that already fit, as on desktop, stay where CSS puts them.
+  useLayoutEffect(() => {
+    const popup = menu.current, desktop = popup?.closest('.game-desktop');
+    if (open === null || !popup || !desktop) return;
+    const style = getComputedStyle(desktop), bounds = desktop.getBoundingClientRect();
+    const top = bounds.top + parseFloat(style.paddingTop), bottom = bounds.bottom - parseFloat(style.paddingBottom);
+    popup.style.maxHeight = `${bottom - top}px`;
+    const box = popup.getBoundingClientRect(), shift = Math.max(top - box.top, Math.min(0, bottom - box.bottom));
+    popup.style.translate = shift ? `0 ${shift}px` : '';
+  }, [open]);
   useEffect(() => {
     if (open === null) return;
     (menu.current?.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? menu.current)?.focus();

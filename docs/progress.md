@@ -3456,3 +3456,12 @@ Not checked on a real phone or tablet.
 - **Page colour:** a `--page: #555` token (the menu bar's dark grey) is now the background of `html`/`body`, `#app`, `.game-desktop` and the menu bar. The band and every safe-area inset show that colour instead of face grey. The workspace, bars and windows paint their own backgrounds, so only the edges change. The pre-load "Loading farm…" text, which sits directly on the desktop, is now white.
 
 Validation: mobile-touch landscape case checks the 16px band and the shared colour on `#app`, `.game-desktop` and the menu bar; the portrait case checks there is no band. mobile-touch, control-bar, window-movement, main-menu and native: 50/50.
+
+### Landscape menus beside their headings, taller tap targets (2026-10-13, user request)
+
+- In phone landscape, each menu opens to the right of the heading tapped, level with it, not at the top of the column.
+- **Staying on screen:** a `useLayoutEffect` in `FileMenu` caps each open popup at the desktop's content height (between the top band and bottom inset). If the popup overflows, it is translated up just far enough to fit. All popups scroll vertically (`overflow-y: auto`) when taller than that. On desktop, menus already fit, so nothing moves.
+- At the 1.2× page scale a landscape phone is about 325 CSS px tall, so only short menus (File) stay level. Windows and Options move up, and Debug starts at the band and scrolls.
+- **Tap targets:** on phones in both orientations, menu headings are 32px tall (like the control-bar launchers) and menu items 28px (7px vertical padding). Landscape headings also get 12px side padding; portrait keeps 8px so the six headings still fit one row.
+
+Validation: type check. mobile-touch landscape case checks 32px headings and 28px items, File level with its heading, Windows moved up but still right of the column, Debug kept between the band and the bottom. mobile-touch with main-menu, debug-menu, disaster-menu, window-menu-checks and options: 39/39.
