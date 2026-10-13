@@ -359,7 +359,7 @@ test('touch Buy placement highlights on the first tap and buys on a second tap o
   await session.detach();
 });
 
-test('a touch highlights its tile at touchdown, reverts to the armed tile if it becomes something else, and confirms the armed tile at touchdown',async({page})=>{
+test('a touch highlights its tile at touchdown, keeps it there if it becomes something else, and confirms the armed tile at touchdown',async({page})=>{
   const f=shopFixture();f.state.disasters.enabled=false;const g=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,g.save(4));
   await reveal(page,'#viewport');await page.locator('#window-buy').click();
   const catalog=page.getByRole('region',{name:'Buy catalog'});await catalog.getByRole('button',{name:'Machinery',exact:true}).click();
@@ -376,16 +376,16 @@ test('a touch highlights its tile at touchdown, reverts to the armed tile if it 
     CanvasRenderingContext2D.prototype.drawImage=w.draw;return w.draws;})).toBeLessThan(500);
   await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   expect(await tilePixels(page,12,12)).not.toEqual(plain);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  // A touch elsewhere moves the highlight there at once; when it turns into a pan, a cancelled touch or a long press,
-  // the highlight returns to the armed 12,12.
+  // A touch elsewhere moves the highlight there at once. When it turns into a pan, a cancelled touch or a long press,
+  // the highlight stays on 16,12 (user request: no revert), while 12,12 remains the armed tile.
   const plain16=await tilePixels(page,16,12),from=await coords(page,16,12);
   const press=async()=>{await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[from]});
     await expect.poll(()=>tilePixels(page,16,12)).not.toEqual(plain16);await expect.poll(()=>tilePixels(page,12,12)).toEqual(plain);};
-  const reverted=async()=>{await expect.poll(()=>tilePixels(page,16,12)).toEqual(plain16);await expect.poll(()=>tilePixels(page,12,12)).not.toEqual(plain);};
-  await press();await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:from.x-30,y:from.y-30}]});await reverted();
+  const kept=async()=>{await page.waitForTimeout(100);expect(await tilePixels(page,16,12)).not.toEqual(plain16);expect(await tilePixels(page,12,12)).toEqual(plain);};
+  await press();await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:from.x-30,y:from.y-30}]});await kept();
   await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.locator('#viewport').evaluate(v=>v.scrollTo(0,0));
-  await press();await session.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await reverted();
-  await press();await page.waitForTimeout(700);await reverted();await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await press();await session.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await kept();
+  await press();await page.waitForTimeout(700);await kept();await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   if(await page.locator('[data-window=examine]').isVisible())await page.locator('[data-window=examine]').getByRole('button',{name:/^Close /}).first().click();
   expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   // Touching the armed tile confirms at touchdown: bought while the finger is still down, and the lift buys nothing more.

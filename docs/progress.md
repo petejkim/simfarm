@@ -3621,7 +3621,7 @@ Two-tap tools (Buy placement, Plant, construction, Bulldoze) now respond when th
 - **Highlight at touchdown:** a touch on the terrain highlights its tile immediately. The tile is still armed only when the touch ends as a tap, so a first tap never commits.
   - `FarmMap` keeps the touched tile in a ref (`touched`). The pointer fallback in `updatePointer`/`clearPointer` prefers it over the armed tile; without that, a layout effect rerunning after touchdown fell back to the armed tile (none yet) and wiped the highlight.
   - Arming, a paint stroke, or a tool change clears it.
-- **Revert:** a touch that becomes something else puts the highlight back on the armed tile (`revertTouch`). That covers a pan past the tap slop, a long press, a second finger or pinch, and a cancelled touch. It is deliberately not part of `endTouch`, which React effect cleanups also call.
+- **Revert (removed later the same day at user request, see below):** a touch that becomes something else puts the highlight back on the armed tile (`revertTouch`). That covers a pan past the tap slop, a long press, a second finger or pinch, and a cancelled touch. It is deliberately not part of `endTouch`, which React effect cleanups also call.
 - **Confirm at touchdown:** touching the armed tile confirms at once.
   - Buy/Plant act at touchdown, and the lift is not another tap.
   - Paint tools (construction, Bulldoze) start their stroke at touchdown, painting the tile and continuing as the finger drags.
@@ -3719,3 +3719,12 @@ This is presentation only; simulation state and the original tile choice are unc
 Validation:
 - tests/world-painter.test.ts models the canvas per cell. Over 40 random steps of cell, worker-phase, field-badge and town-event changes, the incremental canvas equals a full `drawWorldBase` every time, with fewer than 9,216 cells repainted. The test also checks that sheet changes and forced paints repaint everything, and that an unchanged world repaints nothing.
 - Build passes; full browser suite 341/341.
+
+### Touch highlight no longer reverts (2026-10-13, user request)
+
+The user asked to remove the revert. When a touch becomes a pan, a long press, a second finger or pinch, or a cancelled touch, its touchdown highlight now stays on the touched tile. The armed tile is unchanged, so touching it still confirms at touchdown, and touching the highlighted (unarmed) tile still only arms it. `revertTouch` is removed. Effect cleanups and pinches only end the touch.
+
+Validation:
+- Build passes.
+- The mobile-touch case now expects the highlight to stay on 16,12 with 12,12 plain after each of pan, cancel and long press, and still confirms on 12,12. mobile-touch passes 23/23.
+- placement-outline, direct-bulldoze and field-tools pass 16/16.
