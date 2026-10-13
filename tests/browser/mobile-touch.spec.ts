@@ -59,6 +59,8 @@ test.describe('phone screen',()=>{
     const palette=page.getByRole('toolbar',{name:'Edit tools'}),box=async(name:string)=>(await palette.getByRole('button',{name,exact:true}).boundingBox())!;
     const near=(actual:number[],expected:number[])=>actual.forEach((value,i)=>expect(Math.abs(value-expected[i]),`[${i}] ${value} vs ${expected[i]}`).toBeLessThan(1));
     const strip=(await palette.boundingBox())!,terrain=(await page.locator('#viewport').boundingBox())!;
+    // No top band in portrait.
+    expect(Math.abs((await page.getByRole('navigation',{name:'Original game menus'}).boundingBox())!.y-(await page.locator('.game-desktop').boundingBox())!.y)).toBeLessThan(1);
     expect(strip.y).toBeGreaterThanOrEqual(terrain.y+terrain.height);expect(Math.abs(strip.y+strip.height-(await page.locator('.game-desktop').boundingBox())!.height-(await page.locator('.game-desktop').boundingBox())!.y)).toBeLessThan(1.5);const desk=(await page.locator('.game-desktop').boundingBox())!;expect(Math.abs(strip.x+strip.width/2-(desk.x+desk.width/2))).toBeLessThan(1);
     // The strip is zoomed 4/3 so tool cells are as big as the 32px control-bar launchers.
     const launcher=(await page.locator('#window-buy').boundingBox())!;
@@ -98,7 +100,10 @@ test.describe('phone screen',()=>{
     await page.setViewportSize({width:844,height:390});
     const desk=(await page.locator('.game-desktop').boundingBox())!,nav=(await page.getByRole('navigation',{name:'Original game menus'}).boundingBox())!;
     const bar=(await page.getByRole('toolbar',{name:'Game toolbar'}).boundingBox())!,workspace=(await page.locator('.edit-workspace').boundingBox())!;
-    expect(Math.abs(nav.x-desk.x)).toBeLessThan(1);expect(Math.abs(nav.y-desk.y)).toBeLessThan(1);expect(Math.abs(nav.height-desk.height)).toBeLessThan(1);
+    // A 16px top band in the page colour (the menu bar's) keeps the top row off the screen edge.
+    expect(Math.abs(nav.x-desk.x)).toBeLessThan(1);expect(Math.abs(nav.y-desk.y-16)).toBeLessThan(1);expect(Math.abs(nav.height-(desk.height-16))).toBeLessThan(1);
+    const colour=(selector:string)=>page.locator(selector).evaluate(el=>getComputedStyle(el).backgroundColor);
+    expect([await colour('.game-desktop'),await colour('.original-menu-bar'),await colour('#app')]).toEqual(Array(3).fill('rgb(85, 85, 85)'));
     expect(Math.abs(bar.x-(nav.x+nav.width))).toBeLessThan(1);expect(bar.y).toBeLessThan(nav.y+1);expect(Math.abs(workspace.x-bar.x)).toBeLessThan(1);expect(Math.abs(workspace.y-(bar.y+bar.height))).toBeLessThan(1);
     // Headings stack top to bottom at the column's left edge.
     const headings=await Promise.all(['file','options','speed','windows'].map(async id=>(await page.locator(`#${id}-menu-button`).boundingBox())!));

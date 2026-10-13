@@ -3449,3 +3449,10 @@ Validation: type check and build. mobile-touch 12/12:
 Related specs: window-movement, main-menu, control-bar, edit-workspace, mobile-audio, map-window, window-stacking, window-viewport, window-menu-checks and debug-menu, 38/38.
 
 Not checked on a real phone or tablet.
+
+### Phone landscape top band and page colour (2026-10-13, user request)
+
+- **Top band:** buttons at the screen edge were still hard to tap in phone landscape. That mode now sets `--top-band: 16px`, which `.game-desktop` uses as its top padding beside the safe-area insets. Portrait, tablets and desktop keep 0.
+- **Page colour:** a `--page: #555` token (the menu bar's dark grey) is now the background of `html`/`body`, `#app`, `.game-desktop` and the menu bar. The band and every safe-area inset show that colour instead of face grey. The workspace, bars and windows paint their own backgrounds, so only the edges change. The pre-load "Loading farm…" text, which sits directly on the desktop, is now white.
+
+Validation: mobile-touch landscape case checks the 16px band and the shared colour on `#app`, `.game-desktop` and the menu bar; the portrait case checks there is no band. mobile-touch, control-bar, window-movement, main-menu and native: 50/50.
