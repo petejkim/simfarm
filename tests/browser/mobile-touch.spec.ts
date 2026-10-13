@@ -73,9 +73,10 @@ test.describe('phone screen',()=>{
     await palette.getByRole('button',{name:'PLANT'}).tap();const menu=(await page.getByRole('menu',{name:'Plant Field'}).boundingBox())!;
     near([menu.y+menu.height],[strip.y]);expect(Math.abs(menu.x+menu.width/2-(strip.x+strip.width/2))).toBeLessThan(1);
     await page.screenshot({path:'artifacts/browser-mobile-portrait-palette.png'});
-    // Landscape keeps the source vertical palette at the left.
+    // Landscape keeps the source vertical palette at the left of the terrain, right of the menu column.
     await page.keyboard.press('Escape');await page.setViewportSize({width:844,height:390});
-    const side=(await palette.boundingBox())!;near([side.x,side.width],[0,49]);
+    const nav=(await page.getByRole('navigation',{name:'Original game menus'}).boundingBox())!;
+    const side=(await palette.boundingBox())!;near([side.x,side.width],[nav.x+nav.width,49]);
     near([(await box('View object')).x-(await box('Move object')).x,(await box('Move object')).width],[24,24]);
   });
   test('portrait splits the control bar into centred rows of launchers, then forecast, readouts and pause',async({page})=>{
@@ -91,6 +92,26 @@ test.describe('phone screen',()=>{
     expect(status.length).toBe(3);for(const b of status)expect(b.y).toBeGreaterThanOrEqual(first.bottom-0.5);
     expect(second.bottom).toBeLessThanOrEqual(bar.y+bar.height+0.5);expect(Math.abs((second.left+second.right)/2-centre)).toBeLessThan(1);
     await page.screenshot({path:'artifacts/browser-mobile-portrait-control-bar.png'});
+  });
+  test('landscape stacks the menus in a full-height left column beside the control bar and terrain',async({page})=>{
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    await page.setViewportSize({width:844,height:390});
+    const desk=(await page.locator('.game-desktop').boundingBox())!,nav=(await page.getByRole('navigation',{name:'Original game menus'}).boundingBox())!;
+    const bar=(await page.getByRole('toolbar',{name:'Game toolbar'}).boundingBox())!,workspace=(await page.locator('.edit-workspace').boundingBox())!;
+    expect(Math.abs(nav.x-desk.x)).toBeLessThan(1);expect(Math.abs(nav.y-desk.y)).toBeLessThan(1);expect(Math.abs(nav.height-desk.height)).toBeLessThan(1);
+    expect(Math.abs(bar.x-(nav.x+nav.width))).toBeLessThan(1);expect(bar.y).toBeLessThan(nav.y+1);expect(Math.abs(workspace.x-bar.x)).toBeLessThan(1);expect(Math.abs(workspace.y-(bar.y+bar.height))).toBeLessThan(1);
+    // Headings stack top to bottom at the column's left edge.
+    const headings=await Promise.all(['file','options','speed','windows'].map(async id=>(await page.locator(`#${id}-menu-button`).boundingBox())!));
+    for(const [i,h] of headings.entries()){expect(Math.abs(h.x-nav.x)).toBeLessThan(1);if(i)expect(h.y).toBeGreaterThanOrEqual(headings[i-1].y+headings[i-1].height-0.5);}
+    // A menu opens to the right of the column and stays on screen.
+    await page.locator('#windows-menu-button').tap();const popup=(await page.locator('.original-menu-popup').boundingBox())!;
+    expect(Math.abs(popup.x-(nav.x+nav.width))).toBeLessThan(1.5);expect(popup.y+popup.height).toBeLessThanOrEqual(desk.y+desk.height+0.5);
+    await page.screenshot({path:'artifacts/browser-mobile-landscape-menu.png'});
+    // Windows keep clear of the menu column.
+    await page.locator('#windows-menu-button').tap();await page.locator('#window-bank').tap();
+    await expect.poll(async()=>(await page.locator('[data-window=bank]').boundingBox())!.x).toBeGreaterThanOrEqual(nav.x+nav.width-0.5);
+    await page.locator('[data-window=bank] .game-window-title').dragTo(page.locator('#viewport'),{targetPosition:{x:2,y:40}});
+    expect((await page.locator('[data-window=bank]').boundingBox())!.x).toBeGreaterThanOrEqual(nav.x+nav.width-0.5);
   });
   test('the game stays fixed to the screen when the page is scrolled',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
@@ -214,5 +235,20 @@ test.describe('pinch zoom',()=>{
     await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
     expect(await save(page)).toEqual(JSON.parse(g.save(4)));
     await session.detach();
+  });
+});
+
+test.describe('tablet screen',()=>{
+  test.use({hasTouch:true,isMobile:true,viewport:{width:820,height:1180}});
+  test('tablets keep the desktop layout in both orientations',async({page})=>{
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    for(const size of [{width:820,height:1180},{width:1180,height:820}]){
+      await page.setViewportSize(size);
+      const nav=(await page.getByRole('navigation',{name:'Original game menus'}).boundingBox())!,palette=(await page.getByRole('toolbar',{name:'Edit tools'}).boundingBox())!;
+      const terrain=(await page.locator('#viewport').boundingBox())!;
+      // Menu bar across the top, palette at the left of the terrain in its source two columns.
+      expect(nav.width).toBeGreaterThan(nav.height*4);expect(Math.round(palette.width)).toBe(49);expect(palette.y).toBeLessThan(terrain.y+terrain.height);
+      expect(Math.abs(palette.x+palette.width-terrain.x)).toBeLessThan(1.5);
+    }
   });
 });

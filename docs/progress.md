@@ -3433,3 +3433,19 @@ Validation: mobile-touch adds a two-row case (one launcher row, the status group
 Validation: build. mobile-touch adds a case that scrolls a lengthened page and wheels it, checking `#app` stays put and is fixed. Run with window-movement, edit-workspace, mobile-audio and native: 42/42.
 
 Follow-up (resolved): the 42 `document.documentElement.scrollWidth` checks in 38 specs could no longer detect horizontal overflow, because a fixed, clipped root never widens the document. They now call `expectNoHorizontalOverflow` (`tests/support/workspace.ts`), which polls `.game-desktop`'s `scrollWidth − clientWidth` until it is 0. Polling is needed because windows refit to a resized screen through a ResizeObserver. control-bar first measured a 74px overflow mid-refit just after its 1280→390 resize, which the old document check could never see. A probe confirmed the helper fails on an injected overflowing element. All 38 specs: 141/142, with the one control-bar failure being that refit timing. After the poll fix, control-bar, mobile-touch and edit-workspace pass 22/22.
+
+## 2026-10-13 — iOS top band removed, phone landscape menu column, phones only
+
+- **Top band removed** (user report): with `#app` fixed to the screen, the iOS 27 home-screen app no longer blurs the menu bar. The `--ios-edge-band` padding rule (32px, home-screen iOS only) is deleted. The opaque `default` status bar still keeps the page below the status bar. This supersedes the band described in the iOS status-bar entry above.
+- **Phone landscape menu column** (user request): the menu bar becomes a full-height column on the left with the headings stacked, and the control bar and Edit workspace fill the space to its right. `.game-desktop` becomes a two-column grid; `.farm-file-controls` and `.original-controls` use `display: contents`, so the bars join the grid without changing the components. Every menu opens to the right of the column, from the column's top, and scrolls if it is taller than the screen.
+- **Windows** keep clear of anything left of the terrain (`leftLimit` in `GameWindow`, beside `topLimit`): the menu column and side safe areas. They are scaled to fit the remaining width. On desktop and in portrait the terrain starts at x = 0, so nothing changes there.
+- **Phones only** (user request): the portrait rules (palette strip, two-row control bar) and the landscape menu column require `pointer: coarse` and a short side of at most 500 CSS px (`max-width` in portrait, `max-height` in landscape). At the 1.2× page scale the largest iPhone is about 358 CSS px and an iPad mini about 620, so tablets keep the desktop layout.
+
+Validation: type check and build. mobile-touch 12/12:
+- new landscape-column case: column position and height, stacked headings, popup right of the column and on screen, Bank kept right of the column when opened and when dragged left;
+- new tablet case: 820×1180 and 1180×820 with touch keep the menu bar on top and the palette at the left;
+- portrait landscape-fallback check updated for the column.
+
+Related specs: window-movement, main-menu, control-bar, edit-workspace, mobile-audio, map-window, window-stacking, window-viewport, window-menu-checks and debug-menu, 38/38.
+
+Not checked on a real phone or tablet.

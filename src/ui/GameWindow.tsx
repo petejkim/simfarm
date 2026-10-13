@@ -35,6 +35,11 @@ function topLimit(element: Element): number {
   const desktop = element.closest('.game-desktop')!, workspace = desktop.querySelector('.edit-workspace');
   return workspace ? Math.round(workspace.getBoundingClientRect().top - desktop.getBoundingClientRect().top) : 48;
 }
+/** Windows also keep clear of anything left of the terrain (the landscape phone menu column, side safe areas). */
+function leftLimit(element: Element): number {
+  const desktop = element.closest('.game-desktop')!, workspace = desktop.querySelector('.edit-workspace');
+  return workspace ? Math.round(workspace.getBoundingClientRect().left - desktop.getBoundingClientRect().left) : 0;
+}
 /** Shared movable frame; optional native modal dialog keeps Edit mounted. */
 export function GameWindow({ windowKey, title, children, forced = false, modal = false, framed = false, descriptionId, onClose, titleArtwork }: {
   windowKey: string; title: string; children: ReactNode; forced?: boolean; modal?: boolean; descriptionId?: string; onClose?: () => void; titleArtwork?: string;
@@ -57,19 +62,19 @@ export function GameWindow({ windowKey, title, children, forced = false, modal =
     const box = frame.current!.getBoundingClientRect(), desktop = frame.current!.closest('.game-desktop')!.getBoundingClientRect();
     // Oversized legacy dialogs may slide horizontally to expose either edge.
     // Keep the title below the menus and the entire window in bounds when it fits.
-    const right = desktop.width - box.width, top = topLimit(frame.current!);
-    return { left: Math.round(Math.max(Math.min(0, right), Math.min(Math.max(0, right), next.left))),
+    const right = desktop.width - box.width, top = topLimit(frame.current!), left = leftLimit(frame.current!);
+    return { left: Math.round(Math.max(Math.min(left, right), Math.min(Math.max(left, right), next.left))),
       top: Math.round(Math.max(top, Math.min(Math.max(top, desktop.height - box.height), next.top))) };
   }
   /** Scales an oversized window to fit, then moves it back in bounds if it sticks out. */
   function fit() {
     const element = frame.current!, desktop = element.closest('.game-desktop')!.getBoundingClientRect();
     // offsetWidth/Height are the untransformed layout size.
-    const next = Math.min(1, desktop.width / element.offsetWidth, (desktop.height - topLimit(element)) / element.offsetHeight);
+    const next = Math.min(1, (desktop.width - leftLimit(element)) / element.offsetWidth, (desktop.height - topLimit(element)) / element.offsetHeight);
     const value = next >= 1 ? 1 : Math.floor(next * 1000) / 1000;
     setScale(value); element.style.transform = value < 1 ? `scale(${value})` : '';
     const box = element.getBoundingClientRect(), current = currentPosition();
-    if (box.right > desktop.right || box.bottom > desktop.bottom || current.top < topLimit(element) || current.left < 0) move(current);
+    if (box.right > desktop.right || box.bottom > desktop.bottom || current.top < topLimit(element) || current.left < leftLimit(element)) move(current);
     else setPosition(old => { if (!old) return old; const bound = bounded(old); return bound.left === old.left && bound.top === old.top ? old : bound; });
   }
   function move(next: Position) {
