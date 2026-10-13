@@ -3190,3 +3190,22 @@ Known gaps:
 The user pointed out that the original pauses the game while the mouse is held to place roads and fences. Disassembly of the held construction loop (24196..24b34) confirms it never returns to the main loop, and manual removal (233c:035c) follows the same pattern. Natively, a held construction or Bulldoze stroke now stops simulation ticks until release. The evidence and confidence are in [direct-construction.md](direct-construction.md). The change also stops simulation work during drags, which may ease the road-placement stutter the user deferred. That effect is unmeasured, because the earlier probe likely never placed a road.
 
 Validation: type check and production build. Browser: direct-construction (new freeze/resume spec), edit-workspace, network and tool-status, 13/13.
+
+## 2026-10-13 — UI polish batch (eight requested items)
+
+Each item has its own commit:
+1. The PLANT/SPRAY palette captions are uppercase at 10px.
+2. The Spray menu's `Fertilize` reads `Fertilizer`. The source DS label stays pinned in `field-tool-menu.test.ts`.
+3. The Date/Funds readouts are 100px wide with 15px rows and 10px text. 80px clipped long months: "September 30, 1993" needs 89px. The readout column has no top padding, so it fits the 32px control bar.
+4. The map panel and palette lose their margins. The palette gains right/bottom ink borders and is 49×189 so its cells keep their geometry.
+5. The Edit message bar has top/bottom ink borders, 8px side padding and no green hover. The history has 8px side padding, a bottom border only, 16px rows and scrolls vertically. The map now starts at y=66.
+6. Menus are 10px.
+7. Trees, Feed and Trough emit only `plopitem`. The source requests `plopitem` then `ploptool`, and with overlapping native voices both became audible (see tree-placement.md).
+8. The selected tool's cost follows its own selection message, recovered from the original Edit title paint 0x20352; the evidence is in edit-status.md.
+
+A follow-up test commit adapts specs that counted `.voc` fetches, which stop at one now that decoded samples are cached.
+
+Validation:
+- Full unit suite: 958/958.
+- Full browser suite: 308/312. Three of the failures were stale expectations from this batch and the earlier sample caching (window-stacking map y, placement-outline menu label, expert-window missing-sound path). Each was fixed in its originating commit and rerun green.
+- The fourth, native "Speed menu presets", timed out under full-suite load. It passes alone (2/2, ~21s against its 45s limit).
