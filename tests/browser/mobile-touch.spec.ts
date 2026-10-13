@@ -73,9 +73,9 @@ test.describe('phone screen',()=>{
     near([view.x,view.y-move.y,paved.x-move.x,paved.y],[move.x,32*Z,32*Z,move.y]);near([bulldoze.x-move.x,bulldoze.y],[160*Z,view.y]);
     const plant=await box('PLANT'),spray=await box('SPRAY');
     near([plant.x-move.x,plant.y,plant.width,plant.height,spray.x,spray.y],[192*Z,move.y,64*Z,32*Z,plant.x,view.y]);
-    // The strip is centred; the Plant menu opens centred just above it.
+    // The Plant menu opens just above the strip, over its button (FieldToolMenu placement is covered below).
     await palette.getByRole('button',{name:'PLANT'}).tap();const menu=(await page.getByRole('menu',{name:'Plant Field'}).boundingBox())!;
-    near([menu.y+menu.height],[strip.y]);expect(Math.abs(menu.x+menu.width/2-(strip.x+strip.width/2))).toBeLessThan(1);
+    near([menu.y+menu.height],[strip.y]);expect(menu.x).toBeLessThanOrEqual(plant.x+plant.width);expect(menu.x+menu.width).toBeGreaterThanOrEqual(plant.x);
     await page.screenshot({path:'artifacts/browser-mobile-portrait-palette.png'});
     // Landscape keeps the source vertical palette at the left of the terrain, right of the menu column.
     await page.keyboard.press('Escape');await page.setViewportSize({width:844,height:390});
@@ -206,6 +206,45 @@ test.describe('phone screen',()=>{
     // touch-action is not inherited; the browser applies the most restrictive value along the ancestors, so html covers the page.
     for(const selector of ['html','.game-desktop'])
       expect(await page.locator(selector).first().evaluate(el=>getComputedStyle(el).touchAction),selector).toBe('manipulation');
+  });
+  test('Plant and Spray menus use two columns of taller rows and open beside their buttons inside the screen',async({page})=>{
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    const palette=page.getByRole('toolbar',{name:'Edit tools'});
+    const open=async(name:'PLANT'|'SPRAY')=>{
+      const button=(await palette.getByRole('button',{name,exact:true}).boundingBox())!;await palette.getByRole('button',{name,exact:true}).tap();
+      const menu=page.getByRole('menu',{name:name==='PLANT'?'Plant Field':'Spray Field'});await expect(menu).toBeVisible();
+      return {button,menu,box:(await menu.boundingBox())!,area:(await page.locator('.edit-workspace').boundingBox())!,strip:(await palette.boundingBox())!};
+    };
+    const inside=(box:{x:number;y:number;width:number;height:number},area:typeof box)=>{
+      expect(box.x).toBeGreaterThanOrEqual(area.x-0.5);expect(box.y).toBeGreaterThanOrEqual(area.y-0.5);
+      expect(box.x+box.width).toBeLessThanOrEqual(area.x+area.width+0.5);expect(box.y+box.height).toBeLessThanOrEqual(area.y+area.height+0.5);
+    };
+    // Portrait: above the strip, over the button, two columns of 12 rows, each 28px.
+    let plant=await open('PLANT');inside(plant.box,plant.area);
+    expect(Math.abs(plant.box.y+plant.box.height-plant.strip.y)).toBeLessThan(1);
+    expect(plant.box.x).toBeLessThanOrEqual(plant.button.x+1);expect(plant.box.x+plant.box.width).toBeGreaterThanOrEqual(plant.button.x+plant.button.width-1);
+    const items=plant.menu.getByRole('menuitem'),first=(await items.nth(0).boundingBox())!,second=(await items.nth(1).boundingBox())!;
+    const lastOfFirst=(await items.nth(11).boundingBox())!,topOfSecond=(await items.nth(12).boundingBox())!;
+    expect(Math.abs(first.height-28*Z)).toBeLessThan(1);expect(Math.abs(second.y-first.y-28*Z)).toBeLessThan(1);
+    expect(Math.abs(topOfSecond.y-first.y)).toBeLessThan(1);expect(topOfSecond.x).toBeGreaterThan(lastOfFirst.x);
+    expect(Math.abs(plant.box.width-224*Z)).toBeLessThan(1);
+    // Arrow keys move by the twelve rows.
+    await page.keyboard.press('ArrowRight');await expect(items.nth(12)).toBeFocused();
+    await page.screenshot({path:'artifacts/browser-mobile-portrait-plant-menu.png'});
+    await page.keyboard.press('Escape');
+    const spray=await open('SPRAY');inside(spray.box,spray.area);expect(Math.abs(spray.box.y+spray.box.height-spray.strip.y)).toBeLessThan(1);
+    expect(Math.abs(spray.box.width-112*Z)).toBeLessThan(1);expect(Math.abs(spray.box.x+spray.box.width/2-(spray.button.x+spray.button.width/2))).toBeLessThan(1);
+    await page.keyboard.press('Escape');
+    // Landscape: right of the side palette, level with the button where it fits, inside the workspace; Plant scrolls.
+    await page.setViewportSize({width:844,height:390});
+    plant=await open('PLANT');inside(plant.box,plant.area);expect(Math.abs(plant.box.x-(plant.strip.x+plant.strip.width))).toBeLessThan(1);
+    expect(await plant.menu.evaluate(el=>el.scrollHeight>el.clientHeight)).toBe(true);
+    await page.screenshot({path:'artifacts/browser-mobile-landscape-plant-menu.png'});
+    await page.keyboard.press('Escape');
+    const side=await open('SPRAY');inside(side.box,side.area);expect(Math.abs(side.box.x-(side.strip.x+side.strip.width))).toBeLessThan(1);
+    // Level with the button, or moved up only as far as the workspace bottom requires.
+    expect(side.box.y).toBeLessThanOrEqual(side.button.y+1);
+    expect(Math.min(Math.abs(side.box.y-side.button.y),Math.abs(side.box.y+side.box.height-side.area.y-side.area.height))).toBeLessThan(1);
   });
   test('the game stays fixed to the screen when the page is scrolled',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');

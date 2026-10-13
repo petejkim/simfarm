@@ -324,7 +324,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .edit-palette .edit-caption{width:48px;height:22px;font:bold 10px var(--font-ui)}
 /* Phone portrait (native, user request): the palette moves below the terrain, centred. The source's two-column tool pairs
    become columns of a two-row strip (Move/Examine … Trees/Bulldoze), with PLANT and SPRAY stacked at the right end
-   at the 24px row height. The strip is centred and zoomed 4/3 so each cell matches the 32px control-bar launchers; the field menus open centred just above it instead of at source x48,y. */
+   at the 24px row height. The strip is centred and zoomed 4/3 so each cell matches the 32px control-bar launchers. FieldToolMenu places the Plant/Spray menus on phones. */
 /* Phones only (user request): a touch screen whose short side is at most 500 CSS px. Tablets keep the desktop layout. */
 @media (orientation:portrait) and (pointer:coarse) and (max-width:500px){
 .game-desktop .edit-workspace{flex-direction:column}
@@ -333,7 +333,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 /* Menu headings 32px and items 28px tall for tapping, as in landscape; headings keep their 8px sides so one row fits. */
 .original-menu-heading{height:32px;line-height:32px}
 .original-menu-popup button{padding-top:7px;padding-bottom:7px}
-.field-tool-menu{left:50%!important;top:auto!important;bottom:calc(49px * 1.33333);transform:translateX(-50%)}
 /* Control bar in phone portrait (user request): the window launchers fill a centred first row; the forecast, readouts
    and pause launcher share a centred second row. */
 .original-control-bar{justify-content:center}
@@ -526,6 +525,10 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .field-tool-title{grid-column:1/-1;padding:4px 0 0 16px;font:10px/10px var(--font-ui)}
 .game-window .field-tool-menu>button,.field-tool-menu>button{display:flex;align-items:flex-start;gap:2px;width:112px;height:17px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--ink);text-align:left;font:10px/10px var(--font-ui)}
 .field-tool-menu>button>span:last-child{padding-top:4px;white-space:nowrap}
+/* Phones: 28px rows (FieldToolMenu sets the grid) with the icon and name centred; scrolls when taller than the workspace. */
+.field-tool-menu[data-phone]{overflow-y:auto;padding-bottom:4px}
+.game-window .field-tool-menu[data-phone]>button,.field-tool-menu[data-phone]>button{height:28px;align-items:center}
+.field-tool-menu[data-phone]>button>span:last-child{padding-top:0}
 .field-tool-menu>button:hover:not(:disabled),.field-tool-menu>button:focus-visible{outline:1px solid var(--ink);outline-offset:-1px;background:#ffff0033}
 
 

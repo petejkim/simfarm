@@ -3554,3 +3554,21 @@ Gap: the `:active` hook is iOS-specific and cannot be emulated. Chromium does no
 Plant and Spray items now leave 2px between the 16px tile icon and the crop or treatment name (`gap: 2px`, was 0). This is a native readability change; the source popup renderer packs them. Items keep the source 112px width.
 
 Validation: field-tools measures a 2px gap in both menus. field-tools and palette-supplies: 10/10.
+
+### 4. Plant/Spray menus on phones
+
+On phones (`src/ui/phone.ts` → `usePhone`, a touch screen whose short side is ≤ 500 CSS px, matching the style.css phone queries), `FieldToolMenu`:
+- **Layout:** lays Plant out in two columns (12 rows for 24 crops); Spray stays one column. Rows are 28px with the icon and name centred, like the phone main menus. Arrow Left/Right move by the real row count.
+- **Placement:** opens beside the palette next to its button:
+  - portrait: directly above the bottom strip, centred on the button;
+  - landscape: right of the side palette, level with the button.
+- **Bounds:** the position is clamped inside the Edit workspace, and a menu taller than the workspace scrolls (landscape Plant). Placement converts zoomed rects with `cssZoom` and reruns on resize.
+- **Removed:** the portrait CSS that centred the menus over the strip.
+
+Desktop and tablets keep the source popup geometry: 8-row 112×17 columns at x48 and the source y.
+
+Validation: type check. A mobile-touch case covers both orientations:
+- portrait: Plant flush above the strip and over its button, two columns of 12 × 28px rows, 224px wide, ArrowRight jumping 12; Spray centred on its button;
+- landscape: both menus right of the palette and inside the workspace, Plant scrolling, Spray level with its button unless moved up to the workspace bottom.
+
+The portrait strip case now checks the menu sits over PLANT. mobile-touch 18/18; field-tools, palette-supplies, edit-workspace and edit-cursors 15/15.
