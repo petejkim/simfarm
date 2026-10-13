@@ -136,7 +136,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
     return () => cancelAnimationFrame(frame);
   }, [autoScroll, flight, zoom, updatePointer, viewportRef]);
   const workerAnimation=useRef(new HarvestWorkerAnimation()),paint=useRef(()=>{});
-  const baseCache=useRef<{canvas:HTMLCanvasElement;key:unknown[]}|null>(null);
+  const previewRef=useRef<HTMLCanvasElement>(null);
   const hasWorkers=scenario.cells.some(cell=>(cell.terrain&0x0800)!==0&&((cell.overlay&0x07ff)===1036||(cell.overlay&0x07ff)===1037));
   useEffect(()=>{
     const clock=workerAnimation.current;
@@ -227,19 +227,24 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
   }, [zoom, endTouch, revertTouch, stopPainting, viewportRef]);
   useLayoutEffect(() => {
     paint.current=()=>{
-      const context = canvasRef.current!.getContext('2d')!,phase=workerAnimation.current.phase;
-      // The world without a preview is cached and redrawn only when its inputs change (each published snapshot copies
-      // the scenario); a highlight change copies the cache and repaints the preview cells, so touch highlights do not
-      // redraw all 9,216 cells mid-gesture (user report: stutter when dragging).
-      const cache=baseCache.current??={canvas:Object.assign(document.createElement('canvas'),{width:1536,height:1536}),key:[]};
-      const key=[scenario,tiles,maskedTiles,townEventTiles,phase];
-      if(key.some((value,i)=>value!==cache.key[i])){drawWorldBase(cache.canvas.getContext('2d')!,scenario,tiles,maskedTiles,phase,townEventTiles);cache.key=key;}
-      context.imageSmoothingEnabled=false;context.drawImage(cache.canvas,0,0);
-      if(!flight&&preview)drawWorldPreview(context,scenario,tiles,maskedTiles,preview,phase,townEventTiles);
+      const context = canvasRef.current!.getContext('2d')!;
+      drawWorldBase(context, scenario, tiles, maskedTiles, workerAnimation.current.phase, townEventTiles);
       if (flight) drawAircraft(context, flight, flightSprites);
       if (disasters) drawDisasters(context, disasters, disasterSprites);
     };paint.current();
-  }, [scenario, tiles, townEventTiles, maskedTiles, preview, flight, flightSprites, disasters, disasterSprites]);
+  }, [scenario, tiles, townEventTiles, maskedTiles, flight, flightSprites, disasters, disasterSprites]);
+  // The placement preview (tool highlight) is a separate small canvas over the world, sized to the footprint plus a
+  // cell of border (native, user suggestion). Highlight changes repaint and re-upload only that canvas, never the
+  // 1536×1536 world, which made dragging in placement modes stutter on the iPhone; the look is the source's
+  // inverted cells clipped to the footprint outline.
+  const previewBox=preview&&!flight?{x:Math.max(0,preview.x-1),y:Math.max(0,preview.y-1),
+    right:Math.min(WORLD_SIZE,preview.x+preview.width+1),bottom:Math.min(WORLD_SIZE,preview.y+preview.height+1)}:null;
+  useLayoutEffect(()=>{
+    const overlay=previewRef.current;if(!overlay||!previewBox||!preview)return;
+    const context=overlay.getContext('2d')!;
+    context.clearRect(0,0,overlay.width,overlay.height);context.save();context.translate(-previewBox.x*16,-previewBox.y*16);
+    drawWorldPreview(context,scenario,tiles,maskedTiles,preview,workerAnimation.current.phase,townEventTiles);context.restore();
+  });
   useLayoutEffect(() => {
     const viewport = viewportRef.current!;
     const measure = () => {
@@ -351,6 +356,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
       const offset = directions[event.key];
       if (offset) { event.preventDefault(); event.currentTarget.scrollBy(...offset); }
     }}>
+    <div className="world-stack">
     <canvas id="world" ref={canvasRef} width={1536} height={1536} data-paint-tool={paintTool??undefined} style={{ cursor, width: 1536 * zoom, height: 1536 * zoom,touchAction:paintTool?'none':undefined }}
       aria-label="Original scenario terrain"
       onClick={event=>{if(suppressClick.current){suppressClick.current=false;return;}if(!paintTool)selectTile(event);}}
@@ -374,5 +380,10 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
       }}
       onPointerLeave={event=>{if(event.pointerType!=='touch')clearPointer();}} onPointerCancel={event=>{stopPainting();if(event.pointerType==='touch'){endTouch();revertTouch();}else clearPointer();}} onLostPointerCapture={stopPainting}
       onPointerUp={event => { if (event.pointerType === 'touch') { touchUp(event); return; } if(stroke.current?.pointer===event.pointerId)stopPainting(); }} />
+    {previewBox&&<canvas id="world-preview" ref={previewRef} className="world-preview" aria-hidden="true"
+      width={(previewBox.right-previewBox.x)*16} height={(previewBox.bottom-previewBox.y)*16}
+      style={{left:`${previewBox.x/WORLD_SIZE*100}%`,top:`${previewBox.y/WORLD_SIZE*100}%`,
+        width:`${(previewBox.right-previewBox.x)/WORLD_SIZE*100}%`,height:`${(previewBox.bottom-previewBox.y)/WORLD_SIZE*100}%`}} />}
+    </div>
   </div>;
 }

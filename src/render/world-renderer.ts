@@ -29,8 +29,8 @@ export function drawWorld(context: CanvasRenderingContext2D, scenario: Scenario,
   if (preview) drawWorldPreview(context, scenario, tiles, maskedTiles, preview, workerPhase, townEventTiles);
 }
 
-/** Every cell and the field badges: the world without a placement preview. FarmMap caches it so a preview
- * (tool highlight) change repaints only the preview, not all 9,216 cells. */
+/** Every cell and the field badges: the world without a placement preview. FarmMap draws the preview (tool
+ * highlight) separately on a small overlay canvas, so highlight changes never repaint all 9,216 cells. */
 export function drawWorldBase(context: CanvasRenderingContext2D, scenario: Scenario, tiles: CanvasImageSource,
   maskedTiles: CanvasImageSource, workerPhase=0, townEventTiles?: CanvasImageSource): void {
   context.imageSmoothingEnabled = false;

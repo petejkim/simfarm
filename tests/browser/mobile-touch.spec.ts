@@ -6,6 +6,7 @@ import {browserCrops} from '../support/crop-catalog';
 import {worldIndex} from '../../src/formats/scenario';
 import {reveal,expectPaletteAction,expectNoHorizontalOverflow} from '../support/workspace';
 import {farmSnapshot} from '../support/field-checkpoint';
+import {terrainPixels} from '../support/terrain-pixels';
 
 /** Touch screens zoom #app 1.2× (style.css); boxes are screen px, CSS lengths and scroll positions layout px. */
 const Z=1.2;
@@ -19,7 +20,8 @@ async function touch(session:CDPSession,points:{x:number;y:number}[],holdMs=0){
   await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
 }
 const tap=async(page:Page,session:CDPSession,x:number,y:number)=>touch(session,[await coords(page,x,y)]);
-const tilePixels=(page:Page,x:number,y:number)=>page.locator('#world').evaluate((c:HTMLCanvasElement,p)=>Array.from(c.getContext('2d')!.getImageData(p.x*16,p.y*16,16,16).data),{x,y});
+// Read as shown: the world with the tool-highlight overlay on top.
+const tilePixels=(page:Page,x:number,y:number)=>terrainPixels(page,{x:x*16,y:y*16,width:16,height:16});
 
 test.describe('phone screen',()=>{
   test.use({hasTouch:true,isMobile:true,viewport:{width:390,height:844}});
@@ -365,7 +367,7 @@ test('a touch highlights its tile at touchdown, reverts to the armed tile if it 
   await page.locator('#viewport').evaluate(v=>v.scrollTo(0,0));
   const session=await page.context().newCDPSession(page),plain=await tilePixels(page,12,12);
   // Finger down on 12,12: highlighted while it is still down; lifting arms it without buying.
-  // The highlight repaints from the cached world, not all 9,216 cells (stutter when dragging).
+  // The highlight is drawn on its own small overlay canvas; the 9,216-cell world is not repainted (stutter when dragging).
   await page.evaluate(()=>{const w=window as unknown as {draws:number;draw:typeof CanvasRenderingContext2D.prototype.drawImage};w.draws=0;const draw=w.draw=CanvasRenderingContext2D.prototype.drawImage;
     CanvasRenderingContext2D.prototype.drawImage=function(this:CanvasRenderingContext2D,...args:unknown[]){w.draws++;return (draw as (...a:unknown[])=>void).apply(this,args);} as typeof draw;});
   await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[await coords(page,12,12)]});

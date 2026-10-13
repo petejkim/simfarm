@@ -1,4 +1,5 @@
 import {test,expect,type Page} from '@playwright/test';
+import {terrainPixels} from '../support/terrain-pixels';
 import {readFileSync} from 'node:fs';
 import {readArchive} from '../../src/formats/archive';
 import {readPalette} from '../../src/formats/graphics';
@@ -36,7 +37,8 @@ function expected(world:Scenario,region:Rect,paletteName:string,footprint?:Rect)
   }
   return pixels;
 }
-async function pixels(page:Page,r:Rect){return page.locator('#world').evaluate((c:HTMLCanvasElement,r)=>Array.from(c.getContext('2d')!.getImageData(r.x,r.y,r.width,r.height).data),r);}
+// The tool highlight is an overlay canvas over #world; pixels are read as shown.
+async function pixels(page:Page,r:Rect){return terrainPixels(page,r);}
 async function hover(page:Page,x:number,y:number){
   await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-10)*16,Math.max(0,p.y-10)*16),{x,y});
   const r=(await page.locator('#world').boundingBox())!;await page.mouse.move(r.x+x*16+8,r.y+y*16+8);

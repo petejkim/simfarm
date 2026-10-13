@@ -3678,3 +3678,23 @@ Validation: type check. A mobile-touch case compares save-file `timerTicks` acro
 - a 2s held CDP touch drag.
 
 The drag advanced under a third of the wait's ticks beyond overhead, in two runs. A logged run showed the hold spanning the whole 2,028ms drag. mobile-touch, direct-construction, direct-bulldoze and calendar-clock: 36/36.
+
+### Tool highlight as an overlay canvas (2026-10-13, user suggestion)
+
+**Report:** dragging stuttered much more in placement modes than in Examine.
+- Chromium profiles of a paused-game drag showed similar script time in all three modes (Examine, Buy, Dirt road).
+- What differed on the iPhone: every highlight change rewrote the whole 1536×1536 world canvas, which iOS re-uploads (about 9MB) to the GPU. Even copied from the cache, that happened at touchdown and again mid-drag at the revert.
+- Examine never changes the canvas.
+
+**Change:** the highlight (placement preview) is no longer drawn into the world canvas.
+- **Overlay:** FarmMap renders `#world-preview`, a small canvas covering the footprint plus a cell of border, absolutely positioned in percent inside a `.world-stack` wrapper that sizes to the world canvas. It follows zoom and live pinch resizing, and is `pointer-events: none`.
+- **Same look:** `drawWorldPreview` draws the source's inverted cells clipped to the footprint outline into it, translated to its origin. The display is unchanged; only the internal composition differs from the source's single buffer.
+- **World canvas:** it repaints only when the world changes (`drawWorldBase` plus aircraft and disasters), never on highlight changes. The cached base from the previous commit is removed.
+
+**Tests** read pixels as shown, through `tests/support/terrain-pixels.ts`, which composites the overlay over `#world`: placement-outline (pixel-exact source XOR outlines) and the mobile-touch highlight cases.
+
+Validation: type check. A full browser run before the test helper existed had 334/340, with exactly those 6 pixel-reading tests failing. After the helper:
+- placement-outline and mobile-touch: 27/27, then 54/54 twice at 4 workers;
+- the touchdown case: 3/3 and 10/10 at 4 workers.
+
+One earlier failure of the touchdown case (the 16,12 highlight not seen within 5s, in a combined run) could not be reproduced and is unexplained.
