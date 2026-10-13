@@ -3548,3 +3548,9 @@ Validation: a mobile-touch case checks the computed `webkitUserSelect`, `userSel
 Validation: type check. A mobile-touch case checks `touch-action` on `html` and the desktop. mobile-touch, main-menu and control-bar: 30/30.
 
 Gap: the `:active` hook is iOS-specific and cannot be emulated. Chromium does not set `:active` from CDP touch events, with or without the listener. Confirm on the iPhone that buttons press in immediately.
+
+### 3. Plant/Spray menu icon spacing
+
+Plant and Spray items now leave 2px between the 16px tile icon and the crop or treatment name (`gap: 2px`, was 0). This is a native readability change; the source popup renderer packs them. Items keep the source 112px width.
+
+Validation: field-tools measures a 2px gap in both menus. field-tools and palette-supplies: 10/10.

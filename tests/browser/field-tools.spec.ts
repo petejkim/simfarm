@@ -27,6 +27,9 @@ test('original Plant and Spray popup geometry, real labels, source icons and key
   // The crop's planting image is patched into the farm atlas at cropPlantTile(slot); each item shows that tile at 1×.
   const icon=(slot:number)=>menu.locator(`[data-field-tool="${slot}"] .sprite`),tileAt=(t:number)=>`${-(t%32*16)}px ${-Math.floor(t/32)*16}px`;
   expect(await icon(0).evaluate(el=>(el as HTMLElement).style.backgroundPosition)).toBe(tileAt(cropPlantTile(0)));
+  // 2px between each icon and its name (user request), in Plant and Spray alike.
+  const gap=(item:ReturnType<typeof menu.locator>)=>item.evaluate(el=>el.querySelector('span:last-child')!.getBoundingClientRect().left-el.querySelector('.sprite')!.getBoundingClientRect().right);
+  expect(await gap(menu.getByRole('menuitem').first())).toBe(2);
   await page.screenshot({path:'artifacts/browser-plant-menu.png'});
   await expect(menu.getByRole('button',{name:'Next crops'})).toHaveCount(0);
   await page.keyboard.press('ArrowRight');await expect(menu.getByRole('menuitem').nth(17)).toBeFocused();
@@ -37,6 +40,7 @@ test('original Plant and Spray popup geometry, real labels, source icons and key
   await page.keyboard.press('Escape');await expect(menu).toHaveCount(0);expect(await save(page)).toEqual(before);
   await page.getByRole('button',{name:'SPRAY',exact:true}).click();const spray=page.getByRole('menu',{name:'Spray Field',exact:true});
   expect(await spray.getByRole('menuitem').allTextContents()).toEqual(['Fertilizer','Pesticide','Herbicide','Fungicide']);
+  expect(await gap(spray.getByRole('menuitem').first())).toBe(2);
   await page.screenshot({path:'artifacts/browser-spray-menu.png'});await page.keyboard.press('End');await page.keyboard.press('Enter');
   await expectPaletteAction(page,'SPRAY');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-spray\.png.*0 0, crosshair/);await page.keyboard.press('Escape');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
   expect(await save(page)).toEqual(before);

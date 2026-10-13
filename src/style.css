@@ -524,7 +524,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .field-tool-menu{position:absolute;z-index:80;display:grid;grid-template-rows:repeat(9,17px);align-content:start;background:var(--face);color:var(--ink);box-shadow:4px 4px #0008;font:10px/10px var(--font-ui)}
 .field-tool-menu:after{content:'';position:absolute;inset:0;border:1px solid var(--ink);pointer-events:none}
 .field-tool-title{grid-column:1/-1;padding:4px 0 0 16px;font:10px/10px var(--font-ui)}
-.game-window .field-tool-menu>button,.field-tool-menu>button{display:flex;align-items:flex-start;gap:0;width:112px;height:17px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--ink);text-align:left;font:10px/10px var(--font-ui)}
+.game-window .field-tool-menu>button,.field-tool-menu>button{display:flex;align-items:flex-start;gap:2px;width:112px;height:17px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--ink);text-align:left;font:10px/10px var(--font-ui)}
 .field-tool-menu>button>span:last-child{padding-top:4px;white-space:nowrap}
 .field-tool-menu>button:hover:not(:disabled),.field-tool-menu>button:focus-visible{outline:1px solid var(--ink);outline-offset:-1px;background:#ffff0033}
 
