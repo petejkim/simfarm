@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
-import { reveal , speedItem } from '../support/workspace';
+import { reveal , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -41,7 +41,7 @@ test('a cow matures into the original adult sprite, begins monthly breeding and 
   expect(pregnantCow.flags&3).toBe(3);expect(pregnantCow.bytes[28]).toBe(1);
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#viewport');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-animal-lifecycle.png', fullPage: true }); expect(errors).toEqual([]);
 });
 

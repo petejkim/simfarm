@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { aircraftCatalog } from '../support/aircraft-browser';
-import { reveal, openWindow, expectFarmCash , speedItem } from '../support/workspace';
+import { reveal, openWindow, expectFarmCash , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -106,7 +106,7 @@ test('Fly captures the map, original sprites follow keyboard steering, pause/ste
   }, game.getSnapshot().aircraftFlight!)).toBe(true);
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('1');
   await spritesMatch(page, game.getSnapshot().aircraftFlight!); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-flight.png', fullPage: true });
   await press(page, game, 'end'); await fly(page, game, 2000); expect(game.getSnapshot().lastFlightEnd?.kind).toBe('landed');
   await expect(page.locator('.map-panel')).not.toHaveClass(/is-flying/); await expect(page.locator('#flight-result')).toHaveCount(0); // no result screen

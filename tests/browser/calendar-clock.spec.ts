@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { reveal, openWindow , speedItem } from '../support/workspace';
+import { reveal, openWindow , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -48,7 +48,7 @@ test('maximum original delay is explained on mobile, blocks Next day and retains
   await expect(page.locator('#calendar-delay-status')).toHaveText('This save cannot advance the calendar. Load a different save or start a new farm.');
   const before = await save(page); expect(before.scenario.farm.dayDelayTicks).toBe(65535);
   await reveal(page, '#calendar-delay-status'); await page.locator('#calendar-delay-status').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-calendar-maximum-mobile.png', fullPage: false });
   await (await speedItem(page,'#play-pause')).click(); await page.clock.runFor(200); await (await speedItem(page,'#play-pause')).click();
   const after = await save(page); expect(after.runtime.daysAdvanced).toBe(before.runtime.daysAdvanced);

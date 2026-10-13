@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { plantField, clickFarmTile } from '../support/field-actions';
-import { reveal, openWindow, expectPaletteAction , speedItem } from '../support/workspace';
+import { reveal, openWindow, expectPaletteAction , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -65,7 +65,7 @@ test('removal selection cancels safely, confirms stored-content demolition, play
     if (!quote.ok) throw new Error('Missing removal target');
     if (x === 21) {
       await page.setViewportSize({ width: 1280, height: 844 }); await expect(dialog).toBeVisible();
-      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+      await expectNoHorizontalOverflow(page);
       await page.screenshot({ path: 'artifacts/browser-manual-removal.png', fullPage: true });
     }
     await page.getByRole('button',{name:'YES',exact:true}).click(); game.dispatch({ type: 'remove-object', x, y, kind: quote.kind, slot: quote.slot });

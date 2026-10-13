@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { chooseDisaster, setDisastersEnabled, expectDisasterChecked } from '../support/disaster-menu';
 import { farmSnapshot, fieldDescription } from '../support/field-checkpoint';
-import { reveal, acknowledgeFinanceMessages , speedItem } from '../support/workspace';
+import { reveal, acknowledgeFinanceMessages , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -72,7 +72,7 @@ test('Flood controls destroy a shoreline field and occupied building, render sou
   await originalTile(page, 19, 18, game.getSnapshot().scenario.cells[19 * 96 + 18].terrain & 2047);
   await load(page, JSON.stringify(checkpoint));
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page,'#viewport');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await reveal(page, '#viewport'); await page.locator('#viewport').scrollIntoViewIfNeeded();
   await page.screenshot({ path: 'artifacts/browser-flood.png', fullPage: true });
   for (let day = 1; day < 3; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }

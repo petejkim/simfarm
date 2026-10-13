@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import { aircraftCatalog } from '../support/aircraft-browser';
-import { reveal, openWindow, expectFarmCash , speedItem } from '../support/workspace';
+import { reveal, openWindow, expectFarmCash , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -64,7 +64,7 @@ test('Aircraft repairs preserve saved age, cash failures explain disabled servic
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad-aircraft.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(malformed)) });
   await expect(page.locator('#save-status')).toContainText('aircraft chemical'); expect(await save(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#aircraft-panel'); await page.locator('#aircraft-panel').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-aircraft.png', fullPage: true });
   f.state.finances.town.airportCount = 0; await load(page, f.load().withAllCrops(browserCrops).save(4));
   await aircraftCatalog(page); const cash = await page.locator('#farm-cash').textContent(), owned = await page.locator('#buy-owned').textContent(); await page.locator('#catalog-buy').click();

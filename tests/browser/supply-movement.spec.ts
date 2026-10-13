@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import { clickFarmTile } from '../support/field-actions';
-import { reveal , speedItem } from '../support/workspace';
+import { reveal , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -82,7 +82,7 @@ test('supplies transfer into original storage, reopen and leave it; empty feed i
   const emptyGame = empty.load().withAllCrops(browserCrops); await load(page, emptyGame.save(4)); await startMove(page);
   await clickFarmTile(page, 18, 10); await clickFarmTile(page, 20, 20);
   await page.setViewportSize({ width: 1280, height: 844 }); 
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-supply-movement.png', fullPage: true });
   const es = emptyGame.getSnapshot(), feed = checkSupplyPickup(es.scenario, es.finances, 18, 10); if (!feed.ok) throw new Error('Missing feed');
   emptyGame.dispatch({ type: 'move-supply', selected: feed, x: 20, y: 20 });

@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { reveal, openWindow, focusEdit , speedItem } from '../support/workspace';
+import { reveal, openWindow, focusEdit , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 
 async function start(page: Page) {
@@ -37,7 +37,7 @@ test('source control strip keeps desktop geometry, replaces bitmap words with HT
   await page.screenshot({ path: 'artifacts/browser-control-bar-desktop.png' });
   // No minimum width: narrow pages wrap the strip onto a second 32px row (user request) without page scrolling.
   await page.setViewportSize({ width: 390, height: 844 }); await page.evaluate(() => scrollTo(0, 0));
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  await expectNoHorizontalOverflow(page);
 });
 
 test('Windows menu and toolbar route to the same controls; Edit focuses the map without changing the farm', async ({ page }) => {

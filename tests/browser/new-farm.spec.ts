@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
-import { newGame, expectPaletteAction, chooseField , speedItem } from '../support/workspace';
+import { newGame, expectPaletteAction, chooseField , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { fieldDescription } from '../support/field-checkpoint';
 import { scheduleNextHarvest } from '../support/schedule-window';
 import { buyBuilding } from '../support/building-actions';
@@ -34,7 +34,7 @@ test('create a generated farm on mobile, save it and restore without any origina
   await page.setViewportSize({ width: 1280, height: 844 }); await newGame(page); await page.locator('#new-farm-seed').fill('9029');
 
   await reveal(page, '#new-farm-year'); await page.locator('#new-farm-year').fill('1993'); await reveal(page, '#new-farm-seed'); await page.locator('#new-farm-seed').fill('9029');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-new-farm-setup.png', fullPage: true });
   const scenarioRequests: string[] = [];
   await page.route('**/assets/raw/SCEN*.SSM', route => { scenarioRequests.push(route.request().url()); return route.abort(); });

@@ -4,7 +4,7 @@ import {PNG} from 'pngjs';
 import {shopFixture} from '../support/livestock';
 import {browserCrops} from '../support/crop-catalog';
 import {worldIndex} from '../../src/formats/scenario';
-import {reveal,expectPaletteAction} from '../support/workspace';
+import {reveal,expectPaletteAction,expectNoHorizontalOverflow} from '../support/workspace';
 
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'touch.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
@@ -41,7 +41,7 @@ test.describe('phone screen',()=>{
     await page.setViewportSize({width:1280,height:900});
     await expect(page.locator('[data-window=newgame]')).not.toHaveAttribute('data-scale');
     expect(await page.locator('[data-window=newgame]').evaluate(el=>getComputedStyle(el).transform)).toBe('none');
-    expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
+    await expectNoHorizontalOverflow(page);
   });
   test('a scaled Map window still locates the tapped overview tile',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');

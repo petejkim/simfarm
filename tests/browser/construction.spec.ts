@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { clickFarmTile, setAutoDoze } from '../support/field-actions';
 import { buyBuilding, selectBuilding } from '../support/building-actions';
-import { reveal, expectFarmCash } from '../support/workspace';
+import { reveal, expectFarmCash, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -49,7 +49,7 @@ test('original Buy purchases storage roofs and usable records and persists accou
   }
   expect(actual).toEqual(pixels);
   await page.setViewportSize({ width: 1280, height: 844 }); await selectBuilding(page,69);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-construction.png', fullPage: true });
   expect(errors).toEqual([]);
 });

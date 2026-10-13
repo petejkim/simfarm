@@ -3,7 +3,7 @@ import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { fieldDescription } from '../support/field-checkpoint';
 import { buyPlot, selectProperty, setAutoDoze, clickFarmTile } from '../support/field-actions';
 import { scheduleMonth, scheduleWeek, expectWeekPlan } from '../support/schedule-window';
-import { reveal, openWindow, expectPaletteAction, chooseField, expectSelectedField } from '../support/workspace';
+import { reveal, openWindow, expectPaletteAction, chooseField, expectSelectedField, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { shopFixture } from '../support/livestock';
@@ -80,7 +80,7 @@ test('Map and Plant lead through land purchase, field creation and planning with
   await openWindow(page,'bank');
   await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('1000'); await reveal(page, '#borrow-loan'); await page.locator('#borrow-loan').click();
   await expect(page.locator('#loan-balance')).toHaveText('$1,000');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await expect(page.getByRole('dialog',{name:'Farm controls',exact:true})).toHaveCount(0);
   await expect(page.getByRole('dialog',{name:'Field information',exact:true})).toHaveCount(0);
   await page.screenshot({ path: 'artifacts/browser-navigation-windows.png', fullPage: true });

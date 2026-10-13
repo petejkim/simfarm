@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { reveal, openWindow , speedItem } from '../support/workspace';
+import { reveal, openWindow , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -63,7 +63,7 @@ test('source menu order uses HTML text, keyboard navigation and original desktop
   await page.locator('.original-control-bar').click({ position: { x: 600, y: 10 } }); await expect(menu).toHaveCount(0);
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#file-menu-button'); await page.locator('#file-menu-button').click();
   
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await expect(page.getByRole('menuitem', { name: 'About SimFarm' })).toHaveText('About SimFarm');
   await page.screenshot({ path: 'artifacts/browser-main-menu-mobile.png', fullPage: false });
   await page.keyboard.press('Escape');

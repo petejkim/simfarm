@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -40,7 +40,7 @@ test('Farm report displays original totals and field conditions, updates after p
   await openWindow(page, 'balance'); await expect(page.locator('#balance-net')).toHaveText('-500');
   await expect(page.locator('#balance-expense-7')).toHaveText('1040');
   await page.setViewportSize({ width: 1280, height: 844 }); await openWindow(page,'balance');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-balance-report.png', fullPage: true });
   expect(errors).toEqual([]);
 });

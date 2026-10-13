@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { reveal, openWindow , speedItem } from '../support/workspace';
+import { reveal, openWindow , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -57,7 +57,7 @@ test('original import from a generated farm retains setup and works on a narrow 
   expect(imported.runtime.newFarm).toBeNull(); expect(imported.runtime.retainedSetup).not.toBeNull();
   await load(page, Buffer.from(JSON.stringify(imported)), 'restored.json');
   expect((await save(page, 'generated-restored')).data).toEqual(imported);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-original-import-mobile.png', fullPage: true });
 });
 

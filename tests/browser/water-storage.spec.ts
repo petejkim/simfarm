@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import { storedWater } from '../../src/simulation/water-storage';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { buyBuilding } from '../support/building-actions';
-import { reveal , speedItem } from '../support/workspace';
+import { reveal , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -47,7 +47,7 @@ test('Build water storage collects from live irrigation, refills distant troughs
   for (let day = 0; day < 7; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#viewport');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-water-storage.png', fullPage: true });
 });
 

@@ -4,7 +4,7 @@ import { selectSupply } from '../support/supply-actions';
 import { schedulePlant, expectWeekPlan } from '../support/schedule-window';
 import { buyBuilding } from '../support/building-actions';
 import { clickFarmTile, sprayField } from '../support/field-actions';
-import { reveal, expectFarmCash , speedItem } from '../support/workspace';
+import { reveal, expectFarmCash , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -115,7 +115,7 @@ test('supply shop explains storage and money limits, supports building and map s
   const ready=shopFixture().load().withAllCrops(browserCrops);ready.dispatch({type:'build',buildingType:67,x:10,y:10});const broke=JSON.parse(ready.save(4));broke.scenario.farm.cash=0;
   await load(page,JSON.stringify(broke));await selectSupply(page,192);await clickFarmTile(page,10,10);
   await expectFarmCash(page,0);
-  await page.setViewportSize({width:1280,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
+  await page.setViewportSize({width:1280,height:844});await expectNoHorizontalOverflow(page);
   await page.screenshot({path:'artifacts/browser-crop-supplies.png',fullPage:true});expect(await save(page)).toEqual(broke);
 });
 

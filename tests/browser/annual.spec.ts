@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { readFinanceMessage } from '../../src/formats/finance-message';
-import { reveal, openWindow , speedItem } from '../support/workspace';
+import { reveal, openWindow , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -53,7 +53,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   await page.locator('#load-farm-file').setInputFiles(file(JSON.stringify(badStatistics)));
   await expect(page.locator('#save-status')).toContainText('financial state'); await reveal(page, '#town-choice'); await expect(page.locator('#town-choice')).toBeVisible();
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#town-choice'); await page.locator('#town-choice').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-annual-choice.png', fullPage: true });
   await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
   await expect(page.locator('#town-choice')).toHaveCount(0); await expect((await speedItem(page,'#next-day'))).toBeEnabled();

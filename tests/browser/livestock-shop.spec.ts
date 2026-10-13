@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { clickFarmTile, setAutoDoze } from '../support/field-actions';
-import { reveal, expectFarmCash , speedItem } from '../support/workspace';
+import { reveal, expectFarmCash , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -76,7 +76,7 @@ test('livestock purchases explain clearing and cash limits and are usable on a n
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 1280, height: 844 }); await selectProduct(page,299);await clickFarmTile(page,22,20);
   
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-livestock-shop.png', fullPage: true });
 });
 

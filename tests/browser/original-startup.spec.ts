@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { newGame , speedItem } from '../support/workspace';
+import { newGame , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -66,7 +66,7 @@ test('chooser SSM starts fresh independently of old finances and the highlighted
     expect(actual.scenario.farm.workerExpenses).not.toBe(123456); expect(actual.runtime.finances.accounts.buildingBookValue).not.toBe(234567);
     expect(actual.runtime.random).not.toEqual(JSON.parse(prior.importOriginal(bytes, crops).simulation.withAllCrops(browserCrops).save(null)).runtime.random);
   }
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await (await speedItem(page,'#next-day')).click(); expected.dispatch({ type: 'advance-day' }); expect(await save(page)).toEqual(JSON.parse(expected.save(null)));
 });
 

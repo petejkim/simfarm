@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import {farmSnapshot} from '../support/field-checkpoint';
-import {acknowledgeFinanceMessages, speedItem } from '../support/workspace';
+import {acknowledgeFinanceMessages, speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import {toggleOption,expectOptionChecked} from '../support/options-menu';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -69,7 +69,7 @@ test('annual homestead updates repaint original tiles, persist once, and play or
   expect(sounds.filter(s => s.endsWith('/cheers.voc'))).toHaveLength(1);
   await locateHome(page); await page.setViewportSize({ width: 1280, height: 844 });
   await locateHome(page);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-homestead.png', fullPage: true });
   const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const path = 'artifacts/browser-homestead.simfarm.json'; await (await download).saveAs(path);

@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { newGame , speedItem } from '../support/workspace';
+import { newGame , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -56,7 +56,7 @@ test('original geographic panel paints exact markers and bars, preserves selecti
   await pixels(page, 2, 3); expect(await save(page)).toEqual(before);
   const selected = locations[3 * 18 + 2];
   await page.setViewportSize({ width: 1280, height: 844 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await pixels(page, 2, 3);
   await page.locator('#geographic-chooser').screenshot({ path: 'artifacts/browser-region-artwork-mobile.png' });
   await reveal(page, '#region-design'); await page.locator('#region-design').focus(); await page.keyboard.press('Enter');

@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { buyBuilding, selectBuilding } from '../support/building-actions';
 import {clickFarmTile} from '../support/field-actions';
-import { reveal , speedItem } from '../support/workspace';
+import { reveal , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -62,7 +62,7 @@ test('purchased water pump wets original ditch pixels, refreshes fields and cont
   await expect(page.locator('#save-status')).toContainText('irrigation source count'); expect(await pixel()).toEqual(beforeRejectedLoad);
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 1280, height: 844 }); await selectBuilding(page,71);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-irrigation.png', fullPage: true }); expect(errors).toEqual([]);
 });
 
@@ -116,7 +116,7 @@ test('original palette controls dig a connected supply, install and operate a va
   expect(game.getSnapshot().scenario.fields[1].bytes[51]).toBeGreaterThan(4);
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page,'#viewport');await expect(page.getByRole('button',{name:'Valve',exact:true})).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-ditch-controls.png', fullPage: true }); expect(errors).toEqual([]);
 });
 

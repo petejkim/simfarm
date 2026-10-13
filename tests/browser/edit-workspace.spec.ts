@@ -1,4 +1,4 @@
-import { openWindow, focusEdit, expectPaletteAction , speedItem } from '../support/workspace';
+import { openWindow, focusEdit, expectPaletteAction , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
@@ -29,7 +29,7 @@ test('Edit fills the desktop permanently; windows close without resizing or unmo
   await page.screenshot({ path: 'artifacts/browser-edit-workspace-final.png' });
   await page.setViewportSize({ width: 390, height: 844 });
   // No minimum width: the terrain fills whatever remains right of the palette, below the toolbar's wrapped second row.
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  await expectNoHorizontalOverflow(page);
 });
 
 test('palette opens field planning and real tools; Speed retains slower pacing and Save/Load stays available through File', async ({ page }) => {

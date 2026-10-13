@@ -7,7 +7,7 @@ import { fieldDescription, selectedFieldSnapshot, farmSnapshot } from '../suppor
 import { sprayField, buyPlot, selectProperty, setAutoDoze, plantField, selectPlant, clickFarmTile } from '../support/field-actions';
 import { scheduleWeek, schedulePlant, scheduleNextHarvest, expectWeekPlan } from '../support/schedule-window';
 import { saleOffers, selectSaleOffer } from '../support/sell-window';
-import { reveal, openWindow, expectPaletteAction, chooseField, expectSelectedField , speedItem } from '../support/workspace';
+import { reveal, openWindow, expectPaletteAction, chooseField, expectSelectedField , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -315,7 +315,7 @@ test('map tools buy original land and complete a new-field planting and harvest 
   await expect(page.getByRole('menuitemcheckbox',{name:'AutoDoze',exact:true})).toHaveAttribute('aria-checked','false');
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('simfarm.options.v1')!).autoClear)).toBe(true);
   await page.keyboard.press('Escape');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   expect(errors).toEqual([]);
 });
 
@@ -370,7 +370,7 @@ test('all four field treatments use original stored supplies and restore crop wo
     expect(await fieldDescription(page)).toContain('Growing');
   }
   await page.setViewportSize({width:1280,height:844});await reveal(page,'#viewport');await expect(page.getByRole('button',{name:'SPRAY',exact:true})).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   expect(errors).toEqual([]);
 });
 
@@ -429,7 +429,7 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await sale.click();await expect(page.locator('#farm-cash')).toHaveText(`$${(cash+price).toLocaleString('en-US')}`);
   await page.setViewportSize({ width: 1280, height: 844 });
   await page.locator('#file-menu-button').click();await expect(page.getByRole('menuitem',{name:'Save to File...',exact:true})).toBeVisible();await expect(page.getByRole('menuitem',{name:'Load from File...',exact:true})).toBeVisible();await page.keyboard.press('Escape');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   expect(errors).toEqual([]);
 });
 
@@ -619,7 +619,7 @@ test('calendar planner edits five years, preserves saved plans and dispatches th
   await expect(await scheduleWeek(page,16)).toHaveAttribute('aria-label',/Plant Peanuts/);
   await page.setViewportSize({ width: 1280, height: 844 });
   await reveal(page, '#field-planner'); await page.locator('#field-planner').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-field-planner.png', fullPage: true });
   await (await speedItem(page,'#next-day')).click();
   expect(await fieldDescription(page)).toContain('Planting');
@@ -671,7 +671,7 @@ test('Loans panel borrows, quotes installments, saves balances and pays off thro
   await openWindow(page, 'bank'); await expect(page.locator('#loan-balance')).toHaveText('$1,000');
   await page.setViewportSize({ width: 1280, height: 844 });
   await reveal(page, '#loan-panel'); await page.locator('#loan-panel').scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-loans.png', fullPage: true });
   await reveal(page, '#repay-loan'); await page.locator('#repay-loan').click();
   await expect(page.locator('#loan-balance')).toHaveText('$0'); await expect(page.locator('#loan-installment')).toHaveText('$0');

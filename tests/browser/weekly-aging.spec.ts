@@ -3,7 +3,7 @@ import {toggleOption} from '../support/options-menu';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { selectAssetSale } from '../support/sell-window';
 import { clickFarmTile } from '../support/field-actions';
-import { reveal, openWindow , speedItem } from '../support/workspace';
+import { reveal, openWindow , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -64,7 +64,7 @@ test('weekly worn machinery sale displays proceeds, original clearing pixels and
   for (let d = 0; d < 7; d++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({width:1280,height:844});
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-weekly-aging.png', fullPage: true }); expect(errors).toEqual([]);
 });
 

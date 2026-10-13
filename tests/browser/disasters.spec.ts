@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { chooseDisaster, setDisastersEnabled, expectDisasterChecked } from '../support/disaster-menu';
-import { reveal, acknowledgeFinanceMessages , speedItem } from '../support/workspace';
+import { reveal, acknowledgeFinanceMessages , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -108,7 +108,7 @@ test('manual tornado destroys a building and contents without sale credit; disab
   expect(await save(page, 'tornado')).toEqual(JSON.parse(game.save(4))); await sprites(page, game.getSnapshot().disasters, 'tornado');
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page,'#viewport');
   await expectDisasterChecked(page,'tornado');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-disasters.png', fullPage: true }); expect(errors).toEqual([]);
 });
 

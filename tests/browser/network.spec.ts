@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import {clickFarmTile} from '../support/field-actions';
-import { reveal , speedItem } from '../support/workspace';
+import { reveal , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -88,7 +88,7 @@ test('original construction rejects land, cash, terrain and gate limits and stil
   funded.dispatch({type:'network',tool:'road-161',x:10,y:10});
   await gate(page,15,10);funded.dispatch({type:'network',tool:'open-gate',x:15,y:10});
   expect(await save(page,'zero-cash-gate')).toEqual(JSON.parse(funded.save(4)));
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({path:'artifacts/browser-network-mobile.png',fullPage:true});
 });
 

@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
-import { reveal, openWindow , speedItem } from '../support/workspace';
+import { reveal, openWindow , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -37,7 +37,7 @@ test('traffic paints original vehicle pixels and continues through weekly spawni
   for (let day = 0; day < 8; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page, 'continued')).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 1280, height: 844 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280); expect(errors).toEqual([]);
+  await expectNoHorizontalOverflow(page); expect(errors).toEqual([]);
 });
 
 test('traffic collision plays source PCM only when enabled, never replays on load and rejects malformed continuation atomically', async ({ page }) => {

@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { selectAssetSale } from '../support/sell-window';
 import { aircraftCatalog } from '../support/aircraft-browser';
-import { reveal, openWindow, expectFarmCash , speedItem } from '../support/workspace';
+import { reveal, openWindow, expectFarmCash , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -62,7 +62,7 @@ test('Original Sell machinery controls hide rentals, explain busy machines and s
   expect(await save(page, 'artifacts/browser-equipment-sale.simfarm.json')).toEqual(JSON.parse(busy));
   await load(page, game.save(4));
   await page.setViewportSize({ width: 1280, height: 844 }); await openWindow(page,'sell');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-manual-sales.png', fullPage: true });
   for (const slot of [1, 2, 3]) {
     await selectAssetSale(page,'Machinery',slot);

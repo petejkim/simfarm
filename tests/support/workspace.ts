@@ -128,3 +128,10 @@ export async function expectFarmCash(page:Page,cash:number){
 export async function speedItem(page:Page,selector:'#play-pause'|'#next-day'){
   await openSpeedMenu(page);return page.locator(selector);
 }
+
+/** No content overflows the game sideways. #app is fixed and clipped, so the document itself can never widen;
+ * the desktop's own scroll width is what grows when something sticks out. */
+export async function expectNoHorizontalOverflow(page:Page){
+  // Polled: windows refit to a resized screen through a ResizeObserver.
+  await expect.poll(()=>page.locator('.game-desktop').evaluate(el=>el.scrollWidth-el.clientWidth)).toBe(0);
+}

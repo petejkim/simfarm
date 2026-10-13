@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { newGame , speedItem } from '../support/workspace';
+import { newGame , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -91,7 +91,7 @@ test('custom rerolls retain their own streams, respond to keyboard and continue 
   draft.setSettings({ ...options, climate: { ...options.climate, precipitation: 2 } });
   await reveal(page, '#generate-world'); await page.locator('#generate-world').focus();
   for (let i = 0; i < 2; i++) { await page.keyboard.press('Enter'); draft.generateWorld(); await expectPreview(page, draft); }
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.locator('#terrain-design').screenshot({ path: 'artifacts/browser-terrain-design-mobile.png' });
   await reveal(page, '#play-farm'); await page.locator('#play-farm').click();
   const game = GameSimulation.load(writeNativeSave(draft.accept('selected-climate'), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);

@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { newGame , speedItem } from '../support/workspace';
+import { newGame , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -93,7 +93,7 @@ test('New Game starts fresh, cancels safely and restores its generated continuat
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   expect(await save(page, 'live-cancelled')).toEqual(before);
   await newGame(page); await page.locator('#new-farm-seed').fill('9029'); await reveal(page, '#new-farm-year'); await page.locator('#new-farm-year').fill('1993');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-restart-mobile.png', fullPage: true });
   await reveal(page, '#region-design'); await page.locator('#region-design').click(); await reveal(page, '#play-farm'); await page.locator('#play-farm').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   const restarted = await save(page, 'live-generated');

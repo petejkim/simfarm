@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { clickFarmTile, setAutoDoze } from '../support/field-actions';
-import { reveal, expectFarmCash , speedItem } from '../support/workspace';
+import { reveal, expectFarmCash , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -67,6 +67,6 @@ test('machinery shop explains cash, trees and incompatible storage and fits a na
   await page.setViewportSize({width:1280,height:844});await clickFarmTile(page,22,20);stored.dispatch({type:'buy-equipment',equipmentType:0,x:22,y:20});
   await expectFarmCash(page,stored.getSnapshot().scenario.farm.cash);
   expect(await save(page,'artifacts/browser-equipment-ground.simfarm.json')).toEqual(JSON.parse(stored.save(4)));
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-equipment-shop.png', fullPage: true });
 });

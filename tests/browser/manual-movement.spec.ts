@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import { clickFarmTile } from '../support/field-actions';
-import { reveal , speedItem } from '../support/workspace';
+import { reveal , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -61,7 +61,7 @@ test('original Move opens stored machinery, cancels safely and delivers to stora
   await tilePixels(page, 42, 42, 459); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 1280, height: 844 }); await startMove(page);
   await clickFarmTile(page,40,40);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-manual-movement.png', fullPage: true }); expect(errors).toEqual([]);
 });
 

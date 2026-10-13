@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { newGame , speedItem } from '../support/workspace';
+import { newGame , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -39,7 +39,7 @@ test('region map selects source climate, supports keyboard and mobile layout, an
   await expect(page.locator(`[data-region="${last.x},${last.y}"]`)).toBeFocused();
   await page.locator('[data-region="3,8"]').click(); await page.setViewportSize({ width: 1280, height: 844 });
   await reveal(page, '#new-farm-year'); await page.locator('#new-farm-year').fill('1993'); await reveal(page, '#new-farm-seed'); await page.locator('#new-farm-seed').fill('9029');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: 'artifacts/browser-region-mobile.png', fullPage: true });
   expect(await save(page, 'selection-only')).toEqual(before);
   await reveal(page, '#region-use'); await page.locator('#region-use').click(); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');

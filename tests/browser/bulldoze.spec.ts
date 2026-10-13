@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import {clickFarmTile} from '../support/field-actions';
-import { reveal, openWindow, expectPaletteAction , speedItem } from '../support/workspace';
+import { reveal, openWindow, expectPaletteAction , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -65,7 +65,7 @@ test('Bulldoze removes loose supplies/chemicals and terrain, renders source conn
     await expect(page.getByRole('dialog',{name:'Message',exact:true})).toHaveCount(0);
     if (i === 3) {
       await page.setViewportSize({ width: 1280, height: 844 }); await expect(page.locator('#viewport')).toBeVisible();
-      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+      await expectNoHorizontalOverflow(page);
       await page.screenshot({ path: 'artifacts/browser-bulldoze.png', fullPage: true });
     }
     game.dispatch({ type: 'remove-object', x, y, kind: quote.kind, slot: quote.slot, tile: quote.tile });
