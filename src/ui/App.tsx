@@ -10,11 +10,14 @@ import { useSound } from './useSound';
 import { useResource } from './useResource';
 import { Autosave } from '../storage/autosave';
 import { restoreStoredGame } from '../storage/restore';
+import { dismissBootScreen } from './boot-screen';
 import { claimFirstLaunch, createDefaultFarm, startsWithScenario1 } from './default-farm';
 
 export function App() {
   const assets = useResource(loadGameAssets);
-  if (assets.status === 'loading') return <p className="loading">Loading SimFarm…</p>;
+  // While loading, index.html's title-screen boot overlay is shown instead.
+  useEffect(() => { if (assets.status === 'error') dismissBootScreen(); }, [assets.status]);
+  if (assets.status === 'loading') return null;
   if (assets.status === 'error') return <div className="loading">
     <h1>SimFarm assets unavailable</h1>
     <p>{assets.error} Start with ./tools/bun run import, then ./tools/bun run dev.</p>
@@ -55,7 +58,7 @@ function Game({ assets }: { assets: GameAssets }) {
     if (event.type === 'music') music.requestTrack(event.track);
     else if(event.type==='sound') sound.play(event.sound);
   }, [music.requestTrack, sound.play]);
-  if (!farm) return <p className="loading">Loading SimFarm…</p>;
+  if (!farm) return null;
   return <WindowDesktop artwork={assets.windowArtwork} onButtonClick={sound.click}>
     <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded} openNewGame={farm.firstStart} autosave={autosave} autosaveNow={farm.autosaveNow} startMessage={farm.notice}
       onRetry={() => setFarm(previous => previous && ({ ...previous, serial: previous.serial + 1 }))}

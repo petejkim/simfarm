@@ -44,6 +44,7 @@ import { ExpertWindow } from './ExpertWindow';
 import { ScheduleWindow } from './ScheduleWindow';
 import { FarmMap, type MapFocus } from './FarmMap';
 import { useResource } from './useResource';
+import { dismissBootScreen } from './boot-screen';
 import { CHEAT_DONATION, GameSimulation, type GameCommand } from '../simulation/game';
 import { speedMenu, TimeStatus } from './SpeedMenu';
 import { SaveControls, type LoadedFarm } from './SaveControls';
@@ -91,6 +92,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
     return {tiles:data.tiles,simulation};
   }, [id, loaded, assets.catalog.crops, assets.townLayouts]);
   const resource = useResource(load);
+  useEffect(() => { if (resource.status !== 'loading') dismissBootScreen(); }, [resource.status]);
   const simulation = resource.status === 'ready' ? resource.value.simulation : null;
   const openedNewGame = useRef(false);
   useEffect(() => { if (openNewGame && simulation && !openedNewGame.current) { openedNewGame.current = true; setNewFarmOpen(true); } }, [openNewGame, simulation]);

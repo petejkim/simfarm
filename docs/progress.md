@@ -3728,3 +3728,19 @@ Validation:
 - Build passes.
 - The mobile-touch case now expects the highlight to stay on 16,12 with 12,12 plain after each of pan, cancel and long press, and still confirms on 12,12. mobile-touch passes 23/23.
 - placement-outline, direct-bulldoze and field-tools pass 16/16.
+
+### Title-screen boot overlay (2026-10-13, user request)
+
+The page now opens on the original title screen (`sftitle.png`, the 640×480 title image already imported from `sftitle.int`/`.pal`), with an HTML "Loading..." line under it. It is static markup in index.html (`#boot`), with inline styles, so it shows before any script or the app stylesheet loads. The image is shown at 1× where it fits and scaled down to fit narrower or shorter screens; the page colour matches the menu bar.
+
+The app removes the overlay (`src/ui/boot-screen.ts`) in these cases:
+- when the farm resource is ready (FarmView);
+- when the farm or startup assets fail, so their errors and Retry stay visible.
+
+App's former "Loading SimFarm…" placeholders now render nothing behind it. The original game showed this screen at startup; the boot overlay is presentation only, with no title-screen timing or input.
+
+Validation:
+- Build passes.
+- boot-screen.spec holds `main.tsx` and checks that the title image (`/assets/sftitle.png`, natural width 640) and Loading... text are visible from index.html alone, at 640×480 with the text below. Once released, the farm is shown and the overlay is gone. An asset error and a farm load error each remove it.
+- With startup-retry, first-start, town and edit-status: 13/13.
+- Desktop and 390px phone screenshots checked by eye.
