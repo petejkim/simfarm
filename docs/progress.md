@@ -3271,3 +3271,9 @@ Validation: type check. Browser specs: map-window, balance-window, evaluation-wi
 At the user's request, the Select a Region and Design Your Own screens drop their native Help disclosures; neither screen's help is from the original. The Design Your Own help also held a climate/water summary (`#terrain-settings`, `#terrain-sites`) that only appeared when expanded, so it went too. Terrain specs now check the climate sliders' own values.
 
 Validation: type check. Browser specs: terrain-design, region-selection, new-farm, new-game-layout and region-artwork, 21/21.
+
+## 2026-10-13 — Crop advice bounded to 0x1580
+
+The Buy and Examine crop text came from 0x1580 to the end of the file. That range includes the 256-byte Expert block at 0x1600, so the stats (Temperature … Replant Every Harvest) appeared twice. `readCrop` now reads only the 128-byte advice block (0x1580–0x15ff). All 24 supplied crops end cleanly in `@` padding before 0x1600. The Expert window still reads 0x1600 on its own. Regenerate assets with `./tools/bun run import`. The Examine overflow test now checks that the longest advice (Potatoes) fits; the old test relied on the combined text overflowing.
+
+Validation: type check; formats and examine unit tests; browser specs all-crops, examine and expert, 11/11.

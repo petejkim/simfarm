@@ -57,7 +57,7 @@ test('missing Examine data stops asset loading before play',async({page})=>{
   await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('#world')).toHaveCount(0);
 });
 
-test('long original crop descriptions stay inside Examine and remain keyboard-scrollable in full',async({page})=>{
+test('the longest original crop advice fits inside Examine without the Expert block',async({page})=>{
   const {cropPlantTile}=await import('../../src/formats/crop-slots');const {worldIndex}=await import('../../src/formats/scenario');
   const f=shopFixture();f.state.disasters.enabled=false;const g=f.load().withAllCrops(browserCrops),state=g.getSnapshot();
   const crop=[...browserCrops].sort((a,b)=>b.description.length-a.description.length)[0],slot=state.scenario.cropFiles.indexOf(`${crop.id}.crp`);
@@ -67,8 +67,7 @@ test('long original crop descriptions stay inside Examine and remain keyboard-sc
   const initial=writeNativeSave(fixture.state,4);await load(page,initial);await point(page,55,40);
   const text=page.locator('#examine-text');await expect(text).toHaveText(crop.description);
   expect(await text.evaluate(e=>e.scrollWidth<=e.clientWidth)).toBe(true);
-  expect(await text.evaluate(e=>e.scrollHeight>e.clientHeight)).toBe(true);
-  await text.focus();await page.keyboard.press('End');await expect.poll(()=>text.evaluate(e=>e.scrollTop)).toBeGreaterThan(0);
+  expect(await text.evaluate(e=>e.scrollHeight<=e.clientHeight)).toBe(true);await expect(text).not.toContainText('Temperature:');
   expect(await save(page)).toEqual(JSON.parse(initial));await page.screenshot({path:'artifacts/browser-examine-text.png'});
 });
 
