@@ -3182,7 +3182,7 @@ Decoded samples are now cached per sound, matching the original's resolve/cache 
 Validation: type check. Browser: button-sounds, including new specs that check rapid repeats start without stopping each other and load the file once, plus animal-input, aircraft-flight, aircraft, stationary-disasters, options and mobile-audio: 31 passed, and 7/7 on the final rerun. The animal-input missing-PCM case now reloads the page before blocking `cow2.voc`, because the sample is cached.
 
 Known gaps:
-- **Hover test under load.** The animal-input hover test ("map hover steers original livestock…") fails under heavy parallel load (6 workers): the visual RNG and animal positions drift. It fails the same way with sound off and at `a8d9518`, before today's audio work, so it predates this change. It passes at normal concurrency. Pausing the page clock did not fix it. Revisit.
+- **Hover test under load.** The animal-input hover test ("map hover steers original livestock…") fails under heavy parallel load (6 workers): the visual RNG and animal positions drift. It fails the same way with sound off and at `a8d9518`, before today's audio work, so it predates this change. It passes at normal concurrency. Pausing the page clock did not fix it. **Resolved 2026-10-13**; see "Hover test race fixed" below.
 - **Road stutter.** The user reports stutter during road placement with sound on or off, so it is not audio, and they deferred it. A 6× CPU-throttled Chromium probe showed no long tasks, but it likely never placed a road (no VOC fetches), so the result is inconclusive.
 
 ## 2026-10-13 — Held strokes freeze time
@@ -3388,6 +3388,14 @@ Validation: type check; unit test pinch-zoom. Browser specs:
 
 Two of the 79 failed:
 - **palette-supplies** touch case: it still assumed a press plants immediately, which predates the first-tap highlight. It now taps first and passes.
-- **animal-input** "map hover steers original livestock": flaky, unrelated. It failed 3 of 5 repeats here and also 3 of 5 on 8d273d8, before any mobile work. Saves differ in `visual` and the animal record, consistent with timing rather than hover input. To revisit.
+- **animal-input** "map hover steers original livestock": flaky, unrelated. It failed 3 of 5 repeats here and also 3 of 5 on 8d273d8, before any mobile work. Saves differ in `visual` and the animal record, consistent with timing rather than hover input. **Resolved 2026-10-13**; see "Hover test race fixed" below.
 
 Limitation: no trackpad or ctrl+wheel zoom on desktop; not yet checked on a real phone.
+
+## Hover test race fixed (2026-10-13)
+
+The animal-input test "map hover steers original livestock" failed about half the time, and the cause was in the test, not the game. At 50% zoom the hovered tile (9, 10) lies under the Speed menu, which the test opens with the keyboard. With 1280×900 the point is at (125, 150) and the menu covers x 86–202, y 16–176. Logging showed a canvas `pointerleave` arriving before the day step in every failing run and after it in every passing run. Chrome updates hover state under a stationary mouse on its own schedule, so the game correctly cleared the map pointer, but only sometimes in time. The earlier explanation (visual RNG drifting under load) was a symptom: with no pointer, the animal follows its RNG-driven path instead of fleeing.
+
+Fix (test only): at 50% zoom the test hovers tile (9, 16), below the menu. It is still within the source steering range (squared distance < 50, `animal-movement.ts` → `equipmentDistance`) and west of the animal at (10, 10), so the animal still flees east to x = 11. The test also checks that `elementFromPoint` hits `#world` once the menu is open. A future layout change that covers the hover point will now fail every run instead of flaking. No runtime change.
+
+Validation: the hover test passed 20/20 at default concurrency and 24/24 with 6 workers. The full animal-input spec passed 2/2, and type checking passed.

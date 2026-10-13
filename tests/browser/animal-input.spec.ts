@@ -25,8 +25,12 @@ test('map hover steers original livestock through zoom and scrolling, and clears
     await reveal(page, '#viewport'); await page.locator('#viewport').scrollIntoViewIfNeeded();
     await page.locator('#viewport').evaluate(v => { v.scrollLeft = v.scrollTop = 0; });
     const rect = await page.locator('#world').boundingBox(); expect(rect).not.toBeNull();
-    await page.mouse.move(rect!.x + 9.5 * 16 * zoom, rect!.y + 10.5 * 16 * zoom);
-    let pointer: { x: number; y: number } | null = { x: 9, y: 10 };
+    // The open Speed menu covers tile (9, 10) at half zoom; Chrome then fires pointerleave on its own schedule,
+    // racing the day step. Hover below the menu instead, still within steering range (squared distance < 50) and
+    // west of the animal at (10, 10), so it still flees east.
+    const tile = { x: 9, y: zoom < 1 ? 16 : 10 }, client = { x: rect!.x + (tile.x + 0.5) * 16 * zoom, y: rect!.y + (tile.y + 0.5) * 16 * zoom };
+    await page.mouse.move(client.x, client.y);
+    let pointer: { x: number; y: number } | null = { ...tile };
     if (action === 'scroll') {
       await page.locator('#viewport').evaluate((v, pixels) => { v.scrollLeft = pixels; v.dispatchEvent(new Event('scroll')); }, 32 * zoom);
       pointer = { x: 11, y: 10 };
@@ -36,7 +40,10 @@ test('map hover steers original livestock through zoom and scrolling, and clears
     game.dispatch({ type: 'set-map-pointer', pointer });
     // Open Speed with the keyboard, leaving the pointer on the map.
     await page.locator('#speed-menu-button').focus(); await page.keyboard.press('Enter');
-    await (await speedItem(page,'#next-day')).focus(); await page.keyboard.press('Enter'); game.dispatch({ type: 'advance-day' });
+    await (await speedItem(page,'#next-day')).focus();
+    if (action === 'hover' || action === 'scroll')
+      expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id, client), 'Speed menu must not cover the hovered tile').toBe('world');
+    await page.keyboard.press('Enter'); game.dispatch({ type: 'advance-day' });
     await expect(page.locator('#time-status')).toContainText('1 days advanced');
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));
     if (action === 'hover') expect(game.getSnapshot().scenario.animals[1].x).toBe(11);
