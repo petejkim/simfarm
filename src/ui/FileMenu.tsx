@@ -34,7 +34,7 @@ export function FileMenu({ about, data, busy, onSave, onSaveToFile, onLoad, onNe
   const button = useRef<HTMLButtonElement>(null), menu = useRef<HTMLDivElement>(null), root = useRef<HTMLElement>(null);
   const last=data.menus.at(-1)!,debugX=last.header.x+last.header.width;
   const menus=[...data.menus,{offset:-1,title:'Debug',header:{x:debugX,width:48},popup:{x:debugX,width:192,height:38},
-    items:['Start rodeo','Start fair (carnival)','Advance event week','Start town expansion','Grow town districts','Create crop circles'].map((label,i)=>({label,offset:-100-i}))}];
+    items:['Start rodeo','Start fair (carnival)','Advance event week','Start town expansion','Grow town districts','Create crop circles','Show toxic-land warning'].map((label,i)=>({label,offset:-100-i}))}];
   const active = open === null ? null : menus[open];
   const choices:MenuChoices|null = open === 5 ? debug : open === 1 ? options : open === 2 ? speed : open === 4 ? disasters : open === 3
     ? {checked:GAME_WINDOWS.map(key=>key==='edit'||windows.order.includes(key)),choose:index=>onWindow(GAME_WINDOWS[index])} : null;

@@ -3136,3 +3136,7 @@ Debug → Create crop circles runs the original debug-only mode-7 start, with it
 ## 2026-10-12 — Toxic-land warning trace
 
 An exhaustive static trace found no route to the toxic-land warning (disaster mode 8, message 51) in the shipped executable, debug keys included. Only mode 8 itself touches its flag bit or loads the message. No manager caller, alias, stored pointer, thunk or dispatcher request can produce mode 8 or message 51. It is recorded as SF-179 (dead content) and reproduced by `tools/audit-toxic-warning.py`. No game code changed.
+
+## 2026-10-12 — Toxic-land warning in the Debug menu
+
+Debug → Show toxic-land warning runs the original's unreachable mode 8 (SF-179): message 51 plus a permanent flag, so it works once per farm. Validation: type check; debug-menu and stationary-disasters browser specs 6/6.

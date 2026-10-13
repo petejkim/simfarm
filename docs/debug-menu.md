@@ -41,3 +41,11 @@ Behaviour is the original's, not a forced success:
 - On success the field takes 10 loss, the seven circle tiles are painted, `alien` MIDI plays, and the mandatory "CLOSE ENCOUNTER" message appears.
 
 The item is disabled when disasters are disabled, when circles are already active (flag 0x40), or when the farm has no active fields. Its tooltip explains the random crop condition. The browser spec now starts circles from this item, rather than constructing an active checkpoint outside the browser, and verifies the message, tiles, saved state and the disabled repeat.
+
+## Show toxic-land warning
+
+The seventh Debug item, "Show toxic-land warning", dispatches `start-disaster` with kind `toxic-land`. That runs original mode 8 at `0x36836`, which the original executable never reaches (SF-179; see disaster-trigger-audit.md).
+
+It sets persistent flag 0x80 of the disaster flags and shows the mandatory message 51. It has no damage, fine, price or sound effect. Nothing clears the flag, so the item works once per farm. It is disabled afterwards, and also while disasters are disabled.
+
+The browser spec starts the warning from this item, checks the message, compares the saved state with the simulation's, and checks that the item is then disabled.

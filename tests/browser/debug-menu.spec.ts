@@ -12,7 +12,7 @@ test('Debug triggers original event dialogs/music without a time jump or duplica
  const date=await page.locator('#farm-date').textContent();
  await page.locator('#debug-menu-button').focus();await page.keyboard.press('ArrowDown');
  const menu=page.getByRole('menu',{name:'Debug',exact:true});
- expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['Start rodeo','Start fair (carnival)','Advance event week','Start town expansion','Grow town districts','Create crop circles']);
+ expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['Start rodeo','Start fair (carnival)','Advance event week','Start town expansion','Grow town districts','Create crop circles','Show toxic-land warning']);
  await expect(menu.getByRole('menuitem',{name:'Advance event week'})).toBeDisabled();
  await expect(menu.getByRole('menuitem',{name:'Start rodeo',exact:true})).toBeFocused();
  await page.keyboard.press('Escape');await expect(menu).toHaveCount(0);

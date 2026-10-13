@@ -1549,4 +1549,4 @@ Native decodes immutable executable headers and separate archived planes; it per
 
 **Classification:** unreachable feature / dead code. It is not a crash, overflow or security issue. The text also promises fines that no code implements. High confidence, limited only by what static scanning cannot detect (self-modifying code or run-time-built far pointers), for which no evidence exists.
 
-**Native behavior:** the same as the original in normal play: no trigger. The mode-8 primitive, persistent flag and message are retained, and a checkpoint with the flag set shows nothing new. Revisit only if a run-time pointer path is ever found, or if a native Debug item is wanted, as was done for crop circles.
+**Native behavior:** the same as the original in normal play: no trigger. Since 2026-10-12 the Debug menu item "Show toxic-land warning" starts it once per farm (debug-menu.md). The mode-8 primitive, persistent flag and message are retained, and a checkpoint with the flag set shows nothing new. Revisit only if a run-time pointer path is ever found, or if a native Debug item is wanted, as was done for crop circles.

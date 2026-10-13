@@ -82,6 +82,13 @@ test('saved toxic warning remains flag-only and ordinary play has no provisional
   await observeAudio(page);await page.goto('/');const f=disasterFixture(),g=f.load().withAllCrops(browserCrops);
   const before=JSON.parse(g.save(4));g.dispatch({type:'start-disaster',kind:'toxic-land'});const active=JSON.parse(g.save(4));
   expect(active.scenario).toEqual(before.scenario);expect(active.runtime.random).toEqual(before.runtime.random);
+  // Unreachable in the original (SF-179); natively Debug starts mode8 once, with its mandatory message51.
+  await load(page,JSON.stringify(before));
+  await page.locator('#debug-menu-button').click();await page.getByRole('menuitem',{name:'Show toxic-land warning',exact:true}).click();
+  await expect(page.locator('#disaster-message-text .message-line')).toHaveText([/^A large percentage of your land is too toxic!/]);
+  await page.locator('#disaster-message-ok').click();expect(await save(page,'warning-debug')).toEqual(active);
+  await page.locator('#debug-menu-button').click();await expect(page.getByRole('menuitem',{name:'Show toxic-land warning',exact:true})).toBeDisabled(); // flag never clears
+  await page.keyboard.press('Escape');
   await load(page,JSON.stringify(active));await expect(page.locator('#disaster-message-ok')).toHaveCount(0);
   await toggleOption(page,'Sound Effects');
   await expect(page.locator('#start-crop-circles,#start-toxic-land,[data-window=disasters]')).toHaveCount(0);
