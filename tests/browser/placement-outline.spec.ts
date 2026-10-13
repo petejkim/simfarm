@@ -112,7 +112,7 @@ test('View, Spray and Bulldoze follow one tile over whole fields and erase on po
   };
   await page.getByRole('button',{name:'View object',exact:true}).click();await check(12,21);await check(15,22);
   await page.mouse.move(0,0);expect(await pixels(page,region)).toEqual(expected(world,region,'simfarm.pal'));
-  for(const label of ['Fertilize','Pesticide','Herbicide','Fungicide']){
+  for(const label of ['Fertilizer','Pesticide','Herbicide','Fungicide']){
     await page.getByRole('button',{name:'SPRAY',exact:true}).click();await page.getByRole('menuitem',{name:label,exact:true}).click();
     await check(12,21);await check(9,19); // Field presence does not enlarge or tint the outline.
     await page.keyboard.press('Escape');await page.mouse.move(0,0);

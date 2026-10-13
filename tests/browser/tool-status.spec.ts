@@ -12,7 +12,7 @@ test('palette and Spray selections show source messages, retain recent order acr
   ]){
     await page.getByRole('button',{name:tool,exact:true}).click();await expect(status).toHaveText(text);messages.push(text);
   }
-  for(const [tool,text] of [['Fertilize','Select field to fertilize.'],['Pesticide','Select field to spray with pesticide.'],['Herbicide','Select field to spray with herbicide.'],['Fungicide','Select field to spray with fungicide.']]){
+  for(const [tool,text] of [['Fertilizer','Select field to fertilize.'],['Pesticide','Select field to spray with pesticide.'],['Herbicide','Select field to spray with herbicide.'],['Fungicide','Select field to spray with fungicide.']]){
     await page.getByRole('button',{name:'SPRAY',exact:true}).click();await page.getByRole('menuitem',{name:tool,exact:true}).click();await expect(status).toHaveText(text);messages.push(text);
   }
   await page.getByRole('button',{name:'SPRAY',exact:true}).click();await page.getByRole('menuitem',{name:'Fungicide',exact:true}).click();

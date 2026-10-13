@@ -18,7 +18,8 @@ test('Plant and Spray menu chains, source geometry, item order and native comman
       node=exe.readUInt16LE(ds+node+6);
     }
     assert.equal(node,0);assert.deepEqual(codes,kind==='plant'?Array.from({length:16},(_,i)=>832+i):SPRAY_TOOLS.map(t=>t.tile));
-    if(kind==='spray')assert.deepEqual(labels,SPRAY_TOOLS.map(t=>t.label));
+    // Source DS label `Fertilize` is shown natively as `Fertilizer` (user request); the other labels are unchanged.
+    if(kind==='spray')assert.deepEqual(labels,SPRAY_TOOLS.map(t=>t.kind==='fertilizer'?'Fertilize':t.label));
   }
   // Original palette IDs22/23 dispatch to the two popup branches.
   assert.deepEqual([21,22].map(i=>0x1f950+exe.readUInt16LE(0x22352+i*2)),[0x21eec,0x21fa6]);
