@@ -16,7 +16,7 @@ async function windowMenu(page: Page, name: string) {
   await page.getByRole('menuitemcheckbox', { name, exact: true }).click();
 }
 
-test('source control strip keeps desktop geometry, replaces bitmap words with selectable text and updates live funds/date', async ({ page }) => {
+test('source control strip keeps desktop geometry, replaces bitmap words with HTML text and updates live funds/date', async ({ page }) => {
   await start(page);
   const bar = page.getByRole('toolbar', { name: 'Game toolbar' });
   expect(await bar.getByRole('button').evaluateAll(els => els.map(el => el.getAttribute('aria-label')))).toEqual(
@@ -26,11 +26,7 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
   }
   expect(await page.locator('.original-menu-bar').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(85, 85, 85)');
   await expect(page.locator('#window-market')).toBeEnabled();
-  const caption = await page.locator('#window-buy .toolbar-caption').evaluate(el => {
-    const range = document.createRange(); range.selectNodeContents(el);
-    const selection = getSelection()!; selection.removeAllRanges(); selection.addRange(range); return selection.toString();
-  });
-  expect(caption).toBe('BUY');
+  await expect(page.locator('#window-buy .toolbar-caption')).toHaveText('BUY');
   const date = await page.locator('#farm-date').textContent();
   await (await speedItem(page,'#next-day')).click(); await expect(page.locator('#farm-date')).not.toHaveText(date!);
   await reveal(page, '#window-bank'); await page.locator('#window-bank').click(); await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('1000');

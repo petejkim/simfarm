@@ -44,7 +44,7 @@ async function expectPreview(page: Page, draft: CustomFarmSetup) {
   await expect(page.locator('#terrain-design canvas')).toHaveCount(0);
   await expect(page.locator('#terrain-design label')).toHaveText(['Rainfall', 'Temperature', 'Wind speed']);
   await expect(page.locator('#terrain-design .terrain-button')).toHaveText(['River', 'Lake', 'Generate World', 'Play']);
-  // Text remains selectable/copyable and fits at desktop and narrow widths.
+  // Text is real HTML text and fits at desktop and narrow widths.
   expect(await page.locator('#terrain-design .terrain-title').evaluate(el => {
     const range = document.createRange(); range.selectNodeContents(el);
     return range.toString();

@@ -3283,3 +3283,9 @@ Validation: type check; formats and examine unit tests; browser specs all-crops,
 Native addition (user request): Space toggles pause/resume. It is blocked in the same cases as the pause launcher (pending town choice, town event or default decision), and also in form fields, open menus and modal dialogs, and with modifier keys. While flying, the flight handler handles Space (spraying) first. Space is default-prevented, so a focused button is not also pressed; Enter still activates a focused button. The launcher's tooltip reads "Pause (Spacebar)"/"Resume (Spacebar)".
 
 Validation: type check. Browser specs: control-bar, aircraft-flight, tool-hotkeys and button-sounds, 20/20.
+
+## 2026-10-13 — No text selection while clicking
+
+At the user's request, `*` now has `user-select: none`, so rapid clicks in the game do not select text. `input` and `textarea` keep `user-select: text` so values such as the map seed and loan amount can still be selected while editing. The menu and control-bar tests used to select their caption text with `getSelection()`. They now check the HTML text directly.
+
+Validation: browser specs main-menu, control-bar, terrain-design and new-farm, 21/21.

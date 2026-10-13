@@ -24,7 +24,7 @@ async function pick(page: Page, name: string, buffer: Buffer) {
   await (await pending).setFiles({ name, mimeType: 'application/octet-stream', buffer });
 }
 
-test('source menu order uses selectable text, keyboard navigation and original desktop spacing', async ({ page }) => {
+test('source menu order uses HTML text, keyboard navigation and original desktop spacing', async ({ page }) => {
   await start(page);
   const bar = page.getByRole('navigation', { name: 'Original game menus' });
   expect(await bar.locator('.original-menu-heading').allTextContents()).toEqual(['File', 'Options', 'Speed', 'Windows', 'Disasters', 'Debug']);
@@ -45,11 +45,7 @@ test('source menu order uses selectable text, keyboard navigation and original d
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#file-menu-button'); await page.locator('#file-menu-button').click();
   
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
-  const text = await page.getByRole('menuitem', { name: 'About SimFarm' }).evaluate(element => {
-    const range = document.createRange(); range.selectNodeContents(element); const selection = getSelection()!;
-    selection.removeAllRanges(); selection.addRange(range); return selection.toString();
-  });
-  expect(text).toBe('About SimFarm');
+  await expect(page.getByRole('menuitem', { name: 'About SimFarm' })).toHaveText('About SimFarm');
   await page.screenshot({ path: 'artifacts/browser-main-menu-mobile.png', fullPage: false });
   await page.keyboard.press('Escape');
   await command(page, 'New Game'); await expect(page.getByRole('region', { name: 'New farm', exact: true })).toBeVisible();
