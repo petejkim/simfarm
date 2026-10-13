@@ -7,7 +7,7 @@ import type { AircraftFlight } from '../simulation/aircraft-flight';
 import { useCallback, useEffect, useLayoutEffect, useRef, type MouseEvent, type PointerEvent, type RefObject } from 'react';
 import { WORLD_SIZE, worldIndex, type Scenario } from '../formats/scenario';
 import { pinchView, settledZoom } from './pinch-zoom';
-import { drawWorld, type MapPreview } from '../render/world-renderer';
+import { drawWorldBase, drawWorldPreview, type MapPreview } from '../render/world-renderer';
 
 export interface MapFocus { x: number; y: number }
 interface Props {
@@ -134,6 +134,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
     return () => cancelAnimationFrame(frame);
   }, [autoScroll, flight, zoom, updatePointer, viewportRef]);
   const workerAnimation=useRef(new HarvestWorkerAnimation()),paint=useRef(()=>{});
+  const baseCache=useRef<{canvas:HTMLCanvasElement;key:unknown[]}|null>(null);
   const hasWorkers=scenario.cells.some(cell=>(cell.terrain&0x0800)!==0&&((cell.overlay&0x07ff)===1036||(cell.overlay&0x07ff)===1037));
   useEffect(()=>{
     const clock=workerAnimation.current;
@@ -204,8 +205,15 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
   }, [zoom, endTouch, revertTouch, stopPainting, viewportRef]);
   useLayoutEffect(() => {
     paint.current=()=>{
-      const context = canvasRef.current!.getContext('2d')!;
-      drawWorld(context, scenario, tiles, maskedTiles, flight ? undefined : preview,workerAnimation.current.phase,townEventTiles);
+      const context = canvasRef.current!.getContext('2d')!,phase=workerAnimation.current.phase;
+      // The world without a preview is cached and redrawn only when its inputs change (each published snapshot copies
+      // the scenario); a highlight change copies the cache and repaints the preview cells, so touch highlights do not
+      // redraw all 9,216 cells mid-gesture (user report: stutter when dragging).
+      const cache=baseCache.current??={canvas:Object.assign(document.createElement('canvas'),{width:1536,height:1536}),key:[]};
+      const key=[scenario,tiles,maskedTiles,townEventTiles,phase];
+      if(key.some((value,i)=>value!==cache.key[i])){drawWorldBase(cache.canvas.getContext('2d')!,scenario,tiles,maskedTiles,phase,townEventTiles);cache.key=key;}
+      context.imageSmoothingEnabled=false;context.drawImage(cache.canvas,0,0);
+      if(!flight&&preview)drawWorldPreview(context,scenario,tiles,maskedTiles,preview,phase,townEventTiles);
       if (flight) drawAircraft(context, flight, flightSprites);
       if (disasters) drawDisasters(context, disasters, disasterSprites);
     };paint.current();

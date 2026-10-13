@@ -342,8 +342,13 @@ test('a touch highlights its tile at touchdown, reverts to the armed tile if it 
   await page.locator('#viewport').evaluate(v=>v.scrollTo(0,0));
   const session=await page.context().newCDPSession(page),plain=await tilePixels(page,12,12);
   // Finger down on 12,12: highlighted while it is still down; lifting arms it without buying.
+  // The highlight repaints from the cached world, not all 9,216 cells (stutter when dragging).
+  await page.evaluate(()=>{const w=window as unknown as {draws:number;draw:typeof CanvasRenderingContext2D.prototype.drawImage};w.draws=0;const draw=w.draw=CanvasRenderingContext2D.prototype.drawImage;
+    CanvasRenderingContext2D.prototype.drawImage=function(this:CanvasRenderingContext2D,...args:unknown[]){w.draws++;return (draw as (...a:unknown[])=>void).apply(this,args);} as typeof draw;});
   await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[await coords(page,12,12)]});
   await expect.poll(()=>tilePixels(page,12,12)).not.toEqual(plain);
+  expect(await page.evaluate(()=>{const w=window as unknown as {draws:number;draw:typeof CanvasRenderingContext2D.prototype.drawImage};
+    CanvasRenderingContext2D.prototype.drawImage=w.draw;return w.draws;})).toBeLessThan(500);
   await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   expect(await tilePixels(page,12,12)).not.toEqual(plain);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   // A touch elsewhere moves the highlight there at once; when it turns into a pan, a cancelled touch or a long press,

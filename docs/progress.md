@@ -3648,3 +3648,18 @@ Validation: type check. A mobile-touch case records `defaultPrevented` after the
 - a double-tapped launcher is never cancelled, and Weather opens then closes.
 
 The loupe itself is iOS-only and needs device confirmation.
+
+### Cached terrain base for cheap highlight repaints (2026-10-13, user report)
+
+**Report:** dragging to scroll stuttered after the touchdown highlight.
+- Every preview (tool highlight) change made FarmMap redraw the whole terrain with `drawWorld`: 9,220 `drawImage` calls (cells, overlays, badges).
+- A drag paid for that at touchdown, and again mid-drag when the highlight reverted at the pan threshold.
+
+**Fix:** `drawWorld` is split into `drawWorldBase` (cells and field badges) and `drawWorldPreview` (inverted cells clipped to the footprint, drawn over a base). `drawWorld` remains their composition.
+- FarmMap keeps a 1536×1536 offscreen base, redrawn only when its inputs change: the scenario (copied on every published snapshot), the tile sheets, or the harvest-worker phase.
+- Every paint copies the base in one `drawImage`, then draws the preview, aircraft and disasters.
+- A highlight change now costs fewer than 500 draws.
+
+Validation: harvest-worker-animation unit test. The mobile-touch touchdown case counts `drawImage` calls during a touchdown highlight (< 500; the previous FarmMap made 9,220 and fails). Full browser regression (render pipeline change): 339/339.
+
+Follow-up: the user still sees some stutter on the device (through a tunnel to this dev server, so the cache was live). Remaining candidates: FarmView re-rendering on every highlight change, and the mid-drag revert.
