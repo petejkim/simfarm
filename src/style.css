@@ -504,7 +504,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window:has(>.game-window-body>.original-message-body)::backdrop{background:transparent}
 .game-window:has(>.game-window-body>.original-message-body)>.game-window-title>button{display:none}
 .original-message-body{display:flex;flex-direction:column;align-items:center;width:240px;height:168px;padding-top:8px;color:var(--ink)}
-.message-text{width:224px;height:56px;margin:8px 0 0;font:bold 11px/9px var(--font-ui);white-space:normal}
+.message-text{width:224px;height:56px;margin:8px 0 0;font:10px/1.1 var(--font-ui);white-space:normal}
 .message-line{display:block}.message-line[data-centered]{text-align:center}
 #bulldoze-message-text{font:12px/14px 'Courier New',var(--font-ui);white-space:pre-line}
 .message-buttons{display:flex;justify-content:center;gap:80px;margin-top:4px}
