@@ -3345,3 +3345,27 @@ Limitations and next actions: no real-device check yet (iOS Safari standalone, A
 The user reported that tapping an editable field zoomed the page in with no way back out. iOS Safari zooms into focused fields under 16px (map seed, starting year, loan amount are 10px). The full-screen desktop hides page overflow, so the zoomed page could not be recovered. The viewport meta now sets `maximum-scale=1.0, user-scalable=no`, which keeps the page scale fixed. The game's Zoom setting still scales the terrain. iOS blocks the focus zoom through `maximum-scale`; user pinch may still be allowed by iOS accessibility, and in that case it can be pinched back out.
 
 Validation: browser specs mobile-touch (asserts the viewport meta) and mobile-audio, 7/7. Chromium cannot emulate the iOS focus zoom, so this still needs a check on a real iPhone.
+
+## 2026-10-13 — Menu bar clear of the iOS status bar and edge blur
+
+On the user's iPhone 16 Pro Max (iOS 26), the menu bar of the home-screen app could not be tapped and was blurred, in portrait and landscape. Research (web search, 2026-10-13; other projects' pull requests, not Apple documentation):
+- iOS 26+ draws a system Liquid Glass edge blur over the top of home-screen web apps.
+- No CSS or meta disables it.
+- `env(safe-area-inset-top)` can read 0 there since iOS 26.1 (WebKit bug 301994).
+
+Attempts that failed on the device, squashed into this one change:
+1. `display: fullscreen`, `viewport-fit=cover`, `black-translucent` and `safe-area-inset-*` padding. The top stayed unchanged because the inset read 0, and the bottom inset was too large.
+2. `display: standalone` with the opaque `default` status bar and no `viewport-fit=cover`. iOS still blurred the menu bar; herdr-web-ui#199 reports this avoids the blur on iOS 27, but not here.
+3. A 48px band in portrait only. The user found it too tall, and the menu was still unreachable in landscape.
+
+Kept:
+- the manifest uses `display: standalone`;
+- the viewport has no `viewport-fit=cover` (iOS keeps content in the safe area itself, so no bottom inset is added);
+- the iOS status bar is `default`;
+- in the installed iOS app only (`@supports (-webkit-touch-callout:none)` and `@media (display-mode:standalone)`, both orientations), `#app` gets `padding-top: var(--ios-edge-band, 32px)`. That is a flat #555 band above the menu bar that the blur cannot smear. 32px follows the smallest reported blur measurement. A 16px band was tried and left the menu bar blurry on the device.
+
+Android opens standalone (status and navigation bars visible), not immersive.
+
+Validation: browser specs mobile-touch (manifest display, viewport meta and status bar style), mobile-audio, window-movement, edit-workspace and finance-messages, 20/20. Chromium parses the band rule unchanged in dev and production CSS and computes 0 padding outside iOS. The band cannot be exercised locally; the user should check it on the iPhone in both orientations after removing and re-adding the app. Tune `--ios-edge-band` if needed.
+
+Sources: github.com/devswha/herdr-web-ui/pull/199, github.com/mval23/remy/pull/12, github.com/anomalyco/opencode/pull/53297.

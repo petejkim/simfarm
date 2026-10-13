@@ -678,3 +678,12 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none;background:#555}
 .game-window{transform-origin:0 0}
 .game-window[data-framed]{max-height:none}
 #world{-webkit-touch-callout:none}
+/* Home-screen app (native, user request). iOS standalone with the default status bar lays the page out below the
+   status bar and inside the safe area by itself (no viewport-fit=cover). iOS 26+ still draws a system Liquid Glass
+   blur over the top of every home-screen web app in both orientations, which also kept taps from the menu bar; no
+   CSS or meta disables it, and env(safe-area-inset-top) can read 0 there (WebKit bug 301994). So only in the
+   installed iOS app (touch-callout is iOS-only; display-mode is the installed app) the desktop starts below a flat
+   menu-bar-grey band that the blur cannot smear. */
+#app{height:100dvh;background:#555}
+.game-desktop{height:100%}
+@supports (-webkit-touch-callout:none){@media (display-mode:standalone){#app{padding-top:var(--ios-edge-band,32px)}}}

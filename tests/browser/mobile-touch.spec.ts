@@ -97,7 +97,7 @@ test('the installable web app manifest and home-screen icons are served',async({
   await page.goto('/');
   expect(await page.locator('link[rel=manifest]').getAttribute('href')).toBe('/manifest.webmanifest');
   const manifest=await (await request.get('/manifest.webmanifest')).json();
-  expect(manifest).toMatchObject({name:'SimFarm',short_name:'SimFarm',display:'fullscreen',start_url:'./'});
+  expect(manifest).toMatchObject({name:'SimFarm',short_name:'SimFarm',display:'standalone',start_url:'./'});
   for(const icon of [...manifest.icons.map((i:{src:string;sizes:string})=>({src:'/'+i.src,size:Number(i.sizes.split('x')[0])})),{src:'/assets/apple-touch-icon.png',size:180}]){
     const response=await request.get(icon.src);expect(response.ok()).toBe(true);
     const png=PNG.sync.read(await response.body());expect([png.width,png.height]).toEqual([icon.size,icon.size]);
@@ -108,4 +108,7 @@ test('the installable web app manifest and home-screen icons are served',async({
   // iOS zooms the page into focused fields under 16px (map seed, loan amount) and the full-screen game has no way
   // to zoom back out; the page scale stays fixed and the game's own Zoom setting scales the terrain.
   expect(await page.locator('meta[name=viewport]').getAttribute('content')).toContain('maximum-scale=1.0, user-scalable=no');
+  // Content under the status bar is blurred by iOS and takes no taps: no viewport-fit=cover, opaque status bar.
+  expect(await page.locator('meta[name=viewport]').getAttribute('content')).not.toContain('viewport-fit');
+  expect(await page.locator('meta[name=apple-mobile-web-app-status-bar-style]').getAttribute('content')).toBe('default');
 });
