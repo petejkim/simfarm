@@ -124,3 +124,19 @@ The crop pager is gone. The crop inset holds all twenty-four planting icons in t
 - **Gauges:** previously cropped. `fldgrph.til` frames are only the 48×24 middle of each dial. In the source, the outer rim and the top of the arc come from the window bitmap: a 56×32 dial at gauge x−8, y168 (Disease 16,168; Pests 72; Weeds 128; Water 208; Soil 264), with the frame drawn at offset 8,8. Each gauge now stacks the bitmap dial sprite with the frame sprite. With no field selected, the bitmap dial and its resting needle show alone. The dials sit edge to edge, as in the source.
 
 The spec checks the 56×32 dial, the bitmap sprite offset, and the frame's tile and offset. Validation: schedule-window and all-crops specs pass (5/5).
+
+## RESET (native, 2026-10-13, user request)
+
+RESET has no original equivalent. It sits below CUT; the button column moves up 16px, so CLOSE (after its 8px gap) and the panels below keep their original positions. One press returns the selected field's future plan, rows now+1..239, to the default plan of the crop in the field, as if it had been planted with no edits. CUT, a different crop, extra harvests, sprays and plowing are all dropped. Contracts are excluded: the current week, including a contract placed this week, and the field's contract bytes are never touched.
+
+`resetFieldPlan` (`src/simulation/field-plan-edit.ts`, command `reset-field-plan`) aligns the plan to the crop's age (+34). A run of the weekly dispatcher confirmed the alignment:
+- A growing crop's plan index equals its age. Index 0 is planting; growth stage *n* falls *n* weeks later.
+- Planting (state 3) is index 0.
+- A harvest under way (state 5) is age + 1.
+- A treatment week (states 6–9, interrupted state in +4) skips growth and the next week catches up twice, so it is also age + 1.
+- Fixed-harvest crops (the shipped perennials: almonds, apples, grapes, oranges) follow the calendar, so their default rows depend only on the week of the year.
+- A field with no crop (waiting, clearing or plowing) is left with nothing planned (fallow 209).
+
+`continuePlantingPlan` continues `buildPlantingPlan`'s pattern from a start that may lie in an earlier plan year. `buildPlantingPlan` now shares the same pattern code (`plantingPattern`/`planCode`), unchanged in output.
+
+The weekly dispatcher (`dispatchFieldSchedule`) treats growth-stage codes as inert and fallow (209) as an active clear. So "no orders" for a growing crop means its stage codes, followed by the default harvest and replant cycle.

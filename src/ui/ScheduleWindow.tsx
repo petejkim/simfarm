@@ -122,6 +122,9 @@ function ScheduleEditor({assets,snapshot,tiles,field,inspection,focusRef,onComma
         <div className="schedule-buttons">
           <BevelButton className="schedule-caption" onClick={()=>setMonth(calendar.month)}>TODAY</BevelButton>
           <BevelButton className="schedule-caption" aria-label="Clear remaining plan" title="Choose CUT, then the first week to clear" pressed={action.kind==='clear'} onClick={()=>chooseAction({kind:'clear'})}>CUT</BevelButton>
+          {/* Native RESET (user request): returns this field's future plan to its crop's default plan in one press. */}
+          <BevelButton id="schedule-reset" className="schedule-caption" aria-label="Reset plan" title="Reset the rest of this field's plan to its crop's normal growth, with no orders added"
+            disabled={!field||blocked} onClick={()=>{if(field)onCommand({type:'reset-field-plan',fieldSlot:field.slot});}}>RESET</BevelButton>
           <BevelButton className="schedule-caption schedule-close" onClick={()=>windows.close('schedule')}>CLOSE</BevelButton>
         </div>
       </div>

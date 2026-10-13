@@ -1,6 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { declineTownEventDialogs } from '../support/town-event-dialogs';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
+import {farmSnapshot} from '../support/field-checkpoint';
 import { setDisastersEnabled } from '../support/disaster-menu';
 import { openWindow, expectPaletteAction, chooseField, expectSelectedField , speedItem } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
@@ -148,4 +149,32 @@ test('reexamining the same field resets Schedule to today without editing its pl
   await expect(page.getByRole('button',{name:'Water overlay',exact:true})).toHaveAttribute('aria-pressed','true');
   // Browsing after entry must remain possible; snapshots do not repeatedly reset the month.
   await scheduleMonth(page,5);await expect(page.locator('#schedule-month')).toHaveValue('5');expect(await save(page)).toEqual(before);
+});
+
+test('RESET returns a field\'s edited future plan to its crop\'s default plan and keeps this week and the farm unchanged',async({page})=>{
+  await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  // Expected: the same checkpoint reset by the simulation directly.
+  const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();
+  const text=readSaveText((await (await pending).path())!),reference=GameSimulation.load(text,browserCrops).simulation;
+  const calendar=reference.getSnapshot().scenario.farm.calendar,now=calendar.month*4+calendar.week;
+  reference.dispatch({type:'reset-field-plan',fieldSlot:1});const expected=reference.getSnapshot().scenario.schedule.column(0);
+  await openWindow(page,'schedule');await chooseField(page,1);
+  const reset=page.getByRole('button',{name:'Reset plan',exact:true});
+  await expect(reset).toHaveText('RESET');await expect(reset).toBeEnabled();
+  // Accidental edits: CUT two weeks ahead, then another crop five weeks ahead.
+  await page.getByRole('button',{name:'Clear remaining plan',exact:true}).click();await page.locator(`[data-plan-week="${now+2}"]`).click();
+  await expectWeekPlan(page,now+2,/Fallow/);
+  await page.locator('.schedule-crops button').nth(3).click();await page.locator(`[data-plan-week="${now+5}"]`).click();
+  const edited=(await farmSnapshot(page)).scenario.schedule.column(0);expect(edited).not.toEqual(expected);
+  await reset.click();
+  const after=await farmSnapshot(page);
+  expect(after.scenario.schedule.column(0)).toEqual(expected);
+  expect(after.scenario.schedule.column(0).slice(0,now+1)).toEqual(edited.slice(0,now+1)); // the past and this week stay
+  await expect(page.locator(`[data-plan-week="${now+2}"]`)).not.toHaveAttribute('aria-label',/Fallow/);
+  // RESET joins the original 16px captions below CUT; the column moves up instead, so CLOSE (after its 8px gap) and the
+  // panels below keep their original places (CLOSE at client y 128..144 of the window, panels from 149).
+  const layout=await page.locator('[data-window="schedule"]').evaluate(w=>{const o=w.getBoundingClientRect().top,
+    box=(el:Element)=>[el.textContent,Math.round(el.getBoundingClientRect().top-o),Math.round(el.getBoundingClientRect().height)];
+    return {captions:[...w.querySelectorAll('.schedule-buttons .schedule-caption')].map(box),panels:Math.round(w.querySelector('.schedule-panels')!.getBoundingClientRect().top-o)};});
+  expect(layout).toEqual({captions:[['TODAY',72,16],['CUT',88,16],['RESET',104,16],['CLOSE',128,16]],panels:149});
 });

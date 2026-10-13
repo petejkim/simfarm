@@ -3817,3 +3817,17 @@ The title image on the boot screen visibly rescaled while the game loaded. WebKi
 Both dimensions now come from viewport units: `--width:min(640px,100vw - 32px,(100vh - 80px)*4/3)`, with height = `--width*3/4`. Separately (user request), Loading... uses a system font (`system-ui, -apple-system, sans-serif`) instead of Roboto, so its line no longer moves when Roboto arrives.
 
 Validation: boot-screen.spec adds three viewport cases (1280×900, 844×390, 390×844), each run in Chromium and in a WebKit browser the test launches itself. Each measures the image and text boxes from index.html alone, then with the app running and the farm held. The boxes must be identical, the image 4:3 and the font the system stack. With the previous index.html all three fail; with the fix boot-screen passes 6/6.
+
+### Schedule RESET (2026-10-13, user request)
+
+The Schedule window has a native RESET button below CUT. It returns the selected field's future plan to its crop's default plan, aligned to the crop's real age, which undoes accidental CUT, crop replacement, harvest, spray or plow orders. Contracts and the current week are never changed. The button column moves up 16px so CLOSE and the panels keep their original places. Details and alignment evidence: docs/schedule-window.md.
+
+Validation:
+- Unit 972/972, including field-plan-reset:
+  - the continued plan equals `buildPlantingPlan` for all 24 crops and many starts, including starts before row 0;
+  - week by week through real play (annual corn through planting, growth and harvest; wheat; fixed-harvest almonds), scrambling the plan then pressing RESET gives back the unedited plan exactly, without changing past rows;
+  - the plan stays aligned across a treatment week;
+  - a contract this week survives in the plan, field bytes and definitions;
+  - an empty field becomes fallow; RESET changes nothing but the schedule; an invalid field changes nothing.
+- Browser: schedule-window 5/5. The new case CUTs and replants through the window, presses RESET, matches the simulation's own reset of the same checkpoint, and pins the caption column (TODAY 72, CUT 88, RESET 104, CLOSE 128, all 16px tall) and the panels at y 149.
+- Full browser suite 352/353. The one failure was map-window's ArrowRight centre check under full-suite load (view centre 57.5, 69.9 instead of 46.5, 55.5). It is unrelated to this change, and the spec then passed 12/12 with `--repeat-each=3`. Recorded as an unexplained timing flake.

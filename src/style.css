@@ -236,7 +236,9 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .schedule-window #schedule-month{width:160px;height:16px;margin:0;padding:0;opacity:0;cursor:pointer}
 .schedule-track:has(#schedule-month:focus-visible){outline:1px dotted #000}
 .schedule-season-box{display:flex;align-items:center;justify-content:center;width:134px;height:13px;margin-top:2px}
-.schedule-buttons{display:flex;flex-direction:column;gap:0;margin-left:7px}
+.schedule-buttons{display:flex;flex-direction:column;gap:0;margin:-16px 0 0 7px}
+/* Native RESET (user request) adds a 16px button below CUT. The column (.schedule-buttons) moves up by those 16px (its
+   height in the row is unchanged), so CLOSE ends at the original y and the panels below keep their place. */
 .schedule-caption{width:48px;height:16px;font:bold 10px/1 var(--font-ui)}
 .schedule-close{margin-top:8px}
 .schedule-panels{display:flex;flex:1;margin-top:3px;padding-left:1px}

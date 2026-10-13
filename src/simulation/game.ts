@@ -69,7 +69,7 @@ import { orderTreatment, updateTreatmentField, type Treatment, type TreatmentRes
 import { recordFieldPlanOrder } from './field-plan-order';
 import { dispatchFieldSchedule, type ScheduleDispatchResult } from './field-calendar';
 import { projectFieldScheduleYear } from './field-projection';
-import { editFieldPlan, type FieldPlanEdit, type FieldPlanEditResult } from './field-plan-edit';
+import { editFieldPlan, resetFieldPlan, type FieldPlanEdit, type FieldPlanEditResult } from './field-plan-edit';
 
 import { SIMULATION_SPEEDS, type SimulationState, type PendingTownExpansion } from './save-state';
 /** The open town choice: the original year-end expansion (saved), or a native Debug-menu choice that is never
@@ -192,6 +192,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'debug-town-grow' }
   | { type: 'debug-cheat'; code: CheatCode }
   | { type: 'edit-field-plan'; fieldSlot: number; week: number; action: FieldPlanEdit }
+  | { type: 'reset-field-plan'; fieldSlot: number }
   | { type: 'set-speed'; speed: number }
   | { type: 'start-disaster'; kind: MovingDisasterKind | WaterDisasterKind | StationaryDisasterKind | 'wind' }
   | { type: 'set-disasters-enabled'; enabled: boolean }
@@ -624,6 +625,10 @@ export class GameSimulation {
         fieldSlot: command.fieldSlot, week: command.week };
       if(!this.lastPlanEditResult.ok&&this.lastPlanEditResult.reason==='fixed-harvest-week')
         this.events.push({type:'field-notice',id:'fixed-harvest-week'});
+    } else if (command.type === 'reset-field-plan') {
+      const result = resetFieldPlan(this.scenario, this.crops, command.fieldSlot);
+      const { month, week } = this.scenario.farm.calendar;
+      this.lastPlanEditResult = result.ok ? result : { ...result, fieldSlot: command.fieldSlot, week: month * 4 + week + 1 };
     } else if (command.type === 'disaster-menu') {
       if (command.action === 'disable') this.disasters.enabled = !this.disasters.enabled;
       else {

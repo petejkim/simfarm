@@ -2,7 +2,7 @@ import { cropPlantSlot } from '../formats/crop-slots';
 import { Binary } from '../formats/binary';
 import type { Scenario } from '../formats/scenario';
 import { SCHEDULE_WEEKS } from '../formats/field-schedule';
-import { buildPlantingPlan } from './field-plan-pattern';
+import { buildPlantingPlan, continuePlantingPlan } from './field-plan-pattern';
 import { validateCalendar } from './calendar';
 import type { Treatment } from './field-treatment';
 
@@ -68,4 +68,28 @@ export function editFieldPlan(world: Pick<Scenario, 'fields' | 'farm' | 'schedul
   }
   world.schedule.set(week, column, code);
   return success;
+}
+
+/** Native RESET (user request; no original equivalent): every future week of a field's plan returns to the default plan
+ * of the crop in the field, as if it had been planted with no edits. Player orders (CUT, another crop, harvests,
+ * treatments, plowing) are dropped; the current week, including a contract, is untouched. The plan is aligned to the
+ * crop's actual age (+34), which the weekly dispatcher advances in step with the plan: a growing crop's plan index equals
+ * its age, planting is index 0, and a harvest or treatment under way is age + 1 (treatments keep the interrupted state in +4). A field
+ * with no crop (waiting, clearing or plowing) is left with nothing planned (fallow 209). */
+export function resetFieldPlan(world: Pick<Scenario, 'fields' | 'farm' | 'schedule'>, crops: readonly (readonly number[])[],
+  fieldSlot: number): FieldPlanEditResult {
+  const field = world.fields[fieldSlot];
+  if (!Number.isInteger(fieldSlot) || fieldSlot < 1 || !field?.active) return { ok: false, reason: 'invalid-field' };
+  validateCalendar(world.farm.calendar);
+  const now = world.farm.calendar.month * 4 + world.farm.calendar.week, column = fieldSlot - 1, from = now + 1;
+  if (from >= SCHEDULE_WEEKS) return { ok: false, reason: 'invalid-week' };
+  const b = field.bytes, treating = b[2] >= 6 && b[2] <= 9, state = treating ? b[4] : b[2], age = b[34] << 24 >> 24;
+  // A treatment week skips growth and the next week catches up (+34 advances twice), so it sits at age + 1 like a harvest.
+  const start = state === 3 && !treating ? now : state === 4 ? now - age - (treating ? 1 : 0) : state === 5 ? now - age - 1 : null;
+  let plan: number[];
+  if (start === null || !crops[field.cropSlot]) plan = Array<number>(SCHEDULE_WEEKS - from).fill(209);
+  else try { plan = continuePlantingPlan(crops, field.cropSlot, start, from); }
+  catch { return { ok: false, reason: 'invalid-crop' }; }
+  plan.forEach((code, i) => world.schedule.set(from + i, column, code));
+  return { ok: true, fieldSlot, week: from };
 }
