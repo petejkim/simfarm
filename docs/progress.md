@@ -3399,3 +3399,18 @@ The animal-input test "map hover steers original livestock" failed about half th
 Fix (test only): at 50% zoom the test hovers tile (9, 16), below the menu. It is still within the source steering range (squared distance < 50, `animal-movement.ts` → `equipmentDistance`) and west of the animal at (10, 10), so the animal still flees east to x = 11. The test also checks that `elementFromPoint` hits `#world` once the menu is open. A future layout change that covers the hover point will now fail every run instead of flaking. No runtime change.
 
 Validation: the hover test passed 20/20 at default concurrency and 24/24 with 6 workers. The full animal-input spec passed 2/2, and type checking passed.
+
+## 2026-10-13 — Portrait palette strip, safe-area insets and 1.2× page scale
+
+Native additions (user requests), CSS-only; the palette component and its source cell geometry are unchanged.
+
+- **Bottom palette in phone portrait** (`@media (orientation:portrait) and (pointer:coarse)`): the Edit workspace stacks vertically and the palette sits below the terrain as a 193×49 strip. A two-row grid fills column by column, so each source tool pair becomes one column (Move/Examine, Paved/Dirt, Fence/Gate, Ditch/Valve, Hay/Trough, Trees/Bulldoze). PLANT and SPRAY stack in a seventh 48px column, 24px tall (source 22) to match the rows. Landscape and desktop keep the source two-column palette at the left.
+- **Field menus in portrait** open at the left edge just above the strip, not at source x48 and the source y. The source y would put them at the top of the screen, far from the buttons.
+- **Page scale 1.2** (user change in `index.html`: `initial-scale=1.2, maximum-scale=1.2`, no `width=device-width`): controls are 20% larger and easier to tap. At 390×844 the CSS viewport is 325×703; Balance now fits at 0.812 and New Game at 0.688.
+- **Safe area:** the viewport adds `viewport-fit=cover`, and `.game-desktop` pads its bottom and sides by `env(safe-area-inset-*)`. The bars and the palette strip stay clear of the home indicator and the landscape notch, with face grey filling the insets. The top still relies on the opaque `default` status bar and the 32px iOS band. This reverses the earlier "no viewport-fit=cover" choice, so the top of the installed iOS app must be rechecked on the device.
+
+Validation: type check and production build. Browser specs:
+- mobile-touch: new portrait-strip case (positions, transposed order, Plant menu flush above the strip, landscape fallback) and safe-area case (CDP `Emulation.setSafeAreaInsetsOverride`); scale and meta expectations updated for 1.2×. 8/8.
+- edit-workspace, palette-supplies, window-movement, mobile-audio and edit-status: 16/16.
+
+Not checked on a real phone.

@@ -23,24 +23,25 @@ test.describe('phone screen',()=>{
   test('oversized windows scale to fit the screen and return to 1x when there is room',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
     // Resizes refit through a ResizeObserver, so the bounds are polled.
-    const inside=(key:string,width:number,height:number)=>expect(async()=>{
-      const box=(await page.locator(`[data-window="${key}"]`).boundingBox())!;
+    // The page is shown at 1.2× (index.html, user request), so bounds are the CSS viewport, not the device size.
+    const inside=(key:string)=>expect(async()=>{
+      const [width,height]=await page.evaluate(()=>[innerWidth,innerHeight]),box=(await page.locator(`[data-window="${key}"]`).boundingBox())!;
       expect(box.x).toBeGreaterThanOrEqual(0);expect(box.y).toBeGreaterThanOrEqual(0);
       expect(box.x+box.width).toBeLessThanOrEqual(width+0.5);expect(box.y+box.height).toBeLessThanOrEqual(height+0.5);
     }).toPass();
     await page.locator('#window-balance').tap();
-    await expect(page.locator('[data-window=balance]')).toHaveAttribute('data-scale',/^0\.9/);await inside('balance',390,844);
-    await page.locator('#window-bank').tap();await expect(page.locator('[data-window=bank]')).not.toHaveAttribute('data-scale');await inside('bank',390,844);
+    await expect(page.locator('[data-window=balance]')).toHaveAttribute('data-scale',/^0\.8/);await inside('balance');
+    await page.locator('#window-bank').tap();await expect(page.locator('[data-window=bank]')).not.toHaveAttribute('data-scale');await inside('bank');
     await page.locator('#file-menu-button').tap();await page.getByRole('menuitem',{name:/New Game/}).tap();await page.getByRole('button',{name:'YES'}).tap();
-    await expect(page.locator('[data-window=newgame]')).toHaveAttribute('data-scale',/^0\.8/);await inside('newgame',390,844);
+    await expect(page.locator('[data-window=newgame]')).toHaveAttribute('data-scale',/^0\.6/);await inside('newgame');
     await page.screenshot({path:'artifacts/browser-mobile-newgame.png'});
     // Landscape: New Game is scaled by height instead and stays below the bars.
     await page.setViewportSize({width:844,height:390});
-    await expect(page.locator('[data-window=newgame]')).toHaveAttribute('data-scale',/^0\.[6-8]/);await inside('newgame',844,390);
+    await expect(page.locator('[data-window=newgame]')).toHaveAttribute('data-scale',/^0\.[4-8]/);await inside('newgame');
     await page.setViewportSize({width:1280,height:900});
     await expect(page.locator('[data-window=newgame]')).not.toHaveAttribute('data-scale');
     expect(await page.locator('[data-window=newgame]').evaluate(el=>getComputedStyle(el).transform)).toBe('none');
-    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(1280);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
   });
   test('a scaled Map window still locates the tapped overview tile',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
@@ -52,6 +53,37 @@ test.describe('phone screen',()=>{
     const viewport=page.locator('#viewport');
     // Locate centres the Edit view on the tile one view right of and below it: the scroll origin is that tile.
     await expect.poll(()=>viewport.evaluate(v=>[v.scrollLeft,v.scrollTop])).toEqual([40*16,20*16]);
+  });
+  test('portrait puts the palette below the terrain as two rows of tools with PLANT and SPRAY at the end',async({page})=>{
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    const palette=page.getByRole('toolbar',{name:'Edit tools'}),box=async(name:string)=>(await palette.getByRole('button',{name,exact:true}).boundingBox())!;
+    const strip=(await palette.boundingBox())!,terrain=(await page.locator('#viewport').boundingBox())!;
+    expect(strip.y).toBeGreaterThanOrEqual(terrain.y+terrain.height);expect(Math.abs(strip.y+strip.height-(await page.locator('.game-desktop').boundingBox())!.height-(await page.locator('.game-desktop').boundingBox())!.y)).toBeLessThan(1.5);expect(strip.x).toBe(0);
+    expect([strip.width,strip.height]).toEqual([193,49]);
+    // Source pairs become columns: Move/View over each other, then Paved/Dirt … Trees/Bulldoze.
+    const move=await box('Move object'),view=await box('View object'),paved=await box('Paved road'),bulldoze=await box('Bulldoze');
+    expect([view.x,view.y-move.y,paved.x-move.x,paved.y]).toEqual([move.x,24,24,move.y]);expect([bulldoze.x-move.x,bulldoze.y]).toEqual([120,view.y]);
+    const plant=await box('PLANT'),spray=await box('SPRAY');
+    expect([plant.x-move.x,plant.y,plant.width,plant.height,spray.x,spray.y]).toEqual([144,move.y,48,24,plant.x,view.y]);
+    // The Plant menu opens at the left edge just above the strip.
+    await palette.getByRole('button',{name:'PLANT'}).tap();const menu=(await page.getByRole('menu',{name:'Plant Field'}).boundingBox())!;
+    expect(menu.y+menu.height).toBeCloseTo(strip.y,0);expect(menu.x).toBe(0);
+    await page.screenshot({path:'artifacts/browser-mobile-portrait-palette.png'});
+    // Landscape keeps the source vertical palette at the left.
+    await page.keyboard.press('Escape');await page.setViewportSize({width:844,height:390});
+    const side=(await palette.boundingBox())!;expect([side.x,side.width]).toEqual([0,49]);
+    expect((await box('View object')).x-(await box('Move object')).x).toBe(24);
+  });
+  test('the desktop keeps the palette strip and bars inside the bottom and side safe-area insets',async({page})=>{
+    const session=await page.context().newCDPSession(page);
+    await session.send('Emulation.setSafeAreaInsetsOverride' as never,{insets:{bottom:34,left:0,right:0,top:0}} as never);
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    const strip=(await page.getByRole('toolbar',{name:'Edit tools'}).boundingBox())!,desk=(await page.locator('.game-desktop').boundingBox())!;
+    // The strip ends the inset above the bottom of the desktop (in CSS px at the 1.2× page scale).
+    const inset=await page.locator('.game-desktop').evaluate(el=>parseFloat(getComputedStyle(el).paddingBottom));
+    expect(inset).toBeGreaterThan(0);expect(Math.abs(strip.y+strip.height-(desk.y+desk.height-inset))).toBeLessThan(1.5);
+    await session.send('Emulation.setSafeAreaInsetsOverride' as never,{insets:{left:44,right:44,top:0,bottom:21}} as never);await page.setViewportSize({width:844,height:390});
+    await expect.poll(async()=>(await page.getByRole('toolbar',{name:'Edit tools'}).boundingBox())!.x).toBeGreaterThan(0);
   });
 });
 
@@ -107,9 +139,11 @@ test('the installable web app manifest and home-screen icons are served',async({
   expect(await page.locator('meta[name=apple-mobile-web-app-capable]').getAttribute('content')).toBe('yes');
   // iOS zooms the page into focused fields under 16px (map seed, loan amount) and the full-screen game has no way
   // to zoom back out; the page scale stays fixed and the game's own Zoom setting scales the terrain.
-  expect(await page.locator('meta[name=viewport]').getAttribute('content')).toContain('maximum-scale=1.0, user-scalable=no');
-  // Content under the status bar is blurred by iOS and takes no taps: no viewport-fit=cover, opaque status bar.
-  expect(await page.locator('meta[name=viewport]').getAttribute('content')).not.toContain('viewport-fit');
+  // The fixed scale is 1.2 so controls are easier to tap (user request).
+  expect(await page.locator('meta[name=viewport]').getAttribute('content')).toContain('initial-scale=1.2, maximum-scale=1.2, user-scalable=no');
+  // viewport-fit=cover exposes the bottom/side safe-area insets the desktop pads by. Content under the status bar is
+  // blurred by iOS and takes no taps, so the status bar stays opaque.
+  expect(await page.locator('meta[name=viewport]').getAttribute('content')).toContain('viewport-fit=cover');
   expect(await page.locator('meta[name=apple-mobile-web-app-status-bar-style]').getAttribute('content')).toBe('default');
 });
 

@@ -320,6 +320,15 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .edit-palette{flex:none;display:flex;flex-wrap:wrap;align-content:flex-start;align-self:flex-start;width:49px;margin:0;border-right:1px solid var(--ink);border-bottom:1px solid var(--ink);background:var(--face)}
 .edit-palette .edit-tool{width:24px;height:24px}
 .edit-palette .edit-caption{width:48px;height:22px;font:bold 10px var(--font-ui)}
+/* Phone portrait (native, user request): the palette moves below the terrain. The source's two-column tool pairs
+   become columns of a two-row strip (Move/Examine … Trees/Bulldoze), with PLANT and SPRAY stacked at the right end
+   at the 24px row height. The field menus open at the left edge just above the strip instead of at source x48,y. */
+@media (orientation:portrait) and (pointer:coarse){
+.game-desktop .edit-workspace{flex-direction:column}
+.edit-palette{order:1;display:grid;grid-template-rows:repeat(2,24px);grid-auto-flow:column;width:auto}
+.edit-palette .edit-caption{height:24px}
+.field-tool-menu{left:0!important;top:auto!important;bottom:49px}
+}
 
 .game-desktop .map-panel{flex:1;display:flex;flex-direction:column;border:0;box-shadow:none;margin:0;padding:0;overflow:hidden}
 .game-desktop #viewport{flex:1;height:auto;width:100%;overflow:scroll;background:#000}
@@ -679,7 +688,7 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none;background:#555}
 .game-window[data-framed]{max-height:none}
 #world{-webkit-touch-callout:none}
 /* Home-screen app (native, user request). iOS standalone with the default status bar lays the page out below the
-   status bar and inside the safe area by itself (no viewport-fit=cover). iOS 26+ still draws a system Liquid Glass
+   status bar by itself. iOS 26+ still draws a system Liquid Glass
    blur over the top of every home-screen web app in both orientations, which also kept taps from the menu bar; no
    CSS or meta disables it, and env(safe-area-inset-top) can read 0 there (WebKit bug 301994). So only in the
    installed iOS app (touch-callout is iOS-only; display-mode is the installed app) the desktop starts below a flat
@@ -687,5 +696,9 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none;background:#555}
 #app{height:100dvh;background:#555}
 .game-desktop{height:100%}
 @supports (-webkit-touch-callout:none){@media (display-mode:standalone){#app{padding-top:var(--ios-edge-band,32px)}}}
+/* Safe area (user request): viewport-fit=cover lets the page reach the screen edges, so the desktop keeps its bars and
+   the bottom palette strip clear of the home indicator and side notches; the face grey fills the insets. The top keeps
+   the band above, since the top inset can read 0 in the installed app. */
+.game-desktop{padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 /* Two-finger pinch on the terrain is FarmMap's zoom, never the browser's page zoom; one finger still scrolls natively. */
 .game-desktop #viewport{touch-action:pan-x pan-y}
