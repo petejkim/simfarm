@@ -46,3 +46,17 @@ Hay/trough quick placement and Trees now use the same gesture path; see [tree-pl
 Irrigation form retirement: retained the source-backed initial-click valve toggle (`25616..25705`) rather than the interim form's explicit open/close construction adapters. Browser continuation now builds connected ditches, installs and toggles a valve directly, verifies source valve pixels, saves a partly wet network, reloads and resumes downstream flow. Simulation APIs and source defect evidence remain unchanged.
 
 Network form retirement: removed its four purchase actions and explicit open/close gate buttons after verifying original palette placement and map gate toggles. The direct map operation reuses the source-backed network command; secondary-click toggling remains free and silent, while initial primary construction on a gate retains its separately tested toggle-then-placement semantics. Browser tests preserve original prices/crossings, both saved terrain flags and sprite pixels, original placement PCM, failed transactions and zero-cash gate operation. The rejected explicit “open gate on a non-gate” adapter remains unit-tested; the original map interaction simply has no gate action there.
+
+## Time during a held stroke
+
+The held loop 24196..24b34 is self-contained. While DS1721 bit0 stays set, its calls are limited to:
+- placement rules (1a66:002e / 1a66:02e2)
+- redraw (1d75:074c)
+- tile blits (0863:02e0 / 0863:01b4)
+- the sample helper 212a:08b6 (= 0x23d56)
+- helpers 24e9e/25398
+- edge scrolling 233c:19ea, called at 24224 only when DS a89f is set
+
+It never returns to the main loop, so no day step, animal or traffic movement runs until the button is released. Manual removal's held loop 233c:035c/file 2591c (see [manual-removal.md](manual-removal.md)) has the same structure. Confidence is medium-high: the callee list comes from the disassembly (`./tools/bun run analyze --start 0x24196 --size 0x9c0`), and the callees are identified by their documented roles rather than traced exhaustively. Interrupt-driven tick counters still advance in DOS, but the main-loop work that consumes them is deferred.
+
+Native behavior (2026-10-13): `FarmMap` reports held paint strokes, covering all construction tools and Bulldoze, through `onStroke`. The `FarmView` frame loop skips `simulation.tick` while a stroke is held, then resumes normal pacing on release. Elapsed time during the hold is discarded rather than caught up, consistent with native browser pacing. A browser spec holds a Dirt road and a Bulldoze stroke for three 1× days without the date changing, then sees time resume after release.

@@ -89,3 +89,17 @@ test('touch construction at2x uses captured map coordinates and cancellation sto
   for(const x of [25,26])g.dispatch({type:'network',tool:'road-161',x,y:25});
   await move(page,27,25);expect(await save(page)).toEqual(JSON.parse(g.save(4)));await session.detach();
 });
+
+test('holding a construction or bulldoze stroke freezes game time until release, as the original mouse-held loops do',async({page})=>{
+  test.setTimeout(90000); // simulated clock time runs every animation frame
+  await page.clock.install({time:new Date('1993-01-01')});await page.clock.pauseAt(new Date('1993-01-01'));
+  const f=shopFixture();f.state.disasters.enabled=false;f.state.scenario.farm.messages=false;
+  await page.goto('/');await load(page,f.load().withAllCrops(browserCrops).save(4));await page.locator('#viewport').evaluate(v=>v.scrollTo(0,0));
+  const date=page.locator('#farm-date');
+  await (await speedItem(page,'#play-pause')).click();await expect(page.locator('#time-status')).not.toContainText('Paused');
+  for(const name of ['Dirt road','Bulldoze']){
+    await tool(page,name);await move(page,10,12);await page.mouse.down();await move(page,11,12);
+    const held=await date.textContent();await page.clock.runFor(12000);await expect(date).toHaveText(held!); // three 1× days
+    await page.mouse.up();await page.clock.runFor(4500);await expect(date).not.toHaveText(held!);
+  }
+});

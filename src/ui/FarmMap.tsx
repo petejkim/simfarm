@@ -30,6 +30,8 @@ interface Props {
   paintTool?: string | null;
   stopPaintingOutside?: boolean;
   onPaint: (index:number,initial:boolean)=>boolean;
+  /** A held paint stroke began (true) or ended (false). */
+  onStroke?: (active:boolean)=>void;
   onPointer: (pointer: MapFocus | null) => void;
 }
 function followAircraft(viewport: HTMLDivElement, flight: AircraftFlight, zoom: number): void {
@@ -40,12 +42,14 @@ const directions: Record<string, [number, number]> = {
   ArrowLeft: [-64, 0], ArrowRight: [64, 0], ArrowUp: [0, -64], ArrowDown: [0, 64],
 };
 
-export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scenario, tiles, townEventTiles, maskedTiles, zoom, focus, preview, onSelect,onSecondarySelect,paintTool,onPaint,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize }: Props) {
+export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scenario, tiles, townEventTiles, maskedTiles, zoom, focus, preview, onSelect,onSecondarySelect,paintTool,onPaint,onStroke,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stroke=useRef<{pointer:number;last:number|null}|null>(null),suppressClick=useRef(false);
+  const strokeCallback=useRef(onStroke);strokeCallback.current=onStroke;
   const stopPainting=useCallback(()=>{
     const active=stroke.current;stroke.current=null;
     if(active&&canvasRef.current?.hasPointerCapture(active.pointer))canvasRef.current.releasePointerCapture(active.pointer);
+    if(active)strokeCallback.current?.(false);
   },[]);
   useEffect(()=>{stopPainting();},[paintTool,stopPainting]);
   useEffect(()=>{
@@ -191,7 +195,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
         suppressClick.current=false;
         if(paintTool&&!flight&&event.buttons===1){
           event.preventDefault();viewportRef.current?.focus({preventScroll:true});
-          suppressClick.current=true;stroke.current={pointer:event.pointerId,last:null};
+          suppressClick.current=true;stroke.current={pointer:event.pointerId,last:null};onStroke?.(true);
           event.currentTarget.setPointerCapture(event.pointerId);paintTile(event,true);
         }
       }}

@@ -3184,3 +3184,9 @@ Validation: type check. Browser: button-sounds, including new specs that check r
 Known gaps:
 - **Hover test under load.** The animal-input hover test ("map hover steers original livestock…") fails under heavy parallel load (6 workers): the visual RNG and animal positions drift. It fails the same way with sound off and at `a8d9518`, before today's audio work, so it predates this change. It passes at normal concurrency. Pausing the page clock did not fix it. Revisit.
 - **Road stutter.** The user reports stutter during road placement with sound on or off, so it is not audio, and they deferred it. A 6× CPU-throttled Chromium probe showed no long tasks, but it likely never placed a road (no VOC fetches), so the result is inconclusive.
+
+## 2026-10-13 — Held strokes freeze time
+
+The user pointed out that the original pauses the game while the mouse is held to place roads and fences. Disassembly of the held construction loop (24196..24b34) confirms it never returns to the main loop, and manual removal (233c:035c) follows the same pattern. Natively, a held construction or Bulldoze stroke now stops simulation ticks until release. The evidence and confidence are in [direct-construction.md](direct-construction.md). The change also stops simulation work during drags, which may ease the road-placement stutter the user deferred. That effect is unmeasured, because the earlier probe likely never placed a road.
+
+Validation: type check and production build. Browser: direct-construction (new freeze/resume spec), edit-workspace, network and tool-status, 13/13.
