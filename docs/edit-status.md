@@ -68,3 +68,48 @@ Focused tests cover every treatment with busy, missing stock, insufficient cash,
 Original held-button handler2591c tests town ownership first at259c0 (`test ...40`). For eligible cells,259cf tests cash's high word against zero and259d7 tests its low word against25 using unsigned carry. A nonzero high word or cash>=25 proceeds. Otherwise259eb pushes42 and259ed calls22504, displaying “Not enough money.” This gate precedes removable-object lookup: even an empty eligible tile requests the warning below25, while town cells do not. Range259b5..259fb SHA256 `dfcd4b2194777e6669c583b1287ddfaefe393af297c52818b635d86266742675`. Evidence is high-confidence static source, not a DOS runtime capture.
 
 The direct Bulldoze gesture now posts42 only when its existing canonical preflight returns insufficient-cash. Confirmed/secondary remove-object commands post the same code on that result, covering a rejected command without relying on React to interpret it. Preview/hover never posts a warning; adjacent repeats deduplicate through the existing ring. Native failure atomicity, town priority, the25 threshold, confirmation dialogs and removal rules are unchanged. Other result reasons receive no invented status mapping. Original pre-action/error audio timing remains deferred as documented in manual-removal.md; this increment only restores the quick-message producer. No new original defect was established.
+
+## Selected tool cost (2026-10-13)
+
+The original Edit window paint at 0x20352..0x203f1 draws a cost in its titlebar:
+- It skips the cost when there is no current mode record (es:[13ae]) or the mode is 2 (View) or 11 (Move).
+- Mode 15 (Bulldoze) pushes a fixed 25 (`6a19` at 0x20388).
+- Every other mode prices the type at `[fa3a]+2` through lookup 1a66:0a20 (file 0x1d280).
+- The price is formatted with itoa radix 10 (`84:266e`, so signed). The routine draws DS570d `Cost:` at title x+0x20 and the number at x+0x50.
+
+The lookup reads the price word (+6) of an 18-byte goods definition by type range:
+
+| Types | Definitions |
+| --- | --- |
+| 0–63 | equipment |
+| 64–127 | buildings |
+| 128–159 | crops |
+| 160–167 | animals |
+| 168–191 | other table |
+| 192–215 | seeds |
+| 220–223 | chemicals |
+| 288–351 | other goods |
+| anything else | 0 |
+
+Palette handlers 0x2183a..0x21ec2 point `[fa3a]` at DS goods records:
+
+| Tool | Type | Template price |
+| --- | --- | --- |
+| Dirt road | 288 | $20 |
+| Ditch | 289 | $80 |
+| Trees | 291 | $10 |
+| Paved road | 293 | $30 |
+| Fence | 297 | $50 |
+| Trough | 299 | $15 |
+| Feed | 300 | $100 |
+| Bridge | 301 | $40 (no native palette tool) |
+| Gate | 303 | $75 |
+| Valve | 304 | $35 |
+
+Plant selection writes DS74c0 (type 302, new field, $120) at 0x38374. The Spray items write the chemical records 220–223 ($200 each) at 0x3840b/0x38459/0x3849f/0x384e7.
+
+Native behaviour: the Edit titlebar no longer exists, so `EditStatus` appends the cost to the current message, e.g. "Paved Road ($30)" or "Choose a location for your field. ($120)". Prices come from the live definitions (`goodsPrice`, covering the 220–223 and 288–351 ranges) and are signed like itoa. Unlike the persistent original title, the cost appears only while the current message is the selected tool's own selection message, so later results such as "Field is busy." or "Not enough money." are not mistaken for priced items. View/Move and Buy-window placement show no cost.
+
+Tests:
+- `tests/tool-cost.test.ts` pins the handler records, the Plant record and the Bulldoze immediate against the executable, and checks live prices, the message condition and signed formatting.
+- `tool-status.spec.ts` checks every palette and Spray tool plus Plant in the browser.

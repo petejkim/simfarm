@@ -76,10 +76,10 @@ test('Bulldoze cash warning is an original status, respects town priority and st
     w.cells[worldIndex(40,40)].terrain=161;w.cells[worldIndex(41,40)].overlay=0x4800;
     const g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));await tool(page);
     const status=page.getByRole('button',{name:'Edit message history'}),p=await point(page,40,40);
-    await page.mouse.move(p.x,p.y);await expect(status).toHaveText('Bulldoze');
-    await click(page,41,40);await expect(status).toHaveText('Bulldoze');
+    await page.mouse.move(p.x,p.y);await expect(status).toHaveText('Bulldoze ($25)'); // source title's fixed Bulldoze cost
+    await click(page,41,40);await expect(status).toHaveText('Bulldoze ($25)');
     await click(page,40,40);
-    if(cash===25){remove(g,40,40);await expect(status).toHaveText('Bulldoze');await click(page,42,40);}
+    if(cash===25){remove(g,40,40);await expect(status).toHaveText('Bulldoze ($25)');await click(page,42,40);}
     await expect(status).toHaveText('Not enough money.');await expect(page.getByRole('dialog',{name:'Message',exact:true})).toHaveCount(0);
     await click(page,42,40);await status.click();await expect(page.getByRole('list',{name:'Recent Edit messages'}).locator('li')).toHaveText(['Not enough money.','Bulldoze']);
     await page.keyboard.press('Escape');expect(await save(page)).toEqual(JSON.parse(g.save(4)));

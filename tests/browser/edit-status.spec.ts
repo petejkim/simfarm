@@ -10,7 +10,7 @@ test('Plant shows original status text and a deduplicated recent history without
   await expect(page.getByRole('button',{name:'Edit message history'})).toBeVisible();
   await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('');
   await page.getByRole('button',{name:'PLANT',exact:true}).click();await page.locator('[data-field-tool="0"]').click();
-  const status=page.getByRole('button',{name:'Edit message history'});await expect(status).toHaveText('Choose a location for your field.');
+  const status=page.getByRole('button',{name:'Edit message history'});await expect(status).toHaveText('Choose a location for your field. ($120)'); // tool cost follows its own selection message
   expect(await status.boundingBox()).toMatchObject({x:49,y:49,height:16}); // right of the bordered palette, inside the bar's top border
   expect(await status.evaluate(el=>{const s=getComputedStyle(el),bar=getComputedStyle(el.parentElement!);return [s.paddingLeft,s.paddingRight,bar.borderTop,bar.borderBottom];})).toEqual(['8px','8px','1px solid rgb(0, 0, 0)','1px solid rgb(0, 0, 0)']);
   await status.hover();expect(await status.evaluate(el=>getComputedStyle(el).backgroundColor)).toBe('rgb(194, 194, 194)'); // no green hover
