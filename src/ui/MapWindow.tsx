@@ -16,7 +16,7 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
 }) {
   const {active,order,close}=useWindows(),canvas=useRef<HTMLCanvasElement>(null);
   const legend=useRef<HTMLCanvasElement>(null);
-  const [mode,setMode]=useState<MapMode>(0),[selected,setSelected]=useState({x:0,y:0}),[help,setHelp]=useState(false);
+  const [mode,setMode]=useState<MapMode>(0),[selected,setSelected]=useState({x:0,y:0});
   const [view,setView]=useState({x:0,y:0,width:40,height:32});
   // Owned plots show what SELL pays (SF-158 sale quote); other plots show the purchase quote.
   const quote=quoteLandSale(snapshot.scenario,selected.x,selected.y,snapshot.weather.soilMoisture)!;
@@ -43,9 +43,8 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
         <div className="overview-side">
           <div className="overview-modes">
             {MAP_BUTTONS.map(b=><BevelButton key={b.mode} className="overview-mode" aria-label={MAP_MODES[b.mode]} title={MAP_MODES[b.mode]} pressed={mode===b.mode}
-              faceStyle={spriteFace(art,b.x+3,b.y+3)} onClick={()=>{setMode(mode===b.mode?0:b.mode);setHelp(false);}} />)}
+              faceStyle={spriteFace(art,b.x+3,b.y+3)} onClick={()=>setMode(mode===b.mode?0:b.mode)} />)}
           </div>
-          <BevelButton className="overview-help-button" aria-label="Map help" pressed={help} onClick={()=>setHelp(!help)}>?</BevelButton>
           <span className="overview-land-label">Land<br/>Value</span>
           <SunkenInset className="overview-land-box"><output className="overview-land-value" aria-label="Land value">{quote.price}</output></SunkenInset>
         </div>
@@ -58,9 +57,8 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
               onKeyDown={e=>{const offset=({ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]} as Record<string,number[]>)[e.key];if(!offset)return;
                 e.preventDefault();if(mode===1){setSelected(p=>({x:Math.max(0,Math.min(11,p.x+offset[0])),y:Math.max(0,Math.min(11,p.y+offset[1]))}));}
                 else onLocate(Math.max(0,Math.min(95,view.x/2+offset[0])),Math.max(0,Math.min(95,view.y/2+offset[1])));}} />
-            {/* Layered in the same grid cell as the map: the Edit view outline and the help legend. */}
+            {/* Layered in the same grid cell as the map: the Edit view outline. */}
             <div className="overview-edit-outline" style={{marginLeft:view.x,marginTop:view.y,width:view.width,height:view.height}} />
-            {help&&<div className="overview-help" role="note" aria-label="Map legend">{['PROPERTY','WEEDS','TOXICITY','WATER','NUTRIENTS','FIELD PROFIT','DISEASE','PESTS'].map(label=><span key={label}>{label}</span>)}</div>}
           </div>
         </SunkenInset>
       </div>

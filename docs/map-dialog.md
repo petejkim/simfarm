@@ -70,3 +70,7 @@ User request (ui-components.md). Map is a framed `GameWindow` around a 272×232 
 - **Footer:** the Low/High gradient (canvas) and mode name, BUY/SELL and CLOSE caption buttons.
 
 The overview and gradient remain canvases because they are rendered content, not backgrounds for controls. The layout follows the source but is not pixel-perfect.
+
+## Help removed (2026-10-13)
+
+At the user's request, the native Map window omits the source Help control 12 (25,139, 28×28) and its legend: the mode buttons' tooltips already name each overlay. The source evidence above stays for reference: help 35718..357d5 shows the 80×120 `maphelp.bmp` while the button is held. The left column now holds the eight mode buttons, the Land Value label and the readout.

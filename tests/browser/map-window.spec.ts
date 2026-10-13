@@ -25,8 +25,6 @@ test('original Map has all source overlays, HTML help and titles, source geometr
   }
   expect(frames.size).toBeGreaterThan(4);
   await panel.getByRole('button',{name:'Field Profit',exact:true}).click();await expect(panel.locator('.overview-mode-name')).toHaveText('Overhead');
-  await panel.getByRole('button',{name:'Map help'}).click();await expect(page.getByRole('note',{name:'Map legend'})).toContainText('PROPERTY');
-  await panel.getByRole('button',{name:'Map help'}).click();await expect(page.getByRole('note',{name:'Map legend'})).toHaveCount(0);
   await canvas.click({position:{x:16,y:24}});
   await expect.poll(()=>page.locator('#viewport').evaluate(el=>[el.scrollLeft,el.scrollTop])).toEqual([128,192]);
   await expect.poll(()=>page.locator('.overview-edit-outline').evaluate(el=>[parseFloat((el as HTMLElement).style.marginLeft),parseFloat((el as HTMLElement).style.marginTop)])).toEqual([16,24]); // outline offset within the map's grid cell
