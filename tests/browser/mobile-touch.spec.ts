@@ -138,6 +138,28 @@ test.describe('phone screen',()=>{
     await page.locator('[data-window=bank] .game-window-title').dragTo(page.locator('#viewport'),{targetPosition:{x:2,y:40}});
     expect((await page.locator('[data-window=bank]').boundingBox())!.x).toBeGreaterThanOrEqual(nav.x+nav.width-0.5);
   });
+  test('rotating between landscape and portrait leaves the menus and control bar tappable',async({page})=>{
+    await page.setViewportSize({width:844,height:390});
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    // Every heading and launcher is the topmost element at its centre, and a menu and a window open by tap.
+    const reachable=async()=>{
+      for(const id of ['file-menu-button','debug-menu-button','window-buy','window-expert','window-bank']){
+        expect(await page.locator(`#${id}`).evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}),id).toBe(true);
+      }
+      await page.locator('#file-menu-button').tap();await expect(page.locator('#original-file-menu')).toBeVisible();
+      await page.locator('#file-menu-button').tap();await expect(page.locator('#original-file-menu')).toHaveCount(0);
+      await page.locator('#window-bank').tap();await expect(page.locator('[data-window=bank]')).toBeVisible();
+      await page.locator('[data-window=bank]').getByRole('button',{name:/^Close /}).first().tap();await expect(page.locator('[data-window=bank]')).toBeHidden();
+    };
+    await reachable();
+    for(const size of [{width:390,height:844},{width:844,height:390},{width:390,height:844}]){
+      await page.setViewportSize(size);
+      const nav=(await page.getByRole('navigation',{name:'Original game menus'}).boundingBox())!;
+      // Portrait: one bar across the top. Landscape: the left column.
+      if(size.width<size.height)expect(nav.width).toBeGreaterThan(nav.height*4);else expect(nav.height).toBeGreaterThan(nav.width*2);
+      await reachable();
+    }
+  });
   test('the game stays fixed to the screen when the page is scrolled',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
     const before=(await page.locator('#app').boundingBox())!;

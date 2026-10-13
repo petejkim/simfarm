@@ -3465,3 +3465,22 @@ Validation: mobile-touch landscape case checks the 16px band and the shared colo
 - **Tap targets:** on phones in both orientations, menu headings are 32px tall (like the control-bar launchers) and menu items 28px (7px vertical padding). Landscape headings also get 12px side padding; portrait keeps 8px so the six headings still fit one row.
 
 Validation: type check. mobile-touch landscape case checks 32px headings and 28px items, File level with its heading, Windows moved up but still right of the column, Debug kept between the band and the bottom. mobile-touch with main-menu, debug-menu, disaster-menu, window-menu-checks and options: 39/39.
+
+### Landscape menu column without display:contents (2026-10-13, user report)
+
+**Report:** on the iPhone, after rotating from landscape to portrait, the menu bar and control bar looked broken and could not be tapped.
+
+**Not reproduced locally.** Chromium and Playwright's desktop WebKit 26.6, newly installed under `.tools/playwright`, both hit-test every heading and launcher correctly after resizing the viewport.
+
+**Suspected cause:** only the two bars broke, and they were exactly the children of the `.farm-file-controls`/`.original-controls` wrappers that switched to `display: contents` (inside a `.game-desktop` grid) in landscape. WebKit has a history of stale layout and hit-testing when elements leave `display: contents`.
+
+**Change:** the landscape layout no longer uses a grid or `display: contents`.
+- `.game-desktop` gets an extra left padding, `--menu-column` (72px).
+- The menu bar is absolutely positioned in that padding: from the top band to the bottom, after the left safe-area inset.
+- The control bar and workspace stay in normal flow in both orientations, so rotating changes only padding and positioning, never the box tree.
+
+**Test-tool finding:** Playwright's mobile WebKit maps tap coordinates wrongly when the page has `initial-scale=1.2`. A tap aimed at CSS x 194.5 arrives at clientX 162, which is 194.5/1.2, while Chromium delivers 195. Its tap-based mobile-touch failures under `--browser=webkit` are therefore harness artifacts, not app evidence. WebKit is not a configured project.
+
+**Validation:** mobile-touch, including a new rotation case (landscape → portrait → landscape → portrait: bar orientation, top hit-testing for File, Debug and three launchers, a menu opening and closing by tap, Bank opening and closing by tap), 13/13. Window-movement, edit-workspace, control-bar, main-menu, window-viewport and window-stacking: 27/27. Build passes.
+
+**Needs device confirmation:** rotate on the iPhone.
