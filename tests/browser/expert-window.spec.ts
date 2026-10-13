@@ -110,7 +110,10 @@ test('Expert navigation and portrait play original PCM only when enabled, with m
   expect(requests.filter(r=>r.endsWith('/click.voc'))).toHaveLength(1);expect(requests.filter(r=>r.endsWith('/rooster.voc'))).toHaveLength(1);
   await toggleOption(page,'Sound Effects');await openWindow(page,'expert');const n=requests.length;
   await client.getByRole('button',{name:'Play rooster sound',exact:true}).click();await client.getByRole('button',{name:'NEXT',exact:true}).click();expect(requests).toHaveLength(n);
-  await page.route('**/rooster.voc',r=>r.fulfill({status:404,body:'Missing rooster'}));await toggleOption(page,'Sound Effects');await openWindow(page,'expert');
+  await page.route('**/rooster.voc',r=>r.fulfill({status:404,body:'Missing rooster'}));
+  // Decoded samples stay cached for the page's lifetime; a fresh page exercises the missing file.
+  await page.reload();await expect(page.locator('#map-status')).toContainText('original terrain');
+  await toggleOption(page,'Sound Effects');await openWindow(page,'expert');await client.getByRole('button',{name:'Livestock',exact:true}).click();
   await client.getByRole('button',{name:'Play rooster sound',exact:true}).click();await expect(page.locator('#sound-error')).toContainText('rooster.voc');await expect(client.getByRole('button',{name:'NEXT',exact:true})).toBeEnabled();
   expect(await save(page)).toEqual(before);expect(errors).toEqual([]);
 });

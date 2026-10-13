@@ -16,12 +16,22 @@ async function save(page:Page){const p=page.waitForEvent('download');await page.
 async function point(page:Page,x:number,y:number,button:'left'|'right'='left'){await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-20)*16,Math.max(0,p.y-15)*16),{x,y});const r=(await page.locator('#world').boundingBox())!;await page.mouse.click(r.x+x*16+8,r.y+y*16+8,{button});}
 async function move(page:Page){await page.getByRole('button',{name:'Move object',exact:true}).click();await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');await expect(page.locator('#world')).toHaveCSS('cursor',/move-pick\.png.*8 8, crosshair/);}
 
+/** Started uhoh.voc samples (2293 frames). Decoded samples are cached, so a fetch count would stop at one. */
+async function countUhoh(page:Page){
+  await page.addInitScript(()=>{
+    const Base=window.AudioContext;(window as unknown as {__uhoh:number}).__uhoh=0;
+    window.AudioContext=class extends Base{constructor(options?:AudioContextOptions){super(options);const create=this.createBufferSource.bind(this);
+      this.createBufferSource=()=>{const s=create(),start=s.start.bind(s);s.start=(...args)=>{if(s.buffer?.length===2293)(window as unknown as {__uhoh:number}).__uhoh++;start(...args);};return s;};}};
+  });
+  return ()=>page.evaluate(()=>(window as unknown as {__uhoh:number}).__uhoh);
+}
+
 test('Move object picks stored machinery directly, cancels without withdrawal, rejects unowned land and queues saved travel',async({page})=>{
-  const warnings:string[]=[];page.on('request',r=>{if(r.url().endsWith('/uhoh.voc'))warnings.push(r.url());});
+  const warnings=await countUhoh(page);
   const f=shopFixture();f.state.disasters.enabled=false;f.state.scenario.cells[worldIndex(60,60)].overlay=0;
   const g=f.load().withAllCrops(browserCrops);g.dispatch({type:'build',buildingType:67,x:20,y:20});g.dispatch({type:'build',buildingType:67,x:40,y:40});g.dispatch({type:'buy-equipment',equipmentType:4,x:20,y:20});
   await page.goto('/');await load(page,g.save(4));await move(page);await point(page,20,21);
-  await expect.poll(()=>warnings.length).toBe(1);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  await expect.poll(warnings).toBe(1);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await page.getByRole('button',{name:'View object',exact:true}).click();await point(page,20,21,'right');g.dispatch({type:'toggle-building-interior',x:20,y:21,slot:1});
   await move(page);await point(page,20,21);await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','drop');await expect(page.locator('#world')).toHaveCSS('cursor',/move-drop\.png.*8 8, crosshair/);await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Choose a destination.');
   await expect(page.locator('[data-window=actions]')).toBeHidden();expect(await save(page)).toEqual(JSON.parse(g.save(4)));
@@ -36,13 +46,13 @@ test('Move object picks stored machinery directly, cancels without withdrawal, r
 });
 
 test('one Move object tool transfers every supply category, retains rejected/cancelled state and discards empty feed',async({page})=>{
-  const warnings:string[]=[];page.on('request',r=>{if(r.url().endsWith('/uhoh.voc'))warnings.push(r.url());});
+  const warnings=await countUhoh(page);
   const f=supplyMovementFixture();f.state.disasters.enabled=false;f.state.scenario.cells[worldIndex(60,60)].overlay=0;
   const g=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,g.save(4));await move(page);
   for(const x of [10,12,14,16,18]){
     const selected=checkSupplyPickup(g.getSnapshot().scenario,g.getSnapshot().finances,x,10);if(!selected.ok)throw new Error('Missing supply');
     await point(page,x,10);await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','drop');await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Choose a destination.');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-    await point(page,60,60);await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','drop');await expect.poll(()=>warnings.length).toBe((x-10)/2+1);
+    await point(page,60,60);await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','drop');await expect.poll(warnings).toBe((x-10)/2+1);
     await point(page,x,20);g.dispatch({type:'move-supply',selected,x,y:20});await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   }
   await point(page,10,20);await page.keyboard.press('Escape');await expectPaletteAction(page,'View object');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
@@ -54,12 +64,12 @@ test('one Move object tool transfers every supply category, retains rejected/can
 });
 
 test('selection respects busy machinery and switching tools discards the draft without changing the farm',async({page})=>{
-  const warnings:string[]=[];page.on('request',r=>{if(r.url().endsWith('/uhoh.voc'))warnings.push(r.url());});
+  const warnings=await countUhoh(page);
   const f=shopFixture();f.state.disasters.enabled=false;const g=f.load().withAllCrops(browserCrops);g.dispatch({type:'buy-equipment',equipmentType:0,x:40,y:40});
   const state=readNativeSave(g.save(4)).state;state.scenario.equipment[1].flags|=1;const busy=writeNativeSave(state,4);
-  await page.goto('/');await load(page,busy);await move(page);await point(page,40,40);await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Cannot move item in use.');await expect.poll(()=>warnings.length).toBe(1);expect(await save(page)).toEqual(JSON.parse(busy));
+  await page.goto('/');await load(page,busy);await move(page);await point(page,40,40);await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Cannot move item in use.');await expect.poll(warnings).toBe(1);expect(await save(page)).toEqual(JSON.parse(busy));
   await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true}).click();
-  await point(page,40,40);await page.waitForTimeout(150);expect(warnings.length).toBe(1);
+  await point(page,40,40);await page.waitForTimeout(150);expect(await warnings()).toBe(1);
   await load(page,g.save(4));await move(page);await point(page,40,40);await page.getByRole('button',{name:'View object',exact:true}).click();await point(page,40,40);await expect(page.getByRole('dialog',{name:'Examine',exact:true})).toBeVisible();await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);
   expect(await save(page)).toEqual(JSON.parse(g.save(4)));await move(page);await point(page,40,40);await page.locator('#window-buy').click();await expectPaletteAction(page,'View object');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
 });
