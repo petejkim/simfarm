@@ -3209,3 +3209,25 @@ Validation:
 - Full unit suite: 958/958.
 - Full browser suite: 308/312. Three of the failures were stale expectations from this batch and the earlier sample caching (window-stacking map y, placement-outline menu label, expert-window missing-sound path). Each was fixed in its originating commit and rerun green.
 - The fourth, native "Speed menu presets", timed out under full-suite load. It passes alone (2/2, ~21s against its 45s limit).
+
+## 2026-10-13 — Geometry assertions removed
+
+At the user's request, browser specs no longer pin layout positions or sizes. Removed:
+- 118 literal `boundingBox()` expectations;
+- fixed widths, heights and offsets (the map's y, palette and dial sizes, readout and dialog positions);
+- the anchored-menu helpers;
+- the control-bar ordering checks;
+- the narrow-screen wrapping test.
+
+Kept, because they test behaviour rather than pixels:
+- relative comparisons, e.g. the terrain's box is unchanged after closing or moving windows, which AGENTS.md requires;
+- keyboard and drag window movement, and moved windows reopening in place;
+- "inside the desktop after a resize", rewritten without numbers;
+- "the message bar never covers the first terrain row", loosened to an inequality;
+- the map filling the screen;
+- decoded image sizes used for pixel comparisons;
+- simulation positions.
+
+Computed-style checks (fonts, borders, padding) remain.
+
+Validation: full browser suite 312/313. The one failure is native "Speed menu presets" again, a load-sensitive 45s timeout that passes alone and is unaffected by this change.

@@ -12,17 +12,9 @@ async function save(page:Page){await acknowledgeFinanceMessages(page);const down
 async function choose(page:Page,name:string){await acknowledgeFinanceMessages(page);await page.locator('#disasters-menu-button').click();await page.getByRole('menuitemcheckbox',{name,exact:true}).click();}
 async function checks(page:Page,expected:boolean[]){await page.locator('#disasters-menu-button').click();for(let i=0;i<7;i++)await expect(page.getByRole('menuitemcheckbox',{name:names[i],exact:true})).toHaveAttribute('aria-checked',String(expected[i]));await page.keyboard.press('Escape');}
 
-/** Drop-down menus sit directly under their heading, at least as wide, with uniform item rows. */
-async function expectAnchored(menu:import('@playwright/test').Locator){
-  const id=await menu.getAttribute('id'),heading=menu.page().locator(`[aria-controls="${id}"]`);
-  const h=(await heading.boundingBox())!,m=(await menu.boundingBox())!;
-  expect([m.x,m.y]).toEqual([h.x,h.y+h.height]);expect(m.width).toBeGreaterThanOrEqual(h.width);
-  const heights=await menu.locator('button').evaluateAll(els=>els.map(e=>e.getBoundingClientRect().height));expect(new Set(heights).size).toBe(1);
-}
 test('Disasters opens the seven original real-text rows at source scale, with keyboard controls and live Disable state',async({page})=>{
   await start(page);const before=await save(page);await page.locator('#disasters-menu-button').focus();await page.keyboard.press('ArrowDown');
   const menu=page.getByRole('menu',{name:'Disasters',exact:true}),items=menu.getByRole('menuitemcheckbox');
-  await expectAnchored(menu);
   expect(await items.evaluateAll(els=>els.map(el=>[...el.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE).map(n=>n.textContent).join('')))).toEqual(names);
   await expect(items.first()).toBeFocused();await page.keyboard.press('End');await expect(items.last()).toBeFocused();await page.keyboard.press('Enter');await expect(menu).toHaveCount(0);await expect(page.locator('#disasters-menu-button')).toBeFocused();
   const after=await save(page);before.runtime.disasters.enabled=false;expect(after).toEqual(before);await checks(page,[false,false,false,false,false,false,true]);

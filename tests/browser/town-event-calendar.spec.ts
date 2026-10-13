@@ -37,7 +37,6 @@ async function checkMessage(page: Page, game: InstanceType<typeof GameSimulation
   const win = page.locator('[data-window=town-event-message]');
   await expect(win).toBeVisible(); await expect(win.locator('[data-town-event]')).toHaveAttribute('data-town-event', state.pending!.kind);
   await expect(page.locator('#town-event-message-text')).toHaveText(model.text);
-  expect(await win.boundingBox()).toEqual({ x: 192, y: 150, width: 256, height: 192 });
   expect(await win.evaluate(el => el.matches(':modal'))).toBe(true);
   expect(await page.locator('#town-event-message-text').evaluate(el => el.scrollHeight <= el.clientHeight)).toBe(true);
   expect(await win.locator('.message-portrait').evaluate(el => (el as HTMLElement).style.backgroundPosition))

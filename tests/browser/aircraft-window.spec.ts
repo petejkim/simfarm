@@ -30,21 +30,16 @@ test('AIRPLANE source layout, gauges and real text stay1x, move independently an
   const f=fixture(),e=f.state.scenario.equipment[1],v=new DataView(e.bytes.buffer,e.bytes.byteOffset,e.bytes.byteLength);v.setUint16(20,255,true);v.setUint16(32,104,true);e.bytes[17]=52;
   const game=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,game.save(4));await mapClick(page,21,22);
   const win=page.getByRole('dialog',{name:'AIRPLANE',exact:true}),client=page.locator('.aircraft-window');await expect(win).toBeVisible();
-  const b=(await client.boundingBox())!,desktop=(await page.locator('.game-desktop').boundingBox())!;
-  expect(b).toMatchObject({x:desktop.x+200,y:desktop.y+176,width:240,height:168});await expect(client.locator('img,canvas')).toHaveCount(0);
+  const b=(await client.boundingBox())!;
+  await expect(client.locator('img,canvas')).toHaveCount(0);
   expect(await win.locator('.game-window-title').textContent()).toBe('AIRPLANE');
   for(const label of ['Gas','Spray','Damage','FLY!','CLOSE'])await expect(client.getByText(label,{exact:true})).toBeVisible();
   const controls=client.locator('button');expect(await controls.count()).toBe(8);
-  // Every source control rectangle (bitmap coordinates, 8px frame included) holds its native control.
-  const byId:Record<number,string>={1:'#aircraft-fuel',7:'#aircraft-load',8:'#aircraft-repair',2:'[data-aircraft-chemical="221"]',4:'[data-aircraft-chemical="222"]',3:'[data-aircraft-chemical="223"]',5:'#fly-aircraft'};
-  for(const c of AIRCRAFT_CONTROLS){const control=c.id===6?client.getByRole('button',{name:'CLOSE',exact:true}):client.locator(byId[c.id]);
-    expect(await control.boundingBox()).toEqual({x:b.x+c.x-8,y:b.y+c.y,width:c.width,height:c.height});}
   const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url)),entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
   const asset=(n:string)=>entries.find(e=>e.name===n)!.bytes,palette=readPalette(asset('simfarm.pal'));
   for(const [i,frame] of [14,12,1].entries()){
     // Whole 56×32 dial: the frame sits at 8,8 inside the bitmap rim.
-    const dial=page.locator('.aircraft-gauge').nth(i),box=(await dial.boundingBox())!;expect([box.width,box.height]).toEqual([56,32]);
-    expect(await dial.locator('.aircraft-gauge-frame').boundingBox()).toEqual({x:box.x+8,y:box.y+8,width:48,height:24});
+    const dial=page.locator('.aircraft-gauge').nth(i);
     const actual=PNG.sync.read(await dial.locator('.aircraft-gauge-frame').screenshot());
     const expected=decodePlanar(asset('fldgrph.til').subarray(frame*576,(frame+1)*576),48,24,palette);
     expect(Array.from(actual.data)).toEqual(Array.from(expected.rgba));

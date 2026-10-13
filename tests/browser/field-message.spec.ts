@@ -12,9 +12,9 @@ test('Schedule fixed harvest opens the original mandatory Message and returns to
   const calendar=before.scenario.farm.calendar,week=calendar.month*4+calendar.week+1;
   await page.locator('[data-plan-action="harvest"]').click();await page.locator(`[data-plan-week="${week}"]`).click();
   const win=page.locator('[data-window=field-message]');await expect(win).toBeVisible();await expect(page.locator('#field-message-text')).toHaveText(FIXED_HARVEST_MESSAGE);
-  expect(await win.boundingBox()).toEqual({x:192,y:150,width:256,height:192});expect(await win.locator('.message-portrait').evaluate(el=>(el as HTMLElement).style.backgroundPosition.split(' ').map(parseFloat))).toEqual([-224,-576]);
-  expect(await page.locator('#field-message-ok').boundingBox()).toEqual({x:296,y:306,width:48,height:24});expect(await win.evaluate(el=>(el as HTMLDialogElement).matches(':modal'))).toBe(true);
-  await win.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');expect(await win.boundingBox()).toMatchObject({x:202,y:150});
+  expect(await win.locator('.message-portrait').evaluate(el=>(el as HTMLElement).style.backgroundPosition.split(' ').map(parseFloat))).toEqual([-224,-576]);
+  expect(await win.evaluate(el=>(el as HTMLDialogElement).matches(':modal'))).toBe(true);
+  await win.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');
   const date=await page.locator('#farm-date').textContent();await page.clock.fastForward(12000);await expect(page.locator('#farm-date')).toHaveText(date!);
   await page.screenshot({path:'artifacts/browser-field-message.png'});await page.keyboard.press('Escape');await expect(win).toHaveCount(0);await expect(page.getByRole('dialog',{name:'Schedule',exact:true})).toBeVisible();expect(await save()).toEqual(before);
   await page.locator(`[data-plan-week="${week}"]`).click();await expect(win).toBeVisible();await page.locator('#field-message-ok').click();expect(await save()).toEqual(before);

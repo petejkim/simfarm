@@ -12,17 +12,9 @@ async function save(page:Page){await acknowledgeFinanceMessages(page);const down
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'options.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 const position=(page:Page)=>page.locator('#viewport').evaluate(el=>[el.scrollLeft,el.scrollTop]);
 
-/** Drop-down menus sit directly under their heading, at least as wide, with uniform item rows. */
-async function expectAnchored(menu:import('@playwright/test').Locator){
-  const id=await menu.getAttribute('id'),heading=menu.page().locator(`[aria-controls="${id}"]`);
-  const h=(await heading.boundingBox())!,m=(await menu.boundingBox())!;
-  expect([m.x,m.y]).toEqual([h.x,h.y+h.height]);expect(m.width).toBeGreaterThanOrEqual(h.width);
-  const heights=await menu.locator('button').evaluateAll(els=>els.map(e=>e.getBoundingClientRect().height));expect(new Set(heights).size).toBe(1);
-}
 test('original Options plus native click toggle has real text, source geometry, live checks and keyboard navigation',async({page})=>{
   await start(page);const before=await save(page);await page.locator('#options-menu-button').focus();await page.keyboard.press('ArrowDown');
   const menu=page.getByRole('menu',{name:'Options',exact:true}),items=menu.getByRole('menuitemcheckbox');
-  await expectAnchored(menu);
   expect(await items.evaluateAll(els=>els.map(el=>[...el.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE).map(n=>n.textContent).join('')))).toEqual(['Music','Sound Effects','Button Click Sounds','AutoBuy','AutoScroll','AutoDoze','AutoGoto','AutoLease','Messages']);
   expect(await menu.locator('> *').evaluateAll(es=>es.map(e=>e.getAttribute('role')==='separator'?'-':e.textContent!.replace('✓','')))).toEqual(['Music','Sound Effects','Button Click Sounds','-','AutoBuy','AutoScroll','AutoDoze','AutoGoto','AutoLease','-','Messages','-','Settings…']);
   expect(await items.evaluateAll(els=>els.map(el=>el.getAttribute('aria-checked')))).toEqual(['true','true','true','true','true','false','true','true','true']);
