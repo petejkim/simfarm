@@ -19,7 +19,7 @@ test('Edit fills the desktop permanently; windows close without resizing or unmo
   for (const [index, button] of (await page.locator('.edit-palette > button').all()).slice(0, 12).entries()) {
     expect(await button.boundingBox()).toEqual({ x: palette!.x + index % 2 * 24, y: palette!.y + Math.floor(index / 2) * 24, width: 24, height: 24 });
   }
-  const before = await map.boundingBox(); expect(before!.y).toBe(64); expect(before!.width).toBeGreaterThan(1100); expect(before!.height).toBeGreaterThan(700);
+  const before = await map.boundingBox(); expect(before!.y).toBe(66); expect(before!.width).toBeGreaterThan(1100); expect(before!.height).toBeGreaterThan(700);
   await expect(page.locator('.edit-title,[data-window=edit]')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Close Edit', exact: true })).toHaveCount(0);
   const stamp = await page.locator('#world').evaluate(el => { el.setAttribute('data-retained', 'yes'); return el.getAttribute('data-retained'); });

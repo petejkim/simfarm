@@ -53,7 +53,7 @@ test('the map stays behind floating windows without a title or stack entry, and 
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
   async function save(){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await(await p).path())!));}
   const before=await save(),map=page.locator('#viewport'),mapBox=await map.boundingBox();
-  expect(mapBox!.y).toBe(64);await expect(page.locator('.edit-title,[data-window=edit]')).toHaveCount(0);
+  expect(mapBox!.y).toBe(66);await expect(page.locator('.edit-title,[data-window=edit]')).toHaveCount(0); // below the bordered message bar
   const buy=page.locator('[data-window=buy]'),bank=page.locator('[data-window=bank]');
   await page.locator('#window-buy').click();await buy.getByRole('button',{name:'Machinery',exact:true}).click();
   await buy.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');const position=await buy.boundingBox();

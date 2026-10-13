@@ -62,7 +62,8 @@ test('AutoGoto centers a newly started disaster while disabling it keeps the map
     await page.locator('#viewport').evaluate(el=>el.scrollTo(40,50));await chooseDisaster(page,'tornado');
     const saved=await save(page),p=saved.runtime.disasters.tornado;
     const expected=await page.locator('#viewport').evaluate((el,p)=>[Math.max(0,Math.min(el.scrollWidth-el.clientWidth,p.x*16-el.clientWidth/2)),Math.max(0,Math.min(el.scrollHeight-el.clientHeight,p.y*16-el.clientHeight/2))],p);
-    expect(await position(page)).toEqual(enabled?expected:[40,50]);
+    // Scroll offsets are whole pixels; an odd viewport size makes the exact centre a half pixel.
+    const actual=await position(page);(enabled?expected:[40,50]).forEach((v,i)=>expect(Math.abs(actual[i]-v)).toBeLessThanOrEqual(0.5));
   }
 });
 
