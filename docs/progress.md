@@ -3251,3 +3251,17 @@ Validation:
 - expert-cards unit tests, including a new all-pages classification test;
 - expert-window browser spec, 4/4;
 - a visual check of the Field Icon and Crop pages.
+
+## 2026-10-13 — Map help, button weight, Balance Sheet readability
+
+Each task has its own commit:
+- **Map help removed.** The Map window drops its ? button and overlay legend; the mode tooltips already name each overlay. See map-dialog.md.
+- **Button weight.** The Balance Sheet CLOSE and Evaluation Prev/Next/CLOSE buttons are bold 10px, like the other windows' buttons.
+- **Balance Sheet readability.**
+  - Line items use bold 9px text in 10px rows (source 8px).
+  - The ledger grows from 216px to 264px.
+  - Each binder-hole strip is the source 16×216 cut plus a 48px copy. The holes repeat every 12px, so the pattern continues seamlessly.
+
+Three leftover literal geometry checks were folded into the earlier geometry-removal commit: Balance label positions, the AIRPLANE client rectangle and control-strip box, and the Examine text inset.
+
+Validation: type check. Browser specs: map-window, balance-window, evaluation-window, aircraft-window, control-bar and examine, all passing. Balance screenshot reviewed.

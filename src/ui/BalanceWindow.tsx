@@ -30,7 +30,7 @@ export function BalanceWindow({assets,snapshot,focusRef}:{assets:GameAssets;snap
   const art=assets.balanceArtwork.src;
   return <GameWindow windowKey="balance" title="Balance Sheet" onClose={close} framed>
     <section ref={focusRef} tabIndex={-1} className="balance-window" aria-label="Farm balance sheet">
-      <Sprite className="balance-holes" image={art} x={8} y={0} width={16} height={216}/>
+      <BinderHoles art={art} x={8}/>
       <div className="balance-ledger">
         {/* 22 striped rows from source y8, then the tax/loan rows beside CLOSE. */}
         {Array.from({length:22},(_,row)=><div key={row} className="balance-row" data-stripe={row%2?'white':'grey'}>{cell(left[row],'left')}{cell(right[row],'right')}</div>)}
@@ -42,7 +42,16 @@ export function BalanceWindow({assets,snapshot,focusRef}:{assets:GameAssets;snap
           <BevelButton className="balance-close" shadow onClick={close}>CLOSE</BevelButton>
         </div>
       </div>
-      <Sprite className="balance-holes" image={art} x={376} y={0} width={16} height={216}/>
+      {/* The source green header rows reach x376, so the right strip is cut from x377 and inset 1px on white paper. */}
+      <BinderHoles art={art} x={377} width={15}/>
     </section>
   </GameWindow>;
+}
+
+/** Taller rows (user request) make the ledger 264px; the source strips are 216px, so a second 48px cut continues
+ * the 12px hole period seamlessly below. */
+function BinderHoles({art,x,width=16}:{art:string;x:number;width?:number}){
+  return <div className="balance-holes" style={{paddingLeft:16-width}}>
+    <Sprite image={art} x={x} y={0} width={width} height={216}/><Sprite image={art} x={x} y={0} width={width} height={48}/>
+  </div>;
 }
