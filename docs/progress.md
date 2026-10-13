@@ -3698,3 +3698,9 @@ Validation: type check. A full browser run before the test helper existed had 33
 - the touchdown case: 3/3 and 10/10 at 4 workers.
 
 One earlier failure of the touchdown case (the 16,12 highlight not seen within 5s, in a combined run) could not be reproduced and is unexplained.
+
+### Closed Map stops tracking terrain scrolls (2026-10-13, user report)
+
+MapWindow subscribed to the terrain viewport's `scroll` events and a ResizeObserver even while closed, re-rendering itself on every scroll event. That added work to every drag, the slight stutter still seen in Examine. The subscription now exists only while the Map window is open. Opening it measures the current view at once, so nothing missed while it was closed is shown stale.
+
+Validation: a map-window case (with a running clock, since `start()` pauses it and with it scroll and frame delivery) scrolls the terrain three times with the Map closed. It checks there are no mutations of the view outline, then that the outline matches the scroll once the Map opens. It fails on the previous MapWindow (2 mutations). map-window: all pass; with mobile-touch, navigation and window-viewport, 31 other tests passed.

@@ -48,6 +48,19 @@ test('original Map has all source overlays, HTML help and titles, source geometr
   expect(await save(page)).toEqual(before);
 });
 
+test('a closed Map ignores terrain scrolling and shows the current view when opened',async({page})=>{
+  // A running clock, so scroll events and frames are delivered.
+  await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  const outline=page.locator('.overview-edit-outline'),viewport=page.locator('#viewport');
+  await outline.evaluate(el=>{const w=window as unknown as {changes:number};w.changes=0;new MutationObserver(()=>w.changes++).observe(el,{attributes:true});});
+  for(const at of [[100,80],[300,240],[520,410]])await viewport.evaluate((v,[x,y])=>v.scrollTo(x,y),at);
+  await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+  expect(await page.evaluate(()=>(window as unknown as {changes:number}).changes)).toBe(0);
+  await page.locator('#window-map').click();
+  const scroll=await viewport.evaluate(v=>[v.scrollLeft,v.scrollTop]);
+  await expect.poll(()=>outline.evaluate(el=>[parseFloat((el as HTMLElement).style.marginLeft),parseFloat((el as HTMLElement).style.marginTop)])).toEqual([scroll[0]/8,scroll[1]/8]);
+});
+
 test('Map buys and sells the selected plot, protects home/fields, rejects other owners and persists canonical ledgers',async({page})=>{
   const {state}=shopFixture();state.scenario.regionalConditions.fill(0);
   for(const [x,y] of [[0,0],[2,2]])state.scenario.regionalConditions[(x*12+y)*7+1]=1;

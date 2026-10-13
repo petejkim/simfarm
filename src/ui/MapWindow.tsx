@@ -27,12 +27,15 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
     paintTerrainPreview(canvas.current!,renderOverview(snapshot.scenario,assets.miniature,assets.catalog.palette,mode,snapshot.weather.soilMoisture,selected));
     if(legend.current)paintTerrainPreview(legend.current,renderOverviewLegend(assets.miniature));
   },[order,snapshot,assets,mode,selected]);
+  // Track the Edit view only while the Map is open: a closed Map re-rendering on every terrain scroll event added
+  // work to every drag (user report: slight stutter when dragging in Examine).
+  const open=order.includes('map');
   useLayoutEffect(()=>{
-    const el=viewportRef.current;if(!el)return;
+    const el=viewportRef.current;if(!el||!open)return;
     const update=()=>setView({x:el.scrollLeft/(8*zoom),y:el.scrollTop/(8*zoom),width:el.clientWidth/(8*zoom),height:el.clientHeight/(8*zoom)});
     update();el.addEventListener('scroll',update);const observer=new ResizeObserver(update);observer.observe(el);
     return()=>{el.removeEventListener('scroll',update);observer.disconnect();};
-  },[viewportRef,zoom,active]);
+  },[viewportRef,zoom,active,open]);
   function point(event: PointerEvent<HTMLCanvasElement>){
     // Two pixels per tile at 1x; a window scaled down to fit a small screen shrinks the canvas box.
     const rect=event.currentTarget.getBoundingClientRect(),pixel=2*rect.width/event.currentTarget.offsetWidth;
