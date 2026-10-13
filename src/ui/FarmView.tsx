@@ -361,6 +361,10 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
   const mapCursor=snapshot?.aircraftFlight?null:bulldoze.active||construction.tool?'bulldoze':objectMove.active?(objectMove.selected?'drop':'pick'):
     fieldMapTool?(fieldMapTool.kind==='plant'?'bulldoze':'spray'):buyPlacement?'buy':'view';
   const cursorHotspot=mapCursor==='pick'||mapCursor==='drop'?8:0;
+  // Touch confirmation (native): tools that place a footprint or paint need a visible highlight before they commit.
+  // View object, Spray (whole fields) and Move object (pickup/drop cursors without a footprint) act on the first tap.
+  const confirmTaps=Boolean(buyPlacement||fieldMapTool?.kind==='plant'||construction.tool||bulldoze.active);
+  const toolKey=`${mapCursor}:${buyPlacement?.type??''}:${fieldMapTool?.kind??''}:${construction.tool??''}`;
   return <>
     {simulation && <SaveControls debug={{
       checked:[],
@@ -446,7 +450,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
         <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") ${cursorHotspot} ${cursorHotspot}, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize} scenario={data.scenario} tiles={tilesForWeather(data.tiles,snapshot?.weather)} townEventTiles={tilesForWeather(assets.townEventTiles[snapshot?.townEvent.artworkMode ?? 0],snapshot?.weather)} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           onStroke={active=>{mapStroke.current=active;}} stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
-          preview={preview} onPointer={onMapPointer} onSecondarySelect={interactWithMap} onSelect={index => {
+          preview={preview} onPointer={onMapPointer} confirmTaps={confirmTaps} toolKey={toolKey} onSecondarySelect={interactWithMap} onSelect={index => {
             if(construction.tool||bulldoze.active)return;
             if(enterMapWindow(index))return;
             setSelection(index);

@@ -670,3 +670,11 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .about-logo img{display:block;image-rendering:pixelated;pointer-events:none}
 .about-logo span{align-self:start;margin-top:90px;text-align:center;font:bold 10px/9px var(--font-ui)}
 .original-menu-popup .menu-separator{width:100%;height:0;margin:2px 0;border:0;border-top:1px solid #000}
+/* Responsive play and home-screen web app (native, user request). Windows that do not fit are scaled about their
+   top-left corner by GameWindow; framed windows keep their natural height so that measurement sees all of them.
+   manipulation disables double-tap zoom, which would swallow the second tap of touch placement. */
+html,body{height:100%;overflow:hidden;overscroll-behavior:none;background:#555}
+.game-desktop{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.game-window{transform-origin:0 0}
+.game-window[data-framed]{max-height:none}
+#world{-webkit-touch-callout:none}

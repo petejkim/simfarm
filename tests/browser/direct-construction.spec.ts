@@ -79,10 +79,13 @@ test('initial valve press consumes construction and gate press toggles before pl
   expect(g.getSnapshot().scenario.cells[worldIndex(11,14)].terrain).toBe(122);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
 });
 
-test('touch construction at2x uses captured map coordinates and cancellation stops further tiles',async({page})=>{
+test('touch construction at2x arms on the first tap, uses captured map coordinates and cancellation stops further tiles',async({page})=>{
   const f=shopFixture();f.state.disasters.enabled=false;const g=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,g.save(4));
   await reveal(page,'#zoom');await page.locator('#zoom').selectOption('2');await tool(page,'Dirt road');await page.locator('#viewport').evaluate(v=>v.scrollTo(20*32,20*32));
   const a=await coords(page,25,25),b=await coords(page,26,25),session=await page.context().newCDPSession(page);
+  // Touch has no hover: the first tap only highlights the tile; pressing the highlighted tile paints.
+  await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[a]});await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[a]});
   for(let i=1;i<=4;i++)await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:a.x+(b.x-a.x)*i/4,y:a.y}]});
   await session.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});

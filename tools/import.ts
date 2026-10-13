@@ -40,6 +40,17 @@ const output = resolve('public/assets');
 const sha256 = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 const read = (name: string) => readFile(join(source, name));
 const json = (name: string, value: unknown) => writeFile(join(output, name), JSON.stringify(value, null, 2));
+function appIcon(source: Raster, size: number): Raster {
+  const scale = Math.floor(size * 0.875 / Math.max(source.width, source.height));
+  const left = (size - source.width * scale) >> 1, top = (size - source.height * scale) >> 1, rgba = new Uint8Array(size * size * 4);
+  for (let i = 0; i < size * size; i++) rgba.set([0xc2, 0xc2, 0xc2, 255], i * 4);
+  for (let y = 0; y < source.height * scale; y++) for (let x = 0; x < source.width * scale; x++) {
+    const from = (Math.floor(y / scale) * source.width + Math.floor(x / scale)) * 4, alpha = source.rgba[from + 3] / 255;
+    const to = ((top + y) * size + left + x) * 4;
+    for (let c = 0; c < 3; c++) rgba[to + c] = Math.round(source.rgba[from + c] * alpha + rgba[to + c] * (1 - alpha));
+  }
+  return { width: size, height: size, rgba };
+}
 async function png(name: string, raster: Raster) {
   const image = new PNG({ width: raster.width, height: raster.height });
   image.data = Buffer.from(raster.rgba);
@@ -130,6 +141,10 @@ for (const name of (await readdir(join(source, 'CROPS'))).filter(n => /\.crp$/i.
 const appleIcons = readCropIcons(cropBytes.get('apples.crp')!, palette);
 await png('favicon-16.png', appleIcons.plant);
 await png('favicon-32.png', appleIcons.badge);
+// Home-screen icons (native, for the installed web app): the same badge enlarged by whole pixels and centred on
+// the control-bar grey, because launchers draw transparency as black.
+for (const [name, size] of [['apple-touch-icon.png', 180], ['app-icon-192.png', 192], ['app-icon-512.png', 512]] as const)
+  await png(name, appIcon(appleIcons.badge, size));
 for (let i = 0; i < 8; i++) {
   const name = `SCEN${i}.SSM`, bytes = await read(name);
   inputs.push({ name, size: bytes.length, sha256: sha256(bytes) });

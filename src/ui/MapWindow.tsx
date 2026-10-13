@@ -32,7 +32,9 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
     return()=>{el.removeEventListener('scroll',update);observer.disconnect();};
   },[viewportRef,zoom,active]);
   function point(event: PointerEvent<HTMLCanvasElement>){
-    const rect=event.currentTarget.getBoundingClientRect(),x=Math.floor((event.clientX-rect.left)/2),y=Math.floor((event.clientY-rect.top)/2);
+    // Two pixels per tile at 1x; a window scaled down to fit a small screen shrinks the canvas box.
+    const rect=event.currentTarget.getBoundingClientRect(),pixel=2*rect.width/event.currentTarget.offsetWidth;
+    const x=Math.floor((event.clientX-rect.left)/pixel),y=Math.floor((event.clientY-rect.top)/pixel);
     if(x<0||x>=96||y<0||y>=96)return;
     if(mode===1){setSelected({x:x>>3,y:y>>3});}else onLocate(x,y);
   }

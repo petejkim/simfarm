@@ -63,6 +63,8 @@ test('drag clearing stops on leaving Edit or cancellation; primary Bulldoze remo
   remove(g,10,10);remove(g,11,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await click(page,14,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await reveal(page,'#zoom');await page.locator('#zoom').selectOption('2');await tool(page);a=await point(page,12,10);b=await point(page,13,10,false);const session=await page.context().newCDPSession(page);
+  // Touch: a first tap highlights the tile without clearing it; pressing the highlighted tile clears.
+  await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[a]});await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[a]});await session.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await page.mouse.move(b.x,b.y);remove(g,12,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));await session.detach();
   await click(page,13,10);remove(g,13,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));await click(page,15,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await page.locator('#window-buy').click();await expectPaletteAction(page,'View object');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);

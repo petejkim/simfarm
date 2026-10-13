@@ -30,6 +30,11 @@ export function WindowDesktop({ children, artwork, onButtonClick }: { children: 
   } as CSSProperties}>{children}</div></Context>;
 }
 interface Position { left: number; top: number }
+/** Windows keep their titlebars below the menu and control bars (48px at desktop width; taller when they wrap). */
+function topLimit(element: Element): number {
+  const desktop = element.closest('.game-desktop')!, workspace = desktop.querySelector('.edit-workspace');
+  return workspace ? Math.round(workspace.getBoundingClientRect().top - desktop.getBoundingClientRect().top) : 48;
+}
 /** Shared movable frame; optional native modal dialog keeps Edit mounted. */
 export function GameWindow({ windowKey, title, children, forced = false, modal = false, framed = false, descriptionId, onClose, titleArtwork }: {
   windowKey: string; title: string; children: ReactNode; forced?: boolean; modal?: boolean; descriptionId?: string; onClose?: () => void; titleArtwork?: string;
@@ -40,6 +45,9 @@ export function GameWindow({ windowKey, title, children, forced = false, modal =
   const ref = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLElement>(null);
   const [position, setPosition] = useState<Position | null>(null);
+  // Responsive fit (native, user request): a window larger than the desktop below the bars is shown scaled down
+  // around its top-left corner; it keeps its original 1x layout wherever it fits.
+  const [scale, setScale] = useState(1);
   const drag = useRef<{ pointer: number; x: number; y: number; origin: Position } | null>(null);
   function currentPosition(): Position {
     const box = frame.current!.getBoundingClientRect(), desktop = frame.current!.closest('.game-desktop')!.getBoundingClientRect();
@@ -49,9 +57,20 @@ export function GameWindow({ windowKey, title, children, forced = false, modal =
     const box = frame.current!.getBoundingClientRect(), desktop = frame.current!.closest('.game-desktop')!.getBoundingClientRect();
     // Oversized legacy dialogs may slide horizontally to expose either edge.
     // Keep the title below the menus and the entire window in bounds when it fits.
-    const right = desktop.width - box.width;
+    const right = desktop.width - box.width, top = topLimit(frame.current!);
     return { left: Math.round(Math.max(Math.min(0, right), Math.min(Math.max(0, right), next.left))),
-      top: Math.round(Math.max(48, Math.min(Math.max(48, desktop.height - box.height), next.top))) };
+      top: Math.round(Math.max(top, Math.min(Math.max(top, desktop.height - box.height), next.top))) };
+  }
+  /** Scales an oversized window to fit, then moves it back in bounds if it sticks out. */
+  function fit() {
+    const element = frame.current!, desktop = element.closest('.game-desktop')!.getBoundingClientRect();
+    // offsetWidth/Height are the untransformed layout size.
+    const next = Math.min(1, desktop.width / element.offsetWidth, (desktop.height - topLimit(element)) / element.offsetHeight);
+    const value = next >= 1 ? 1 : Math.floor(next * 1000) / 1000;
+    setScale(value); element.style.transform = value < 1 ? `scale(${value})` : '';
+    const box = element.getBoundingClientRect(), current = currentPosition();
+    if (box.right > desktop.right || box.bottom > desktop.bottom || current.top < topLimit(element) || current.left < 0) move(current);
+    else setPosition(old => { if (!old) return old; const bound = bounded(old); return bound.left === old.left && bound.top === old.top ? old : bound; });
   }
   function move(next: Position) {
     const value = bounded(next);
@@ -73,10 +92,8 @@ export function GameWindow({ windowKey, title, children, forced = false, modal =
     const previous = document.activeElement, currentFrame=frame.current!, desktop=currentFrame.closest('.game-desktop')!;
     if(modal)(frame.current as HTMLDialogElement).showModal();
     ref.current?.focus({ preventScroll: true });
-    const observer = new ResizeObserver(() => setPosition(old => {
-      if (!old) return old;
-      const next = bounded(old); return next.left === old.left && next.top === old.top ? old : next;
-    }));
+    fit();
+    const observer = new ResizeObserver(fit);
     observer.observe(frame.current!); observer.observe(frame.current!.closest('.game-desktop')!);
     return () => {
       observer.disconnect(); drag.current = null;
@@ -95,7 +112,8 @@ export function GameWindow({ windowKey, title, children, forced = false, modal =
   function close() { if (onClose) onClose(); else if (!forced) closeWindow(windowKey); }
   const Frame = modal ? 'dialog' : 'section';
   return <Frame ref={element=>{frame.current=element;}} data-window={windowKey} data-front={forced||active===windowKey} hidden={!open} role="dialog" aria-modal={modal||undefined} aria-label={title} aria-describedby={descriptionId} className="game-window" data-framed={framed || undefined}
-    style={{zIndex:forced?90:30+order.indexOf(windowKey),...(position?{left:position.left,top:position.top,right:'auto'}:{})}}
+    data-scale={scale < 1 ? scale : undefined}
+    style={{zIndex:forced?90:30+order.indexOf(windowKey),...(position?{left:position.left,top:position.top,right:'auto'}:{}),...(scale<1?{transform:`scale(${scale})`}:{})}}
     onPointerDownCapture={()=>{if(!forced)raise(windowKey);}} onFocusCapture={()=>{if(!forced)raise(windowKey);}}
     onCancel={event=>{event.preventDefault();event.stopPropagation();close();}}
     onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); } }}>
