@@ -54,25 +54,29 @@ test.describe('phone screen',()=>{
     // Locate centres the Edit view on the tile one view right of and below it: the scroll origin is that tile.
     await expect.poll(()=>viewport.evaluate(v=>[v.scrollLeft,v.scrollTop])).toEqual([40*16,20*16]);
   });
-  test('portrait centres the palette below the terrain as two rows of tools with PLANT and SPRAY at the end',async({page})=>{
+  test('portrait centres the palette below the terrain as two rows of launcher-sized tools with PLANT and SPRAY at the end',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
-    const palette=page.getByRole('toolbar',{name:'Edit tools'}),box=async(name:string)=>{const b=(await palette.getByRole('button',{name,exact:true}).boundingBox())!;return {x:Math.round(b.x),y:Math.round(b.y),width:Math.round(b.width),height:Math.round(b.height)};};
+    const palette=page.getByRole('toolbar',{name:'Edit tools'}),box=async(name:string)=>(await palette.getByRole('button',{name,exact:true}).boundingBox())!;
+    const near=(actual:number[],expected:number[])=>actual.forEach((value,i)=>expect(Math.abs(value-expected[i]),`[${i}] ${value} vs ${expected[i]}`).toBeLessThan(1));
     const strip=(await palette.boundingBox())!,terrain=(await page.locator('#viewport').boundingBox())!;
     expect(strip.y).toBeGreaterThanOrEqual(terrain.y+terrain.height);expect(Math.abs(strip.y+strip.height-(await page.locator('.game-desktop').boundingBox())!.height-(await page.locator('.game-desktop').boundingBox())!.y)).toBeLessThan(1.5);const desk=(await page.locator('.game-desktop').boundingBox())!;expect(Math.abs(strip.x+strip.width/2-(desk.x+desk.width/2))).toBeLessThan(1);
-    expect([strip.width,strip.height]).toEqual([193,49]);
+    // The strip is zoomed 4/3 so tool cells are as big as the 32px control-bar launchers.
+    const launcher=(await page.locator('#window-buy').boundingBox())!;
+    near([strip.width,strip.height],[193*4/3,49*4/3]);
     // Source pairs become columns: Move/View over each other, then Paved/Dirt … Trees/Bulldoze.
     const move=await box('Move object'),view=await box('View object'),paved=await box('Paved road'),bulldoze=await box('Bulldoze');
-    expect([view.x,view.y-move.y,paved.x-move.x,paved.y]).toEqual([move.x,24,24,move.y]);expect([bulldoze.x-move.x,bulldoze.y]).toEqual([120,view.y]);
+    near([move.width,move.height],[launcher.width,launcher.height]);
+    near([view.x,view.y-move.y,paved.x-move.x,paved.y],[move.x,32,32,move.y]);near([bulldoze.x-move.x,bulldoze.y],[160,view.y]);
     const plant=await box('PLANT'),spray=await box('SPRAY');
-    expect([plant.x-move.x,plant.y,plant.width,plant.height,spray.x,spray.y]).toEqual([144,move.y,48,24,plant.x,view.y]);
+    near([plant.x-move.x,plant.y,plant.width,plant.height,spray.x,spray.y],[192,move.y,64,32,plant.x,view.y]);
     // The strip is centred; the Plant menu opens centred just above it.
     await palette.getByRole('button',{name:'PLANT'}).tap();const menu=(await page.getByRole('menu',{name:'Plant Field'}).boundingBox())!;
-    expect(menu.y+menu.height).toBeCloseTo(strip.y,0);expect(Math.abs(menu.x+menu.width/2-(strip.x+strip.width/2))).toBeLessThan(1);
+    near([menu.y+menu.height],[strip.y]);expect(Math.abs(menu.x+menu.width/2-(strip.x+strip.width/2))).toBeLessThan(1);
     await page.screenshot({path:'artifacts/browser-mobile-portrait-palette.png'});
     // Landscape keeps the source vertical palette at the left.
     await page.keyboard.press('Escape');await page.setViewportSize({width:844,height:390});
-    const side=(await palette.boundingBox())!;expect([side.x,side.width]).toEqual([0,49]);
-    expect((await box('View object')).x-(await box('Move object')).x).toBe(24);
+    const side=(await palette.boundingBox())!;near([side.x,side.width],[0,49]);
+    near([(await box('View object')).x-(await box('Move object')).x,(await box('Move object')).width],[24,24]);
   });
   test('the desktop keeps the palette strip and bars inside the bottom and side safe-area insets',async({page})=>{
     const session=await page.context().newCDPSession(page);
