@@ -5,6 +5,7 @@ import {shopFixture} from '../support/livestock';
 import {browserCrops} from '../support/crop-catalog';
 import {worldIndex} from '../../src/formats/scenario';
 import {reveal,expectPaletteAction,expectNoHorizontalOverflow} from '../support/workspace';
+import {farmSnapshot} from '../support/field-checkpoint';
 
 /** Touch screens zoom #app 1.2× (style.css); boxes are screen px, CSS lengths and scroll positions layout px. */
 const Z=1.2;
@@ -294,6 +295,28 @@ test.describe('phone screen',()=>{
     await page.waitForTimeout(500);await touch(button);await touch(button);expect(await prevented()).toEqual([false,false]);
     await expect(page.locator('[data-window=weather]')).toBeHidden();
     await session.detach();
+  });
+  test('the game holds time while a finger drags the terrain',async({page})=>{
+    test.setTimeout(60000);
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    const pause=page.locator('#toolbar-pause'),ticks=async()=>(await farmSnapshot(page)).scenario.farm.timerTicks;
+    const run=async(during:()=>Promise<void>)=>{
+      await expect(pause).toHaveAttribute('aria-label','Resume');const before=await ticks();
+      await pause.tap();await expect(pause).toHaveAttribute('aria-label','Pause');await during();await pause.tap();
+      await expect(pause).toHaveAttribute('aria-label','Resume');return ((await ticks())-before+65536)%65536;
+    };
+    // The resume/pause taps themselves let time run; a run with nothing in between measures that overhead.
+    const overhead=await run(async()=>{}),control=await run(()=>page.waitForTimeout(2000));
+    const session=await page.context().newCDPSession(page),box=(await page.locator('#viewport').boundingBox())!,at={x:box.x+box.width/2,y:box.y+box.height/2};
+    const dragged=await run(async()=>{
+      await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[at]});
+      await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:at.x-20,y:at.y-20}]});
+      await page.waitForTimeout(2000);
+      await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    });
+    await session.detach();
+    // Only the moments before the drag passes the slop and after it ends may tick.
+    expect(control-overhead).toBeGreaterThan(20);expect(dragged-overhead).toBeLessThan((control-overhead)/3);
   });
   test('the game stays fixed to the screen when the page is scrolled',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');

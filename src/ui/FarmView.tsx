@@ -155,7 +155,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
     return () => { releaseAll(); window.removeEventListener('keydown', onKeyDown, true); window.removeEventListener('keyup', onKeyUp, true); window.removeEventListener('blur', releaseAll); };
   }, [simulation, flying]);
   useEffect(() => { onFlightRunning(flightRunning); return () => onFlightRunning(false); }, [flightRunning, onFlightRunning]);
-  const mapSize = useRef({ columns: 20, rows: 16 }), mapStroke = useRef(false);
+  const mapSize = useRef({ columns: 20, rows: 16 }), mapStroke = useRef(false), mapDrag = useRef(false);
   const onViewportSize = useCallback((size: { columns: number; rows: number }) => { mapSize.current = size; }, []);
   useEffect(() => {
     if (!simulation) return;
@@ -163,7 +163,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
     const tick = (now: number) => {
       // Background tabs do not accumulate days; wall-clock pacing remains outside the simulation rules.
       // A held construction/bulldoze stroke freezes time as the original's mouse-held loops do (docs/direct-construction.md).
-      if (!document.hidden && previous !== null && !bulldoze.pendingRef.current && !heldMessages.current && !mapStroke.current) simulation.tick(Math.min(250, Math.max(0, now - previous)));
+      // A touch drag or pinch on the terrain freezes it too (native, user request), so scrolling never competes with ticks.
+      if (!document.hidden && previous !== null && !bulldoze.pendingRef.current && !heldMessages.current && !mapStroke.current && !mapDrag.current) simulation.tick(Math.min(250, Math.max(0, now - previous)));
       previous = now;
       frame = requestAnimationFrame(tick);
     };
@@ -451,7 +452,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
         construction.tool?{kind:'construction',tool:construction.tool}:bulldoze.active?{kind:'bulldoze'}:fieldMapTool?{kind:'field',tool:fieldMapTool}:null,snapshot.editStatuses[0])}/>}
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
         <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") ${cursorHotspot} ${cursorHotspot}, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize} scenario={data.scenario} tiles={tilesForWeather(data.tiles,snapshot?.weather)} townEventTiles={tilesForWeather(assets.townEventTiles[snapshot?.townEvent.artworkMode ?? 0],snapshot?.weather)} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
-          onStroke={active=>{mapStroke.current=active;}} stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
+          onStroke={active=>{mapStroke.current=active;}} onDrag={active=>{mapDrag.current=active;}} stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
           preview={preview} onPointer={onMapPointer} confirmTaps={confirmTaps} toolKey={toolKey} onZoom={onZoomChange} onSecondarySelect={interactWithMap} onSelect={index => {
             if(construction.tool||bulldoze.active)return;
             if(enterMapWindow(index))return;

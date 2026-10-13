@@ -3663,3 +3663,18 @@ The loupe itself is iOS-only and needs device confirmation.
 Validation: harvest-worker-animation unit test. The mobile-touch touchdown case counts `drawImage` calls during a touchdown highlight (< 500; the previous FarmMap made 9,220 and fails). Full browser regression (render pipeline change): 339/339.
 
 Follow-up: the user still sees some stutter on the device (through a tunnel to this dev server, so the cache was live). Remaining candidates: FarmView re-rendering on every highlight change, and the mid-drag revert.
+
+### Time held while dragging the terrain (2026-10-13, user request)
+
+A touch drag past the tap slop, or a second finger (pinch), on the terrain viewport holds simulation time until every finger lifts, like a held construction/bulldoze stroke.
+- FarmMap reports drag start and end through `onDrag`, using passive viewport touch listeners. Touch events keep arriving during native scrolling, whereas pointer events are cancelled once the browser takes over.
+- FarmView's frame loop skips `tick` while `mapDrag` is set.
+
+**Profiling finding (Chromium, phone viewport):** while the game runs, every simulation publish copies the scenario, which repaints all 9,216 terrain cells and re-renders every window. Over 2s that was about 530ms of `drawWorldBase` alone, without CPU throttling. That background cost, not the highlight, is the main source of drag stutter. Holding time during the drag removes it for the gesture; incremental terrain repaint is the follow-up.
+
+Validation: type check. A mobile-touch case compares save-file `timerTicks` across three resume/pause runs:
+- nothing in between, measuring the taps' own overhead;
+- a 2s wait;
+- a 2s held CDP touch drag.
+
+The drag advanced under a third of the wait's ticks beyond overhead, in two runs. A logged run showed the hold spanning the whole 2,028ms drag. mobile-touch, direct-construction, direct-bulldoze and calendar-clock: 36/36.

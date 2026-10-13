@@ -41,6 +41,8 @@ interface Props {
   toolKey?: string;
   /** A finished pinch settles on this zoom (the view already shows it, anchored under the fingers). */
   onZoom?: (zoom: number) => void;
+  /** A touch drag (past the tap slop) or a pinch on the terrain started (true) or every finger lifted (false). */
+  onDrag?: (active: boolean) => void;
 }
 /** Touch movement beyond this many CSS pixels pans instead of tapping. */
 const TAP_SLOP = 8;
@@ -54,7 +56,7 @@ const directions: Record<string, [number, number]> = {
   ArrowLeft: [-64, 0], ArrowRight: [64, 0], ArrowUp: [0, -64], ArrowDown: [0, 64],
 };
 
-export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scenario, tiles, townEventTiles, maskedTiles, zoom, focus, preview, onSelect,onSecondarySelect,paintTool,onPaint,onStroke,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, confirmTaps = false, toolKey, onZoom }: Props) {
+export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scenario, tiles, townEventTiles, maskedTiles, zoom, focus, preview, onSelect,onSecondarySelect,paintTool,onPaint,onStroke,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, confirmTaps = false, toolKey, onZoom, onDrag }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stroke=useRef<{pointer:number;last:number|null}|null>(null),suppressClick=useRef(false);
   const strokeCallback=useRef(onStroke);strokeCallback.current=onStroke;
@@ -156,6 +158,26 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
   // resized and scrolled directly every move, so the gesture does not re-render the game, and the content point
   // under the fingers' midpoint stays beneath it (moving both fingers also pans). On release the zoom is kept as the
   // Zoom setting, without the usual recentring.
+  const dragCallback = useRef(onDrag); dragCallback.current = onDrag;
+  useEffect(() => {
+    // Touch events keep arriving during native scrolling, unlike pointer events, which the browser cancels.
+    const viewport = viewportRef.current!;
+    let origin: { x: number; y: number } | null = null, dragging = false;
+    const set = (active: boolean) => { if (dragging !== active) { dragging = active; dragCallback.current?.(active); } };
+    const down = (event: TouchEvent) => { if (event.touches.length > 1) set(true); else origin = { x: event.touches[0].clientX, y: event.touches[0].clientY }; };
+    const move = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (event.touches.length > 1 || (origin && touch && Math.hypot(touch.clientX - origin.x, touch.clientY - origin.y) > TAP_SLOP)) set(true);
+    };
+    const up = (event: TouchEvent) => { if (!event.touches.length) { origin = null; set(false); } };
+    const options = { passive: true };
+    viewport.addEventListener('touchstart', down, options); viewport.addEventListener('touchmove', move, options);
+    viewport.addEventListener('touchend', up, options); viewport.addEventListener('touchcancel', up, options);
+    return () => {
+      viewport.removeEventListener('touchstart', down); viewport.removeEventListener('touchmove', move);
+      viewport.removeEventListener('touchend', up); viewport.removeEventListener('touchcancel', up); set(false);
+    };
+  }, [viewportRef]);
   const zoomCallback = useRef(onZoom); zoomCallback.current = onZoom;
   useEffect(() => {
     const viewport = viewportRef.current!, canvas = canvasRef.current!;
