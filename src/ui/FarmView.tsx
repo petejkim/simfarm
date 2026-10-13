@@ -11,6 +11,7 @@ import {DisasterMessage} from './DisasterMessage';
 import {CheatMessage} from './CheatMessage';
 import {FinanceMessage} from './FinanceMessage';
 import {SaveProblemMessage} from './SaveProblemMessage';
+import {TouchNotice,touchNoticeDue} from './TouchNotice';
 import type {SaveProblem} from '../storage/autosave';
 import {DefaultDialog} from './DefaultDialog';
 import {EvaluationWindow} from './EvaluationWindow';
@@ -113,6 +114,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
   // Queued message count, kept in step with events and acknowledgements synchronously so the frame loop
   // holds time from the very tick that raised a message until OK (not from React's later commit).
   const heldMessages=useRef(0);
+  // The touch-screen notice (native) holds time like the original messages while it is open or waiting to show.
+  const [touchNotice,setTouchNotice]=useState(touchNoticeDue);
+  useEffect(()=>{if(!touchNotice)return;heldMessages.current++;return()=>{heldMessages.current=Math.max(0,heldMessages.current-1);};},[touchNotice]);
   function closeMessage(){heldMessages.current=Math.max(0,heldMessages.current-1);setMessages(previous=>previous.slice(1));}
   const onMapPointer = useCallback((pointer: MapFocus | null) => {
     simulation?.dispatch({ type: 'set-map-pointer', pointer });
@@ -480,6 +484,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
         : messages[0].type==='building-notice' ? <BuildingMessage key={messages[0].serial} assets={assets} onClose={closeMessage}/>
         : messages[0].type==='cheat-notice' ? <CheatMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>
         : <DisasterMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>)}
+      {touchNotice&&data&&!messages.length&&!saveProblem&&!bulldoze.pending&&!newFarmOpen&&!snapshot?.townEvent.pending&&<TouchNotice assets={assets} onClose={()=>setTouchNotice(false)}/>}
       {saveProblem&&!messages.length&&!bulldoze.pending&&!newFarmOpen&&!snapshot?.townEvent.pending&&<SaveProblemMessage problem={saveProblem} assets={assets} onClose={()=>setSaveProblem(null)}/>}
     </main>}
   </>;

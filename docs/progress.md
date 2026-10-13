@@ -3744,3 +3744,18 @@ Validation:
 - boot-screen.spec holds `main.tsx` and checks that the title image (`/assets/sftitle.png`, natural width 640) and Loading... text are visible from index.html alone, at 640×480 with the text below. Once released, the farm is shown and the overlay is gone. An asset error and a farm load error each remove it.
 - With startup-retry, first-start, town and edit-status: 13/13.
 - Desktop and 390px phone screenshots checked by eye.
+
+### Touch-screen notice (2026-10-13, user request)
+
+On touch screens (`pointer:coarse`), the game shows a one-time Message: the farmer says mobile support is still a work in progress. Outside an installed home-screen app it also suggests adding SimFarm to the Home Screen to play in full screen. This is a native notice, not an original message. It reuses the original popup with Buy card 75 (the farmer, thumbs up) as its portrait.
+
+- It waits for New Game, queued messages, save problems, bulldoze prompts and town events.
+- Game time is held while it is open or waiting, like the original messages.
+- OK records `simfarm.touch-notice.v1` in localStorage, so it is not shown again in that browser; an installed app has its own storage, so it shows once there too.
+- The Playwright default storage marks it seen, so other specs are unaffected.
+
+Validation:
+- Build passes.
+- touch-notice.spec, as a 390px touch phone: exact text, the card-75 portrait position, and no time passing over 4.5s while open (with the clock resumed behind it). After OK, time runs again and the notice is not shown on reload. A desktop browser never shows it.
+- With mobile-touch, first-start and control-bar: 36/36.
+- Phone screenshot checked by eye.
