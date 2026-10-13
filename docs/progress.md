@@ -3809,3 +3809,11 @@ Validation:
 - Build passes. The full suite ran at the previous commit; this change only touches the Map window and one startup asset.
 
 The only runtime pixel composition left is the terrain designer's per-seed preview.
+
+### Boot title no longer rescales while loading (2026-10-13, user report)
+
+The title image on the boot screen visibly rescaled while the game loaded. WebKit gave the image (a flex item with `width:min(640px,100%,…)`, `height:auto`) 24px of extra height, e.g. 640×504. The app stylesheet's `html,body{height:100%}` corrected it once it loaded, so the picture jumped back to 4:3. Chromium never stretched it.
+
+Both dimensions now come from viewport units: `--width:min(640px,100vw - 32px,(100vh - 80px)*4/3)`, with height = `--width*3/4`. Separately (user request), Loading... uses a system font (`system-ui, -apple-system, sans-serif`) instead of Roboto, so its line no longer moves when Roboto arrives.
+
+Validation: boot-screen.spec adds three viewport cases (1280×900, 844×390, 390×844), each run in Chromium and in a WebKit browser the test launches itself. Each measures the image and text boxes from index.html alone, then with the app running and the farm held. The boxes must be identical, the image 4:3 and the font the system stack. With the previous index.html all three fail; with the fix boot-screen passes 6/6.
