@@ -3122,3 +3122,9 @@ Validation: type check; livestock purchase, tree, crop-supply and animal-purchas
 The equipment limit is now 255 machines (was 126), as a native enhancement. The live table is padded to 256 records; original farm decoding stays at 127. All hard-coded slot bounds share `MAX_EQUIPMENT_SLOT`. Native saves move to v29 with 256 equipment records, and older checkpoints still load. Building storage's one-byte slot field makes 255 the ceiling. Details in equipment-purchase.md and native-save.md.
 
 Validation: type check; full unit suite 950/950 (version assertions updated to 29), plus two new tests, a 255-purchase fill with v29/v28 round trips and building storage of slot 200 (live-equipment-purchases 4/4). Production build; full browser suite 304/304.
+
+## 2026-10-12 — Disaster message titles
+
+Disaster messages showed raw renderer markup ("``````TORNADO WARNING~ High winds…"). Renderer `882e` treats a backtick as a blank indent cell and `~` as a line break. Messages now show the title centred on its own line with the body below, for all six titled disasters; the other six messages are unchanged. A shared `parseEventText` handles events.dat markup. Details in disaster-messages.md.
+
+Validation: type check; disaster-messages unit tests 5/5; all disaster browser specs 16/16, with a screenshot of the flood message.

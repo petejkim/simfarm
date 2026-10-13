@@ -42,3 +42,32 @@ Browser tests check each of the twelve messages, decoded words, every portrait p
 ## Shared MessageDialog (2026-10-12)
 
 This popup now renders through the shared `MessageDialog` on shared chrome; see financial-messages.md.
+
+## Title markup (fixed 2026-10-12)
+
+Six records indent their title with backticks and end it with `~`:
+- 49 FROST WARNING
+- 50 CLOSE ENCOUNTER
+- 52 TORNADO WARNING
+- 53 DROUGHT WARNING
+- 54 FLOOD WARNING
+- 55 LOCUST INFESTATION
+
+The native decoder had kept both characters as literal text, for example "``````TORNADO WARNING~ High winds…". That was our decoding error, not an original defect.
+
+The word renderer `882e..8931` defines them:
+- `~` (0x7e) is a forced line break: `8912..891c` add 8 to y and reset x.
+- A backtick (0x60) is rewritten to a space and drawn as a blank 8-pixel cell (`88d0..88d6`). The leading cells indent the title to roughly the centre of the 224-pixel text area.
+
+`src/formats/event-text.ts` (`parseEventText`) turns a record into lines:
+- each `~` starts a new line;
+- a segment that begins with backticks is marked centred;
+- CR/LF and repeated spaces stay word separators.
+
+`readDisasterMessage` returns those lines. `EventTextLines` renders each one as a block of real text, centring titles with CSS rather than counting blank cells.
+
+Building records 6, 8, 9, 10 and 12 also end with `~`, but they are not yet shown natively. Use the same parser when they are.
+
+Tests:
+- Unit tests pin both renderer branches' bytes, every record's words, all truncation boundaries, and the exact title/body split and centring for all 12 messages.
+- The browser spec checks the rendered lines, their computed alignment, the absence of `` ` `` and `~`, and that the text fits. Screenshot: `artifacts/browser-disaster-flood-message.png`.

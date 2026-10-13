@@ -36,13 +36,14 @@ test('all twelve original disaster rows, portraits, coordinates and preference g
 test('disaster text preserves source words and enforces every truncated record boundary without modifying assets',()=>{
   const before=hash(bytes);
   for(const id of Object.keys(DISASTER_MESSAGES) as DisasterNoticeId[]){
-    const m=DISASTER_MESSAGES[id],text=readDisasterMessage(bytes,id);
-    expect(text.length).toBeGreaterThan(20);expect(text).not.toMatch(/[@\r\n]/);
-    expect(text).toBe(new TextDecoder().decode(bytes.subarray(m.record*256,m.record*256+254)).split('\0')[0].replace(/@|\r|\n/g,' ').replace(/\s+/g,' ').trim());
+    const m=DISASTER_MESSAGES[id],lines=readDisasterMessage(bytes,id),text=lines.map(l=>l.text).join(' ');
+    expect(text.length).toBeGreaterThan(20);expect(text).not.toMatch(/[@\r\n`~]/);
+    expect(text).toBe(new TextDecoder().decode(bytes.subarray(m.record*256,m.record*256+254)).split('\0')[0].replace(/[@\r\n`~]/g,' ').replace(/\s+/g,' ').trim());
     for(let n=m.record*256;n<(m.record+1)*256;n++)expect(()=>readDisasterMessage(bytes.subarray(0,n),id)).toThrow('Truncated disaster message');
-    const changed=Uint8Array.from(bytes);changed[m.record*256+3]=0;expect(readDisasterMessage(changed,id)).toBe(text.slice(0,3));
+    const changed=Uint8Array.from(bytes);changed[m.record*256+3]=0;
+    expect(readDisasterMessage(changed,id).map(l=>l.text).join('')).toBe(new TextDecoder().decode(bytes.subarray(m.record*256,m.record*256+3)).replace(/[`@]/g,'').trim());
   }
-  expect(()=>readDisasterMessage(bytes,'missing' as DisasterNoticeId)).toThrow('Unknown disaster message');expect(hash(bytes)).toBe(before);
+expect(()=>readDisasterMessage(bytes,'missing' as DisasterNoticeId)).toThrow('Unknown disaster message');expect(hash(bytes)).toBe(before);
 });
 
 test('all successful starts honor original mandatory/optional messages, preserve saves and never replay on failed starts or reload',()=>{
@@ -72,4 +73,18 @@ test('natural wind, tornado, drought and flood endings announce once; silent fro
     expect(seen).toEqual(messages&&kind!=='frost'&&kind!=='swarm'?[`${kind}-ended` as DisasterNoticeId]:[]);
     game.dispatch({type:'advance-day'});expect(seen.length).toBe(messages&&kind!=='frost'&&kind!=='swarm'?1:0);
   }
+});
+
+test('renderer882e markup: backtick-indented titles are centred and ~ breaks the line before the body',()=>{
+  const titles:Partial<Record<DisasterNoticeId,string>>={frost:'FROST WARNING','crop-circles':'CLOSE ENCOUNTER',tornado:'TORNADO WARNING',
+    drought:'DROUGHT WARNING',flood:'FLOOD WARNING',swarm:'LOCUST INFESTATION'};
+  for(const id of Object.keys(DISASTER_MESSAGES) as DisasterNoticeId[]){
+    const lines=readDisasterMessage(bytes,id),title=titles[id];
+    if(title){expect(lines).toHaveLength(2);expect(lines[0]).toEqual({text:title,centered:true});expect(lines[1].centered).toBe(false);}
+    else {expect(lines).toHaveLength(1);expect(lines[0].centered).toBe(false);}
+  }
+  expect(readDisasterMessage(bytes,'tornado')).toEqual([{text:'TORNADO WARNING',centered:true},{text:'High winds in the area have spawned a tornado!',centered:false}]);
+  // 882e..8931: ~ (0x7e) advances the line; a backtick (0x60) is rewritten to a space and drawn as a blank cell.
+  expect(exe.subarray(0x8912,0x891c).toString('hex')).toBe('26803f7e750c8346f808');
+  expect(exe.subarray(0x88d0,0x88da).toString('hex')).toBe('26803f60750426c60720');
 });

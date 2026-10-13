@@ -17,7 +17,10 @@ async function load(page:Page,text:string){await page.locator('#load-farm-file')
 async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
 async function message(page:Page,id:DisasterNoticeId){
   const win=page.locator('[data-window=disaster-message]');await expect(win.locator('[data-disaster-notice]')).toHaveAttribute('data-disaster-notice',id);
-  await expect(page.locator('#disaster-message-text')).toHaveText(readDisasterMessage(events,id));
+  const lines=readDisasterMessage(events,id),rendered=page.locator('#disaster-message-text .message-line');
+  await expect(rendered).toHaveText(lines.map(l=>l.text));
+  expect(await rendered.evaluateAll(es=>es.map(e=>getComputedStyle(e).textAlign))).toEqual(lines.map(l=>l.centered?'center':'start'));
+  await expect(page.locator('#disaster-message-text')).not.toContainText('`');await expect(page.locator('#disaster-message-text')).not.toContainText('~');
   expect(await win.boundingBox()).toEqual({x:192,y:150,width:256,height:192});
   expect(await page.locator('#disaster-message-text').evaluate(el=>el.scrollHeight<=el.clientHeight)).toBe(true);
   expect(await win.locator('.message-portrait').boundingBox()).toEqual({x:264,y:174,width:112,height:64});
@@ -33,7 +36,7 @@ test('all six original menu starts restore original text and portrait pixels, ho
     const f=disasterFixture();f.state.scenario.fields[1].bytes[14]=1;f.state.scenario.farm.messages=enabled;
     const game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));
     await chooseDisaster(page,kind);game.dispatch({type:'disaster-menu',action:kind});
-    if(enabled||DISASTER_MESSAGES[kind].mandatory){await message(page,kind);await page.keyboard.press('Escape');}
+    if(enabled||DISASTER_MESSAGES[kind].mandatory){const win=await message(page,kind);if(kind==='flood')await win.screenshot({path:'artifacts/browser-disaster-flood-message.png'});await page.keyboard.press('Escape');}
     await expect(page.locator('#disaster-message-ok')).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(game.save(4)));
     await load(page,game.save(4));await expect(page.locator('#disaster-message-ok')).toHaveCount(0);
   }
