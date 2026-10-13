@@ -458,12 +458,14 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 /* Farm Expert: 384×216 client. Card commands are positional source data, so their elements keep absolute
    placement at the recorded coordinates (less the frame and title) rather than a flex layout. */
 .game-window[data-window=expert]{left:128px;top:96px;right:auto}
-.expert-window{position:relative;width:384px;height:216px;color:var(--ink)}
+.expert-window{position:relative;width:384px;height:228px;color:var(--ink)}
 .expert-window>*{position:absolute}
 .expert-portrait{width:112px;height:64px;pointer-events:none;image-rendering:pixelated}
 .expert-picture{pointer-events:none}
 .expert-tiles{display:grid;pointer-events:none}
-.expert-window .expert-text{overflow:clip;margin:0;white-space:pre-line;font:10px/10px var(--font-ui)}
+.expert-window .expert-text{overflow:clip;margin:0;white-space:pre-line;font:10px/1.1 var(--font-ui)}
+.expert-window .expert-beside-art{padding-left:6px}
+.expert-window .expert-heading{left:0;right:0;margin:0;color:var(--ink);text-align:center;font:10px/1.1 var(--font-ui)}
 .expert-caption{width:48px;height:24px;font:bold 10px/1 var(--font-ui)}
 .game-window .expert-window .expert-hotspot{margin:0;padding:0;border:0;border-radius:0;background:transparent}
 .game-window .expert-window .expert-hotspot:hover{background:#fff2}

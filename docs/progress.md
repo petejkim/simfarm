@@ -3235,3 +3235,19 @@ Validation: full browser suite 312/313. The one failure is native "Speed menu pr
 ## 2026-10-13 — Slow Speed-menu browser test removed
 
 At the user's request, native.spec's "Speed menu presets…" test is deleted. It ran ~1,400 fake-clock animation frames with full-map redraws: ~21–24s alone, over its 45s limit under parallel suite load. `tests/game.test.ts` still covers preset pacing (16×, 4×, 0.5×, 0.25× and invalid speeds). The gap is browser coverage of the Speed menu's checked preset, its item order and the paused Next Day count.
+
+## 2026-10-13 — Farm Expert headings and text inset
+
+The Expert cards use one text command for both titles and body text, so the styling is inferred from layout.
+
+`expertHeading` marks free-standing text with page artwork below it. Across all 43 pages these are exactly the six titles: Field Icon Index, and Crop, Livestock, Spray, Machinery and Structure Information. They render as `<h2>` centred across the client.
+
+`expertTextBesideArt` marks text starting at a picture's or tile strip's right edge (x136, x96 and x232). It gets 6px of left padding inside its source width. The page-1 welcome paragraph is neither.
+
+All Expert text uses a 1.1 line height. Crop descriptions then run to client y192, into the source button row at y184, so the bottom buttons drop 12px and the window grows from 216px to 228px. A scan of all Crop, Machinery, Structure, Livestock, Spray and Field Icon pages finds no clipping or overlap.
+
+Validation:
+- type check;
+- expert-cards unit tests, including a new all-pages classification test;
+- expert-window browser spec, 4/4;
+- a visual check of the Field Icon and Crop pages.

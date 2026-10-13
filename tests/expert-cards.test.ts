@@ -5,7 +5,7 @@ import {PNG} from 'pngjs';
 import {readArchive} from '../src/formats/archive';
 import {decodePlanar,readBitmap,readPalette} from '../src/formats/graphics';
 import {readMessageButton,MESSAGE_BUTTON_FACE as F} from '../src/formats/message-dialog';
-import {EXPERT_CARD_IDS,readExpertPortrait,readExpertCard,readExpertDeck,expertPage,expertText,expertLauncherFace} from '../src/formats/expert-cards';
+import {EXPERT_CARD_IDS,readExpertPortrait,readExpertCard,readExpertDeck,expertPage,expertText,expertLauncherFace,expertHeading,expertTextBesideArt} from '../src/formats/expert-cards';
 import {browserCrops} from './support/crop-catalog';
 const source=(n:string)=>readFileSync(new URL('../../simfarm-dos/'+n,import.meta.url));
 const exe=source('SIMFARM.EXE'),entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
@@ -124,4 +124,19 @@ test('the native Expert launcher face is the head square of portrait 66, halved 
   }
   expect(Array.from(PNG.sync.read(readFileSync('public/assets/expert-launcher.png')).data)).toEqual(Array.from(face.rgba));
   expect(()=>expertLauncherFace({width:111,height:64,rgba:new Uint8Array(111*64*4)})).toThrow();
+});
+
+test('page titles are inferred as headings and text beside art is distinguished on every page',()=>{
+  const titles=new Set<string>(),beside=new Set<string>(),plain:string[]=[];
+  for(const id of deck.keys()){
+    const page=expertPage(deck,id,browserCrops.length);
+    for(const c of page){
+      if(expertHeading(page,c))titles.add((c as {text:string}).text);
+      else if(expertTextBesideArt(page,c))beside.add(`x${c.x}`);
+      else if(c.kind==='text'||c.kind==='crop')plain.push((c as {text:string}).text.slice(0,7));
+    }
+  }
+  expect([...titles].sort()).toEqual(['Crop Information','Field Icon Index','Livestock Information','Machinery Information','Spray Information','Structure Information']);
+  expect([...beside].sort()).toEqual(['x136','x232','x96']);
+  expect(plain).toEqual(['Welcome']); // the home paragraph is neither
 });

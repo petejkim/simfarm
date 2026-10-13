@@ -120,3 +120,18 @@ export function expertPage(deck:ExpertDeck,id:number,cropCount:number):readonly 
     return [command];
   });
 }
+
+/** Right edges of a page's 112px pictures and 16px-tile strips. */
+function artEdges(page:readonly ExpertCommand[]):number[]{
+  return page.flatMap(c=>c.kind==='picture'?[c.x+112]:c.kind==='tiles'?[c.x+c.columns*16]:[]);
+}
+/** Text or crop description that starts at a picture's or tile strip's right edge (source x136/x96/x232 layouts). */
+export function expertTextBesideArt(page:readonly ExpertCommand[],command:ExpertCommand):boolean{
+  return (command.kind==='text'||command.kind==='crop')&&artEdges(page).includes(command.x);
+}
+/** Presentation inference, not a source flag: every page title ("Field Icon Index", "Crop Information", …) is
+ * free-standing text with page artwork below it. The welcome paragraph sits below its pictures and is not a title. */
+export function expertHeading(page:readonly ExpertCommand[],command:ExpertCommand):boolean{
+  return command.kind==='text'&&!expertTextBesideArt(page,command)
+    &&page.some(c=>(c.kind==='picture'||c.kind==='tiles')&&c.y>command.y);
+}
