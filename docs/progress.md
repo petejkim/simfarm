@@ -3277,3 +3277,9 @@ Validation: type check. Browser specs: terrain-design, region-selection, new-far
 The Buy and Examine crop text came from 0x1580 to the end of the file. That range includes the 256-byte Expert block at 0x1600, so the stats (Temperature … Replant Every Harvest) appeared twice. `readCrop` now reads only the 128-byte advice block (0x1580–0x15ff). All 24 supplied crops end cleanly in `@` padding before 0x1600. The Expert window still reads 0x1600 on its own. Regenerate assets with `./tools/bun run import`. The Examine overflow test now checks that the longest advice (Potatoes) fits; the old test relied on the combined text overflowing.
 
 Validation: type check; formats and examine unit tests; browser specs all-crops, examine and expert, 11/11.
+
+## 2026-10-13 — Spacebar pause hotkey
+
+Native addition (user request): Space toggles pause/resume. It is blocked in the same cases as the pause launcher (pending town choice, town event or default decision), and also in form fields, open menus and modal dialogs, and with modifier keys. While flying, the flight handler handles Space (spraying) first. Space is default-prevented, so a focused button is not also pressed; Enter still activates a focused button. The launcher's tooltip reads "Pause (Spacebar)"/"Resume (Spacebar)".
+
+Validation: type check. Browser specs: control-bar, aircraft-flight, tool-hotkeys and button-sounds, 20/20.

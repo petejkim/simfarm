@@ -64,7 +64,7 @@ export function WindowLauncher({ window, faceStyle, label, captioned, pressed, o
 export function PauseToggle({ sheet, paused, disabled, onToggle }: { sheet: HTMLImageElement; paused: boolean; disabled: boolean; onToggle: () => void }) {
   const label = paused ? 'Resume' : 'Pause';
   return <BevelButton id="toolbar-pause" className="window-launcher toolbar-pause" faceClassName="window-launcher-face" disabled={disabled}
-    faceStyle={spriteFace(sheet.src, paused ? CONTROL_BAR_LAUNCHER.face : 0, 0)} aria-label={label} title={label} onClick={onToggle} />;
+    faceStyle={spriteFace(sheet.src, paused ? CONTROL_BAR_LAUNCHER.face : 0, 0)} aria-label={label} title={`${label} (Spacebar)`} onClick={onToggle} />;
 }
 
 /** Source2a518..2a552: three 16×16 forecast tiles (204+code from the current day) inside a 52×20 inset. */

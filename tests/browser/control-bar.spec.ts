@@ -101,6 +101,19 @@ test('the pause/resume launcher toggles time with matching faces', async ({ page
   expect(await save(page)).toEqual(before); // frozen clock: toggling alone changes no farm state
 });
 
+test('Space toggles pause/resume without activating a focused button and is ignored in menus and modal dialogs', async ({ page }) => {
+  await start(page); const toggle = page.locator('#toolbar-pause'), status = page.locator('#time-status');
+  await expect(toggle).toHaveAttribute('title', 'Resume (Spacebar)');
+  await page.keyboard.press('Space'); await expect(status).toContainText('Running'); await expect(toggle).toHaveAttribute('title', 'Pause (Spacebar)');
+  await page.keyboard.press('Space'); await expect(status).toContainText('Paused');
+  // A focused launcher keeps its window closed; Space only resumes.
+  await page.locator('#window-expert').focus(); await page.keyboard.press('Space');
+  await expect(status).toContainText('Running'); await expect(page.locator('#window-expert')).toHaveAttribute('aria-pressed', 'false');
+  await page.keyboard.press('Space'); await expect(status).toContainText('Paused');
+  await page.locator('#file-menu-button').click(); await page.keyboard.press('Space'); await page.keyboard.press('Escape');
+  await expect(status).toContainText('Paused');
+});
+
 test('missing control-bar artwork reports an asset error before starting the farm', async ({ page }) => {
   await page.route('**/assets/control-bar.png', route => route.abort()); await page.goto('/');
   await expect(page.getByRole('heading', { name: 'SimFarm assets unavailable' })).toBeVisible();

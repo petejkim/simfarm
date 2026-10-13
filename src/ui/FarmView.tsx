@@ -305,6 +305,24 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
     };
     window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey);
   },[paletteDisabled]);
+  // Space toggles pause/resume (native, user request), with the pause launcher's blocking. While flying, the flight
+  // handler consumes Space for spraying first. Prevent the default so a focused button is not also activated.
+  const pauseBlocked=Boolean(snapshot?.finances.defaultDecision || snapshot?.pendingTown || snapshot?.townEvent.pending);
+  useEffect(()=>{
+    if(!simulation||pauseBlocked)return;
+    const ignored=(event:KeyboardEvent)=>{
+      const target=event.target as HTMLElement|null;
+      return event.code!=='Space'||event.ctrlKey||event.metaKey||event.altKey||Boolean(target?.closest('input,textarea,select,[contenteditable="true"],[role=menu]'))||Boolean(document.querySelector(':modal'));
+    };
+    const onKey=(event:KeyboardEvent)=>{
+      if(event.defaultPrevented||ignored(event))return;
+      event.preventDefault();if(event.repeat)return;
+      simulation.dispatch({type:'set-paused',paused:!simulation.getSnapshot().paused});
+    };
+    const onKeyUp=(event:KeyboardEvent)=>{if(!event.defaultPrevented&&!ignored(event))event.preventDefault();};
+    window.addEventListener('keydown',onKey);window.addEventListener('keyup',onKeyUp);
+    return()=>{window.removeEventListener('keydown',onKey);window.removeEventListener('keyup',onKeyUp);};
+  },[simulation,pauseBlocked]);
   function cancelPurchase() { setBuyPlacement(null); setToolPointer(null); }
   function enterMapWindow(index:number){
     if(!simulation)return false;

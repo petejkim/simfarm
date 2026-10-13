@@ -20,7 +20,7 @@ test('toolbar, menus, dialog controls and keyboard buttons share one original cl
   await click('#file-menu-button');await page.keyboard.press('Escape');await click('#window-bank');
   await expect(page.locator('#repay-loan')).toBeDisabled();const before=await count(page);await page.locator('#repay-loan').dispatchEvent('click');expect(await count(page)).toBe(before);
   await page.getByRole('button',{name:'Close Bank',exact:true}).click();await expect.poll(()=>count(page)).toBe(before+1);
-  await page.locator('#window-buy').focus();await page.keyboard.press('Space');await expect.poll(()=>count(page)).toBe(before+2);
+  await page.locator('#window-buy').focus();await page.keyboard.press('Enter');await expect.poll(()=>count(page)).toBe(before+2);
   await page.locator('[data-window=buy]').getByRole('button',{name:'Machinery',exact:true}).click();await expect.poll(()=>count(page)).toBe(before+3);
   await click('#options-menu-button');await page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true}).click();
   const muted=await count(page);await page.locator('#window-bank').click();expect(await count(page)).toBe(muted);
