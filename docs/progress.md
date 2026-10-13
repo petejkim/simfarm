@@ -3315,3 +3315,9 @@ Validation: type check. Browser spec first-start, 3/3.
 Automatic saves now show an original-style Message popup when they fail, with portrait 76 (the frustrated farmer of the unpaid-tax warning). This covers a second window without the save lock (shown as soon as that tab attaches a game) and storage errors. Each game shows a reason once, until a save succeeds. See autosave.md.
 
 Validation: type check. Browser specs autosave (including a new storage-error case), first-start and finance-messages, 16/16.
+
+## 2026-10-13 — Save warning on manual Save
+
+A failed File → Save now also opens the save-problem warning, every time it fails; the status line still updates. The two-window autosave test checks this, and its takeover retry dismisses the warning before each attempt.
+
+Validation: type check. Browser spec autosave, 8/8; the two-window case was repeated 3×.

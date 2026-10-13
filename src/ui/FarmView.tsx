@@ -393,7 +393,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
         const action=index===6?'disable':DISASTER_MENU_KINDS[index]; if(!action)return;
         simulation.dispatch({type:'disaster-menu',action});
       },
-    }} simulation={simulation} scenarioId={id} tiles={data?.tiles??null} assets={assets} loaded={Boolean(loaded)} startMessage={startMessage} onSaveGame={() => autosave.save()} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
+    }} simulation={simulation} scenarioId={id} tiles={data?.tiles??null} assets={assets} loaded={Boolean(loaded)} startMessage={startMessage} onSaveGame={async () => { const outcome = await autosave.save(); if (!outcome.ok) setSaveProblem(outcome); return outcome; }} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
     <GameWindow windowKey="options" title="Settings" framed><section className="native-window browser-settings" aria-label="View and audio settings">
       <label className="native-row"><span className="native-label">Zoom</span><select id="zoom" className="chrome-select" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>

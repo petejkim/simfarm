@@ -106,8 +106,15 @@ test('only one tab writes the stored game, the other warns once that it is not s
   await second.evaluate(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' }); document.dispatchEvent(new Event('visibilitychange')); });
   await nextDay(second); await second.waitForTimeout(300); await expect(warning).toHaveCount(0);
   await command(second, 'Save'); await expect(second.locator('#save-status')).toHaveText('Another SimFarm tab is saving this farm.');
+  // A manual Save always shows the warning again.
+  await expect(warning).toBeVisible(); await second.locator('#save-problem-ok').click();
   await page.close();
-  await expect.poll(async () => { await command(second, 'Save'); return second.locator('#save-status').textContent(); }).toBe('Farm saved.');
+  // Until the lock passes over, each refused Save shows the warning; dismiss it before retrying.
+  await expect.poll(async () => {
+    if (await warning.count()) await second.locator('#save-problem-ok').click();
+    await command(second, 'Save'); return second.locator('#save-status').textContent();
+  }).toBe('Farm saved.');
+  await expect(warning).toHaveCount(0);
 });
 
 test('Save to File... and Load from File... use the file pickers where available', async ({ page }) => {
