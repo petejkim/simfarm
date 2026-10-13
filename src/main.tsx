@@ -12,5 +12,8 @@ import './style.css';
 const settle = () => { if (scrollX || scrollY) scrollTo(0, 0); };
 for (const target of [window, window.visualViewport]) for (const type of ['resize', 'scroll']) target?.addEventListener(type, settle);
 addEventListener('orientationchange', settle);
+// iOS Safari applies :active (the pressed bevel) to tapped buttons only when the page listens for touchstart; without it
+// buttons show no feedback until the click lands after the finger lifts, which reads as a delay (user report).
+document.addEventListener('touchstart', () => {}, { passive: true });
 
 createRoot(document.getElementById('app')!).render(<StrictMode><App /></StrictMode>);

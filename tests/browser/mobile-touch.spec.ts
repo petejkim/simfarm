@@ -201,6 +201,12 @@ test.describe('phone screen',()=>{
       expect(await style(selector),selector).toEqual(['none','none','none']);
     expect((await style('#loan-amount')).slice(0,2)).toEqual(['text','text']);
   });
+  test('taps never wait for a double tap',async({page})=>{
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    // touch-action is not inherited; the browser applies the most restrictive value along the ancestors, so html covers the page.
+    for(const selector of ['html','.game-desktop'])
+      expect(await page.locator(selector).first().evaluate(el=>getComputedStyle(el).touchAction),selector).toBe('manipulation');
+  });
   test('the game stays fixed to the screen when the page is scrolled',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
     const before=(await page.locator('#app').boundingBox())!;

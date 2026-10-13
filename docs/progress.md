@@ -3539,3 +3539,12 @@ Validation: type check. main-menu adds a heading-toggle case that replays Safari
 `* { user-select: none }` alone did not stop long-press selection on the iPhone. Every element now also gets `-webkit-user-select: none` (which iOS Safari still honours) and `-webkit-touch-callout: none`. Text fields restore `text` selection and the default callout.
 
 Validation: a mobile-touch case checks the computed `webkitUserSelect`, `userSelect` and `webkitTouchCallout` for a menu heading, a readout, a palette caption, a window titlebar and window text, plus an editable field. It passes in Chromium and WebKit, and fails in WebKit with the old rule.
+
+### 2. Touch responsiveness
+
+- `src/main.tsx` registers an empty passive `touchstart` listener on the document. iOS Safari applies `:active`, and so the pressed bevel of every BevelButton, only when the page listens for `touchstart`. Without it a tapped button showed no feedback until the click arrived after the finger lifted, which read as a delay.
+- `touch-action: manipulation` moved from `.game-desktop` up to `html`, so no tap anywhere waits for a possible double tap. `touch-action` is not inherited, but the browser applies the most restrictive ancestor value. The map viewport's `pan-x pan-y` and the window titlebars' `none` still apply.
+
+Validation: type check. A mobile-touch case checks `touch-action` on `html` and the desktop. mobile-touch, main-menu and control-bar: 30/30.
+
+Gap: the `:active` hook is iOS-specific and cannot be emulated. Chromium does not set `:active` from CDP touch events, with or without the listener. Confirm on the iPhone that buttons press in immediately.

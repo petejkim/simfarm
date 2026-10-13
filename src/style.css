@@ -710,6 +710,8 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
    top-left corner by GameWindow; framed windows keep their natural height so that measurement sees all of them.
    manipulation disables double-tap zoom, which would swallow the second tap of touch placement. */
 html,body{height:100%;overflow:hidden;overscroll-behavior:none;background:var(--page)}
+/* No double-tap zoom anywhere, so no tap waits for a possible second tap (user report: delay on touch). */
+html{touch-action:manipulation}
 .game-desktop{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .game-window{transform-origin:0 0}
 .game-window[data-framed]{max-height:none}
