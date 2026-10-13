@@ -43,6 +43,20 @@ test('New Game and Load from File... warn that the current farm will be deleted,
   await page.getByRole('menuitem', { name: 'Load from File...', exact: true }).click(); await page.locator('#replace-game-yes').click(); await picked;
 });
 
+test('pressing the open heading again closes its menu, also in Safari, which never focuses a clicked button', async ({ page }) => {
+  await start(page);
+  const file = page.locator('#file-menu-button'), menu = page.locator('#original-file-menu');
+  await file.click(); await expect(menu).toBeVisible();
+  await file.click(); await expect(menu).toHaveCount(0);
+  // Safari's sequence: the focused menu item blurs with no destination (relatedTarget null), then the click arrives.
+  await file.click(); await expect(menu).toBeVisible();
+  await page.evaluate(() => { (document.activeElement as HTMLElement).blur(); document.getElementById('file-menu-button')!.click(); });
+  await expect(menu).toHaveCount(0);
+  // Focus moving to another element still closes the menus.
+  await file.click(); await expect(menu).toBeVisible();
+  await page.locator('#viewport').focus(); await expect(menu).toHaveCount(0);
+});
+
 test('source menu order uses HTML text, keyboard navigation and original desktop spacing', async ({ page }) => {
   await start(page);
   const bar = page.getByRole('navigation', { name: 'Original game menus' });

@@ -55,8 +55,11 @@ export function FileMenu({ about, data, busy, onSave, onSaveToFile, onLoad, onNe
     if (open === null) return;
     (menu.current?.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? menu.current)?.focus();
     const outside = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(null); };
+    // Rotating a phone moves the bar (left column ↔ top row), so an open menu closes rather than float misplaced.
+    const orientation = matchMedia('(orientation: portrait)'), rotate = () => setOpen(null);
     document.addEventListener('pointerdown', outside);
-    return () => document.removeEventListener('pointerdown', outside);
+    orientation.addEventListener('change', rotate);
+    return () => { document.removeEventListener('pointerdown', outside); orientation.removeEventListener('change', rotate); };
   }, [open]);
   function select(index: number) {
     closeMenu();
@@ -98,7 +101,10 @@ export function FileMenu({ about, data, busy, onSave, onSaveToFile, onLoad, onNe
       </div>;
   return <>
     <nav ref={root} className="original-menu-bar" aria-label="Original game menus"
-      onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
+      // Focus moving to another element closes the menus. Safari never focuses a tapped or clicked button, so focus
+      // leaving for nowhere (no relatedTarget) is ignored: closing then would let the same click on the open heading
+      // reopen its menu. Outside presses close menus through the document listener instead.
+      onBlur={event => { if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
       {menus.map((entry, index) => <div key={entry.offset} className="original-menu">
         <button ref={index === 0 ? button : undefined} className="original-menu-heading"
           id={`${entry.title.toLowerCase()}-menu-button`} disabled={busy}

@@ -3484,3 +3484,13 @@ Validation: type check. mobile-touch landscape case checks 32px headings and 28p
 **Validation:** mobile-touch, including a new rotation case (landscape → portrait → landscape → portrait: bar orientation, top hit-testing for File, Debug and three launchers, a menu opening and closing by tap, Bank opening and closing by tap), 13/13. Window-movement, edit-workspace, control-bar, main-menu, window-viewport and window-stacking: 27/27. Build passes.
 
 **Needs device confirmation:** rotate on the iPhone.
+
+### Menu heading toggle in Safari, menus close on rotation (2026-10-13, user report)
+
+- **Tapping the open heading again** now closes its menu in Safari, not just Chromium.
+  - Cause: Safari never focuses a clicked or tapped button. The bar's `onBlur` saw focus leave for nowhere (`relatedTarget` null) and closed the menu, then the same click toggled it open again.
+  - Fix: `onBlur` closes only when focus moves to another element outside the bar. Outside presses still close menus through the document `pointerdown` listener.
+  - Reproduced in desktop WebKit before the fix: a second click left File open; Chromium closed it.
+- **Rotation:** an open menu closes when `(orientation: portrait)` changes, instead of floating misplaced after the bar moves between the left column and the top row.
+
+Validation: type check. main-menu adds a heading-toggle case that replays Safari's sequence (blur with no destination, then click) and checks Tab-style focus moves still close. mobile-touch adds a rotation case in both directions. Both fail without the fix. main-menu, mobile-touch, debug-menu, disaster-menu, window-menu-checks and options: 42/42.

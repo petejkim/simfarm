@@ -160,6 +160,14 @@ test.describe('phone screen',()=>{
       await reachable();
     }
   });
+  test('rotating the phone closes an open menu',async({page})=>{
+    await page.setViewportSize({width:844,height:390});
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    await page.locator('#windows-menu-button').tap();await expect(page.locator('#original-windows-menu')).toBeVisible();
+    await page.setViewportSize({width:390,height:844});await expect(page.locator('#original-windows-menu')).toHaveCount(0);
+    await page.locator('#options-menu-button').tap();await expect(page.locator('#original-options-menu')).toBeVisible();
+    await page.setViewportSize({width:844,height:390});await expect(page.locator('#original-options-menu')).toHaveCount(0);
+  });
   test('the game stays fixed to the screen when the page is scrolled',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
     const before=(await page.locator('#app').boundingBox())!;
