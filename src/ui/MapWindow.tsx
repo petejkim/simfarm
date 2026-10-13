@@ -3,8 +3,8 @@ import type { GameAssets } from '../assets/game-assets';
 import { MAP_BUTTONS, MAP_MODES, type MapMode } from '../formats/map-window';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
 import { quoteLandSale } from '../simulation/land';
-import { paintTerrainPreview } from '../render/terrain-preview';
-import { renderOverview, renderOverviewLegend } from '../render/overview-map';
+import { invertedTiles } from '../assets/inverted-tiles';
+import { drawOverview, drawOverviewLegend } from '../render/overview-map';
 import { GameWindow, useWindows } from './GameWindow';
 import { BevelButton } from './chrome/BevelButton';
 import { SunkenInset } from './chrome/SunkenInset';
@@ -24,8 +24,9 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
   const quote=quoteLandSale(snapshot.scenario,selected.x,selected.y,snapshot.weather.soilMoisture)!;
   useLayoutEffect(()=>{
     if(!order.includes('map'))return;
-    paintTerrainPreview(canvas.current!,renderOverview(snapshot.scenario,assets.miniature,assets.catalog.palette,mode,snapshot.weather.soilMoisture,selected));
-    if(legend.current)paintTerrainPreview(legend.current,renderOverviewLegend(assets.miniature));
+    // Drawn from the imported miniature sheets (map-tiles.png and its .inverted variant).
+    drawOverview(canvas.current!.getContext('2d')!,snapshot.scenario,assets.mapTiles,invertedTiles(assets.mapTiles),assets.catalog.palette,mode,snapshot.weather.soilMoisture,selected);
+    if(legend.current)drawOverviewLegend(legend.current.getContext('2d')!,assets.mapTiles);
   },[order,snapshot,assets,mode,selected]);
   // Track the Edit view only while the Map is open: a closed Map re-rendering on every terrain scroll event added
   // work to every drag (user report: slight stutter when dragging in Examine).

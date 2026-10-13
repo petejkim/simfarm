@@ -3790,3 +3790,22 @@ Validation:
   - the region map uses the imported files;
   - the terrain designer has no data URL.
 - Full browser suite 348/348.
+
+### Map window overview drawn from imported sheets (2026-10-13, user follow-up)
+
+The Map window decoded `far_mapc.mbm` at startup and composed its 192×192 overview and 64×8 legend pixel by pixel. Every mode, including the data colour modes, is a lookup into the 2×2-pixel miniature atlas; tiles 464..495 are the colour ramps. So the importer now writes `map-tiles.png` and `map-tiles.inverted.png` (XOR-15 palette) in the gameplay palette. `mini-tiles.png` stays as the setup-palette evidence.
+
+`drawOverview` and `drawOverviewLegend` (src/render/overview-map.ts) draw from those files:
+- one 2×2 copy per tile;
+- the selected property plot from the inverted sheet;
+- property mode's plot grid as palette-1 lines.
+
+`renderOverview`/`renderOverviewLegend` remain as the pinned pixel reference. The raw miniature is no longer fetched at startup.
+
+Validation:
+- Unit: a pixel-exact canvas model of drawImage/fillRect gives buffers equal to `renderOverview` for all 8 SSM farms, all 9 modes and 3 moisture/selection pairs, and equal to the legend reference. Unit total 966/966.
+- Browser: sprite-sheets.spec checks that the Map requests exactly the two sheet files (no `far_mapc.mbm`), paints all 192×192 pixels opaque, draws the legend, and that the page has no data PNG.
+- Specs that open the Map or test startup assets (map-window, window-viewport, window-stacking, control-bar, mobile-touch, homestead, native, weather-window, scenario-assets, boot-screen): 81/81.
+- Build passes. The full suite ran at the previous commit; this change only touches the Map window and one startup asset.
+
+The only runtime pixel composition left is the terrain designer's per-seed preview.

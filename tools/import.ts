@@ -158,6 +158,9 @@ for (const [suffix, colors] of weatherPalettes) {
     await png(`town-event-tiles-${mode}${suffix}.inverted.png`, tileAtlas(bank, inverse(colors), 7));
   }
 }
+// Map window miniature (overlay 8, 2×2 pixels per tile) in the gameplay palette, unlike mini-tiles.png (setup palette).
+await png('map-tiles.png', miniTileAtlas(asset('far_mapc.mbm'), palette));
+await png('map-tiles.inverted.png', miniTileAtlas(asset('far_mapc.mbm'), inverse(palette)));
 await png('masked-tiles.inverted.png', tileAtlas(asset('mskdtile.til'), inverse(palette), 32, 7));
 {
   const maps = renderRegionMaps(readRegionArtwork(asset('scenario.int'), readPalette(asset('scenario.pal'))), readScenarioChooser(exe).farms);

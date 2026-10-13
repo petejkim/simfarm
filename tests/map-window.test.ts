@@ -6,7 +6,8 @@ import {readArchive} from '../src/formats/archive';
 import {readBitmap,readPalette} from '../src/formats/graphics';
 import {readScenario,worldIndex} from '../src/formats/scenario';
 import {MAP_MODES,MAP_TEXT_MASKS,readMapArtwork,readMapMiniature,type MapMode} from '../src/formats/map-window';
-import {overviewTiles,renderOverview,renderOverviewLegend} from '../src/render/overview-map';
+import {drawOverview,drawOverviewLegend,overviewTiles,renderOverview,renderOverviewLegend} from '../src/render/overview-map';
+import type {Raster} from '../src/formats/graphics';
 const source=(s:string)=>readFileSync(new URL('../../simfarm-dos/'+s,import.meta.url));
 const exe=source('SIMFARM.EXE'),archive=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
 const asset=(s:string)=>archive.find(a=>a.name===s)!.bytes,palette=readPalette(asset('simfarm.pal')),atlas=readMapMiniature(asset('far_mapc.mbm'),palette);
@@ -85,4 +86,28 @@ test('property highlight XOR preserves duplicate RGB palette identities in every
   }
   assert.deepEqual(palette[7],palette[11]);assert.notDeepEqual(palette[7^15],palette[11^15]);
   assert.throws(()=>readMapMiniature(bytes.subarray(0,1919),palette));
+});
+
+/** A pixel-exact 2D context over an RGBA buffer, for the drawImage copies and fillRect lines the sheet painters use. */
+function pixelCanvas(width:number,height:number){
+  const rgba=new Uint8Array(width*height*4);let fill=[0,0,0];
+  const context={imageSmoothingEnabled:true,
+    set fillStyle(style:string){fill=style.match(/\d+/g)!.map(Number);},
+    fillRect(x:number,y:number,w:number,h:number){for(let py=y;py<y+h;py++)for(let px=x;px<x+w;px++)rgba.set([...fill,255],(py*width+px)*4);},
+    drawImage(image:Raster,sx:number,sy:number,sw:number,sh:number,dx:number,dy:number,dw:number,dh:number){
+      assert.equal(sw,dw);assert.equal(sh,dh);
+      for(let y=0;y<sh;y++)for(let x=0;x<sw;x++){const from=((sy+y)*image.width+sx+x)*4;rgba.set(image.rgba.subarray(from,from+4),((dy+y)*width+dx+x)*4);}
+    }} as unknown as CanvasRenderingContext2D;
+  return {context,rgba};
+}
+test('sheet-drawn overview and legend equal the reference pixels in every mode for all eight farms',()=>{
+  const sheet=atlas as unknown as CanvasImageSource,inverted=atlas.inverted as unknown as CanvasImageSource;
+  for(let id=0;id<8;id++){
+    const world=readScenario(source(`SCEN${id}.SSM`));
+    for(let mode=0;mode<=8;mode++)for(const [moisture,selected] of [[0,{x:0,y:0}],[-20,{x:5,y:7}],[30,{x:11,y:11}]] as const){
+      const canvas=pixelCanvas(192,192);drawOverview(canvas.context,world,sheet,inverted,palette,mode as MapMode,moisture,selected);
+      assert.deepEqual(canvas.rgba,renderOverview(world,atlas,palette,mode as MapMode,moisture,selected).rgba,`farm ${id} mode ${mode}`);
+    }
+  }
+  const legend=pixelCanvas(64,8);drawOverviewLegend(legend.context,sheet);assert.deepEqual(legend.rgba,renderOverviewLegend(atlas).rgba);
 });

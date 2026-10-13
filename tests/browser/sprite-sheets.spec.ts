@@ -39,3 +39,18 @@ test('the region map and terrain preview use no data: PNGs',async({page})=>{
   await reveal(page,'#region-design');await page.locator('#region-design').click();
   await expect(page.locator('#terrain-preview')).toBeVisible();expect(await dataImages(page)).toBe(0);
 });
+
+test('the Map window overview and legend are drawn from the imported miniature sheets',async({page})=>{
+  const requested:string[]=[];page.on('request',request=>{const path=new URL(request.url()).pathname;if(/map-tiles|far_mapc/.test(path))requested.push(path);});
+  await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  await openWindow(page,'map');const panel=page.getByRole('region',{name:'Farm overview'}),canvas=panel.locator('.overview-viewport canvas');
+  await expect(canvas).toBeVisible();
+  expect(requested.sort()).toEqual(['/assets/map-tiles.inverted.png','/assets/map-tiles.png']); // the raw miniature is no longer fetched
+  // Every one of the 192×192 pixels is painted, opaque, from the sheet.
+  const opaque=()=>canvas.evaluate((el:HTMLCanvasElement)=>{const d=el.getContext('2d')!.getImageData(0,0,192,192).data;let n=0;for(let i=3;i<d.length;i+=4)if(d[i]===255)n++;return n;});
+  expect(await opaque()).toBe(192*192);
+  const legend=panel.locator('.overview-gradient');
+  await panel.getByRole('button',{name:'Soil Toxicity'}).click();await expect(legend).toBeVisible();
+  expect(await legend.evaluate((el:HTMLCanvasElement)=>{const d=el.getContext('2d')!.getImageData(0,0,64,8).data;return d.every((v,i)=>i%4!==3||v===255);})).toBe(true);
+  expect(await dataImages(page)).toBe(0);
+});

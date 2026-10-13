@@ -56,3 +56,25 @@ export function renderOverviewLegend(atlas: Raster): Raster {
   }
   return {width:64,height:8,rgba};
 }
+
+/** renderOverview drawn onto a canvas from the imported miniature sheets (map-tiles.png and its XOR-15 .inverted
+ * variant, gameplay palette): each world tile is a 2×2 copy, the selected property plot comes from the inverted
+ * sheet, and property mode's plot grid is palette colour 1 on every sixteenth row and column. */
+export function drawOverview(context: CanvasRenderingContext2D, world: Scenario, sheet: CanvasImageSource, inverted: CanvasImageSource,
+  palette: Palette, mode: MapMode, moisture: number, selected: {x:number;y:number}): void {
+  if(palette.length!==16||![selected.x,selected.y].every(n=>Number.isInteger(n)&&n>=0&&n<12))throw new Error('Invalid overview graphics');
+  const tiles=overviewTiles(world,mode,moisture);
+  context.imageSmoothingEnabled=false;
+  for(let x=0;x<96;x++)for(let y=0;y<96;y++){
+    const tile=tiles[x*96+y],source=mode===1&&(x>>3)===selected.x&&(y>>3)===selected.y?inverted:sheet;
+    context.drawImage(source,(tile&31)*2,(tile>>5)*2,2,2,x*2,y*2,2,2);
+  }
+  if(mode!==1)return;
+  context.fillStyle=`rgb(${palette[1].join(',')})`;
+  for(let line=0;line<192;line+=16){context.fillRect(line,0,1,192);context.fillRect(0,line,192,1);}
+}
+/** renderOverviewLegend drawn from the miniature sheet. */
+export function drawOverviewLegend(context: CanvasRenderingContext2D, sheet: CanvasImageSource): void {
+  context.imageSmoothingEnabled=false;
+  for(let i=0;i<32;i++){const tile=464+i;for(let y=0;y<8;y+=2)context.drawImage(sheet,(tile&31)*2,(tile>>5)*2,2,2,i*2,y,2,2);}
+}
