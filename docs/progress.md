@@ -3415,3 +3415,13 @@ Validation: type check and production build. Browser specs:
 - edit-workspace, palette-supplies, window-movement, mobile-audio and edit-status: 16/16.
 
 Not checked on a real phone.
+
+### Portrait control bar rows (2026-10-13, user request)
+
+In the same phone-portrait media query, the control bar has two centred rows:
+1. the nine window launchers;
+2. the weather forecast, the Date/Funds readouts and the pause launcher.
+
+The forecast area keeps only an 8px gap on its right, so the visible group is centred. Landscape and desktop keep the wrapping single row.
+
+Validation: mobile-touch adds a two-row case (one launcher row, the status group below it, both centred on the bar, ±1px). Run with control-bar, window-movement and edit-workspace: 25/25.

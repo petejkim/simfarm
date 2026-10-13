@@ -328,6 +328,12 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .edit-palette{order:1;align-self:center;display:grid;grid-template-rows:repeat(2,24px);grid-auto-flow:column;width:auto;zoom:1.33333}
 .edit-palette .edit-caption{height:24px}
 .field-tool-menu{left:50%!important;top:auto!important;bottom:calc(49px * 1.33333);transform:translateX(-50%)}
+/* Control bar in phone portrait (user request): the window launchers fill a centred first row; the forecast, readouts
+   and pause launcher share a centred second row. */
+.original-control-bar{justify-content:center}
+.toolbar-launchers{flex:1 0 100%;justify-content:center}
+.toolbar-forecast-area{flex:none;padding-right:8px}
+.toolbar-status{margin-left:0}
 }
 
 .game-desktop .map-panel{flex:1;display:flex;flex-direction:column;border:0;box-shadow:none;margin:0;padding:0;overflow:hidden}

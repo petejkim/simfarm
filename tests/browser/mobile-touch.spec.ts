@@ -78,6 +78,20 @@ test.describe('phone screen',()=>{
     const side=(await palette.boundingBox())!;near([side.x,side.width],[0,49]);
     near([(await box('View object')).x-(await box('Move object')).x,(await box('Move object')).width],[24,24]);
   });
+  test('portrait splits the control bar into centred rows of launchers, then forecast, readouts and pause',async({page})=>{
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    const bar=(await page.getByRole('toolbar',{name:'Game toolbar'}).boundingBox())!,centre=bar.x+bar.width/2;
+    const boxes=async(selector:string)=>Promise.all((await page.locator(selector).all()).map(async l=>(await l.boundingBox())!));
+    const span=(list:{x:number;y:number;width:number;height:number}[])=>({left:Math.min(...list.map(b=>b.x)),right:Math.max(...list.map(b=>b.x+b.width)),
+      top:Math.min(...list.map(b=>b.y)),bottom:Math.max(...list.map(b=>b.y+b.height))});
+    const launchers=await boxes('.toolbar-launchers > button'),first=span(launchers);
+    expect(launchers.length).toBe(9);expect(new Set(launchers.map(b=>Math.round(b.y))).size).toBe(1);
+    expect(Math.abs((first.left+first.right)/2-centre)).toBeLessThan(1);
+    const status=await boxes('.toolbar-forecast, .toolbar-readouts, .toolbar-pause'),second=span(status);
+    expect(status.length).toBe(3);for(const b of status)expect(b.y).toBeGreaterThanOrEqual(first.bottom-0.5);
+    expect(second.bottom).toBeLessThanOrEqual(bar.y+bar.height+0.5);expect(Math.abs((second.left+second.right)/2-centre)).toBeLessThan(1);
+    await page.screenshot({path:'artifacts/browser-mobile-portrait-control-bar.png'});
+  });
   test('the desktop keeps the palette strip and bars inside the bottom and side safe-area insets',async({page})=>{
     const session=await page.context().newCDPSession(page);
     await session.send('Emulation.setSafeAreaInsetsOverride' as never,{insets:{bottom:34,left:0,right:0,top:0}} as never);
