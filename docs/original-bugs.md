@@ -1550,3 +1550,13 @@ Native decodes immutable executable headers and separate archived planes; it per
 **Classification:** unreachable feature / dead code. It is not a crash, overflow or security issue. The text also promises fines that no code implements. High confidence, limited only by what static scanning cannot detect (self-modifying code or run-time-built far pointers), for which no evidence exists.
 
 **Native behavior:** the same as the original in normal play: no trigger. Since 2026-10-12 the Debug menu item "Show toxic-land warning" starts it once per farm (debug-menu.md). The mode-8 primitive, persistent flag and message are retained, and a checkpoint with the flag set shows nothing new. Revisit only if a run-time pointer path is ever found, or if a native Debug item is wanted, as was done for crop circles.
+
+## SF-180 — FUND cheat says you donated $10,000 but never charges you
+
+**Status:** verified in the original executable (2026-10-12, user report). Native matches the original. No fix applied; deferred to a user decision.
+
+**Evidence:** after the exact `FUND` match, the keyboard path (`0xf786..0xf7b1`) shows popup `DS:2223`, "You just donated $10000 to the town. The mayor and his new car thank you!", then performs only `add word es:[758e],2710h` / `adc word es:[7590],0` with `ES = [DS:c732] = 0x6190`. That adds 10,000 to the town expansion fund. Cash (`6190:3e48`) is never read or written on this path. CORN (`0xf7c8`, `ES = [DS:c730] = 0x6190`) is the only code that changes cash.
+
+**Classification:** text/behaviour mismatch in a developer cheat. The town gains $10,000 for free despite the "donated" wording. It is not memory corruption or a security issue, and it is only reachable by typing the cheat (natively, the Debug menu). High confidence.
+
+**Native behavior:** the same as the original: the town fund rises by $10,000 and cash is unchanged (`tests/debug-cheats.test.ts`). A native "charge the donation" correction would subtract $10,000 from cash. Undecided whether to allow it below zero, or to refuse when cash is short.
