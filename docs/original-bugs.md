@@ -4,6 +4,8 @@ Track defects and suspicious behavior in the supplied DOS executable separately 
 
 Keep entries after fixing a defect. Record the original behavior, native behavior, evidence, verification and compatibility decision. Do not silently normalize source quirks while claiming faithful reconstruction.
 
+Current triage: [2026-10-13 gameplay-impact review](original-bugs-gameplay-review.md) covers all180 entries, distinguishes retained player risks from native corrections and unproven boundary cases, and checks several historical implementation-status notes against the merged code.
+
 ## SF-001 — reversed regional-condition subtraction
 
 **Status:** confirmed arithmetic defect; preserved in the native port pending a compatibility decision.

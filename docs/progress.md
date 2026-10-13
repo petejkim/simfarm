@@ -3842,3 +3842,12 @@ Validation:
 - map-window, window-viewport and sprite-sheets pass 30/30 with `--repeat-each=3`.
 
 This also closes the "unexplained timing flake" noted under Schedule RESET.
+
+
+## 2026-10-13 — original-bug gameplay-impact review
+
+User requested review of original-bugs.md after the merged28df5a7 tree and explicitly skipped the weather-outline audit. Removed that audit's four tracked edits and two unused generated variants; no weather changes were committed. Reviewed all180 primary defect entries plus follow-ups and wrote docs/original-bugs-gameplay-review.md, linked from the ledger. Historical source evidence and resolved entries remain intact.
+
+Highest current candidates are SF-071/074 loan arrears/full payoff, SF-129 repeated wind damage, SF-001 reversed regional reductions, and SF-026/041/042/046 misleading financial postings/totals. The review also identifies water warnings, fifth-cycle year-end temperature, stored-crop loss flags, town recreation/airport bookkeeping, worker-overlay cleanup, irrigation/herd arithmetic, flood flag loss, newborn/storage state and original-file irrigation carryover, with explicit conditions and confidence. No gameplay rule was changed or suspected reachability promoted to an observed original bug. Recorded already-corrected high-impact paths, including SF-101 reservoir loss, SF-158 land profit and SF-178 main dispatcher starvation, rather than relying on stale early headings.
+
+Focused83existing unit tests across14files pass(9.72s), checking current loan/arrears/payoff, wind, reporting/sales, irrigation/town, market, valuation, clock and supply-movement behavior. Log artifacts/original-bugs-gameplay-review-tests.log. A separate raw-definition bound found all24 shipped crop quantity×unit-price products below65536 at twice base price (maximum39140 for oranges), reducing SF-020 priority under those stated assumptions; altered SSM prices/contracts/quantities are not excluded. Coverage index accounts uniquely for all180 IDs. Documentation-only change: no browser/build/full-suite repetition, source modification or push. Full reconstruction remains incomplete. Recommended next correction/reproduction order is loan settlement, wind cadence, regional-condition consumers, financial totals, then town/storage continuity; conditional entries require actual gameplay cases before changing rules.

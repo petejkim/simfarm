@@ -474,3 +474,8 @@ Move hover audit is complete for the represented pickup/drop flow: mode11 skips 
 User correction exposed missing startup495ba..497c1 resource loading. Restore Move hand/pinching hand and resource View/Buy/Spray artwork before further cursor work; initialized executable pixel labels are superseded by edit-cursors.md. Boundary/source/pixel checks must include cursors.til, not just executable records.
 
 Shared window chrome (user decisions, 2026-10-11): rebuild the toolbar, palette and every window from shared components. Bevels (sunken insets, icon and caption buttons) are CSS borders only. The wooden frame is a `border-image` 9-slice of original pixels. Weather uses the common frame. Measurements, components and migration order are in [ui-components.md](ui-components.md). First step is extraction from ControlBar/EditPalette with no visual change, then `WindowFrame` plus Examine.
+
+
+## 2026-10-13 — merged-state gameplay review
+
+The previous aircraft work was abandoned at user request after the merge; do not restore its removed edits. User also skipped weather-outline palette fidelity, so it is not an active prerequisite. The current original-bug triage is docs/original-bugs-gameplay-review.md: all180 primary entries are classified, current high-impact candidates are distinguished from native fixes/guards, and source compatibility decisions remain explicit. Prioritize demonstrated player cash/crop/continuation harm over speculative extreme-state or visual quirks. This review itself changes no gameplay behavior and does not establish a completed port.
