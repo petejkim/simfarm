@@ -277,6 +277,24 @@ test.describe('phone screen',()=>{
     const off=await tap('#window-bank',{lift:'outside',click:false});expect(off.afterDown).toBe(true);expect(off.afterUp).toBe(false);
     await expect(page.locator('[data-window=bank]')).toBeHidden();
   });
+  test('a quick second touch is kept from the iOS loupe, except on controls',async({page})=>{
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    // Record, after the game's own document listener, whether each touchstart's default was cancelled.
+    await page.evaluate(()=>{const w=window as unknown as {prevented:boolean[]};w.prevented=[];
+      document.addEventListener('touchstart',e=>w.prevented.push(e.defaultPrevented),{passive:true});});
+    const session=await page.context().newCDPSession(page);
+    const touch=async(point:{x:number;y:number})=>{await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});};
+    const prevented=()=>page.evaluate(()=>(window as unknown as {prevented:boolean[]}).prevented.splice(0));
+    const terrain=(await page.locator('#viewport').boundingBox())!,ground={x:terrain.x+terrain.width/2,y:terrain.y+terrain.height/2};
+    const launcher=(await page.locator('#window-weather').boundingBox())!,button={x:launcher.x+launcher.width/2,y:launcher.y+launcher.height/2};
+    // Terrain: a quick second touch is cancelled; a slow one is not.
+    await touch(ground);await touch(ground);expect(await prevented()).toEqual([false,true]);
+    await page.waitForTimeout(500);await touch(ground);expect(await prevented()).toEqual([false]);
+    // A launcher keeps its default (and so its click) even when double tapped: Weather opens, then closes.
+    await page.waitForTimeout(500);await touch(button);await touch(button);expect(await prevented()).toEqual([false,false]);
+    await expect(page.locator('[data-window=weather]')).toBeHidden();
+    await session.detach();
+  });
   test('the game stays fixed to the screen when the page is scrolled',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
     const before=(await page.locator('#app').boundingBox())!;

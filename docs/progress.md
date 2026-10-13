@@ -3634,3 +3634,17 @@ Validation: type check. mobile-touch (1280×900 touch screen):
 - Dirt road: the armed tile is painted at touchdown and the drag continues the road.
 
 direct-bulldoze now clears the highlighted tile at touchdown, even if the touch is cancelled. mobile-touch, direct-construction, direct-bulldoze, buy-window, field-tools, construction, bulldoze and animal-input: 47/47.
+
+### No iOS loupe on a held double tap (2026-10-13, user report)
+
+Double tapping and holding the second touch showed iOS's text-selection loupe, despite `user-select: none` everywhere. `src/main.tsx` now cancels the default of a quick second touch (`touchstart` within 400ms and 40px of the previous `touchend`, single finger). This covers the terrain, bars and window backgrounds.
+- Pointer handlers still run, so the terrain's touchdown confirm works.
+- Controls and text fields (`button`, `input`, `select`, `textarea`, `a`, `[role^=menuitem]`) are skipped, because cancelling their `touchstart` would also cancel their click.
+- Cost: that one quick second touch cannot start a native scroll.
+- This replaces the empty passive `touchstart` listener; a non-passive listener equally enables iOS `:active`.
+
+Validation: type check. A mobile-touch case records `defaultPrevented` after the game's listener:
+- a quick second terrain touch is cancelled and a slow one is not;
+- a double-tapped launcher is never cancelled, and Weather opens then closes.
+
+The loupe itself is iOS-only and needs device confirmation.
