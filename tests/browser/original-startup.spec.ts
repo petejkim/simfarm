@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { newGame } from '../support/workspace';
+import { newGame , speedItem } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -42,7 +42,7 @@ test('fresh chooser SSM runs original startup and native checkpoints bypass it e
   const actual = await save(page); expect(actual).toEqual(JSON.parse(expected.save(null)));
   expect(actual.runtime.setup.climateSelection).toEqual({ precipitation: 0, temperature: 0, wind: 0 });
   expect(actual.runtime.retainedSetup).not.toBeNull(); expect(actual.runtime.newFarm).toBeNull();
-  for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 7; day++) { await (await speedItem(page,'#next-day')).click(); expected.dispatch({ type: 'advance-day' }); }
   const advanced = await save(page); expect(advanced).toEqual(JSON.parse(expected.save(null)));
   await chooser(page); await reveal(page, '#new-farm-seed'); await page.locator('#new-farm-seed').fill('19');
   // Checkpoint restoration needs neither temporary terrain nor setup assets.
@@ -67,7 +67,7 @@ test('chooser SSM starts fresh independently of old finances and the highlighted
     expect(actual.runtime.random).not.toEqual(JSON.parse(prior.importOriginal(bytes, crops).simulation.withAllCrops(browserCrops).save(null)).runtime.random);
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); expect(await save(page)).toEqual(JSON.parse(expected.save(null)));
+  await (await speedItem(page,'#next-day')).click(); expected.dispatch({ type: 'advance-day' }); expect(await save(page)).toEqual(JSON.parse(expected.save(null)));
 });
 
 test('legacy checkpoints restore unknown climate exactly and New Game loading needs no retained history', async ({ page }) => {

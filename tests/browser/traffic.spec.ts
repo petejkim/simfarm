@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow , speedItem } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -21,7 +21,7 @@ async function save(page: Page, name: string) {
 test('traffic paints original vehicle pixels and continues through weekly spawning and browser save/load', async ({ page }) => {
   const f = trafficFixture(), game = f.load().withAllCrops(browserCrops), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/'); await load(page, game.save(4));
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   const state = game.getSnapshot(), record = state.traffic.records[0]; expect(record[2]).toBe(21);
   const source = (n: string) => readFileSync(new URL('../../../simfarm-dos/' + n, import.meta.url));
   const archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA')), asset = (n: string) => archive.find(e => e.name === n)!.bytes;
@@ -34,7 +34,7 @@ test('traffic paints original vehicle pixels and continues through weekly spawni
   await page.locator('#viewport').evaluate(e => e.scrollTo(160, 160));
   await page.screenshot({ path: 'artifacts/browser-traffic.png', fullPage: true });
   await load(page, JSON.stringify(checkpoint)); expect(await save(page, 'restored')).toEqual(checkpoint);
-  for (let day = 0; day < 8; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 8; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page, 'continued')).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 1280, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280); expect(errors).toEqual([]);
@@ -55,9 +55,9 @@ test('traffic collision plays source PCM only when enabled, never replays on loa
     };
   });
   const f = trafficFixture(true), game = f.load().withAllCrops(browserCrops); await page.goto('/'); await load(page, game.save(4));
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   expect(requests).toEqual([]); expect(await save(page, 'muted-hit')).toEqual(JSON.parse(game.save(4)));
-  await load(page, f.load().withAllCrops(browserCrops).save(4)); await toggleOption(page,'Sound Effects'); await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await load(page, f.load().withAllCrops(browserCrops).save(4)); await toggleOption(page,'Sound Effects'); await (await speedItem(page,'#next-day')).click();
   await expect.poll(() => page.evaluate(() => (window as unknown as { __trafficPlayed: { length: number; peak: number }[] }).__trafficPlayed.some(p => p.length === 1467 && p.peak > 0.1))).toBe(true);
   const checkpoint = await save(page, 'audible-hit'); expect(checkpoint).toEqual(JSON.parse(game.save(4)));
   const count = requests.length; await load(page, JSON.stringify(checkpoint)); expect(await save(page, 'hit-restored')).toEqual(checkpoint); expect(requests).toHaveLength(count);

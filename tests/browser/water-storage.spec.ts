@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import { storedWater } from '../../src/simulation/water-storage';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { buyBuilding } from '../support/building-actions';
-import { reveal } from '../support/workspace';
+import { reveal , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -37,14 +37,14 @@ test('Build water storage collects from live irrigation, refills distant troughs
     pixels.push(...atlas.data.subarray(offset, offset + 4));
   }
   expect(actual).toEqual(pixels);
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   expect(storedWater((await farmSnapshot(page)).scenario.buildings[2])).toBe(255);
-  for (let day = 1; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 1; day < 7; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(storedWater((await farmSnapshot(page)).scenario.buildings[2])).toBe(191);
   expect((await farmSnapshot(page)).scenario.inventory.filter(i=>i.active&&i.type===299).reduce((sum,i)=>sum+i.quantity,0)).toBe(128);
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 7; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#viewport');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
@@ -59,7 +59,7 @@ test('water storage wear is visible and removes its supply before weekly refills
   const game = GameSimulation.load(writeNativeSave(state, 4), browserCrops).simulation.withAllCrops(browserCrops);
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'worn-water-store.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   await expect(page.locator('#building-message-text')).toHaveText('A water tower has burst! You may want to bulldoze it and buy another.');
   await expect(page.getByRole('dialog',{name:'Message',exact:true})).toBeVisible();
   await page.locator('#building-message-ok').click();

@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { chooseDisaster, setDisastersEnabled, expectDisasterChecked } from '../support/disaster-menu';
-import { reveal, acknowledgeFinanceMessages } from '../support/workspace';
+import { reveal, acknowledgeFinanceMessages , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -78,13 +78,13 @@ test('Disasters controls start real locust damage, render every source sprite pi
   const active=await farmSnapshot(page);expect(active.paused).toBe(true);expect([active.disasters.swarm.x,active.disasters.swarm.y]).toEqual([20,20]);
   await expectDisasterChecked(page,'swarm'); await sprites(page, game.getSnapshot().disasters, 'swarm');
   await expect.poll(() => page.evaluate(() => (window as unknown as { disasterAudio: { length: number; peak: number }[] }).disasterAudio.some(a => a.length === 7259 && a.peak > 0.01))).toBe(true);
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   const checkpoint = await save(page, 'swarm'); expect(checkpoint).toEqual(JSON.parse(game.save(4)));
   expect(game.getSnapshot().scenario.fields[1].bytes[19]).toBeGreaterThan(0);
   await load(page, JSON.stringify(checkpoint)); await sprites(page, game.getSnapshot().disasters, 'swarm');
 
   await reveal(page,'#viewport');
-  for (let i = 0; i < 8; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let i = 0; i < 8; i++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   await expectDisasterChecked(page,'swarm',false);await expectDisasterChecked(page,'tornado',false);
   expect(await save(page, 'swarm')).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
@@ -102,7 +102,7 @@ test('manual tornado destroys a building and contents without sale credit; disab
   await sprites(page, game.getSnapshot().disasters, 'tornado'); await reveal(page,'#viewport');
   await expect.poll(() => page.evaluate(() => (window as unknown as { disasterAudio: { length: number; peak: number }[] }).disasterAudio.some(a => a.length === 11549 && a.peak > 0.01))).toBe(true);
   await setDisastersEnabled(page,false); game.dispatch({ type: 'set-disasters-enabled', enabled: false });
-  for (let i = 0; i < 2; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let i = 0; i < 2; i++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(game.getSnapshot().scenario.buildings[1].active).toBe(false); expect(game.getSnapshot().scenario.equipment[1].active).toBe(false);
   expect(game.getSnapshot().scenario.farm.cash).toBe(cash); expect(game.getSnapshot().disasters.flags & 1).toBe(1);
   expect(await save(page, 'tornado')).toEqual(JSON.parse(game.save(4))); await sprites(page, game.getSnapshot().disasters, 'tornado');

@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import { readNativeSave } from '../../src/formats/native-save';
-import { reveal } from '../support/workspace';
+import { reveal , speedItem } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readArchive } from '../../src/formats/archive';
@@ -69,8 +69,8 @@ test('loaded fair and rodeo animate on simulation ticks, freeze on pause and res
     const text = f.load().withAllCrops(browserCrops).save(4); await load(page, text);
     const pixels = () => page.locator('#world').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(8 * 16, 16 * 16, 8 * 16, 8 * 16).data));
     const initial = await pixels(); await page.clock.runFor(64); expect(await pixels()).toEqual(initial);
-    await reveal(page, '#play-pause'); await page.locator('#play-pause').click(); await page.clock.runFor(64);
-    await page.locator('#play-pause').click(); const stopped = await save(page), animated = await pixels();
+    await (await speedItem(page,'#play-pause')).click(); await page.clock.runFor(64);
+    await (await speedItem(page,'#play-pause')).click(); const stopped = await save(page), animated = await pixels();
     expect(animated).not.toEqual(initial);
     const state = readNativeSave(JSON.stringify(stopped)).state;
     expect(state.townEvent.lastTick).toBeGreaterThanOrEqual(8);

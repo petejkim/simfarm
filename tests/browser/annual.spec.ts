@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { readFinanceMessage } from '../../src/formats/finance-message';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -29,11 +29,11 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(file(yearEnd()));
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await openWindow(page,'balance');await expect(page.locator('#balance-tax')).toHaveText('4715');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   await reveal(page, '#town-choice'); await expect(page.locator('#town-choice')).toBeVisible(); await expect(page.locator('#farm-cash')).toHaveText('$35,285');
   expect((await farmSnapshot(page)).finances.accounts.taxExpenses).toBe(4715);
-  await expect(page.locator('#play-pause')).toBeDisabled(); await expect(page.locator('#next-day')).toBeDisabled();
-  await expect(page.locator('#simulation-speed')).toBeDisabled();
+  await expect((await speedItem(page,'#play-pause'))).toBeDisabled(); await expect((await speedItem(page,'#next-day'))).toBeDisabled();
+  await expect(page.getByRole('menuitemcheckbox',{name:'Fast (2x)',exact:true})).toBeDisabled();
   await openWindow(page, 'bank'); await expect(page.locator('#borrow-loan')).toBeDisabled();
   await reveal(page, '#town-recreational'); await page.locator('#town-recreational').click(); await expect(page.locator('#town-choice-error')).toContainText('cannot support');
   const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
@@ -56,7 +56,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-annual-choice.png', fullPage: true });
   await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
-  await expect(page.locator('#town-choice')).toHaveCount(0); await expect(page.locator('#next-day')).toBeEnabled();
+  await expect(page.locator('#town-choice')).toHaveCount(0); await expect((await speedItem(page,'#next-day'))).toBeEnabled();
   await expect(page.locator('#time-status')).toContainText('Paused · 1 days advanced');
   await expect(page.locator('#farm-cash')).toHaveText('$35,285');
   await openWindow(page,'balance');await expect(page.locator('#balance-expense-9')).toHaveText('4715');
@@ -70,7 +70,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
   expect(statistics.words.slice(10)).toEqual([player, 110, town, 112]);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(completedPath);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await expect(page.locator('#town-choice')).toHaveCount(0);
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); await expect(page.locator('#farm-date')).toContainText('January 2, 1994');
+  await (await speedItem(page,'#next-day')).click(); await expect(page.locator('#farm-date')).toContainText('January 2, 1994');
   const continuedDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   const continuedPath = 'artifacts/browser-annual-statistics-continued.simfarm.json'; await (await continuedDownload).saveAs(continuedPath);
   expect(JSON.parse(readSaveText(continuedPath)).runtime.finances.statistics).toEqual(statistics);
@@ -79,7 +79,7 @@ test('annual taxes open a saved town choice, reject unavailable recreation and r
 
 test('unpaid annual taxes show the original penalty, persist and retry at the next month boundary', async ({ page }) => {
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(file(yearEnd(0)));
-  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await (await speedItem(page,'#next-day')).click();
   await expect(page.locator('#town-choice')).toHaveCount(0);
   await expect(page.locator('#finance-message-text')).toHaveText(readFinanceMessage(readFileSync('public/assets/raw/events.dat'),159));
   await page.locator('#finance-message-ok').click();
@@ -89,7 +89,7 @@ test('unpaid annual taxes show the original penalty, persist and retry at the ne
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   expect((await farmSnapshot(page)).finances.debt.unpaidTaxes).toBe(5893);
-  for (let day = 0; day < 28; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  for (let day = 0; day < 28; day++) { await (await speedItem(page,'#next-day')).click(); }
   await expect(page.locator('#farm-date')).toContainText('February 1, 1994');
   await expect(page.locator('#finance-message-text')).toHaveText(readFinanceMessage(readFileSync('public/assets/raw/events.dat'),162));
   await page.locator('#finance-message-ok').click();

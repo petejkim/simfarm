@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import { aircraftCatalog } from '../support/aircraft-browser';
-import { reveal, openWindow, expectFarmCash } from '../support/workspace';
+import { reveal, openWindow, expectFarmCash , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -47,7 +47,7 @@ test('Aircraft catalog buys at the original airport pad, refuels, changes and lo
     const actual = await page.locator('#world').evaluate((c: HTMLCanvasElement, p) => Array.from(c.getContext('2d')!.getImageData(p.x * 16, p.y * 16, 16, 16).data), { x, y });
     expect(actual).toEqual(Array.from(expected));
   }
-  for (let d = 0; d < 7; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let d = 0; d < 7; d++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page, path)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
 

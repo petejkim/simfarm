@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { browseSupply, selectSupply } from '../support/supply-actions';
 import { clickFarmTile } from '../support/field-actions';
-import { reveal, openWindow, expectFarmCash } from '../support/workspace';
+import { reveal, openWindow, expectFarmCash , speedItem } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { disasterFixture } from '../support/disasters';
@@ -31,7 +31,7 @@ test('scheduled planting keeps trade quotes until weekly execution updates seed 
   expect(planted.runtime.cropMarketPrices).toEqual(before.cropMarketPrices);
   expect(planted).toEqual(JSON.parse(game.save(4)));
   await browseSupply(page,192);await expect(page.locator('#buy-price')).toHaveText('$32');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   const price = game.getSnapshot().scenario.seedDefinitions[0].price; expect(price).not.toBe(32);
   await browseSupply(page,192);await expect(page.locator('#buy-price')).toHaveText(`$${price}`);
   const week = await save(page, 'weekly'); expect(week).toEqual(JSON.parse(game.save(4)));
@@ -61,7 +61,7 @@ test('legacy market migration keeps unknown samples through browser save/load an
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
   await expect(page.locator('#save-status')).toContainText('Could not load farm');
   expect(await save(page, 'rejected')).toEqual(migrated);
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   const next = await save(page, 'migrated-week'); expect(next).toEqual(JSON.parse(game.save(4)));
   expect(next.runtime.market.history[0].filter((p: number | null) => p === null)).toHaveLength(28);
   await load(page, JSON.stringify(next)); expect(await save(page, 'migrated-restored')).toEqual(next);

@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { newGame } from '../support/workspace';
+import { newGame , speedItem } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -77,7 +77,7 @@ test('custom screen uses HTML text over exact terrain pixels and Play accepts it
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   const expected = GameSimulation.load(writeNativeSave(draft.accept('selected-climate'), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
   expect(await save(page)).toEqual(JSON.parse(expected.save(null)));
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); expected.dispatch({ type: 'advance-day' });
   expect(await save(page)).toEqual(JSON.parse(expected.save(null)));
   expect(errors).toEqual([]);
 });
@@ -98,7 +98,7 @@ test('custom rerolls retain their own streams, respond to keyboard and continue 
   const accepted = await save(page); expect(accepted).toEqual(JSON.parse(game.save(null)));
   await page.locator('#load-farm-file').setInputFiles({ name: 'preview.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(accepted)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  for (let i = 0; i < 7; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let i = 0; i < 7; i++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page)).toEqual(JSON.parse(game.save(null)));
 });
 

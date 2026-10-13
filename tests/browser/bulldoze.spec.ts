@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import {clickFarmTile} from '../support/field-actions';
-import { reveal, openWindow, expectPaletteAction } from '../support/workspace';
+import { reveal, openWindow, expectPaletteAction , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -76,7 +76,7 @@ test('Bulldoze removes loose supplies/chemicals and terrain, renders source conn
   }
   await pixels(page, game.getSnapshot().scenario);
   await page.reload(); await load(page, game.save(4)); await expect(page.locator('#removal-panel')).toHaveCount(0);
-  for (let d = 0; d < 14; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let d = 0; d < 14; d++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
 

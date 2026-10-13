@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import {clickFarmTile} from '../support/field-actions';
-import { reveal } from '../support/workspace';
+import { reveal , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -68,7 +68,7 @@ test('network controls construct original networks, operate gates, play placemen
   expect(await save(page,'built')).toEqual(JSON.parse(g.save(4)));
   await page.reload();await load(page,g.save(4));expect((await played(page)).length).toBe(0);
   await gate(page,10,12);g.dispatch({type:'network',tool:'close-gate',x:10,y:12});
-  for(let day=0;day<3;day++){await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}
+  for(let day=0;day<3;day++){await (await speedItem(page,'#next-day')).click();g.dispatch({type:'advance-day'});}
   expect(await save(page,'continued')).toEqual(JSON.parse(g.save(4)));expect(errors).toEqual([]);
 });
 

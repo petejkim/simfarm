@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 import {disasterFixture} from '../support/disasters';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
-import { reveal, openWindow, focusEdit, expectPaletteAction, expectSelectedField } from '../support/workspace';
+import { reveal, openWindow, focusEdit, expectPaletteAction, expectSelectedField , speedItem } from '../support/workspace';
 import { cropPlantTile } from '../../src/formats/crop-slots';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'field-tools.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
@@ -93,7 +93,7 @@ test('Spray applies all four treatments through canonical supplies and busy guar
     await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:label,exact:true}).click();
     await point(page,42,42);await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Field is busy.');
     await page.keyboard.press('Escape');expect(await save(page)).toEqual(before);
-    for(let i=0;i<7;i++){await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});}
+    for(let i=0;i<7;i++){await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});}
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));await openWindow(page,'edit');
   }
 });
@@ -143,7 +143,7 @@ test('selected Spray treatment stays active across successful fields and busy re
     await point(page,52,42);await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Field is busy.');
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));
     await focusEdit(page);await expectPaletteAction(page,'View object');
-    for(let i=0;i<7;i++){await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});}
+    for(let i=0;i<7;i++){await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});}
     await openWindow(page,'edit');
   }
   await page.getByRole('button',{name:'Spray',exact:true}).click();await page.getByRole('menuitem',{name:'Fertilize',exact:true}).click();

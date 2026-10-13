@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
 import { worldIndex } from '../../src/formats/scenario';
-import { reveal, expectPaletteAction } from '../support/workspace';
+import { reveal, expectPaletteAction , speedItem } from '../support/workspace';
 import { readArchive } from '../../src/formats/archive';
 import { decodePlanar,readPalette } from '../../src/formats/graphics';
 async function load(page:Page,text:string){await page.goto('/');await page.locator('#load-farm-file').setInputFiles({name:'palette-supplies.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');await page.locator('#viewport').evaluate(v=>v.scrollTo(0,0));}
@@ -32,7 +32,7 @@ test('Trees, Hay and Trough paint from the original palette with exact source ti
   const supplies=g.getSnapshot().scenario.inventory.filter(i=>i.active);expect(supplies.map(i=>[i.type,i.quantity])).toEqual([[300,512],[300,512],[300,512],[299,256],[299,256],[299,256]]);
   await page.screenshot({path:'artifacts/browser-palette-supplies.png'});
   await page.reload();await load(page,g.save(4));expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  for(let day=0;day<8;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  for(let day=0;day<8;day++){await (await speedItem(page,'#next-day')).click();g.dispatch({type:'advance-day'});}expect(await save(page)).toEqual(JSON.parse(g.save(4)));
 });
 
 test('rejected supply/tree work preserves cash, clearing and RNG, while one stroke charges each sampled cell once',async({page})=>{

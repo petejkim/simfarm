@@ -41,7 +41,7 @@ import { ScheduleWindow } from './ScheduleWindow';
 import { FarmMap, type MapFocus } from './FarmMap';
 import { useResource } from './useResource';
 import { GameSimulation, type GameCommand } from '../simulation/game';
-import { TimeControls } from './TimeControls';
+import { speedMenu, TimeStatus } from './SpeedMenu';
 import { SaveControls, type LoadedFarm } from './SaveControls';
 import type { Autosave } from '../storage/autosave';
 import { SellWindow } from './SellWindow';
@@ -329,7 +329,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
       ],
       hints:['Requires a recreation district, $1,000 and no active event.','Requires a recreation district and no active event.','Advances only the active event countdown; the farm date stays unchanged.','Opens the town expansion choice now (requires a free site; skips the town fund). Not kept in saves.','Raises every unfinished town district one level now (requires one below level 13; no town revenue spent).'],
       choose:index=>{if(index===3){simulation.dispatch({type:'debug-town-expansion'});return;}if(index===4){simulation.dispatch({type:'debug-town-grow'});return;}const action=(['rodeo','fair','advance-week'] as const)[index];if(action)simulation.dispatch({type:'debug-town-event',action});},
-    }} options={{
+    }} speed={speedMenu(snapshot, command => simulation.dispatch(command))} options={{
       checked: [audioOptions.music, audioOptions.sound, ...FARM_OPTIONS.map(key=>simulation.getSnapshot().scenario.farm[key]),audioOptions.buttonClicks],
       extraLabels:['Button Click Sounds'],
       actions:[{label:'Settings…',choose:()=>windows.show('options')}],
@@ -356,9 +356,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
     </GameWindow>
     <span id="map-status" className="file-status" role="status">{resource.status === 'ready' ? (id === null ? `${snapshot?.scenario.origin === 'original' ? 'Imported' : 'Generated'} farm · original terrain` : `Scenario ${id + 1} · original terrain`)
           : resource.status === 'error' ? resource.error : 'Loading map…'}</span>
-    <GameWindow windowKey="speed" title="Speed" framed>
-    {simulation && snapshot && <TimeControls snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
-    </GameWindow>
+    {snapshot && <TimeStatus snapshot={snapshot} />}
     <GameWindow windowKey="town" title="Town development" framed titleArtwork={assets.townChoiceArtwork.src} forced={Boolean(snapshot?.pendingTown)}>
     {simulation && snapshot && <TownChoicePanel assets={assets} snapshot={snapshot} onCommand={command => simulation.dispatch(command)} />}
     </GameWindow>

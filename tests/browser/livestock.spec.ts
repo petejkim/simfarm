@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
-import { reveal } from '../support/workspace';
+import { reveal , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -20,7 +20,7 @@ test('live livestock moves with original pixels, drinks and preserves frame stat
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'animals.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   expect((await farmSnapshot(page)).scenario.animals.filter(a=>a.active).map(a=>[a.slot,a.type])).toEqual([[1,161]]);
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   const a = game.getSnapshot().scenario.animals[1]; expect([a.x, a.y]).toEqual([11, 10]);
   expect(game.getSnapshot().scenario.inventory[1].quantity).toBe(506);
   const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
@@ -33,7 +33,7 @@ test('live livestock moves with original pixels, drinks and preserves frame stat
   const path = 'artifacts/browser-livestock.simfarm.json', saved = await download(page, path);
   expect(saved.version).toBe(28); expect(saved.runtime.animalFrame.lastMoveTick).toBe(16); expect(saved).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  for (let day = 0; day < 21; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 21; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4))); expect(game.getSnapshot().animalFrame.lastCentreTick).toBeGreaterThan(320);
   expect(errors).toEqual([]);
 });
@@ -43,7 +43,7 @@ test('livestock loss is shown in React, malformed frame saves preserve the curre
   f.state.scenario.cells[worldIndex(12, 10)].terrain = 15; f.state.scenario.animals[1].bytes[14] = 255;
   const game = f.load().withAllCrops(browserCrops); await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'thirst.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
-  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   expect((await farmSnapshot(page)).scenario.animals.filter(a=>a.active)).toHaveLength(0);
   const status=page.getByRole('button',{name:'Edit message history'});
   await expect(status).toHaveText('Livestock are dying!');await status.click();

@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { chooseDisaster, setDisastersEnabled, expectDisasterChecked } from '../support/disaster-menu';
-import { reveal, acknowledgeFinanceMessages } from '../support/workspace';
+import { reveal, acknowledgeFinanceMessages , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test,expect,type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -44,8 +44,8 @@ test('frost controls cancel locusts, play original wind PCM and retain cooling/l
   const active=await save(page,'frost-active');expect(active).toEqual(JSON.parse(g.save(4)));const sounds=(await audio(page)).filter(s=>s.length!==2667).map(s=>s.length);
   await load(page,JSON.stringify(active));expect((await audio(page)).filter(s=>s.length!==2667).map(s=>s.length)).toEqual(sounds);
   await setDisastersEnabled(page,false);g.dispatch({type:'set-disasters-enabled',enabled:false});
-  for(const day of [1,2]){await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});expect(g.getSnapshot().weather.temperature).toBe(day===1?28:8);expect(await save(page,`frost-day${day}`)).toEqual(JSON.parse(g.save(4)));}
-  for(let day=2;day<12;day++){await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}
+  for(const day of [1,2]){await (await speedItem(page,'#next-day')).click();g.dispatch({type:'advance-day'});expect(g.getSnapshot().weather.temperature).toBe(day===1?28:8);expect(await save(page,`frost-day${day}`)).toEqual(JSON.parse(g.save(4)));}
+  for(let day=2;day<12;day++){await (await speedItem(page,'#next-day')).click();g.dispatch({type:'advance-day'});}
   await expectDisasterChecked(page,'frost',false);expect(await save(page,'frost-ended')).toEqual(JSON.parse(g.save(4)));expect(errors).toEqual([]);
 });
 
@@ -64,7 +64,7 @@ test('saved crop circles retain original tiles and event flags; alien MIDI remai
   await expect.poll(()=>page.evaluate(()=>{const a=(window as unknown as {stationaryAudio:{masters:AnalyserNode[]}}).stationaryAudio.masters[0],data=new Float32Array(a.fftSize);a.getFloatTimeDomainData(data);return Math.max(...Array.from(data,Math.abs));})).toBeGreaterThan(0.001);
   await page.locator('#music').selectOption('ffarm');await expect(page.locator('#audio-status')).toContainText('Playing ffarm');
   await load(page,JSON.stringify(active));await expect(page.locator('#audio-status')).toContainText('Playing ffarm');
-  await circles(page);await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});
+  await circles(page);await (await speedItem(page,'#next-day')).click();g.dispatch({type:'advance-day'});
   const ended=await save(page,'circles-ended');expect(ended.runtime.disasters.flags&64).toBe(0);expect(ended).toEqual(JSON.parse(g.save(4)));await circles(page);
   await toggleOption(page,'Music');await load(page,JSON.stringify(active));
   await expect(page.locator('#audio-status')).toHaveText('Music off');await expect(page.locator('#music')).toHaveValue('ffarm');
@@ -80,7 +80,7 @@ test('saved toxic warning remains flag-only and ordinary play has no provisional
   await expect(page.locator('#start-crop-circles,#start-toxic-land,[data-window=disasters]')).toHaveCount(0);
   // Uppercase A is source debug input, not an ordinary gameplay shortcut.
   await reveal(page,'#viewport');await page.keyboard.press('Shift+A');expect(await save(page,'warning')).toEqual(active);
-  await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});
+  await (await speedItem(page,'#next-day')).click();g.dispatch({type:'advance-day'});
   const continued=await save(page,'warning-continued');expect(continued.runtime.disasters.flags&128).toBe(128);expect(continued).toEqual(JSON.parse(g.save(4)));
   expect((await audio(page)).filter(s=>s.length!==2667)).toEqual([]);
   await chooseDisaster(page,'wind');g.dispatch({type:'disaster-menu',action:'wind'});

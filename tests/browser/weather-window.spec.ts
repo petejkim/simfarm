@@ -10,7 +10,7 @@ import {weatherWindowView,WEATHER_SKIES} from '../../src/simulation/weather-view
 import {WEATHER_LABELS} from '../../src/formats/weather-window';
 import {shopFixture} from '../support/livestock';
 import {browserCrops} from '../support/crop-catalog';
-import {openWindow,reveal, focusEdit } from '../support/workspace';
+import {openWindow,reveal, focusEdit , speedItem } from '../support/workspace';
 const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url));
 const entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),asset=(n:string)=>entries.find(e=>e.name===n)!.bytes,palette=readPalette(asset('simfarm.pal'));
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
@@ -73,7 +73,7 @@ test('Weather follows all seasons and sky types, cross-week forecasts, signed ex
   }
   const f=fixture(),game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));
   for(let day=0;day<9;day++){
-    await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});await declineTownEventDialogs(page);declineTownEvents(game);await open(page);
+    await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});await declineTownEventDialogs(page);declineTownEvents(game);await open(page);
     const s=game.getSnapshot(),v=weatherWindowView(s.scenario.farm.calendar,s.weather,s.scenario.climate);
     await expect(page.locator('#weather-fahrenheit')).toHaveText(String(v.fahrenheit));await expect(page.locator('#weather-calendar')).toHaveText(v.calendar);
     await expect(page.getByRole('list',{name:'Five day forecast'})).toContainText(v.forecast.map((code,i)=>`${i===0?'Today':`Day ${i+1}`}: ${WEATHER_SKIES[code]}`).join(''));
@@ -85,13 +85,13 @@ test('Weather follows all seasons and sky types, cross-week forecasts, signed ex
 test('Weather animation stays presentation-only, pauses and closes cleanly while Speed keeps native pacing',async({page})=>{
   await start(page);const game=fixture().load().withAllCrops(browserCrops);await load(page,game.save(4));await open(page);
   const initial=(await sprite(page.locator('.weather-vane'))).position;await page.clock.runFor(1200);expect((await sprite(page.locator('.weather-vane'))).position).toEqual(initial);expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  await reveal(page,'#play-pause');await page.locator('#play-pause').click();await open(page);await page.clock.runFor(300);
+  await (await speedItem(page,'#play-pause')).click();await open(page);await page.clock.runFor(300);
   expect((await sprite(page.locator('.weather-vane'))).position).not.toEqual(initial);
-  await reveal(page,'#play-pause');await page.locator('#play-pause').click();await open(page);
+  await (await speedItem(page,'#play-pause')).click();await open(page);
   const stopped=(await sprite(page.locator('.weather-vane'))).position,before=await save(page);await page.clock.runFor(2000);expect((await sprite(page.locator('.weather-vane'))).position).toEqual(stopped);expect(await save(page)).toEqual(before);
   await page.getByRole('button',{name:'Close Weather',exact:true}).click();await expect(page.getByRole('dialog',{name:'Weather',exact:true})).toBeHidden();
-  await openWindow(page,'speed');await expect(page.getByRole('dialog',{name:'Speed',exact:true})).toBeVisible();await expect(page.locator('#simulation-speed-value')).toHaveText('1×');await expect(page.locator('#simulation-speed-value')).toHaveAttribute('title','At 1×, one full game day takes four real seconds.');
-  await expect(page.locator('#next-day')).toBeEnabled();await expect(page.locator('#play-pause')).toHaveText('Play');
+  await openWindow(page,'speed');await expect(page.getByRole('menuitemcheckbox',{name:'Normal (1x)',exact:true})).toHaveAttribute('aria-checked','true');
+  await expect((await speedItem(page,'#next-day'))).toBeEnabled();await expect((await speedItem(page,'#play-pause'))).toHaveText('Resume');
 });
 
 test('missing Weather assets fail before creating a farm',async({page})=>{
@@ -104,13 +104,13 @@ test('missing Weather assets fail before creating a farm',async({page})=>{
 test('toolbar shows three original weather icons across week boundaries and updates after advancing a day',async({page})=>{
   const f=fixture();f.state.scenario.farm.calendar.day=6;
   const game=f.load().withAllCrops(browserCrops);await start(page);await load(page,game.save(4));const before=await save(page);
-  const icons=page.locator('.toolbar-weather');expect(await icons.boundingBox()).toEqual({x:(288+page.viewportSize()!.width-224)/2-24,y:24,width:48,height:16});
+  const icons=page.locator('.toolbar-weather'),area=(await page.locator('.toolbar-forecast-area').boundingBox())!;expect(await icons.boundingBox()).toEqual({x:area.x+area.width/2-24,y:24,width:48,height:16});expect(area.x).toBe(288);
   async function check(codes:number[]){
     expect(await icons.locator('.sprite').evaluateAll(es=>es.map(e=>(e as HTMLElement).style.backgroundPosition))).toEqual(codes.map(code=>tileAt(204+code)));
   }
   await expect(icons).toHaveAttribute('aria-label','Today: Partly cloudy; Tomorrow: Snow; Day 3: Rain');await check([1,4,3]);
   expect(await save(page)).toEqual(before);
-  await reveal(page,'#next-day');await page.locator('#next-day').click();await declineTownEventDialogs(page);await check([4,3,2]);
+  await (await speedItem(page,'#next-day')).click();await declineTownEventDialogs(page);await check([4,3,2]);
   await expect(icons).toHaveAttribute('aria-label','Today: Snow; Tomorrow: Rain; Day 3: Cloudy');
   await focusEdit(page);await page.screenshot({path:'artifacts/browser-toolbar-weather.png'});
 });
@@ -129,7 +129,7 @@ test('terrain uses original rain/frost colors and restores dry artwork without m
   }
   const f=fixture();Object.assign(f.state.weather,{current:3,temperature:40,forecast:[3,0,0,0,0,0,0]});f.state.scenario.farm.calendar.day=0;
   await load(page,f.load().withAllCrops(browserCrops).save(4));
-  await reveal(page,'#next-day');await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   const pixels=await page.locator('#world').evaluate((c:HTMLCanvasElement)=>Array.from(c.getContext('2d')!.getImageData(0,0,16,16).data));
   expect(pixels).toEqual(Array.from(decodePlanar(asset('ega16til.til').subarray(15*128,16*128),16,16,palette).rgba));
 });
@@ -145,8 +145,8 @@ test('prolonged dry climate reaches the original cracked-soil artwork in the liv
   const pixels=()=>page.locator('#world').evaluate((c:HTMLCanvasElement)=>Array.from(c.getContext('2d')!.getImageData(0,0,16,16).data));
   const original=(tile:number)=>Array.from(decodePlanar(asset('ega16til.til').subarray(tile*128,(tile+1)*128),16,16,palette).rgba);
   expect(await pixels()).toEqual(original(27));
-  await reveal(page,'#next-day');
-  for(let day=0;day<28;day++){await page.locator('#next-day').click();game.dispatch({type:'advance-day'});}
+  
+  for(let day=0;day<28;day++){await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});}
   expect(game.getSnapshot().weather.soilMoisture).toBe(0);expect(game.getSnapshot().scenario.cells[0].terrain&2047).toBe(15);
   expect(await pixels()).toEqual(original(15));expect(await pixels()).not.toEqual(original(27));
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));

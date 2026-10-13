@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
 import { worldIndex } from '../../src/formats/scenario';
-import { reveal, expectPaletteAction } from '../support/workspace';
+import { reveal, expectPaletteAction , speedItem } from '../support/workspace';
 import { readArchive } from '../../src/formats/archive';
 import { decodePlanar,readPalette } from '../../src/formats/graphics';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'construction.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
@@ -38,7 +38,7 @@ test('six original palette tools build directly, drag connected lines, retain so
   for(const [x,y,t] of [[11,10,151],[11,12,162],[11,14,190],[11,16,122],[14,10,172],[14,16,172]])await pixels(page,x,y,t);
   await page.screenshot({path:'artifacts/browser-direct-construction.png'});
   await page.reload();await load(page,g.save(4));await expectPaletteAction(page,'View object');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  for(let d=0;d<3;d++){await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  for(let d=0;d<3;d++){await (await speedItem(page,'#next-day')).click();g.dispatch({type:'advance-day'});}expect(await save(page)).toEqual(JSON.parse(g.save(4)));
 });
 
 test('construction failures preserve clearing and cash, and hover or same-cell motion never repeat a purchase',async({page})=>{

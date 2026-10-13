@@ -10,7 +10,7 @@ import type {DisasterNoticeId} from '../../src/simulation/events';
 import {financeMessageFixture} from '../support/finance-messages';
 import {readNativeSave,writeNativeSave} from '../../src/formats/native-save';
 import {GameSimulation} from '../support/game';
-import {reveal} from '../support/workspace';
+import {reveal, speedItem } from '../support/workspace';
 const events=readFileSync('public/assets/raw/events.dat');
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'disaster.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
@@ -45,7 +45,7 @@ test('all four natural endings show source records once and honor disabled Messa
     const f=disasterFixture();f.state.scenario.farm.messages=enabled;f.state.disasters.enabled=false;
     f.state.disasters.flags={wind:8,tornado:1,drought:2,flood:4}[kind];f.state.scenario.farm.calendar.day=6;
     f.state.scenario.farm.animationTicks=3000;f.state.weather.soilMoisture=5;f.state.waterDisasters.counter=9;
-    const game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});
+    const game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});
     if(enabled){await message(page,`${kind}-ended`);await page.locator('#disaster-message-ok').click();}
     await expect(page.locator('#disaster-message-ok')).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   }
@@ -53,10 +53,10 @@ test('all four natural endings show source records once and honor disabled Messa
 
 test('disaster Message moves, blocks input, waits during a running farm and resumes without catch-up',async({page})=>{
   await start(page);const f=disasterFixture();f.state.disasters.enabled=false;f.state.disasters.flags=8;f.state.scenario.farm.calendar.day=6;
-  const game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));await reveal(page,'#play-pause');await page.locator('#play-pause').click();await page.clock.runFor(4200);
+  const game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));await (await speedItem(page,'#play-pause')).click();await page.clock.runFor(4200);
   const win=await message(page,'wind-ended');expect(await win.evaluate(el=>(el as HTMLDialogElement).matches(':modal'))).toBe(true);
   const date=await page.locator('#farm-date').textContent();await page.clock.runFor(8000);await expect(page.locator('#farm-date')).toHaveText(date!);
-  const next=(await page.locator('#next-day').boundingBox())!;await page.mouse.click(next.x+next.width/2,next.y+next.height/2);await expect(win).toBeVisible();await expect(page.locator('#farm-date')).toHaveText(date!);
+  const next=(await page.locator('#speed-menu-button').boundingBox())!;await page.mouse.click(next.x+next.width/2,next.y+next.height/2);await expect(page.locator('#original-speed-menu')).toHaveCount(0);await expect(win).toBeVisible();await expect(page.locator('#farm-date')).toHaveText(date!);
   await win.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');expect(await win.boundingBox()).toMatchObject({x:202,y:150});
   await page.screenshot({path:'artifacts/browser-disaster-message.png'});await page.keyboard.press('Tab');await expect(page.locator('#disaster-message-ok')).toBeFocused();await page.keyboard.press('Enter');await expect(win).toHaveCount(0);
   await page.clock.runFor(4016);await expect(page.locator('#time-status')).toContainText('Running · 2 days advanced');
@@ -67,7 +67,7 @@ test('disaster and financial notices share publication order and acknowledge ind
   await start(page);const state=readNativeSave(financeMessageFixture('loan-new').save(4)).state;
   state.disasters.flags=8;state.disasters.enabled=false;state.scenario.climate.wind.fill(5);state.weather.windAnomaly=0;
   const game=GameSimulation.load(writeNativeSave(state,4),browserCrops).simulation;
-  await load(page,game.save(4));await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});
+  await load(page,game.save(4));await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});
   await message(page,'wind-ended');await expect(page.locator('#finance-message-ok')).toHaveCount(0);await page.keyboard.press('Escape');
   await expect(page.locator('[data-finance-notice]')).toHaveAttribute('data-finance-notice','166');await page.locator('#finance-message-ok').click();
   await expect(page.locator('#disaster-message-ok,#finance-message-ok')).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(game.save(4)));

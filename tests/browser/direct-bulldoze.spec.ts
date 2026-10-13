@@ -9,7 +9,7 @@ import { GameSimulation } from '../support/game';
 import { checkManualRemoval } from '../../src/simulation/manual-removal';
 import { readScenario,worldIndex } from '../../src/formats/scenario';
 import { readCrop } from '../../src/formats/crop';
-import { reveal, expectPaletteAction } from '../support/workspace';
+import { reveal, expectPaletteAction , speedItem } from '../support/workspace';
 async function load(page:Page,text:string){await page.goto('/');await page.locator('#load-farm-file').setInputFiles({name:'direct-bulldoze.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
 async function point(page:Page,x:number,y:number,scroll=true){const zoom=Number(await page.locator('#zoom').inputValue());if(scroll)await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x*16*p.z-120),Math.max(0,p.y*16*p.z-120)),{x,y,z:zoom});const r=(await page.locator('#world').boundingBox())!;return{x:r.x+(x+.5)*16*zoom,y:r.y+(y+.5)*16*zoom};}
@@ -21,7 +21,7 @@ test('direct Bulldoze clears supplies, chemicals and every network family with e
   const f=bulldozeFixture(),g=f.load().withAllCrops(browserCrops);await load(page,g.save(4));await tool(page);
   for(const [x,y] of bulldozeTargets){await click(page,x,y);remove(g,x,y);await expect(page.getByRole('dialog',{name:'Message',exact:true})).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(g.save(4)));}
   await page.keyboard.press('Escape');await expectPaletteAction(page,'View object');await expect(page.locator('#world')).toHaveCSS('cursor',/edit-view\.png.*0 0, crosshair/);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  await page.reload();await load(page,g.save(4));for(let day=0;day<8;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  await page.reload();await load(page,g.save(4));for(let day=0;day<8;day++){await (await speedItem(page,'#next-day')).click();g.dispatch({type:'advance-day'});}expect(await save(page)).toEqual(JSON.parse(g.save(4)));
 });
 
 test('original movable MESSAGE confirmation cancels without mutation, blocks background input and destroys stored contents only on YES',async({page})=>{
@@ -48,8 +48,8 @@ test('busy fields show original text, growing fields ask confirmation, and the m
   const g=new GameSimulation(w,crops).withAllCrops(browserCrops);g.dispatch({type:'buy-land',regionX:0,regionY:2});g.dispatch({type:'set-auto-clear',enabled:true});g.dispatch({type:'create-field',x:0,y:16,cropSlot:0});
   await load(page,g.save(4));await tool(page);await click(page,1,17);const dialog=page.getByRole('dialog',{name:'Message',exact:true});
   await expect(dialog).toContainText('You cannot bulldoze a field while equipment is operating in it.');await expect(dialog.getByRole('button',{name:'YES',exact:true})).toHaveCount(0);await dialog.getByRole('button',{name:'OK',exact:true}).click();expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});await tool(page);await click(page,1,17);await expect(dialog).toContainText('destroy this field?');await dialog.getByRole('button',{name:'CANCEL',exact:true}).click();expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  await reveal(page,'#play-pause');await page.locator('#play-pause').click();g.dispatch({type:'set-paused',paused:false});await tool(page);await click(page,1,17);
+  await (await speedItem(page,'#next-day')).click();g.dispatch({type:'advance-day'});await tool(page);await click(page,1,17);await expect(dialog).toContainText('destroy this field?');await dialog.getByRole('button',{name:'CANCEL',exact:true}).click();expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  await (await speedItem(page,'#play-pause')).click();g.dispatch({type:'set-paused',paused:false});await tool(page);await click(page,1,17);
   await page.clock.runFor(12000);await expect(dialog).toBeVisible();await dialog.getByRole('button',{name:'YES',exact:true}).click();remove(g,1,17);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   // The clock resumes naturally; no accumulated12-second catch-up is applied.
   const before=await page.locator('#time-status').textContent();await page.clock.runFor(4016);expect(await page.locator('#time-status').textContent()).not.toBe(before);

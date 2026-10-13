@@ -13,6 +13,8 @@ export async function acknowledgeFinanceMessages(page:Page){
  * Workspace/layout tests exercise discovery and window behavior directly. */
 export async function openWindow(page: Page, key: string) {
   await acknowledgeFinanceMessages(page);
+  // An open Speed menu (left by speedItem) overlays the launchers; close it like a user would.
+  if(key!=='speed'&&await page.locator('#original-speed-menu').isVisible())await page.locator('#speed-menu-button').click();
   if(key==='schedule'){
     if(await page.locator('[data-window="schedule"]').isVisible()){await page.locator('[data-window="schedule"] .game-window-title').focus();return;}
     const snapshot=await farmSnapshot(page),selected=await selectedFieldSlot(page,snapshot);
@@ -35,7 +37,7 @@ export async function openWindow(page: Page, key: string) {
     return;
   }
   if (key === 'options') { await page.locator('#options-menu-button').click(); await page.getByRole('menuitem', { name: 'Settings…', exact: true }).click(); return; }
-  if (key === 'speed') { await page.locator(`#${key}-menu-button`).click(); return; }
+  if (key === 'speed') { await openSpeedMenu(page); return; }
   if (['bank', 'sell', 'evaluation', 'balance'].includes(key)) { await page.locator(`#window-${key}`).click(); return; }
   if (key === 'expert') {
     await page.locator('#windows-menu-button').click();
@@ -84,8 +86,15 @@ async function uncoverMap(page:Page){
   }
   await page.locator('#viewport').focus();
 }
+/** The Speed menu replaced the Speed window; its Pause/Resume and Next Day items exist only while it is open. */
+export async function openSpeedMenu(page:Page){
+  await acknowledgeFinanceMessages(page);
+  if(!await page.locator('#original-speed-menu').isVisible())await page.locator('#speed-menu-button').click();
+  await expect(page.locator('#original-speed-menu')).toBeVisible();
+}
 export async function reveal(page: Page, selector: string) {
   if (selector === '#world' || selector === '#viewport') { await uncoverMap(page); return; }
+  if (selector === '#next-day' || selector === '#play-pause') { await openSpeedMenu(page); return; }
   const target = page.locator(selector).first();
   await target.waitFor({ state: "attached" });
   const key = await target.evaluate(el => el.closest<HTMLElement>('[data-window]')?.dataset.window);
@@ -113,4 +122,8 @@ export async function expectPaletteAction(page:Page,name:string){
 /** The control strip's Funds readout equals the expected simulation cash. */
 export async function expectFarmCash(page:Page,cash:number){
   await expect(page.locator('#farm-cash')).toHaveText(`$${cash.toLocaleString('en-US')}`);
+}
+/** A Speed menu item (#play-pause or #next-day), opening the menu first. */
+export async function speedItem(page:Page,selector:'#play-pause'|'#next-day'){
+  await openSpeedMenu(page);return page.locator(selector);
 }

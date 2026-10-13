@@ -118,7 +118,7 @@ At the user's request, native-only windows now match the original windows: they 
 - `.native-button`: caption `BevelButton`s.
 
 Converted so far:
-- **Speed:** status box, speed slider with its value inset, and Play/Pause and Next day buttons.
+- **Speed:** removed (2026-10-12). Its controls moved to the Speed menu (`src/ui/SpeedMenu.tsx`). Its run/days, weekly-order and calendar-delay text remains as screen-reader status (`TimeStatus`); the weather line duplicated the Weather window and was dropped.
 - **Settings:** framed, with Zoom and Music `.chrome-select`s, the Volume `.chrome-range` and the audio status line.
 - **New Game:** region chooser rebuilt (see new-farm.md); the setup strip uses `.chrome-input` fields.
 - **Terrain designer:** rebuilt (see new-farm.md).

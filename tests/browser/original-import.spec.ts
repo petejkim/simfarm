@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow , speedItem } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -22,7 +22,7 @@ async function save(page: Page, name: string) {
 test('original SSM import retains the active session, continues and restores without fetching a scenario', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   const before = (await save(page, 'before')).data;
   const original = GameSimulation.load(JSON.stringify(before), browserCrops, newFarmAssets.townLayouts).simulation.withAllCrops(browserCrops);
   const bytes = source('SCEN6.SSM');
@@ -37,7 +37,7 @@ test('original SSM import retains the active session, continues and restores wit
   expect(imported.data).toEqual(JSON.parse(expected.save(null)));
   expect(imported.data.scenario.source).toBe(bytes.toString('hex'));
   expect(imported.data.runtime.random).toEqual(before.runtime.random);
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); expected.dispatch({ type: 'advance-day' });
   const advanced = (await save(page, 'advanced')).data;
   expect(advanced).toEqual(JSON.parse(expected.save(null)));
   await load(page, Buffer.from(JSON.stringify(advanced)), 'imported.simfarm.json');
@@ -88,7 +88,7 @@ test('original imports keep unequal calendar and machinery clocks distinct throu
   const imported = (await save(page, 'unequal-imported')).data;
   expect(imported.runtime.dayTicks).toBe(27);
   const steps = imported.scenario.farm.dayDelayTicks + 1 - 27;
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   const next = (await save(page, 'unequal-next')).data;
   expect(next.runtime.daysAdvanced).toBe(imported.runtime.daysAdvanced + 1);
   expect(next.runtime.dayTicks).toBe(0);
@@ -106,7 +106,7 @@ test('loaded pause depth decides original resume pacing for both running and pau
   baseline.runtime.disasters.frameDelay = 47;
   for (const running of [false, true]) for (const depth of [0, 1, 2, 255]) {
     await load(page, Buffer.from(JSON.stringify(baseline)), 'pause-baseline.json');
-    if (running) { await reveal(page, '#play-pause'); await page.locator('#play-pause').click(); }
+    if (running) { await (await speedItem(page,'#play-pause')).click(); }
     await expect(page.locator('#time-status')).toContainText(running ? 'Running' : 'Paused');
     const prior = (await save(page, 'pause-prior')).data;
     const bytes = Buffer.from(source('SCEN0.SSM'));
@@ -129,7 +129,7 @@ test('loaded pause depth decides original resume pacing for both running and pau
     expect(actual).toEqual(JSON.parse(expected.save(null)));
     await load(page, Buffer.from(JSON.stringify(actual)), 'pause-restored.json');
     expect((await save(page, 'pause-restored')).data).toEqual(actual);
-    await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
+    await (await speedItem(page,'#next-day')).click(); expected.dispatch({ type: 'advance-day' });
     expect((await save(page, 'pause-next')).data).toEqual(JSON.parse(expected.save(null)));
   }
 });
@@ -143,7 +143,7 @@ test('equipment pacing bytes survive browser checkpoints; v21 keeps unknown iden
   expect(migrated.version).toBe(28);
   expect(migrated).toEqual({ ...current, scenario: { ...current.scenario, farm: { ...current.scenario.farm, equipmentPacingByte: null } },
     runtime: { ...current.runtime, originalPause: { depth: null, speedChecks: [null, null, null, null, null] } } });
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   const advanced = (await save(page, 'byte-advanced')).data; expect(advanced.scenario.farm.equipmentPacingByte).toBeNull();
   for (const byte of [undefined, -1, 256, 0.5, '2']) {
     const bad = structuredClone(advanced); bad.scenario.farm.equipmentPacingByte = byte;

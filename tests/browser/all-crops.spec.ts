@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import { expectWeekPlan } from '../support/schedule-window';
 import { browseSupply } from '../support/supply-actions';
 import { plantField } from '../support/field-actions';
-import { reveal, openWindow, expectPaletteAction } from '../support/workspace';
+import { reveal, openWindow, expectPaletteAction , speedItem } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { shopFixture } from '../support/livestock';
@@ -51,7 +51,7 @@ test('all crops are immediately plantable and plannable with source artwork and 
   await expect(page.locator('#buy-description')).toContainText(browserCrops.find(c=>`${c.id}.crp`===game.getSnapshot().scenario.cropFiles[23])!.description);
   const checkpoint = await save(page); await page.reload(); await expect(page.locator('#save-status')).toHaveText('Saved farm restored (paused).'); // the browser-stored game reopens
   await load(page, JSON.stringify(checkpoint)); expect(await save(page)).toEqual(checkpoint);
-  for (let day = 0; day < 8; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 8; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   expect(errors).toEqual([]);
 });

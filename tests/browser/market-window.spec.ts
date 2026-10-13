@@ -9,7 +9,7 @@ import {cropBadgeTile} from '../../src/formats/crop-slots';
 import {marketBarTop} from '../../src/simulation/market-view';
 import {worldIndex} from '../../src/formats/scenario';
 import {readNativeSave,writeNativeSave} from '../../src/formats/native-save';
-import {reveal, focusEdit } from '../support/workspace';
+import {reveal, focusEdit , speedItem } from '../support/workspace';
 const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url));
 const entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),palette=readPalette(entries.find(e=>e.name==='simfarm.pal')!.bytes);
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'market.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
@@ -75,7 +75,7 @@ test('Market retains unknown samples and separate trade/history prices, updates 
   await expect(page.locator('#market-price')).toHaveText(String((Math.floor(def.price/10)*yieldWord)&65535));
   expect(await page.locator('.market-bars>span').first().evaluate(e=>e.getBoundingClientRect().height)).toBe(0); // unknown sample: no bar
   expect(await save(page)).toEqual(JSON.parse(saved));
-  await reveal(page,'#next-day');await page.locator('#next-day').click();live.dispatch({type:'advance-day'});await page.locator('#window-market').click();
+  await (await speedItem(page,'#next-day')).click();live.dispatch({type:'advance-day'});await page.locator('#window-market').click();
   const next=live.getSnapshot();await expect(page.locator('#market-history td').last()).toHaveText(String(next.market.history[0][29]));
   await expect(page.locator('#market-price')).toHaveText(String((Math.floor(next.scenario.cropDefinitions[0].price/10)*yieldWord)&65535));
   expect(await save(page)).toEqual(JSON.parse(live.save(4)));await page.reload();await load(page,live.save(4));await page.locator('#window-market').click();

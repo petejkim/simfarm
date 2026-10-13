@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -27,7 +27,7 @@ test('saved field clearing advances original animation tiles, pauses and reloads
   const pixels = () => page.locator('#world').evaluate((canvas: HTMLCanvasElement, box) =>
     Array.from(canvas.getContext('2d')!.getImageData(box.x * 16, box.y * 16, box.width * 16, box.height * 16).data), { x, y, width, height });
   const initial = await pixels();
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); expected.dispatch({ type: 'advance-day' });
   const first = await pixels(); expect(first).not.toEqual(initial);
   await page.waitForTimeout(150); expect(await pixels()).toEqual(first); // Native Pause also freezes clearing.
   const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
@@ -36,7 +36,7 @@ test('saved field clearing advances original animation tiles, pauses and reloads
   expect(saved).toEqual(JSON.parse(expected.save(4))); expect(saved.runtime.finances.clearing.count).toBe(64);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); expect(await pixels()).toEqual(first);
-  for (let day = 0; day < 9; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 9; day++) { await (await speedItem(page,'#next-day')).click(); expected.dispatch({ type: 'advance-day' }); }
   const finalDownload = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
   await (await finalDownload).saveAs(path);
   const done = JSON.parse(readSaveText(path));

@@ -7,7 +7,7 @@ import {readArchive} from '../../src/formats/archive';
 import {readPalette,decodePlanar} from '../../src/formats/graphics';
 import {GameSimulation} from '../support/game';
 import {browserCrops} from '../support/crop-catalog';
-import {reveal} from '../support/workspace';
+import {reveal, speedItem } from '../support/workspace';
 const source=(name:string)=>readFileSync(new URL('../../../simfarm-dos/'+name,import.meta.url));
 const archive=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
 const asset=(name:string)=>archive.find(entry=>entry.name===name)!.bytes;
@@ -35,22 +35,22 @@ test('harvest workers alternate both original frames, freeze on pause, reload un
   const pixels=()=>page.locator('#world').evaluate((canvas:HTMLCanvasElement,p)=>[...canvas.getContext('2d')!.getImageData(p.x*16,p.y*16,16,16).data],position);
   const initial=await pixels();expect(matchesFrame(initial,0)).toBe(true);expect(matchesFrame(initial,1)).toBe(false);
   await page.clock.runFor(600);expect(await pixels()).toEqual(initial);expect(await save(page)).toEqual(JSON.parse(text));
-  await reveal(page,'#play-pause');await page.locator('#play-pause').click();await page.clock.runFor(288);
+  await (await speedItem(page,'#play-pause')).click();await page.clock.runFor(288);
   const alternate=await pixels();expect(matchesFrame(alternate,1)).toBe(true);expect(alternate).not.toEqual(initial);
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});
   await page.clock.runFor(300);expect(await pixels()).toEqual(alternate);
   await page.evaluate(()=>{delete (document as unknown as {hidden?:boolean}).hidden;document.dispatchEvent(new Event('visibilitychange'));});
   await page.clock.runFor(16);expect(await pixels()).toEqual(alternate);
-  await page.locator('#play-pause').click();const paused=await save(page);
+  await (await speedItem(page,'#play-pause')).click();const paused=await save(page);
   expect(readNativeSave(JSON.stringify(paused)).state.scenario.cells[index]).toEqual(snapshot.scenario.cells[index]);
   await page.clock.runFor(800);expect(await pixels()).toEqual(alternate);expect(await save(page)).toEqual(paused);
-  await page.locator('#play-pause').click();await page.clock.runFor(256);
-  expect(matchesFrame(await pixels(),0)).toBe(true);await page.locator('#play-pause').click();
+  await (await speedItem(page,'#play-pause')).click();await page.clock.runFor(256);
+  expect(matchesFrame(await pixels(),0)).toBe(true);await (await speedItem(page,'#play-pause')).click();
   await reveal(page,'#viewport');await page.locator('#viewport').evaluate((el,p)=>el.scrollTo((p.x-3)*16,(p.y-3)*16),position);
   await page.screenshot({path:'artifacts/browser-harvest-workers.png'});
   await page.reload();await load(page,JSON.stringify(paused));expect(matchesFrame(await pixels(),0)).toBe(true);
   expect(await save(page)).toEqual(paused);
-  for(let day=0;day<3;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();}
+  for(let day=0;day<3;day++){await (await speedItem(page,'#next-day')).click();}
   const after=await save(page);expect(readNativeSave(JSON.stringify(after)).state.scenario.cells[index].terrain&0x800).toBe(0);
   const finished=await pixels();expect(matchesFrame(finished,0)).toBe(false);expect(matchesFrame(finished,1)).toBe(false);
 });

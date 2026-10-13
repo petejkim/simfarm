@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { aircraftCatalog } from '../support/aircraft-browser';
-import { reveal, openWindow, expectFarmCash } from '../support/workspace';
+import { reveal, openWindow, expectFarmCash , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -44,7 +44,7 @@ async function launch(page: Page, game: ReturnType<typeof prepared>['game']) {
 }
 /** Pause/resume through the ordinary Speed controls (no flight panel), mirrored in the expected game. */
 async function pause(page: Page, game: ReturnType<typeof prepared>['game']) {
-  await reveal(page, '#play-pause'); await page.locator('#play-pause').click(); game.dispatch({ type: 'set-paused', paused: !game.getSnapshot().paused });
+  await (await speedItem(page,'#play-pause')).click(); game.dispatch({ type: 'set-paused', paused: !game.getSnapshot().paused });
 }
 /** Flight keys work from anywhere: S/W altitude, A/D turn, E end, Space spray. */
 const KEYS: Partial<Record<FlightControl, string>> = { climb: 'KeyS', descend: 'KeyW', left: 'KeyA', right: 'KeyD', end: 'KeyE', 'spray-toggle': 'Space' };
@@ -91,7 +91,7 @@ async function spritesMatch(page: Page, f: AircraftFlight) {
 test('Fly captures the map, original sprites follow keyboard steering, pause/step and resize preserve the flight, and End lands at the airport', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await freeze(page); await page.goto('/');
   const { game } = prepared(); await load(page, game.save(4)); await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2'); await launch(page, game);
-  await expect(page.locator('#next-day')).toBeDisabled();
+  await expect((await speedItem(page,'#next-day'))).toBeDisabled();
   await spritesMatch(page, game.getSnapshot().aircraftFlight!);
   await press(page, game, 'spray-toggle'); await press(page, game, 'right'); await press(page, game, 'climb'); await fly(page, game, 4000);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
@@ -110,14 +110,15 @@ test('Fly captures the map, original sprites follow keyboard steering, pause/ste
   await page.screenshot({ path: 'artifacts/browser-flight.png', fullPage: true });
   await press(page, game, 'end'); await fly(page, game, 2000); expect(game.getSnapshot().lastFlightEnd?.kind).toBe('landed');
   await expect(page.locator('.map-panel')).not.toHaveClass(/is-flying/); await expect(page.locator('#flight-result')).toHaveCount(0); // no result screen
-  await reveal(page, '#next-day'); await expect(page.locator('#next-day')).toBeEnabled();
+  await expect((await speedItem(page,'#next-day'))).toBeEnabled();
   expect(await save(page)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
 
 test('held flight keys queue one control at a time and Space never presses the focused button', async ({ page }) => {
   await freeze(page); await page.goto('/'); const { game } = prepared(); await load(page, game.save(4)); await launch(page, game);
-  // #play-pause keeps focus after pausing; Space must only toggle spraying, not resume the game.
-  await expect(page.locator('#play-pause')).toBeFocused(); await page.keyboard.press('Space');
+  // The Speed heading keeps focus after Pause; Space must only toggle spraying, not reopen the menu or resume the game.
+  await expect(page.locator('#speed-menu-button')).toBeFocused(); await page.keyboard.press('Space');
+  await expect(page.locator('#original-speed-menu')).toHaveCount(0);
   await expect(page.locator('#time-status')).toContainText('Paused');
   expect((await save(page)).runtime.aircraftFlight.inputs).toEqual(['spray-toggle']);
   await press(page, game, 'spray-toggle'); // undo, then hold a turn key
@@ -126,8 +127,8 @@ test('held flight keys queue one control at a time and Space never presses the f
   await page.clock.runFor(1000); await page.keyboard.up('KeyA');
   expect((await save(page)).runtime.aircraftFlight.inputs).toEqual(['spray-toggle', 'spray-toggle', 'left']);  // While flying, a held key keeps turning as each queued turn is consumed.
   const before = (await save(page)).runtime.aircraftFlight.heading;
-  await page.keyboard.down('KeyA'); await reveal(page, '#play-pause'); await page.locator('#play-pause').click();
-  await page.clock.runFor(8000); await page.locator('#play-pause').click(); await page.keyboard.up('KeyA');
+  await page.keyboard.down('KeyA'); await (await speedItem(page,'#play-pause')).click();
+  await page.clock.runFor(8000); await (await speedItem(page,'#play-pause')).click(); await page.keyboard.up('KeyA');
   const turned = ((before - (await save(page)).runtime.aircraftFlight.heading) + 8) % 8;
   expect(turned).toBeGreaterThanOrEqual(2);
 });
@@ -190,10 +191,10 @@ test('original engine PCM plays without frame restarts, caches between clips, an
   await expect.poll(async () => (await voices()).length).toBeGreaterThanOrEqual(2);
   const initial = await voices(); expect(initial[1].time - initial[0].time).toBeGreaterThanOrEqual(initial[0].duration - 0.02);
   expect(initial[0].stopped).toBe(false); expect(requests).toHaveLength(1);
-  await reveal(page, '#play-pause'); await page.locator('#play-pause').click(); await expect.poll(async () => (await voices()).at(-1)!.stopped).toBe(true);
+  await (await speedItem(page,'#play-pause')).click(); await expect.poll(async () => (await voices()).at(-1)!.stopped).toBe(true);
   const checkpoint = await save(page), count = (await voices()).length;
   await page.keyboard.press('KeyD'); expect((await voices()).length).toBe(count); // Queued controls while paused are silent.
-  await toggleOption(page,'Sound Effects'); await reveal(page, '#play-pause'); await page.locator('#play-pause').click();
+  await toggleOption(page,'Sound Effects'); await (await speedItem(page,'#play-pause')).click();
   await expect(page.locator('#time-status')).toContainText('Running');
   expect(requests).toHaveLength(1); expect((await voices()).length).toBe(count);
   await toggleOption(page,'Sound Effects'); await expect.poll(async () => (await voices()).length).toBeGreaterThan(count);
@@ -208,12 +209,12 @@ test('missing engine audio reports once per flight attempt and can recover witho
   await page.goto('/'); const f = prepared(); await load(page, f.game.save(4)); await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2');
   await toggleOption(page,'Sound Effects'); await openWindow(page, 'aircraft'); await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click();
   await expect(page.locator('#sound-error')).toContainText('plane.voc');
-  await reveal(page, '#play-pause'); await page.locator('#play-pause').click(); const snapshot = await save(page);
+  await (await speedItem(page,'#play-pause')).click(); const snapshot = await save(page);
   expect(snapshot.runtime.aircraftFlight).not.toBeNull(); expect(requests).toBe(1);
   const expected = GameSimulation.load(JSON.stringify(snapshot), browserCrops).simulation.withAllCrops(browserCrops);
   await press(page, expected, 'right'); expect(await save(page)).toEqual(JSON.parse(expected.save(4)));
-  await page.unroute('**/plane.voc'); await reveal(page, '#play-pause'); await page.locator('#play-pause').click();
-  await expect(page.locator('#sound-error')).toHaveCount(0); await reveal(page, '#play-pause'); await page.locator('#play-pause').click();
+  await page.unroute('**/plane.voc'); await (await speedItem(page,'#play-pause')).click();
+  await expect(page.locator('#sound-error')).toHaveCount(0); await (await speedItem(page,'#play-pause')).click();
   expect(errors).toEqual([]);
 });
 

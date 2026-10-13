@@ -4,7 +4,7 @@ import {balanceWindowView} from '../../src/simulation/balance-view';
 import {BALANCE_LABELS} from '../../src/formats/balance-window';
 import {shopFixture} from '../support/livestock';
 import {browserCrops} from '../support/crop-catalog';
-import {openWindow,reveal} from '../support/workspace';
+import {openWindow,reveal, speedItem } from '../support/workspace';
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'balance.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
@@ -47,7 +47,7 @@ test('Balance Sheet tracks annual collection, town choice, loans and saved conti
   for(let day=0;day<4;day++){
     await open(page);await values(page,balanceWindowView(game.getSnapshot(),browserCrops));expect(await save(page)).toEqual(JSON.parse(game.save(4)));
     if(day===2)await load(page,JSON.stringify(await save(page)));
-    await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});
+    await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});
     if(game.getSnapshot().pendingTown){await reveal(page,'#town-residential');await page.locator('#town-residential').click();game.dispatch({type:'choose-town',choice:'residential'});}
   }
   await openWindow(page,'bank');await page.locator('#repay-loan').click();game.dispatch({type:'repay-loan'});await open(page);

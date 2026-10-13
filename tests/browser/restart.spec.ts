@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { newGame } from '../support/workspace';
+import { newGame , speedItem } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -47,7 +47,7 @@ test('accepted custom preview survives browser import and retains exact continua
   expect(initial.runtime.setup.terrainHistory).toEqual(preview.terrainHistory);
   expect(initial.runtime.setup.climateSelection).toEqual({ precipitation: 0, temperature: 3, wind: 0 });
   expect(initial.runtime.weather.soilMoisture).toBe(preview.terrain.soilMoisture);
-  for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 7; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   const advanced = await save(page, 'preview-advanced'); expect(advanced).toEqual(JSON.parse(game.save(null)));
   await load(page, JSON.stringify(advanced)); expect(await save(page, 'preview-restored')).toEqual(advanced);
   const imported = game.importOriginal(source('SCEN4.SSM'), crops).simulation.withAllCrops(browserCrops);
@@ -74,10 +74,10 @@ test('a generated restart checkpoint preserves its original archive and continue
   expect(initial.version).toBe(28); expect(initial.runtime.newFarm.provenance.kind).toBe('restart');
   expect(initial.runtime.setup.sourceArchive).toBe(source('SCEN4.SSM').toString('hex'));
   expect(initial).toEqual(JSON.parse(game.save(null)));
-  for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 7; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   const advanced = await save(page, 'advanced'); expect(advanced).toEqual(JSON.parse(game.save(null)));
   await load(page, JSON.stringify(advanced)); expect(await save(page, 'restored')).toEqual(advanced);
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   expect(await save(page, 'continued')).toEqual(JSON.parse(game.save(null)));
   expect(requests).toEqual([]); expect(errors).toEqual([]);
 });
@@ -85,7 +85,7 @@ test('a generated restart checkpoint preserves its original archive and continue
 test('New Game starts fresh, cancels safely and restores its generated continuation', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 844 });
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   const before = await save(page, 'live-before');
   await newGame(page); await page.locator('#new-farm-seed').fill('9029');
   await expect(page.locator('#new-farm-session')).toHaveCount(0);
@@ -101,7 +101,7 @@ test('New Game starts fresh, cancels safely and restores its generated continuat
   const expected = GameSimulation.load(writeNativeSave(draft.accept('selected-climate'), null), browserCrops, assets.townLayouts).simulation.withAllCrops(browserCrops);
   expect(restarted).toEqual(JSON.parse(expected.save(null)));
   expect(restarted.runtime.newFarm.provenance.kind).toBe('cold-start');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); expected.dispatch({ type: 'advance-day' });
   const advanced = await save(page, 'live-generated-day'); expect(advanced).toEqual(JSON.parse(expected.save(null)));
   await load(page, JSON.stringify(advanced)); expect(await save(page, 'live-generated-restored')).toEqual(advanced);
 });
@@ -117,7 +117,7 @@ test('all eight New Game markers start fresh and continue after original preset 
     await expect(page.locator('#region-design')).toHaveCount(0);
     await expect(page.locator('#map-status')).toHaveText(`Scenario ${id + 1} · original terrain`);
     expect(await save(page, `live-region-${id}`)).toEqual(JSON.parse(expected.save(id)));
-    await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
+    await (await speedItem(page,'#next-day')).click(); expected.dispatch({ type: 'advance-day' });
     const advanced = await save(page, `live-region-day-${id}`); expect(advanced).toEqual(JSON.parse(expected.save(id)));
     await load(page, JSON.stringify(advanced)); expect(await save(page, `live-region-restored-${id}`)).toEqual(advanced);
   }
@@ -149,7 +149,7 @@ test('invalid setup state leaves the browser farm intact and legacy original sav
   const migrated = await save(page, 'legacy');
   expect(migrated.runtime.setup).toEqual({ terrainHistory: null, sourceArchive: null, previewRaw: null, climateSelection: null });
   expect(migrated).toEqual(JSON.parse(expected.save(0)));
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); expected.dispatch({ type: 'advance-day' });
   const advanced = await save(page, 'legacy-advanced'); expect(advanced).toEqual(JSON.parse(expected.save(0)));
   await load(page, JSON.stringify(advanced)); expect(await save(page, 'legacy-restored')).toEqual(advanced);
 });

@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { clickFarmTile, setAutoDoze } from '../support/field-actions';
-import { reveal, expectFarmCash } from '../support/workspace';
+import { reveal, expectFarmCash , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -45,7 +45,7 @@ test('original Buy purchases ground sprites and stored machines with exact saved
   const tractor = decodePlanar(asset('mskdtile.til').subarray(0, 128), 16, 16, palette, 7).rgba;
   for (let p = 0; p < ground.length; p += 4) if (tractor[p + 3]) ground.set(tractor.subarray(p, p + 4), p);
   expect(await page.locator('#world').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(160, 160, 16, 16).data))).toEqual(Array.from(ground));
-  for (let d = 0; d < 7; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let d = 0; d < 7; d++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page, path)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
 

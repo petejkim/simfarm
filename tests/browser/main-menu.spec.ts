@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -55,10 +55,10 @@ test('source menu order uses selectable text, keyboard navigation and original d
 });
 
 test('File Save downloads a dated gzip checkpoint and Load Game restores the exact native checkpoint', async ({ page }) => {
-  await start(page); await reveal(page, '#next-day'); await page.locator('#next-day').click(); const before = await save(page);
+  await start(page); await (await speedItem(page,'#next-day')).click(); const before = await save(page);
   expect(before.filename).toMatch(/^simfarm-1-\d+-\d+-\d+\.simfarm\.json\.gz$/);
   expect((await save(page))).toEqual(before); // saving again repeats the same name and checkpoint
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   await pick(page, 'checkpoint.json', Buffer.from(JSON.stringify(before.data))); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   expect((await save(page)).data).toEqual(before.data);
   await pick(page, 'broken.json', Buffer.from('{')); await expect(page.locator('#save-status')).toContainText('Could not load farm');
@@ -66,13 +66,13 @@ test('File Save downloads a dated gzip checkpoint and Load Game restores the exa
 });
 
 test('File Load Game follows ordinary original import without replaying chooser generation', async ({ page }) => {
-  await start(page); await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await start(page); await (await speedItem(page,'#next-day')).click();
   const before = (await save(page)).data, bytes = source('SCEN6.SSM');
   const prior = GameSimulation.load(JSON.stringify(before), browserCrops, newFarmAssets.townLayouts).simulation.withAllCrops(browserCrops);
   const expected = prior.importOriginal(bytes, crops).simulation.withAllCrops(browserCrops);
   await page.route('**/assets/new-farm-runtime.json', route => route.abort());
   await pick(page, 'SCEN6.SSM', bytes); await expect(page.locator('#map-status')).toHaveText('Imported farm · original terrain');
   expect((await save(page)).data).toEqual(JSON.parse(expected.save(null)));
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); expected.dispatch({ type: 'advance-day' });
   expect((await save(page)).data).toEqual(JSON.parse(expected.save(null)));
 });

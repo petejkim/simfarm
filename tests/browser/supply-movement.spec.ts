@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import { clickFarmTile } from '../support/field-actions';
-import { reveal } from '../support/workspace';
+import { reveal , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -57,7 +57,7 @@ test('original Move tool moves all five supply categories with exact original pi
   }
   await page.reload(); await load(page, game.save(4)); await startMove(page);
   await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');
-  for (let d = 0; d < 7; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let d = 0; d < 7; d++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
 

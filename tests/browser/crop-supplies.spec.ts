@@ -4,7 +4,7 @@ import { selectSupply } from '../support/supply-actions';
 import { schedulePlant, expectWeekPlan } from '../support/schedule-window';
 import { buyBuilding } from '../support/building-actions';
 import { clickFarmTile, sprayField } from '../support/field-actions';
-import { reveal, expectFarmCash } from '../support/workspace';
+import { reveal, expectFarmCash , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -88,9 +88,9 @@ test('supply controls buy original stock, plays feedback, preserves checkpoints 
   expect((await played(page)).length).toBe(sounds);
   await schedulePlant(page,20,20,1,4);g.dispatch({type:'edit-field-plan',fieldSlot:1,week:1,action:{kind:'plant',cropSlot:4}});
   await expectWeekPlan(page,1,/Plant /);
-  for(let n=0;n<7;n++){await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}
+  for(let n=0;n<7;n++){await (await speedItem(page,'#next-day')).click();g.dispatch({type:'advance-day'});}
   expect(g.getSnapshot().scenario.inventory.some(i=>i.active&&i.type===196)).toBe(false);
-  for(let n=0;n<10 && g.getSnapshot().scenario.fields[1].state!==4;n++){await reveal(page, '#next-day'); await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}
+  for(let n=0;n<10 && g.getSnapshot().scenario.fields[1].state!==4;n++){await (await speedItem(page,'#next-day')).click();g.dispatch({type:'advance-day'});}
   await sprayField(page,g.getSnapshot().scenario.fields[1].x,g.getSnapshot().scenario.fields[1].y,'fertilizer');g.dispatch({type:'treat-field',fieldSlot:1,treatment:'fertilizer'});
   expect(g.getSnapshot().lastTreatmentResult).toMatchObject({ok:true,source:'stored'});
   expect(await save(page)).toEqual(JSON.parse(g.save(4)));expect(errors).toEqual([]);

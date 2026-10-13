@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { reveal, openWindow, focusEdit } from '../support/workspace';
+import { reveal, openWindow, focusEdit , speedItem } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 
 async function start(page: Page) {
@@ -36,7 +36,7 @@ test('source control strip keeps desktop geometry, replaces bitmap words with se
   });
   expect(caption).toBe('BUY');
   const date = await page.locator('#farm-date').textContent();
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); await expect(page.locator('#farm-date')).not.toHaveText(date!);
+  await (await speedItem(page,'#next-day')).click(); await expect(page.locator('#farm-date')).not.toHaveText(date!);
   await reveal(page, '#window-bank'); await page.locator('#window-bank').click(); await reveal(page, '#loan-amount'); await page.locator('#loan-amount').fill('1000');
   const cash = Number((await page.locator('#farm-cash').textContent())!.replace(/[^\d-]/g, '')); await reveal(page, '#borrow-loan'); await page.locator('#borrow-loan').click();
   await expect(page.locator('#loan-balance')).toHaveText('$1,000');

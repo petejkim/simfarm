@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { buyBuilding, selectBuilding } from '../support/building-actions';
 import {clickFarmTile} from '../support/field-actions';
-import { reveal } from '../support/workspace';
+import { reveal , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -37,7 +37,7 @@ test('purchased water pump wets original ditch pixels, refreshes fields and cont
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await buyBuilding(page,70,10,10); game.dispatch({ type: 'build', buildingType: 70, x: 10, y: 10 });
   const pixel = () => page.locator('#world').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(14 * 16, 10 * 16, 16, 16).data));
-  const before = await pixel(); await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  const before = await pixel(); await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   const wet = await pixel(); expect(wet).not.toEqual(before);
   const atlas = PNG.sync.read(readFileSync('public/assets/scenario4.tiles.png')), expected: number[] = [];
   for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
@@ -51,7 +51,7 @@ test('purchased water pump wets original ditch pixels, refreshes fields and cont
   expect(saved.scenario.irrigation.flow.length).toBeGreaterThan(0);
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); expect(await pixel()).toEqual(wet);
-  for (let i = 0; i < 2; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let i = 0; i < 2; i++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(game.getSnapshot().scenario.fields[1].bytes[51]).toBe(9);
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   // The wave has advanced since the first wet atlas check. A failed load must
@@ -71,7 +71,7 @@ test('wind-powered building saves original masked footprint and respects low win
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'wind.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await buyBuilding(page,71,20,20); game.dispatch({ type: 'build', buildingType: 71, x: 20, y: 20 });
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   const saved = await download(page, 'artifacts/browser-irrigation-wind.simfarm.json'); expect(saved).toEqual(JSON.parse(game.save(4)));
   expect(saved.scenario.irrigation.phase).toBe(1); expect(saved.scenario.irrigation.active).toBe(false); expect(saved.scenario.irrigation.flow).toEqual([]);
   const cells = game.getSnapshot().scenario.cells;
@@ -106,13 +106,13 @@ test('original palette controls dig a connected supply, install and operate a va
     expected.push(...atlas.data.subarray(offset, offset + 4));
   }
   expect(pixels).toEqual(expected);
-  for (let i = 0; i < 3; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let i = 0; i < 3; i++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(game.getSnapshot().scenario.fields[1].bytes[51]).toBe(4);
   const path = 'artifacts/browser-ditches.simfarm.json'; expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await reveal(page,'#viewport');await page.getByRole('button',{name:'Valve',exact:true}).click();await clickFarmTile(page,15,10);
   game.dispatch({type:'toggle-valve',x:15,y:10});
-  for (let i = 0; i < 8; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let i = 0; i < 8; i++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(game.getSnapshot().scenario.fields[1].bytes[51]).toBeGreaterThan(4);
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page,'#viewport');await expect(page.getByRole('button',{name:'Valve',exact:true})).toBeVisible();

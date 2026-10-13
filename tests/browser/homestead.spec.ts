@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import {farmSnapshot} from '../support/field-checkpoint';
-import {acknowledgeFinanceMessages} from '../support/workspace';
+import {acknowledgeFinanceMessages, speedItem } from '../support/workspace';
 import {toggleOption,expectOptionChecked} from '../support/options-menu';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -52,14 +52,14 @@ test('annual homestead updates repaint original tiles, persist once, and play or
   });
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(checkpoint());
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); await reveal(page, '#town-choice'); await expect(page.locator('#town-choice')).toBeVisible();
+  await (await speedItem(page,'#next-day')).click(); await reveal(page, '#town-choice'); await expect(page.locator('#town-choice')).toBeVisible();
   await reveal(page, '#town-airport'); await page.locator('#town-airport').click(); expect((await farmSnapshot(page)).finances.homestead.rank).toBe(5);
   expect(music).toEqual([]); expect(sounds).toEqual([]); // No automatic opt-in, even on a genuine game event.
   await page.locator('#load-farm-file').setInputFiles(checkpoint());
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await toggleOption(page,'Music');await reveal(page, '#music');await page.locator('#music').selectOption('amain'); await expect(page.locator('#audio-status')).toContainText('Playing amain');
   await toggleOption(page,'Sound Effects'); await expectOptionChecked(page,'Sound Effects',true);
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
+  await (await speedItem(page,'#next-day')).click(); await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
   await expect(page.locator('#audio-status')).toContainText('Playing cowman'); await expect(page.locator('#music')).toHaveValue('cowman');
   await expect.poll(() => page.evaluate(() => {
     const pcm = (window as unknown as { __homePcm: { length: number; analyser: AnalyserNode }[] }).__homePcm;
@@ -82,10 +82,10 @@ test('annual homestead updates repaint original tiles, persist once, and play or
   await expect(page.locator('#save-status')).toContainText('financial state'); await page.locator('#file-error-ok').click(); expect((await farmSnapshot(page)).finances.homestead.rank).toBe(5);
   const count = sounds.length; await page.locator('#load-farm-file').setInputFiles(path);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); expect((await farmSnapshot(page)).finances.homestead.rank).toBe(5);
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); expect(sounds).toHaveLength(count);
+  await (await speedItem(page,'#next-day')).click(); expect(sounds).toHaveLength(count);
   await page.locator('#load-farm-file').setInputFiles(checkpoint(40000, 5));
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
+  await (await speedItem(page,'#next-day')).click(); await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
 
   await expect.poll(() => page.evaluate(() => {
     const pcm = (window as unknown as { __homePcm: { length: number; analyser: AnalyserNode }[] }).__homePcm;
@@ -117,7 +117,7 @@ test('muting cancels a pending homestead sample and missing sound assets leave t
   try {
     await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(checkpoint());
     await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await toggleOption(page,'Sound Effects');
-    await reveal(page, '#next-day'); await page.locator('#next-day').click(); await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
+    await (await speedItem(page,'#next-day')).click(); await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
     await expect.poll(() => requested).toBe(true); await toggleOption(page,'Sound Effects'); release();
     await expectOptionChecked(page,'Sound Effects',false);
     expect((await farmSnapshot(page)).finances.homestead.rank).toBe(5);
@@ -125,9 +125,9 @@ test('muting cancels a pending homestead sample and missing sound assets leave t
     await page.route('**/raw/cheers.voc', route => route.fulfill({ status: 404, body: 'Missing sound' }));
     await page.locator('#load-farm-file').setInputFiles(checkpoint());
     await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await toggleOption(page,'Sound Effects');
-    await reveal(page, '#next-day'); await page.locator('#next-day').click(); await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
+    await (await speedItem(page,'#next-day')).click(); await reveal(page, '#town-airport'); await page.locator('#town-airport').click();
     expect((await farmSnapshot(page)).finances.homestead.rank).toBe(5); await expect(page.locator('#sound-error')).toContainText('cheers.voc');
-    await expect(page.locator('#time-status')).toContainText('1 days advanced'); await expect(page.locator('#next-day')).toBeEnabled();
+    await expect(page.locator('#time-status')).toContainText('1 days advanced'); await expect((await speedItem(page,'#next-day'))).toBeEnabled();
     expect(await page.evaluate(() => (window as unknown as { __pcmStarts: number }).__pcmStarts)).toBe(0);
   } finally { release(); }
 });
@@ -138,14 +138,14 @@ test('weekly MIDI requests deduplicate the active track, respect Stop and cancel
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(checkpoint(600000, 0, true));
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await toggleOption(page,'Music');await reveal(page, '#music');await page.locator('#music').selectOption('amain'); await expect(page.locator('#audio-status')).toContainText('Playing amain');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); await expect(page.locator('#audio-status')).toContainText('Playing ffarm');
+  await (await speedItem(page,'#next-day')).click(); await expect(page.locator('#audio-status')).toContainText('Playing ffarm');
   expect(happyRequests).toBe(1);
-  for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  for (let day = 0; day < 7; day++) { await (await speedItem(page,'#next-day')).click(); }
   await expect(page.locator('#audio-status')).toContainText('Playing ffarm'); expect(happyRequests).toBe(1);
   await toggleOption(page,'Music'); await expect(page.locator('#audio-status')).toHaveText('Music off');
   await reveal(page, '#music'); await page.locator('#music').selectOption('amain');
   await page.locator('#load-farm-file').setInputFiles(checkpoint(600000, 0, true));
-  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await (await speedItem(page,'#next-day')).click();
   await expect(page.locator('#music')).toHaveValue('amain'); expect(happyRequests).toBe(1);
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });

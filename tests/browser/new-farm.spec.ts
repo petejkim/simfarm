@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
-import { newGame, expectPaletteAction, chooseField } from '../support/workspace';
+import { newGame, expectPaletteAction, chooseField , speedItem } from '../support/workspace';
 import { fieldDescription } from '../support/field-checkpoint';
 import { scheduleNextHarvest } from '../support/schedule-window';
 import { buyBuilding } from '../support/building-actions';
@@ -46,7 +46,7 @@ test('create a generated farm on mobile, save it and restore without any origina
   const draft = CustomFarmSetup.fresh(first.data.runtime.newFarm.provenance.options, newFarmAssets);
   const original = GameSimulation.load(writeNativeSave(draft.accept('selected-climate'), null), browserCrops, newFarmAssets.townLayouts).simulation.withAllCrops(browserCrops);
   expect(first.data).toEqual(JSON.parse(original.save(null)));
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); original.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); original.dispatch({ type: 'advance-day' });
   expect((await save(page, 'browser-created-farm-day')).data).toEqual(JSON.parse(original.save(null)));
   await load(page, JSON.stringify(first.data));
   await expect(page.locator('.new-farm-panel')).toHaveCount(0); await expect(page.locator('#new-farm')).toHaveCount(0);await expect(page.locator('#file-menu-button')).toBeEnabled();
@@ -91,7 +91,7 @@ test('a previewed farm plants on its starting land and delivers harvest into new
   expect(await fieldDescription(page)).toContain('Planting');
   view = generated.getSnapshot(); const storage = find((x, y) => checkBuildingPlacement(view.scenario, 65, x, y, view.weather.soilMoisture).ok);
   await buyBuilding(page,65,storage.x,storage.y); generated.dispatch({ type: 'build', ...storage, buildingType: 65 });
-  for (let i = 0; i < 12; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); generated.dispatch({ type: 'advance-day' }); }
+  for (let i = 0; i < 12; i++) { await (await speedItem(page,'#next-day')).click(); generated.dispatch({ type: 'advance-day' }); }
   await page.getByRole('button', { name: 'View object', exact: true }).click(); await chooseField(page,1);
   expect(await fieldDescription(page)).toContain('Growing');
   const midpoint = await save(page, 'browser-generated-growing'); expect(midpoint.data).toEqual(JSON.parse(generated.save(null)));
@@ -99,7 +99,7 @@ test('a previewed farm plants on its starting land and delivers harvest into new
   const {week,daysUntil}=await scheduleNextHarvest(page,field.x,field.y);
   generated.dispatch({type:'edit-field-plan',fieldSlot:1,week,action:{kind:'harvest'}});
   generated.dispatch({type:'edit-field-plan',fieldSlot:1,week:week+1,action:{kind:'clear'}});
-  for (let i = 0; i < daysUntil+12; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); generated.dispatch({ type: 'advance-day' }); }
+  for (let i = 0; i < daysUntil+12; i++) { await (await speedItem(page,'#next-day')).click(); generated.dispatch({ type: 'advance-day' }); }
   await expect(page.locator('#harvest-stock')).toHaveText('1 stored harvest');
   const slot = generated.getSnapshot().scenario.inventory.find(i => i.active && i.type === 168)!.slot;
   await reveal(page, '.sell-harvest'); await page.locator('.sell-harvest').click(); generated.dispatch({ type: 'sell-harvest', inventorySlot: slot });

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readSaveText } from '../support/save-file';
-import { newGame, reveal } from '../support/workspace';
+import { newGame, reveal , speedItem } from '../support/workspace';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
 
@@ -23,7 +23,7 @@ function stored(page: Page, key = 'current') {
     open.onsuccess = () => { const get = open.result.transaction('games').objectStore('games').get(key); get.onsuccess = () => { resolve(get.result ?? null); open.result.close(); }; };
   }), key);
 }
-async function nextDay(page: Page) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+async function nextDay(page: Page) { await (await speedItem(page,'#next-day')).click(); }
 
 test('File menu offers Save, Save to File... and Load from File... without Quit; Save stores the game and reopening restores it paused', async ({ page }) => {
   await start(page);

@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import { declineTownEventDialogs } from '../support/town-event-dialogs';
 import {loadScenarioCheckpoint} from '../support/scenario-checkpoint';
 import { setDisastersEnabled } from '../support/disaster-menu';
-import { openWindow, expectPaletteAction, chooseField, expectSelectedField } from '../support/workspace';
+import { openWindow, expectPaletteAction, chooseField, expectSelectedField , speedItem } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { readScenario } from '../../src/formats/scenario';
@@ -25,7 +25,7 @@ test('original map and Schedule controls complete harvest, storage, sale and rep
   await reveal(page,'#zoom');await page.locator('#zoom').selectOption('0.5');
   await buyPlot(page,0,2);await setAutoDoze(page,true);await plantField(page,0,16);
   await expectPaletteAction(page,'View object');
-  async function days(count:number){for(let i=0;i<count;i++){await reveal(page,'#next-day');await page.locator('#next-day').click();
+  async function days(count:number){for(let i=0;i<count;i++){await (await speedItem(page,'#next-day')).click();
     await declineTownEventDialogs(page);
   }}
   async function examine(){

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { livestockFixture, shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
 import { GameSimulation } from '../support/game';
-import { reveal } from '../support/workspace';
+import { reveal , speedItem } from '../support/workspace';
 import { townEventMessage } from '../../src/ui/town-event-message';
 
 function fixture(month: number, animal = false) {
@@ -43,7 +43,8 @@ async function checkMessage(page: Page, game: InstanceType<typeof GameSimulation
   expect(await win.locator('.message-portrait').evaluate(el => (el as HTMLElement).style.backgroundPosition))
     .toBe(`${-(model.portrait % 8) * 112}px ${-Math.floor(model.portrait / 8) * 64}px`);
   for (const [i, button] of model.buttons.entries()) await expect(page.locator(`#town-event-${i}`)).toHaveText(button.caption);
-  await expect(page.locator('#next-day')).toBeDisabled(); await expect(page.locator('#play-pause')).toBeDisabled();
+  // The modal message makes the Speed menu unreachable; the pause launcher shares its blocked condition.
+  await expect(page.locator('#toolbar-pause')).toBeDisabled();
   return win;
 }
 
@@ -53,7 +54,7 @@ test('calendar fair and rodeo entries use original modal choices, select MIDI an
   await page.locator('#options-menu-button').click();await expect(page.locator('#audio-status')).toContainText('Playing amain');await page.keyboard.press('Escape');
   for (const [month, animal] of [[5, false], [8, true], [8, false]] as const) {
     const game = fixture(month, animal).load().withAllCrops(browserCrops); await load(page, game.save(4));
-    await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+    await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
     const win = await checkMessage(page, game);
     await expect(page.locator('#audio-status')).toContainText(`Playing ${month === 5 ? 'rodeo' : 'carnival'}`);
     const date = await page.locator('#farm-date').textContent(); await page.clock.runFor(8000);

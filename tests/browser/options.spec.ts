@@ -5,7 +5,7 @@ import {test,expect,type Page} from '@playwright/test';
 import {GameSimulation} from '../support/game';
 import {browserCrops} from '../support/crop-catalog';
 import {financeMessageFixture} from '../support/finance-messages';
-import {openWindow,reveal,acknowledgeFinanceMessages} from '../support/workspace';
+import {openWindow,reveal,acknowledgeFinanceMessages, speedItem } from '../support/workspace';
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
 async function toggle(page:Page,name:string){await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name,exact:true}).click();}
 async function save(page:Page){await acknowledgeFinanceMessages(page);const download=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await download).path())!));}
@@ -67,7 +67,7 @@ test('AutoGoto centers a newly started disaster while disabling it keeps the map
 
 test('Messages off suppresses optional auction warnings but retains mandatory debt results',async({page})=>{
   await start(page);const game=financeMessageFixture('loan-sale');await load(page,game.save(4));await toggle(page,'Messages');game.dispatch({type:'set-option',option:'messages',enabled:false});
-  await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});
+  await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});
   await expect(page.locator('[data-finance-notice]')).toHaveAttribute('data-finance-notice','168');await page.locator('#finance-message-ok').click();await expect(page.locator('#finance-message-ok')).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(game.save(4)));
 });
 

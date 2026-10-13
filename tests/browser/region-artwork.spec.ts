@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { newGame } from '../support/workspace';
+import { newGame , speedItem } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -79,7 +79,7 @@ test('chooser Load opens its file picker for exact checkpoint restoration and Qu
   await (await picker).setFiles({ name: 'chooser-checkpoint.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(before)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); expect(await save(page)).toEqual(before);
   await expect(page.locator('#geographic-chooser')).toHaveCount(0);
-  await reveal(page, '#play-pause'); await page.locator('#play-pause').click(); await expect(page.locator('#time-status')).toContainText('Running');
+  await (await speedItem(page,'#play-pause')).click(); await expect(page.locator('#time-status')).toContainText('Running');
   await chooser(page); await reveal(page, '#region-quit'); await page.locator('#region-quit').focus(); await page.keyboard.press('Enter');
   await expect(page.locator('#time-status')).toContainText('Paused'); await expect(page.locator('#file-menu-button')).toBeVisible();
   expect(await save(page)).toEqual(before);

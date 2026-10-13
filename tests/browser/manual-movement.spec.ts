@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import { clickFarmTile } from '../support/field-actions';
-import { reveal } from '../support/workspace';
+import { reveal , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -51,7 +51,7 @@ test('original Move opens stored machinery, cancels safely and delivers to stora
   // Save/reload while moving; source interior remains open and destination closed.
   await page.reload(); await load(page, game.save(4)); await startMove(page);
   await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');
-  for (let d = 0; d < 8; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let d = 0; d < 8; d++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(game.getSnapshot().scenario.equipment[1].flags & 4).toBe(4); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await startMove(page);await clickFarmTile(page,40,40);
   await toggleBuilding(page,40,40); game.dispatch({ type: 'toggle-building-interior', x: 40, y: 40, slot: 2 });
@@ -80,7 +80,7 @@ test('move controls explain busy and unowned targets, then tow an implement and 
   await clickFarmTile(page, 11, 10); await clickFarmTile(page, 30, 30);
   const selected = checkEquipmentPickup(game.getSnapshot().scenario, 11, 10); if (!selected.ok) throw new Error('Missing implement');
   game.dispatch({ type: 'move-equipment', selected, x: 30, y: 30 });
-  for (let d = 0; d < 12; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let d = 0; d < 12; d++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   const w = game.getSnapshot().scenario;
   expect([w.equipment[1].x, w.equipment[1].y, w.equipment[1].attachment]).toEqual([10, 10, 0]);
   expect([w.equipment[2].x, w.equipment[2].y, w.equipment[2].parent]).toEqual([30, 30, 0]);

@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
 import { clickFarmTile, setAutoDoze } from '../support/field-actions';
-import { reveal, expectFarmCash } from '../support/workspace';
+import { reveal, expectFarmCash , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -48,11 +48,11 @@ test('original Buy and palette purchase a cow and usable supplies and save their
     pixels.push(...atlas.data.subarray(offset, offset + 4));
   }
   expect(actual).toEqual(pixels);
-  for (let day = 0; day < 4; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 4; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect((await farmSnapshot(page)).scenario.inventory.filter(i=>i.active&&(i.type===299||i.type===300)).map(i=>[i.type,i.quantity])).toEqual([[299,252],[300,496]]);
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 7; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   expect(errors).toEqual([]);
 });

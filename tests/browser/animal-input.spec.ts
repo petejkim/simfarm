@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
-import { reveal, openWindow } from '../support/workspace';
+import { reveal, openWindow , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { livestockFixture } from '../support/livestock';
@@ -21,7 +21,7 @@ test('map hover steers original livestock through zoom and scrolling, and clears
     const f = livestockFixture(16); f.state.scenario.animals[1].bytes[13] = f.state.scenario.animals[1].bytes[14] = 0;
     f.state.scenario.farm.calendar.day = 1; // Even day has no new needs before the first move.
     const game = f.load().withAllCrops(browserCrops); await load(page, game.save(4));
-    await reveal(page, '#zoom'); await page.locator('#zoom').selectOption(String(zoom)); await reveal(page, '#next-day'); await page.locator('#next-day').focus();
+    await reveal(page, '#zoom'); await page.locator('#zoom').selectOption(String(zoom)); await page.locator('#speed-menu-button').focus();
     await reveal(page, '#viewport'); await page.locator('#viewport').scrollIntoViewIfNeeded();
     await page.locator('#viewport').evaluate(v => { v.scrollLeft = v.scrollTop = 0; });
     const rect = await page.locator('#world').boundingBox(); expect(rect).not.toBeNull();
@@ -36,7 +36,7 @@ test('map hover steers original livestock through zoom and scrolling, and clears
     game.dispatch({ type: 'set-map-pointer', pointer });
     // Open Speed with the keyboard, leaving the pointer on the map.
     await page.locator('#speed-menu-button').focus(); await page.keyboard.press('Enter');
-    await page.locator('#next-day').focus(); await page.keyboard.press('Enter'); game.dispatch({ type: 'advance-day' });
+    await (await speedItem(page,'#next-day')).focus(); await page.keyboard.press('Enter'); game.dispatch({ type: 'advance-day' });
     await expect(page.locator('#time-status')).toContainText('1 days advanced');
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));
     if (action === 'hover') expect(game.getSnapshot().scenario.animals[1].x).toBe(11);
@@ -67,9 +67,9 @@ test('original animal voices are audible when enabled, mute does not alter state
   await page.goto('/');
   const weekly = livestockFixture(16); weekly.state.scenario.farm.calendar.day = 6; weekly.state.random.simulation = 300;
   const muted = weekly.load().withAllCrops(browserCrops); await load(page, muted.save(4));
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); muted.dispatch({ type: 'advance-day' }); expect(requests).toEqual([]);
+  await (await speedItem(page,'#next-day')).click(); muted.dispatch({ type: 'advance-day' }); expect(requests).toEqual([]);
   expect(await save(page)).toEqual(JSON.parse(muted.save(4)));
-  await load(page, weekly.load().withAllCrops(browserCrops).save(4)); await toggleOption(page,'Sound Effects'); await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await load(page, weekly.load().withAllCrops(browserCrops).save(4)); await toggleOption(page,'Sound Effects'); await (await speedItem(page,'#next-day')).click();
   await expect.poll(() => page.evaluate(() => {
     const voices = (window as unknown as { __animalVoices: { length: number; analyser: AnalyserNode }[] }).__animalVoices;
     const voice = voices.find(v => v.length === 8210), values = new Float32Array(2048);
@@ -86,16 +86,16 @@ test('original animal voices are audible when enabled, mute does not alter state
     f.state.scenario.farm.animationTicks = f.state.scenario.farm.timerTicks = f.state.animalFrame.lastMoveTick = 640;
     f.state.animalFrame.lastCentreTick = f.state.traffic.lastTick = 640; f.state.random.visual = visual;
     for (const d of f.state.finances.accounts.assets.animalDefinitions) d.count = Number(d.type === type);
-    const game = f.load().withAllCrops(browserCrops); await load(page, game.save(4)); await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+    const game = f.load().withAllCrops(browserCrops); await load(page, game.save(4)); await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
     await expect.poll(() => page.evaluate(n => (window as unknown as { __animalVoices: { length: number }[] }).__animalVoices.some(v => v.length === n), length)).toBe(true);
     expect(requests.some(r => r.endsWith(`/${name}.voc`))).toBe(true);
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   }
   await toggleOption(page,'Sound Effects'); await load(page, weekly.load().withAllCrops(browserCrops).save(4));
-  const count = requests.length; await reveal(page, '#next-day'); await page.locator('#next-day').click(); expect(requests).toHaveLength(count);
+  const count = requests.length; await (await speedItem(page,'#next-day')).click(); expect(requests).toHaveLength(count);
   await page.route('**/cow2.voc', route => route.fulfill({ status: 404, body: 'Missing voice' }));
-  await load(page, weekly.load().withAllCrops(browserCrops).save(4)); await toggleOption(page,'Sound Effects'); await reveal(page, '#next-day'); await page.locator('#next-day').click();
-  await expect(page.locator('#sound-error')).toContainText('cow2.voc'); await expect(page.locator('#next-day')).toBeEnabled();
+  await load(page, weekly.load().withAllCrops(browserCrops).save(4)); await toggleOption(page,'Sound Effects'); await (await speedItem(page,'#next-day')).click();
+  await expect(page.locator('#sound-error')).toContainText('cow2.voc'); await expect((await speedItem(page,'#next-day'))).toBeEnabled();
   expect(await save(page)).toEqual(JSON.parse(muted.save(4))); expect(errors).toEqual([]);
 });
 

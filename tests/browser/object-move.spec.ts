@@ -9,7 +9,7 @@ import { readNativeSave,writeNativeSave } from '../../src/formats/native-save';
 import { createInventoryItem } from '../../src/simulation/harvest-storage';
 import { cropPlantTile,cropHarvestTile } from '../../src/formats/crop-slots';
 import { worldIndex } from '../../src/formats/scenario';
-import { reveal, expectPaletteAction } from '../support/workspace';
+import { reveal, expectPaletteAction , speedItem } from '../support/workspace';
 import { GameSimulation } from '../support/game';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'move.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
@@ -31,7 +31,7 @@ test('Move object picks stored machinery directly, cancels without withdrawal, r
   await point(page,40,40);g.dispatch({type:'move-equipment',selected,x:40,y:40});await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');await expect(page.locator('#world')).toHaveCSS('cursor',/move-pick\.png.*8 8, crosshair/);
   expect(await save(page)).toEqual(JSON.parse(g.save(4)));await page.screenshot({path:'artifacts/browser-object-move.png'});
   await page.reload();await load(page,g.save(4));await expectPaletteAction(page,'View object');
-  for(let i=0;i<8;i++){await reveal(page,'#next-day');await page.locator('#next-day').click();g.dispatch({type:'advance-day'});}
+  for(let i=0;i<8;i++){await (await speedItem(page,'#next-day')).click();g.dispatch({type:'advance-day'});}
   expect(g.getSnapshot().scenario.equipment[1].flags&4).toBe(4);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
 });
 

@@ -1,5 +1,5 @@
 import {readSaveText} from '../support/save-file';
-import { newGame } from '../support/workspace';
+import { newGame , speedItem } from '../support/workspace';
 import { reveal, openWindow } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
@@ -46,7 +46,7 @@ test('region map selects source climate, supports keyboard and mobile layout, an
   const generated = await save(page, 'generated'), options = generated.runtime.newFarm.provenance.options;
   expect(options.climate).toEqual({ precipitation: p.precipitation, temperature: p.temperature, wind: p.wind });
   const game = GameSimulation.createGeographic(options, newFarmAssets, 'selected-climate').withAllCrops(browserCrops); expect(generated).toEqual(JSON.parse(game.save(null)));
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   expect(await save(page, 'next-day')).toEqual(JSON.parse(game.save(null))); expect(errors).toEqual([]);
 });
 
@@ -124,7 +124,7 @@ test('unmarked New Game geography resets old soil and water while applying locat
   expect(actual).toEqual(JSON.parse(expected.save(null)));
   await page.locator('#load-farm-file').setInputFiles({ name: 'geography.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(actual)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  for (let i = 0; i < 7; i++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); expected.dispatch({ type: 'advance-day' }); }
+  for (let i = 0; i < 7; i++) { await (await speedItem(page,'#next-day')).click(); expected.dispatch({ type: 'advance-day' }); }
   expect(await save(page, 'warm-continued')).toEqual(JSON.parse(expected.save(null)));
 });
 

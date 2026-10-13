@@ -1,7 +1,7 @@
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { plantField, clickFarmTile } from '../support/field-actions';
-import { reveal, openWindow, expectPaletteAction } from '../support/workspace';
+import { reveal, openWindow, expectPaletteAction , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -80,7 +80,7 @@ test('removal selection cancels safely, confirms stored-content demolition, play
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   }
   await page.reload(); await load(page, game.save(4)); await expect(page.locator('#removal-panel')).toHaveCount(0);
-  for (let d = 0; d < 14; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let d = 0; d < 14; d++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await save(page)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
 
@@ -93,16 +93,16 @@ test('field removal explains active machinery, destroys a growing crop after con
   await page.goto('/'); await load(page, game.save(4)); await expect(page.locator('#removal-panel')).toHaveCount(0);
   await selectTile(page,1,17);const dialog=page.getByRole('dialog',{name:'Message',exact:true});await expect(dialog).toContainText('equipment is operating');
   await expect(dialog.getByRole('button',{name:'YES',exact:true})).toHaveCount(0);await dialog.getByRole('button',{name:'OK',exact:true}).click(); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   await selectTile(page,1,17);await expect(dialog).toContainText('destroy this field?');
   await page.getByRole('button',{name:'YES',exact:true}).click(); game.dispatch({ type: 'remove-object', x: 1, y: 17, kind: 'field', slot: result.slot });
   
   await page.getByRole('button',{name:'View object',exact:true}).click(); await clearingPixels(page, 0, 16);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-  await page.reload(); await load(page, game.save(4)); await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await page.reload(); await load(page, game.save(4)); await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   await plantField(page,0,16);await expectPaletteAction(page,'View object'); game.dispatch({ type: 'create-field', x: 0, y: 16, cropSlot: 0 });
   expect(game.getSnapshot().lastNewFieldResult?.ok).toBe(true); await expect(page.locator('#map-tool')).toHaveCount(0);
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   expect(game.getSnapshot().scenario.fields[result.slot].state).toBe(4);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
 });

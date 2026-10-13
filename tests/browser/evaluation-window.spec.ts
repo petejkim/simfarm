@@ -7,7 +7,7 @@ import {decodePlanar,readPalette} from '../../src/formats/graphics';
 import {evaluationWindowView,EVALUATION_TOPICS,EVALUATION_PROBLEMS} from '../../src/simulation/evaluation-view';
 import {shopFixture} from '../support/livestock';
 import {browserCrops} from '../support/crop-catalog';
-import {openWindow,reveal} from '../support/workspace';
+import {openWindow,reveal, speedItem } from '../support/workspace';
 const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url));
 const entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')),asset=(n:string)=>entries.find(e=>e.name===n)!.bytes,palette=readPalette(asset('simfarm.pal'));
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
@@ -63,7 +63,7 @@ test('Evaluation follows season/year rollover, clears resolved problems and sugg
     await expect(client.getByRole('list',{name:'Field problems'}).locator('li')).toHaveCount(0);await expect(client.getByRole('meter',{name:'Soil Quality',exact:true})).toHaveAttribute('aria-valuenow','80');
     expect(await badgeTiles(client.locator('.evaluation-season-icon'))).toEqual(tilePositions([200+v.season]));
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));if(day===4)await load(page,JSON.stringify(await save(page)));
-    await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});
+    await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});
     if(game.getSnapshot().pendingTown){await reveal(page,'#town-residential');await page.locator('#town-residential').click();game.dispatch({type:'choose-town',choice:'residential'});}
   }
   // Replacing a populated farm removes all old icons and uses live status, not cached annual counters.

@@ -1,6 +1,6 @@
 import {readSaveText} from '../support/save-file';
 import { farmSnapshot } from '../support/field-checkpoint';
-import { reveal } from '../support/workspace';
+import { reveal , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -23,7 +23,7 @@ test('a cow matures into the original adult sprite, begins monthly breeding and 
   const game = f.load().withAllCrops(browserCrops), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'adult-cow.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   const a = game.getSnapshot().scenario.animals[1]; expect([a.x, a.y, a.bytes[18]]).toEqual([11, 10, 1]);
   const source = (name: string) => readFileSync(new URL('../../../simfarm-dos/' + name, import.meta.url));
   const archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA')), asset = (name: string) => archive.find(e => e.name === name)!.bytes;
@@ -36,7 +36,7 @@ test('a cow matures into the original adult sprite, begins monthly breeding and 
   expect(adultCow.ageWeeks).toBe(81);expect(adultCow.flags&3).toBe(3);expect(adultCow.bytes[28]).toBe(0);
   const path = 'artifacts/browser-animal-age.simfarm.json'; expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  for (let d = 0; d < 7; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let d = 0; d < 7; d++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   const pregnantCow=(await farmSnapshot(page)).scenario.animals[1];
   expect(pregnantCow.flags&3).toBe(3);expect(pregnantCow.bytes[28]).toBe(1);
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
@@ -49,12 +49,12 @@ test('birth reuses an old-age slot with the newborn species, and a full herd can
   const f = replacementBirthFixture(), game = f.load().withAllCrops(browserCrops); await page.goto('/');
   await page.locator('#load-farm-file').setInputFiles({ name: 'birth.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   const born=(await farmSnapshot(page)).scenario.animals.filter(a=>a.active);
   expect(born.map(a=>[a.slot,a.type])).toEqual([[1,161],[2,161]]);expect(born[0].ageWeeks).toBe(0);
   const path = 'artifacts/browser-animal-birth.simfarm.json'; expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  for (let d = 0; d < 7; d++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let d = 0; d < 7; d++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect(await download(page, path)).toEqual(JSON.parse(game.save(4)));
   const full = shopFixture(), random = new FarmRandom(full.state.random);
   for (let slot = 1; slot <= 255; slot++) allocateAnimal(full.state.scenario, full.state.finances, random, 163, 10 + slot % 16, 10 + Math.floor(slot / 16));
@@ -63,7 +63,7 @@ test('birth reuses an old-age slot with the newborn species, and a full herd can
   const capacityGame = full.load().withAllCrops(browserCrops);
   await page.locator('#load-farm-file').setInputFiles({ name: 'full-herd.json', mimeType: 'application/json', buffer: Buffer.from(capacityGame.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); capacityGame.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); capacityGame.dispatch({ type: 'advance-day' });
   const fullHerd=(await farmSnapshot(page)).scenario.animals;
   expect(fullHerd.filter(a=>a.active)).toHaveLength(255);expect(fullHerd[255].flags&1).toBe(0);expect(fullHerd[255].bytes[28]).toBe(0);
   expect(await download(page, path)).toEqual(JSON.parse(capacityGame.save(4)));

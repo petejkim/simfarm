@@ -7,7 +7,7 @@ import { fieldDescription, selectedFieldSnapshot, farmSnapshot } from '../suppor
 import { sprayField, buyPlot, selectProperty, setAutoDoze, plantField, selectPlant, clickFarmTile } from '../support/field-actions';
 import { scheduleWeek, schedulePlant, scheduleNextHarvest, expectWeekPlan } from '../support/schedule-window';
 import { saleOffers, selectSaleOffer } from '../support/sell-window';
-import { reveal, openWindow, expectPaletteAction, chooseField, expectSelectedField } from '../support/workspace';
+import { reveal, openWindow, expectPaletteAction, chooseField, expectSelectedField , speedItem } from '../support/workspace';
 import { browserCrops, useOriginalCatalog } from '../support/crop-catalog';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -127,20 +127,20 @@ test('time controls advance the simulation, render crop changes, pause, and rese
   await expect(page.locator('#farm-date')).toHaveText('April 28, 1993');
   expect((await selectedFieldSnapshot(page)).field.bytes[34]).toBe(0);
   const before = await page.locator('#world').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   await expect(page.locator('#farm-date')).toHaveText('May 1, 1993');
   expect((await selectedFieldSnapshot(page)).field.bytes[34]).toBe(1);
   const after = await page.locator('#world').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
   expect(after).not.toBe(before);
-  await reveal(page, '#play-pause'); await page.locator('#play-pause').click();
-  await expect(page.locator('#next-day')).toBeDisabled();
+  await (await speedItem(page,'#play-pause')).click();
+  await expect((await speedItem(page,'#next-day'))).toBeDisabled();
   await page.clock.runFor(12400);
   await expect(page.locator('#time-status')).toHaveText('Running · 4 days advanced');
-  await reveal(page, '#play-pause'); await page.locator('#play-pause').click();
+  await (await speedItem(page,'#play-pause')).click();
   await page.clock.runFor(3100);
   await expect(page.locator('#time-status')).toHaveText('Paused · 4 days advanced');
-  await expect(page.locator('#next-day')).toBeEnabled();
-  await reveal(page, '#play-pause'); await page.locator('#play-pause').click();
+  await expect((await speedItem(page,'#next-day'))).toBeEnabled();
+  await (await speedItem(page,'#play-pause')).click();
   await loadScenarioCheckpoint(page,Number('0'));
   await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
   await page.clock.runFor(2100);
@@ -167,7 +167,7 @@ test('scheduled planting buys seed, rents machinery and renders original crop pi
   // Planning does not buy seed before the selected week arrives.
   await expect(page.locator('#farm-cash')).toHaveText('$40,000');
   for(let day=0;day<14;day++){
-    await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});
+    await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});
   }
   expect(game.getSnapshot().scenario.fields[1].state).toBe(4);
   expect(game.getSnapshot().scenario.fields[1].cropSlot).toBe(2);
@@ -213,7 +213,7 @@ for (const id of [0, 4]) test(`scheduled harvest controls complete ${id === 0 ? 
   await expect(page.locator('#plant-field')).toHaveCount(0);
   await page.clock.runFor(1000);
   expect(await fieldDescription(page)).toContain('Growing');
-  for (let day = 0; day < daysUntil+12; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click();expectedGame.dispatch({type:'advance-day'}); }
+  for (let day = 0; day < daysUntil+12; day++) { await (await speedItem(page,'#next-day')).click();expectedGame.dispatch({type:'advance-day'}); }
   expect(await fieldDescription(page)).toContain(crop.rawDefinition[62] & 1 ? 'Growing' : 'Waiting');
   // SCEN0's other grape and almond fields also harvest on their saved annual dates.
   await expect(page.locator('#harvest-stock')).toHaveText(id === 0 ? '13 stored harvests' : '1 stored harvest');
@@ -243,13 +243,13 @@ test('a planted original corn crop grows, is harvested and sold through browser 
   await chooseField(page,1);
   const initial=readScenario(readFileSync(new URL('../../../simfarm-dos/SCEN4.SSM',import.meta.url)));
   await schedulePlant(page,initial.fields[1].x,initial.fields[1].y,initial.farm.calendar.month*4+initial.farm.calendar.week+1,0);
-  for(let day=0;day<7-initial.farm.calendar.day;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();}
-  for (let day = 0; day < 84; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); await declineTownEventDialogs(page); }
+  for(let day=0;day<7-initial.farm.calendar.day;day++){await (await speedItem(page,'#next-day')).click();}
+  for (let day = 0; day < 84; day++) { await (await speedItem(page,'#next-day')).click(); await declineTownEventDialogs(page); }
   expect(await fieldDescription(page)).toContain('Growing');
   expect((await selectedFieldSnapshot(page)).estimate?.value).toBeGreaterThan(0);
   const previousLots = await saleOffers(page);
   const {daysUntil}=await scheduleNextHarvest(page,initial.fields[1].x,initial.fields[1].y);
-  for(let day=0;day<daysUntil+1;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();}
+  for(let day=0;day<daysUntil+1;day++){await (await speedItem(page,'#next-day')).click();}
   await expect(page.locator('#harvest-stock')).toHaveText('4 stored harvests');
   const newLots = (await saleOffers(page))
     .filter(name => !previousLots.some(old => old?.split(', for ')[0] === name.split(', for ')[0]));
@@ -270,7 +270,7 @@ test('a planted original corn crop grows, is harvested and sold through browser 
   expect(errors).toEqual([]);
 });
 
-test('speed slider adjusts running time, stays paused and keeps Next day to one day', async ({ page }) => {
+test('Speed menu presets adjust running time, stays paused and keeps Next day to one day', async ({ page }) => {
   test.setTimeout(45_000); // Full-map clock/frame progression takes ~24s alone; retain headroom under suite load.
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
@@ -278,32 +278,36 @@ test('speed slider adjusts running time, stays paused and keeps Next day to one 
   await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
   // Optional disaster dialogs pause browser time; their suspension is tested separately.
   await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Messages',exact:true}).click();
+  const choose = async (label: string) => { await openWindow(page, 'speed'); await page.getByRole('menuitemcheckbox', { name: label, exact: true }).click(); };
   await openWindow(page, 'speed');
-  const slider = page.getByRole('slider', { name: 'Speed', exact: true });
-  await expect(page.locator('#simulation-speed-value')).toHaveText('1×');
-  await slider.focus(); await slider.press('End');
-  await expect(slider).toHaveAttribute('aria-valuetext', '16× simulation speed');
+  await expect(page.locator('#original-speed-menu [role=menuitemcheckbox]')).toContainText(['Very Slow (0.25x)', 'Slow (0.5x)', 'Normal (1x)', 'Fast (2x)', 'Faster (4x)', 'Even Faster (8x)', 'Fastest (16x)']);
+  await expect(page.locator('#original-speed-menu [aria-checked=true]')).toHaveAccessibleName('Normal (1x)');
+  await expect(page.locator('#original-speed-menu > *')).toHaveCount(11); // Pause, rule, seven presets, rule, Next Day
+  await expect(page.locator('#original-speed-menu > :first-child')).toHaveAccessibleName('Resume');
+  for (const n of [2, 10]) await expect(page.locator(`#original-speed-menu > :nth-child(${n})`)).toHaveAttribute('role', 'separator');
+  await expect(page.locator('#original-speed-menu > :last-child')).toHaveAccessibleName('Next Day');
+  await choose('Fastest (16x)');
+  await openWindow(page, 'speed'); await expect(page.locator('#original-speed-menu [aria-checked=true]')).toHaveAccessibleName('Fastest (16x)'); await page.keyboard.press('Escape');
   await page.clock.runFor(1000);
   await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   await expect(page.locator('#time-status')).toHaveText('Paused · 1 days advanced');
-  await slider.focus(); await slider.press('Home');
-  await expect(page.locator('#simulation-speed-value')).toHaveText('0.25×');
-  await reveal(page, '#play-pause'); await page.locator('#play-pause').click();
+  await choose('Very Slow (0.25x)');
+  await (await speedItem(page,'#play-pause')).click();
   await page.clock.runFor(16400);
   await expect(page.locator('#time-status')).toHaveText('Running · 2 days advanced');
-  await slider.focus(); await slider.press('End');
+  await choose('Fastest (16x)');
   await page.clock.runFor(4000);
   await expect(page.locator('#time-status')).toHaveText('Running · 18 days advanced');
-  await reveal(page, '#play-pause'); await page.locator('#play-pause').click();
+  await (await speedItem(page,'#play-pause')).click();
   await page.clock.runFor(1000);
   await expect(page.locator('#time-status')).toHaveText('Paused · 18 days advanced');
   await page.screenshot({ path: 'artifacts/browser-speed.png', fullPage: true });
   await loadScenarioCheckpoint(page,Number('4'));
-  await expect(page.locator('#simulation-speed-value')).toHaveText('1×');
+  await openWindow(page, 'speed'); await expect(page.locator('#original-speed-menu [aria-checked=true]')).toHaveAccessibleName('Normal (1x)'); await page.keyboard.press('Escape');
   await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
   await page.setViewportSize({ width: 1280, height: 844 });
-  await openWindow(page, "speed"); await expect(slider).toBeVisible();
+  await openWindow(page, "speed"); await expect(page.locator("#original-speed-menu")).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
 });
 
@@ -331,13 +335,13 @@ test('map tools buy original land and complete a new-field planting and harvest 
   expect((await farmSnapshot(page)).scenario.fields.filter(f=>f.active).length).toBe(9);
   expect(await fieldDescription(page)).toBe('Field 9 · Planting · 8 × 8 tiles at 0, 16');
   await expect(page.locator('#farm-cash')).toHaveText('$21,888');
-  for (let day = 0; day < 12; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  for (let day = 0; day < 12; day++) { await (await speedItem(page,'#next-day')).click(); }
   expect(await fieldDescription(page)).toContain('Growing');
   // Original unowned soil is poor; this checks new-field work and delivery, not a profitable crop.
   expect((await selectedFieldSnapshot(page)).estimate?.value).toBe(0);
   await page.screenshot({ path: 'artifacts/browser-new-field.png', fullPage: true });
   const {daysUntil}=await scheduleNextHarvest(page,0,16);
-  for (let day = 0; day < daysUntil+12; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  for (let day = 0; day < daysUntil+12; day++) { await (await speedItem(page,'#next-day')).click(); }
   await expect(page.locator('#harvest-stock')).toHaveText('1 stored harvest');
   await reveal(page, '.sell-harvest'); await page.locator('.sell-harvest').click();
   await expect(page.locator('#harvest-stock')).toHaveText('No stored harvests.');
@@ -366,21 +370,21 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
   await buyPlot(page,0,2);await setAutoDoze(page,true);await plantField(page,0,16);
   await expectPaletteAction(page,'View object');
-  for (let day = 0; day < 2; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  for (let day = 0; day < 2; day++) { await (await speedItem(page,'#next-day')).click(); }
   expect(await fieldDescription(page)).toContain('Growing');
   await sprayField(page,0,16,'fertilizer');
   expect(await fieldDescription(page)).toContain('Fertilize');
   await expect(page.locator('#farm-cash')).toHaveText('$21,613');
   await expect(page.locator('#plant-field')).toHaveCount(0);
   await expect(page.locator('#harvest-field')).toHaveCount(0);
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   expect(await fieldDescription(page)).toContain('Growing');
   expect((await selectedFieldSnapshot(page)).field.bytes[29]).toBe(255);
   await page.screenshot({ path: 'artifacts/browser-fertilizer.png', fullPage: true });
-  for (let day = 3; day < 84; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); await declineTownEventDialogs(page); }
+  for (let day = 3; day < 84; day++) { await (await speedItem(page,'#next-day')).click(); await declineTownEventDialogs(page); }
   expect((await selectedFieldSnapshot(page)).estimate?.value).toBeGreaterThan(0); // Event animation now participates in the source RNG stream.
   const {daysUntil}=await scheduleNextHarvest(page,0,16);
-  for(let day=0;day<daysUntil+12;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();}
+  for(let day=0;day<daysUntil+12;day++){await (await speedItem(page,'#next-day')).click();}
   // Scheduled replanting changes history after the weekly quote; the lot still sells at that quote.
   await selectSaleOffer(page,name=>/^Sell Corn, lot 5, for \$[1-9]/.test(name));
   const sale=page.locator('#catalog-sell'),price=Number((await sale.getAttribute('aria-label'))!.split(', for $')[1]);
@@ -403,7 +407,7 @@ test('all four field treatments use original stored supplies and restore crop wo
     const cash=await page.locator('#farm-cash').textContent();
     await sprayField(page,field.x,field.y,name);expect(await fieldDescription(page)).toContain(status);
     await expect(page.locator('#farm-cash')).toHaveText(cash!);
-    for(let day=0;day<8;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();}
+    for(let day=0;day<8;day++){await (await speedItem(page,'#next-day')).click();}
     expect(await fieldDescription(page)).toContain('Growing');
   }
   await page.setViewportSize({width:1280,height:844});await reveal(page,'#viewport');await expect(page.getByRole('button',{name:'Spray',exact:true})).toBeVisible();
@@ -421,7 +425,7 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('0.5');
   await buyPlot(page,0,2);await setAutoDoze(page,true);await plantField(page,0,16);
   await expectPaletteAction(page,'View object');
-  for (let day = 0; day < 2; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  for (let day = 0; day < 2; day++) { await (await speedItem(page,'#next-day')).click(); }
   await sprayField(page,0,16,'fertilizer');
   expect(await fieldDescription(page)).toContain('Fertilize');
   const date = await page.locator('#farm-date').textContent();
@@ -456,10 +460,10 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await (await restoredDownload).saveAs(restoredPath);
   expect(JSON.parse(readSaveText(restoredPath)).scenario.schedule).toBe(saved.scenario.schedule);
   await page.screenshot({ path: 'artifacts/browser-load.png', fullPage: true });
-  for (let day = 2; day < 84; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); await declineTownEventDialogs(page); }
+  for (let day = 2; day < 84; day++) { await (await speedItem(page,'#next-day')).click(); await declineTownEventDialogs(page); }
   expect((await selectedFieldSnapshot(page)).estimate?.value).toBeGreaterThan(0); // Event animation now participates in the source RNG stream.
   const {daysUntil}=await scheduleNextHarvest(page,0,16);
-  for(let day=0;day<daysUntil+12;day++){await reveal(page,'#next-day');await page.locator('#next-day').click();}
+  for(let day=0;day<daysUntil+12;day++){await (await speedItem(page,'#next-day')).click();}
   await selectSaleOffer(page,name=>/^Sell Corn, lot 5, for \$[1-9]/.test(name));
   const sale=page.locator('#catalog-sell'),price=Number((await sale.getAttribute('aria-label'))!.split(', for $')[1]);
   const cash=Number((await page.locator('#farm-cash').textContent())!.replace(/[^0-9]/g,''));
@@ -475,8 +479,8 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
   await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.goto('/');
   await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
-  await openWindow(page, 'speed'); await page.getByRole('slider', { name: 'Speed', exact: true }).fill('4'); // 4×
-  await reveal(page, '#play-pause'); await page.locator('#play-pause').click(); await page.clock.runFor(1748);
+  await openWindow(page, 'speed'); await page.getByRole('menuitemcheckbox', { name: 'Faster (4x)', exact: true }).click();
+  await (await speedItem(page,'#play-pause')).click(); await page.clock.runFor(1748);
   async function saved() {
     const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
     const file = await pending; return readSaveText((await file.path())!);
@@ -495,9 +499,9 @@ test('loading preserves running speed and partial ticks; corrupt files leave the
   await page.locator('#load-farm-file').setInputFiles(file);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   expect(JSON.parse(await saved())).toEqual(expected);
-  await expect(page.locator('#play-pause')).toHaveText('Pause');
-  await expect(page.locator('#simulation-speed-value')).toHaveText('4×');
-  await expect(page.locator('#next-day')).toBeDisabled();
+  await expect((await speedItem(page,'#play-pause'))).toHaveText('Pause');
+  await expect(page.getByRole('menuitemcheckbox', { name: 'Faster (4x)', exact: true })).toHaveAttribute('aria-checked', 'true');
+  await expect((await speedItem(page,'#next-day'))).toBeDisabled();
   // Reopening the same file triggers a fresh load; the input clears after each selection.
   await page.locator('#load-farm-file').setInputFiles(file);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
@@ -536,7 +540,7 @@ test('failed or cancelled asset loading cannot replace a current farm', async ({
   const file = { name: 'farm.json', mimeType: 'application/json', buffer: readFileSync((await (await pendingDownload).path())!) };
   await loadScenarioCheckpoint(page,Number('4'));
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   await page.route('**/scenario0.tiles.png', route => route.abort());
   await page.locator('#load-farm-file').setInputFiles(file);
   await expect(page.locator('#save-status')).toContainText('Could not load farm:');
@@ -553,7 +557,7 @@ test('failed or cancelled asset loading cannot replace a current farm', async ({
   await loadScenarioCheckpoint(page,Number('2'));
   await expect(page.locator('#map-status')).toHaveText('Scenario 3 · original terrain');
   release();
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   await expect(page.locator('#map-status')).toContainText('Scenario 3');
   await expect(page.locator('#time-status')).toHaveText('Paused · 1 days advanced');
   expect(errors).toEqual([]);
@@ -574,7 +578,7 @@ test('a farm saved while a harvest truck drives to storage loads and completes d
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await chooseField(page,1);
   expect(await fieldDescription(page)).toContain('Harvest');
-  for (let day = 0; day < 8; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  for (let day = 0; day < 8; day++) { await (await speedItem(page,'#next-day')).click(); }
   await expect(page.locator('#harvest-stock')).toHaveText('1 stored harvest');
   expect(await fieldDescription(page)).toContain('Waiting');
 });
@@ -587,10 +591,10 @@ test('original field plans harvest and replant automatically through the browser
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await chooseField(page,1);
   await expect(page.locator('#schedule-status')).toHaveText('Field plans run automatically each week.');
-  for (let day = 0; day < 78; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); await declineTownEventDialogs(page); }
+  for (let day = 0; day < 78; day++) { await (await speedItem(page,'#next-day')).click(); await declineTownEventDialogs(page); }
   expect(await fieldDescription(page)).toContain('Harvest');
   await expect(page.locator('#farm-cash')).toHaveText('$40,000');
-  for (let day = 78; day < 85; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); await declineTownEventDialogs(page); }
+  for (let day = 78; day < 85; day++) { await (await speedItem(page,'#next-day')).click(); await declineTownEventDialogs(page); }
   expect(await fieldDescription(page)).toContain('Planting');
   const plantedCash=Number((await page.locator('#farm-cash').textContent())!.replace(/[^0-9]/g,''));
   expect(plantedCash).toBeLessThan(40000); // Weekly seed quotes include the event RNG consumers.
@@ -616,7 +620,7 @@ test('weekly seed failure is reported without replacing crops or spending cash',
   await page.locator('#load-farm-file').setInputFiles({ name: 'no-seed-cash.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await chooseField(page,1);
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   await expect(page.locator('#schedule-status')).toHaveText('Weekly orders stopped at field 1: not enough cash for seed.');
   expect(await fieldDescription(page)).toContain('Growing');
   await expect(page.locator('#farm-cash')).toHaveText('$0');
@@ -658,10 +662,10 @@ test('calendar planner edits five years, preserves saved plans and dispatches th
   await reveal(page, '#field-planner'); await page.locator('#field-planner').scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-field-planner.png', fullPage: true });
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   expect(await fieldDescription(page)).toContain('Planting');
   await expect(page.locator('#field-planner .schedule-crop-name')).toContainText('Peanuts');
-  for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); }
+  for (let day = 0; day < 7; day++) { await (await speedItem(page,'#next-day')).click(); }
   expect(await fieldDescription(page)).toContain('Fertilize');
   expect(errors).toEqual([]);
 });
@@ -725,7 +729,7 @@ test('loaded loans collect the March installment at the month boundary', async (
   Object.assign(save.scenario.farm.calendar, { day: 6, week: 3, month: 1 }); save.scenario.farm.cash = 4000;
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles({ name: 'loan.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(save)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await openWindow(page, 'bank');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click();
+  await (await speedItem(page,'#next-day')).click();
   await expect(page.locator('#farm-date')).toContainText('March 1');
   await expect(page.locator('#loan-balance')).toHaveText('$943'); await expect(page.locator('#farm-cash')).toHaveText('$3,943');
 });
@@ -742,19 +746,19 @@ test('saved financial default stops time and actions, supports ending or restart
   const file = { name: 'default.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) };
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(file);
   await expect(page.getByRole('region', { name: 'Financial default', exact: true })).toBeVisible();
-  await expect(page.locator('#play-pause')).toBeDisabled(); await expect(page.locator('#next-day')).toBeDisabled();
+  await expect((await speedItem(page,'#play-pause'))).toBeDisabled(); await expect((await speedItem(page,'#next-day'))).toBeDisabled();
   await openWindow(page, 'bank'); await expect(page.locator('#borrow-loan')).toBeDisabled();
   await reveal(page, '#default-exit'); await page.locator('#default-exit').click(); await expect(page.getByRole('region', { name: 'Farm session ended', exact: true })).toBeVisible();
-  await expect(page.locator('#next-day')).toBeDisabled();
+  await expect((await speedItem(page,'#next-day'))).toBeDisabled();
   await page.locator('#load-farm-file').setInputFiles(file); await reveal(page, '#default-restart'); await page.locator('#default-restart').click();
   await expect(page.getByRole('region', { name: 'Financial default', exact: true })).toHaveCount(0);
-  await reveal(page, '.new-farm-panel'); await expect(page.locator('.new-farm-panel')).toBeVisible(); await expect(page.locator('#next-day')).toBeDisabled();
+  await reveal(page, '.new-farm-panel'); await expect(page.locator('.new-farm-panel')).toBeVisible(); await expect((await speedItem(page,'#next-day'))).toBeDisabled();
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Farm session ended', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Choose another farm', exact: true }).click();
   await reveal(page, '#region-design'); await page.locator('#region-design').click(); await reveal(page, '#play-farm'); await page.locator('#play-farm').click();
   await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
-  await expect(page.locator('#next-day')).toBeEnabled(); await expect(page.locator('#time-status')).toContainText('0 days advanced');
+  await expect((await speedItem(page,'#next-day'))).toBeEnabled(); await expect(page.locator('#time-status')).toContainText('0 days advanced');
   await openWindow(page, 'bank'); await expect(page.locator('#loan-balance')).toHaveText('$0');
 });
 

@@ -2,7 +2,7 @@ import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { chooseDisaster, setDisastersEnabled, expectDisasterChecked } from '../support/disaster-menu';
 import { farmSnapshot, fieldDescription } from '../support/field-checkpoint';
-import { reveal, acknowledgeFinanceMessages } from '../support/workspace';
+import { reveal, acknowledgeFinanceMessages , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -63,7 +63,7 @@ test('Flood controls destroy a shoreline field and occupied building, render sou
   await expect.poll(async () => (await played(page)).some(s => s.length === 9729 && s.peak > 0.01)).toBe(true);
   await setDisastersEnabled(page,false); game.dispatch({ type: 'set-disasters-enabled', enabled: false });
   await expectDisasterChecked(page,'disable');
-  await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' });
+  await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   expect(await fieldDescription(page)).toContain('0 fields');
   const destroyed=(await farmSnapshot(page)).scenario;expect(destroyed.fields[1].active).toBe(false);expect(destroyed.buildings.some(b=>b.active&&b.x===40&&b.y===40)).toBe(false);expect(destroyed.equipment.filter(e=>e.active)).toHaveLength(0);
   await expect.poll(async () => (await played(page)).some(s => s.length === 12736 && s.peak > 0.01)).toBe(true);
@@ -75,10 +75,10 @@ test('Flood controls destroy a shoreline field and occupied building, render sou
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await reveal(page, '#viewport'); await page.locator('#viewport').scrollIntoViewIfNeeded();
   await page.screenshot({ path: 'artifacts/browser-flood.png', fullPage: true });
-  for (let day = 1; day < 3; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 1; day < 3; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   expect((await farmSnapshot(page)).waterDisasters.scanning).toBe(false);await expectDisasterChecked(page,'flood');
   expect(await save(page, 'scanned')).toEqual(JSON.parse(game.save(4)));
-  for (let day = 3; day < 28; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 3; day < 28; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   await expectDisasterChecked(page,'flood',false);
   expect(await save(page, 'drained')).toEqual(JSON.parse(game.save(4)));
   expect((await played(page)).filter(s => s.length === 9729)).toHaveLength(1); expect(errors).toEqual([]);
@@ -96,7 +96,7 @@ test('Drought controls dry and restore source shoreline pixels without start aud
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
   await expect(page.locator('#save-status')).toContainText('flood scan Y'); expect(await save(page, 'after-invalid')).toEqual(checkpoint);
   await load(page, JSON.stringify(checkpoint));
-  for (let day = 0; day < 7; day++) { await reveal(page, '#next-day'); await page.locator('#next-day').click(); game.dispatch({ type: 'advance-day' }); }
+  for (let day = 0; day < 7; day++) { await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' }); }
   await expectDisasterChecked(page,'drought',false);
   await originalTile(page, 20, 19, game.getSnapshot().scenario.cells[20 * 96 + 19].terrain & 2047);
   expect(await save(page, 'recovered')).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);

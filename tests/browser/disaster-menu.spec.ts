@@ -4,7 +4,7 @@ import {disasterFixture} from '../support/disasters';
 import {financeMessageFixture} from '../support/finance-messages';
 import {browserCrops} from '../support/crop-catalog';
 import {GameSimulation} from '../support/game';
-import {reveal,acknowledgeFinanceMessages} from '../support/workspace';
+import {reveal,acknowledgeFinanceMessages, speedItem } from '../support/workspace';
 const names=['Tornado','Locusts','Drought','Flood','Frost','Windstorm','Disable'];
 async function start(page:Page){await page.clock.install({time:new Date('1993-04-05T12:00:00Z')});await page.clock.pauseAt(new Date('1993-04-05T12:00:00Z'));await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');}
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'disasters.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
@@ -44,7 +44,7 @@ test('Disable does not cancel an active swarm; its damage continues and checked 
   await start(page);const f=disasterFixture(),game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));
   await choose(page,'Locusts');game.dispatch({type:'disaster-menu',action:'swarm'});await choose(page,'Disable');game.dispatch({type:'disaster-menu',action:'disable'});
   await checks(page,[false,true,false,false,false,false,true]);await choose(page,'Locusts');game.dispatch({type:'disaster-menu',action:'swarm'});
-  await reveal(page,'#next-day');await page.locator('#next-day').click();game.dispatch({type:'advance-day'});expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+  await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   const field=game.getSnapshot().scenario.fields[1];expect(field.bytes[18]|field.bytes[19]<<8).toBeGreaterThan(0);
 });
 
@@ -52,7 +52,7 @@ test('failed locust choices leave Disable checked without phantom events, and na
   await start(page);const f=disasterFixture();f.state.disasters.enabled=false;for(const field of f.state.scenario.fields)field.bytes[7]&=~1;
   const game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));const before=await save(page);await choose(page,'Locusts');expect(await save(page)).toEqual(before);await checks(page,[false,false,false,false,false,false,true]);
   const end=disasterFixture();end.state.disasters.flags=16;end.state.disasters.enabled=false;end.state.weather.temperatureAnomaly=0;const ending=end.load().withAllCrops(browserCrops);await load(page,ending.save(4));
-  await checks(page,[false,false,false,false,true,false,true]);await reveal(page,'#next-day');await page.locator('#next-day').click();ending.dispatch({type:'advance-day'});await checks(page,[false,false,false,false,false,false,true]);expect(await save(page)).toEqual(JSON.parse(ending.save(4)));
+  await checks(page,[false,false,false,false,true,false,true]);await (await speedItem(page,'#next-day')).click();ending.dispatch({type:'advance-day'});await checks(page,[false,false,false,false,false,false,true]);expect(await save(page)).toEqual(JSON.parse(ending.save(4)));
 });
 
 test('pending financial decisions disable every disaster action while the popup remains keyboard dismissible',async({page})=>{

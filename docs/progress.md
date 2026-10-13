@@ -3085,3 +3085,20 @@ Added a pause/resume toggle to the right end of the control bar. Its play face i
 ## 2026-10-12 — Wrapping toolbar
 
 The menu bar and toolbar now wrap onto extra rows on narrow screens, keeping every control visible; desktop layout is unchanged. Details and validation in control-bar.md.
+
+## 2026-10-12 — Speed menu replaces the Speed window
+
+The Speed heading now opens a dropdown, in this order:
+- Pause/Resume
+- a separator
+- seven checkable presets: Very Slow (0.25x), Slow (0.5x), Normal (1x), Fast (2x), Faster (4x), Even Faster (8x), Fastest (16x)
+- a separator
+- Next Day
+
+The Speed window and its slider are gone. A financial default or a pending town decision disables the whole menu, as it disabled the window. Next Day is also disabled while time runs, during flight, and when the calendar cannot advance. Its tooltip explains the calendar case.
+
+The window's run state, days advanced, weekly-order result and calendar notice remain as visually hidden status text (`TimeStatus`). Its weather line duplicated the Weather window and was dropped. Limitation: a weekly-order failure is no longer shown visually anywhere; it needs a visible home later, such as a message or the Schedule window.
+
+`FileMenu` gained replacement labels, leading actions, separators and per-action ids/disabled/hints for this. Tests open the menu through `openSpeedMenu`/`speedItem`; `openWindow` closes an open Speed menu before using a launcher. The weather-icon toolbar test now measures against the forecast area. Its fixed constant had been stale since the pause launcher narrowed that area.
+
+Validation: production build; unit suite 949/949; full browser suite 299/303. All four failures were test-side Speed-window assumptions (animal-input, three town-event-calendar specs). They were fixed and pass on rerun (5/5).
