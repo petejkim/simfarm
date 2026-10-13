@@ -251,6 +251,32 @@ test.describe('phone screen',()=>{
     expect(side.box.y).toBeLessThanOrEqual(side.button.y+1);
     expect(Math.min(Math.abs(side.box.y-side.button.y),Math.abs(side.box.y+side.box.height-side.area.y-side.area.height))).toBeLessThan(1);
   });
+  test('a tapped launcher stays down from touch to click, never popping up in between',async({page})=>{
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    // iOS sequence: pointerdown, pointerup (where :active ends), then the click in a later task.
+    const tap=(selector:string,{lift='inside',click=true}:{lift?:'inside'|'outside';click?:boolean}={})=>page.evaluate(async([selector,lift,click])=>{
+      const el=document.querySelector<HTMLElement>(selector)!,r=el.getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height/2;
+      const down=(cls:string)=>cls.includes('is-pressed')||cls.includes('is-held'),seen:string[]=[];
+      const observer=new MutationObserver(()=>seen.push(el.className));observer.observe(el,{attributes:true,attributeFilter:['class']});
+      const pointer=(type:string,px:number,py:number)=>el.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'touch',isPrimary:true,clientX:px,clientY:py}));
+      const frame=()=>new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve)));
+      pointer('pointerdown',x,y);await frame();const afterDown=el.className;
+      pointer('pointerup',x,lift==='inside'?y:y+400);await frame();const afterUp=el.className;
+      if(click)el.click();await frame();observer.disconnect();
+      return {afterDown:down(afterDown),afterUp:down(afterUp),seen:seen.map(down),final:el.className};
+    },[selector,lift,click] as const);
+    // Opening Bank: down at touch, still down after the finger lifts, and down (now open) after the click; never up.
+    const open=await tap('#window-bank');
+    expect(open.afterDown).toBe(true);expect(open.afterUp).toBe(true);expect(open.seen.every(Boolean)).toBe(true);
+    expect(open.final).toContain('is-pressed');expect(open.final).not.toContain('is-held');
+    await expect(page.locator('[data-window=bank]')).toBeVisible();
+    // Closing it by the launcher: held down until the click, then up once.
+    const close=await tap('#window-bank');expect(close.afterUp).toBe(true);expect(close.final).not.toMatch(/is-pressed|is-held/);
+    await expect(page.locator('[data-window=bank]')).toBeHidden();
+    // A finger lifted off the button releases it without a click.
+    const off=await tap('#window-bank',{lift:'outside',click:false});expect(off.afterDown).toBe(true);expect(off.afterUp).toBe(false);
+    await expect(page.locator('[data-window=bank]')).toBeHidden();
+  });
   test('the game stays fixed to the screen when the page is scrolled',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
     const before=(await page.locator('#app').boundingBox())!;

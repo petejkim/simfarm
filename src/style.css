@@ -59,7 +59,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .bevel-button:disabled{opacity:1;cursor:default}
 .bevel-button:focus-visible{outline:2px solid #0000eb;outline-offset:-4px}
 .bevel-button-face{position:relative;display:flex;flex:1;align-items:center;justify-content:center;border:2px solid;border-color:var(--bevel-light) var(--bevel-shadow) var(--bevel-shadow) var(--bevel-light);background-color:var(--face);background-repeat:no-repeat;image-rendering:pixelated;overflow:hidden;line-height:1}
-.bevel-button:active:not(:disabled) .bevel-button-face,.bevel-button.is-pressed .bevel-button-face{border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
+.bevel-button:active:not(:disabled) .bevel-button-face,.bevel-button.is-pressed .bevel-button-face,.bevel-button.is-held:not(:disabled) .bevel-button-face{border-color:var(--bevel-shadow) var(--bevel-light) var(--bevel-light) var(--bevel-shadow)}
 .bevel-button:disabled .bevel-button-face[style*=background-image]::after{content:'';position:absolute;inset:0;background:#c2c2c260}
 /* Native windows on shared chrome (Speed, Settings, file dialogs): framed face client, bold monospace labels,
    sunken status/value insets, chrome-styled select and range controls, caption BevelButtons. */

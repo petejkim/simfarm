@@ -3594,3 +3594,23 @@ Validation: type check. field-tools checks:
 - Plant: items 4px from the left, right and bottom.
 
 mobile-touch widths now include the padding (232 and 120 × zoom). mobile-touch also checks each phone item's icon is 6px in from its left, top and bottom, and the title text lines up with the icons. field-tools, mobile-touch, palette-supplies and edit-workspace: 32/32.
+
+### Touch press held until the click (2026-10-13, user report)
+
+**Report:** with the iOS `:active` hook (polish item 2), tapping a control-bar launcher showed it down, then up, then down again.
+- iOS ends `:active` when the finger lifts.
+- The tap's click, which opens the window and sets the launcher's persistent pressed state, arrives in a later task.
+- So a frame rendered between them with the button up.
+
+**Fix:** `BevelButton` holds a touch press.
+- `pointerdown` from touch or pen sets `is-held`, drawn like pressed.
+- The click handler releases it after running the button's own `onClick`, so React renders the release in the same update as the click's state change.
+- A finger lifted outside the button (checked with `elementFromPoint`, since touch pointers are captured), `pointercancel`, or a click that never arrives within 500ms also releases it.
+- Mouse presses are unchanged.
+
+Validation: build. A mobile-touch case replays the iOS order with dispatched touch pointer events and a separate click, recording every class change:
+- opening Bank is down at touch, still down after lift, and never up until it ends pressed;
+- closing it ends up;
+- a finger lifted off the button releases without a click.
+
+It passes in Chromium and WebKit and fails with the previous BevelButton. mobile-touch, control-bar, window-movement, edit-workspace, buy-window, sell-window, main-menu, field-tools, palette-supplies, map-window and new-farm: 62/62.
