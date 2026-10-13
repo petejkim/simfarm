@@ -45,3 +45,7 @@ Automatic saves used to drop their result: the save on New Game and Load from Fi
 - `error`: the farm could not be saved automatically (with the error); use Save to File...
 
 Each game reports a reason once: attaching a new game resets this, and so does a successful save. The warning waits for game messages, Bulldoze confirmation, New Game and town events to close. A failed manual File → Save shows the warning every time, as well as the status line (user request, 2026-10-13). A tab that takes over the lock when the other closes resumes saving at its next automatic save.
+
+## Replace-game confirmation (user request, 2026-10-13)
+
+File → New Game and Load from File... first show an original message popup: portrait 74 with YES/CANCEL, as the Bulldoze confirmation. It warns that the current farm will be deleted, and tells the player to cancel and use Save to File... first to keep a copy. CANCEL keeps the farm, and nothing else happens. YES opens New Game setup, or opens the file picker from inside the YES click so the browser still treats it as a user gesture. Cancel inside New Game setup still keeps the current farm. The first-launch New Game, and setup's own Load a Saved Game, do not show the confirmation.

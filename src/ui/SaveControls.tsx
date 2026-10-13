@@ -8,6 +8,7 @@ import { GameWindow } from './GameWindow';
 import { FileMenu, type MenuChoices } from './FileMenu';
 import { ControlBar, type GameWindow as WindowCommand } from './ControlBar';
 import type { SaveOutcome } from '../storage/autosave';
+import { ReplaceGameDialog, type ReplaceGameAction } from './ReplaceGameDialog';
 
 // File System Access pickers (Chromium). Elsewhere the download link and file input are used.
 type FilePickerWindow = Window & {
@@ -66,6 +67,7 @@ export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, st
     }
     finally{savingRef.current=false;setSaving(false);}
   }
+  const [replace,setReplace]=useState<ReplaceGameAction|null>(null);
   /** File → Load from File...: an open-file dialog where supported, otherwise the file input. */
   async function chooseFile() {
     const picker = (window as FilePickerWindow).showOpenFilePicker;
@@ -99,7 +101,7 @@ export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, st
   return <div className="farm-file-controls">
     <div className="original-controls">
       <FileMenu debug={debug} speed={speed} about={assets.about} options={options} disasters={disasters} data={assets.mainMenus} busy={busy||saving} onSave={saveGame} onSaveToFile={save}
-        onLoad={() => void chooseFile()} onNewGame={onNewGame} onWindow={window=>onWindow(window,'menu')} />
+        onLoad={() => setReplace('load')} onNewGame={() => setReplace('new-game')} onWindow={window=>onWindow(window,'menu')} />
       <ControlBar tiles={tiles} artwork={assets.controlBar} expertFace={assets.expertLauncher} timeToggle={assets.timeToggle} menus={assets.mainMenus} snapshot={simulation.getSnapshot()} onWindow={window=>onWindow(window,'toolbar')}
         onTogglePause={()=>simulation.dispatch({ type: 'set-paused', paused: !simulation.getSnapshot().paused })} />
     </div>
@@ -109,6 +111,8 @@ export function SaveControls({ simulation, scenarioId, assets, tiles, loaded, st
         if (file) void load(file);
       }} />
     <span id="save-status" className="file-status" role="status">{message}</span>
+    {replace&&<ReplaceGameDialog action={replace} assets={assets} onCancel={()=>setReplace(null)}
+      onConfirm={()=>{ setReplace(null); if (replace === 'load') void chooseFile(); else onNewGame(); }} />}
     {busy&&<GameWindow windowKey="file-loading" title="Loading game" forced framed onClose={cancelLoad}>
       <section className="native-window native-dialog" aria-label="Loading farm">
         <SunkenInset as="div" className="native-status"><span role="status">Loading farm…</span></SunkenInset>

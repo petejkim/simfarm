@@ -25,7 +25,7 @@ test('a first start without saved data generates a random farm in Region 9, 14 a
   await page.goto('/'); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain');
   // First launch opens New Game over the generated farm, which keeps starting behind it; Cancel keeps that farm.
   const setup = page.getByRole('region', { name: 'New farm', exact: true });
-  await expect(setup).toBeVisible(); await reveal(page, '#region-map');
+  await expect(setup).toBeVisible(); await expect(page.locator('[data-replace-game]')).toHaveCount(0); await reveal(page, '#region-map');
   await expect(page.locator('[data-region="8,13"]')).toHaveAttribute('aria-pressed', 'true');
   await setup.getByRole('button', { name: 'Cancel', exact: true }).click(); await expect(setup).toHaveCount(0);
   const first = await saveToFile(page), options = first.runtime.newFarm.provenance.options;

@@ -3321,3 +3321,9 @@ Validation: type check. Browser specs autosave (including a new storage-error ca
 A failed File → Save now also opens the save-problem warning, every time it fails; the status line still updates. The two-window autosave test checks this, and its takeover retry dismisses the warning before each attempt.
 
 Validation: type check. Browser spec autosave, 8/8; the two-window case was repeated 3×.
+
+## 2026-10-13 — Confirmation before replacing the current game
+
+File → New Game and Load from File... now ask for confirmation first, in the original message popup. The text says the current farm will be deleted and to cancel and use Save to File... first. CANCEL keeps the farm; YES continues. The automatic first-launch New Game skips it. Menu-driven test helpers now press YES.
+
+Validation: type check. Browser specs main-menu (new confirmation case), first-start, autosave, file-loading, file-errors, new-game-layout, native, region-selection, new-farm and region-artwork, 56/56; the confirmation case was rerun after the wording change.

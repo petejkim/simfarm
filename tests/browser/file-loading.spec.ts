@@ -11,7 +11,7 @@ async function save(page:Page){
 }
 async function load(page:Page,text:string){
   const picker=page.waitForEvent('filechooser');await page.locator('#file-menu-button').click();
-  await page.getByRole('menuitem',{name:'Load from File...',exact:true}).click();
+  await page.getByRole('menuitem',{name:'Load from File...',exact:true}).click(); await page.locator('#replace-game-yes').click();
   await(await picker).setFiles({name:'farm.simfarm.json',mimeType:'application/json',buffer:Buffer.from(text)});
 }
 for(const cancel of ['button','Escape','close'] as const)test(`File Load ${cancel} cancels pending assets and late completion cannot replace a newer farm`,async({page})=>{

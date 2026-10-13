@@ -14,6 +14,7 @@ async function start(page: Page) {
 }
 async function command(page: Page, name: string) {
   await reveal(page, '#file-menu-button'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name, exact: true }).click();
+  if (name === 'New Game' || name === 'Load from File...') await page.locator('#replace-game-yes').click();
 }
 async function save(page: Page) {
   const pending = page.waitForEvent('download'); await command(page, 'Save to File...'); const download = await pending;
@@ -23,6 +24,24 @@ async function pick(page: Page, name: string, buffer: Buffer) {
   const pending = page.waitForEvent('filechooser'); await command(page, 'Load from File...');
   await (await pending).setFiles({ name, mimeType: 'application/octet-stream', buffer });
 }
+
+test('New Game and Load from File... warn that the current farm will be deleted, and CANCEL keeps it', async ({ page }) => {
+  await start(page); const before = await save(page), dialog = page.locator('[data-replace-game]');
+  const setup = page.getByRole('region', { name: 'New farm', exact: true });
+  let chooser = false; page.on('filechooser', () => { chooser = true; });
+  for (const [name, action, text] of [['New Game', 'new-game', /^Starting a new game will delete your current farm\./], ['Load from File...', 'load', /^Loading a farm will delete your current farm\./]] as const) {
+    await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name, exact: true }).click();
+    await expect(dialog).toHaveAttribute('data-replace-game', action); await expect(page.locator('#replace-game-text')).toHaveText(text);
+    await page.locator('#replace-game-cancel').click(); await expect(dialog).toHaveCount(0);
+  }
+  await expect(setup).toHaveCount(0); expect(chooser).toBe(false); expect((await save(page)).data).toEqual(before.data);
+  // YES continues: New Game opens setup; Load opens the file picker from the YES click.
+  await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'New Game', exact: true }).click();
+  await page.locator('#replace-game-yes').click(); await expect(setup).toBeVisible();
+  await setup.getByRole('button', { name: 'Cancel', exact: true }).click();
+  const picked = page.waitForEvent('filechooser'); await page.locator('#file-menu-button').click();
+  await page.getByRole('menuitem', { name: 'Load from File...', exact: true }).click(); await page.locator('#replace-game-yes').click(); await picked;
+});
 
 test('source menu order uses HTML text, keyboard navigation and original desktop spacing', async ({ page }) => {
   await start(page);

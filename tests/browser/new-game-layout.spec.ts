@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test';
 
 test('New Game opens the original chooser directly, keeps native options, and fits both source panels at 1x',async({page})=>{
   await page.setViewportSize({width:640,height:480});await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
-  const open=async()=>{await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'New Game',exact:true}).click();};
+  const open=async()=>{await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'New Game',exact:true}).click(); await page.locator('#replace-game-yes').click();};
   await open();const win=page.locator('[data-window=newgame]'),region=page.locator('#geographic-chooser');
   await expect(region).toBeVisible();await expect(region.getByRole('heading')).toBeFocused();
   
@@ -33,7 +33,7 @@ test('each New Game suggests a new seed, keeps edits within setup, and leaves th
   });
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
   async function save(){const download=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await(await download).path())!));}
-  async function open(){await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'New Game',exact:true}).click();await expect(page.locator('#region-map')).toBeVisible();}
+  async function open(){await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'New Game',exact:true}).click(); await page.locator('#replace-game-yes').click();await expect(page.locator('#region-map')).toBeVisible();}
   const before=await save();await open();const first=Number(await page.locator('#new-farm-seed').inputValue());expect(first).toBeGreaterThan(100);
   await page.locator('#new-farm-seed').fill('65535');await page.locator('[data-region="3,8"]').click();await expect(page.locator('#new-farm-seed')).toHaveValue('65535');
   await page.getByRole('button',{name:'Cancel',exact:true}).click();expect(await save()).toEqual(before);

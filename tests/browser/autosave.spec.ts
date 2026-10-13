@@ -10,6 +10,7 @@ async function start(page: Page) {
 }
 async function command(page: Page, name: string) {
   await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name, exact: true }).click();
+  if (name === 'New Game' || name === 'Load from File...') await page.locator('#replace-game-yes').click();
 }
 async function saveToFile(page: Page) {
   const pending = page.waitForEvent('download'); await command(page, 'Save to File...');

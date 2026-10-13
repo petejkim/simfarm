@@ -403,7 +403,7 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
   await expect(page.locator('#save-status')).toHaveText('Saved farm restored (paused).');
   const chooserPromise = page.waitForEvent('filechooser');
-  await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Load from File...', exact: true }).click();
+  await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Load from File...', exact: true }).click(); await page.locator('#replace-game-yes').click();
   await (await chooserPromise).setFiles(path);
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   await expect(page.locator('#map-status')).toContainText('Scenario 5');

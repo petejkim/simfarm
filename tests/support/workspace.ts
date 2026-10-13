@@ -113,7 +113,7 @@ export async function reveal(page: Page, selector: string) {
 /** Original File entry; native seed/year remain inside the source region chooser. */
 export async function newGame(page:Page){
   await acknowledgeFinanceMessages(page);await page.locator('#file-menu-button').click();
-  await page.getByRole('menuitem',{name:'New Game',exact:true}).click();
+  await page.getByRole('menuitem',{name:'New Game',exact:true}).click(); await page.locator('#replace-game-yes').click();
 }
 
 /** The depressed Edit palette button names the running map action (View object when idle). */
