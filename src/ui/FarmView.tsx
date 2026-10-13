@@ -401,6 +401,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
     <GameWindow windowKey="options" title="Settings" framed><section className="native-window browser-settings" aria-label="View and audio settings">
       <label className="native-row"><span className="native-label">Zoom</span><select id="zoom" className="chrome-select" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
+        {/* A pinched zoom (native) is listed as it is; choosing a preset replaces it. */}
+        {![0.5,1,2].includes(zoom)&&<option value={zoom}>{Math.round(zoom*100)}%</option>}
       </select></label>
       {audioControls}
     </section></GameWindow>
@@ -450,7 +452,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
         <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") ${cursorHotspot} ${cursorHotspot}, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize} scenario={data.scenario} tiles={tilesForWeather(data.tiles,snapshot?.weather)} townEventTiles={tilesForWeather(assets.townEventTiles[snapshot?.townEvent.artworkMode ?? 0],snapshot?.weather)} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           onStroke={active=>{mapStroke.current=active;}} stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
-          preview={preview} onPointer={onMapPointer} confirmTaps={confirmTaps} toolKey={toolKey} onSecondarySelect={interactWithMap} onSelect={index => {
+          preview={preview} onPointer={onMapPointer} confirmTaps={confirmTaps} toolKey={toolKey} onZoom={onZoomChange} onSecondarySelect={interactWithMap} onSelect={index => {
             if(construction.tool||bulldoze.active)return;
             if(enterMapWindow(index))return;
             setSelection(index);

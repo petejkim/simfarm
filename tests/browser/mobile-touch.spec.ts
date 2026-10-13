@@ -112,3 +112,47 @@ test('the installable web app manifest and home-screen icons are served',async({
   expect(await page.locator('meta[name=viewport]').getAttribute('content')).not.toContain('viewport-fit');
   expect(await page.locator('meta[name=apple-mobile-web-app-status-bar-style]').getAttribute('content')).toBe('default');
 });
+
+test.describe('pinch zoom',()=>{
+  test.use({hasTouch:true,isMobile:true,deviceScaleFactor:3,viewport:{width:390,height:844}});
+  test('two fingers zoom the terrain smoothly about their midpoint, keep the zoom they leave and never paint',async({page})=>{
+    const f=shopFixture();f.state.disasters.enabled=false;const g=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,g.save(4));
+    const session=await page.context().newCDPSession(page),viewport=page.locator('#viewport'),world=page.locator('#world');
+    await viewport.evaluate(v=>v.scrollTo(400,400));
+    const box=(await viewport.boundingBox())!,mid={x:Math.round(box.x+box.width/2),y:Math.round(box.y+box.height/2)};
+    /** The content point (in zoom-1 pixels) under the midpoint. */
+    const under=()=>viewport.evaluate((v,m)=>{const r=v.getBoundingClientRect(),z=parseFloat(getComputedStyle(v.querySelector('canvas')!).width)/1536;
+      return [(v.scrollLeft+m.x-r.left)/z,(v.scrollTop+m.y-r.top)/z];},mid);
+    const pinch=async(from:number,to:number,end=true)=>{
+      const points=(d:number)=>[{x:mid.x-d,y:mid.y,id:0},{x:mid.x+d,y:mid.y,id:1}];
+      await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:points(from)});
+      for(let i=1;i<=6;i++)await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:points(from+(to-from)*i/6)});
+      if(end)await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    };
+    const before=await under();
+    await pinch(40,80,false);
+    // Mid-gesture: the canvas follows the fingers continuously and the midpoint's content stays put.
+    expect(await world.evaluate(c=>parseFloat(getComputedStyle(c).width))).toBeCloseTo(3072,0);
+    const during=await under();expect(Math.abs(during[0]-before[0])).toBeLessThan(1);expect(Math.abs(during[1]-before[1])).toBeLessThan(1);
+    await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await expect(page.locator('#zoom')).toHaveValue('2');
+    const after=await under();expect(Math.abs(after[0]-before[0])).toBeLessThan(1);expect(Math.abs(after[1]-before[1])).toBeLessThan(1);
+    // 2 x 0.7 = 1.4 stays 1.4, not snapped to device pixels (user request), and is listed as 140%.
+    await pinch(100,70);
+    await expect(page.locator('#zoom')).toHaveValue('1.4');
+    expect(await page.locator('#zoom option:checked').textContent()).toBe('140%');
+    expect(await world.evaluate(c=>c.getBoundingClientRect().width)).toBeCloseTo(1536*1.4,0);
+    // A pinch that begins on the highlighted tile of a paint tool builds nothing.
+    await page.getByRole('button',{name:'Dirt road',exact:true}).click();await expectPaletteAction(page,'Dirt road');
+    const tile=await world.evaluate((c,m)=>{const r=c.getBoundingClientRect(),z=r.width/1536;return [Math.floor((m.x-40-r.left)/(16*z)),Math.floor((m.y-r.top)/(16*z))];},mid);
+    const zoom=1.4,cell=(await world.boundingBox())!;
+    const at={x:cell.x+(tile[0]+.5)*16*zoom,y:cell.y+(tile[1]+.5)*16*zoom};
+    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[at]});await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...at,id:0}]});
+    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...at,id:0},{x:at.x+80,y:at.y,id:1}]});
+    for(let i=1;i<=4;i++)await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:at.x-10*i,y:at.y,id:0},{x:at.x+80+10*i,y:at.y,id:1}]});
+    await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+    await session.detach();
+  });
+});

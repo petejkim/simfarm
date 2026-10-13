@@ -3369,3 +3369,25 @@ Android opens standalone (status and navigation bars visible), not immersive.
 Validation: browser specs mobile-touch (manifest display, viewport meta and status bar style), mobile-audio, window-movement, edit-workspace and finance-messages, 20/20. Chromium parses the band rule unchanged in dev and production CSS and computes 0 padding outside iOS. The band cannot be exercised locally; the user should check it on the iPhone in both orientations after removing and re-adding the app. Tune `--ios-edge-band` if needed.
 
 Sources: github.com/devswha/herdr-web-ui/pull/199, github.com/mval23/remy/pull/12, github.com/anomalyco/opencode/pull/53297.
+
+## 2026-10-13 — Pinch zoom on the terrain
+
+Native addition (user request): two fingers on the terrain zoom it smoothly between 50% and 400%.
+
+- **Smooth gesture:** FarmMap listens for non-passive touch events on `#viewport`. Each move resizes the canvas and scrolls the viewport directly, with no React render per move. The content point under the fingers' midpoint stays beneath it (`pinchView` in `src/ui/pinch-zoom.ts`), so moving both fingers also pans.
+- **On release:** the zoom is kept as the fingers left it (rounded to whole percent) and committed as the Zoom setting. FarmMap's zoom-change recentring is skipped by pre-setting its previous zoom. The view stays around the viewport centre.
+- **No snapping:** an earlier draft snapped to whole device pixels. The user rejected it: modern phone screens look sharp at any zoom.
+- **Settings list:** the Zoom list shows a pinched value (e.g. 140%) beside the 50/100/200% presets.
+- **Browser zoom blocked:** `#viewport` has `touch-action: pan-x pan-y`, and iOS gesture events are cancelled there. One finger still scrolls natively, but the browser never page-zooms the map.
+- **Interrupted gestures:** a second finger ends a pending tap, long press or paint stroke. A paint stroke on the highlighted tile now waits until the finger moves beyond the tap distance or lifts, so a pinch that starts there builds nothing. A cancelled press likewise paints nothing; the direct-bulldoze touch case was updated, and now taps to clear.
+
+Validation: type check; unit test pinch-zoom. Browser specs:
+- mobile-touch (new pinch case at device scale 3: continuous canvas width mid-gesture, midpoint anchoring, 200% then 140% committed to Settings, no road from a pinch on the highlighted tile), 6/6;
+- direct-construction and direct-bulldoze;
+- specs using the Zoom setting (map-window, map-interaction and others), plus mobile-audio, edit-workspace and options: 79 tests in total.
+
+Two of the 79 failed:
+- **palette-supplies** touch case: it still assumed a press plants immediately, which predates the first-tap highlight. It now taps first and passes.
+- **animal-input** "map hover steers original livestock": flaky, unrelated. It failed 3 of 5 repeats here and also 3 of 5 on 8d273d8, before any mobile work. Saves differ in `visual` and the animal record, consistent with timing rather than hover input. To revisit.
+
+Limitation: no trackpad or ctrl+wheel zoom on desktop; not yet checked on a real phone.

@@ -57,6 +57,9 @@ test('full inventory rejects Hay/Trough but allows Trees, including captured tou
   for(const name of ['Hay','Trough']){await tool(page,name);await click(page,10,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));}
   await reveal(page,'#zoom');await page.locator('#zoom').selectOption('2');await tool(page,'Trees');await page.locator('#viewport').evaluate(v=>v.scrollTo(20*32,20*32));
   const a=await coords(page,25,25),b=await coords(page,26,25),session=await page.context().newCDPSession(page);
+  // Touch has no hover: the first tap only highlights the tile; pressing the highlighted tile plants.
+  await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[a]});await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[a]});
   for(let i=1;i<=4;i++)await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:a.x+(b.x-a.x)*i/4,y:a.y}]});
   await session.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});

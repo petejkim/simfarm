@@ -687,3 +687,5 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none;background:#555}
 #app{height:100dvh;background:#555}
 .game-desktop{height:100%}
 @supports (-webkit-touch-callout:none){@media (display-mode:standalone){#app{padding-top:var(--ios-edge-band,32px)}}}
+/* Two-finger pinch on the terrain is FarmMap's zoom, never the browser's page zoom; one finger still scrolls natively. */
+.game-desktop #viewport{touch-action:pan-x pan-y}
