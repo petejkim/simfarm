@@ -3494,3 +3494,40 @@ Validation: type check. mobile-touch landscape case checks 32px headings and 28p
 - **Rotation:** an open menu closes when `(orientation: portrait)` changes, instead of floating misplaced after the bar moves between the left column and the top row.
 
 Validation: type check. main-menu adds a heading-toggle case that replays Safari's sequence (blur with no destination, then click) and checks Tab-style focus moves still close. mobile-touch adds a rotation case in both directions. Both fail without the fix. main-menu, mobile-touch, debug-menu, disaster-menu, window-menu-checks and options: 42/42.
+
+## 2026-10-13 — 1.2× via CSS zoom instead of the viewport scale
+
+**Report:** on the iPhone, switching orientation left taps misaligned with what was drawn: a tap on PLANT opened SPRAY, the button below it. Playwright's mobile WebKit showed the same kind of mismatch under `initial-scale=1.2`. The user asked to return to a 1.0 viewport and enlarge in CSS.
+
+**Changes:**
+- `index.html`: `width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover`.
+- `style.css`: `@media (pointer: coarse) { #app { zoom: 1.2 } }`. Phones and tablets get 1.2×, matching where the viewport scale applied before; desktop browsers ignored the viewport scale. The phone media queries now measure real CSS px. The 500px short-side cap still separates phones (≤ 430) from tablets (≥ 744).
+- `src/main.tsx`: on window and visual-viewport `resize`/`scroll` and on `orientationchange`, a scrolled document is put back to 0,0. This targets iOS leaving the page offset after rotation, the other known cause of fixed-content tap offsets. Not verified on a device.
+
+**Measured zoom semantics:** Chromium and desktop WebKit 26.6 agree, using standardized zoom.
+- `getBoundingClientRect` and pointer `clientX`/`offsetX` are zoomed screen px.
+- `offset*`, `client*`, scroll positions and style lengths are layout px.
+- `element.currentCSSZoom` gives the effective zoom (`src/ui/css-zoom.ts` → `cssZoom`).
+
+**Coordinate fixes:**
+- **GameWindow:** every rect goes through `layoutRect`, which divides by the zoom. Drag deltas are divided by the zoom.
+- **FileMenu** popup clamp: padding is scaled to screen px, and `max-height` and the translate to layout px.
+- **FarmMap:**
+  - tile picking (`tileAt`, `selectTile`, `paintTile`, `updatePointer`) divides by `16 × zoom × cssZoom`;
+  - viewport bounds use `clientWidth × cssZoom`;
+  - autoscroll edge distances, the touch-pan scroll delta and the pinch anchor are converted to layout px.
+- **MapWindow** was already ratio-based (`rect.width / offsetWidth`).
+
+**Tests (`mobile-touch`):**
+- A shared `Z = 1.2` scales screen-px expectations: palette strip and cells, band, heading/item heights, safe-area inset, tablet palette, map-window click point, pinch content point and canvas width.
+- The touch Buy and paint/pan cases now run as a 1280×900 touch screen, so they exercise tile picking and panning through the zoom (a 96×72 screen-px drag scrolls exactly 80×60).
+- New: a window follows the finger 1:1 (vertical in portrait, sideways in landscape). It fails without the drag conversion (moves 1.2×).
+- The rotation case now taps PLANT and SPRAY after each rotation.
+- **WebKit:** with a 1.0 page scale, Playwright's mobile WebKit taps land correctly, so its earlier coordinate artifact is gone. Under `--browser=webkit`, every tap-based case passes. Only CDP touch/inset tests and the mouse-wheel test cannot run there.
+
+**Validation:** type check and build. Full browser regression (cross-cutting input change): 331/332.
+- The one failure was the new drag case. Under parallel load, its landscape drag began while the window was still refitting through its ResizeObserver.
+- The test now waits for a stable window box before dragging.
+- After the fix: that case 8/8 at 4 workers, and the mobile-touch spec twice at 4 workers.
+
+**Needs device confirmation:** fully relaunch the home-screen app so it loads the new viewport tag, then rotate and tap PLANT and SPRAY.

@@ -1,4 +1,5 @@
 import { HarvestWorkerAnimation } from '../render/harvest-workers';
+import { cssZoom } from './css-zoom';
 import { drawDisasters, type DisasterSprites } from '../render/disaster-renderer';
 import type { MovingDisasterState } from '../simulation/moving-disasters';
 import { drawAircraft, flightPixelPosition, type FlightSprites } from '../render/aircraft-renderer';
@@ -78,10 +79,10 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
   const updatePointer = useCallback(() => {
     const p = pointerRef.current, canvas = canvasRef.current, viewport = viewportRef.current;
     if (!p || !canvas || !viewport) { onPointer(armed.current); return; }
-    const bounds = viewport.getBoundingClientRect(), rect = canvas.getBoundingClientRect();
-    const x = Math.floor((p.clientX - rect.left) / (16 * zoom)), y = Math.floor((p.clientY - rect.top) / (16 * zoom));
-    onPointer(p.clientX >= bounds.left && p.clientX < bounds.left + viewport.clientWidth &&
-      p.clientY >= bounds.top && p.clientY < bounds.top + viewport.clientHeight &&
+    const bounds = viewport.getBoundingClientRect(), rect = canvas.getBoundingClientRect(), s = cssZoom(canvas);
+    const x = Math.floor((p.clientX - rect.left) / (16 * zoom * s)), y = Math.floor((p.clientY - rect.top) / (16 * zoom * s));
+    onPointer(p.clientX >= bounds.left && p.clientX < bounds.left + viewport.clientWidth * s &&
+      p.clientY >= bounds.top && p.clientY < bounds.top + viewport.clientHeight * s &&
       document.elementFromPoint(p.clientX,p.clientY)===canvas &&
       x >= 0 && y >= 0 && x < WORLD_SIZE && y < WORLD_SIZE ? { x, y } : null);
   }, [zoom, onPointer]);
@@ -106,7 +107,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
     const step = (now: number) => {
       const p = pointerRef.current, viewport = viewportRef.current;
       if (!document.hidden && p && viewport && document.elementFromPoint(p.clientX, p.clientY) === canvasRef.current) {
-        const bounds = viewport.getBoundingClientRect(), x = p.clientX - bounds.left, y = p.clientY - bounds.top;
+        const bounds = viewport.getBoundingClientRect(), s = cssZoom(viewport), x = (p.clientX - bounds.left) / s, y = (p.clientY - bounds.top) / s;
         // Source c6a0 tests screen coordinate 0 on the left/top, where the DOS pointer stops at the screen
         // edge. The browser viewport edges border the palette and message bar instead, so every side uses
         // the same 16px band as the source's right/bottom (display minus 17).
@@ -152,9 +153,9 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
     const viewport = viewportRef.current!, canvas = canvasRef.current!;
     let pinch: { distance: number; zoom: number; contentX: number; contentY: number; current: number } | null = null;
     const measure = (touches: TouchList) => {
-      const [a, b] = [touches[0], touches[1]], rect = viewport.getBoundingClientRect();
+      const [a, b] = [touches[0], touches[1]], rect = viewport.getBoundingClientRect(), s = cssZoom(viewport);
       return { distance: Math.max(1, Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)),
-        x: (a.clientX + b.clientX) / 2 - rect.left - viewport.clientLeft, y: (a.clientY + b.clientY) / 2 - rect.top - viewport.clientTop };
+        x: ((a.clientX + b.clientX) / 2 - rect.left) / s - viewport.clientLeft, y: ((a.clientY + b.clientY) / 2 - rect.top) / s - viewport.clientTop };
     };
     const apply = (value: number, left: number, top: number) => {
       canvas.style.width = canvas.style.height = `${1536 * value}px`; viewport.scrollTo(left, top);
@@ -232,8 +233,8 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
     updatePointer();
   }, [focus, zoom, updatePointer, flight]);
   function tileAt(clientX: number, clientY: number): MapFocus | null {
-    const rect = canvasRef.current!.getBoundingClientRect();
-    const x = Math.floor((clientX - rect.left) / (16 * zoom)), y = Math.floor((clientY - rect.top) / (16 * zoom));
+    const rect = canvasRef.current!.getBoundingClientRect(), s = cssZoom(canvasRef.current!);
+    const x = Math.floor((clientX - rect.left) / (16 * zoom * s)), y = Math.floor((clientY - rect.top) / (16 * zoom * s));
     return x >= 0 && y >= 0 && x < WORLD_SIZE && y < WORLD_SIZE ? { x, y } : null;
   }
   function tap(clientX: number, clientY: number) {
@@ -269,7 +270,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
     const dx = event.clientX - active.x, dy = event.clientY - active.y;
     if (active.paint && Math.hypot(dx, dy) > TAP_SLOP) { beginTouchStroke(active); touchMove(event); return; }
     if (!active.moved && Math.hypot(dx, dy) > TAP_SLOP) { active.moved = true; clearTimeout(active.timer); }
-    if (active.moved && active.pan) viewportRef.current!.scrollTo(active.left - dx, active.top - dy);
+    if (active.moved && active.pan) { const s = cssZoom(viewportRef.current!); viewportRef.current!.scrollTo(active.left - dx / s, active.top - dy / s); }
   }
   function touchUp(event: PointerEvent<HTMLCanvasElement>) {
     if (stroke.current?.pointer === event.pointerId) { stopPainting(); return; }
@@ -285,16 +286,16 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
   }
   function selectTile(event: MouseEvent<HTMLCanvasElement>,secondary=false) {
     if (flight) return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = Math.floor((event.clientX - rect.left) / (16 * zoom)), y = Math.floor((event.clientY - rect.top) / (16 * zoom));
+    const rect = event.currentTarget.getBoundingClientRect(), s = cssZoom(event.currentTarget);
+    const x = Math.floor((event.clientX - rect.left) / (16 * zoom * s)), y = Math.floor((event.clientY - rect.top) / (16 * zoom * s));
     if (x >= 0 && y >= 0 && x < WORLD_SIZE && y < WORLD_SIZE) (secondary?onSecondarySelect:onSelect)(worldIndex(x, y));
   }
   function paintTile(event:{clientX:number;clientY:number},initial:boolean){
     const active=stroke.current;if(!active||!paintTool||flight)return;
-    const viewport=viewportRef.current!,bounds=viewport.getBoundingClientRect(),rect=canvasRef.current!.getBoundingClientRect();
+    const viewport=viewportRef.current!,bounds=viewport.getBoundingClientRect(),rect=canvasRef.current!.getBoundingClientRect(),s=cssZoom(viewport);
     // Captured pointers can leave the canvas/viewport; never paint beneath controls.
-    if(event.clientX<bounds.left||event.clientY<bounds.top||event.clientX>=bounds.left+viewport.clientWidth||event.clientY>=bounds.top+viewport.clientHeight){if(stopPaintingOutside)stopPainting();return;}
-    const x=Math.floor((event.clientX-rect.left)/(16*zoom)),y=Math.floor((event.clientY-rect.top)/(16*zoom));
+    if(event.clientX<bounds.left||event.clientY<bounds.top||event.clientX>=bounds.left+viewport.clientWidth*s||event.clientY>=bounds.top+viewport.clientHeight*s){if(stopPaintingOutside)stopPainting();return;}
+    const x=Math.floor((event.clientX-rect.left)/(16*zoom*s)),y=Math.floor((event.clientY-rect.top)/(16*zoom*s));
     if(x<0||y<0||x>=WORLD_SIZE||y>=WORLD_SIZE)return;
     const index=worldIndex(x,y);if(active.last===index)return;
     active.last=index;

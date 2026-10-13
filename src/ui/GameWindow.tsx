@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
+import { cssZoom } from './css-zoom';
 import type { WindowArtwork } from '../assets/game-assets';
 
 interface Windows {
@@ -30,15 +31,20 @@ export function WindowDesktop({ children, artwork, onButtonClick }: { children: 
   } as CSSProperties}>{children}</div></Context>;
 }
 interface Position { left: number; top: number }
+/** Bounding box in layout px: rects are in zoomed screen px when #app is CSS-zoomed (touch screens). */
+function layoutRect(element: Element) {
+  const r = element.getBoundingClientRect(), z = cssZoom(element);
+  return { left: r.left / z, top: r.top / z, right: r.right / z, bottom: r.bottom / z, width: r.width / z, height: r.height / z };
+}
 /** Windows keep their titlebars below the menu and control bars (48px at desktop width; taller when they wrap). */
 function topLimit(element: Element): number {
   const desktop = element.closest('.game-desktop')!, workspace = desktop.querySelector('.edit-workspace');
-  return workspace ? Math.round(workspace.getBoundingClientRect().top - desktop.getBoundingClientRect().top) : 48;
+  return workspace ? Math.round(layoutRect(workspace).top - layoutRect(desktop).top) : 48;
 }
 /** Windows also keep clear of anything left of the terrain (the landscape phone menu column, side safe areas). */
 function leftLimit(element: Element): number {
   const desktop = element.closest('.game-desktop')!, workspace = desktop.querySelector('.edit-workspace');
-  return workspace ? Math.round(workspace.getBoundingClientRect().left - desktop.getBoundingClientRect().left) : 0;
+  return workspace ? Math.round(layoutRect(workspace).left - layoutRect(desktop).left) : 0;
 }
 /** Shared movable frame; optional native modal dialog keeps Edit mounted. */
 export function GameWindow({ windowKey, title, children, forced = false, modal = false, framed = false, descriptionId, onClose, titleArtwork }: {
@@ -55,11 +61,11 @@ export function GameWindow({ windowKey, title, children, forced = false, modal =
   const [scale, setScale] = useState(1);
   const drag = useRef<{ pointer: number; x: number; y: number; origin: Position } | null>(null);
   function currentPosition(): Position {
-    const box = frame.current!.getBoundingClientRect(), desktop = frame.current!.closest('.game-desktop')!.getBoundingClientRect();
+    const box = layoutRect(frame.current!), desktop = layoutRect(frame.current!.closest('.game-desktop')!);
     return { left: box.left - desktop.left, top: box.top - desktop.top };
   }
   function bounded(next: Position): Position {
-    const box = frame.current!.getBoundingClientRect(), desktop = frame.current!.closest('.game-desktop')!.getBoundingClientRect();
+    const box = layoutRect(frame.current!), desktop = layoutRect(frame.current!.closest('.game-desktop')!);
     // Oversized legacy dialogs may slide horizontally to expose either edge.
     // Keep the title below the menus and the entire window in bounds when it fits.
     const right = desktop.width - box.width, top = topLimit(frame.current!), left = leftLimit(frame.current!);
@@ -68,12 +74,12 @@ export function GameWindow({ windowKey, title, children, forced = false, modal =
   }
   /** Scales an oversized window to fit, then moves it back in bounds if it sticks out. */
   function fit() {
-    const element = frame.current!, desktop = element.closest('.game-desktop')!.getBoundingClientRect();
+    const element = frame.current!, desktop = layoutRect(element.closest('.game-desktop')!);
     // offsetWidth/Height are the untransformed layout size.
     const next = Math.min(1, (desktop.width - leftLimit(element)) / element.offsetWidth, (desktop.height - topLimit(element)) / element.offsetHeight);
     const value = next >= 1 ? 1 : Math.floor(next * 1000) / 1000;
     setScale(value); element.style.transform = value < 1 ? `scale(${value})` : '';
-    const box = element.getBoundingClientRect(), current = currentPosition();
+    const box = layoutRect(element), current = currentPosition();
     if (box.right > desktop.right || box.bottom > desktop.bottom || current.top < topLimit(element) || current.left < leftLimit(element)) move(current);
     else setPosition(old => { if (!old) return old; const bound = bounded(old); return bound.left === old.left && bound.top === old.top ? old : bound; });
   }
@@ -126,7 +132,7 @@ export function GameWindow({ windowKey, title, children, forced = false, modal =
       title="Drag to move; arrow keys move a focused titlebar (Shift for one pixel)"
       onPointerDown={startDrag} onPointerMove={event => {
         const start = drag.current; if (!start || start.pointer !== event.pointerId) return;
-        move({ left: start.origin.left + event.clientX - start.x, top: start.origin.top + event.clientY - start.y });
+        const z = cssZoom(frame.current!); move({ left: start.origin.left + (event.clientX - start.x) / z, top: start.origin.top + (event.clientY - start.y) / z });
       }} onPointerUp={stopDrag} onPointerCancel={stopDrag} onLostPointerCapture={() => { drag.current = null; }}
       onKeyDown={event => {
         if (event.target !== event.currentTarget || !['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) return;

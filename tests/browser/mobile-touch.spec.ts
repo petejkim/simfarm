@@ -6,9 +6,11 @@ import {browserCrops} from '../support/crop-catalog';
 import {worldIndex} from '../../src/formats/scenario';
 import {reveal,expectPaletteAction,expectNoHorizontalOverflow} from '../support/workspace';
 
+/** Touch screens zoom #app 1.2× (style.css); boxes are screen px, CSS lengths and scroll positions layout px. */
+const Z=1.2;
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'touch.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
-async function coords(page:Page,x:number,y:number){const r=(await page.locator('#world').boundingBox())!;return {x:r.x+(x+.5)*16,y:r.y+(y+.5)*16};}
+async function coords(page:Page,x:number,y:number){const r=(await page.locator('#world').boundingBox())!;return {x:r.x+(x+.5)*16*Z,y:r.y+(y+.5)*16*Z};}
 async function touch(session:CDPSession,points:{x:number;y:number}[],holdMs=0){
   await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[points[0]]});
   for(const point of points.slice(1))await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point]});
@@ -49,7 +51,7 @@ test.describe('phone screen',()=>{
     await page.locator('#window-map').tap();const map=page.locator('[data-window=map]');
     await expect(map).toHaveAttribute('data-scale',/^0\./);
     const scale=Number(await map.getAttribute('data-scale')),canvas=(await map.locator('canvas').first().boundingBox())!;
-    await page.mouse.click(canvas.x+40.5*2*scale,canvas.y+20.5*2*scale);
+    await page.mouse.click(canvas.x+40.5*2*scale*Z,canvas.y+20.5*2*scale*Z);
     const viewport=page.locator('#viewport');
     // Locate centres the Edit view on the tile one view right of and below it: the scroll origin is that tile.
     await expect.poll(()=>viewport.evaluate(v=>[v.scrollLeft,v.scrollTop])).toEqual([40*16,20*16]);
@@ -64,13 +66,13 @@ test.describe('phone screen',()=>{
     expect(strip.y).toBeGreaterThanOrEqual(terrain.y+terrain.height);expect(Math.abs(strip.y+strip.height-(await page.locator('.game-desktop').boundingBox())!.height-(await page.locator('.game-desktop').boundingBox())!.y)).toBeLessThan(1.5);const desk=(await page.locator('.game-desktop').boundingBox())!;expect(Math.abs(strip.x+strip.width/2-(desk.x+desk.width/2))).toBeLessThan(1);
     // The strip is zoomed 4/3 so tool cells are as big as the 32px control-bar launchers.
     const launcher=(await page.locator('#window-buy').boundingBox())!;
-    near([strip.width,strip.height],[193*4/3,49*4/3]);
+    near([strip.width,strip.height],[193*4/3*Z,49*4/3*Z]);
     // Source pairs become columns: Move/View over each other, then Paved/Dirt … Trees/Bulldoze.
     const move=await box('Move object'),view=await box('View object'),paved=await box('Paved road'),bulldoze=await box('Bulldoze');
     near([move.width,move.height],[launcher.width,launcher.height]);
-    near([view.x,view.y-move.y,paved.x-move.x,paved.y],[move.x,32,32,move.y]);near([bulldoze.x-move.x,bulldoze.y],[160,view.y]);
+    near([view.x,view.y-move.y,paved.x-move.x,paved.y],[move.x,32*Z,32*Z,move.y]);near([bulldoze.x-move.x,bulldoze.y],[160*Z,view.y]);
     const plant=await box('PLANT'),spray=await box('SPRAY');
-    near([plant.x-move.x,plant.y,plant.width,plant.height,spray.x,spray.y],[192,move.y,64,32,plant.x,view.y]);
+    near([plant.x-move.x,plant.y,plant.width,plant.height,spray.x,spray.y],[192*Z,move.y,64*Z,32*Z,plant.x,view.y]);
     // The strip is centred; the Plant menu opens centred just above it.
     await palette.getByRole('button',{name:'PLANT'}).tap();const menu=(await page.getByRole('menu',{name:'Plant Field'}).boundingBox())!;
     near([menu.y+menu.height],[strip.y]);expect(Math.abs(menu.x+menu.width/2-(strip.x+strip.width/2))).toBeLessThan(1);
@@ -78,8 +80,8 @@ test.describe('phone screen',()=>{
     // Landscape keeps the source vertical palette at the left of the terrain, right of the menu column.
     await page.keyboard.press('Escape');await page.setViewportSize({width:844,height:390});
     const nav=(await page.getByRole('navigation',{name:'Original game menus'}).boundingBox())!;
-    const side=(await palette.boundingBox())!;near([side.x,side.width],[nav.x+nav.width,49]);
-    near([(await box('View object')).x-(await box('Move object')).x,(await box('Move object')).width],[24,24]);
+    const side=(await palette.boundingBox())!;near([side.x,side.width],[nav.x+nav.width,49*Z]);
+    near([(await box('View object')).x-(await box('Move object')).x,(await box('Move object')).width],[24*Z,24*Z]);
   });
   test('portrait splits the control bar into centred rows of launchers, then forecast, readouts and pause',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
@@ -107,7 +109,7 @@ test.describe('phone screen',()=>{
     const desk=(await page.locator('.game-desktop').boundingBox())!,nav=(await page.getByRole('navigation',{name:'Original game menus'}).boundingBox())!;
     const bar=(await page.getByRole('toolbar',{name:'Game toolbar'}).boundingBox())!,workspace=(await page.locator('.edit-workspace').boundingBox())!;
     // A 16px top band in the page colour (the menu bar's) keeps the top row off the screen edge.
-    expect(Math.abs(nav.x-desk.x)).toBeLessThan(1);expect(Math.abs(nav.y-desk.y-16)).toBeLessThan(1);expect(Math.abs(nav.height-(desk.height-16))).toBeLessThan(1);
+    expect(Math.abs(nav.x-desk.x)).toBeLessThan(1);expect(Math.abs(nav.y-desk.y-16*Z)).toBeLessThan(1);expect(Math.abs(nav.height-(desk.height-16*Z))).toBeLessThan(1);
     const colour=(selector:string)=>page.locator(selector).evaluate(el=>getComputedStyle(el).backgroundColor);
     expect([await colour('.game-desktop'),await colour('.original-menu-bar'),await colour('#app')]).toEqual(Array(3).fill('rgb(85, 85, 85)'));
     expect(Math.abs(bar.x-(nav.x+nav.width))).toBeLessThan(1);expect(bar.y).toBeLessThan(nav.y+1);expect(Math.abs(workspace.x-bar.x)).toBeLessThan(1);expect(Math.abs(workspace.y-(bar.y+bar.height))).toBeLessThan(1);
@@ -116,7 +118,7 @@ test.describe('phone screen',()=>{
     for(const [i,h] of headings.entries()){expect(Math.abs(h.x-nav.x)).toBeLessThan(1);if(i)expect(h.y).toBeGreaterThanOrEqual(headings[i-1].y+headings[i-1].height-0.5);}
     // A menu opens to the right of the column and stays on screen.
     // Headings and items are taller for tapping.
-    for(const h of headings)expect(Math.round(h.height)).toBe(32);
+    for(const h of headings)expect(Math.round(h.height)).toBe(Math.round(32*Z));
     // A menu that fits opens to the right of its heading, level with it.
     await page.locator('#file-menu-button').tap();const file=(await page.locator('.original-menu-popup').boundingBox())!;
     expect(Math.abs(file.x-(nav.x+nav.width))).toBeLessThan(1.5);expect(Math.abs(file.y-headings[0].y)).toBeLessThan(1.5);
@@ -125,7 +127,7 @@ test.describe('phone screen',()=>{
     await page.locator('#windows-menu-button').tap();const popup=(await page.locator('.original-menu-popup').boundingBox())!;
     expect(Math.abs(popup.x-(nav.x+nav.width))).toBeLessThan(1.5);expect(popup.y).toBeLessThan(headings[3].y);
     expect(popup.y+popup.height).toBeLessThanOrEqual(desk.y+desk.height+0.5);
-    expect(Math.round((await page.locator('.original-menu-popup [role^=menuitem]').first().boundingBox())!.height)).toBe(28);
+    expect(Math.round((await page.locator('.original-menu-popup [role^=menuitem]').first().boundingBox())!.height)).toBe(Math.round(28*Z));
     await page.screenshot({path:'artifacts/browser-mobile-landscape-menu.png'});
     // The lowest heading's long menu moves up only far enough to fit between the band and the screen bottom.
     await page.locator('#windows-menu-button').tap();await page.locator('#debug-menu-button').tap();
@@ -150,6 +152,11 @@ test.describe('phone screen',()=>{
       await page.locator('#file-menu-button').tap();await expect(page.locator('#original-file-menu')).toHaveCount(0);
       await page.locator('#window-bank').tap();await expect(page.locator('[data-window=bank]')).toBeVisible();
       await page.locator('[data-window=bank]').getByRole('button',{name:/^Close /}).first().tap();await expect(page.locator('[data-window=bank]')).toBeHidden();
+      // PLANT and SPRAY each open their own menu (on an iPhone a 1.2 viewport scale sent PLANT taps to SPRAY).
+      await page.getByRole('button',{name:'PLANT',exact:true}).tap();await expect(page.getByRole('menu',{name:'Plant Field'})).toBeVisible();
+      await page.keyboard.press('Escape');await expect(page.getByRole('menu',{name:'Plant Field'})).toHaveCount(0);
+      await page.getByRole('button',{name:'SPRAY',exact:true}).tap();await expect(page.getByRole('menu',{name:'Spray Field'})).toBeVisible();
+      await page.keyboard.press('Escape');await expect(page.getByRole('menu',{name:'Spray Field'})).toHaveCount(0);
     };
     await reachable();
     for(const size of [{width:390,height:844},{width:844,height:390},{width:390,height:844}]){
@@ -159,6 +166,23 @@ test.describe('phone screen',()=>{
       if(size.width<size.height)expect(nav.width).toBeGreaterThan(nav.height*4);else expect(nav.height).toBeGreaterThan(nav.width*2);
       await reachable();
     }
+  });
+  test('a window follows the finger one to one through the 1.2× zoom',async({page})=>{
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    await page.locator('#window-weather').tap();const weather=page.locator('[data-window=weather]'),title=weather.locator('.game-window-title');
+    const drag=async(dx:number,dy:number)=>{
+      const before=(await weather.boundingBox())!,grip=(await title.boundingBox())!,start={x:grip.x+grip.width/2,y:grip.y+grip.height/2};
+      await page.mouse.move(start.x,start.y);await page.mouse.down();await page.mouse.move(start.x+dx,start.y+dy,{steps:4});await page.mouse.up();
+      const after=(await weather.boundingBox())!;return [after.x-before.x,after.y-before.y];
+    };
+    // Portrait: the fitted window spans the screen width, so it can only move down.
+    const down=await drag(0,60);expect(Math.abs(down[1]-60)).toBeLessThan(1.5);
+    // Landscape: room to move sideways.
+    await page.setViewportSize({width:844,height:390});
+    // The window refits to the new size through a ResizeObserver; wait until it has settled before dragging.
+    let last='';
+    await expect.poll(async()=>{const b=(await weather.boundingBox())!,now=JSON.stringify(b),settled=now===last&&b.x+b.width<700;last=now;return settled;},{intervals:[100]}).toBe(true);
+    const side=await drag(60,0);expect(Math.abs(side[0]-60)).toBeLessThan(1.5);
   });
   test('rotating the phone closes an open menu',async({page})=>{
     await page.setViewportSize({width:844,height:390});
@@ -182,13 +206,16 @@ test.describe('phone screen',()=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
     const strip=(await page.getByRole('toolbar',{name:'Edit tools'}).boundingBox())!,desk=(await page.locator('.game-desktop').boundingBox())!;
     // The strip ends the inset above the bottom of the desktop (in CSS px at the 1.2× page scale).
-    const inset=await page.locator('.game-desktop').evaluate(el=>parseFloat(getComputedStyle(el).paddingBottom));
+    const inset=await page.locator('.game-desktop').evaluate(el=>parseFloat(getComputedStyle(el).paddingBottom))*Z;
     expect(inset).toBeGreaterThan(0);expect(Math.abs(strip.y+strip.height-(desk.y+desk.height-inset))).toBeLessThan(1.5);
     await session.send('Emulation.setSafeAreaInsetsOverride' as never,{insets:{left:44,right:44,top:0,bottom:21}} as never);await page.setViewportSize({width:844,height:390});
     await expect.poll(async()=>(await page.getByRole('toolbar',{name:'Edit tools'}).boundingBox())!.x).toBeGreaterThan(0);
   });
 });
 
+// Touch-screen pages are zoomed 1.2×, so these also check tile picking and panning through the zoom.
+test.describe('touch screen',()=>{
+test.use({hasTouch:true,isMobile:true,viewport:{width:1280,height:900}});
 test('touch Buy placement highlights on the first tap and buys on a second tap of the same tile',async({page})=>{
   const f=shopFixture();f.state.disasters.enabled=false;const g=f.load().withAllCrops(browserCrops);await page.goto('/');await load(page,g.save(4));
   await reveal(page,'#viewport');await page.locator('#window-buy').click();
@@ -216,8 +243,9 @@ test('touch paint tools pan the map from unhighlighted tiles and paint after a c
   await tap(page,session,25,25);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   // Dragging from any other tile pans instead of painting.
   const from=await coords(page,30,30);
-  await touch(session,[from,{x:from.x-40,y:from.y-30},{x:from.x-80,y:from.y-60}]);
-  await expect.poll(()=>viewport.evaluate(v=>[v.scrollLeft,v.scrollTop])).toEqual([80,60]);
+  await touch(session,[from,{x:from.x-40*Z,y:from.y-30*Z},{x:from.x-80*Z,y:from.y-60*Z}]);
+  // Screen-px finger travel scrolls the same distance in layout px (80, 60) through the zoom.
+  await expect.poll(()=>viewport.evaluate(v=>[Math.round(v.scrollLeft),Math.round(v.scrollTop)])).toEqual([80,60]);
   expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   // The highlight stayed on tile 25,25 while the map moved; pressing it paints and dragging continues the road.
   const a=await coords(page,25,25),b=await coords(page,27,25);
@@ -225,6 +253,7 @@ test('touch paint tools pan the map from unhighlighted tiles and paint after a c
   for(const x of [25,26,27])g.dispatch({type:'network',tool:'road-161',x,y:25});
   expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await session.detach();
+});
 });
 
 test('the installable web app manifest and home-screen icons are served',async({page,request})=>{
@@ -241,8 +270,8 @@ test('the installable web app manifest and home-screen icons are served',async({
   expect(await page.locator('meta[name=apple-mobile-web-app-capable]').getAttribute('content')).toBe('yes');
   // iOS zooms the page into focused fields under 16px (map seed, loan amount) and the full-screen game has no way
   // to zoom back out; the page scale stays fixed and the game's own Zoom setting scales the terrain.
-  // The fixed scale is 1.2 so controls are easier to tap (user request).
-  expect(await page.locator('meta[name=viewport]').getAttribute('content')).toContain('initial-scale=1.2, maximum-scale=1.2, user-scalable=no');
+  // The page scale stays 1 (a 1.2 initial-scale misaligned taps after rotating on iOS); touch screens zoom #app 1.2×.
+  expect(await page.locator('meta[name=viewport]').getAttribute('content')).toContain('width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
   // viewport-fit=cover exposes the bottom/side safe-area insets the desktop pads by. Content under the status bar is
   // blurred by iOS and takes no taps, so the status bar stays opaque.
   expect(await page.locator('meta[name=viewport]').getAttribute('content')).toContain('viewport-fit=cover');
@@ -258,7 +287,7 @@ test.describe('pinch zoom',()=>{
     const box=(await viewport.boundingBox())!,mid={x:Math.round(box.x+box.width/2),y:Math.round(box.y+box.height/2)};
     /** The content point (in zoom-1 pixels) under the midpoint. */
     const under=()=>viewport.evaluate((v,m)=>{const r=v.getBoundingClientRect(),z=parseFloat(getComputedStyle(v.querySelector('canvas')!).width)/1536;
-      return [(v.scrollLeft+m.x-r.left)/z,(v.scrollTop+m.y-r.top)/z];},mid);
+      return [(v.scrollLeft+(m.x-r.left)/1.2)/z,(v.scrollTop+(m.y-r.top)/1.2)/z];},mid);
     const pinch=async(from:number,to:number,end=true)=>{
       const points=(d:number)=>[{x:mid.x-d,y:mid.y,id:0},{x:mid.x+d,y:mid.y,id:1}];
       await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:points(from)});
@@ -277,7 +306,7 @@ test.describe('pinch zoom',()=>{
     await pinch(100,70);
     await expect(page.locator('#zoom')).toHaveValue('1.4');
     expect(await page.locator('#zoom option:checked').textContent()).toBe('140%');
-    expect(await world.evaluate(c=>c.getBoundingClientRect().width)).toBeCloseTo(1536*1.4,0);
+    expect(await world.evaluate(c=>c.getBoundingClientRect().width)).toBeCloseTo(1536*1.4*Z,0);
     // A pinch that begins on the highlighted tile of a paint tool builds nothing.
     await page.getByRole('button',{name:'Dirt road',exact:true}).click();await expectPaletteAction(page,'Dirt road');
     const tile=await world.evaluate((c,m)=>{const r=c.getBoundingClientRect(),z=r.width/1536;return [Math.floor((m.x-40-r.left)/(16*z)),Math.floor((m.y-r.top)/(16*z))];},mid);
@@ -302,7 +331,7 @@ test.describe('tablet screen',()=>{
       const nav=(await page.getByRole('navigation',{name:'Original game menus'}).boundingBox())!,palette=(await page.getByRole('toolbar',{name:'Edit tools'}).boundingBox())!;
       const terrain=(await page.locator('#viewport').boundingBox())!;
       // Menu bar across the top, palette at the left of the terrain in its source two columns.
-      expect(nav.width).toBeGreaterThan(nav.height*4);expect(Math.round(palette.width)).toBe(49);expect(palette.y).toBeLessThan(terrain.y+terrain.height);
+      expect(nav.width).toBeGreaterThan(nav.height*4);expect(Math.round(palette.width)).toBe(Math.round(49*Z));expect(palette.y).toBeLessThan(terrain.y+terrain.height);
       expect(Math.abs(palette.x+palette.width-terrain.x)).toBeLessThan(1.5);
     }
   });

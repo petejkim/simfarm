@@ -7,4 +7,10 @@ import '@fontsource/roboto/700.css';
 import '@fontsource/dm-serif-display/400.css';
 import './style.css';
 
+// The game is fixed to the screen and the page never scrolls, but iOS can leave the document or visual viewport
+// offset after a rotation, so taps land away from what is drawn (user report: PLANT opened SPRAY). Put it back.
+const settle = () => { if (scrollX || scrollY) scrollTo(0, 0); };
+for (const target of [window, window.visualViewport]) for (const type of ['resize', 'scroll']) target?.addEventListener(type, settle);
+addEventListener('orientationchange', settle);
+
 createRoot(document.getElementById('app')!).render(<StrictMode><App /></StrictMode>);

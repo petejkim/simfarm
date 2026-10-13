@@ -718,6 +718,10 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none;background:var(--
    flat top band is gone; the default status bar keeps the page below the status bar. */
 html,body{overscroll-behavior:none}
 #app{position:fixed;inset:0;overflow:hidden;background:var(--page)}
+/* Touch screens show the game 1.2× larger so controls are easier to tap (user request). This replaced a 1.2 viewport
+   initial-scale, which iOS left misaligned with taps after rotating (a tap on PLANT opened SPRAY). Pointer and rect
+   coordinates are zoomed screen px; GameWindow, FileMenu and FarmMap convert them with cssZoom (css-zoom.ts). */
+@media (pointer:coarse){#app{zoom:1.2}}
 .game-desktop{height:100%}
 /* Loading and load-error text sits on the dark page colour before the workspace exists. */
 .game-desktop>.loading{color:#fff}

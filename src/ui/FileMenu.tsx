@@ -3,6 +3,7 @@ import type {AboutAssets} from '../assets/game-assets';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { MainMenus } from '../formats/main-menus';
 import { useWindows } from './GameWindow';
+import { cssZoom } from './css-zoom';
 import { GAME_WINDOWS, type GameWindow } from './ControlBar';
 
 /** Native File menu over the source item order (About, New Game, Save, Save As, Load Game, Load Crop, Quit):
@@ -45,11 +46,12 @@ export function FileMenu({ about, data, busy, onSave, onSaveToFile, onLoad, onNe
   useLayoutEffect(() => {
     const popup = menu.current, desktop = popup?.closest('.game-desktop');
     if (open === null || !popup || !desktop) return;
-    const style = getComputedStyle(desktop), bounds = desktop.getBoundingClientRect();
-    const top = bounds.top + parseFloat(style.paddingTop), bottom = bounds.bottom - parseFloat(style.paddingBottom);
-    popup.style.maxHeight = `${bottom - top}px`;
+    // Rects are zoomed screen px; padding, max-height and translate are layout px.
+    const style = getComputedStyle(desktop), bounds = desktop.getBoundingClientRect(), z = cssZoom(desktop);
+    const top = bounds.top + parseFloat(style.paddingTop) * z, bottom = bounds.bottom - parseFloat(style.paddingBottom) * z;
+    popup.style.maxHeight = `${(bottom - top) / z}px`;
     const box = popup.getBoundingClientRect(), shift = Math.max(top - box.top, Math.min(0, bottom - box.bottom));
-    popup.style.translate = shift ? `0 ${shift}px` : '';
+    popup.style.translate = shift ? `0 ${shift / z}px` : '';
   }, [open]);
   useEffect(() => {
     if (open === null) return;
