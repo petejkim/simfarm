@@ -3231,3 +3231,7 @@ Kept, because they test behaviour rather than pixels:
 Computed-style checks (fonts, borders, padding) remain.
 
 Validation: full browser suite 312/313. The one failure is native "Speed menu presets" again, a load-sensitive 45s timeout that passes alone and is unaffected by this change.
+
+## 2026-10-13 — Slow Speed-menu browser test removed
+
+At the user's request, native.spec's "Speed menu presets…" test is deleted. It ran ~1,400 fake-clock animation frames with full-map redraws: ~21–24s alone, over its 45s limit under parallel suite load. `tests/game.test.ts` still covers preset pacing (16×, 4×, 0.5×, 0.25× and invalid speeds). The gap is browser coverage of the Speed menu's checked preset, its item order and the paused Next Day count.

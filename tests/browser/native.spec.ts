@@ -270,47 +270,6 @@ test('a planted original corn crop grows, is harvested and sold through browser 
   expect(errors).toEqual([]);
 });
 
-test('Speed menu presets adjust running time, stays paused and keeps Next day to one day', async ({ page }) => {
-  test.setTimeout(45_000); // Full-map clock/frame progression takes ~24s alone; retain headroom under suite load.
-  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
-  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
-  await page.goto('/');
-  await expect(page.locator('#map-status')).toHaveText('Scenario 1 · original terrain');
-  // Optional disaster dialogs pause browser time; their suspension is tested separately.
-  await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Messages',exact:true}).click();
-  const choose = async (label: string) => { await openWindow(page, 'speed'); await page.getByRole('menuitemcheckbox', { name: label, exact: true }).click(); };
-  await openWindow(page, 'speed');
-  await expect(page.locator('#original-speed-menu [role=menuitemcheckbox]')).toContainText(['Very Slow (0.25x)', 'Slow (0.5x)', 'Normal (1x)', 'Fast (2x)', 'Faster (4x)', 'Even Faster (8x)', 'Fastest (16x)']);
-  await expect(page.locator('#original-speed-menu [aria-checked=true]')).toHaveAccessibleName('Normal (1x)');
-  await expect(page.locator('#original-speed-menu > *')).toHaveCount(11); // Pause, rule, seven presets, rule, Next Day
-  await expect(page.locator('#original-speed-menu > :first-child')).toHaveAccessibleName('Resume');
-  for (const n of [2, 10]) await expect(page.locator(`#original-speed-menu > :nth-child(${n})`)).toHaveAttribute('role', 'separator');
-  await expect(page.locator('#original-speed-menu > :last-child')).toHaveAccessibleName('Next Day');
-  await choose('Fastest (16x)');
-  await openWindow(page, 'speed'); await expect(page.locator('#original-speed-menu [aria-checked=true]')).toHaveAccessibleName('Fastest (16x)'); await page.keyboard.press('Escape');
-  await page.clock.runFor(1000);
-  await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
-  await (await speedItem(page,'#next-day')).click();
-  await expect(page.locator('#time-status')).toHaveText('Paused · 1 days advanced');
-  await choose('Very Slow (0.25x)');
-  await (await speedItem(page,'#play-pause')).click();
-  await page.clock.runFor(16400);
-  await expect(page.locator('#time-status')).toHaveText('Running · 2 days advanced');
-  await choose('Fastest (16x)');
-  await page.clock.runFor(4000);
-  await expect(page.locator('#time-status')).toHaveText('Running · 18 days advanced');
-  await (await speedItem(page,'#play-pause')).click();
-  await page.clock.runFor(1000);
-  await expect(page.locator('#time-status')).toHaveText('Paused · 18 days advanced');
-  await page.screenshot({ path: 'artifacts/browser-speed.png', fullPage: true });
-  await loadScenarioCheckpoint(page,Number('4'));
-  await openWindow(page, 'speed'); await expect(page.locator('#original-speed-menu [aria-checked=true]')).toHaveAccessibleName('Normal (1x)'); await page.keyboard.press('Escape');
-  await expect(page.locator('#time-status')).toHaveText('Paused · 0 days advanced');
-  await page.setViewportSize({ width: 1280, height: 844 });
-  await openWindow(page, "speed"); await expect(page.locator("#original-speed-menu")).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
-});
-
 test('map tools buy original land and complete a new-field planting and harvest cycle', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
