@@ -16,26 +16,30 @@ export function useSound() {
   const [volume,setVolume]=useState(()=>readPreferences().soundVolume??100);
   useEffect(()=>{player.setVolume(volume/100);clickPlayer.setVolume(volume/100);},[player,clickPlayer]); // Apply the remembered volume once.
   const active = useRef(enabled), activated=useRef(false), flightRunning = useRef(false), planeFailed = useRef(false);
-  const planeSample = useRef<PcmSound | null>(null), playing = useRef<GameSound | null>(null);
-  const request = useRef<{ id: GameSound; controller: AbortController } | null>(null);
+  // Decoded samples, kept like the original's sample cache (0x23d72 resolves/caches before playing). Refetching on
+  // every request delayed rapid repeats unevenly and dropped those whose load the next request aborted.
+  const samples = useRef(new Map<GameSound, PcmSound>());
+  // In-flight loads by sound; effects overlap, so a new request no longer cancels another sound's load.
+  const requests = useRef(new Map<GameSound, AbortController>());
+  const abortLoads = useCallback(() => { for (const controller of requests.current.values()) controller.abort(); requests.current.clear(); }, []);
   const stop = useCallback(() => {
-    active.current = false; activated.current=false; request.current?.controller.abort(); request.current = null;
-    player.stop(); clickPlayer.stop(); clickRequest.current?.abort(); playing.current = null; planeFailed.current = false; setEnabled(false);
-  }, [player,clickPlayer]);
+    active.current = false; activated.current=false; abortLoads();
+    player.stop(); clickPlayer.stop(); clickRequest.current?.abort(); planeFailed.current = false; setEnabled(false);
+  }, [player,clickPlayer,abortLoads]);
   // Presentation lifetime only. Flight rules and timing remain in GameSimulation.
   const setFlightRunning = useCallback((running: boolean) => {
     flightRunning.current = running; planeFailed.current = false;
     if (!running) {
-      if (request.current?.id === 'plane') { request.current.controller.abort(); request.current = null; }
-      if (playing.current === 'plane') { player.stop(); playing.current = null; }
+      requests.current.get('plane')?.abort(); requests.current.delete('plane');
+      const plane = samples.current.get('plane'); if (plane) player.stop(plane);
     }
   }, [player]);
   useEffect(() => {
     active.current=enabled; // Restore intent after React's development effect cleanup.
-    const suspend=()=>{activated.current=false;request.current?.controller.abort();clickRequest.current?.abort();player.stop();clickPlayer.stop();};
+    const suspend=()=>{activated.current=false;abortLoads();clickRequest.current?.abort();player.stop();clickPlayer.stop();};
     window.addEventListener('pagehide', suspend);
-    return () => { window.removeEventListener('pagehide', suspend); active.current = false; request.current?.controller.abort(); clickRequest.current?.abort(); player.dispose(); clickPlayer.dispose(); };
-  }, [player, clickPlayer, stop]);
+    return () => { window.removeEventListener('pagehide', suspend); active.current = false; abortLoads(); clickRequest.current?.abort(); player.dispose(); clickPlayer.dispose(); };
+  }, [player, clickPlayer, stop, abortLoads]);
   const activate=useCallback(()=>{
     if(!active.current)return;
     // Re-unlock synchronously on every activation event until both contexts run (mobile gesture rules, interruptions).
@@ -55,20 +59,21 @@ export function useSound() {
   };
   const play = useCallback((id: GameSound) => {
     if (!active.current||!activated.current) return;
-    // Source0x23d72 skips status2. Native engine requests wait for the current
-    // sample/load to finish, then replay on a later flight frame, never restarting each frame.
-    if (id === 'plane' && (!flightRunning.current || request.current || player.playing || planeFailed.current)) return;
-    request.current?.controller.abort(); player.stop();
-    if (id === 'plane' && planeSample.current) { player.play(planeSample.current); playing.current = id; return; }
-    const controller = new AbortController(); request.current = { id, controller };
+    // Source0x23d72 skips status2. Engine requests wait for the plane sample/load to finish, then replay on a later
+    // flight frame, never restarting each frame. Other effects overlap (native enhancement; the original had one voice).
+    const cached = samples.current.get(id);
+    if (id === 'plane' && (!flightRunning.current || requests.current.has(id) || (cached && player.isPlaying(cached)) || planeFailed.current)) return;
+    if (cached) { player.play(cached); return; }
+    if (requests.current.has(id)) return; // first load still in flight
+    const controller = new AbortController(); requests.current.set(id, controller);
     void loadSound(id, controller.signal).then(sound => {
       if (!controller.signal.aborted && active.current) {
-        if (id === 'plane') planeSample.current = sound;
-        player.play(sound); playing.current = id; setError('');
+        samples.current.set(id, sound);
+        player.play(sound); setError('');
       }
     }).catch(error => {
       if (!controller.signal.aborted) { if (id === 'plane') planeFailed.current = true; setError(String(error)); }
-    }).finally(() => { if (request.current?.controller === controller) request.current = null; });
+    }).finally(() => { if (requests.current.get(id) === controller) requests.current.delete(id); });
   }, [player]);
   // UI feedback has its own PCM voice so a button never cancels a disaster,
   // transaction or flight effect. Cache the original click sample after loading.

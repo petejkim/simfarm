@@ -94,6 +94,8 @@ test('original animal voices are audible when enabled, mute does not alter state
   await toggleOption(page,'Sound Effects'); await load(page, weekly.load().withAllCrops(browserCrops).save(4));
   const count = requests.length; await (await speedItem(page,'#next-day')).click(); expect(requests).toHaveLength(count);
   await page.route('**/cow2.voc', route => route.fulfill({ status: 404, body: 'Missing voice' }));
+  // Samples stay cached once decoded; a fresh page exercises the missing-file path.
+  await page.reload(); await expect(page.locator('#map-status')).toContainText('original terrain');
   await load(page, weekly.load().withAllCrops(browserCrops).save(4)); await toggleOption(page,'Sound Effects'); await (await speedItem(page,'#next-day')).click();
   await expect(page.locator('#sound-error')).toContainText('cow2.voc'); await expect((await speedItem(page,'#next-day'))).toBeEnabled();
   expect(await save(page)).toEqual(JSON.parse(muted.save(4))); expect(errors).toEqual([]);

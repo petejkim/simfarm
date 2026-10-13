@@ -3172,3 +3172,15 @@ Settings no longer shows a music status line. "Music enabled · starts on intera
 Settings has two sliders, Music volume (`#volume`, default 80%) and Sound volume (`#sound-volume`, default 100%). Sound volume scales both effect voices, game sounds and button clicks, from the original 0.75 mix level. Both values are saved as whole percentages in the browser preferences (`musicVolume`/`soundVolume` in `simfarm.options.v1`), never in the farm save. The effects gain node is now created with its audio context. Effects volume is set directly, because a scheduled ramp stalls while a context is suspended.
 
 Validation: type check and production build. Browser: options (incl. a new volume/persistence spec checking the real gain values), mobile-audio, button-sounds, startup-music, midi-loop, stationary-disasters, homestead, town-event-calendar, debug-menu and native, 59 tests passing.
+
+## 2026-10-13 — Overlapping, cached sound effects
+
+Rapid effects (e.g. dragging a road) popped, because each new sample cut off the playing one mid-waveform. I measured the imported VOC samples: they start and end within ±0.063 of zero and have DC offsets of 0.016 or less, so the samples themselves are clean. Short fades removed the pops but still sounded wrong. At the user's request, effects now overlap instead of replacing each other, with no fades. This is a native enhancement: the original helper 0x23d72 stops the current Sound Blaster sample and starts the new one on a single voice. `PcmPlayer` keeps up to eight voices, and the oldest yields when rapid repeats exceed that. `stop(sound?)` ends all voices or only those of one sample. The plane loop still waits for its own sample before replaying. Button clicks keep their separate player. The user confirmed by ear that rapid road placement sounds right.
+
+Decoded samples are now cached per sound, matching the original's resolve/cache step. Previously every request refetched and decoded its VOC. The next request cancelled any load still in flight, so rapid repeats started late or not at all. Loads for different sounds no longer cancel each other.
+
+Validation: type check. Browser: button-sounds, including new specs that check rapid repeats start without stopping each other and load the file once, plus animal-input, aircraft-flight, aircraft, stationary-disasters, options and mobile-audio: 31 passed, and 7/7 on the final rerun. The animal-input missing-PCM case now reloads the page before blocking `cow2.voc`, because the sample is cached.
+
+Known gaps:
+- **Hover test under load.** The animal-input hover test ("map hover steers original livestock…") fails under heavy parallel load (6 workers): the visual RNG and animal positions drift. It fails the same way with sound off and at `a8d9518`, before today's audio work, so it predates this change. It passes at normal concurrency. Pausing the page clock did not fix it. Revisit.
+- **Road stutter.** The user reports stutter during road placement with sound on or off, so it is not audio, and they deferred it. A 6× CPU-throttled Chromium probe showed no long tasks, but it likely never placed a road (no VOC fetches), so the result is inconclusive.
