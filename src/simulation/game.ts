@@ -91,7 +91,7 @@ import type { TownSite } from './town';
 import { resolveTownChoice, type TownChoice, type TownConstructionResult } from './town-construction';
 import { updateClearingEffects } from './clearing-effects';
 import { updateHomestead, type HomesteadChange } from './homestead';
-import type { GameEvent, AnimalSound, AnimalVocal } from './events';
+import type { GameEvent, AnimalSound, AnimalVocal, CheatCode } from './events';
 import { purchaseBuilding, type BuildingPlacementResult } from './building-placement';
 import { copyIrrigation } from '../formats/irrigation';
 import { updateIrrigation } from './irrigation';
@@ -190,6 +190,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'debug-town-event'; action: 'rodeo' | 'fair' | 'advance-week' }
   | { type: 'debug-town-expansion' }
   | { type: 'debug-town-grow' }
+  | { type: 'debug-cheat'; code: CheatCode }
   | { type: 'edit-field-plan'; fieldSlot: number; week: number; action: FieldPlanEdit }
   | { type: 'set-speed'; speed: number }
   | { type: 'start-disaster'; kind: MovingDisasterKind | WaterDisasterKind | StationaryDisasterKind | 'wind' }
@@ -545,6 +546,17 @@ export class GameSimulation {
       const site = findTownExpansionSite(this.scenario); if (!site) return;
       this.pendingTown = { phase: 'debug', site, resumeRunning: !this.paused };
       this.lastTownResult = null; this.paused = true; this.elapsed = 0;
+      this.publish(); return;
+    }
+    if (command.type === 'debug-cheat') {
+      // Original typed codes, keyboard path0xf72a..0xf7d9 (exact, case-sensitive compare0x4fac on Enter). Natively
+      // reached from the Debug menu. Each add is the source's 32-bit add/adc, wrapping like the original.
+      if (command.code === 'LLAMA') this.events.push({ type: 'cheat-notice', id: 'llama' });
+      else if (command.code === 'FUND') {
+        this.finances.town.expansionFunds = (this.finances.town.expansionFunds + 10000) >>> 0; // DS758e
+        this.events.push({ type: 'cheat-notice', id: 'fund' });
+      } else if (command.code === 'CORN') this.scenario.farm.cash = (this.scenario.farm.cash + 10000) >>> 0; // DS3e48
+      else throw new Error('Invalid cheat code');
       this.publish(); return;
     }
     if (command.type === 'debug-town-grow') {

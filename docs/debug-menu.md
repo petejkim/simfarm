@@ -57,3 +57,29 @@ The eighth Debug item, "Place type 6 machine", arms the ordinary Buy placement f
 The original Buy catalog (file `0x8fc36`) lists machinery 0, 1, 2, 3, 4, 5, 7 and 8 and omits type 6, so this item is the only native way to obtain one. Type 6 has graphic 71 (car-like tiles 892–895), item text "Not a Llama.", 1×1 size, and is exempt from head wear on grass steps and forced arrival (`0x11972`). Its intended purpose is still unknown; see equipment-purchase.md. No original trigger that creates type 6 has been found.
 
 The browser spec places one at (20, 20) through this item and the map, and compares the price, cash and downloaded save with the simulation.
+
+## Cheats: LLAMA, FUND, CORN
+
+The original has three typed cheat codes that work in ordinary play, without the `eeadebug` flag.
+- The keyboard path `0xf6c5..0xf7fc` appends each key to a 16-byte buffer at `DS:21a4`. Its index `DS:21b4` wraps with `& 0x0f`, and keys are only collected while the front window has a key handler.
+- On Enter (`0xf72a`) the buffer is compared with `LLAMA` (`DS:21ef`), `FUND` (`DS:221e`) and `CORN` (`DS:226d`) by the exact, case-sensitive `strcmp` at `0x4fac` (`repe cmpsb`). The buffer is then cleared.
+
+Natively they are the Debug items "Cheat: LLAMA", "Cheat: FUND" and "Cheat: CORN" (user request), dispatching `{type:'debug-cheat', code}`:
+
+| Code | Original effect | Native |
+| --- | --- | --- |
+| LLAMA | Popup `0636:10f4` with `DS:21f5` "\"The Llama is a quadruped\" - Will Wright" and portrait 0x19 (card 25) at `0xf75e` | `cheat-notice` llama; no state change |
+| FUND | Popup `DS:2223` "You just donated $10000 to the town. The mayor and his new car thank you!", portrait 0x4b (75), then `add/adc` 10000 to `DS:758e/7590` (`0xf7a4`), the town expansion fund | `finances.town.expansionFunds += 10000` (32-bit wrap) plus `cheat-notice` fund |
+| CORN | Silent `add/adc` 10000 to `DS:3e48/3e4a` (`0xf7cc`), farm cash | `farm.cash += 10000` (32-bit wrap) |
+
+The popups use the shared message queue, so game time holds until OK, like other messages. They are presentation events and not saved. The balances are ordinary saved state, so no schema change is needed.
+
+`tests/debug-cheats.test.ts` pins the code strings, message strings, Enter test, compare instruction, portrait pushes and both `add/adc` sequences, plus the effects, silence of CORN and 32-bit wrap. The browser spec runs all three through the Debug menu, checks the popups (with the llama portrait) and compares the downloaded save with the simulation. Screenshot: `artifacts/browser-llama-cheat.png`.
+
+### The llama
+
+The llama is a running in-joke, not a hidden species.
+- **Art:** buy-cards row 4 starts with a llama pair, cards 24 and 25, laid out like every species' adult and young photographs. Card 25 is used only as the LLAMA cheat portrait. Card 24 is never referenced.
+- **No livestock record:** livestock definitions exist only for types 160–163 (cards 30/32/28/26), plus a fifth type-163 definition at $2,180 that uses the horse card. The species list is "Horse, Cow, Pig, Sheep" (`DS:22a0`), followed by the fair pet names (`DS:22bc`).
+- **Possible sprites:** masked tiles 937–945 hold an unidentified eight-direction four-legged sprite that could be a llama. No entry in the graphic-to-tile table (file `0x4f4be`) maps to them. Unconfirmed.
+- **Filler text:** "Not a Llama." appears in dozens of unused `itemtext.dat`/`events.dat` records, including type 6's. It is not a real item name. There are also joke descriptions: rocks are "Petrified ancient Llama droppings", and another item makes "a delicious Llama milkshake".

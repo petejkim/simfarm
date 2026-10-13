@@ -7,6 +7,7 @@ import {EditStatus} from './EditStatus';
 import {FieldMessage} from './FieldMessage';
 import {BalanceWindow} from './BalanceWindow';
 import {DisasterMessage} from './DisasterMessage';
+import {CheatMessage} from './CheatMessage';
 import {FinanceMessage} from './FinanceMessage';
 import {DefaultDialog} from './DefaultDialog';
 import {EvaluationWindow} from './EvaluationWindow';
@@ -95,7 +96,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
   const objectMove=useObjectMove(simulation,snapshot,onGameEvent);
   const construction=useConstruction(simulation,snapshot);
   const bulldoze=useBulldoze(simulation,snapshot);
-  const [messages,setMessages]=useState<(Extract<GameEvent,{type:'finance-notice'|'disaster-notice'|'field-notice'|'building-notice'}>&{serial:number})[]>([]);
+  const [messages,setMessages]=useState<(Extract<GameEvent,{type:'finance-notice'|'disaster-notice'|'field-notice'|'building-notice'|'cheat-notice'}>&{serial:number})[]>([]);
   const messageSerial=useRef(0);
   // Queued message count, kept in step with events and acknowledgements synchronously so the frame loop
   // holds time from the very tick that raised a message until OK (not from React's later commit).
@@ -106,7 +107,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
     setToolPointer(old => old?.x === pointer?.x && old?.y === pointer?.y ? old : pointer);
   }, [simulation]);
   useEffect(() => simulation?.subscribeEvents(event=>{
-    if(event.type==='finance-notice'||event.type==='disaster-notice'||event.type==='field-notice'||event.type==='building-notice'){
+    if(event.type==='finance-notice'||event.type==='disaster-notice'||event.type==='field-notice'||event.type==='building-notice'||event.type==='cheat-notice'){
       const message={...event,serial:++messageSerial.current};
       heldMessages.current++;setMessages(previous=>[...previous,message]);
     }else if(event.type==='map-focus')setFocus({x:event.x,y:event.y});
@@ -329,9 +330,10 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
         !snapshot?.disasters.enabled||Boolean(snapshot.disasters.flags&64)||!snapshot.scenario.fields.some(f=>f.slot&&f.active),
         !snapshot?.disasters.enabled||Boolean(snapshot.disasters.flags&128),
         false,
+        false,false,false,
       ],
-      hints:['Requires a recreation district, $1,000 and no active event.','Requires a recreation district and no active event.','Advances only the active event countdown; the farm date stays unchanged.','Opens the town expansion choice now (requires a free site; skips the town fund). Not kept in saves.','Raises every unfinished town district one level now (requires one below level 13; no town revenue spent).','Original debug Shift+A (mode7): picks a random field; only wheat, barley, oats or sorghum get circles, otherwise nothing happens. Requires disasters enabled.','Unreachable original mode8 (SF-179): shows message51 and sets a flag that never clears, so it works once per farm. No damage or fine. Requires disasters enabled.','Arms Buy placement for machinery type6 ("Not a Llama.", $250, 1x1), which the original Buy catalog omits. Click the map to buy it through the ordinary machinery purchase.'],
-      choose:index=>{if(index===3){simulation.dispatch({type:'debug-town-expansion'});return;}if(index===4){simulation.dispatch({type:'debug-town-grow'});return;}if(index===5){simulation.dispatch({type:'start-disaster',kind:'crop-circles'});return;}if(index===6){simulation.dispatch({type:'start-disaster',kind:'toxic-land'});return;}if(index===7){beginPurchase({type:6,name:'Not a Llama.'});return;}const action=(['rodeo','fair','advance-week'] as const)[index];if(action)simulation.dispatch({type:'debug-town-event',action});},
+      hints:['Requires a recreation district, $1,000 and no active event.','Requires a recreation district and no active event.','Advances only the active event countdown; the farm date stays unchanged.','Opens the town expansion choice now (requires a free site; skips the town fund). Not kept in saves.','Raises every unfinished town district one level now (requires one below level 13; no town revenue spent).','Original debug Shift+A (mode7): picks a random field; only wheat, barley, oats or sorghum get circles, otherwise nothing happens. Requires disasters enabled.','Unreachable original mode8 (SF-179): shows message51 and sets a flag that never clears, so it works once per farm. No damage or fine. Requires disasters enabled.','Arms Buy placement for machinery type6 ("Not a Llama.", $250, 1x1), which the original Buy catalog omits. Click the map to buy it through the ordinary machinery purchase.','Original typed code LLAMA: shows the Will Wright quote with the otherwise unused llama photograph. No other effect.','Original typed code FUND: adds $10,000 to the town expansion fund (not your cash) and thanks you.','Original typed code CORN: silently adds $10,000 to your cash.'],
+      choose:index=>{if(index===3){simulation.dispatch({type:'debug-town-expansion'});return;}if(index===4){simulation.dispatch({type:'debug-town-grow'});return;}if(index===5){simulation.dispatch({type:'start-disaster',kind:'crop-circles'});return;}if(index===6){simulation.dispatch({type:'start-disaster',kind:'toxic-land'});return;}if(index===7){beginPurchase({type:6,name:'Not a Llama.'});return;}const cheat=(['LLAMA','FUND','CORN'] as const)[index-8];if(cheat){simulation.dispatch({type:'debug-cheat',code:cheat});return;}const action=(['rodeo','fair','advance-week'] as const)[index];if(action)simulation.dispatch({type:'debug-town-event',action});},
     }} speed={speedMenu(snapshot, command => simulation.dispatch(command))} options={{
       checked: [audioOptions.music, audioOptions.sound, ...FARM_OPTIONS.map(key=>simulation.getSnapshot().scenario.farm[key]),audioOptions.buttonClicks],
       extraLabels:['Button Click Sounds'],
@@ -422,6 +424,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
         ? <FinanceMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>
         : messages[0].type==='field-notice' ? <FieldMessage key={messages[0].serial} assets={assets} onClose={closeMessage}/>
         : messages[0].type==='building-notice' ? <BuildingMessage key={messages[0].serial} assets={assets} onClose={closeMessage}/>
+        : messages[0].type==='cheat-notice' ? <CheatMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>
         : <DisasterMessage key={messages[0].serial} id={messages[0].id} assets={assets} onClose={closeMessage}/>)}
     </main>}
   </>;

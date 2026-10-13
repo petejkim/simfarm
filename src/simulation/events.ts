@@ -3,6 +3,8 @@ export type AnimalSound = 'horse1' | 'cow1' | 'cow2' | 'pig' | 'sheep1' | 'sheep
 export type AnimalVocal = `${AnimalSound}.voc`;
 export type FinanceNoticeId = 36 | 39 | 159 | 161 | 162 | 163 | 165 | 166 | 168 | 169 | 170;
 export type DisasterNoticeId = 'frost' | 'wind' | 'crop-circles' | 'toxic-land' | 'tornado' | 'drought' | 'flood' | 'swarm' | 'wind-ended' | 'tornado-ended' | 'drought-ended' | 'flood-ended';
+export type CheatCode = 'LLAMA' | 'FUND' | 'CORN';
+export type CheatNoticeId = 'llama' | 'fund';
 export type GameSound = 'click' | 'rooster' | 'boos' | 'cheers' | 'explode' | 'bulldoze' | 'plane' | 'tornado' | 'swarm' | 'wind' | 'flood' | 'plopitem' | 'ploptool' | 'uhoh' | 'smack' | AnimalSound;
 export type GameEvent = { type: 'music'; track: 'dfarm' | 'ffarm' | 'cowman' | 'alien' | 'carnival' | 'rodeo' }
   | { type: 'sound'; sound: GameSound }
@@ -10,4 +12,5 @@ export type GameEvent = { type: 'music'; track: 'dfarm' | 'ffarm' | 'cowman' | '
   | { type: 'building-notice'; id: 'water-storage-burst' }
   | { type: 'finance-notice'; id: FinanceNoticeId }
   | { type: 'disaster-notice'; id: DisasterNoticeId }
+  | { type: 'cheat-notice'; id: CheatNoticeId }
   | { type: 'map-focus'; x: number; y: number };

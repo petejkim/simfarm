@@ -3144,3 +3144,9 @@ Debug → Show toxic-land warning runs the original's unreachable mode 8 (SF-179
 ## 2026-10-12 — Type 6 machine in the Debug menu
 
 Debug → Place type 6 machine arms Buy placement for the catalog-omitted type 6 ("Not a Llama.", $250); clicking the map buys it through the ordinary machinery purchase. Validation: type check; debug-menu browser spec 4/4.
+
+## 2026-10-12 — Original cheats in the Debug menu
+
+Debug → Cheat: LLAMA / FUND / CORN reproduce the original typed codes from keyboard path `0xf6c5`. LLAMA shows the Will Wright quote with the otherwise unused llama photograph (card 25). FUND adds $10,000 to the town expansion fund with its thank-you popup. CORN silently adds $10,000 to cash. Llama findings (cards 24/25, possible unmapped sprites at tiles 937–945, "Not a Llama." filler) are recorded in debug-menu.md.
+
+Validation: type check; debug-cheats unit tests 2/2; debug-menu browser spec 5/5, with a screenshot of the LLAMA popup.

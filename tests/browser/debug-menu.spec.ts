@@ -13,7 +13,7 @@ test('Debug triggers original event dialogs/music without a time jump or duplica
  const date=await page.locator('#farm-date').textContent();
  await page.locator('#debug-menu-button').focus();await page.keyboard.press('ArrowDown');
  const menu=page.getByRole('menu',{name:'Debug',exact:true});
- expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['Start rodeo','Start fair (carnival)','Advance event week','Start town expansion','Grow town districts','Create crop circles','Show toxic-land warning','Place type 6 machine']);
+ expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['Start rodeo','Start fair (carnival)','Advance event week','Start town expansion','Grow town districts','Create crop circles','Show toxic-land warning','Place type 6 machine','Cheat: LLAMA','Cheat: FUND','Cheat: CORN']);
  await expect(menu.getByRole('menuitem',{name:'Advance event week'})).toBeDisabled();
  await expect(menu.getByRole('menuitem',{name:'Start rodeo',exact:true})).toBeFocused();
  await page.keyboard.press('Escape');await expect(menu).toHaveCount(0);
@@ -80,4 +80,24 @@ test('Debug places the catalog-omitted type 6 machine through the ordinary machi
  const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();
  const saved=JSON.parse(readSaveText((await(await pending).path())!));expect(saved).toEqual(JSON.parse(game.save(4)));
  expect(game.getSnapshot().scenario.equipment.filter(e=>e.active&&e.type===6).map(e=>[e.x,e.y])).toEqual([[20,20]]);
+});
+
+test('Debug cheats show the original LLAMA and FUND popups and add the original $10,000 amounts',async({page})=>{
+ await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+ const game=shopFixture().load().withAllCrops(browserCrops);
+ await page.locator('#load-farm-file').setInputFiles({name:'cheats.json',mimeType:'application/json',buffer:Buffer.from(game.save(4))});
+ await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+ const cheat=async(code:'LLAMA'|'FUND'|'CORN')=>{await page.locator('#debug-menu-button').click();await page.getByRole('menuitem',{name:`Cheat: ${code}`,exact:true}).click();game.dispatch({type:'debug-cheat',code});};
+ await cheat('LLAMA');
+ const win=page.locator('[data-window=cheat-message]');
+ await expect(page.locator('#cheat-message-text')).toHaveText('"The Llama is a quadruped" - Will Wright');
+ expect(await win.locator('.message-portrait').evaluate(el=>(el as HTMLElement).style.backgroundPosition)).toBe(`${-(25%8)*112}px ${-Math.floor(25/8)*64}px`); // llama card
+ await win.screenshot({path:'artifacts/browser-llama-cheat.png'});await page.locator('#cheat-message-ok').click();await expect(win).toHaveCount(0);
+ await cheat('FUND');
+ await expect(page.locator('#cheat-message-text')).toHaveText('You just donated $10000 to the town. The mayor and his new car thank you!');
+ await page.locator('#cheat-message-ok').click();
+ await cheat('CORN');await expect(win).toHaveCount(0);
+ await expect(page.locator('#farm-cash')).toHaveText(`$${game.getSnapshot().scenario.farm.cash.toLocaleString('en-US')}`);
+ const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();
+ expect(JSON.parse(readSaveText((await(await pending).path())!))).toEqual(JSON.parse(game.save(4)));
 });
