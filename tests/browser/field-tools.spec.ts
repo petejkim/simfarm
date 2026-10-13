@@ -142,7 +142,7 @@ test('selected Spray treatment stays active across successful fields and busy re
     }
     await point(page,52,42);await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Field is busy.');
     expect(await save(page)).toEqual(JSON.parse(game.save(4)));
-    await focusEdit(page);await expectPaletteAction(page,'View object');
+    await page.getByRole('button',{name:'View object',exact:true}).click();await expectPaletteAction(page,'View object');
     for(let i=0;i<7;i++){await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});}
     await openWindow(page,'edit');
   }

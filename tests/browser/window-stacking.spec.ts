@@ -58,16 +58,15 @@ test('the map stays behind floating windows without a title or stack entry, and 
   await page.locator('#window-buy').click();await buy.getByRole('button',{name:'Machinery',exact:true}).click();
   await buy.locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');const position=await buy.boundingBox();
   await page.locator('#window-bank').click();
-  for(const route of ['keyboard','menu'] as const){
-    if(route==='keyboard')await map.focus();
-    else {await page.locator('#windows-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Edit',exact:true}).click();}
+  for(let i=0;i<2;i++){
+    await map.focus();
     await expect(buy).toBeVisible();await expect(bank).toBeVisible();await expect(map).toBeFocused();
     expect(await map.boundingBox()).toEqual(mapBox);expect(await buy.boundingBox()).toEqual(position);
     await expect(page.locator('#buy-description')).toContainText('Tractor');
     const r=(await bank.boundingBox())!;
     expect(await page.evaluate(({x,y})=>document.elementFromPoint(x,y)?.closest('[data-window]')?.getAttribute('data-window'),{x:r.x+r.width/2,y:r.y+8})).toBe('bank');
     await page.locator('#windows-menu-button').click();
-    for(const name of ['Buy','Bank','Edit'])await expect(page.getByRole('menuitemcheckbox',{name,exact:true})).toHaveAttribute('aria-checked','true');
+    for(const name of ['Buy','Bank'])await expect(page.getByRole('menuitemcheckbox',{name,exact:true})).toHaveAttribute('aria-checked','true');
     await page.keyboard.press('Escape');await page.locator('#window-buy').click();await expect(buy).toHaveAttribute('data-front','true');
     await page.locator('#window-bank').click();await expect(bank).toHaveAttribute('data-front','true');
   }

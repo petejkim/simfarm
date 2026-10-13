@@ -50,9 +50,10 @@ export async function openWindow(page: Page, key: string) {
   if(['buy','map','weather','market'].includes(key)){await page.locator(`#window-${key}`).click();return;}
   throw new Error(`No original window entry for ${key}`);
 }
-/** Edit has no toolbar launcher (user request); its Windows-menu entry focuses the permanent terrain. */
+/** Edit has no toolbar launcher or Windows-menu entry (user requests); focusing the permanent terrain selects it. */
 export async function focusEdit(page:Page){
-  await page.locator('#windows-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Edit',exact:true}).click();
+  if(await page.locator('#original-speed-menu').isVisible())await page.locator('#speed-menu-button').click();
+  await page.locator('#viewport').focus();
 }
 /** Original field entry: View object, then click the field on the map; opens its Schedule window. */
 async function viewField(page:Page,field:{x:number;y:number}){

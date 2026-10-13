@@ -3102,3 +3102,11 @@ The window's run state, days advanced, weekly-order result and calendar notice r
 `FileMenu` gained replacement labels, leading actions, separators and per-action ids/disabled/hints for this. Tests open the menu through `openSpeedMenu`/`speedItem`; `openWindow` closes an open Speed menu before using a launcher. The weather-icon toolbar test now measures against the forecast area. Its fixed constant had been stale since the pause launcher narrowed that area.
 
 Validation: production build; unit suite 949/949; full browser suite 299/303. All four failures were test-side Speed-window assumptions (animal-input, three town-event-calendar specs). They were fixed and pass on rerun (5/5).
+
+## 2026-10-12 — Menu layout
+
+The menus now follow the user's layout. File: About SimFarm, a separator, New Game and Load from File..., a separator, then Save and Save to File.... Options groups the audio toggles, then the Auto options, then Messages, then Settings..., with separators between groups. Disasters puts a separator before Disable. Windows no longer lists Edit.
+
+This only changes display order: a per-menu layout of decoded item indexes, so checks and handlers keep their source indexes. Tests reach the terrain by focusing the map (`focusEdit`) instead of the removed menu item. The Windows-menu "menu" route in window-stacking was dropped along with that item.
+
+Validation: production build; full browser suite 299/303. Three failures were order or Edit-entry assertions (autosave, control-bar, field-tools); field-tools had used Windows → Edit to leave Spray and now clicks View object. terrain-design hit its 30 s limit under load. All four spec files pass on rerun (28/28). The unit suite was not rerun because no simulation code changed.

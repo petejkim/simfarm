@@ -54,17 +54,18 @@ test('Windows menu and toolbar route to the same controls; Edit focuses the map 
   await reveal(page, '#windows-menu-button'); await page.locator('#windows-menu-button').focus(); await page.keyboard.press('ArrowDown');
   const menu = page.getByRole('menu', { name: 'Windows' });
   expect(await menu.getByRole('menuitemcheckbox').evaluateAll(els=>els.map(el=>[...el.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE).map(n=>n.textContent).join('')))).toEqual(
-    ['Buy', 'Sell', 'Evaluation', 'Map', 'Weather', 'Balance Sheet', 'Bank', 'Edit', 'Market Value', 'Farm Expert']);
+    ['Buy', 'Sell', 'Evaluation', 'Map', 'Weather', 'Balance Sheet', 'Bank', 'Market Value', 'Farm Expert']); // Edit omitted (user request)
   await expect(menu.getByRole('menuitemcheckbox', { name: 'Buy', exact: true })).toBeFocused();
   await page.keyboard.press('End'); await expect(menu.getByRole('menuitemcheckbox', { name: 'Farm Expert' })).toBeFocused();
   await page.keyboard.press('ArrowUp'); await expect(menu.getByRole('menuitemcheckbox', { name: 'Market Value', exact: true })).toBeFocused();
   await page.keyboard.press('Escape'); await expect(page.locator('#windows-menu-button')).toBeFocused();
   for (const viaMenu of [false, true]) {
     const open = async (key: string, label: string) => {
-      if(!viaMenu){if(key==='edit')await focusEdit(page);else await page.locator(`#window-${key}`).click();return;}
+      if(key==='edit'){await focusEdit(page);return;}
+      if(!viaMenu){await page.locator(`#window-${key}`).click();return;}
       await page.locator('#windows-menu-button').click();
       const item=page.getByRole('menuitemcheckbox',{name:label,exact:true});
-      const alreadyOpen=key!=='edit'&&await item.getAttribute('aria-checked')==='true';
+      const alreadyOpen=await item.getAttribute('aria-checked')==='true';
       await item.click();
       if(alreadyOpen)await windowMenu(page,label); // Menu closes covered windows before reopening.
     };

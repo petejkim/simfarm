@@ -9,7 +9,15 @@ import { GAME_WINDOWS, type GameWindow } from './ControlBar';
  * Save writes the browser-stored game; the Save As slot becomes Save to File... and Load Game becomes
  * Load from File... (user decisions); Load Crop and Quit are omitted. The decoded source labels are unchanged. */
 const FILE_LABELS: Record<number, string> = { 3: 'Save to File...', 4: 'Load from File...' };
-const FILE_HIDDEN = new Set([5, 6]);
+/** Display order per menu (user layout, 2026-10-12): source/extra item indexes with '-' separators. Indexes keep
+ * the decoded order, so checks and callbacks are unchanged. File omits Load Crop/Quit; Windows omits Edit (the
+ * terrain is a permanent background). A menu without an entry lists its items in source order. */
+const MENU_LAYOUT: Record<number, readonly (number | '-')[]> = {
+  0: [0, '-', 1, 4, '-', 2, 3],
+  1: [0, 1, 8, '-', 2, 3, 4, 5, 7, '-', 6],
+  3: [0, 1, 2, 3, 4, 5, 6, 8, 9],
+  4: [0, 1, 2, 3, 4, 5, '-', 6],
+};
 
 export interface MenuAction { id?:string;label:string;choose:()=>void;disabled?:boolean;hint?:string }
 export interface MenuChoices { actions?:readonly MenuAction[]; leadingActions?:readonly MenuAction[]; separated?:boolean; labels?:readonly string[]; extraLabels?:readonly string[]; checked: readonly boolean[]; choose: (index: number) => void; disabled?: boolean; disabledItems?:readonly boolean[]; hints?:readonly string[] }
@@ -47,6 +55,10 @@ export function FileMenu({ about, data, busy, onSave, onSaveToFile, onLoad, onNe
     else if (index === 3) void onSaveToFile();
     else if (index === 4) onLoad();
   }
+  const itemButton = (item: {label:string;offset:number}, index: number) => <button key={item.offset} role={choices && open!==5 ? 'menuitemcheckbox' : 'menuitem'} aria-checked={open===5?undefined:choices?.checked[index]} tabIndex={-1}
+          disabled={busy || choices?.disabled || choices?.disabledItems?.[index]} title={choices?.hints?.[index]}
+          onPointerMove={event=>{if(event.pointerType==='mouse'&&document.activeElement!==event.currentTarget)event.currentTarget.focus({preventScroll:true});}}
+          onClick={() => { if (open === 0) select(index); else if (choices) { closeMenu(); choices.choose(index); } else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{choices && open!==5 && <span className="menu-check" aria-hidden="true">{choices.checked[index] ? '✓' : ''}</span>}{open === 0 ? FILE_LABELS[index] ?? item.label : item.label}</button>;
   const actionButton = (action: MenuAction) => <button key={action.id??action.label} id={action.id} role="menuitem" tabIndex={-1} disabled={busy || choices?.disabled || action.disabled} title={action.hint}
     onPointerMove={event=>{if(event.pointerType==='mouse'&&document.activeElement!==event.currentTarget)event.currentTarget.focus({preventScroll:true});}}
     onClick={()=>{closeMenu();action.choose();}}><span className="menu-check" aria-hidden="true" />{action.label}</button>;
@@ -66,10 +78,10 @@ export function FileMenu({ about, data, busy, onSave, onSaveToFile, onLoad, onNe
         }}>
         {choices?.leadingActions?.map(actionButton)}
         {choices?.separated && choices.leadingActions?.length ? <hr className="menu-separator" role="separator" /> : null}
-        {[...(choices?.labels?.map((label,i)=>({label,offset:-200-i}))??active.items),...(choices?.extraLabels??[]).map((label,i)=>({label,offset:-i-1}))].map((item, index) => open === 0 && FILE_HIDDEN.has(index) ? null : <button key={item.offset} role={choices && open!==5 ? 'menuitemcheckbox' : 'menuitem'} aria-checked={open===5?undefined:choices?.checked[index]} tabIndex={-1}
-          disabled={busy || choices?.disabled || choices?.disabledItems?.[index]} title={choices?.hints?.[index]}
-          onPointerMove={event=>{if(event.pointerType==='mouse'&&document.activeElement!==event.currentTarget)event.currentTarget.focus({preventScroll:true});}}
-          onClick={() => { if (open === 0) select(index); else if (choices) { closeMenu(); choices.choose(index); } else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{choices && open!==5 && <span className="menu-check" aria-hidden="true">{choices.checked[index] ? '✓' : ''}</span>}{open === 0 ? FILE_LABELS[index] ?? item.label : item.label}</button>)}
+        {(()=>{
+          const items=[...(choices?.labels?.map((label,i)=>({label,offset:-200-i}))??active.items),...(choices?.extraLabels??[]).map((label,i)=>({label,offset:-i-1}))];
+          return (MENU_LAYOUT[open!] ?? items.map((_,index)=>index)).map((index,position) => index === '-' ? <hr key={`separator-${position}`} className="menu-separator" role="separator" /> : itemButton(items[index], index));
+        })()}
         {choices?.separated && choices.actions?.length ? <hr className="menu-separator" role="separator" /> : null}
         {choices?.actions?.map(actionButton)}
       </div>;

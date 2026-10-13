@@ -30,12 +30,13 @@ test('source menu order uses selectable text, keyboard navigation and original d
   expect(await bar.locator('.original-menu-heading').allTextContents()).toEqual(['File', 'Options', 'Speed', 'Windows', 'Disasters', 'Debug']);
   await reveal(page, '#file-menu-button'); await page.locator('#file-menu-button').focus(); await page.keyboard.press('ArrowDown');
   const menu = page.getByRole('menu', { name: 'File' });
-  expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['About SimFarm', 'New Game', 'Save', 'Save to File...', 'Load from File...']); // source Load Crop and Quit are omitted
+  expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['About SimFarm', 'New Game', 'Load from File...', 'Save', 'Save to File...']); // source Load Crop and Quit are omitted
+  expect(await menu.locator('> *').evaluateAll(es => es.map(e => e.getAttribute('role') === 'separator' ? '-' : e.textContent))).toEqual(['About SimFarm', '-', 'New Game', 'Load from File...', '-', 'Save', 'Save to File...']);
   await expect(page.getByRole('menuitem', { name: 'About SimFarm' })).toBeFocused();
   await expect(page.getByRole('menuitem', { name: 'Load Crop' })).toHaveCount(0);
   await expect(page.getByRole('menuitem', { name: 'Quit' })).toHaveCount(0);
-  await page.keyboard.press('End'); await expect(page.getByRole('menuitem', { name: 'Load from File...' })).toBeFocused();
-  await page.keyboard.press('ArrowUp'); await expect(page.getByRole('menuitem', { name: 'Save to File...' })).toBeFocused();
+  await page.keyboard.press('End'); await expect(page.getByRole('menuitem', { name: 'Save to File...' })).toBeFocused();
+  await page.keyboard.press('ArrowUp'); await expect(page.getByRole('menuitem', { name: 'Save', exact: true })).toBeFocused();
   await page.keyboard.press('Escape'); await expect(menu).toHaveCount(0); await expect(page.locator('#file-menu-button')).toBeFocused();
   await command(page, 'About SimFarm'); await expect(page.getByRole('dialog')).toContainText('Eric Albers');
   await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).toHaveCount(0);

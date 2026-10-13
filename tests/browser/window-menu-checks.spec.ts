@@ -16,14 +16,15 @@ test('Windows displays source geometry and live open checks, preserving permanen
   async function checks(open:string[]){
     await page.locator('#windows-menu-button').click();
     await expectAnchored(menu);
-    for(const label of ['Buy','Sell','Evaluation','Map','Weather','Balance Sheet','Bank','Edit','Market Value','Farm Expert'])await expect(menu.getByRole('menuitemcheckbox',{name:label,exact:true})).toHaveAttribute('aria-checked',String(label==='Edit'||open.includes(label)));
+    await expect(menu.getByRole('menuitemcheckbox')).toHaveCount(9); // Edit is omitted: the terrain is a permanent background
+    for(const label of ['Buy','Sell','Evaluation','Map','Weather','Balance Sheet','Bank','Market Value','Farm Expert'])await expect(menu.getByRole('menuitemcheckbox',{name:label,exact:true})).toHaveAttribute('aria-checked',String(open.includes(label)));
   }
   await checks([]);await page.keyboard.press('Escape');
   await page.locator('#window-buy').click();await page.locator('#window-bank').click();await checks(['Buy','Bank']);
   await page.screenshot({path:'artifacts/browser-window-menu-checks.png'});
   await menu.getByRole('menuitemcheckbox',{name:'Buy',exact:true}).click();await expect(page.locator('[data-window=buy]')).toBeHidden();await expect(page.locator('[data-window=bank]')).toBeVisible();
   await checks(['Bank']);await page.keyboard.press('Escape');await page.getByRole('button',{name:'Close Bank',exact:true}).click();
-  await checks([]);await menu.getByRole('menuitemcheckbox',{name:'Edit',exact:true}).click();await expect(page.locator('#viewport')).toBeVisible();
+  await checks([]);await page.keyboard.press('Escape');await expect(page.locator('#viewport')).toBeVisible();
   // All original menu entries retain independent checks, not merely the front one.
   for(const label of ['Buy','Sell','Evaluation','Map','Weather','Balance Sheet','Bank','Market Value','Farm Expert']){
     await page.locator('#windows-menu-button').click();await menu.getByRole('menuitemcheckbox',{name:label,exact:true}).click();

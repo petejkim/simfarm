@@ -28,7 +28,7 @@ async function nextDay(page: Page) { await (await speedItem(page,'#next-day')).c
 test('File menu offers Save, Save to File... and Load from File... without Quit; Save stores the game and reopening restores it paused', async ({ page }) => {
   await start(page);
   await page.locator('#file-menu-button').click();
-  expect(await page.getByRole('menu', { name: 'File' }).getByRole('menuitem').allTextContents()).toEqual(['About SimFarm', 'New Game', 'Save', 'Save to File...', 'Load from File...']);
+  expect(await page.getByRole('menu', { name: 'File' }).getByRole('menuitem').allTextContents()).toEqual(['About SimFarm', 'New Game', 'Load from File...', 'Save', 'Save to File...']);
   await page.keyboard.press('Escape');
   expect(await stored(page)).toBeNull(); // a fresh browser starts Scenario 1 without saving
   await nextDay(page);

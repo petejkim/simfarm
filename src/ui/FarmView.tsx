@@ -332,7 +332,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
     }} speed={speedMenu(snapshot, command => simulation.dispatch(command))} options={{
       checked: [audioOptions.music, audioOptions.sound, ...FARM_OPTIONS.map(key=>simulation.getSnapshot().scenario.farm[key]),audioOptions.buttonClicks],
       extraLabels:['Button Click Sounds'],
-      actions:[{label:'Settings…',choose:()=>windows.show('options')}],
+      separated:true,actions:[{label:'Settings…',choose:()=>windows.show('options')}],
       choose: index=>{
         if(index===0)audioOptions.toggleMusic();else if(index===1)audioOptions.toggleSound();else if(index===8)audioOptions.toggleButtonClicks();
         else {const option=FARM_OPTIONS[index-2];if(option){const enabled=!simulation.getSnapshot().scenario.farm[option];simulation.dispatch({type:'set-option',option,enabled});rememberPreference(option,enabled);}}
