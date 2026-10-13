@@ -49,3 +49,11 @@ The seventh Debug item, "Show toxic-land warning", dispatches `start-disaster` w
 It sets persistent flag 0x80 of the disaster flags and shows the mandatory message 51. It has no damage, fine, price or sound effect. Nothing clears the flag, so the item works once per farm. It is disabled afterwards, and also while disasters are disabled.
 
 The browser spec starts the warning from this item, checks the message, compares the saved state with the simulation's, and checks that the item is then disabled.
+
+## Place type 6 machine
+
+The eighth Debug item, "Place type 6 machine", arms the ordinary Buy placement for equipment type 6. The next map click dispatches the existing `buy-equipment` command, exactly as a Buy-window machinery purchase does: the same ground guards, auto-clear, $250 price, accounts and v29 records.
+
+The original Buy catalog (file `0x8fc36`) lists machinery 0, 1, 2, 3, 4, 5, 7 and 8 and omits type 6, so this item is the only native way to obtain one. Type 6 has graphic 71 (car-like tiles 892–895), item text "Not a Llama.", 1×1 size, and is exempt from head wear on grass steps and forced arrival (`0x11972`). Its intended purpose is still unknown; see equipment-purchase.md. No original trigger that creates type 6 has been found.
+
+The browser spec places one at (20, 20) through this item and the map, and compares the price, cash and downloaded save with the simulation.

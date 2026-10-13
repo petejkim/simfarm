@@ -2,6 +2,7 @@ import {test,expect} from '@playwright/test';
 import {shopFixture} from '../support/livestock';
 import {browserCrops} from '../support/crop-catalog';
 import {readSaveText} from '../support/save-file';
+import {clickFarmTile} from '../support/field-actions';
 test('Debug triggers original event dialogs/music without a time jump or duplicate Disasters entries',async({page})=>{
  await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
  await page.locator('#options-menu-button').click();await expect(page.locator('#audio-status')).toContainText('Playing amain');await page.keyboard.press('Escape');
@@ -12,7 +13,7 @@ test('Debug triggers original event dialogs/music without a time jump or duplica
  const date=await page.locator('#farm-date').textContent();
  await page.locator('#debug-menu-button').focus();await page.keyboard.press('ArrowDown');
  const menu=page.getByRole('menu',{name:'Debug',exact:true});
- expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['Start rodeo','Start fair (carnival)','Advance event week','Start town expansion','Grow town districts','Create crop circles','Show toxic-land warning']);
+ expect(await menu.getByRole('menuitem').allTextContents()).toEqual(['Start rodeo','Start fair (carnival)','Advance event week','Start town expansion','Grow town districts','Create crop circles','Show toxic-land warning','Place type 6 machine']);
  await expect(menu.getByRole('menuitem',{name:'Advance event week'})).toBeDisabled();
  await expect(menu.getByRole('menuitem',{name:'Start rodeo',exact:true})).toBeFocused();
  await page.keyboard.press('Escape');await expect(menu).toHaveCount(0);
@@ -65,4 +66,18 @@ test('Debug opens the town expansion choice mid-year without the town fund, leav
  // Grow town districts: one original level for every unfinished district, same date, same saved result as the simulation.
  await page.locator('#debug-menu-button').click();await page.getByRole('menuitem',{name:'Grow town districts',exact:true}).click();game.dispatch({type:'debug-town-grow'});
  await expect(page.locator('#farm-date')).toHaveText(date!);expect(await save()).toEqual(JSON.parse(game.save(4)));
+});
+
+test('Debug places the catalog-omitted type 6 machine through the ordinary machinery purchase',async({page})=>{
+ await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+ const game=shopFixture().load().withAllCrops(browserCrops);
+ await page.locator('#load-farm-file').setInputFiles({name:'type6.json',mimeType:'application/json',buffer:Buffer.from(game.save(4))});
+ await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+ await page.locator('#debug-menu-button').click();await page.getByRole('menuitem',{name:'Place type 6 machine',exact:true}).click();
+ await clickFarmTile(page,20,20);game.dispatch({type:'buy-equipment',equipmentType:6,x:20,y:20});
+ const result=game.getSnapshot().lastEquipmentPurchaseResult;expect(result?.ok&&result.price).toBe(250);
+ await expect(page.locator('#farm-cash')).toHaveText(`$${game.getSnapshot().scenario.farm.cash.toLocaleString('en-US')}`);
+ const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();
+ const saved=JSON.parse(readSaveText((await(await pending).path())!));expect(saved).toEqual(JSON.parse(game.save(4)));
+ expect(game.getSnapshot().scenario.equipment.filter(e=>e.active&&e.type===6).map(e=>[e.x,e.y])).toEqual([[20,20]]);
 });

@@ -239,7 +239,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
     : buyPlacement&&data&&buyPlacement.type>=64&&buyPlacement.type<=72 ? {...toolPointer,
       width:data.scenario.buildingDefinitions[buyPlacement.type-64].width,height:data.scenario.buildingDefinitions[buyPlacement.type-64].height}
     : {...toolPointer,width:1,height:1};
-  function beginPurchase(product: ShopProduct) {
+  function beginPurchase(product: Pick<ShopProduct, 'type' | 'name'>) {
     objectMove.cancel();construction.cancel();bulldoze.cancel();
     setFieldMenu(null);setFieldMapTool(null);
     if (!simulation || !snapshot || snapshot.pendingTown || snapshot.townEvent.pending || snapshot.finances.defaultDecision || snapshot.aircraftFlight) return;
@@ -328,9 +328,10 @@ export function FarmView({ audioControls, audioOptions, id, loaded, autosave, au
         !snapshot||!growableTownSites(snapshot.scenario).length,
         !snapshot?.disasters.enabled||Boolean(snapshot.disasters.flags&64)||!snapshot.scenario.fields.some(f=>f.slot&&f.active),
         !snapshot?.disasters.enabled||Boolean(snapshot.disasters.flags&128),
+        false,
       ],
-      hints:['Requires a recreation district, $1,000 and no active event.','Requires a recreation district and no active event.','Advances only the active event countdown; the farm date stays unchanged.','Opens the town expansion choice now (requires a free site; skips the town fund). Not kept in saves.','Raises every unfinished town district one level now (requires one below level 13; no town revenue spent).','Original debug Shift+A (mode7): picks a random field; only wheat, barley, oats or sorghum get circles, otherwise nothing happens. Requires disasters enabled.','Unreachable original mode8 (SF-179): shows message51 and sets a flag that never clears, so it works once per farm. No damage or fine. Requires disasters enabled.'],
-      choose:index=>{if(index===3){simulation.dispatch({type:'debug-town-expansion'});return;}if(index===4){simulation.dispatch({type:'debug-town-grow'});return;}if(index===5){simulation.dispatch({type:'start-disaster',kind:'crop-circles'});return;}if(index===6){simulation.dispatch({type:'start-disaster',kind:'toxic-land'});return;}const action=(['rodeo','fair','advance-week'] as const)[index];if(action)simulation.dispatch({type:'debug-town-event',action});},
+      hints:['Requires a recreation district, $1,000 and no active event.','Requires a recreation district and no active event.','Advances only the active event countdown; the farm date stays unchanged.','Opens the town expansion choice now (requires a free site; skips the town fund). Not kept in saves.','Raises every unfinished town district one level now (requires one below level 13; no town revenue spent).','Original debug Shift+A (mode7): picks a random field; only wheat, barley, oats or sorghum get circles, otherwise nothing happens. Requires disasters enabled.','Unreachable original mode8 (SF-179): shows message51 and sets a flag that never clears, so it works once per farm. No damage or fine. Requires disasters enabled.','Arms Buy placement for machinery type6 ("Not a Llama.", $250, 1x1), which the original Buy catalog omits. Click the map to buy it through the ordinary machinery purchase.'],
+      choose:index=>{if(index===3){simulation.dispatch({type:'debug-town-expansion'});return;}if(index===4){simulation.dispatch({type:'debug-town-grow'});return;}if(index===5){simulation.dispatch({type:'start-disaster',kind:'crop-circles'});return;}if(index===6){simulation.dispatch({type:'start-disaster',kind:'toxic-land'});return;}if(index===7){beginPurchase({type:6,name:'Not a Llama.'});return;}const action=(['rodeo','fair','advance-week'] as const)[index];if(action)simulation.dispatch({type:'debug-town-event',action});},
     }} speed={speedMenu(snapshot, command => simulation.dispatch(command))} options={{
       checked: [audioOptions.music, audioOptions.sound, ...FARM_OPTIONS.map(key=>simulation.getSnapshot().scenario.farm[key]),audioOptions.buttonClicks],
       extraLabels:['Button Click Sounds'],

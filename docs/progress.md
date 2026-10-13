@@ -3140,3 +3140,7 @@ An exhaustive static trace found no route to the toxic-land warning (disaster mo
 ## 2026-10-12 — Toxic-land warning in the Debug menu
 
 Debug → Show toxic-land warning runs the original's unreachable mode 8 (SF-179): message 51 plus a permanent flag, so it works once per farm. Validation: type check; debug-menu and stationary-disasters browser specs 6/6.
+
+## 2026-10-12 — Type 6 machine in the Debug menu
+
+Debug → Place type 6 machine arms Buy placement for the catalog-omitted type 6 ("Not a Llama.", $250); clicking the map buys it through the ordinary machinery purchase. Validation: type check; debug-menu browser spec 4/4.
