@@ -10,6 +10,10 @@ import { BevelButton } from './chrome/BevelButton';
 import { SunkenInset } from './chrome/SunkenInset';
 import { spriteFace } from './chrome/Sprite';
 
+/** The Edit view in overview pixels (two per tile). */
+function measureView(el:HTMLElement,zoom:number){
+  return {x:el.scrollLeft/(8*zoom),y:el.scrollTop/(8*zoom),width:el.clientWidth/(8*zoom),height:el.clientHeight/(8*zoom)};
+}
 export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLocate }: {
   assets: GameAssets; snapshot: GameSnapshot; onCommand: (command: GameCommand) => void;
   viewportRef: RefObject<HTMLDivElement | null>; zoom: number;
@@ -33,7 +37,7 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
   const open=order.includes('map');
   useLayoutEffect(()=>{
     const el=viewportRef.current;if(!el||!open)return;
-    const update=()=>setView({x:el.scrollLeft/(8*zoom),y:el.scrollTop/(8*zoom),width:el.clientWidth/(8*zoom),height:el.clientHeight/(8*zoom)});
+    const update=()=>setView(measureView(el,zoom));
     update();el.addEventListener('scroll',update);const observer=new ResizeObserver(update);observer.observe(el);
     return()=>{el.removeEventListener('scroll',update);observer.disconnect();};
   },[viewportRef,zoom,active,open]);
@@ -65,7 +69,12 @@ export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLo
               onPointerUp={e=>{if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);}}
               onKeyDown={e=>{const offset=({ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]} as Record<string,number[]>)[e.key];if(!offset)return;
                 e.preventDefault();if(mode===1){setSelected(p=>({x:Math.max(0,Math.min(11,p.x+offset[0])),y:Math.max(0,Math.min(11,p.y+offset[1]))}));}
-                else onLocate(Math.max(0,Math.min(96,(view.x+view.width/2)/2+offset[0])),Math.max(0,Math.min(96,(view.y+view.height/2)/2+offset[1])));}} />
+                else{
+                  // Measure the Edit view now: the tracked view follows scroll events, which arrive a frame after a
+                  // click's scroll, so a quick arrow key moved from the previous view (an intermittent test failure).
+                  const now=viewportRef.current?measureView(viewportRef.current,zoom):view;
+                  onLocate(Math.max(0,Math.min(96,(now.x+now.width/2)/2+offset[0])),Math.max(0,Math.min(96,(now.y+now.height/2)/2+offset[1])));
+                }}} />
             {/* Layered in the same grid cell as the map: the Edit view outline. */}
             <div className="overview-edit-outline" style={{marginLeft:view.x,marginTop:view.y,width:view.width,height:view.height}} />
           </div>

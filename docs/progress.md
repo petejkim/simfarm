@@ -3831,3 +3831,14 @@ Validation:
   - an empty field becomes fallow; RESET changes nothing but the schedule; an invalid field changes nothing.
 - Browser: schedule-window 5/5. The new case CUTs and replants through the window, presses RESET, matches the simulation's own reset of the same checkpoint, and pins the caption column (TODAY 72, CUT 88, RESET 104, CLOSE 128, all 16px tall) and the panels at y 149.
 - Full browser suite 352/353. The one failure was map-window's ArrowRight centre check under full-suite load (view centre 57.5, 69.9 instead of 46.5, 55.5). It is unrelated to this change, and the spec then passed 12/12 with `--repeat-each=3`. Recorded as an unexplained timing flake.
+
+### Map arrow keys use the live Edit view (2026-10-13, intermittent test failure)
+
+The map-window case that failed once under full-suite load ("Expected 46.5,55.5, received 57.5,69.9") was a real race. MapWindow's arrow keys moved the centre from its tracked view, which updates on the terrain's `scroll` events. Those arrive with the next frame, so an arrow pressed right after a click's scroll moved from the previous view. Here that was the bottom-right corner left by the preceding click at 191,191, which clamps to 57.5,69.9. The key handler now measures the viewport at key time (`measureView`, the same formula the scroll listener uses).
+
+Validation:
+- A new deterministic map-window case scrolls the terrain and dispatches ArrowRight in one task, before any scroll event. It requires exactly one tile of movement from the new position.
+- With the previous handler it fails with the same 57.53,69.94 as the flake; with the fix map-window passes 5/5.
+- map-window, window-viewport and sprite-sheets pass 30/30 with `--repeat-each=3`.
+
+This also closes the "unexplained timing flake" noted under Schedule RESET.

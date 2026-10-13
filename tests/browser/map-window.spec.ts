@@ -88,3 +88,18 @@ test('Map handles insufficient cash and missing original artwork',async({page})=
   await expect(page.locator('#map-land-action')).toBeDisabled();
   await page.route('**/assets/map-window.png',r=>r.abort());await page.reload();await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('#world')).toHaveCount(0);
 });
+
+test('an arrow key moves one tile from the current Edit view even before its scroll event arrives',async({page})=>{
+  await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');await page.locator('#window-map').click();
+  const canvas=page.getByRole('region',{name:'Farm overview'}).locator('.overview-viewport canvas'),viewport=page.locator('#viewport');
+  const centre=()=>viewport.evaluate(el=>[(el.scrollLeft+el.clientWidth/2)/16,(el.scrollTop+el.clientHeight/2)/16]);
+  await canvas.click({position:{x:180,y:180}});await expect.poll(async()=>(await centre())[0]).toBeGreaterThan(50); // the tracked view is bottom-right
+  // Scroll the terrain and press ArrowRight in one task, so the scroll event (delivered with the next frame) has not run.
+  const moved=await page.evaluate(()=>{
+    const viewport=document.getElementById('viewport')!,map=document.querySelector('.overview-viewport canvas')!;
+    viewport.scrollTo(160,160); // well inside the farm, so one more tile is not clamped
+    const from=[(viewport.scrollLeft+viewport.clientWidth/2)/16,(viewport.scrollTop+viewport.clientHeight/2)/16];
+    map.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));return from;
+  });
+  await expect.poll(centre).toEqual([moved[0]+1,moved[1]]);
+});
