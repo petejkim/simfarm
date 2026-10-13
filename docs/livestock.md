@@ -145,3 +145,35 @@ The following archived qmessage.dat64-byte records are rendered as actual HTML t
 |67|A section of fence has broken!|5ccf8a7bacbbe3d4ad0ac704fd96a4e7a3a573cd0405639629d998a2f2adb821|
 
 Preserve these actual source captions even though code56 follows feed death and code59 is the feed warning. Native species-specific diagnostic prose is not the original text. Live tests verify57,58,59 and feed-warning→56 history order, source tests pin all five callers, and movement tests retain fence-break/RNG checks. Browser verifies source death text/history, no popup, save/reset and original movement/supply pixels. Birth/old-age/capacity diagnostic notices remain explicitly native; no original IDs are invented for them.
+
+## Animal Buy placement sounds
+
+Animals placed from the Buy window now request the original placement sounds; before this they were silent. Evidence, from executable `8b86a2d3…58ce` (static disassembly only):
+
+- **Buy placement loop `0x2239a..0x22503`.** The same loop serves every selected Buy product (type from `[fa3a]+2`), animals 160–163 included.
+  - It first applies the visible-window bounds test `0x22626` (called twice, for both footprint corners).
+  - Then it compares the price from `1a66:0a20` with `DS3e48/3e4a`. That pair is assumed to be cash, which is plausible but not separately traced. When the price is not lower, `0x224ca` requests DS`5736` `uhoh.voc` and calls `0x22504` with 0x2a.
+  - Then it tests ownership flag 8 at terrain `+0x4c25` (`0x22473`); only type 0x46 bypasses it. That rejection is silent.
+  - Finally it calls generic purchase `0x1cb42` at `0x224a4`. No `ploptool.voc` is requested anywhere in this loop.
+- **Generic purchase `0x1cb42`.**
+  - Success requests DS`3ece` `plopitem.voc` at `0x1cc92`.
+  - A failed debit (`0x1ccb6`, DS`3ee4`), a failed allocation (`0x1cca0`, DS`3edb`) and a failed placement (`0x1cc7f`, DS`3ec5`) each request `uhoh.voc`.
+  - The callers at `0x24364`, `0x24497` and `0x24af6` are the edit-tool feed, water and tree branches. Only those add `ploptool.voc` through `0x24b24`.
+
+Native mapping in `GameSimulation` (`buy-livestock`, types 160–163):
+- Success requests `plopitem`.
+- `occupied`, `blocked-terrain`, `no-animal-slots` and `insufficient-cash` request `uhoh`.
+- `outside-map`, `not-owned` and `unsupported-animal` are silent.
+
+Confidence is high for the success sound, the unaffordable sound and the silent ownership rejection.
+
+Approximations:
+- Native `not-owned` also covers the town bit 0x4000, which this loop does not test, so the original would reach the generic routine and probably play `uhoh`.
+- Native `occupied` is a native bounded collision check.
+
+Deferred:
+- The price comparison appears to require price < cash, while native accepts price == cash. This needs the `DS3e48` identity confirmed before it is recorded as a defect.
+- `0x22504` with 0x2a is probably the Edit status line and is not shown here.
+- Buildings and equipment use the same loop and generic routine but remain silent natively.
+
+Tests: `tests/live-livestock-purchases.test.ts` covers all four species, occupied, bounds and unaffordable cases. `livestock-shop.spec.ts` covers the real Buy → map placement requesting `plopitem.voc` without `ploptool.voc`, then `uhoh.voc` on the occupied tile.

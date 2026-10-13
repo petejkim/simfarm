@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { worldIndex } from '../src/formats/scenario';
 import { GameSimulation } from './support/game';
 import { shopFixture } from './support/livestock';
+import type { GameEvent } from '../src/simulation/events';
 
 test('live shop commands purchase a herd and supplies, consume them and persist all records/accounts/random state', () => {
   const f = shopFixture(), game = f.load();
@@ -48,4 +49,20 @@ test('shop commands reject atomically, respect financial decisions and keep sour
   const blocked = f.load(), saved = blocked.save(4);
   blocked.dispatch({ type: 'buy-livestock', productType: 299, x: 30, y: 30 });
   assert.equal(blocked.save(4), saved); assert.equal(blocked.getSnapshot().lastLivestockResult, null);
+});
+
+test('Buy placement of animals requests the original generic purchase sounds without the edit-tool plop', () => {
+  const f = shopFixture(), game = f.load(), events: GameEvent[] = []; game.subscribeEvents(e => events.push(e));
+  for (const [productType, x] of [[160, 20], [161, 22], [162, 24], [163, 26]]) game.dispatch({ type: 'buy-livestock', productType, x, y: 20 });
+  assert.deepEqual(events, Array.from({ length: 4 }, () => ({ type: 'sound', sound: 'plopitem' }))); // 0x1cc92 only
+  events.length = 0;
+  game.dispatch({ type: 'buy-livestock', productType: 161, x: 20, y: 20 }); // occupied: generic placement failure
+  assert.deepEqual(events, [{ type: 'sound', sound: 'uhoh' }]);
+  events.length = 0;
+  game.dispatch({ type: 'buy-livestock', productType: 161, x: 96, y: 20 }); // bounds guard0x22626 is silent
+  assert.deepEqual(events, []);
+  const poor = shopFixture(); poor.state.scenario.farm.cash = 100; const broke = poor.load(), heard: GameEvent[] = [];
+  broke.subscribeEvents(e => heard.push(e)); broke.dispatch({ type: 'buy-livestock', productType: 160, x: 20, y: 20 });
+  assert.equal(broke.getSnapshot().lastLivestockResult?.ok, false);
+  assert.deepEqual(heard, [{ type: 'sound', sound: 'uhoh' }]); // caller0x224ca
 });

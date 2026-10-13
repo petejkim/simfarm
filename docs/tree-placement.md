@@ -20,7 +20,7 @@ Automatic clearing shares26faa..27043:535..538 cost25;131..146 are free to clear
 
 Hay242ba..243e2 and Trough243e6..244e4 call the same generic purchase, with their existing recovered inventory allocator and ground guards. Native uses the existing buy-livestock command: Hay/type300 starts with512 units; Trough/type299 with256. Prices come from live definitions (source defaults100/15). Slot capacity, occupied-tile guards, successful clearing, quantities/counts, raw-byte preservation and downstream feeding/watering remain in [livestock.md](livestock.md) and existing supply tests.
 
-Generic success1cc92 requests DS3ece `plopitem.voc`; loop24b24 requests DS59b6 `ploptool.voc`. The new tree command and existing299/300 supply commands emit both success requests, or one `uhoh` request for native preflight failure. Exact original failure-path duplicate arbitration is not emulated; failures are atomic. No sound is replayed by checkpoint restore. Animal purchases are unchanged.
+Generic success1cc92 requests DS3ece `plopitem.voc`; loop24b24 requests DS59b6 `ploptool.voc`. The new tree command and existing299/300 supply commands emit both success requests, or one `uhoh` request for native preflight failure. Exact original failure-path duplicate arbitration is not emulated; failures are atomic. No sound is replayed by checkpoint restore. Animal purchases were later given their own Buy-loop sounds; see livestock.md, "Animal Buy placement sounds".
 
 ## Native integration and limits
 

@@ -681,6 +681,13 @@ export class GameSimulation {
       if (command.productType === 299 || command.productType === 300) {
         if (this.lastLivestockResult.ok) this.events.push({ type: 'sound', sound: 'plopitem' }, { type: 'sound', sound: 'ploptool' });
         else this.events.push({ type: 'sound', sound: 'uhoh' });
+      } else {
+        // Buy placement loop0x2239a: generic purchase0x1cb42 requests plopitem.voc on success (0x1cc92) and uhoh.voc
+        // on its own failures; the caller adds uhoh.voc for unaffordable stock (0x224ca). Its bounds/ownership
+        // guards (0x22626, 0x22473) reject silently, and it never adds the edit-tool ploptool.voc.
+        const result = this.lastLivestockResult;
+        if (result.ok) this.events.push({ type: 'sound', sound: 'plopitem' });
+        else if (!['unsupported-animal', 'outside-map', 'not-owned'].includes(result.reason)) this.events.push({ type: 'sound', sound: 'uhoh' });
       }
     } else if(command.type==='edit-status'){
       if(!isEditToolStatus(command.code))throw new Error('Invalid Edit tool status');

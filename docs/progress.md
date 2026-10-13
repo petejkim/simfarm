@@ -3110,3 +3110,9 @@ The menus now follow the user's layout. File: About SimFarm, a separator, New Ga
 This only changes display order: a per-menu layout of decoded item indexes, so checks and handlers keep their source indexes. Tests reach the terrain by focusing the map (`focusEdit`) instead of the removed menu item. The Windows-menu "menu" route in window-stacking was dropped along with that item.
 
 Validation: production build; full browser suite 299/303. Three failures were order or Edit-entry assertions (autosave, control-bar, field-tools); field-tools had used Windows → Edit to leave Spray and now clicks View object. terrain-design hit its 30 s limit under load. All four spec files pass on rerun (28/28). The unit suite was not rerun because no simulation code changed.
+
+## 2026-10-12 — Animal placement sound
+
+Placing a horse, cow, pig or sheep bought from the Buy window now plays the original `plopitem.voc`; an unaffordable or otherwise rejected placement plays `uhoh.voc`. The trace of Buy placement loop `0x2239a` and generic purchase `0x1cb42` shows animals get only `plopitem` on success. Troughs and hay come from the edit-tool loop, which also adds `ploptool`. Evidence, mapping and deferred items (town-bit approximation, price == cash boundary, silent buildings/equipment) are in livestock.md.
+
+Validation: type check; livestock purchase, tree, crop-supply and animal-purchase unit tests (15/15); livestock-shop browser spec (3/3), including the new sound check. The full suite was not run: the change only adds sound events for one command.

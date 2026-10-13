@@ -79,3 +79,21 @@ test('livestock purchases explain clearing and cash limits and are usable on a n
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
   await page.screenshot({ path: 'artifacts/browser-livestock-shop.png', fullPage: true });
 });
+
+test('placing a bought animal plays the original plopitem sound, and an unaffordable one plays uhoh', async ({ page }) => {
+  const requests: string[] = []; page.on('request', r => { if (r.url().endsWith('.voc')) requests.push(r.url().split('/').at(-1)!); });
+  await page.addInitScript(() => localStorage.setItem('simfarm.options.v1', JSON.stringify({ music: false, sound: true })));
+  const f = shopFixture(), game = f.load().withAllCrops(browserCrops); await page.goto('/');
+  await page.locator('#load-farm-file').setInputFiles({ name: 'shop.json', mimeType: 'application/json', buffer: Buffer.from(game.save(4)) });
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+  await page.locator('#options-menu-button').click();
+  await expect(page.getByRole('menuitemcheckbox', { name: 'Sound Effects', exact: true })).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('Escape');
+  await selectProduct(page, 161); await clickFarmTile(page, 10, 10); game.dispatch({ type: 'buy-livestock', productType: 161, x: 10, y: 10 });
+  await expectFarmCash(page, game.getSnapshot().scenario.farm.cash);
+  await expect.poll(() => requests).toContain('plopitem.voc');
+  expect(requests).not.toContain('ploptool.voc'); // the Buy loop0x2239a never adds the edit-tool plop
+  await clickFarmTile(page, 10, 10); // occupied: generic purchase failure
+  await expect.poll(() => requests).toContain('uhoh.voc');
+  expect(await farmSnapshot(page)).toMatchObject({ scenario: { farm: { cash: game.getSnapshot().scenario.farm.cash } } });
+});
