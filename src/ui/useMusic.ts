@@ -1,6 +1,8 @@
 import {readPreferences,rememberPreference} from './preferences';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MidiPlayer,DEFAULT_MUSIC_VOLUME } from '../audio/midi-player';
+import { MUSIC_BANK } from '../audio/music-bank';
+import { ACTIVATION_EVENTS } from '../audio/user-activation';
 import { loadMusic } from '../assets/game-assets';
 
 type Playback = { status: 'idle' | 'loading' | 'playing' } | { status: 'error'; error: string };
@@ -36,14 +38,18 @@ export function useMusic() {
     }
   }, [player]);
   const activate=useCallback(()=>{
-    if(!current.current.enabled||activated.current)return;
+    if(!current.current.enabled)return;
+    // Every activation event re-unlocks synchronously until audio actually runs: mobile browsers refuse audio outside
+    // a gesture and suspend it again after interruptions (calls, backgrounding).
+    if(!player.running)player.unlock();
+    if(activated.current)return;
     activated.current=true;
-    // Resume Web Audio synchronously from the gesture before fetching MIDI.
-    void player.enable().then(()=>{if(activated.current&&current.current.enabled)void play(current.current.track);}).catch(error=>setPlayback({status:'error',error:String(error)}));
+    void player.enable().then(()=>{if(activated.current&&current.current.enabled)void play(current.current.track);})
+      .catch(error=>{activated.current=false;setPlayback({status:'error',error:String(error)});});
   },[player,play]);
   useEffect(()=>{
-    window.addEventListener('pointerdown',activate);window.addEventListener('keydown',activate);
-    return()=>{window.removeEventListener('pointerdown',activate);window.removeEventListener('keydown',activate);};
+    for(const type of ACTIVATION_EVENTS)window.addEventListener(type,activate,{capture:true});
+    return()=>{for(const type of ACTIVATION_EVENTS)window.removeEventListener(type,activate,{capture:true});};
   },[activate]);
   function toggleTrack(id: string) {
     if (!started.current) id='amain';
@@ -69,7 +75,7 @@ export function useMusic() {
     setTrack(id);current.current.track=id;if(activated.current)void play(id);
   }, [play]);
   function changeVolume(value: number) { setVolume(value); player.setVolume(value / 100); }
-  const message = playback.status === 'playing' ? `Playing ${track} · MIDI · AIL/SimFarm`
+  const message = playback.status === 'playing' ? `Playing ${track} · MIDI · FM bank ${MUSIC_BANK}`
     : playback.status === 'loading' ? `Loading ${track}…`
     : playback.status === 'error' ? `Music unavailable: ${playback.error}` : enabled?'Music enabled · starts on interaction':'Music off';
   return { enabled, toggleTrack, track, volume, playback, message, selectTrack, changeVolume, requestTrack };

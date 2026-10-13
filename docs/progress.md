@@ -3158,3 +3158,9 @@ The original FUND cheat only credits the town expansion fund, despite saying "yo
 ## 2026-10-12 — Land buy/sell loop closed (SF-158)
 
 Selling a just-bought plot paid $100 more than it cost: the original sale quote counts the plot itself among occupied regions. That was already recorded as SF-158 with the fix deferred. Sales and the Map window's SELL price now quote the plot as unowned, so a round trip returns exactly the purchase price. Purchases and the tax assessment keep the original quote. Validation: type check; land, tax, default and asset-sale unit tests 60/60, including a new 20-round-trip regression; map-window and native browser specs 26/26.
+
+## 2026-10-12 — Music on mobile, bank 58
+
+Music uses libadlmidi bank 58 (The Fat Man 2op set) and now plays on mobile; the user confirmed it on their phone. Music and sound effects unlock on every activation event (`pointerup`/`touchend`/`click`/`keydown`), retrying until audio runs. iOS gets the playback audio session and a silent-buffer unlock. Without AudioWorklet (insecure contexts) synthesis falls back to the main thread. The short-lived MP3 plan was dropped by the user, so nothing references the untracked `public/assets/*.mp3` files. AGENTS.md, README and adlmidi-playback.md are updated.
+
+Validation: type check and production build; music unit tests 7/7; music, sound and debug browser specs 36/36, including the new mobile-audio spec. Remaining gap: Chromium cannot emulate iOS touch-activation timing, so that part rests on the user's device check.

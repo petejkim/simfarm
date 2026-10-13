@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 import {encodeMidi} from '../../src/formats/xmidi';
-test('light worklet uses bank39, renders MIDI, honors source loop bounds and silences on mute',async({page})=>{
+test('light worklet uses bank 58, renders MIDI, honors source loop bounds and silences on mute',async({page})=>{
   await page.addInitScript(()=>{
     const Original=AudioWorkletNode;
     const w=window as any;w.adlMessages=[];
@@ -20,7 +20,7 @@ test('light worklet uses bank39, renders MIDI, honors source loop bounds and sil
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
   await page.locator('#options-menu-button').click();await expect(page.locator('#audio-status')).toContainText('Playing genfarm');
-  expect(await page.evaluate(()=>(window as any).adlMessages.filter((m:any)=>m.type==='setBank').map((m:any)=>m.bank))).toEqual([39]);
+  expect(await page.evaluate(()=>(window as any).adlMessages.filter((m:any)=>m.type==='setBank').map((m:any)=>m.bank))).toEqual([58]);
   const bounds=await page.evaluate(async()=>{
     const node=(window as any).adlNode as AudioWorkletNode;
     const query=(type:string,response:string)=>new Promise<number>(resolve=>{

@@ -1,4 +1,5 @@
 import type { PcmSound } from '../formats/voc';
+import { unlockAudioContext } from './user-activation';
 
 /** Short original PCM effects, independent of MIDI and simulation state. */
 export class PcmPlayer {
@@ -6,6 +7,9 @@ export class PcmPlayer {
   private source?: AudioBufferSourceNode;
   private master?: GainNode;
   get playing(): boolean { return Boolean(this.source); }
+  get running(): boolean { return this.context?.state === 'running'; }
+  /** Synchronous unlock from inside an activation event (see user-activation.ts). */
+  unlock(): void { this.context ??= new AudioContext(); unlockAudioContext(this.context); }
   async enable(): Promise<void> {
     this.context ??= new AudioContext();
     await this.context.resume();

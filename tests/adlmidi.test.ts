@@ -3,12 +3,13 @@ import {readFileSync} from 'node:fs';
 import {AdlMidiCore} from 'libadlmidi-js/light';
 import {readArchive} from '../src/formats/archive';
 import {decodeXmidi,encodeMidi} from '../src/formats/xmidi';
+import {MUSIC_BANK} from '../src/audio/music-bank';
 
-test('light WASM bank39 is AIL/SimFarm and renders all eight converted source MIDIs',async()=>{
+test('light WASM music bank 58 is the Fat Man 2op set and renders all eight converted source MIDIs',async()=>{
   const synth=await AdlMidiCore.create();synth.init(44100);
   try{
-    expect(synth.getEmbeddedBanks().find(b=>b.id===39)?.name).toMatch(/AIL.*SimFarm/i);
-    expect(synth.setBank(39)).toBe(true);
+    expect(MUSIC_BANK).toBe(58);expect(synth.getEmbeddedBanks().find(b=>b.id===MUSIC_BANK)?.name).toBe('WOPL (The Fat Man 2op set; Win9x)');
+    expect(synth.setBank(MUSIC_BANK)).toBe(true);
     const source=(n:string)=>readFileSync(new URL('../../simfarm-dos/'+n,import.meta.url));
     const tracks=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA')).filter(e=>e.name.endsWith('.xmi'));
     expect(tracks).toHaveLength(8);

@@ -1,4 +1,5 @@
 import {readPreferences,rememberPreference} from './preferences';
+import { ACTIVATION_EVENTS } from '../audio/user-activation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PcmPlayer } from '../audio/pcm-player';
 import { loadSound } from '../assets/game-assets';
@@ -34,12 +35,15 @@ export function useSound() {
     return () => { window.removeEventListener('pagehide', suspend); active.current = false; request.current?.controller.abort(); clickRequest.current?.abort(); player.dispose(); clickPlayer.dispose(); };
   }, [player, clickPlayer, stop]);
   const activate=useCallback(()=>{
-    if(!active.current||activated.current)return;
+    if(!active.current)return;
+    // Re-unlock synchronously on every activation event until both contexts run (mobile gesture rules, interruptions).
+    if(!player.running)player.unlock();if(!clickPlayer.running)clickPlayer.unlock();
+    if(activated.current)return;
     activated.current=true;void Promise.all([player.enable(),clickPlayer.enable()]).catch(error=>{activated.current=false;setError(String(error));});
   },[player,clickPlayer]);
   useEffect(()=>{
-    window.addEventListener('pointerdown',activate);window.addEventListener('keydown',activate);
-    return()=>{window.removeEventListener('pointerdown',activate);window.removeEventListener('keydown',activate);};
+    for(const type of ACTIVATION_EVENTS)window.addEventListener(type,activate,{capture:true});
+    return()=>{for(const type of ACTIVATION_EVENTS)window.removeEventListener(type,activate,{capture:true});};
   },[activate]);
   const toggle = async () => {
     if (active.current) { rememberPreference('sound',false);stop(); return; }
