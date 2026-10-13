@@ -3295,3 +3295,9 @@ Validation: browser specs main-menu, control-bar, terrain-design and new-farm, 2
 On a first launch with no stored game, App still generates and saves the Region 9, 14 farm. It now also opens New Game once over that farm, which keeps starting behind it (user request). Cancel keeps the generated farm. Reloads that restore the saved game, and Scenario 1 starts, do not open New Game. A boot title screen was briefly committed for this batch and then removed at the user's request.
 
 Validation: type check. Browser specs first-start, new-farm, region-selection and original-startup, 16/16.
+
+## 2026-10-13 — Region chooser Quit removed
+
+Select a Region no longer has a Quit button (user request); the setup's Cancel button already closes it. Cancel keeps the farm running as it was, whereas Quit paused it. The source Quit hit area and branch (32474..3252a) stay documented in scenario-selection.md. NewFarmControls no longer takes the simulation, which only Quit used.
+
+Validation: type check. Browser specs region-artwork, region-selection, new-farm, first-start and new-game-layout, 17/17.

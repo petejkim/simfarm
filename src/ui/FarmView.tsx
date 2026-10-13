@@ -396,7 +396,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
       {audioControls}
     </section></GameWindow>
     <GameWindow windowKey="newgame" title="New Game" framed forced={newFarmOpen} onClose={() => setNewFarmOpen(false)}>
-    {simulation && <NewFarmControls assets={assets} simulation={simulation} open={newFarmOpen} onOpenChange={setNewFarmOpen} onCreate={onLoad} />}
+    {simulation && <NewFarmControls assets={assets} open={newFarmOpen} onOpenChange={setNewFarmOpen} onCreate={onLoad} />}
     </GameWindow>
     <span id="map-status" className="file-status" role="status">{resource.status === 'ready' ? (id === null ? `${snapshot?.scenario.origin === 'original' ? 'Imported' : 'Generated'} farm · original terrain` : `Scenario ${id + 1} · original terrain`)
           : resource.status === 'error' ? resource.error : 'Loading map…'}</span>

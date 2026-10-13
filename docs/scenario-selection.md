@@ -76,7 +76,7 @@ The same solid-fill trace corrected the custom screen's native visual bar widths
 |Use this region | strict96<X<237,232<Y<256;3222c..32392 | Submit validated options through numbered/unmarked canonical setup |
 |Design your own | strict96<X<237,256<Y<280;3216e..32228 | Open the canonical custom preview directly, keeping selected climate; final acceptance remains Play |
 |Load a saved game | strict96<X<237,280<Y<305;32396..32472 | Close setup and open the existing browser Load farm picker; native checkpoints restore exactly and SSM files use the established in-game import |
-|Quit | strict96<X<237,304<Y<328;32474..3252a | Close setup and pause the current farm; do not discard it or attempt to terminate the browser |
+|Quit | strict96<X<237,304<Y<328;32474..3252a | Removed natively (user request, 2026-10-13): Cancel already closes setup without discarding the farm. It formerly closed setup and paused the farm |
 
 DOM action areas follow the artwork including edge pixels. Source pressed-state/bevel animations and held-mouse timing are not yet reconstructed. The Load action is explicitly a browser bridge, **not** the source result1 startup path. Source3245a/3245f generates another map and selects sites before returning1 at32464, then proceeds through additional setup and later file selection. That caller sequence still needs complete audit/composition; it must not be applied to native checkpoints or conflated with in-game SSM transfer. Quit's pause/retain behavior is an explicit browser adaptation. The initial native session/seed/year form, original startup/title lifecycle and remaining menus/dialogs/reports are still unfinished.
 

@@ -11,8 +11,8 @@ import { TerrainDesign } from './TerrainDesign';
 import { BevelButton } from './chrome/BevelButton';
 import { defaultFarmOptions, defaultRegionIndex, randomSetupSeeds } from './default-farm';
 
-export function NewFarmControls({ assets, simulation: current, open, onOpenChange, onCreate }: {
-  assets: GameAssets; simulation: GameSimulation; open: boolean; onOpenChange: (open: boolean) => void; onCreate: (farm: LoadedFarm) => void;
+export function NewFarmControls({ assets, open, onOpenChange, onCreate }: {
+  assets: GameAssets; open: boolean; onOpenChange: (open: boolean) => void; onCreate: (farm: LoadedFarm) => void;
 }) {
   const [options, setOptions] = useState<NewFarmOptions>(() => defaultFarmOptions());
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
@@ -110,8 +110,7 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
     <form ref={form} onSubmit={event => { event.preventDefault(); if (!busy && region) void create(); }}>
       {region ? <RegionMap assets={region} selected={selected} disabled={busy} unavailable={false} onSelect={selectRegion}
         onDesign={() => { if (form.current?.reportValidity()) void create(true); }}
-        onLoad={() => { setError(''); fileInput.current?.click(); }}
-        onQuit={() => { pending.current?.abort(); current.dispatch({ type: 'set-paused', paused: true }); onOpenChange(false); }} />
+        onLoad={() => { setError(''); fileInput.current?.click(); }} />
         : <div className="setup-loading">
           {regionError ? <p id="region-error" role="alert">Could not load regions: {regionError}</p> : <p role="status">Loading regions…</p>}
           <div className="native-actions">

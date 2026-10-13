@@ -24,7 +24,7 @@ async function chooser(page: Page) {
 async function pixels(page: Page, x: number, y: number) {
   const chooser = page.locator('#geographic-chooser'), p = locations[y * 18 + x];
   await expect(chooser.locator('.region-title')).toHaveText('SELECTA REGION');
-  await expect(chooser.locator('.region-action')).toHaveText(['Use This Region', 'Design Your Own', 'Load a Saved Game', 'Quit']);
+  await expect(chooser.locator('.region-action')).toHaveText(['Use This Region', 'Design Your Own', 'Load a Saved Game']); // Quit removed: Cancel closes setup
   expect(await chooser.locator('.region-label, .region-range, .region-action').evaluateAll(els =>
     els.every(el => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight))).toBe(true);
   await expect(chooser.locator('canvas, img')).toHaveCount(0);
@@ -69,22 +69,20 @@ test('original geographic panel paints exact markers and bars, preserves selecti
   await page.getByRole('button', { name: 'Cancel', exact: true }).click(); expect(await save(page)).toEqual(before); expect(errors).toEqual([]);
 });
 
-test('chooser Load opens its file picker for exact checkpoint restoration and Quit pauses without losing the farm', async ({ page }) => {
+test('chooser Load opens its file picker for exact checkpoint restoration and Cancel closes it without losing the farm', async ({ page }) => {
   await start(page); const before = await save(page); await chooser(page);
   const picker = page.waitForEvent('filechooser'); await reveal(page, '#region-load'); await page.locator('#region-load').click();
   await (await picker).setFiles({ name: 'chooser-checkpoint.simfarm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(before)) });
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); expect(await save(page)).toEqual(before);
   await expect(page.locator('#geographic-chooser')).toHaveCount(0);
-  await (await speedItem(page,'#play-pause')).click(); await expect(page.locator('#time-status')).toContainText('Running');
-  await chooser(page); await reveal(page, '#region-quit'); await page.locator('#region-quit').focus(); await page.keyboard.press('Enter');
-  await expect(page.locator('#time-status')).toContainText('Paused'); await expect(page.locator('#file-menu-button')).toBeVisible();
-  expect(await save(page)).toEqual(before);
+  await chooser(page); await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(page.locator('#geographic-chooser')).toHaveCount(0); expect(await save(page)).toEqual(before);
   await chooser(page); const bad = page.waitForEvent('filechooser'); await reveal(page, '#region-load'); await page.locator('#region-load').click();
   await (await bad).setFiles({ name: 'broken.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
   await expect(page.locator('#new-farm-error')).toContainText('Could not open farm'); expect(await save(page)).toEqual(before);
 });
 
-test('truncated original artwork and palette fail atomically and original Quit cancels a pending region load', async ({ page }) => {
+test('truncated original artwork and palette fail atomically and Cancel cancels a pending region load', async ({ page }) => {
   await start(page); const before = await save(page);
   for (const [file, length] of [['scenario.int', 153599], ['scenario.pal', 47]] as const) {
     await page.route(`**/assets/raw/${file}`, route => route.fulfill({ body: raw(file).subarray(0, length), contentType: 'application/octet-stream' }));
@@ -99,7 +97,7 @@ test('truncated original artwork and palette fail atomically and original Quit c
   await page.route('**/assets/raw/SCEN7.SSM', async route => { requested(); await release; await route.continue().catch(() => {}); });
   await reveal(page, '#region-use'); await page.locator('#region-use').click(); await started;
   await expect(page.locator('#region-design')).toBeDisabled(); await expect(page.locator('#region-load')).toBeDisabled();
-  await reveal(page, '#region-quit'); await page.locator('#region-quit').click(); finish();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click(); finish();
   await page.unroute('**/assets/raw/SCEN7.SSM'); expect(await save(page)).toEqual(before);
   await chooser(page); await pixels(page, 8, 13); // native default: Region 9, 14
 });

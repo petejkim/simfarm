@@ -11,9 +11,9 @@ import { Sprite } from './chrome/Sprite';
  * Low/High text; climate bars (31f53: 96×10 at palette 6 over 12) as sunken meters; caption
  * BevelButtons; and the 18×18 region grid over the map sprite (source 248,40). The selection outline
  * is four strips of the XORed map, matching 31e24. */
-export function RegionMap({ assets, selected, disabled, unavailable, onSelect, onDesign, onLoad, onQuit }: {
+export function RegionMap({ assets, selected, disabled, unavailable, onSelect, onDesign, onLoad }: {
   assets: RegionAssets; selected: number; disabled: boolean; unavailable: boolean; onSelect: (index: number) => void;
-  onDesign: () => void; onLoad: () => void; onQuit: () => void;
+  onDesign: () => void; onLoad: () => void;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { focusUnlessClaimed(heading.current); }, []);
@@ -56,7 +56,6 @@ export function RegionMap({ assets, selected, disabled, unavailable, onSelect, o
         <BevelButton id="region-use" className="region-action" shadow type="submit" aria-label="Use this region" disabled={disabled || unavailable}>Use This Region</BevelButton>
         <BevelButton id="region-design" className="region-action" shadow aria-label="Design your own" disabled={disabled || unavailable} onClick={onDesign}>Design Your Own</BevelButton>
         <BevelButton id="region-load" className="region-action" shadow aria-label="Load a saved game" disabled={disabled} onClick={onLoad}>Load a Saved Game</BevelButton>
-        <BevelButton id="region-quit" className="region-action" shadow aria-label="Quit setup" onClick={onQuit}>Quit</BevelButton>
       </div>
     </div>
     <SunkenInset className="region-map-box">
