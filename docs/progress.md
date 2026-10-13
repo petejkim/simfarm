@@ -3128,3 +3128,7 @@ Validation: type check; full unit suite 950/950 (version assertions updated to 2
 Disaster messages showed raw renderer markup ("``````TORNADO WARNING~ High winds…"). Renderer `882e` treats a backtick as a blank indent cell and `~` as a line break. Messages now show the title centred on its own line with the body below, for all six titled disasters; the other six messages are unchanged. A shared `parseEventText` handles events.dat markup. Details in disaster-messages.md.
 
 Validation: type check; disaster-messages unit tests 5/5; all disaster browser specs 16/16, with a screenshot of the flood message.
+
+## 2026-10-12 — Crop circles in the Debug menu
+
+Debug → Create crop circles runs the original debug-only mode-7 start, with its random-field and crop-eligibility rules intact. It is disabled when disasters are off, when circles are active, or when there are no fields. Details in debug-menu.md. Validation: type check; debug-menu and stationary-disasters browser specs 6/6, with the crop-circle flow now started from the real menu item.

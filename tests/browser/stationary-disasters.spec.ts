@@ -52,8 +52,15 @@ test('frost controls cancel locusts, play original wind PCM and retain cooling/l
 test('saved crop circles retain original tiles and event flags; alien MIDI remains audible without replay on load',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await observeAudio(page);await page.goto('/');
   const f=disasterFixture();f.state.scenario.fields[1].bytes[14]=1;const g=f.load().withAllCrops(browserCrops);
-  // The source trigger is debug-only; construct its resulting checkpoint outside the browser.
-  g.dispatch({type:'start-disaster',kind:'crop-circles'});const active=JSON.parse(g.save(4));await load(page,JSON.stringify(active));
+  // The source trigger is debug-only (Shift+A behind eeadebug); natively it is the Debug menu item.
+  await load(page,g.save(4));
+  await page.locator('#debug-menu-button').click();await page.getByRole('menuitem',{name:'Create crop circles',exact:true}).click();
+  g.dispatch({type:'start-disaster',kind:'crop-circles'});
+  await expect(page.locator('#disaster-message-text .message-line')).toHaveText(['CLOSE ENCOUNTER',/^Odd-looking, circular areas/]);
+  await page.locator('#disaster-message-ok').click();const active=JSON.parse(g.save(4));
+  expect(await save(page,'circles-started')).toEqual(active);
+  await page.locator('#debug-menu-button').click();await expect(page.getByRole('menuitem',{name:'Create crop circles',exact:true})).toBeDisabled(); // already active
+  await page.keyboard.press('Escape');await load(page,JSON.stringify(active));
   await circles(page);expect(await save(page,'circles-active')).toEqual(active);
   await expect(page.locator('#disaster-message-ok')).toHaveCount(0);
   await toggleOption(page,'Music');await reveal(page,'#music');

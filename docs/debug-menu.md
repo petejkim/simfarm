@@ -30,3 +30,14 @@ Validation: unit debug-events 5/5 plus live-annual, game, native-save, live-town
 
 Validation: unit debug-events 6/6 (two stuck debug districts reach level 13 with buildings; revenue, date and activeSite unchanged; no-op once complete), town-development, live-annual and game (29); browser debug-menu and town-choice specs 7/7; production build. The user save's four unfinished districts reach level 13 after 13 uses.
 
+
+## Create crop circles
+
+The Debug menu's sixth item, "Create crop circles", dispatches the existing `start-disaster` command with kind `crop-circles`. That runs the original mode-7 start `0x3672c`. In the original it is reachable only through Shift+A while the `eeadebug` flag is set (`0xf6b5`; see disaster-trigger-audit.md), so the Debug menu is its natural native home.
+
+Behaviour is the original's, not a forced success:
+- Disasters must be enabled.
+- One random active field is chosen through `0x1b802`. If its crop is not wheat, barley, oats or sorghum (crop byte 62 bit 02), nothing happens and there is no retry.
+- On success the field takes 10 loss, the seven circle tiles are painted, `alien` MIDI plays, and the mandatory "CLOSE ENCOUNTER" message appears.
+
+The item is disabled when disasters are disabled, when circles are already active (flag 0x40), or when the farm has no active fields. Its tooltip explains the random crop condition. The browser spec now starts circles from this item, rather than constructing an active checkpoint outside the browser, and verifies the message, tiles, saved state and the disabled repeat.

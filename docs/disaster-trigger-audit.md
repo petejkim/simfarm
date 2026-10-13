@@ -8,7 +8,7 @@ Resident keyboard handler f254 calls BIOS wrappers404:00f8/file6338 (INT16 AH=0,
 
 Initialized DS1b78 at file86268 is zero. Startup227e..22d0 requires argc>1 and exact argv[1] string at DS005d/file8474d, `eeadebug`. The DOS date wrapper5dba invokes INT21 AH=2a and writes year at struct+2 and month at+1. Startup22ac rejects year>1993 **or** month>11; only matching argument with year<=1993 AND month<=11 stores1 at22ca. This is a debug availability gate, not a proposed native timing rule or a gameplay restriction to reproduce using the browser's clock. No new defect/security claim is made about it.
 
-Confidence high for the inspected startup and input paths. The crop-circle button was a provisional native debug exposure, not an original ordinary menu action. Original debug startup/keyboard behavior is separate unfinished input work; do not silently replace the button with an ungated `A` handler.
+Confidence high for the inspected startup and input paths. The crop-circle button was a provisional native debug exposure, not an original ordinary menu action. Since 2026-10-12 it is reachable natively through the Debug menu (see debug-menu.md); normal play still has no trigger. Original debug startup/keyboard behavior is separate unfinished input work; do not silently replace the button with an ungated `A` handler.
 
 ## Toxic warning and bounded general-start reference scan
 
