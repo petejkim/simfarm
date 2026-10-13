@@ -105,4 +105,7 @@ test('the installable web app manifest and home-screen icons are served',async({
     for(let i=3;i<png.data.length;i+=4)if(png.data[i]!==255)throw new Error(`${icon.src} has transparent pixels`);
   }
   expect(await page.locator('meta[name=apple-mobile-web-app-capable]').getAttribute('content')).toBe('yes');
+  // iOS zooms the page into focused fields under 16px (map seed, loan amount) and the full-screen game has no way
+  // to zoom back out; the page scale stays fixed and the game's own Zoom setting scales the terrain.
+  expect(await page.locator('meta[name=viewport]').getAttribute('content')).toContain('maximum-scale=1.0, user-scalable=no');
 });

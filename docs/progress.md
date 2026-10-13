@@ -3339,3 +3339,9 @@ The user asked for the game to be playable on phones and installable to the home
 Validation: type check and production build; crop-graphics unit test; re-import. New browser spec mobile-touch (phone and landscape window fit, then back to 1× at desktop size; scaled Map locate; touch Buy two-tap; paint-tool pan/arm/paint; long-press gate; manifest and icons), 5/5. Existing touch cases in direct-construction and direct-bulldoze were updated to tap before painting. Related specs: window-movement, direct-construction, direct-bulldoze, edit-workspace, mobile-audio, map-window, map-interaction, new-game-layout, equipment-shop, placement-outline, field-tools, about, finance-messages, all passing. Full regression was not run.
 
 Limitations and next actions: no real-device check yet (iOS Safari standalone, Android Chrome install). Pinch-zooming the terrain is not wired to the Zoom setting. Original 16px controls (window close boxes, palette tools) stay small touch targets. Scaled windows shrink their 10px text. The menu bar and control bar are not otherwise rearranged.
+
+## 2026-10-13 — No page zoom on mobile text fields
+
+The user reported that tapping an editable field zoomed the page in with no way back out. iOS Safari zooms into focused fields under 16px (map seed, starting year, loan amount are 10px). The full-screen desktop hides page overflow, so the zoomed page could not be recovered. The viewport meta now sets `maximum-scale=1.0, user-scalable=no`, which keeps the page scale fixed. The game's Zoom setting still scales the terrain. iOS blocks the focus zoom through `maximum-scale`; user pinch may still be allowed by iOS accessibility, and in that case it can be pinched back out.
+
+Validation: browser specs mobile-touch (asserts the viewport meta) and mobile-audio, 7/7. Chromium cannot emulate the iOS focus zoom, so this still needs a check on a real iPhone.
