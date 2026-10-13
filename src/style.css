@@ -307,13 +307,13 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .edit-palette .bevel-button:focus-visible{outline-offset:-3px}
 .toolbar-caption{display:flex;overflow:hidden;align-items:center;justify-content:center;width:26px;height:9px;color:var(--lettering);text-shadow:1px 0 var(--bevel-light);font:bold 10px/1 var(--font-ui);pointer-events:none}
 .toolbar-forecast-area{display:flex;flex:1 1 60px;min-height:32px;align-items:center;justify-content:center}
-.toolbar-readouts{display:flex;flex-direction:column;gap:2px;flex:0 1 auto;min-width:0;padding:2px 3px 0 0}
+.toolbar-readouts{display:flex;flex-direction:column;gap:2px;flex:0 1 auto;min-width:0;padding:0 3px 0 0}
 .toolbar-status{display:flex;flex:0 1 auto;max-width:100%;min-width:0;margin-left:auto}
 .toolbar-pause{flex:none}
-.toolbar-readout-row{display:flex;gap:4px;height:13px;min-width:0}
+.toolbar-readout-row{display:flex;gap:4px;height:15px;min-width:0}
 .toolbar-forecast{width:52px;height:20px}
 .toolbar-readout-label{display:flex;justify-content:flex-end;align-items:center;width:41px;font-weight:bold}
-.toolbar-readout{width:176px;min-width:0;flex:0 1 176px;height:13px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;padding-left:1px;font-size:9px}
+.toolbar-readout{width:100px;min-width:0;flex:0 1 100px;height:15px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;padding-left:1px;font-size:10px}
 
 /* Permanent desktop workspace. No phone breakpoint rearranges this frame. */
 .game-desktop{position:relative;display:flex;flex-direction:column;width:100%;height:100dvh;overflow:hidden;background:#c2c2c2;color:#000;color-scheme:light}

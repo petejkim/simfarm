@@ -132,9 +132,12 @@ test('flex-laid launchers and insets rebuild the source bevels with CSS around s
   // between the launchers (nine, ending x288) and readouts.
   const right = page.viewportSize()!.width - 32;
   expect(await page.locator('#toolbar-pause').boundingBox()).toEqual({ x: right, y: 16, width: 32, height: 32 });
-  expect(await page.locator('#farm-date').locator('..').boundingBox()).toEqual({ x: right - 179, y: 18, width: 176, height: 13 });
-  expect(await page.locator('#farm-cash').locator('..').boundingBox()).toEqual({ x: right - 179, y: 33, width: 176, height: 13 });
-  expect(await page.locator('.toolbar-forecast').boundingBox()).toEqual({ x: (288 + right - 224) / 2 - 26, y: 22, width: 52, height: 20 });
+  expect(await page.locator('#farm-date').locator('..').boundingBox()).toEqual({ x: right - 103, y: 16, width: 100, height: 15 });
+  expect(await page.locator('#farm-cash').locator('..').boundingBox()).toEqual({ x: right - 103, y: 33, width: 100, height: 15 });
+  for (const id of ['#farm-date', '#farm-cash']) expect(await page.locator(id).locator('..').evaluate(el => getComputedStyle(el).fontSize)).toBe('10px');
+  // The longest month name still fits without clipping.
+  expect(await page.locator('#farm-date').evaluate(el => { const saved = el.textContent; el.textContent = 'September 30, 1993'; const fits = el.scrollWidth <= el.parentElement!.clientWidth; el.textContent = saved; return fits; })).toBe(true);
+  expect(await page.locator('.toolbar-forecast').boundingBox()).toEqual({ x: (288 + right - 148) / 2 - 26, y: 22, width: 52, height: 20 });
   for (const id of ['#farm-date', '#farm-cash', '#farm-date-label', '#farm-cash-label']) expect(await page.locator(id).evaluate(el => getComputedStyle(el).color)).toBe('rgb(0, 0, 0)');
   await expect(page.locator('#farm-date-label')).toHaveText('Date'); await expect(page.locator('#farm-cash-label')).toHaveText('Funds');
   expect(await bar.locator('.toolbar-caption').allTextContents()).toEqual(['BUY', 'SELL']);
