@@ -4,7 +4,9 @@ import {disasterFixture} from '../support/disasters';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
 import { reveal, openWindow, focusEdit, expectPaletteAction, expectSelectedField , speedItem } from '../support/workspace';
-import { cropPlantTile } from '../../src/formats/crop-slots';
+import { allCropFiles, cropPlantTile, fixedCropTiles } from '../../src/formats/crop-slots';
+import { readScenario } from '../../src/formats/scenario';
+import { readFileSync } from 'node:fs';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'field-tools.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
 async function point(page:Page,x:number,y:number){
@@ -40,7 +42,9 @@ test('original Plant and Spray popup geometry, real labels, source icons and key
   await page.keyboard.press('ArrowRight');await expect(menu.getByRole('menuitem').nth(17)).toBeFocused();
   await page.keyboard.press('End');await expect(menu.getByRole('menuitem').nth(23)).toBeFocused();
   for(let slot=0;slot<24;slot++){
-    expect(await icon(slot).evaluate(el=>(el as HTMLElement).style.backgroundPosition)).toBe(tileAt(cropPlantTile(slot)));
+    // Scenario 1's slot order, drawn from each crop's fixed place in the shared terrain sheet.
+    const crops=fixedCropTiles(allCropFiles(readScenario(readFileSync(new URL('../../../simfarm-dos/SCEN0.SSM',import.meta.url))).cropFiles));
+    expect(await icon(slot).evaluate(el=>(el as HTMLElement).style.backgroundPosition)).toBe(tileAt(crops[cropPlantTile(slot)]));
   }
   await page.keyboard.press('Escape');await expect(menu).toHaveCount(0);expect(await save(page)).toEqual(before);
   await page.getByRole('button',{name:'SPRAY',exact:true}).click();const spray=page.getByRole('menu',{name:'Spray Field',exact:true});

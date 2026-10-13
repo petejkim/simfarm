@@ -37,7 +37,7 @@ test('original Sell browses three rows, excludes rentals, explains busy machiner
   await expect(page.locator('#catalog-sell')).toHaveCSS('font-size','10px');await expect(page.locator('#catalog-sell')).toHaveText('SELL');
   // Each row shows its item graphic as tile sprites (here masked tile 848 = masked atlas 0,0), then badge and price.
   const tile=page.locator('.sell-row').first().locator('.sell-tiles .sprite').first();
-  expect(await tile.evaluate(el=>[getComputedStyle(el).backgroundImage.startsWith('url("data:image/png'),getComputedStyle(el).backgroundPosition])).toEqual([true,'0px 0px']); // masked atlas (generated data URL), tile 0
+  expect(await tile.evaluate(el=>[getComputedStyle(el).backgroundImage.endsWith('/assets/masked-tiles.png")'),getComputedStyle(el).backgroundPosition])).toEqual([true,'0px 0px']); // masked sheet file, tile 0
   expect(await page.locator('.sell-row').first().evaluate(el=>[...el.children].map(c=>c.className.split(' ')[0]))).toEqual(['sell-tiles','condition-badge','sell-price','sale-accessible-detail']);
   await page.screenshot({path:'artifacts/browser-sell-catalog.png'});
   expect(await save(page)).toEqual(JSON.parse(original));

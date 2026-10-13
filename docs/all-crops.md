@@ -27,7 +27,23 @@ Native crop terrain/schedule IDs reserve1280..1391, away from original terrain0.
 
 The eleven-bit terrain field can contain these IDs. The atlas appends exact original CRP pixels. Badge protection, field repaint/clear, planning recognition, storage interiors and inventory pickup distinguish native tiles from original status/machinery graphics. Harvest types extend168..191 and seed types192..215; these remain disjoint from chemicals220..223. Original byte/word record sizes and bounded inventory/building-slot limits stay unchanged.
 
-Restart and SSM import perform the recovered sixteen-slot phases first, then the accepted browser farm expands again. Restart discards extra live catalog records alongside the replaced farm; SSM import retains the original16 history slots and initializes the newly appended histories. Native checkpoints preserve the entire expanded live state without re-expansion or replay. Missing crop files fail before replacing the visible farm.
+Restart and SSM import perform the recovered sixteen-slot phases first, then the accepted browser farm expands again. Restart discards extra live catalog records alongside the replaced farm; SSM import retains the original16 history slots and initializes the newly appended histories. Native checkpoints preserve the entire expanded live state without re-expansion or replay. Missing crop files formerly failed tile composition before replacing the visible farm; since the fixed-place sheets (below), loads no longer fetch crop files for artwork. Missing or invalid terrain sheets still fail before any farm is shown.
+
+## Fixed-place terrain sprite sheets (native, 2026-10-13)
+
+Farms keep their own slot order: a scenario's sixteen SSM slots come first, then the other eight shipped crops. The
+simulation and saves depend on this order. For example, `updateMarket` (`src/simulation/market.ts`) draws the original
+random numbers slot by slot, so reordering slots would change prices and break exact checkpoints.
+
+Only the artwork has a fixed order:
+- The importer patches all twenty-four shipped crops into the terrain atlas in `SHIPPED_CROP_IDS` order (`FIXED_CROP_FILES`). It writes one PNG per palette (`terrain-tiles.png`, `.rain`, `.frost`), each with an `.inverted` outline variant (palette index XOR 15).
+- Drawing maps each crop tile of a farm slot (stage, badge, harvest and plant tiles) to the same tile of its crop's fixed slot (`fixedCropTiles` in `src/formats/crop-slots.ts`). Every other tile maps to itself.
+- The world renderer applies the mapping per cell; UI `TileSprite`s get it through `CropTilesContext` from FarmView.
+- The masked, town-event and region-map atlases are crop-independent, and are now imported PNG files too.
+
+The runtime no longer composites atlases or creates `data:` image URLs. Every sprite references the shared files.
+
+Evidence: `tests/fixed-crop-tiles.test.ts` patches each original scenario's own slot atlas, as the runtime did before. For all eight SSM files and all 1392 tiles, every tile's 128 bytes equal the mapped tile of the fixed atlas, so the pictures are unchanged. The mapping only permutes crop tiles.
 
 ## Saves and checks
 

@@ -1,4 +1,4 @@
-import { cropBadgeTile } from '../../src/formats/crop-slots';
+import { cropBadgeTile, fixedCropTiles } from '../../src/formats/crop-slots';
 import {readSaveText} from '../support/save-file';
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
@@ -41,7 +41,7 @@ test('Evaluation restores source geometry, gauges, problems, all24 suggested cro
     for(let i=0;i<8;i++){
       const slot=batch*8+i,crop=browserCrops.find(c=>`${c.id}.crp`===game.getSnapshot().scenario.cropFiles[slot])!,raw=source('CROPS/'+crop.id.toUpperCase()+'.CRP');
       await expect(items.nth(i)).toHaveText(crop.name);await expect(items.nth(i)).toHaveAttribute('data-evaluation-crop',String(slot));
-      expect(await badgeTiles(items.nth(i))).toEqual(tilePositions([0,1,2,3].map(p=>cropBadgeTile(slot,p))));void raw;
+      expect(await badgeTiles(items.nth(i))).toEqual(tilePositions([0,1,2,3].map(p=>fixedCropTiles(game.getSnapshot().scenario.cropFiles)[cropBadgeTile(slot,p)])));void raw;
     }
     if(batch<2)await client.getByRole('button',{name:'Next suggested crops'}).click();
   }

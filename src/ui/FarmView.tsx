@@ -12,6 +12,8 @@ import {CheatMessage} from './CheatMessage';
 import {FinanceMessage} from './FinanceMessage';
 import {SaveProblemMessage} from './SaveProblemMessage';
 import {TouchNotice,touchNoticeDue} from './TouchNotice';
+import {CropTilesContext} from './chrome/TileSprite';
+import {fixedCropTiles} from '../formats/crop-slots';
 import type {SaveProblem} from '../storage/autosave';
 import {DefaultDialog} from './DefaultDialog';
 import {EvaluationWindow} from './EvaluationWindow';
@@ -372,7 +374,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
   // View object, Spray (whole fields) and Move object (pickup/drop cursors without a footprint) act on the first tap.
   const confirmTaps=Boolean(buyPlacement||fieldMapTool?.kind==='plant'||construction.tool||bulldoze.active);
   const toolKey=`${mapCursor}:${buyPlacement?.type??''}:${fieldMapTool?.kind??''}:${construction.tool??''}`;
-  return <>
+  const cropFiles=snapshot?.scenario.cropFiles??data?.scenario.cropFiles;
+  return <CropTilesContext value={cropFiles?fixedCropTiles(cropFiles):null}>
     {simulation && <SaveControls debug={{
       checked:[],
       disabled:Boolean(snapshot?.pendingTown||snapshot?.townEvent.pending||snapshot?.finances.defaultDecision||snapshot?.aircraftFlight),
@@ -487,5 +490,5 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
       {touchNotice&&data&&!messages.length&&!saveProblem&&!bulldoze.pending&&!newFarmOpen&&!snapshot?.townEvent.pending&&<TouchNotice assets={assets} onClose={()=>setTouchNotice(false)}/>}
       {saveProblem&&!messages.length&&!bulldoze.pending&&!newFarmOpen&&!snapshot?.townEvent.pending&&<SaveProblemMessage problem={saveProblem} assets={assets} onClose={()=>setSaveProblem(null)}/>}
     </main>}
-  </>;
+  </CropTilesContext>;
 }

@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { TerrainPreviewAssets } from '../assets/game-assets';
 import { focusUnlessClaimed } from './focus';
 import type { CustomFarmSetup } from '../simulation/custom-farm-setup';
-import { renderTerrainPreview } from '../render/terrain-preview';
-import { rasterDataUrl } from '../render/raster-image';
+import { paintTerrainPreview, renderTerrainPreview } from '../render/terrain-preview';
 import { BevelButton } from './chrome/BevelButton';
 import { SunkenInset } from './chrome/SunkenInset';
 import { spriteFace } from './chrome/Sprite';
@@ -24,9 +23,14 @@ export function TerrainDesign({ draft, assets, onPlay, onCancel, error }: {
   const rendered = useMemo(() => {
     try {
       if (!preview.locations) throw new Error('No starting sites selected');
-      return { image: rasterDataUrl(renderTerrainPreview(preview.world, assets.miniature)), error: '' };
+      return { image: renderTerrainPreview(preview.world, assets.miniature), error: '' };
     } catch (cause) { return { image: null, error: cause instanceof Error ? cause.message : String(cause) }; }
   }, [preview, assets]);
+  // The generated preview is drawn straight onto a canvas (no data: image URL).
+  const canvas = useRef<HTMLCanvasElement>(null);
+  useLayoutEffect(() => {
+    if (rendered.image && canvas.current) paintTerrainPreview(canvas.current, rendered.image);
+  }, [rendered.image]);
   function run(action: () => void) {
     try { action(); setActionError(''); } catch (cause) { setActionError(cause instanceof Error ? cause.message : String(cause)); }
   }
@@ -63,7 +67,7 @@ export function TerrainDesign({ draft, assets, onPlay, onCancel, error }: {
         <div className="terrain-side">
           <SunkenInset className="terrain-preview-box">
             <span className="terrain-preview-grid">
-              {rendered.image && <img id="terrain-preview" src={rendered.image} width={192} height={192} alt="Terrain preview with home and town markers" draggable={false} />}
+              {rendered.image && <canvas id="terrain-preview" ref={canvas} width={192} height={192} role="img" aria-label="Terrain preview with home and town markers" />}
               {rendered.image && preview.locations && ([['T', preview.locations.town], ['H', preview.locations.player]] as const).map(([letter, site]) =>
                 <span key={letter} className="terrain-marker" style={{ gridColumn: site.regionX + 1, gridRow: site.regionY + 1 }} aria-label={letter === 'H' ? 'Home' : 'Town'}>{letter}</span>)}
             </span>

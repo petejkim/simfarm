@@ -16,6 +16,9 @@ import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { PNG } from 'pngjs';
 import { patchCropGraphics, readCropIcons } from '../src/formats/crop-graphics';
+import { FIXED_CROP_FILES } from '../src/formats/crop-slots';
+import { renderRegionMaps } from '../src/render/region-chooser';
+import { readRegionArtwork } from '../src/formats/region-artwork';
 import { spriteAtlas } from '../src/formats/sprite';
 import { readScenario } from '../src/formats/scenario';
 import { readArchive } from '../src/formats/archive';
@@ -30,7 +33,7 @@ import { readBuyArtwork, readBuyCards, readBuyCatalog } from '../src/formats/buy
 import { readBankArtwork } from '../src/formats/bank-artwork';
 import { readEditPalette } from '../src/formats/edit-palette';
 import { readControlBar, timeToggleFaces } from '../src/formats/control-bar';
-import { readPalette, readBitmap, tileAtlas, miniTileAtlas, decodePlanar, readInterleavedScreen, type Raster } from '../src/formats/graphics';
+import { readPalette, readBitmap, tileAtlas, miniTileAtlas, decodePlanar, readInterleavedScreen, type Palette, type Raster } from '../src/formats/graphics';
 import { townEventTileBank } from '../src/formats/town-event-graphics';
 import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
 import { readCrop, type CropDefinition } from '../src/formats/crop';
@@ -136,6 +139,29 @@ for (const name of (await readdir(join(source, 'CROPS'))).filter(n => /\.crp$/i.
   inputs.push({ name: `CROPS/${name}`, size: bytes.length, sha256: sha256(bytes) });
   await png(`${id}.png`, tileAtlas(bytes.subarray(0, 0x400), palette, 8));
   await png(`${id}.card.png`, decodePlanar(bytes.subarray(0x400, 0x1200), 112, 64, palette));
+}
+// Native sprite sheets (user request): every runtime tile atlas is an imported PNG file, so sprites share one file
+// instead of generated data: URLs. The terrain atlas holds all twenty-four shipped crops at fixed positions
+// (FIXED_CROP_FILES, slot i = SHIPPED_CROP_IDS[i]); drawing maps a farm's slots to them (fixedCropTiles). Each
+// atlas has rain/frost palette variants and an .inverted variant (palette index XOR 15) for outlines.
+const weatherPalettes = [['', palette], ['.rain', readPalette(asset('rainpal.pal'))], ['.frost', readPalette(asset('frostpal.pal'))]] as const;
+const inverse = (colors: Palette): Palette => colors.map((_, index) => colors[index ^ 15]);
+const fixedTiles = patchCropGraphics(asset('ega16til.til'), FIXED_CROP_FILES.map(file => {
+  const crop = cropBytes.get(file); if (!crop) throw new Error(`Missing shipped crop ${file}`); return crop;
+}));
+for (const [suffix, colors] of weatherPalettes) {
+  await png(`terrain-tiles${suffix}.png`, tileAtlas(fixedTiles, colors));
+  await png(`terrain-tiles${suffix}.inverted.png`, tileAtlas(fixedTiles, inverse(colors)));
+  for (const mode of [0, 1, 2] as const) {
+    const bank = townEventTileBank(asset('twnevent.til'), mode);
+    await png(`town-event-tiles-${mode}${suffix}.png`, tileAtlas(bank, colors, 7));
+    await png(`town-event-tiles-${mode}${suffix}.inverted.png`, tileAtlas(bank, inverse(colors), 7));
+  }
+}
+await png('masked-tiles.inverted.png', tileAtlas(asset('mskdtile.til'), inverse(palette), 32, 7));
+{
+  const maps = renderRegionMaps(readRegionArtwork(asset('scenario.int'), readPalette(asset('scenario.pal'))), readScenarioChooser(exe).farms);
+  await png('region-map.png', maps.map); await png('region-map.inverted.png', maps.inverted);
 }
 // Favicons: the Apples crop's 16×16 plant icon and 32×32 badge, decoded from the crop file.
 const appleIcons = readCropIcons(cropBytes.get('apples.crp')!, palette);

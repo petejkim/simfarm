@@ -24,11 +24,8 @@ async function save(page: Page) {
   const path = await (await pending).path(); return JSON.parse(readSaveText(path!));
 }
 async function pixels(page: Page) {
-  // The preview is generated simulation output shown as an image; decode it to compare with the reference renderer.
-  return page.locator('#terrain-preview').evaluate(async (img: HTMLImageElement) => {
-    await img.decode(); const c = document.createElement('canvas'); c.width = 192; c.height = 192;
-    const g = c.getContext('2d')!; g.drawImage(img, 0, 0); return Array.from(g.getImageData(0, 0, 192, 192).data);
-  });
+  // The preview is generated simulation output drawn on a canvas; read it to compare with the reference renderer.
+  return page.locator('#terrain-preview').evaluate((canvas: HTMLCanvasElement) => Array.from(canvas.getContext('2d')!.getImageData(0, 0, 192, 192).data));
 }
 async function expectPreview(page: Page, draft: CustomFarmSetup) {
   const p = draft.getSnapshot().preview;
@@ -41,7 +38,7 @@ async function expectPreview(page: Page, draft: CustomFarmSetup) {
     expect([marker.x - panel.x, marker.y - panel.y]).toEqual([264 + site.regionX * 16 - 136, 72 + site.regionY * 16 - 40]);
   }
   await expect(page.locator('#terrain-design .terrain-title')).toHaveText('Design your terrain');
-  await expect(page.locator('#terrain-design canvas')).toHaveCount(0);
+  await expect(page.locator('#terrain-design canvas:not(#terrain-preview)')).toHaveCount(0); // only the generated map preview is a canvas
   await expect(page.locator('#terrain-design label')).toHaveText(['Rainfall', 'Temperature', 'Wind speed']);
   await expect(page.locator('#terrain-design .terrain-button')).toHaveText(['River', 'Lake', 'Generate World', 'Play']);
   // Text is real HTML text and fits at desktop and narrow widths.

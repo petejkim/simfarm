@@ -5,7 +5,7 @@ import {shopFixture} from '../support/livestock';
 import {browserCrops} from '../support/crop-catalog';
 import {readArchive} from '../../src/formats/archive';
 import {readPalette} from '../../src/formats/graphics';
-import {cropBadgeTile} from '../../src/formats/crop-slots';
+import {cropBadgeTile,fixedCropTiles} from '../../src/formats/crop-slots';
 import {marketBarTop} from '../../src/simulation/market-view';
 import {worldIndex} from '../../src/formats/scenario';
 import {readNativeSave,writeNativeSave} from '../../src/formats/native-save';
@@ -48,7 +48,7 @@ test('original Market geometry, all24 crop badges/text and source chart structur
     await page.locator(`[data-market-crop="${slot}"]`).click();const file=state.scenario.cropFiles[slot],crop=browserCrops.find(c=>`${c.id}.crp`===file)!;
     await expect(page.locator('#market-crop-name')).toHaveText(crop.name);names.add(crop.name);
     const button=page.locator(`[data-market-crop="${slot}"]`);
-    expect(await button.locator('.sprite').evaluateAll(es=>es.map(e=>(e as HTMLElement).style.backgroundPosition))).toEqual([0,1,2,3].map(part=>tileAt(cropBadgeTile(slot,part))));
+    expect(await button.locator('.sprite').evaluateAll(es=>es.map(e=>(e as HTMLElement).style.backgroundPosition))).toEqual([0,1,2,3].map(part=>tileAt(fixedCropTiles(state.scenario.cropFiles)[cropBadgeTile(slot,part)])));
     expect(await button.locator('.market-selection').evaluate(e=>getComputedStyle(e).borderTopColor)).toBe(rgb(8));
     await expect(page.locator('.market-selection')).toHaveCount(1);
   }

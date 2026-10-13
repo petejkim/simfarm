@@ -57,7 +57,7 @@ test('create a generated farm on mobile, save it and restore without any origina
   await expect(page.locator('#map-status')).toHaveText('Scenario 5 · original terrain');
 });
 
-test('generated load rejects corrupt startup state and unavailable crop assets without replacing the active farm', async ({ page }) => {
+test('generated load rejects corrupt startup state without replacing the active farm', async ({ page }) => {
   const generated = GameSimulation.createNew(newFarmOptions, newFarmAssets).withAllCrops(browserCrops), text = generated.save(null);
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   const before = (await save(page, 'browser-generated-failure-before')).data;
@@ -65,11 +65,8 @@ test('generated load rejects corrupt startup state and unavailable crop assets w
   await page.locator('#load-farm-file').setInputFiles({ name: 'invalid.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(invalid)) });
   await expect(page.locator('#save-status')).toContainText('Could not load farm');
   expect((await save(page, 'browser-generated-failure-invalid')).data).toEqual(before);
-  await page.route('**/assets/raw/crops/corn.crp', route => route.fulfill({ status: 404, body: '' }));
-  await page.locator('#load-farm-file').setInputFiles({ name: 'missing.json', mimeType: 'application/json', buffer: Buffer.from(text) });
-  await expect(page.locator('#save-status')).toContainText('Missing game asset');
-  expect((await save(page, 'browser-generated-failure-asset')).data).toEqual(before);
-  await page.unroute('**/assets/raw/crops/corn.crp'); await load(page, text);
+  // Farms share the session's imported terrain sheets, so a load fetches no crop or tile assets that could fail.
+  await load(page, text);
   expect((await save(page, 'browser-generated-recovered')).data).toEqual(JSON.parse(text));
 });
 

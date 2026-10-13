@@ -2,14 +2,17 @@ import { invertedTiles } from '../assets/inverted-tiles';
 import { clipPlacementOutline, type PlacementFootprint } from './placement-outline';
 import { harvestWorkerTile } from './harvest-workers';
 import { drawFieldBadgeStacks, fieldBadgeStacks } from './field-badges';
+import { fixedCropTiles } from '../formats/crop-slots';
 import { maskedTile, terrainTile, worldPosition, worldIndex, WORLD_SIZE, type Scenario } from '../formats/scenario';
 
 export type MapPreview = PlacementFootprint;
 
-/** Paints one world cell (terrain tile, then its masked overlay) from the given tile sheets. */
+/** Paints one world cell (terrain tile, then its masked overlay) from the given tile sheets. Crop tiles of the
+ * farm's slots are drawn from their crops' fixed places in the imported terrain sheets (fixedCropTiles). */
 function cellPainter(context: CanvasRenderingContext2D, scenario: Scenario, workerPhase: number) {
+  const crops = fixedCropTiles(scenario.cropFiles);
   return (i: number, base: CanvasImageSource, mask: CanvasImageSource, events?: CanvasImageSource) => {
-    const cell = scenario.cells[i], tile = terrainTile(cell), { x, y } = worldPosition(i);
+    const cell = scenario.cells[i], tile = crops[terrainTile(cell)], { x, y } = worldPosition(i);
     if (events && tile >= 483 && tile < 518) {
       const eventTile = tile - 483;
       context.drawImage(events, eventTile % 7 * 16, Math.floor(eventTile / 7) * 16, 16, 16, x * 16, y * 16, 16, 16);
@@ -91,9 +94,9 @@ export class WorldPainter {
 /** Three values per cell, as drawWorldBase paints it: terrain tile (or -1 - town-event tile), overlay (or -1),
  * and the field-badge tile drawn over it (or -1). */
 function cellLooks(scenario: Scenario, workerPhase: number, events: boolean): Int32Array {
-  const looks = new Int32Array(scenario.cells.length * 3);
+  const looks = new Int32Array(scenario.cells.length * 3), crops = fixedCropTiles(scenario.cropFiles);
   for (let i = 0; i < scenario.cells.length; i++) {
-    const cell = scenario.cells[i], tile = terrainTile(cell), stored = maskedTile(cell);
+    const cell = scenario.cells[i], tile = crops[terrainTile(cell)], stored = maskedTile(cell);
     const overlay = stored === null ? null : harvestWorkerTile(stored, workerPhase);
     looks[i * 3] = events && tile >= 483 && tile < 518 ? -(tile - 483) - 1 : tile;
     looks[i * 3 + 1] = overlay !== null && overlay >= 0 && overlay < 200 ? overlay : -1;

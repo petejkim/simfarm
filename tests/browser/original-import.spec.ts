@@ -61,7 +61,7 @@ test('original import from a generated farm retains setup and works on a narrow 
   await page.screenshot({ path: 'artifacts/browser-original-import-mobile.png', fullPage: true });
 });
 
-test('invalid originals and missing crop assets leave the active farm intact and allow retry', async ({ page }) => {
+test('invalid originals leave the active farm intact and allow retry', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   const before = (await save(page, 'failure-before')).data, bytes = source('SCEN0.SSM');
   for (const buffer of [bytes.subarray(0, -1), Buffer.alloc(bytes.length)]) {
@@ -69,11 +69,8 @@ test('invalid originals and missing crop assets leave the active farm intact and
     await expect(page.locator('#save-status')).toContainText('Could not load farm');
     expect((await save(page, 'failure-invalid')).data).toEqual(before);
   }
-  await page.route('**/assets/raw/crops/*.crp', route => route.fulfill({ status: 404, body: '' }));
-  await page.locator('#load-farm-file').setInputFiles({ name: 'farm.SSM', mimeType: 'application/octet-stream', buffer: bytes });
-  await expect(page.locator('#save-status')).toContainText('Missing game asset');
-  expect((await save(page, 'failure-asset')).data).toEqual(before);
-  await page.unroute('**/assets/raw/crops/*.crp'); await load(page, bytes, 'farm.SSM');
+  // Farms share the session's imported terrain sheets, so an import fetches no crop or tile assets that could fail.
+  await load(page, bytes, 'farm.SSM');
   await expect(page.locator('#map-status')).toHaveText('Imported farm · original terrain');
 });
 

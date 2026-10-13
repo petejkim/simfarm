@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useRef, type KeyboardEvent } from 'react';
-import type { RegionAssets } from '../assets/game-assets';
+import { useEffect, useRef, type KeyboardEvent } from 'react';
+import { assetUrl, type RegionAssets } from '../assets/game-assets';
 import { focusUnlessClaimed } from './focus';
-import { renderRegionMaps } from '../render/region-chooser';
-import { rasterDataUrl } from '../render/raster-image';
 import { BevelButton } from './chrome/BevelButton';
 import { SunkenInset } from './chrome/SunkenInset';
 import { Sprite } from './chrome/Sprite';
@@ -17,7 +15,8 @@ export function RegionMap({ assets, selected, disabled, unavailable, onSelect, o
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { focusUnlessClaimed(heading.current); }, []);
-  const images = useMemo(() => { const r = renderRegionMaps(assets.artwork, assets.farms); return { map: rasterDataUrl(r.map), inverted: rasterDataUrl(r.inverted) }; }, [assets]);
+  // Imported sprite sheets (renderRegionMaps in tools/import.ts): the map with its farm rectangles, and the XORed copy.
+  const images = { map: assetUrl('region-map.png'), inverted: assetUrl('region-map.inverted.png') };
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const location = assets.locations[selected], fill = `rgb(${assets.artwork.palette[6].join(',')})`;
   function navigate(event: KeyboardEvent<HTMLButtonElement>, index: number) {

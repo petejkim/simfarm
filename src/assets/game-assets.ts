@@ -1,5 +1,4 @@
 import {readAboutCredits} from '../formats/about';
-import { townEventTileBank } from '../formats/town-event-graphics';
 import {registerInvertedTiles} from './inverted-tiles';
 import {registerWeatherTiles} from './weather-tiles';
 import {readEditStatus} from '../formats/edit-status';
@@ -9,9 +8,7 @@ import { readMapMiniature, type MapMiniature } from '../formats/map-window';
 import { readBuyCatalogData, type BuyCatalog } from '../formats/buy-window';
 import { allCropFiles } from '../formats/crop-slots';
 import { readRegionArtwork, type RegionArtwork } from '../formats/region-artwork';
-import { rasterImage } from '../render/raster-image';
-import { tileAtlas, miniTileAtlas, readPalette, type Palette, type Raster } from '../formats/graphics';
-import { patchCropGraphics } from '../formats/crop-graphics';
+import { miniTileAtlas, readPalette, type Raster } from '../formats/graphics';
 import type { NewFarmAssets } from '../simulation/create-farm';
 import type { DisasterSprites } from '../render/disaster-renderer';
 import type { FlightSprites } from '../render/aircraft-renderer';
@@ -136,15 +133,30 @@ export async function loadSound(id: GameSound, signal: AbortSignal) {
   return decodeVoc(new Uint8Array(await (await response(`raw/${id}.voc`, signal)).arrayBuffer()));
 }
 
-/** Assemble all supplied crop slots from original resources, without a SCEN file. */
+/** The terrain sheets for a farm's crops. They hold all twenty-four shipped crops at fixed places, so every farm
+ * shares the same imported files; the renderer maps the farm's slots to them (fixedCropTiles). */
 export async function loadGeneratedTiles(cropFiles: readonly string[], signal: AbortSignal): Promise<HTMLImageElement> {
   cropFiles = allCropFiles(cropFiles);
   if (cropFiles.length !== 24 || cropFiles.some(n => !/^[a-z0-9_]{1,8}\.crp$/.test(n))) throw new Error('Invalid crop filenames');
-  const binary = (path: string) => response(path, signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b));
-  const [tiles, palette, rain, frost, ...crops] = await Promise.all([binary('raw/ega16til.til'), binary('raw/simfarm.pal'), binary('raw/rainpal.pal'), binary('raw/frostpal.pal'), ...cropFiles.map(file => binary(`raw/crops/${file}`))]);
-  const patched=patchCropGraphics(tiles,crops);
-  const images=await Promise.all([palette,rain,frost].map(p=>outlineAtlas(patched,readPalette(p),signal)));
-  return registerWeatherTiles(images[0],images[1],images[2]);
+  if (!terrainSheets) {
+    // Shared by every farm, so loaded once; one caller's abort must not cancel it for the others.
+    terrainSheets = weatherAtlas('terrain-tiles', new AbortController().signal).then(tiles => {
+      // 1392 tiles: the 880 original tiles and the eight native crop slots (crop-slots.ts), 32 per row.
+      if (tiles.naturalWidth !== 512 || tiles.naturalHeight !== 704) throw new Error('Invalid terrain tiles. Run ./tools/bun run import first.');
+      return tiles;
+    });
+    terrainSheets.catch(() => { terrainSheets = null; });
+  }
+  return abortable(terrainSheets, signal);
+}
+let terrainSheets: Promise<HTMLImageElement> | null = null;
+function abortable<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+  signal.throwIfAborted();
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(signal.reason);
+    signal.addEventListener('abort', abort, { once: true });
+    work.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+  });
 }
 /** Native checkpoints may require either bundled or recomposed original tiles. */
 export async function loadSavedFarmTiles(world: Scenario, scenarioId: number | null, signal: AbortSignal): Promise<HTMLImageElement> {
@@ -161,26 +173,21 @@ export async function loadNewFarmAssets(assets: GameAssets, signal: AbortSignal)
 }
 
 
+/** Imported sprite sheets (tools/import.ts): each atlas PNG with its .inverted outline variant, and the rain and
+ * frost palette variants for terrain and town events. Every sprite and canvas draw shares these files. */
+async function atlasFile(name: string, signal: AbortSignal): Promise<HTMLImageElement> {
+  const [normal, inverse] = await Promise.all([image(`${name}.png`, signal), image(`${name}.inverted.png`, signal)]);
+  return registerInvertedTiles(normal, inverse);
+}
+async function weatherAtlas(name: string, signal: AbortSignal): Promise<HTMLImageElement> {
+  const [normal, rain, frost] = await Promise.all(['', '.rain', '.frost'].map(suffix => atlasFile(name + suffix, signal)));
+  return registerWeatherTiles(normal, rain, frost);
+}
 /** Original recreation banks share the global terrain palette; retain all three
  * weather variants without modifying a farm's crop-expanded atlas. */
-async function loadTownEventTiles(signal: AbortSignal): Promise<HTMLImageElement[]> {
-  const [raw, ...palettes] = await Promise.all(['twnevent.til', 'simfarm.pal', 'rainpal.pal', 'frostpal.pal']
-    .map(name => response(`raw/${name}`, signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b))));
-  return Promise.all(([0, 1, 2] as const).map(async mode => {
-    const bank = townEventTileBank(raw, mode);
-    const images = await Promise.all(palettes.map(p => outlineAtlas(bank,readPalette(p),signal,7)));
-    return registerWeatherTiles(images[0], images[1], images[2]);
-  }));
+function loadTownEventTiles(signal: AbortSignal): Promise<HTMLImageElement[]> {
+  return Promise.all([0, 1, 2].map(mode => weatherAtlas(`town-event-tiles-${mode}`, signal)));
 }
-
-
-async function outlineAtlas(bytes:Uint8Array,palette:Palette,signal:AbortSignal,columns=32,transparentIndex?:number):Promise<HTMLImageElement>{
-  const [normal,inverse]=await Promise.all([palette,palette.map((_,index)=>palette[index^15])]
-    .map(colors=>rasterImage(tileAtlas(bytes,colors,columns,transparentIndex),signal)));
-  return registerInvertedTiles(normal,inverse);
-}
-async function loadMaskedTiles(signal:AbortSignal):Promise<HTMLImageElement>{
-  const [bytes,palette]=await Promise.all(['mskdtile.til','simfarm.pal'].map(name=>response(`raw/${name}`,signal)
-    .then(r=>r.arrayBuffer()).then(b=>new Uint8Array(b))));
-  return outlineAtlas(bytes,readPalette(palette),signal,32,7);
+function loadMaskedTiles(signal: AbortSignal): Promise<HTMLImageElement> {
+  return atlasFile('masked-tiles', signal);
 }

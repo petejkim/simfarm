@@ -21,3 +21,26 @@ export const cropPlantSlot = (tile: number, count = 24) => tile >= 832 && tile <
 export const cropHarvestSlot = (tile: number) => tile >= 816 && tile < 832 ? tile - 816
   : tile >= 1376 && tile < 1384 ? tile - 1376 + 16 : -1;
 export const isCropStageTile = (tile: number) => tile >= 688 && tile < 816 || tile >= 1280 && tile < 1344;
+
+/** Native sprite sheets (user request): the imported terrain atlases hold all twenty-four shipped crops at fixed
+ * positions, crop SHIPPED_CROP_IDS[i] in the tiles of slot i. A farm's own slot order (its scenario's sixteen
+ * slots, then the rest) is unchanged in the simulation and saves, which depend on it (the market draws random
+ * numbers slot by slot). Drawing maps each crop tile of a farm slot to its crop's fixed tile. */
+export const FIXED_CROP_FILES: readonly string[] = SHIPPED_CROP_IDS.map(id => `${id}.crp`);
+const fixedMaps = new Map<string, Uint16Array>();
+/** Tile number → fixed-atlas tile for a farm's crop files; non-crop tiles map to themselves. */
+export function fixedCropTiles(cropFiles: readonly string[]): Uint16Array {
+  const key = cropFiles.join();
+  let map = fixedMaps.get(key);
+  if (map) return map;
+  const files = allCropFiles(cropFiles);
+  map = Uint16Array.from({ length: 2048 }, (_, tile) => tile);
+  files.forEach((file, slot) => {
+    const fixed = FIXED_CROP_FILES.indexOf(file);
+    for (let stage = 0; stage < 8; stage++) map![cropStageTile(slot, stage)] = cropStageTile(fixed, stage);
+    for (let part = 0; part < 4; part++) map![cropBadgeTile(slot, part)] = cropBadgeTile(fixed, part);
+    map![cropHarvestTile(slot)] = cropHarvestTile(fixed); map![cropPlantTile(slot)] = cropPlantTile(fixed);
+  });
+  fixedMaps.set(key, map);
+  return map;
+}

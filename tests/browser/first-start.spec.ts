@@ -77,7 +77,7 @@ test('a stored farm that cannot be restored is never replaced by a newly generat
   // Fail only the restore's first request; later loads succeed, so a regression that generated a new
   // farm here would succeed and overwrite the record.
   let failed = false;
-  await page.route('**/assets/raw/crops/apples.crp', route => { if (failed) return route.continue(); failed = true; return route.fulfill({ status: 404, body: '' }); });
+  await page.route('**/assets/terrain-tiles.png', route => { if (failed) return route.continue(); failed = true; return route.fulfill({ status: 404, body: '' }); });
   await page.reload(); await expect(page.locator('#map-status')).toContainText('Scenario 1');
   await expect(page.getByText(/Saved farm could not be restored/).first()).toBeVisible();
   await page.waitForTimeout(500); expect(await storedText(page)).toBe(kept);

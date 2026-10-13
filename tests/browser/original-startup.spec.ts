@@ -80,14 +80,15 @@ test('legacy checkpoints restore unknown climate exactly and New Game loading ne
   expect(await save(page)).toEqual(JSON.parse(GameSimulation.openOriginalSave(source('SCEN4.SSM'), { date, seeds }, assets).withAllCrops(browserCrops).save(null)));
 });
 
-test('malformed saves, picker cancellation and cancellation during startup or tile loading preserve the current farm', async ({ page }) => {
+test('malformed saves, picker cancellation and cancellation during startup preserve the current farm', async ({ page }) => {
   await start(page); const before = await save(page); await chooser(page);
   await page.locator('#setup-load-file').dispatchEvent('cancel'); expect(await save(page)).toEqual(before);
   for (const [name, bytes] of [['bad.SSM', source('SCEN4.SSM').subarray(0, -1)], ['bad.json', Buffer.from('{}')]] as const) {
     await pick(page, name, bytes); await reveal(page, '#new-farm-error'); await expect(page.locator('#new-farm-error')).toBeVisible(); expect(await save(page)).toEqual(before);
   }
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  for (const asset of ['new-farm-runtime.json', 'raw/ega16til.til']) {
+  // Terrain sheets are loaded once per session (before this), so only setup data is fetched while starting.
+  for (const asset of ['new-farm-runtime.json']) {
     let requested!: () => void, finish!: () => void;
     const started = new Promise<void>(resolve => { requested = resolve; }), release = new Promise<void>(resolve => { finish = resolve; });
     await chooser(page);

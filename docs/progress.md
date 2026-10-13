@@ -3759,3 +3759,34 @@ Validation:
 - touch-notice.spec, as a 390px touch phone: exact text, the card-75 portrait position, and no time passing over 4.5s while open (with the clock resumed behind it). After OK, time runs again and the notice is not shown on reload. A desktop browser never shows it.
 - With mobile-touch, first-start and control-bar: 36/36.
 - Phone screenshot checked by eye.
+
+### Imported sprite sheets replace runtime data: URLs (2026-10-13, user request)
+
+Tile icons in the Plant/Spray menus, Market, Evaluation, Expert, Sell, Buy, Examine and other windows used `data:` PNG URLs. So did the terrain canvas sources and the region map. The runtime built these atlases from the raw `.til` and `.crp` files, which repeated a whole data URL in every sprite's style.
+
+All of them are now imported PNG files:
+- **Terrain**: `terrain-tiles[.rain|.frost][.inverted].png`.
+- **Crop-independent atlases**: `masked-tiles[.inverted].png`, `town-event-tiles-{0,1,2}[.rain|.frost][.inverted].png` and `region-map[.inverted].png`.
+
+Every sprite and canvas draw shares these files. The terrain sheets are loaded once per session.
+
+The terrain atlas holds all 24 crops at fixed places. Farms keep their own slot order, because the simulation and saves depend on it. The user first asked to convert scenarios to fixed slots, but `updateMarket` draws the original random numbers slot by slot, so that would change prices and break exact checkpoints; the user chose this artwork-only approach instead. Drawing maps slots to fixed places (`fixedCropTiles`; see docs/all-crops.md). The terrain designer preview is generated per seed, so it is now painted directly on a canvas. `raster-image.ts` (canvas-to-data-URL) is removed.
+
+Test changes:
+- Load failures from missing crop files no longer exist, because farm loads fetch no artwork. Those steps in new-farm, original-import and original-startup were removed; their invalid-file steps still cover failed loads preserving the farm.
+- first-start now fails the first `terrain-tiles.png` request.
+- Sprite-position tests (field-tools, evaluation, market) expect each crop's fixed place; sell-window expects the masked sheet file.
+
+Remaining runtime pixel composition, by design: the Map window overview and its legend (2px per tile with per-pixel data colours), and the terrain designer preview canvas.
+
+Validation:
+- Re-import done; build passes.
+- Unit tests 965/965, including fixed-crop-tiles. For all 8 SSM files and all 1392 tiles, each scenario's own slot atlas equals the mapped fixed atlas byte for byte.
+- world-painter also covers a reversed slot order.
+- sprite-sheets.spec checks:
+  - Plant, Spray, Market, Evaluation and Expert use only `/assets/*.png` sheets;
+  - no `data:image/png` anywhere;
+  - Scenario 1 grapes (slot 1) shows fixed crop 7;
+  - the region map uses the imported files;
+  - the terrain designer has no data URL.
+- Full browser suite 348/348.

@@ -659,7 +659,7 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .terrain-side{display:flex;flex-direction:column;align-items:flex-start;padding-top:2px}
 .terrain-preview-box{width:196px;height:196px}
 .terrain-preview-grid{display:grid;grid-template-columns:repeat(12,16px);grid-template-rows:repeat(12,16px);width:192px;height:192px}
-.terrain-preview-grid>img{grid-area:1/1/13/13;display:block;image-rendering:pixelated}
+.terrain-preview-grid>canvas{grid-area:1/1/13/13;display:block;width:192px;height:192px;image-rendering:pixelated;cursor:default}
 .terrain-marker{width:8px;height:8px;color:#000;font:bold 9px/8px var(--font-ui);pointer-events:none;z-index:1}
 .terrain-actions{display:flex;gap:12px;margin:19px 0 0 4px}
 .terrain-generate{width:123px}
