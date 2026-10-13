@@ -7,7 +7,7 @@ import type { AircraftFlight } from '../simulation/aircraft-flight';
 import { useCallback, useEffect, useLayoutEffect, useRef, type MouseEvent, type PointerEvent, type RefObject } from 'react';
 import { WORLD_SIZE, worldIndex, type Scenario } from '../formats/scenario';
 import { pinchView, settledZoom } from './pinch-zoom';
-import { drawWorldBase, drawWorldPreview, type MapPreview } from '../render/world-renderer';
+import { drawWorldPreview, WorldPainter, type MapPreview } from '../render/world-renderer';
 
 export interface MapFocus { x: number; y: number }
 interface Props {
@@ -58,6 +58,7 @@ const directions: Record<string, [number, number]> = {
 
 export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scenario, tiles, townEventTiles, maskedTiles, zoom, focus, preview, onSelect,onSecondarySelect,paintTool,onPaint,onStroke,stopPaintingOutside, onPointer, flight, flightSprites, disasters, disasterSprites, onViewportSize, confirmTaps = false, toolKey, onZoom, onDrag }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const painter = useRef({ world: new WorldPainter(), overlaid: false, canvas: null as HTMLCanvasElement | null });
   const stroke=useRef<{pointer:number;last:number|null}|null>(null),suppressClick=useRef(false);
   const strokeCallback=useRef(onStroke);strokeCallback.current=onStroke;
   const stopPainting=useCallback(()=>{
@@ -227,8 +228,12 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
   }, [zoom, endTouch, revertTouch, stopPainting, viewportRef]);
   useLayoutEffect(() => {
     paint.current=()=>{
-      const context = canvasRef.current!.getContext('2d')!;
-      drawWorldBase(context, scenario, tiles, maskedTiles, workerAnimation.current.phase, townEventTiles);
+      const canvas = canvasRef.current!, context = canvas.getContext('2d')!, painted = painter.current;
+      // Only cells whose look changed are repainted. Aircraft and disasters draw across cells, so a frame with
+      // them (or just after them), or a new canvas, repaints the whole world.
+      const overlaid = Boolean(flight || disasters), full = overlaid || painted.overlaid || painted.canvas !== canvas;
+      painted.world.paint(context, scenario, tiles, maskedTiles, workerAnimation.current.phase, townEventTiles, full);
+      painted.overlaid = overlaid; painted.canvas = canvas;
       if (flight) drawAircraft(context, flight, flightSprites);
       if (disasters) drawDisasters(context, disasters, disasterSprites);
     };paint.current();

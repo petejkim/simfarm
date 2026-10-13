@@ -3704,3 +3704,18 @@ One earlier failure of the touchdown case (the 16,12 highlight not seen within 5
 MapWindow subscribed to the terrain viewport's `scroll` events and a ResizeObserver even while closed, re-rendering itself on every scroll event. That added work to every drag, the slight stutter still seen in Examine. The subscription now exists only while the Map window is open. Opening it measures the current view at once, so nothing missed while it was closed is shown stale.
 
 Validation: a map-window case (with a running clock, since `start()` pauses it and with it scroll and frame delivery) scrolls the terrain three times with the Map closed. It checks there are no mutations of the view outline, then that the outline matches the scroll once the Map opens. It fails on the previous MapWindow (2 mutations). map-window: all pass; with mobile-touch, navigation and window-viewport, 31 other tests passed.
+
+### Only changed terrain cells repaint (2026-10-13, native performance)
+
+While the game runs, every published snapshot repainted all 9,216 terrain cells, although a day typically changes only a few. This was background load behind drag stutter. `WorldPainter` (src/render/world-renderer.ts) records each cell's drawn look: its terrain or town-event tile, its masked overlay after the harvest-worker phase, and its field-badge part. It then repaints only cells whose look changed, in the same order as `drawWorldBase`.
+
+A full redraw still happens in these cases:
+- new tile sheets (weather artwork);
+- a new canvas;
+- any frame with aircraft or moving disasters, or the first frame after them, because those sprites draw across cells.
+
+This is presentation only; simulation state and the original tile choice are unchanged.
+
+Validation:
+- tests/world-painter.test.ts models the canvas per cell. Over 40 random steps of cell, worker-phase, field-badge and town-event changes, the incremental canvas equals a full `drawWorldBase` every time, with fewer than 9,216 cells repainted. The test also checks that sheet changes and forced paints repaint everything, and that an unchanged world repaints nothing.
+- Build passes; full browser suite 341/341.
