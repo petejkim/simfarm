@@ -18,6 +18,42 @@ Four relative call candidates inside overlay10 were disassembled:364e9 takes mod
 
 Mode8 at36836 remains verified as a persistent flag80 plus source Message51. The bounded scans do **not** establish an ordinary caller, and do **not** prove dead code: computed/indirect references or alternate segment aliases remain possible. There is no evidence to invent natural toxicity damage, a seasonal trigger, or an eighth menu row. Preserve the canonical primitive, saved flag and notification while retiring its unverified ordinary UI button.
 
+## Toxic warning: exhaustive reachability trace (2026-10-12)
+
+This extends the bounded scan above to every route we can enumerate statically. It is reproduced by `tools/audit-toxic-warning.py`, which exits nonzero if any route appears.
+
+1. **Flag bit.**
+   - Mode 8 (`0x36836..0x36874`) tests and sets bit 0x80 of shared disaster flags `DS:6996`, then loads `events.dat` record 0x33 (51) and opens popup `0636:10f4`.
+   - Across the whole executable (resident code and all overlays, with or without an ES override), bit 0x80 of `DS:6996` is accessed only at `0x36836` (test) and `0x36840` (set).
+   - No instruction reads or writes the whole byte.
+   - The stop table clears bits 0x01–0x40 but never 0x80, so the flag has no consumer either.
+   - Fresh startup initializes the byte to 0 (`0x8b084`). The SSM loader reads individual fields and none of them is `DS:6996`, so a saved farm cannot set it.
+2. **Message 51.**
+   - The only literal load of record 51 through `24e6:1000` is mode 8's own (`0x36845`).
+   - The finance/building dispatcher (`24e6:0fd8` → overlay 4 `0x30220`) passes its message number through as the record. Its literal requests are 2, 44, 128, 141, 154, 157, 159, 161, 166, 170, 171 and 188, never 51 or 179 (51+128, mandatory).
+   - Its three variable requests can't reach 51 either:
+     - wrapper `0x1d766`, called only with 0x27 (`0xcc7a`) and 0x24 (`0xcd28`);
+     - a debug message browser in the Ctrl key branch (`0xf2f8..0xf345`). It is guarded by the `eeadebug` flag `DS:1b78`, and its ID is clamped to 0..42 (`0xf30a`).
+3. **Manager mode 8.**
+   - All six far calls to stub `24e6:1096` push the literal modes 7, 6, 1, 1, 4 and 2.
+   - No far call or jump spells the same stub with a different segment:offset.
+   - The pointer bytes `96 10 e6 24` never occur as stored data.
+   - Only one thunk (`0x280f9`) targets overlay 10 `00c4`.
+   - The four overlay-10 near calls push 1, 4, 3 and 2.
+   - The manager's jump table (`cs:0x848`) maps mode 8 to `0x36836`, and its argument comes only from these callers.
+
+**Conclusion (high confidence):** the toxic-land warning is unreachable in the shipped executable, including through the `eeadebug` debug keys.
+
+What remains possible is only what static scanning cannot see: self-modifying code, or far pointers built arithmetically at run time. No evidence of either was found. The message text ("may fine you") describes a mechanic that does not exist either: mode 8 has no damage, fine or price effect. This is recorded as SF-179.
+
+The native game keeps the mode-8 primitive, its saved flag and its message for preservation. It deliberately does not invent a soil-toxicity trigger.
+
+| File range (end exclusive) | SHA256 |
+| --- | --- |
+| 0x36836..0x36874 | `4dfdf41b5326065d85febe751d28dd49db9fcb91e7dfad097c6dda3b80662f92` |
+| 0x36cea..0x36cf8 | `6ff88a3c57226fcc40b58ae7e578f3a84b34b8f80781d49ec7464f4b684d16a0` |
+| 0xf2f8..0xf345 | `3b5e8308b4b6c8344cb0ded909bfa0445886510968a64daa6c7c745d3457ec85` |
+
 ## Next implementation
 
 Remove the two provisional trigger buttons from ordinary Disaster details. Preserve the source simulation primitives and tests; use deterministic pre-event saves/native clock advancement for reachable events, and prepared source-state checkpoints for otherwise unproven event states. Keep actual MIDI/PCM event verification at the simulation/audio boundary when it cannot be reached through ordinary original controls. Do not maintain hidden product controls solely for browser tests. Then retire diagnostic Locate/state prose after checking original AutoGoto, Map and source Message coverage. This audit changes that implementation plan; it does not claim the overall disaster system or port is complete.

@@ -3132,3 +3132,7 @@ Validation: type check; disaster-messages unit tests 5/5; all disaster browser s
 ## 2026-10-12 — Crop circles in the Debug menu
 
 Debug → Create crop circles runs the original debug-only mode-7 start, with its random-field and crop-eligibility rules intact. It is disabled when disasters are off, when circles are active, or when there are no fields. Details in debug-menu.md. Validation: type check; debug-menu and stationary-disasters browser specs 6/6, with the crop-circle flow now started from the real menu item.
+
+## 2026-10-12 — Toxic-land warning trace
+
+An exhaustive static trace found no route to the toxic-land warning (disaster mode 8, message 51) in the shipped executable, debug keys included. Only mode 8 itself touches its flag bit or loads the message. No manager caller, alias, stored pointer, thunk or dispatcher request can produce mode 8 or message 51. It is recorded as SF-179 (dead content) and reproduced by `tools/audit-toxic-warning.py`. No game code changed.

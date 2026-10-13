@@ -1535,3 +1535,18 @@ Native decodes immutable executable headers and separate archived planes; it per
 **Classification:** scheduling/gameplay defect (starvation), not memory corruption or a security issue. High confidence in the mechanism from the ported control flow and reproduced timings. The original executable's on-screen timing was not measured in DOS.
 
 **Native behavior:** the timer wait returns true, so only that field waits and later fields keep their turn. The step 0 stock-failure exit (scheduled treatments) still ends the whole dispatcher as in the original; revisit it if scheduled orders show similar starvation. The regression in `tests/field-treatment.test.ts` orders six fields 1, 3 and 7 ticks apart. It requires all six to spray at once and to finish within the same-tick time plus the ordering gap. It fails against the original exit.
+
+## SF-179 — toxic-land warning (disaster mode 8) is unreachable
+
+**Status:** verified by exhaustive static trace (2026-10-12, user request). Dead content in the original. Not fixed: there is nothing to correct without inventing a trigger.
+
+**Evidence:**
+- Mode 8 (`0x36836`) sets bit 0x80 of `DS:6996` and shows `events.dat` message 51: "A large percentage of your land is too toxic! … the Town Environment Agency may fine you."
+- No caller requests mode 8. The six far calls and four overlay-10 near calls pass the literal modes 7/6/1/1/4/2 and 1/4/3/2. There are no aliases of the 24e6:1096 stub, no stored pointers to it and no second thunk.
+- Nothing else loads message 51. The finance dispatcher never receives 51 or 179, and the debug message browser stops at 42.
+- Nothing else reads or sets the flag bit.
+- Reproduced by `tools/audit-toxic-warning.py`; full detail in disaster-trigger-audit.md.
+
+**Classification:** unreachable feature / dead code. It is not a crash, overflow or security issue. The text also promises fines that no code implements. High confidence, limited only by what static scanning cannot detect (self-modifying code or run-time-built far pointers), for which no evidence exists.
+
+**Native behavior:** the same as the original in normal play: no trigger. The mode-8 primitive, persistent flag and message are retained, and a checkpoint with the flag set shows nothing new. Revisit only if a run-time pointer path is ever found, or if a native Debug item is wanted, as was done for crop circles.
