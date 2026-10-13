@@ -41,7 +41,7 @@ export function RegionMap({ assets, selected, disabled, unavailable, onSelect, o
   // Strips of the XORed map: top/bottom x+1..x+15, left x at y+1..y+15, right x+16 at y..y+16.
   const strip = (dx: number, dy: number, width: number, height: number) =>
     <Sprite image={images.inverted} x={location.x * 16 + dx} y={location.y * 16 + dy} width={width} height={height} style={{ margin: `${dy}px 0 0 ${dx}px` }} />;
-  return <div className="geographic-chooser" id="geographic-chooser" role="group" aria-label="Select a region" aria-describedby="region-map-help">
+  return <div className="geographic-chooser" id="geographic-chooser" role="group" aria-label="Select a region">
     <div className="region-controls">
       <h2 ref={heading} tabIndex={-1} className="region-title" style={{ color: fill }}>SELECT<br />A REGION</h2>
       {(['Rainfall', 'Temperature', 'Wind Speed'] as const).map((label, i) => <div key={label} className="region-climate">

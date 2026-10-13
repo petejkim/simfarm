@@ -33,7 +33,7 @@ export function TerrainDesign({ draft, assets, onPlay, onCancel, error }: {
   const closed = state.phase !== 'preview';
   const art = assets.screen.src;
   return <>
-    <div className="terrain-design" id="terrain-design" role="group" aria-label="Original terrain design" aria-describedby="terrain-design-help">
+    <div className="terrain-design" id="terrain-design" role="group" aria-label="Original terrain design">
       <h2 ref={heading} tabIndex={-1} className="terrain-title">Design your terrain</h2>
       <div className="terrain-body">
         <div className="terrain-controls">
@@ -78,11 +78,6 @@ export function TerrainDesign({ draft, assets, onPlay, onCancel, error }: {
     </div>
     <div className="setup-footer terrain-footer">
       <span>April {settings.date.year} · $40,000</span>
-      <details><summary>Help</summary><div>
-        <p id="terrain-design-help">Choose climate and water options. Generate World makes a new map; Play accepts the displayed map. H marks your home; T marks the town. Water and rainfall changes affect terrain when you Generate World.</p>
-        <p id="terrain-settings" role="status">Rainfall: {levels[settings.climate.precipitation]} · Temperature: {levels[settings.climate.temperature]} · Wind: {levels[settings.climate.wind]} · River: {settings.river ? 'on' : 'off'} · Lake: {settings.lake ? 'on' : 'off'}</p>
-        {preview.locations && <p id="terrain-sites">Home: region {preview.locations.player.regionX + 1}, {preview.locations.player.regionY + 1} · Town: region {preview.locations.town.regionX + 1}, {preview.locations.town.regionY + 1}</p>}
-      </div></details>
       <BevelButton className="native-button" onClick={onCancel}>Cancel</BevelButton>
     </div>
     {(error || actionError || rendered.error) && <p id="new-farm-error" role="alert">Could not create farm: {error || actionError || rendered.error}</p>}

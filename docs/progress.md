@@ -3265,3 +3265,9 @@ Each task has its own commit:
 Three leftover literal geometry checks were folded into the earlier geometry-removal commit: Balance label positions, the AIRPLANE client rectangle and control-strip box, and the Examine text inset.
 
 Validation: type check. Browser specs: map-window, balance-window, evaluation-window, aircraft-window, control-bar and examine, all passing. Balance screenshot reviewed.
+
+## 2026-10-13 — New Game help removed
+
+At the user's request, the Select a Region and Design Your Own screens drop their native Help disclosures; neither screen's help is from the original. The Design Your Own help also held a climate/water summary (`#terrain-settings`, `#terrain-sites`) that only appeared when expanded, so it went too. Terrain specs now check the climate sliders' own values.
+
+Validation: type check. Browser specs: terrain-design, region-selection, new-farm, new-game-layout and region-artwork, 21/21.

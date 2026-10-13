@@ -70,7 +70,7 @@ test('custom screen uses HTML text over exact terrain pixels and Play accepts it
   await reveal(page, '#terrain-temperature'); await page.locator('#terrain-temperature').focus(); await page.keyboard.press('End');
   await reveal(page, '#terrain-river'); await page.locator('#terrain-river').click(); await reveal(page, '#terrain-lake'); await page.locator('#terrain-lake').click();
   draft.setSettings({ ...options, climate: { precipitation: 0, temperature: 3, wind: 0 }, river: false, lake: true });
-  await expect(page.locator('#terrain-settings')).toContainText('Rainfall: Low');
+  for (const [channel, value] of [['precipitation', '0'], ['temperature', '3']]) await expect(page.locator(`#terrain-${channel}`)).toHaveValue(value);
   await expectPreview(page, draft); // No regeneration on either keyboard or water changes.
   await page.locator('#terrain-design').screenshot({ path: 'artifacts/browser-terrain-design-desktop.png' });
   await reveal(page, '#play-farm'); await page.locator('#play-farm').focus(); await page.keyboard.press('Enter');
@@ -147,7 +147,7 @@ test('custom farms start with the selected climate and remembered Options',async
   await newGame(page); await page.locator('#new-farm-seed').fill('9029');
   await reveal(page,'#region-design');await page.locator('#region-design').click();
   for(const channel of ['precipitation','temperature','wind']){await reveal(page,'#terrain-'+channel);await page.locator('#terrain-'+channel).focus();await page.keyboard.press('Home');}
-  await expect(page.locator('#terrain-settings')).toContainText('Rainfall: Low · Temperature: Low · Wind: Low');
+  for(const channel of ['precipitation','temperature','wind'])await expect(page.locator('#terrain-'+channel)).toHaveValue('0');
   await reveal(page,'#play-farm');await page.locator('#play-farm').click();await expect(page.locator('#map-status')).toContainText('Generated farm');
   const state=readNativeSave(JSON.stringify(await save(page))).state;
   expect(state.setup.climateSelection).toEqual({precipitation:0,temperature:0,wind:0});

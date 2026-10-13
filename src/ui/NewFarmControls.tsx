@@ -129,7 +129,6 @@ export function NewFarmControls({ assets, simulation: current, open, onOpenChang
       </fieldset>
       <div className="setup-footer">
         <span id="region-selection" role="status">{location ? `Region ${location.x + 1}, ${location.y + 1} · ${preset ? `Scenario ${preset.id + 1}` : 'New farm'}` : ''}</span>
-        <details><summary>Help</summary><div id="region-map-help">Choose a location, then Use This Region. Yellow squares open original farms and retain their dates. Design Your Own opens the terrain designer. New Game starts a fresh farm. Enter a seed to reproduce a map. Cancel keeps your farm; Quit also pauses it. Save your current farm before replacing it.</div></details>
         <BevelButton className="native-button" onClick={() => { pending.current?.abort(); regionPending.current?.abort(); onOpenChange(false); }}>Cancel</BevelButton>
       </div>
       {error && <p id="new-farm-error" role="alert">Could not open farm: {error}</p>}

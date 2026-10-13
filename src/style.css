@@ -643,8 +643,6 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .game-window input.chrome-input:disabled{background:var(--face);color:var(--bevel-shadow)}
 .new-farm-panel .setup-footer{position:relative;display:flex;align-items:center;gap:8px;min-height:36px;padding:4px 8px 6px;font:10px/12px var(--font-ui)}
 .new-farm-panel .setup-footer>span{flex:1}
-.new-farm-panel .setup-footer details{border:0;padding:0;font:bold 10px/12px var(--font-ui)}
-.new-farm-panel .setup-footer details>div{position:absolute;left:8px;right:8px;bottom:36px;z-index:2;padding:8px;background:#ffffd0;border:1px solid var(--ink);box-shadow:3px 3px #0006;font:12px/1.4 var(--font-ui)}
 .new-farm-panel .setup-loading{padding:16px;min-height:160px;font:10px/12px var(--font-ui)}
 .new-farm-panel :is(#new-farm-error,#restart-unavailable){margin:0;padding:0 8px 8px;font:10px/12px var(--font-ui)}
 
