@@ -14,6 +14,16 @@ export function startsWithScenario1(): boolean {
   try { return localStorage.getItem(STARTUP_OVERRIDE_KEY) === 'scenario-1'; } catch { return false; }
 }
 
+/** Marks the browser's first launch. New Game opens over the generated farm only then, even if that farm could not
+ * be stored (for example, another tab holds the save slot), so a refresh does not reopen it. */
+export const FIRST_LAUNCH_KEY = 'simfarm.launched.v1';
+export function claimFirstLaunch(): boolean {
+  try {
+    if (localStorage.getItem(FIRST_LAUNCH_KEY)) return false;
+    localStorage.setItem(FIRST_LAUNCH_KEY, '1'); return true;
+  } catch { return false; }
+}
+
 /** Browser setup defaults are independent of the simulation's saved RNG streams. */
 export function randomSetupSeeds(): NewFarmOptions['seeds'] {
   const value = new Uint16Array(1);

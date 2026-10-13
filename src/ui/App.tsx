@@ -10,7 +10,7 @@ import { useSound } from './useSound';
 import { useResource } from './useResource';
 import { Autosave } from '../storage/autosave';
 import { restoreStoredGame } from '../storage/restore';
-import { createDefaultFarm, startsWithScenario1 } from './default-farm';
+import { claimFirstLaunch, createDefaultFarm, startsWithScenario1 } from './default-farm';
 
 export function App() {
   const assets = useResource(loadGameAssets);
@@ -23,8 +23,8 @@ export function App() {
 }
 function Game({ assets }: { assets: GameAssets }) {
   // The browser-stored current game is restored (paused) before the first farm mounts; otherwise a random
-  // farm is generated in the default region (Region 9, 14) and saved at once, and New Game opens over it
-  // (first launch, user request). Scenario 1 is the fallback.
+  // farm is generated in the default region (Region 9, 14) and saved at once; on the browser's first launch
+  // New Game also opens over it (user request). Scenario 1 is the fallback.
   const [autosave] = useState(() => new Autosave());
   useEffect(() => autosave.connect(), [autosave]);
   const [farm, setFarm] = useState<{ id: number | null; serial: number; loaded?: LoadedFarm; autosaveNow: boolean; notice?: string; firstStart?: boolean } | null>(null);
@@ -38,7 +38,7 @@ function Game({ assets }: { assets: GameAssets }) {
       if (notice || startsWithScenario1()) { setFarm({ id: 0, serial: 0, autosaveNow: false, notice }); return; }
       try {
         const loaded = await createDefaultFarm(assets, controller.signal);
-        if (!controller.signal.aborted) setFarm({ id: null, serial: 1, loaded, autosaveNow: true, firstStart: true });
+        if (!controller.signal.aborted) setFarm({ id: null, serial: 1, loaded, autosaveNow: true, firstStart: claimFirstLaunch() });
       } catch (error) {
         if (!controller.signal.aborted) setFarm({ id: 0, serial: 0, autosaveNow: false,
           notice: `A new farm could not be generated (${error instanceof Error ? error.message : String(error)}); Scenario 1 opened instead.` });

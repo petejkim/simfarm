@@ -3301,3 +3301,11 @@ Validation: type check. Browser specs first-start, new-farm, region-selection an
 Select a Region no longer has a Quit button (user request); the setup's Cancel button already closes it. Cancel keeps the farm running as it was, whereas Quit paused it. The source Quit hit area and branch (32474..3252a) stay documented in scenario-selection.md. NewFarmControls no longer takes the simulation, which only Quit used.
 
 Validation: type check. Browser specs region-artwork, region-selection, new-farm, first-start and new-game-layout, 17/17.
+
+## 2026-10-13 — First-launch New Game no longer reopens on refresh
+
+The user saw New Game open on every refresh. First launch had been inferred from there being no stored game. When another same-origin tab holds the autosave writer lock, the generated farm is never stored, so every refresh looked like a first launch. The likely trigger was another SimFarm tab, possibly from another checkout on the same localhost port. First launch is now a persistent localStorage flag, `simfarm.launched.v1`, claimed when the default farm is generated. A new first-start test holds the lock from a second tab and checks that a refresh does not reopen New Game; it fails without the fix.
+
+A single-tab reload already restored the saved farm without New Game, so this is the inferred cause, not a reproduction from the user's browser. Separately, while another tab holds the lock, each refresh still generates a new farm instead of keeping one. That is existing autosave behaviour and is not changed here.
+
+Validation: type check. Browser spec first-start, 3/3.
