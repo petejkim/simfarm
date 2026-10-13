@@ -192,6 +192,15 @@ test.describe('phone screen',()=>{
     await page.locator('#options-menu-button').tap();await expect(page.locator('#original-options-menu')).toBeVisible();
     await page.setViewportSize({width:844,height:390});await expect(page.locator('#original-options-menu')).toHaveCount(0);
   });
+  test('a long press selects no UI text and shows no callout, while text fields stay editable',async({page})=>{
+    await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
+    await page.locator('#window-bank').tap();
+    const style=(selector:string)=>page.locator(selector).first().evaluate(el=>{const s=getComputedStyle(el) as CSSStyleDeclaration&{webkitUserSelect:string;webkitTouchCallout?:string};
+      return [s.webkitUserSelect,s.userSelect,s.webkitTouchCallout??'none'];});
+    for(const selector of ['#file-menu-button','#farm-date','.edit-caption','[data-window=bank] .game-window-title','#loan-balance'])
+      expect(await style(selector),selector).toEqual(['none','none','none']);
+    expect((await style('#loan-amount')).slice(0,2)).toEqual(['text','text']);
+  });
   test('the game stays fixed to the screen when the page is scrolled',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
     const before=(await page.locator('#app').boundingBox())!;

@@ -3531,3 +3531,11 @@ Validation: type check. main-menu adds a heading-toggle case that replays Safari
 - After the fix: that case 8/8 at 4 workers, and the mobile-touch spec twice at 4 workers.
 
 **Needs device confirmation:** fully relaunch the home-screen app so it loads the new viewport tag, then rotate and tap PLANT and SPRAY.
+
+## 2026-10-13 — Mobile polish batch (user requests, one commit each)
+
+### 1. No text selection or callout on long press
+
+`* { user-select: none }` alone did not stop long-press selection on the iPhone. Every element now also gets `-webkit-user-select: none` (which iOS Safari still honours) and `-webkit-touch-callout: none`. Text fields restore `text` selection and the default callout.
+
+Validation: a mobile-touch case checks the computed `webkitUserSelect`, `userSelect` and `webkitTouchCallout` for a menu heading, a readout, a palette caption, a window titlebar and window text, plus an editable field. It passes in Chromium and WebKit, and fails in WebKit with the old rule.
