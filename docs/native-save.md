@@ -188,4 +188,6 @@ Loading detects gzip magic1f8b from file contents and uses `DecompressionStream(
 
 A representative bundled farm checkpoint measured572,505bytes as JSON and29,187bytes as gzip (94.9% reduction). Compression ratio varies by farm. Tests independently decompress with zlib and compare exact bytes, exercise browser save→load→save, legacy JSON, renamed gzip, corrupt/truncated streams, size limits and cancellation. Existing browser save assertions now use a shared gzip-aware reader; actual fixture/asset binary reads remain unchanged.
 
+Version29 stores the native 256-record equipment table (slots 1..255); see equipment-purchase.md. Either 127 or 256 records decode for any version.
+
 Version28 adds the native Debug event continuation phase, with same-date validation and preserved partial-day ticks. It resumes only event choice handling, without the calendar/tick-tail work required by original scheduled events. See [Debug events](debug-menu.md). Earlier checkpoint versions remain readable.

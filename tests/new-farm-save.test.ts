@@ -27,7 +27,7 @@ test('cold irrigation bytes and startup phase ordering reach canonical generated
     assert.equal(view.scenario.farm.calendar.month, 3); assert.equal(view.weather.soilMoisture, precipitation * 4);
     assert.deepEqual(view.scenario.cropFiles, assets.records.cropFiles);
     assert.equal(view.scenario.irrigation.delay, 64); assert.equal(view.scenario.fields.filter(f => f.active).length, 0);
-    const save = parsed(game); assert.equal(save.version, 28); assert.equal(save.scenarioId, null); assert.equal(save.scenario.source, null);
+    const save = parsed(game); assert.equal(save.version, 29); assert.equal(save.scenarioId, null); assert.equal(save.scenario.source, null);
     assert.deepEqual(save.runtime.random, state.random); assert.deepEqual(view.newFarm, state.newFarm);
     assert.equal(view.traffic.activeCount, 8); assert.equal(view.market.history.length, 16);
     assert.deepEqual(save, parsed(restore(game.save(null))));
@@ -88,7 +88,7 @@ test('v1–14 original checkpoints migrate to v17 without invented generated pro
     const loaded = GameSimulation.load(JSON.stringify(old), assets.crops, assets.townLayouts);
     assert.equal(loaded.scenarioId, 4); assert.equal(loaded.simulation.getSnapshot().newFarm, null);
     assert.deepEqual(loaded.simulation.getSnapshot().scenario.sourceBytes, source);
-    const upgraded = JSON.parse(loaded.simulation.save(4)); assert.equal(upgraded.version, 28); assert.equal(upgraded.scenario.origin, 'original');
+    const upgraded = JSON.parse(loaded.simulation.save(4)); assert.equal(upgraded.version, 29); assert.equal(upgraded.scenario.origin, 'original');
     assert.equal(upgraded.runtime.newFarm, null);
   }
   baseline.runtime.newFarm = createNewFarmState(options, assets).newFarm;

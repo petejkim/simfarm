@@ -3,6 +3,10 @@ import { Binary } from './binary';
 export const EQUIPMENT_RECORDS_OFFSET = 0x29f3;
 export const EQUIPMENT_RECORD_SIZE = 56;
 export const EQUIPMENT_SLOT_COUNT = 127;
+/** Native enhancement (user request, 2026-10-12): the live table holds 256 records, slots 1..255. Building storage
+ * cells keep an equipment slot in one byte (+58), so 255 is the hard ceiling. Original loaders still read 127. */
+export const NATIVE_EQUIPMENT_SLOT_COUNT = 256;
+export const MAX_EQUIPMENT_SLOT = NATIVE_EQUIPMENT_SLOT_COUNT - 1;
 export const EQUIPMENT_DEFINITIONS_OFFSET = 0x20994;
 export const EQUIPMENT_FLAGS = { reserved: 1, moving: 2, stored: 4, fieldWork: 8, active: 0x20, rented: 0x40, drawn: 0x80 } as const;
 
@@ -46,6 +50,13 @@ export class EquipmentDefinition {
   get price(): number { return this.data.u16(6); }
   get width(): number { return this.bytes[8]; }
   get height(): number { return this.bytes[9]; }
+}
+
+/** Extends a decoded table with zeroed inactive records up to the native slot count; existing records are kept. */
+export function padEquipment(records: EquipmentRecord[]): EquipmentRecord[] {
+  if (records.length > NATIVE_EQUIPMENT_SLOT_COUNT) throw new Error('Invalid equipment table size');
+  return [...records, ...Array.from({ length: NATIVE_EQUIPMENT_SLOT_COUNT - records.length },
+    (_, i) => new EquipmentRecord(records.length + i, new Uint8Array(EQUIPMENT_RECORD_SIZE)))];
 }
 
 /** Loader 0x455bf–0x45600, definitions 0x45864–0x45888. */

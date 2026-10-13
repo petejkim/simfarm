@@ -42,7 +42,7 @@ test('create a generated farm on mobile, save it and restore without any origina
   await expect(page.locator('.new-farm-panel')).toHaveCount(0); await expect(page.locator('#new-farm')).toHaveCount(0);await expect(page.locator('#file-menu-button')).toBeEnabled();
   await expect(page.locator('#farm-cash')).toHaveText('$40,000');
   const first = await save(page, 'browser-created-farm'); expect(first.filename).toContain('simfarm-new-farm-1993-4-');
-  expect(first.data.version).toBe(28); expect(first.data.scenarioId).toBeNull(); expect(first.data.scenario.source).toBeNull();
+  expect(first.data.version).toBe(29); expect(first.data.scenarioId).toBeNull(); expect(first.data.scenario.source).toBeNull();
   const draft = CustomFarmSetup.fresh(first.data.runtime.newFarm.provenance.options, newFarmAssets);
   const original = GameSimulation.load(writeNativeSave(draft.accept('selected-climate'), null), browserCrops, newFarmAssets.townLayouts).simulation.withAllCrops(browserCrops);
   expect(first.data).toEqual(JSON.parse(original.save(null)));

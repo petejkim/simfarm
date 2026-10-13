@@ -1,3 +1,4 @@
+import { MAX_EQUIPMENT_SLOT, NATIVE_EQUIPMENT_SLOT_COUNT, padEquipment } from './equipment';
 import { validateTownEventMap } from '../simulation/town-event-map';
 import { coldTownEvent } from '../simulation/town-event-lifecycle';
 import { decodeTownEventCheckpoint, encodeTownEventCheckpoint } from './town-event-save';
@@ -64,7 +65,7 @@ function encodeScenario(s: Scenario) {
   return { origin: s.origin, source: s.sourceBytes === null ? null : hex(s.sourceBytes), cropFiles: s.cropFiles, world: hex(world), schedule: hex(s.schedule.bytes), regions: hex(s.regionalConditions), farm: s.farm, climate: s.climate,
     irrigation: { ...s.irrigation, sources: hex(s.irrigation.sources) },
     records: Object.fromEntries(Object.entries(tables).map(([key, [, , stride]]) => {
-      const records = s[key as keyof typeof tables], raw = new Uint8Array(records.length * stride);
+      const records = key === 'equipment' ? padEquipment(s.equipment) : s[key as keyof typeof tables], raw = new Uint8Array(records.length * stride);
       records.forEach((r, i) => raw.set(r.bytes, i * stride));
       return [key, hex(raw)];
     })) };
@@ -106,12 +107,15 @@ function decodeScenario(value: unknown, version: number): Scenario {
   const cropCount = cropFiles.length;
   const raw = {} as ScenarioTableBytes;
   for (const [key, [, originalCount, stride]] of Object.entries(tables)) {
-    const count = key === 'cropDefinitions' ? cropCount + 8 : key === 'seedDefinitions' || key === 'harvestDefinitions' ? cropCount : originalCount;
+    // V29 writes the native 256-record equipment table; earlier checkpoints hold the original 127 and are padded on
+    // load. Either length is accepted, so a relabelled current checkpoint still decodes; both are fully validated.
+    const count = key === 'cropDefinitions' ? cropCount + 8 : key === 'seedDefinitions' || key === 'harvestDefinitions' ? cropCount
+      : key === 'equipment' && typeof records[key] === 'string' && records[key].length === NATIVE_EQUIPMENT_SLOT_COUNT * stride * 2 ? NATIVE_EQUIPMENT_SLOT_COUNT : originalCount;
     raw[key as keyof ScenarioTableBytes] = bytes(records[key], count * stride, key);
   }
   const world = bytes(s.world, 96 * 96 * 5, 'world'), view = new DataView(world.buffer);
   const climate = object(s.climate, 'climate');
-  return { ...decodeScenarioRecords(raw, cropCount), origin, sourceBytes: source, version: original?.version ?? null, cropFiles,
+  return { ...decodeScenarioRecords(raw, cropCount, raw.equipment.length / tables.equipment[2]), origin, sourceBytes: source, version: original?.version ?? null, cropFiles,
     schedule: version >= 2 ? new FieldSchedule(bytes(s.schedule, FIELD_SCHEDULE_SIZE, 'field schedule')) : original!.schedule,
     cells: Array.from({ length: 96 * 96 }, (_, i) => ({ terrain: view.getUint16(i * 5, true), overlay: view.getUint16(i * 5 + 2, true), attribute: world[i * 5 + 4] })),
     regionalConditions: bytes(s.regions, 12 * 12 * 7, 'regions'),
@@ -204,7 +208,7 @@ export function writeNativeSave(state: SimulationState, scenarioId: number | nul
   validateTownEventContinuation(state);
   if (state.townEvent.mode) validateTownEventMap(state.scenario, state.finances.town, state.townEvent);
   const { scenario, finances, ...runtime } = state;
-  const text = JSON.stringify({ format: FORMAT, version: 28, scenarioId, scenario: encodeScenario(scenario),
+  const text = JSON.stringify({ format: FORMAT, version: 29, scenarioId, scenario: encodeScenario(scenario),
     runtime: { ...runtime, townEvent: encodeTownEventCheckpoint(state.townEvent), setup: { ...state.setup, sourceArchive: state.setup.sourceArchive ? hex(state.setup.sourceArchive) : null }, disasterFlags: state.disasters.flags, animalFrame: { ...state.animalFrame, herd: hex(state.animalFrame.herd) }, finances: encodeFinancialState(finances) } });
   if (text.length > MAX_SAVE_BYTES) fail('file too large');
   return text;
@@ -214,7 +218,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { fail('JSON'); }
   const save = object(parsed, 'document');
-  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28].includes(save.version)) fail('unsupported format or version');
+  if (save.format !== FORMAT || typeof save.version !== 'number' || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29].includes(save.version)) fail('unsupported format or version');
   const s = decodeScenario(save.scenario, save.version), r = object(save.runtime, 'runtime');
   const scenarioId = s.origin === 'generated' || (save.version >= 18 && save.scenarioId === null) ? null : number(save.scenarioId, 0, 7, 'scenario ID');
   if (s.origin === 'generated' && save.scenarioId !== null) fail('generated scenario ID');
@@ -289,7 +293,7 @@ function decodeFlight(value: unknown, world: Scenario, speed: number): AircraftF
   if (f.active !== true || !Array.isArray(f.inputs) || f.inputs.length > MAX_FLIGHT_INPUTS ||
     !f.inputs.every(input => FLIGHT_CONTROLS.includes(input))) fail('flight controls');
   const result: AircraftFlight = {
-    slot: number(f.slot, 1, 126, 'flight slot'), columns, rows,
+    slot: number(f.slot, 1, MAX_EQUIPMENT_SLOT, 'flight slot'), columns, rows,
     cameraX: number(f.cameraX, 0, 96 - columns, 'flight camera X'), cameraY: number(f.cameraY, 0, 96 - rows, 'flight camera Y'),
     offsetX: number(f.offsetX, 3 - (columns >> 1), (columns >> 1) - 3, 'flight offset X'),
     offsetY: number(f.offsetY, 3 - (rows >> 1), (rows >> 1) - 3, 'flight offset Y'),

@@ -3116,3 +3116,9 @@ Validation: production build; full browser suite 299/303. Three failures were or
 Placing a horse, cow, pig or sheep bought from the Buy window now plays the original `plopitem.voc`; an unaffordable or otherwise rejected placement plays `uhoh.voc`. The trace of Buy placement loop `0x2239a` and generic purchase `0x1cb42` shows animals get only `plopitem` on success. Troughs and hay come from the edit-tool loop, which also adds `ploptool`. Evidence, mapping and deferred items (town-bit approximation, price == cash boundary, silent buildings/equipment) are in livestock.md.
 
 Validation: type check; livestock purchase, tree, crop-supply and animal-purchase unit tests (15/15); livestock-shop browser spec (3/3), including the new sound check. The full suite was not run: the change only adds sound events for one command.
+
+## 2026-10-12 — 255 machines
+
+The equipment limit is now 255 machines (was 126), as a native enhancement. The live table is padded to 256 records; original farm decoding stays at 127. All hard-coded slot bounds share `MAX_EQUIPMENT_SLOT`. Native saves move to v29 with 256 equipment records, and older checkpoints still load. Building storage's one-byte slot field makes 255 the ceiling. Details in equipment-purchase.md and native-save.md.
+
+Validation: type check; full unit suite 950/950 (version assertions updated to 29), plus two new tests, a 255-purchase fill with v29/v28 round trips and building storage of slot 200 (live-equipment-purchases 4/4). Production build; full browser suite 304/304.

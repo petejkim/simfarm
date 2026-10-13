@@ -68,7 +68,7 @@ test('Flood controls destroy a shoreline field and occupied building, render sou
   const destroyed=(await farmSnapshot(page)).scenario;expect(destroyed.fields[1].active).toBe(false);expect(destroyed.buildings.some(b=>b.active&&b.x===40&&b.y===40)).toBe(false);expect(destroyed.equipment.filter(e=>e.active)).toHaveLength(0);
   await expect.poll(async () => (await played(page)).some(s => s.length === 12736 && s.peak > 0.01)).toBe(true);
   const checkpoint = await save(page, 'scanning'); expect(checkpoint).toEqual(JSON.parse(game.save(4)));
-  expect(checkpoint.version).toBe(28); expect(checkpoint.runtime.waterDisasters.scanning).toBe(true);
+  expect(checkpoint.version).toBe(29); expect(checkpoint.runtime.waterDisasters.scanning).toBe(true);
   await originalTile(page, 19, 18, game.getSnapshot().scenario.cells[19 * 96 + 18].terrain & 2047);
   await load(page, JSON.stringify(checkpoint));
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page,'#viewport');

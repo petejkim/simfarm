@@ -17,10 +17,10 @@ export const SCENARIO_TABLES = {
 export type ScenarioTableBytes = { -readonly [K in keyof typeof SCENARIO_TABLES]: Uint8Array };
 
 /** No SSM template, startup side effects or rewriting of unknown bytes. */
-export function decodeScenarioRecords(raw: ScenarioTableBytes, cropCount = 16) {
+export function decodeScenarioRecords(raw: ScenarioTableBytes, cropCount = 16, equipmentCount: number = SCENARIO_TABLES.equipment[1]) {
   function table<T>(key: keyof ScenarioTableBytes, create: (bytes: Uint8Array, slot: number) => T): T[] {
     const [, originalCount, stride] = SCENARIO_TABLES[key], bytes = raw[key];
-    const count = key === 'cropDefinitions' ? cropCount + 8 : key === 'seedDefinitions' || key === 'harvestDefinitions' ? cropCount : originalCount;
+    const count = key === 'cropDefinitions' ? cropCount + 8 : key === 'seedDefinitions' || key === 'harvestDefinitions' ? cropCount : key === 'equipment' ? equipmentCount : originalCount;
     if (!(bytes instanceof Uint8Array) || bytes.length !== count * stride) throw new Error(`Invalid native ${key} table`);
     return Array.from({ length: count }, (_, slot) => create(bytes.slice(slot * stride, (slot + 1) * stride), slot));
   }

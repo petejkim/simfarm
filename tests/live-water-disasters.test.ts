@@ -30,7 +30,7 @@ test('live flood saves mid-scan, destroys fields and storage, retains unknown wo
   const a = GameSimulation.load(writeNativeSave(state, 4), f.crops).simulation;
   const checkpoint = a.save(4), b = GameSimulation.load(checkpoint, f.crops).simulation;
   const restoredEvents: GameEvent[] = []; b.subscribeEvents(e => restoredEvents.push(e));
-  assert.equal(saved(a).version, 28); assert.equal(b.save(4), checkpoint);
+  assert.equal(saved(a).version, 29); assert.equal(b.save(4), checkpoint);
   a.tick(1201); b.tick(400); b.tick(801); assert.deepEqual(saved(a), saved(b));
   for (const game of [a, b]) {
     game.dispatch({ type: 'set-disasters-enabled', enabled: false });

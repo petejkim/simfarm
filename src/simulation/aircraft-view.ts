@@ -1,6 +1,6 @@
 import type { Scenario } from '../formats/scenario';
 import { terrainTile, worldIndex } from '../formats/scenario';
-import type { EquipmentRecord } from '../formats/equipment';
+import { MAX_EQUIPMENT_SLOT, type EquipmentRecord } from '../formats/equipment';
 import { findEquipmentAt } from './manual-equipment-move';
 import { aircraftFuel, aircraftPayload, type AircraftServiceState } from './aircraft';
 
@@ -10,7 +10,7 @@ export function aircraftMapEntry(world:Scenario,x:number,y:number):{slot:number|
   if(![x,y].every(n=>Number.isInteger(n)&&n>=0&&n<96))return null;
   if(![71,72,111,112].includes(terrainTile(world.cells[worldIndex(x,y)])))return null;
   const e=findEquipmentAt(world,x,y);
-  return {slot:e?.type===8&&e.slot<127?e.slot:null};
+  return {slot:e?.type===8&&e.slot<=MAX_EQUIPMENT_SLOT?e.slot:null};
 }
 /** Paint306e2: supplies/52+10, damage/52; prices remain readable even when
  * unaffordable. SF-163: show the full payload debit instead of its low word. */

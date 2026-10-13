@@ -40,3 +40,28 @@ Revalidated the executable SHA above. Machinery catalog words at file8fc36..8fc4
 Type6 has graphic71, price250 and1×1 dimensions in SCEN0. Its archived itemtext.dat record at71×128=0x2380 reads “Not a Llama.” Original masked tiles892..895 (resource indices44..47, offset0x1600..0x17ff) show a small black-and-white car in four directions; visual identification is provisional, not proof of its gameplay purpose. Reviewed artifacts/type6-source-frames.png, a nearest-neighbor enlargement of decoded source pixels. Its exact role remains unverified. Known movement wear exemptions remain documented in reverse-engineering.md. The old neutral label was not a recovered name.
 
 Buy placement now derives machinery footprint/preflight directly from the selected product. Options AutoDoze replaces the removed duplicate checkbox. Source prices, ground/storage placement, repeat rejection, purchases/aging, clearing costs, full/incompatible storage, exact checkpoint continuation and surrounding asset sales remain covered.
+
+## Native 255-machine limit (user request, 2026-10-12)
+
+The original table holds 127 equipment records (loader `0x455bf`, runtime `3d9f:a6ba`). The constructor `0xf8be` scans slots 1..126, so a farm could own at most 126 machines, shared across purchases, rentals and crop dusters.
+
+The native game now pads the live table to 256 records, giving slots 1..255. This is a native enhancement, not original behaviour.
+
+Where the change lives:
+- **Padding:** `padEquipment` runs when a farm enters `GameSimulation` (`copyScenario`). Original SSM and New Game decoding still read exactly 127 records, so import evidence and tests are unchanged.
+- **Shared limit:** `MAX_EQUIPMENT_SLOT` (255) replaces every former `< 127` / `> 126` bound:
+  - purchase and aircraft allocation
+  - aircraft service and flight
+  - the weekly equipment guard
+  - the aircraft map lookup
+  - flight-slot validation in saves
+- **Ceiling:** building storage keeps an equipment slot in one byte per cell (`BuildingRecord` +58..69), so 255 is the hard limit. Going higher would need a new storage encoding.
+- **Other references:** field `+42/+44` and equipment parent/attachment `+44/+46` are 16-bit and unaffected.
+- **Saves:** native save v29 writes 256 equipment records. Decoding accepts 127 or 256 records for any version, so pre-v29 checkpoints load and are padded. Every record is validated either way. A typical save grows by about 14 KB of hex (a measured farm is 582 KB against the 1 MB cap).
+- **Performance:** per-frame loops now cover 256 records instead of 127. No measurable regression was looked for beyond the existing suites.
+
+Tests (`tests/live-equipment-purchases.test.ts`):
+- 255 sequential purchases fill slots 1..255 and the 256th is rejected with `no-equipment-slots`.
+- The v29 round trip and 8-day continuation are exact.
+- A 127-record v28 checkpoint pads with empty slots.
+- A machine in slot 200 stores in a building through the one-byte content slot and survives a checkpoint.

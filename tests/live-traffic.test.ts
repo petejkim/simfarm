@@ -90,7 +90,7 @@ test('v1–16 original migrations preserve map/RNG with empty traffic and v15–
     const g = GameSimulation.load(JSON.stringify(old), f.crops).simulation, next = parsed(g);
     assert.deepEqual(next.runtime.traffic, coldTrafficDefaults()); assert.deepEqual(next.runtime.random, old.runtime.random);
     assert.equal(next.runtime.dayTicks, old.runtime.dayTicks);
-    assert.equal(next.scenario.world, old.scenario.world); assert.equal(next.version, 28);
+    assert.equal(next.scenario.world, old.scenario.world); assert.equal(next.version, 29);
   }
   const game = GameSimulation.createNew(newFarmOptions, newFarmAssets), before = parsed(game, null);
   for (const version of [15, 16]) {

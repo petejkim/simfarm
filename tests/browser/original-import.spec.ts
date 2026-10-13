@@ -140,7 +140,7 @@ test('equipment pacing bytes survive browser checkpoints; v21 keeps unknown iden
   const legacy = structuredClone(current); useOriginalCatalog(legacy); legacy.version = 21; delete legacy.scenario.farm.equipmentPacingByte;
   await load(page, Buffer.from(JSON.stringify(legacy)), 'legacy.json');
   const migrated = (await save(page, 'byte-migrated')).data;
-  expect(migrated.version).toBe(28);
+  expect(migrated.version).toBe(29);
   expect(migrated).toEqual({ ...current, scenario: { ...current.scenario, farm: { ...current.scenario.farm, equipmentPacingByte: null } },
     runtime: { ...current.runtime, originalPause: { depth: null, speedChecks: [null, null, null, null, null] } } });
   await (await speedItem(page,'#next-day')).click();
@@ -167,7 +167,7 @@ test('original pause ownership survives checkpoints; v22 migrates to unknown and
   const legacy = structuredClone(base); useOriginalCatalog(legacy); legacy.version = 22; delete legacy.runtime.originalPause;
   await load(page, Buffer.from(JSON.stringify(legacy)), 'v22.json');
   const unknown = (await save(page, 'owner-unknown')).data;
-  expect(unknown.version).toBe(28);
+  expect(unknown.version).toBe(29);
   expect(unknown).toEqual({ ...base, runtime: { ...base.runtime, originalPause: { depth: null, speedChecks: [null, null, null, null, null] } } });
   for (const owner of [undefined, { depth: 256, speedChecks: [0, 0, 1, 0, 0] }, { depth: 0, speedChecks: [0, 0, -1, 0, 0] }]) {
     const bad = structuredClone(unknown); bad.runtime.originalPause = owner;

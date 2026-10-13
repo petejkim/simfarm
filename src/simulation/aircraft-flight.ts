@@ -1,3 +1,4 @@
+import { MAX_EQUIPMENT_SLOT } from '../formats/equipment';
 import { Binary } from '../formats/binary';
 import type { FinancialState } from '../formats/finance';
 import { worldIndex, type Scenario } from '../formats/scenario';
@@ -30,7 +31,7 @@ export function flightPosition(f: AircraftFlight): { x: number; y: number } {
 /** Shared takeoff/checkpoint invariants; airborne terrain no longer has parked sprites. */
 export function validFlightAircraft(world: Scenario, slot: number): boolean {
   const e = world.equipment[slot], definition = world.equipmentDefinitions[8];
-  if (!Number.isInteger(slot) || slot < 1 || slot > 126 || !e?.active || e.type !== 8 || (e.flags & 15) ||
+  if (!Number.isInteger(slot) || slot < 1 || slot > MAX_EQUIPMENT_SLOT || !e?.active || e.type !== 8 || (e.flags & 15) ||
     !validAircraftHome(e) || e.x !== e.bytes[50] || e.y !== e.bytes[51] || e.parent || e.attachment ||
     !definition.ownedCount || definition.type !== 8 || definition.width !== 2 || definition.height !== 2 ||
     aircraftFuel(e) > 255 || aircraftPayload(e) > 255) return false;

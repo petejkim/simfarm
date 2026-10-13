@@ -1,7 +1,7 @@
 import { Binary } from '../formats/binary';
 import type { FinancialState } from '../formats/finance';
 import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
-import type { EquipmentRecord } from '../formats/equipment';
+import { MAX_EQUIPMENT_SLOT, type EquipmentRecord } from '../formats/equipment';
 import { createEquipment } from './equipment-rental';
 import { validAircraftHome } from './aircraft-home';
 
@@ -29,7 +29,7 @@ export function checkAircraftPurchase(world: Scenario, finances: FinancialState)
   const d = world.equipmentDefinitions[8];
   if (d.type !== 8 || d.width !== 2 || d.height !== 2 || d.graphic !== 82) throw new Error('Invalid aircraft definition');
   if (world.farm.cash < d.price) return { ok: false, reason: 'insufficient-cash' };
-  const slot = world.equipment.find(e => e.slot > 0 && e.slot < 127 && !e.active)?.slot;
+  const slot = world.equipment.find(e => e.slot > 0 && e.slot <= MAX_EQUIPMENT_SLOT && !e.active)?.slot;
   if (!slot) return { ok: false, reason: 'no-equipment-slots' };
   for (let rx = 0; rx < 12; rx++) for (let ry = 0; ry < 12; ry++) {
     const region = world.regionalConditions[(rx * 12 + ry) * 7];
@@ -66,7 +66,7 @@ export function purchaseAircraft(world: Scenario, finances: FinancialState): Air
 export function checkAircraftService(world: Scenario, finances: FinancialState, state: AircraftServiceState,
   slot: number, action: AircraftServiceAction): AircraftServiceResult {
   const e = world.equipment[slot];
-  if (!Number.isInteger(slot) || slot < 1 || slot > 126 || !e?.active || e.type !== 8) return { ok: false, reason: 'not-aircraft' };
+  if (!Number.isInteger(slot) || slot < 1 || slot > MAX_EQUIPMENT_SLOT || !e?.active || e.type !== 8) return { ok: false, reason: 'not-aircraft' };
   if (!validAircraftHome(e) || e.x !== e.bytes[50] || e.y !== e.bytes[51] || (e.flags & 15) ||
     parkedTiles.some((column, dx) => column.some((tile, dy) => terrainTile(world.cells[worldIndex(e.x + dx, e.y + dy)]) !== tile)))
     return { ok: false, reason: 'not-parked' };

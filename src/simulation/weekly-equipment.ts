@@ -1,3 +1,4 @@
+import { MAX_EQUIPMENT_SLOT } from '../formats/equipment';
 import { Binary } from '../formats/binary';
 import type { FinancialState } from '../formats/finance';
 import type { Scenario } from '../formats/scenario';
@@ -15,7 +16,7 @@ export type EquipmentAgingNotice = { slot: number; equipmentType: number; x: num
 export function ageEquipment(world: Scenario, finances: FinancialState, soilMoisture: number): EquipmentAgingNotice[] {
   validateClearingEffects(finances.clearing, soilMoisture);
   const equipment = world.equipment.filter(e => e.slot > 0 && e.active);
-  if (equipment.some(e => e.slot >= 127 || e.type > 8 || !world.equipmentDefinitions[e.type]))
+  if (equipment.some(e => e.slot > MAX_EQUIPMENT_SLOT || e.type > 8 || !world.equipmentDefinitions[e.type]))
     throw new Error('Invalid weekly equipment');
   const result: EquipmentAgingNotice[] = [];
   for (const e of equipment) {

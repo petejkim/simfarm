@@ -42,7 +42,7 @@ import { advanceFlight, beginFlight, FLIGHT_CONTROLS, FLIGHT_SPEED, MAX_FLIGHT_I
 import type { CropDefinition } from '../formats/crop';
 import { FieldRecord } from '../formats/field';
 import { FieldSchedule } from '../formats/field-schedule';
-import { EquipmentRecord, EquipmentDefinition } from '../formats/equipment';
+import { EquipmentRecord, EquipmentDefinition, padEquipment } from '../formats/equipment';
 import { AnimalRecord } from '../formats/animal';
 import { BuildingRecord, BuildingDefinition } from '../formats/building';
 import { InventoryRecord, GoodsDefinition } from '../formats/inventory';
@@ -226,7 +226,7 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
 function copyScenario(scenario: Scenario): Scenario {
   return { ...scenario, irrigation: copyIrrigation(scenario.irrigation), schedule: new FieldSchedule(Uint8Array.from(scenario.schedule.bytes)), sourceBytes: scenario.sourceBytes === null ? null : Uint8Array.from(scenario.sourceBytes), cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
     fields: scenario.fields.map(f => new FieldRecord(f.slot, Uint8Array.from(f.bytes))),
-    equipment: scenario.equipment.map(e => new EquipmentRecord(e.slot, Uint8Array.from(e.bytes))),
+    equipment: padEquipment(scenario.equipment.map(e => new EquipmentRecord(e.slot, Uint8Array.from(e.bytes)))),
     equipmentDefinitions: scenario.equipmentDefinitions.map(e => new EquipmentDefinition(e.slot, Uint8Array.from(e.bytes))),
     animals: scenario.animals.map(a => new AnimalRecord(a.slot, Uint8Array.from(a.bytes))),
     buildings: scenario.buildings.map(b => new BuildingRecord(b.slot, Uint8Array.from(b.bytes))),

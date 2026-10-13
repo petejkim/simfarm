@@ -31,7 +31,7 @@ test('live supply purchases retain every product and original accounting through
   assert.equal(g.save(4), save);
   const copy = GameSimulation.load(save, f.crops).simulation; assert.equal(copy.getSnapshot().lastCropSupplyPurchaseResult, null);
   for (let d = 0; d < 35; d++) { g.dispatch({ type: 'advance-day' }); copy.dispatch({ type: 'advance-day' }); }
-  assert.deepEqual(parsed(g), parsed(copy)); assert.equal(parsed(copy).version, 28);
+  assert.deepEqual(parsed(g), parsed(copy)); assert.equal(parsed(copy).version, 29);
 });
 
 test('purchased seeds and all four chemicals feed live planting and treatment orders without paying automatic purchase surcharges', () => {

@@ -1,3 +1,4 @@
+import { MAX_EQUIPMENT_SLOT } from '../formats/equipment';
 import type { FinancialState } from '../formats/finance';
 import { terrainTile, worldIndex, type Scenario } from '../formats/scenario';
 import { findBuilding, findStorageSpace, storeEquipment } from './building-storage';
@@ -26,7 +27,7 @@ export function checkEquipmentPurchase(world: Scenario, type: number, x: number,
   const single = def.width * def.height === 1, origin = world.cells[worldIndex(x, y)];
   if (!(origin.overlay & 0x800) || (single && (origin.overlay & 0x4000))) return { ok: false, reason: 'not-owned' };
   if (single && (origin.terrain & 0x800)) return { ok: false, reason: 'blocked-terrain' };
-  const free = world.equipment.find(e => e.slot > 0 && e.slot < 127 && !e.active);
+  const free = world.equipment.find(e => e.slot > 0 && e.slot <= MAX_EQUIPMENT_SLOT && !e.active);
   if (!free) return { ok: false, reason: 'no-equipment-slots' };
   const price = (def.price << 16 >> 16) >>> 0;
   if (world.farm.cash < price || (!single && world.farm.cash === price)) return { ok: false, reason: 'insufficient-cash' };
