@@ -320,14 +320,14 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .edit-palette{flex:none;display:flex;flex-wrap:wrap;align-content:flex-start;align-self:flex-start;width:49px;margin:0;border-right:1px solid var(--ink);border-bottom:1px solid var(--ink);background:var(--face)}
 .edit-palette .edit-tool{width:24px;height:24px}
 .edit-palette .edit-caption{width:48px;height:22px;font:bold 10px var(--font-ui)}
-/* Phone portrait (native, user request): the palette moves below the terrain. The source's two-column tool pairs
+/* Phone portrait (native, user request): the palette moves below the terrain, centred. The source's two-column tool pairs
    become columns of a two-row strip (Move/Examine … Trees/Bulldoze), with PLANT and SPRAY stacked at the right end
-   at the 24px row height. The field menus open at the left edge just above the strip instead of at source x48,y. */
+   at the 24px row height. The strip is centred; the field menus open centred just above it instead of at source x48,y. */
 @media (orientation:portrait) and (pointer:coarse){
 .game-desktop .edit-workspace{flex-direction:column}
-.edit-palette{order:1;display:grid;grid-template-rows:repeat(2,24px);grid-auto-flow:column;width:auto}
+.edit-palette{order:1;align-self:center;display:grid;grid-template-rows:repeat(2,24px);grid-auto-flow:column;width:auto}
 .edit-palette .edit-caption{height:24px}
-.field-tool-menu{left:0!important;top:auto!important;bottom:49px}
+.field-tool-menu{left:50%!important;top:auto!important;bottom:49px;transform:translateX(-50%)}
 }
 
 .game-desktop .map-panel{flex:1;display:flex;flex-direction:column;border:0;box-shadow:none;margin:0;padding:0;overflow:hidden}
