@@ -669,7 +669,9 @@ export class GameSimulation {
       else if(this.lastRemovalResult.reason==='insufficient-cash')appendEditStatus(this.editStatus,42); // Original259eb.
     } else if (command.type === 'plant-tree') {
       this.lastTreeResult = placeTree(this.scenario, this.finances, this.random, command.x, command.y, this.weather.soilMoisture);
-      if (this.lastTreeResult.ok) this.events.push({ type: 'sound', sound: 'plopitem' }, { type: 'sound', sound: 'ploptool' });
+      // Source success requests plopitem (1cc92) then ploptool (24b24); with overlapping native voices both would sound,
+      // so only the livestock placement plop plays (user request; docs/tree-placement.md).
+      if (this.lastTreeResult.ok) this.events.push({ type: 'sound', sound: 'plopitem' });
       else this.events.push({ type: 'sound', sound: 'uhoh' });
     } else if (command.type === 'network') {
       this.lastNetworkResult = { tool: command.tool, ...placeNetwork(this.scenario, this.finances, command.tool, command.x, command.y, this.weather.soilMoisture) };
@@ -698,7 +700,7 @@ export class GameSimulation {
       this.lastLivestockResult = { productType: command.productType,
         ...purchaseLivestock(this.scenario, this.finances, this.random, command.productType, command.x, command.y, this.weather.soilMoisture) };
       if (command.productType === 299 || command.productType === 300) {
-        if (this.lastLivestockResult.ok) this.events.push({ type: 'sound', sound: 'plopitem' }, { type: 'sound', sound: 'ploptool' });
+        if (this.lastLivestockResult.ok) this.events.push({ type: 'sound', sound: 'plopitem' }); // trough/feed: as trees above
         else this.events.push({ type: 'sound', sound: 'uhoh' });
       } else {
         // Buy placement loop0x2239a: generic purchase0x1cb42 requests plopitem.voc on success (0x1cc92) and uhoh.voc

@@ -82,7 +82,7 @@ test('tree clearing, signed prices and failed work retain atomic save/RNG semant
 test('tree and supply commands emit placement sounds, obey modal blocking and continue exact saves', () => {
   const f=shopFixture(),g=f.load(),events:GameEvent[]=[];g.subscribeEvents(e=>events.push(e));
   g.dispatch({type:'plant-tree',x:10,y:10});g.dispatch({type:'buy-livestock',productType:299,x:11,y:10});g.dispatch({type:'buy-livestock',productType:300,x:12,y:10});
-  assert.deepEqual(events,Array.from({length:3},()=>[{type:'sound',sound:'plopitem'},{type:'sound',sound:'ploptool'}]).flat());
+  assert.deepEqual(events,Array.from({length:3},()=>({type:'sound',sound:'plopitem'}))); // one livestock plop each, no ploptool (user request)
   const before=g.save(4);g.dispatch({type:'plant-tree',x:10,y:10});assert.equal(g.save(4),before);assert.deepEqual(events.at(-1),{type:'sound',sound:'uhoh'});
   const copy=GameSimulation.load(g.save(4),f.crops).simulation;assert.equal(copy.getSnapshot().lastTreeResult,null);assert.equal(copy.save(4),g.save(4));
   for(let day=0;day<35;day++){g.dispatch({type:'advance-day'});copy.dispatch({type:'advance-day'});}assert.equal(copy.save(4),g.save(4));
