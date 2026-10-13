@@ -3150,3 +3150,7 @@ Debug → Place type 6 machine arms Buy placement for the catalog-omitted type 6
 Debug → Cheat: LLAMA / FUND / CORN reproduce the original typed codes from keyboard path `0xf6c5`. LLAMA shows the Will Wright quote with the otherwise unused llama photograph (card 25). FUND adds $10,000 to the town expansion fund with its thank-you popup. CORN silently adds $10,000 to cash. Llama findings (cards 24/25, possible unmapped sprites at tiles 937–945, "Not a Llama." filler) are recorded in debug-menu.md.
 
 Validation: type check; debug-cheats unit tests 2/2; debug-menu browser spec 5/5, with a screenshot of the LLAMA popup.
+
+## 2026-10-12 — FUND charges the donation
+
+The original FUND cheat only credits the town expansion fund, despite saying "you just donated" (SF-180). Natively it now takes $10,000 from cash and is greyed out below $10,000. The fund is real development money, spent on expansions and maintenance shortfalls. Validation: type check; debug-cheats unit tests 2/2; debug-menu browser spec 5/5.

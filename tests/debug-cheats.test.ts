@@ -22,19 +22,28 @@ test('cheat codes, messages and portraits match the original keyboard path', () 
   assert.equal(exe.subarray(0xf7cc, 0xf7d9).toString('hex'), '268106483e10272683164a3e00');
 });
 
-test('Debug cheats change only their original balance, wrap at 32 bits and publish their popups', () => {
+test('Debug cheats: FUND donates cash it has, CORN adds cash, both wrap at 32 bits, and popups publish', () => {
   const f = shopFixture(), game = f.load(), events: GameEvent[] = []; game.subscribeEvents(e => events.push(e));
   const cash = game.getSnapshot().scenario.farm.cash, fund = game.getSnapshot().finances.town.expansionFunds;
   const before = JSON.parse(game.save(4));
   game.dispatch({ type: 'debug-cheat', code: 'LLAMA' });
   assert.deepEqual(events, [{ type: 'cheat-notice', id: 'llama' }]); assert.deepEqual(JSON.parse(game.save(4)), before);
   game.dispatch({ type: 'debug-cheat', code: 'FUND' });
-  assert.equal(game.getSnapshot().finances.town.expansionFunds, fund + 10000); assert.equal(game.getSnapshot().scenario.farm.cash, cash);
+  // SF-180 native correction: the donation now comes out of cash.
+  assert.equal(game.getSnapshot().finances.town.expansionFunds, fund + 10000); assert.equal(game.getSnapshot().scenario.farm.cash, cash - 10000);
   assert.deepEqual(events.at(-1), { type: 'cheat-notice', id: 'fund' });
   events.length = 0; game.dispatch({ type: 'debug-cheat', code: 'CORN' });
-  assert.equal(game.getSnapshot().scenario.farm.cash, cash + 10000); assert.deepEqual(events, []); // CORN is silent
+  assert.equal(game.getSnapshot().scenario.farm.cash, cash); assert.deepEqual(events, []); // CORN is silent
   f.state.scenario.farm.cash = 0xffffffff - 5000; f.state.finances.town.expansionFunds = 0xfffffff0;
-  const wrap = f.load(); wrap.dispatch({ type: 'debug-cheat', code: 'CORN' }); wrap.dispatch({ type: 'debug-cheat', code: 'FUND' });
-  assert.equal(wrap.getSnapshot().scenario.farm.cash, 4999); assert.equal(wrap.getSnapshot().finances.town.expansionFunds, 9984);
+  const wrap = f.load(); wrap.dispatch({ type: 'debug-cheat', code: 'CORN' }); assert.equal(wrap.getSnapshot().scenario.farm.cash, 4999);
+  // Below $10,000 (here $4,999) FUND does nothing: no charge, no fund change, no popup.
+  const heard: GameEvent[] = []; wrap.subscribeEvents(e => heard.push(e)); const poor = wrap.save(4);
+  wrap.dispatch({ type: 'debug-cheat', code: 'FUND' }); assert.equal(wrap.save(4), poor); assert.deepEqual(heard, []);
+  wrap.dispatch({ type: 'debug-cheat', code: 'CORN' }); wrap.dispatch({ type: 'debug-cheat', code: 'FUND' }); // exactly $14,999 then donate
+  assert.equal(wrap.getSnapshot().scenario.farm.cash, 4999); assert.equal(wrap.getSnapshot().finances.town.expansionFunds, 9984); // fund wraps
+  f.state.scenario.farm.cash = 10000; const exact = f.load(); exact.dispatch({ type: 'debug-cheat', code: 'FUND' });
+  assert.equal(exact.getSnapshot().scenario.farm.cash, 0); // exactly $10,000 is enough
+  f.state.scenario.farm.cash = 0x80000000; const negative = f.load(), owed = negative.save(4); // signed negative cash
+  negative.dispatch({ type: 'debug-cheat', code: 'FUND' }); assert.equal(negative.save(4), owed);
   assert.throws(() => game.dispatch({ type: 'debug-cheat', code: 'llama' as 'LLAMA' }), /Invalid cheat code/);
 });

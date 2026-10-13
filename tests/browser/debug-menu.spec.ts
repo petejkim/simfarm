@@ -93,11 +93,18 @@ test('Debug cheats show the original LLAMA and FUND popups and add the original 
  await expect(page.locator('#cheat-message-text')).toHaveText('"The Llama is a quadruped" - Will Wright');
  expect(await win.locator('.message-portrait').evaluate(el=>(el as HTMLElement).style.backgroundPosition)).toBe(`${-(25%8)*112}px ${-Math.floor(25/8)*64}px`); // llama card
  await win.screenshot({path:'artifacts/browser-llama-cheat.png'});await page.locator('#cheat-message-ok').click();await expect(win).toHaveCount(0);
- await cheat('FUND');
+ const cashBeforeFund=game.getSnapshot().scenario.farm.cash;await cheat('FUND');expect(game.getSnapshot().scenario.farm.cash).toBe(cashBeforeFund-10000);
  await expect(page.locator('#cheat-message-text')).toHaveText('You just donated $10000 to the town. The mayor and his new car thank you!');
  await page.locator('#cheat-message-ok').click();
  await cheat('CORN');await expect(win).toHaveCount(0);
  await expect(page.locator('#farm-cash')).toHaveText(`$${game.getSnapshot().scenario.farm.cash.toLocaleString('en-US')}`);
  const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();
  expect(JSON.parse(readSaveText((await(await pending).path())!))).toEqual(JSON.parse(game.save(4)));
+ // SF-180 native correction: the donation costs $10,000, so FUND is unavailable below that.
+ const poor=shopFixture();poor.state.scenario.farm.cash=9999;
+ await page.locator('#load-farm-file').setInputFiles({name:'poor.json',mimeType:'application/json',buffer:Buffer.from(poor.load().withAllCrops(browserCrops).save(4))});
+ await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+ await page.locator('#debug-menu-button').click();
+ await expect(page.getByRole('menuitem',{name:'Cheat: FUND',exact:true})).toBeDisabled();
+ await expect(page.getByRole('menuitem',{name:'Cheat: CORN',exact:true})).toBeEnabled();
 });

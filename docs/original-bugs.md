@@ -1553,10 +1553,18 @@ Native decodes immutable executable headers and separate archived planes; it per
 
 ## SF-180 — FUND cheat says you donated $10,000 but never charges you
 
-**Status:** verified in the original executable (2026-10-12, user report). Native matches the original. No fix applied; deferred to a user decision.
+**Status:** verified in the original executable (2026-10-12, user report). Native correction implemented the same day (user decision): the donation is charged.
 
 **Evidence:** after the exact `FUND` match, the keyboard path (`0xf786..0xf7b1`) shows popup `DS:2223`, "You just donated $10000 to the town. The mayor and his new car thank you!", then performs only `add word es:[758e],2710h` / `adc word es:[7590],0` with `ES = [DS:c732] = 0x6190`. That adds 10,000 to the town expansion fund. Cash (`6190:3e48`) is never read or written on this path. CORN (`0xf7c8`, `ES = [DS:c730] = 0x6190`) is the only code that changes cash.
 
 **Classification:** text/behaviour mismatch in a developer cheat. The town gains $10,000 for free despite the "donated" wording. It is not memory corruption or a security issue, and it is only reachable by typing the cheat (natively, the Debug menu). High confidence.
 
-**Native behavior:** the same as the original: the town fund rises by $10,000 and cash is unchanged (`tests/debug-cheats.test.ts`). A native "charge the donation" correction would subtract $10,000 from cash. Undecided whether to allow it below zero, or to refuse when cash is short.
+**Why it matters:** the fund is real. Town expansion spends 15,000 from it (`0x3bf7a`, `town.ts`), and annual settlement draws maintenance shortfalls from it (`0x1d5c4`). So the original handed the town $10,000 of free development money.
+
+**Native behavior (corrected):**
+- FUND moves $10,000 from farm cash to the town expansion fund, then shows the original popup.
+- It requires signed cash of at least $10,000, so exactly $10,000 is enough. Below that, or with negative cash, the command does nothing, and the Debug item is greyed out.
+- The fund addition keeps the source's 32-bit wrap.
+- No expense ledger is posted, because the original has no category for it.
+
+`tests/debug-cheats.test.ts` covers the charge, the exact boundary, refusal at $4,999 and with negative signed cash (no state change, no popup), and the fund wrap. The browser spec checks the cash drop and the greyed-out item at $9,999.

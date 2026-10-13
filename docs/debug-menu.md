@@ -69,7 +69,7 @@ Natively they are the Debug items "Cheat: LLAMA", "Cheat: FUND" and "Cheat: CORN
 | Code | Original effect | Native |
 | --- | --- | --- |
 | LLAMA | Popup `0636:10f4` with `DS:21f5` "\"The Llama is a quadruped\" - Will Wright" and portrait 0x19 (card 25) at `0xf75e` | `cheat-notice` llama; no state change |
-| FUND | Popup `DS:2223` "You just donated $10000 to the town. The mayor and his new car thank you!", portrait 0x4b (75), then `add/adc` 10000 to `DS:758e/7590` (`0xf7a4`), the town expansion fund | `finances.town.expansionFunds += 10000` (32-bit wrap) plus `cheat-notice` fund |
+| FUND | Popup `DS:2223` "You just donated $10000 to the town. The mayor and his new car thank you!", portrait 0x4b (75), then `add/adc` 10000 to `DS:758e/7590` (`0xf7a4`), the town expansion fund. Cash is never charged (SF-180). | SF-180 correction: needs cash ≥ $10,000 (item greyed out otherwise), moves $10,000 from cash to `finances.town.expansionFunds` (32-bit wrap), plus `cheat-notice` fund |
 | CORN | Silent `add/adc` 10000 to `DS:3e48/3e4a` (`0xf7cc`), farm cash | `farm.cash += 10000` (32-bit wrap) |
 
 The popups use the shared message queue, so game time holds until OK, like other messages. They are presentation events and not saved. The balances are ordinary saved state, so no schema change is needed.

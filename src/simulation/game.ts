@@ -224,6 +224,9 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
   | { type: 'sell-asset'; kind: AssetSaleKind; slot: number }
   | { type: 'sell-harvest'; inventorySlot: number };
 
+/** FUND cheat amount (source add 0x2710 at 0xf7a4); natively also the cash it costs (SF-180). */
+export const CHEAT_DONATION = 10000;
+
 function copyScenario(scenario: Scenario): Scenario {
   return { ...scenario, irrigation: copyIrrigation(scenario.irrigation), schedule: new FieldSchedule(Uint8Array.from(scenario.schedule.bytes)), sourceBytes: scenario.sourceBytes === null ? null : Uint8Array.from(scenario.sourceBytes), cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
     fields: scenario.fields.map(f => new FieldRecord(f.slot, Uint8Array.from(f.bytes))),
@@ -553,7 +556,11 @@ export class GameSimulation {
       // reached from the Debug menu. Each add is the source's 32-bit add/adc, wrapping like the original.
       if (command.code === 'LLAMA') this.events.push({ type: 'cheat-notice', id: 'llama' });
       else if (command.code === 'FUND') {
-        this.finances.town.expansionFunds = (this.finances.town.expansionFunds + 10000) >>> 0; // DS758e
+        // SF-180 native correction (user decision): the source only credits the fund, despite "you just donated".
+        // Natively the donation comes out of cash and needs at least $10,000 (signed cash, as the Buy loop compares).
+        if ((this.scenario.farm.cash | 0) < CHEAT_DONATION) return;
+        this.scenario.farm.cash = (this.scenario.farm.cash - CHEAT_DONATION) >>> 0;
+        this.finances.town.expansionFunds = (this.finances.town.expansionFunds + CHEAT_DONATION) >>> 0; // DS758e
         this.events.push({ type: 'cheat-notice', id: 'fund' });
       } else if (command.code === 'CORN') this.scenario.farm.cash = (this.scenario.farm.cash + 10000) >>> 0; // DS3e48
       else throw new Error('Invalid cheat code');
