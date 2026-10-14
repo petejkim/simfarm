@@ -4176,3 +4176,24 @@ one400% row at the wheel limit, desktop/hybrid cursor anchoring, scrolling and S
 Runtime files stayed fixed; no failed checks or full-suite reruns. Logs: artifacts/zoom-400-{build,unit,browser}.log.
 Physical devices and other browser engines were not retested for this option-only edit. Request complete;
 commit stays local. Broader preservation remains incomplete; no additional work started.
+
+## 2026-10-14 — AGENTS.md cleanup
+
+Removed completed all-crops and New Game implementation directives, obsolete sequencing and audio-choice
+history. Consolidated terrain/window, HTML text/React architecture and validation guidance; corrected the
+stale speed-slider reference to the Speed menu. Retained ongoing preservation, checkpoint, mobile/audio,
+tooling and Git constraints, with references to existing crop-policy and bitmap-logo documentation.
+
+Documentation-only review and `git diff --check`; no runtime files changed, so build and test suites were
+not rerun. Request complete; commit stays local. Broader preservation remains incomplete.
+
+## 2026-10-14 — further AGENTS.md wording cleanup
+
+Shortened the remaining instructions without changing their requirements, building on the user's removal
+of obsolete research/priority guidance and simplification of native pacing. Consolidated Git/commit rules
+and separated focused validation from full-regression policy for readability. Preservation evidence,
+original-bug records, documented adaptations, checkpoints, UI/architecture, audio/mobile and local-tooling
+constraints remain explicit. The four-second baseline remains documented in calendar-clock.md.
+
+Reviewed the wording against the pre-edit file and ran `git diff --check`. Documentation only; no build or
+test suites rerun. Request complete; commit stays local. Broader preservation remains incomplete.
