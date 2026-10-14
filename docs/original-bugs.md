@@ -594,11 +594,14 @@ Scheduled payment subtracts the installment from principal at `0xc5e2..0xc5fa`. 
 
 ## SF-071 — monthly loan arrears payment omits normal balance and town updates
 
-**Status:** confirmed divergent accounting paths; native preserved; full lifecycle impact and correction deferred.
+**Status:** original divergent paths verified; native settlement corrected2026-10-13 at user request.
 
 On-time scheduled payment `0xc5b4..0xc675` reduces principal, allocates half/quarter of the installment to town funds and restores available credit. Failure copies the installment to overdue balance `2d9f:d5ba` and sets a countdown. Monthly successful retry `0xccba..0xcce6` only posts category 1000, clears overdue amount/countdown and emits notice 170. It does not perform the principal/credit/town updates; forced-sale success similarly clears the overdue state separately. Thus the local sequence accepts cash without applying the normal loan-account changes. Later credit/loan recomputation and UI consequences remain untraced, so no claim of irreversible player loss is made.
 
 Native scheduled and monthly primitives preserve the distinction. A composed regression establishes arrears then pays them, confirming that principal and town state do not change through the retry. Revisit at full loan integration, retaining this source evidence if corrected.
+
+
+Native correction (2026-10-13): successful direct or forced-sale arrears payments now also reduce principal, clear a finished installment, restore credit and allocate town shares once through GameSimulation. Cash/expense posting is not repeated. Earlier preservation notes above describe pre-correction behavior; source evidence remains unchanged. See [requested corrections](gameplay-bug-fixes.md).
 
 ## SF-072 — new scheduled failures overwrite arrears and restart the countdown
 

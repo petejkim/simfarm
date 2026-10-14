@@ -61,7 +61,7 @@ test('live calendar charges only the four recovered loan months and restores ide
   }
 });
 
-test('monthly arrears run before a new installment, including the source overwrite/countdown behavior', () => {
+test('monthly arrears run before a new installment, settling principal before a new source installment failure', () => {
   const { game } = restored(s => {
     boundary(s); s.scenario.farm.cash = 110;
     Object.assign(s.runtime.finances.loan, { principal: 1000, scheduledPayment: 100 });
@@ -69,10 +69,10 @@ test('monthly arrears run before a new installment, including the source overwri
   });
   const before = game.getSnapshot().finances;
   game.dispatch({ type: 'advance-day' }); const after = game.getSnapshot();
-  assert.equal(after.scenario.farm.cash, 50); assert.equal(after.finances.loan.principal, 1000);
+  assert.equal(after.scenario.farm.cash, 50); assert.equal(after.finances.loan.principal, 940);
   assert.equal(after.finances.debt.balanceDue, 100); assert.equal(after.finances.debt.balanceCountdown, 4);
   assert.equal(after.finances.accounts.balancePayments, before.accounts.balancePayments + 60);
-  assert.equal(after.finances.town.expansionFunds, before.town.expansionFunds);
+  assert.equal(after.finances.town.expansionFunds, before.town.expansionFunds+30);
   assert.deepEqual(after.financeNotices, [170, 166]);
 });
 
@@ -135,4 +135,22 @@ test('Bank reports collateral credit independently from cash capacity without mu
   assert.equal(game.getSnapshot().finances.loan.principal, 999999);
   assert.equal(game.getSnapshot().availableLoan, 0);
   assert.ok(game.getSnapshot().loanCreditLimit > 0);
+});
+
+
+test('paid arrears from cash or forced sale settle the loan once and resume identically from a checkpoint',()=>{
+  for(const liquidation of [false,true]){
+    const {game,crops}=restored(s=>{
+      boundary(s,0);s.scenario.farm.cash=liquidation?0:100;
+      Object.assign(s.runtime.finances.loan,{principal:1000,scheduledPayment:100,availableCredit:200});
+      Object.assign(s.runtime.finances.debt,{balanceDue:100,balanceCountdown:liquidation?1:2,unpaidTaxes:0,taxCountdown:0});
+    });
+    const before=game.getSnapshot(),copy=GameSimulation.load(game.save(4),crops).simulation;
+    for(const g of [game,copy])g.dispatch({type:'advance-day'});
+    const after=game.getSnapshot();assert.equal(after.finances.debt.balanceDue,0);
+    assert.equal(after.finances.loan.principal,900);assert.equal(after.finances.loan.availableCredit,300);
+    assert.equal(after.finances.town.expansionFunds,before.finances.town.expansionFunds+50);
+    assert.deepEqual(JSON.parse(game.save(4)),JSON.parse(copy.save(4)));
+    game.dispatch({type:'advance-day'});assert.equal(game.getSnapshot().finances.loan.principal,900);
+  }
 });

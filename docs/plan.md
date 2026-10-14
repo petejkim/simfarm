@@ -479,3 +479,6 @@ Shared window chrome (user decisions, 2026-10-11): rebuild the toolbar, palette 
 ## 2026-10-13 — merged-state gameplay review
 
 The previous aircraft work was abandoned at user request after the merge; do not restore its removed edits. User also skipped weather-outline palette fidelity, so it is not an active prerequisite. The current original-bug triage is docs/original-bugs-gameplay-review.md: all180 primary entries are classified, current high-impact candidates are distinguished from native fixes/guards, and source compatibility decisions remain explicit. Prioritize demonstrated player cash/crop/continuation harm over speculative extreme-state or visual quirks. This review itself changes no gameplay behavior and does not establish a completed port.
+
+
+User authorized twelve reviewed gameplay fixes, one commit per SF ID; current queue and validation are in docs/gameplay-bug-fixes.md. Complete this queue before other preservation work. SF-071 is implemented; SF-074 follows.

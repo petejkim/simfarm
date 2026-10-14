@@ -2,7 +2,7 @@ import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { readLoan } from '../src/formats/loan';
-import { isLoanPaymentMonth, payScheduledLoan } from '../src/simulation/loan';
+import { isLoanPaymentMonth, payScheduledLoan, settleLoanArrears } from '../src/simulation/loan';
 import { readScenario } from '../src/formats/scenario';
 import { readDefaultState } from '../src/formats/default-state';
 import { retryMonthlyDebts } from '../src/simulation/monthly-finance';
@@ -57,7 +57,7 @@ test('last payment keeps full source charge and town shares but omits restoring 
   }
 });
 
-test('failure replaces arrears/countdown, and later monthly payment does not perform scheduled principal/town/credit updates', () => {
+test('failure retains source arrears replacement; native monthly settlement applies principal/town/credit once', () => {
   const d = setup(); d.farm.cash = 20;
   const before = JSON.stringify([d.farm, d.loan, d.accounts]);
   assert.deepEqual(payScheduledLoan(d.farm, d.loan, d.debt, d.accounts), { paid: false, amount: 21, notice: 166 });
@@ -65,10 +65,13 @@ test('failure replaces arrears/countdown, and later monthly payment does not per
   assert.deepEqual(d.debt, { balanceDue: 21, balanceCountdown: 4, unpaidTaxes: 7, taxCountdown: 3 });
   const b = source('SCEN0.SSM'), world = readScenario(b), a = readDefaultState(b, 0); world.farm.cash = 21;
   d.debt.unpaidTaxes = d.debt.taxCountdown = 0;
-  const loanBefore = JSON.stringify(d.loan), townBefore = JSON.stringify(d.accounts);
+  const principal=d.loan.principal,credit=d.loan.availableCredit;
   const r = retryMonthlyDebts(world, a, d.debt, createClearingEffects(), 8, 3);
   assert.deepEqual(r.notices, [170]); assert.equal(world.farm.cash, 0); assert.equal(d.debt.balanceDue, 0);
-  assert.equal(d.debt.balanceCountdown, 0); assert.equal(JSON.stringify(d.loan), loanBefore); assert.equal(JSON.stringify(d.accounts), townBefore);
+  assert.equal(d.debt.balanceCountdown, 0); assert.equal(r.loanPayment,21);settleLoanArrears(d.loan,d.accounts,r.loanPayment!);
+  assert.equal(d.loan.principal,principal-21);assert.equal(d.loan.availableCredit,credit+21);
+  assert.equal(d.accounts.expansionFunds,10);assert.equal(d.accounts.townRevenue,5);
+  assert.equal(a.balancePayments,21);
 });
 
 test('invalid scheduled payment input rejects before any state change', () => {

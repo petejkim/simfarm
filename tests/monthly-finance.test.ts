@@ -34,7 +34,7 @@ test('normal monthly payment handles the balance before taxes, clears matching d
     Object.assign(debt, { balanceDue: 70, balanceCountdown: 2, unpaidTaxes: 50, taxCountdown: 2 });
     world.farm.cash = 100; accounts.balancePayments = 0xfffffff0; accounts.taxExpenses = 0xfffffffe;
     const r = retryMonthlyDebts(world, accounts, debt, effects, 8, 1);
-    assert.deepEqual(r, { notices: [170, 162], forcedSales: [], pendingDefault: null });
+    assert.deepEqual(r, { loanPayment:70, notices: [170, 162], forcedSales: [], pendingDefault: null });
     assert.deepEqual(debt, { balanceDue: 0, balanceCountdown: 0, unpaidTaxes: 50, taxCountdown: 1 });
     assert.equal(world.farm.cash, 30); assert.equal(accounts.balancePayments, 54); assert.equal(accounts.taxExpenses, 0xfffffffe);
     world.farm.cash = 50;

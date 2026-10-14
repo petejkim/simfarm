@@ -36,7 +36,8 @@ test('paid and forced-sale notices follow original balance-before-tax order and 
   for(const [kind,ids] of [['tax-paid',[163]],['loan-paid',[170]],['both',[170,163]],['tax-sale',[36,165]],['loan-sale',[39,168]],['default',[39]]] as const){
     const game=financeMessageFixture(kind);await load(page,game.save(4));await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});
     for(const id of ids)await message(page,id);
-    await expect(page.locator('#finance-message-ok')).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+    await expect(page.locator('#finance-message-ok')).toHaveCount(0);const checkpoint=await save(page);expect(checkpoint).toEqual(JSON.parse(game.save(4)));
+    if(['loan-paid','loan-sale','both'].includes(kind))expect(checkpoint.runtime.finances.loan.principal).toBe(kind==='loan-sale'?999:900);
     if(kind==='default'){await expect(page.getByRole('region',{name:'Financial default',exact:true})).toBeVisible();await page.locator('#default-exit').click();game.dispatch({type:'resolve-default',choice:'exit'});expect(await save(page)).toEqual(JSON.parse(game.save(4)));}
   }
 });

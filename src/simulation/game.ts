@@ -77,7 +77,7 @@ import { SIMULATION_SPEEDS, type SimulationState, type PendingTownExpansion } fr
 export type ActiveTownChoice = PendingTownExpansion | { phase: 'debug'; site: TownSite; resumeRunning: boolean; resumeTickTail?: never };
 import { readNativeSave, writeNativeSave } from '../formats/native-save';
 import { copyFinancialState, readFinancialState, type FinancialState } from '../formats/finance';
-import { borrowLoan, repayLoanInFull, loanCreditLimit, payScheduledLoan, isLoanPaymentMonth, type BorrowResult, type RepayResult } from './loan';
+import { borrowLoan, repayLoanInFull, settleLoanArrears, loanCreditLimit, payScheduledLoan, isLoanPaymentMonth, type BorrowResult, type RepayResult } from './loan';
 import { loanPaymentAccounts, taxAccounts } from './finance-accounts';
 import { retryMonthlyDebts } from './monthly-finance';
 import { resolveDefaultDecision } from './default';
@@ -932,6 +932,7 @@ export class GameSimulation {
       this.random.mixMonth(before.month + 1);
       const retry = retryMonthlyDebts(s, this.finances.accounts, this.finances.debt, this.finances.clearing,
         w.soilMoisture, before.month + 1, id=>{if(id>=128||this.scenario.farm.messages)this.events.push({type:'finance-notice',id});});
+      if(retry.loanPayment!==undefined)settleLoanArrears(this.finances.loan,loanPaymentAccounts(this.finances),retry.loanPayment);
       this.financeNotices = retry.notices;
       if (retry.pendingDefault) {
         this.finances.defaultDecision = retry.pendingDefault.decision;

@@ -13,6 +13,7 @@ export function financeMessageFixture(kind:'annual'|'estimate'|'tax-warning'|'ta
   if(kind==='loan-new'){save.scenario.farm.calendar.month=1;f.loan.principal=1000;f.loan.scheduledPayment=100;}
   if(kind.startsWith('tax-'))Object.assign(f.debt,{unpaidTaxes:kind==='tax-sale'?1:100,taxCountdown:kind==='tax-sale'?1:2});
   if(kind.startsWith('loan-')&&kind!=='loan-new')Object.assign(f.debt,{balanceDue:kind==='loan-sale'?1:100,balanceCountdown:kind==='loan-sale'?1:2});
+  if(['loan-paid','loan-sale','both'].includes(kind))Object.assign(f.loan,{principal:1000,scheduledPayment:100});
   if(kind==='both'){Object.assign(f.debt,{balanceDue:100,balanceCountdown:2,unpaidTaxes:100,taxCountdown:2});save.scenario.farm.cash=1000;}
   if(kind.endsWith('-paid'))save.scenario.farm.cash=1000;
   if(kind==='default')Object.assign(f.debt,{balanceDue:0xffffffff,balanceCountdown:1});

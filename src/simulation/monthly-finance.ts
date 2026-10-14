@@ -7,6 +7,8 @@ import { assessAnnualTax } from './tax';
 import type {FinanceNoticeId} from './events';
 
 export interface MonthlyFinanceResult {
+  /** Successful loan arrears payment, including liquidation; caller settles loan ownership (SF-071). */
+  loanPayment?: number;
   /** Original notice IDs; rendering/throttling remains the caller's responsibility. */
   notices: (161 | 162 | 163 | 165 | 168 | 169 | 170)[];
   forcedSales: ForcedSaleResult[];
@@ -32,6 +34,7 @@ export function retryMonthlyDebts(world: Scenario, accounts: DefaultState, debt:
       world.farm.cash -= amount;
       const expense = tax ? 'taxExpenses' : 'balancePayments';
       accounts[expense] = (accounts[expense] + amount) >>> 0;
+      if(!tax)result.loanPayment=amount;
       debt[due] = 0; debt[countdown] = 0;
       notice(tax ? 163 : 170);
     } else if (--debt[countdown]) {
@@ -46,6 +49,7 @@ export function retryMonthlyDebts(world: Scenario, accounts: DefaultState, debt:
         result.pendingDefault = sale;
         return result;
       }
+      if(!tax)result.loanPayment=amount;
       debt[due] = 0; debt[countdown] = 0;
       notice(tax ? 165 : 168);
     }

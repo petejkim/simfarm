@@ -109,3 +109,19 @@ export function payScheduledLoan(farm: Pick<SavedFarmState, 'cash'>, loan: LoanS
   loan.availableCredit = (loan.availableCredit + loan.scheduledPayment) >>> 0;
   return { paid: true, amount, notice: null };
 }
+
+
+/** SF-071 native correction: the monthly/default path already debited cash
+ * and posted its expense. Apply the same principal/town allocation as an
+ * on-time installment, once, without charging or posting that expense again. */
+export function settleLoanArrears(loan:LoanState,accounts:LoanPaymentAccounts,amount:number):void {
+  validateLoan(loan);
+  if(!Number.isInteger(amount)||amount<=0||amount>0xffffffff)throw new Error('Invalid arrears payment');
+  for(const n of [accounts.townRevenue,accounts.expansionFunds])
+    if(!Number.isInteger(n)||n<0||n>0xffffffff)throw new Error('Invalid loan allocation');
+  loan.principal=Math.max(0,loan.principal-amount);
+  if(!loan.principal)loan.scheduledPayment=0;
+  loan.availableCredit=(loan.availableCredit+amount)>>>0;
+  accounts.expansionFunds=(accounts.expansionFunds+(amount>>>1))>>>0;
+  accounts.townRevenue=(accounts.townRevenue+(amount>>>2))>>>0;
+}
