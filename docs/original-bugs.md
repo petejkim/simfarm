@@ -54,11 +54,13 @@ Native handling: `waterStress` retains the byte wrap. No correction made.
 
 ## SF-006 — water warnings disagree with growth stress
 
-**Status:** confirmed comparison discrepancy; preserved; broader effects of byte thresholds remain unverified.
+**Status:** original evidence retained; corrected natively on2026-10-13 by user request.
 
 The status routine uses `water > upper` (`0x190f6`–`0x19103`) to display a wet warning, while growth applies water stress at `water >= upper` (`0x195d0`–`0x196b7`). A grape field with water 28 and unmodified tolerances therefore incurs stress without a wet badge. The regression test demonstrates this using the distributed grape definition.
 
 Status also computes tolerances with signed byte arithmetic (`0x19087`–`0x190c2`), whereas growth uses word arithmetic. Large modifiers can wrap the displayed thresholds differently; reachable effects need investigation. Native handling preserves both routines. No correction made.
+
+Native correction (2026-10-13): Water warnings and growth share one classification using the recovered growth word tolerances, signed water and exclusive upper bound. Exact-upper water now warns wet; high modifiers no longer wrap warning thresholds as bytes. Random consumption and original stress-byte arithmetic remain unchanged. Earlier preservation/status notes above describe the pre-correction implementation. Build/type checking,16 simulation/report unit cases and2 focused Evaluation browser flows pass, including actual grape water28 wet warning and exact reload. Unit boundaries cover all24 definitions plus a synthetic high-word definition and modifier/water extremes. Updated stale SF-041 report totals; initial browser fixture lacked grapes until expanded to all24. Logs artifacts/bugfix-006-*.log.
 
 ## SF-007 — fifth year-end temperature reads the wind byte
 

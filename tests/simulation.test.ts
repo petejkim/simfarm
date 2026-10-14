@@ -1,6 +1,6 @@
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { readScenario, worldIndex } from '../src/formats/scenario';
 import { readCrop } from '../src/formats/crop';
 import { CALENDAR_OFFSET } from '../src/formats/scenario-state';
@@ -153,9 +153,9 @@ test('status refresh samples fertility, cycles pest warnings and retains overwri
     assert.equal(b[28], 90);
     assert.equal(scenario.cells[worldIndex(field.x + 6, field.y)].terrain & 2047, 539 + badge * 4);
   }
-  // Status says normal at the exact upper limit; growth already applies water stress there (SF-006).
+  // SF-006: the exact upper limit now displays the stress growth applies.
   f.setUint16(24, 28, true);
-  assert.equal(updateFieldStatus(field, crop, scenario.cells) & 10, 0);
+  assert.equal(updateFieldStatus(field, crop, scenario.cells) & 10, 2);
   assert.notEqual(waterStress(field, crop, random()), 0);
   f.setUint16(24, 29, true);
   assert.equal(updateFieldStatus(field, crop, scenario.cells) & 10, 2);
@@ -207,5 +207,26 @@ test('all five regional reductions saturate across the complete byte domain', ()
       assert.equal(field.bytes[offset],Math.max(0,current-amount));
     }
     regions[base+channel]=71;assert.ok(regions.every(n=>n===71));
+  }
+});
+
+
+test('water warnings match growth word thresholds and signed-water boundaries for every crop', () => {
+  const world=readScenario(source('SCEN0.SSM')),field=world.fields[1],view=new DataView(field.bytes.buffer,field.bytes.byteOffset,field.bytes.length);
+  field.bytes[2]=4;view.setUint16(42,0,true);
+  const definitions=readdirSync(new URL('../../simfarm-dos/CROPS/',import.meta.url)).filter(n=>n.toLowerCase().endsWith('.crp')).map(n=>readCrop(n,source(`CROPS/${n}`)).rawDefinition);
+  const custom=Array.from(definition('grapes'));custom[40]=200;custom[41]=1;custom[42]=250;custom[43]=1;definitions.push(custom);
+  for(const crop of definitions) {
+    for(const dry of [0,1,63,64,127,128,255])for(const wet of [0,1,63,64,127,128,255]) {
+      field.bytes[51]=dry;field.bytes[52]=wet;
+      const lower=Math.max(0,(crop[40]+crop[41]*256)-dry*2),upper=crop[42]+crop[43]*256+wet*2;
+      for(const raw of new Set([0,27,28,29,127,128,32767,32768,65535,lower-1,lower,upper-1,upper])) {
+        if(raw<0||raw>65535)continue;view.setUint16(24,raw,true);
+        const water=raw>=32768?raw-65536:raw,expected=water<lower?8:water>=upper?2:0;
+        assert.equal(updateFieldStatus(field,crop as readonly number[],world.cells)&10,expected);
+        const rng=random(),before=rng.snapshot();waterStress(field,crop as readonly number[],rng);
+        assert.equal(rng.snapshot().simulation===before.simulation,expected===0);
+      }
+    }
   }
 });

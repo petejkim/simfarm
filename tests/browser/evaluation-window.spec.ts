@@ -1,3 +1,5 @@
+import { readNativeSave, writeNativeSave } from '../../src/formats/native-save';
+import { GameSimulation } from '../support/game';
 import { cropBadgeTile, fixedCropTiles } from '../../src/formats/crop-slots';
 import {readSaveText} from '../support/save-file';
 import {test,expect,type Page} from '@playwright/test';
@@ -68,4 +70,19 @@ test('Evaluation follows season/year rollover, clears resolved problems and sugg
   await load(page,fixture().load().withAllCrops(browserCrops).save(4));await open(page);await expect(page.locator('[data-evaluation-crop]')).toHaveCount(8);
   await load(page,game.save(4));await open(page);await expect(page.locator('.evaluation-panel .sprite')).toHaveCount(0);
   await page.getByRole('dialog',{name:'Evaluation',exact:true}).locator('.game-window-title').focus();await page.keyboard.press('Escape');await expect(page.getByRole('dialog',{name:'Evaluation',exact:true})).toBeHidden();
+});
+
+test('exact upper water tolerance produces the wet problem and survives checkpoint reload',async({page})=>{
+  const state=readNativeSave(shopFixture().load().withAllCrops(browserCrops).save(4)).state,w=state.scenario,field=w.fields[1];state.disasters.enabled=false;
+  Object.assign(w.farm.calendar,{month:0,week:0,day:6});
+  const crop=w.cropFiles.indexOf('grapes.crp');expect(crop).toBeGreaterThanOrEqual(0);
+  field.bytes[7]=1;field.bytes[2]=4;field.bytes[14]=crop;field.bytes[10]=field.bytes[11]=20;
+  field.bytes[12]=field.bytes[13]=8;field.bytes[34]=0;field.bytes.fill(0,42,48);
+  state.weather.soilMoisture=14;state.weather.forecast.fill(0);state.weather.nextForecast.fill(0);
+  const game=GameSimulation.load(writeNativeSave(state,4),browserCrops).simulation;await start(page);await load(page,game.save(4));
+  await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});
+  const after=game.getSnapshot().scenario.fields[1];expect(after.bytes[24]).toBe(28);expect(after.bytes[54]&2).toBe(2);
+  await open(page);await expect(page.getByRole('list',{name:'Field problems'})).toContainText(EVALUATION_PROBLEMS[1]);
+  expect(await save(page)).toEqual(JSON.parse(game.save(4)));await load(page,game.save(4));await open(page);
+  await expect(page.getByRole('list',{name:'Field problems'})).toContainText(EVALUATION_PROBLEMS[1]);
 });

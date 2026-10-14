@@ -12,7 +12,7 @@ User authorized these twelve native corrections on2026-10-13, one conventional c
 | SF-041 | Report expense omissions | Complete |
 | SF-042 | Worker expense annual reset | Complete |
 | SF-046 | Forced-sale debt expense category | Complete |
-| SF-006 | Water-stress warning | Pending |
+| SF-006 | Water-stress warning | Complete |
 | SF-007 | Fifth-cycle year-end temperature | Pending |
 | SF-119 | Stored crop loss-rate flag | Pending |
 | SF-051 | Recreation/airport demolition bookkeeping | Pending |
@@ -71,3 +71,10 @@ Checks: Build/type checking,11 annual/live unit cases and1 browser annual collec
 Every successful forced-sale payment posts to the actual debt: reason36 taxExpenses/category2500, reason39 balancePayments/category1000. Crop, animal, machinery, land and failed-sale retries share that routing. Asset sale proceeds retain their income categories and cash is debited once.
 
 Checks: Build/type checking,31 default/monthly/live-loan unit cases and1 browser direct/forced/mixed notices/default flow pass. Browser independently checks tax and loan liquidation postings. Original swapped-category source pins remain; stale monthly expectations were corrected. Logs artifacts/bugfix-046-*.log.
+
+
+## SF-006 — native correction
+
+Water warnings and growth share one classification using the recovered growth word tolerances, signed water and exclusive upper bound. Exact-upper water now warns wet; high modifiers no longer wrap warning thresholds as bytes. Random consumption and original stress-byte arithmetic remain unchanged.
+
+Checks: Build/type checking,16 simulation/report unit cases and2 focused Evaluation browser flows pass, including actual grape water28 wet warning and exact reload. Unit boundaries cover all24 definitions plus a synthetic high-word definition and modifier/water extremes. Updated stale SF-041 report totals; initial browser fixture lacked grapes until expanded to all24. Logs artifacts/bugfix-006-*.log.

@@ -1,3 +1,4 @@
+import { fieldWaterStress } from './field-water-stress';
 import { cropStageTile, isCropStageTile } from '../formats/crop-slots';
 import { Binary } from '../formats/binary';
 import type { FieldRecord } from '../formats/field';
@@ -7,11 +8,9 @@ import type { FarmRandom } from './random';
 
 /** Water-stress contribution, file 0x195d0..0x196b7. Result deliberately wraps to a byte. */
 export function waterStress(field: FieldRecord, definition: readonly number[], random: FarmRandom): number {
-  const crop = new Binary(Uint8Array.from(definition)), f = new Binary(field.bytes);
-  const lower = Math.max(0, crop.u16(40) - field.bytes[51] * 2), upper = crop.u16(42) + field.bytes[52] * 2;
-  const water = f.u16(24) << 16 >> 16;
-  if (water < lower) return (definition[71] * (random.nextSimulation() & 31) + 128) & 255;
-  if (water >= upper) return (definition[70] * (random.nextSimulation() & 31) + 128) & 255;
+  const stress = fieldWaterStress(field, definition);
+  if (stress === 'dry') return (definition[71] * (random.nextSimulation() & 31) + 128) & 255;
+  if (stress === 'wet') return (definition[70] * (random.nextSimulation() & 31) + 128) & 255;
   return 0;
 }
 

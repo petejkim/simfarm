@@ -72,9 +72,9 @@ test('current farm reports use original sums and source field flags without rewr
     ds3e8c: 100, ds3e90: 110, ds3e94: 120, ds3e9c: 130, reportIncome: 987, reportExpenses: 654, reportNet: 333 });
   const game = GameSimulation.load(JSON.stringify(save), crops).simulation;
   assert.deepEqual(Object.fromEntries(Object.entries(game.getSnapshot().farmReport).filter(([k]) => k !== 'fields')),
-    { income: 1200, expenses: 910, net: 290 });
+    { income: 1200, expenses: 9910, net: (-8710) >>> 0 });
   assert.equal(game.getSnapshot().finances.annual.reportNet, 333);
   assert.deepEqual(JSON.parse(game.save(4)).runtime.finances.annual, f.annual);
   game.dispatch({ type: 'borrow', amount: 1000 }); game.dispatch({ type: 'repay-loan' });
-  assert.equal(game.getSnapshot().farmReport.net, 290); assert.equal(game.getSnapshot().finances.accounts.balancePayments, 7000);
+  assert.equal(game.getSnapshot().farmReport.net, (-8710) >>> 0); assert.equal(game.getSnapshot().finances.accounts.balancePayments, 7000);
 });

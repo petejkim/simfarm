@@ -1,3 +1,4 @@
+import { fieldWaterStress } from './field-water-stress';
 import { cropBadgeTile } from '../formats/crop-slots';
 import { Binary } from '../formats/binary';
 import type { FieldRecord } from '../formats/field';
@@ -21,12 +22,9 @@ export function updateFieldStatus(field: FieldRecord, crop: readonly number[], c
   f.view.setUint16(54, 0, true);
   for (const position of [1, 2, 3]) writeFieldBadge(field, cells, position, -1);
   if (field.state === 0) return 0;
-  // These thresholds use signed BYTE arithmetic, unlike waterStress's word arithmetic.
-  const lower = Math.max(0, (crop[40] - b[51] * 2) << 24 >> 24);
-  const upper = ((crop[42] + b[52] * 2) << 24 >> 24) & 65535;
-  const water = f.u16(24);
-  if (water < lower) { writeFieldBadge(field, cells, 1, 19); b[54] |= 8; }
-  else if (water > upper) { writeFieldBadge(field, cells, 1, 17); b[54] |= 2; }
+  const stress = fieldWaterStress(field, crop);
+  if (stress === 'dry') { writeFieldBadge(field, cells, 1, 19); b[54] |= 8; }
+  else if (stress === 'wet') { writeFieldBadge(field, cells, 1, 17); b[54] |= 2; }
   // 0x1c50a copies +29 into +28 and returns it, rather than averaging three nutrients.
   b[28] = b[29];
   if (b[28] < 128) { writeFieldBadge(field, cells, 2, 23); b[54] |= 0x80; }
