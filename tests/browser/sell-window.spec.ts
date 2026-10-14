@@ -3,6 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
+import { expectCropPhoto } from '../support/crop-photo';
 import { readNativeSave, writeNativeSave } from '../../src/formats/native-save';
 import { GameSimulation } from '../support/game';
 import { readArchive } from '../../src/formats/archive';
@@ -59,7 +60,11 @@ test('Sell handles all24 crop identities, live prices, last-lot removal and sour
   const original=writeNativeSave(state,4),expected=GameSimulation.load(original,browserCrops).simulation;
   await start(page);await load(page,original);await page.locator('#window-sell').click();
   const catalog=page.getByRole('region',{name:'Sell catalog'});const names=new Set<string>();
-  for(let i=0;i<24;i++){names.add((await page.locator('#sell-item-name').textContent())!);if(i<23)await catalog.getByRole('button',{name:'Next item'}).click();}
+  for(let i=0;i<24;i++){
+    names.add((await page.locator('#sell-item-name').textContent())!);
+    await expectCropPhoto(catalog.locator('.sell-card .sprite'),state.scenario.cropFiles[i].slice(0,-4));
+    if(i<23)await catalog.getByRole('button',{name:'Next item'}).click();
+  }
   expect(names.size).toBe(24);await expect(page.locator('#sell-position')).toHaveText('Item: 24 of 24');
   const before=expected.getSnapshot().scenario.farm;
   await page.locator('#catalog-sell').click();expected.dispatch({type:'sell-harvest',inventorySlot:24});

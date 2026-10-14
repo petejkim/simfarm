@@ -10,6 +10,7 @@ import {readScenario} from '../../src/formats/scenario';
 import {readExpertDeck} from '../../src/formats/expert-cards';
 import {decodeVoc} from '../../src/formats/voc';
 import {browserCrops} from '../support/crop-catalog';
+import {expectCropPhoto} from '../support/crop-photo';
 import {openWindow,reveal} from '../support/workspace';
 const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url));
 const entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
@@ -66,6 +67,10 @@ test('Expert restores original home geometry, all static chapters, field icons a
 });
 
 test('all24 Expert crops show their exact original description and photo through Next/Prev and reopening',async({page})=>{
+  const requests:string[]=[],completed:string[]=[];
+  const isCropImage=(url:string)=>url.endsWith('/crop-cards.png')||url.endsWith('.card.png');
+  page.on('request',r=>{if(isCropImage(r.url()))requests.push(new URL(r.url()).pathname);});
+  page.on('requestfinished',r=>{if(isCropImage(r.url()))completed.push(new URL(r.url()).pathname);});
   await start(page);const before=await save(page);await openWindow(page,'expert');const client=page.getByRole('region',{name:'Farm Expert'});
   await client.getByRole('button',{name:'Crops',exact:true}).click();const seen=new Set<string>();
   for(let i=0;i<24;i++){
@@ -73,8 +78,7 @@ test('all24 Expert crops show their exact original description and photo through
     await expect(client.locator('[data-expert-crop]')).toHaveAttribute('data-expert-crop',crop.id);
     await expect(client.locator('[data-expert-crop]')).toHaveText(crop.expertDescription);
     const img=client.getByRole('img',{name:`${crop.name}, original crop illustration`});await expect(img).toBeVisible();
-    const png=PNG.sync.read(await img.screenshot());expect([png.width,png.height]).toEqual([112,64]);
-    expect(Array.from(png.data)).toEqual(Array.from(decodePlanar(source(`CROPS/${crop.id.toUpperCase()}.CRP`).subarray(0x400,0x1200),112,64,palette).rgba));
+    await expectCropPhoto(img,crop.id);
     if(i===0)await expect(client.getByRole('button',{name:'PREV',exact:true})).toHaveCount(0);
     if(i<23)await client.getByRole('button',{name:'NEXT',exact:true}).click();
   }
@@ -83,6 +87,8 @@ test('all24 Expert crops show their exact original description and photo through
   for(let i=22;i>=0;i--){await client.getByRole('button',{name:'PREV',exact:true}).click();await expect(client.locator('[data-expert-crop]')).toHaveAttribute('data-expert-crop',cropFiles[i].replace('.crp',''));}
   await client.getByRole('button',{name:'CANCEL',exact:true}).click();await expect(client).toHaveAttribute('data-expert-page','1');
   expect(await save(page)).toEqual(before);
+  expect(completed).toEqual(['/assets/crop-cards.png']);
+  expect(requests.every(path=>path==='/assets/crop-cards.png')).toBe(true);
 });
 
 test('Expert navigation and portrait play original PCM only when enabled, with mute and missing sound recovery',async({page})=>{
@@ -113,13 +119,20 @@ test('Expert navigation and portrait play original PCM only when enabled, with m
 });
 
 test('missing or malformed Expert resources fail before creating a farm',async({page})=>{
-  for(const url of ['expert-portrait.png','expert-launcher.png','ui-content.json']){
+  for(const url of ['expert-portrait.png','expert-launcher.png','ui-content.json','crop-cards.png']){
     await page.route(`**/assets/${url}`,r=>r.fulfill({status:404,body:'Missing Expert asset'}));await page.goto('/');
     await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('.loading')).toContainText(url);await expect(page.locator('#world')).toHaveCount(0);await page.unroute(`**/assets/${url}`);
   }
   const data=JSON.parse(readFileSync('public/assets/ui-content.json','utf8'));data.expertCards.pop();
   await page.route('**/assets/ui-content.json',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)}));await page.goto('/');
   await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('#world')).toHaveCount(0);
+});
+
+test('wrong-size crop sheets fail before gameplay and recover on reload',async({page})=>{
+  await page.route('**/assets/crop-cards.png',r=>r.fulfill({contentType:'image/png',body:PNG.sync.write(new PNG({width:112,height:64}))}));
+  await page.goto('/');await expect(page.locator('.loading')).toContainText('Invalid crop card sprite sheet');
+  await expect(page.locator('#world')).toHaveCount(0);await page.unroute('**/assets/crop-cards.png');
+  await page.reload();await expect(page.locator('#map-status')).toContainText('Scenario 1');
 });
 
 

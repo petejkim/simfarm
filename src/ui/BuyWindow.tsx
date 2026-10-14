@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { assetUrl, type GameAssets } from '../assets/game-assets';
+import { type GameAssets } from '../assets/game-assets';
+import { cropCardFrame } from '../formats/crop-graphics';
 import { BUY_CATEGORIES, type BuyCategory } from '../formats/buy-window';
 import type { GameSnapshot } from '../simulation/game';
 import { shopProduct, type ShopProduct } from '../simulation/shop-product';
@@ -32,7 +33,7 @@ export function BuyWindow({ assets, snapshot, tiles, onBuy }: { assets: GameAsse
       <div className="buy-middle">
         <SunkenInset className="buy-photo">
           <div className="buy-card" role="img" aria-label={`${product.name} illustration`}>
-            {product.cropId ? <Sprite image={assetUrl(`${product.cropId}.card.png`)} x={0} y={0} width={112} height={64} />
+            {product.cropId ? <Sprite image={assets.cropCards.src} {...cropCardFrame(product.cropId)} />
               : product.card !== null && <Sprite image={assets.buyCards.src} x={product.card%8*112} y={Math.floor(product.card/8)*64} width={112} height={64} />}
           </div>
         </SunkenInset>

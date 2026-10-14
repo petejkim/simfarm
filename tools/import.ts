@@ -15,8 +15,8 @@ import { readMapArtwork } from '../src/formats/map-window';
 import { readFile, writeFile, mkdir, readdir, rm } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { PNG } from 'pngjs';
-import { patchCropGraphics, readCropIcons } from '../src/formats/crop-graphics';
+import { PNG, type PackerOptions } from 'pngjs';
+import { patchCropGraphics, readCropIcons, cropSpriteSheets } from '../src/formats/crop-graphics';
 import { FIXED_CROP_FILES } from '../src/formats/crop-slots';
 import { renderRegionMaps } from '../src/render/region-chooser';
 import { readRegionArtwork } from '../src/formats/region-artwork';
@@ -55,10 +55,10 @@ function appIcon(source: Raster, size: number): Raster {
   }
   return { width: size, height: size, rgba };
 }
-async function png(name: string, raster: Raster) {
+async function png(name: string, raster: Raster, options?: PackerOptions) {
   const image = new PNG({ width: raster.width, height: raster.height });
   image.data = Buffer.from(raster.rgba);
-  await writeFile(join(output, name), PNG.sync.write(image));
+  await writeFile(join(output, name), PNG.sync.write(image, options));
 }
 await mkdir(join(output, 'raw/crops'), { recursive: true });
 const [index, data, exe] = await Promise.all([read('MEGADATA.IDX'), read('MEGADATA.EEA'), read('SIMFARM.EXE')]);
@@ -138,8 +138,16 @@ for (const name of (await readdir(join(source, 'CROPS'))).filter(n => /\.crp$/i.
   await writeFile(join(output, 'raw/crops', name.toLowerCase()), bytes);
   cropBytes.set(name.toLowerCase(), bytes);
   inputs.push({ name: `CROPS/${name}`, size: bytes.length, sha256: sha256(bytes) });
-  await png(`${id}.png`, tileAtlas(bytes.subarray(0, 0x400), palette, 8));
-  await png(`${id}.card.png`, decodePlanar(bytes.subarray(0x400, 0x1200), 112, 64, palette));
+}
+const cropSheets = cropSpriteSheets(cropBytes, palette);
+// CRP tiles/photos are opaque; lossless RGB avoids storing an unused alpha channel.
+await png('crop-tiles.png', cropSheets.tiles, { colorType: 2 });
+await png('crop-cards.png', cropSheets.cards, { colorType: 2 });
+// Exact obsolete generated crop exports only; keep raw CRPs and other illustrations.
+for (const file of FIXED_CROP_FILES) {
+  const id = file.slice(0, -4);
+  await rm(join(output, `${id}.png`), { force: true });
+  await rm(join(output, `${id}.card.png`), { force: true });
 }
 // Native sprite sheets (user request): every runtime tile atlas is an imported PNG file, so sprites share one file
 // instead of generated data: URLs. The terrain atlas holds all twenty-four shipped crops at fixed positions

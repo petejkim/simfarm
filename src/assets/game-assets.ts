@@ -2,6 +2,7 @@ import {readAboutCredits} from '../formats/about';
 import {registerInvertedTiles} from './inverted-tiles';
 import {registerWeatherTiles} from './weather-tiles';
 import {TOWN_EVENT_SHEET_WIDTH,TOWN_EVENT_SHEET_HEIGHT} from '../formats/town-event-graphics';
+import {CROP_CARD_SHEET_WIDTH,CROP_CARD_SHEET_HEIGHT} from '../formats/crop-graphics';
 import {readUiContentJson} from '../formats/ui-content';
 import type {EventMessageText} from '../formats/event-messages';
 import { readExamineDataJson, type ExamineData } from '../formats/examine';
@@ -51,7 +52,7 @@ export interface Catalog {
 export interface WindowArtwork { title: HTMLImageElement; inactive: HTMLImageElement; close: HTMLImageElement; end: HTMLImageElement; endInactive: HTMLImageElement; frame: HTMLImageElement }
 export interface WeatherArtwork {frame:HTMLImageElement;sky:HTMLImageElement;ground:HTMLImageElement;vane:HTMLImageElement}
 export interface AboutAssets {frame:HTMLImageElement;logo:HTMLImageElement;credits:string[][]}
-export interface GameAssets { editCursors:{pick:HTMLImageElement;drop:HTMLImageElement;view:HTMLImageElement;bulldoze:HTMLImageElement;spray:HTMLImageElement;buy:HTMLImageElement}; about:AboutAssets; townEventTiles: HTMLImageElement; townChoiceArtwork:HTMLImageElement; balanceArtwork:HTMLImageElement; weatherArtwork:WeatherArtwork; expertPortrait:HTMLImageElement; expertLauncher:HTMLImageElement; timeToggle:HTMLImageElement; expertDeck:ExpertDeck; aircraftArtwork:HTMLImageElement; messageArtwork:HTMLImageElement; eventText:readonly EventMessageText[]; editStatusText:readonly string[]; examineData: ExamineData; scheduleArtwork: HTMLImageElement; fieldGauges: HTMLImageElement; mapArtwork: HTMLImageElement; mapTiles: HTMLImageElement; catalog: Catalog; mainMenus: MainMenus; controlBar: HTMLImageElement; editPalette: HTMLImageElement; sellArtwork: HTMLImageElement; sellCondition: HTMLImageElement; buyArtwork: HTMLImageElement; buyCards: HTMLImageElement; buyCatalog: BuyCatalog; itemText: Uint8Array; windowArtwork: WindowArtwork; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
+export interface GameAssets { editCursors:{pick:HTMLImageElement;drop:HTMLImageElement;view:HTMLImageElement;bulldoze:HTMLImageElement;spray:HTMLImageElement;buy:HTMLImageElement}; about:AboutAssets; townEventTiles: HTMLImageElement; cropCards: HTMLImageElement; townChoiceArtwork:HTMLImageElement; balanceArtwork:HTMLImageElement; weatherArtwork:WeatherArtwork; expertPortrait:HTMLImageElement; expertLauncher:HTMLImageElement; timeToggle:HTMLImageElement; expertDeck:ExpertDeck; aircraftArtwork:HTMLImageElement; messageArtwork:HTMLImageElement; eventText:readonly EventMessageText[]; editStatusText:readonly string[]; examineData: ExamineData; scheduleArtwork: HTMLImageElement; fieldGauges: HTMLImageElement; mapArtwork: HTMLImageElement; mapTiles: HTMLImageElement; catalog: Catalog; mainMenus: MainMenus; controlBar: HTMLImageElement; editPalette: HTMLImageElement; sellArtwork: HTMLImageElement; sellCondition: HTMLImageElement; buyArtwork: HTMLImageElement; buyCards: HTMLImageElement; buyCatalog: BuyCatalog; itemText: Uint8Array; windowArtwork: WindowArtwork; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
 export const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}assets/${path}`;
 
 async function response(path: string, signal?: AbortSignal): Promise<Response> {
@@ -82,7 +83,7 @@ export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
   ]);
   if(expert[1].naturalWidth!==112||expert[1].naturalHeight!==64||expert[2].naturalWidth!==26||expert[2].naturalHeight!==26)throw new Error('Invalid Expert artwork');
   if(expert[3].naturalWidth!==52||expert[3].naturalHeight!==26)throw new Error('Invalid pause/resume artwork');
-  const [movePick,moveDrop,viewCursor,bulldozeCursor,sprayCursor,buyCursor,aboutFrame,aboutLogo,aboutCredits,townEventTiles,townChoiceArtwork,balanceArtwork,weatherFrame,weatherSky,weatherGround,weatherVane,aircraftArtwork,messageArtwork,eventText,editStatusText,examineData, scheduleArtwork, fieldGauges, catalog, maskedTiles, townLayouts, airplane, shadow, dust, tornado, swarm, mainMenus, controlBar, editPalette, buyArtwork, buyCards, buyCatalog, itemText, mapArtwork, mapTiles, sellArtwork, sellCondition, windowFrame, windowTitle, windowInactive, windowClose, windowEnd, windowEndInactive] = await Promise.all([
+  const [movePick,moveDrop,viewCursor,bulldozeCursor,sprayCursor,buyCursor,aboutFrame,aboutLogo,aboutCredits,townEventTiles,townChoiceArtwork,balanceArtwork,weatherFrame,weatherSky,weatherGround,weatherVane,aircraftArtwork,messageArtwork,eventText,editStatusText,examineData, scheduleArtwork, fieldGauges, catalog, maskedTiles, townLayouts, airplane, shadow, dust, tornado, swarm, mainMenus, controlBar, editPalette, buyArtwork, buyCards, buyCatalog, itemText, mapArtwork, mapTiles, sellArtwork, sellCondition, windowFrame, windowTitle, windowInactive, windowClose, windowEnd, windowEndInactive, cropCards] = await Promise.all([
     image('move-pick.png',signal),image('move-drop.png',signal),image('edit-view.png',signal),image('edit-bulldoze.png',signal),image('edit-spray.png',signal),image('edit-buy.png',signal),image('about-window.png',signal),image('about-logo.png',signal),response('raw/creditz.txt',signal).then(r=>r.arrayBuffer()).then(b=>readAboutCredits(new Uint8Array(b))),
     loadTownEventTiles(signal), image('town-choice.png',signal),image('balance-window.png',signal),image('weather-window.png',signal),image('weather-sky.png',signal),image('weather-ground.png',signal),image('weather-vane.png',signal),
     image('aircraft-window.png',signal),image('popup.bmp.png',signal),expert[0].eventMessages,expert[0].editStatuses,
@@ -97,7 +98,7 @@ export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
     response('raw/itemtext.dat', signal).then(r => r.arrayBuffer()).then(b => new Uint8Array(b)),
     image('map-window.png', signal),
     atlasFile('map-tiles', signal),
-    image('sell-window.png', signal), image('sell-condition.png', signal), image('window-frame.png', signal), image('window-title.png', signal), image('window-title-inactive.png', signal), image('window-close.png', signal), image('window-title-end.png', signal), image('window-title-end-inactive.png', signal),
+    image('sell-window.png', signal), image('sell-condition.png', signal), image('window-frame.png', signal), image('window-title.png', signal), image('window-title-inactive.png', signal), image('window-close.png', signal), image('window-title-end.png', signal), image('window-title-end-inactive.png', signal), loadCropCards(signal),
   ]);
   if([movePick,moveDrop,viewCursor,bulldozeCursor,sprayCursor,buyCursor].some(i=>i.naturalWidth!==16||i.naturalHeight!==16))throw new Error('Invalid Edit cursor');
   if(aboutFrame.naturalWidth!==400||aboutFrame.naturalHeight!==224||aboutLogo.naturalWidth!==104||aboutLogo.naturalHeight!==112)throw new Error('Invalid About artwork');
@@ -116,7 +117,7 @@ export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
   if (scheduleArtwork.naturalWidth !== 336 || scheduleArtwork.naturalHeight !== 224 || fieldGauges.naturalWidth !== 960 || fieldGauges.naturalHeight !== 24) throw new Error('Invalid Schedule artwork');
   if(balanceArtwork.naturalWidth!==400||balanceArtwork.naturalHeight!==224)throw new Error('Invalid Balance Sheet artwork');
   if(townChoiceArtwork.naturalWidth!==368||townChoiceArtwork.naturalHeight!==224)throw new Error('Invalid town choice artwork');
-  return { editCursors:{pick:movePick,drop:moveDrop,view:viewCursor,bulldoze:bulldozeCursor,spray:sprayCursor,buy:buyCursor},about:{frame:aboutFrame,logo:aboutLogo,credits:aboutCredits},townEventTiles,townChoiceArtwork,balanceArtwork,weatherArtwork:{frame:weatherFrame,sky:weatherSky,ground:weatherGround,vane:weatherVane},expertPortrait:expert[1],expertLauncher:expert[2],timeToggle:expert[3],expertDeck:expert[0].expertDeck,aircraftArtwork,messageArtwork,eventText,editStatusText,examineData, scheduleArtwork, fieldGauges, mapArtwork, mapTiles, sellArtwork, sellCondition, catalog, mainMenus, controlBar, editPalette, buyArtwork, buyCards, buyCatalog, itemText, windowArtwork: { title: windowTitle, inactive: windowInactive, close: windowClose, end: windowEnd, endInactive: windowEndInactive, frame: windowFrame }, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
+  return { editCursors:{pick:movePick,drop:moveDrop,view:viewCursor,bulldoze:bulldozeCursor,spray:sprayCursor,buy:buyCursor},about:{frame:aboutFrame,logo:aboutLogo,credits:aboutCredits},townEventTiles,cropCards,townChoiceArtwork,balanceArtwork,weatherArtwork:{frame:weatherFrame,sky:weatherSky,ground:weatherGround,vane:weatherVane},expertPortrait:expert[1],expertLauncher:expert[2],timeToggle:expert[3],expertDeck:expert[0].expertDeck,aircraftArtwork,messageArtwork,eventText,editStatusText,examineData, scheduleArtwork, fieldGauges, mapArtwork, mapTiles, sellArtwork, sellCondition, catalog, mainMenus, controlBar, editPalette, buyArtwork, buyCards, buyCatalog, itemText, windowArtwork: { title: windowTitle, inactive: windowInactive, close: windowClose, end: windowEnd, endInactive: windowEndInactive, frame: windowFrame }, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
 }
 export async function loadScenarioAssets(id: number, signal: AbortSignal) {
   const [buffer, tiles] = await Promise.all([
@@ -191,4 +192,10 @@ async function loadTownEventTiles(signal: AbortSignal): Promise<HTMLImageElement
 }
 function loadMaskedTiles(signal: AbortSignal): Promise<HTMLImageElement> {
   return image('masked-tiles.png', signal);
+}
+async function loadCropCards(signal: AbortSignal): Promise<HTMLImageElement> {
+  const sheet = await image('crop-cards.png', signal);
+  if (sheet.naturalWidth !== CROP_CARD_SHEET_WIDTH || sheet.naturalHeight !== CROP_CARD_SHEET_HEIGHT)
+    throw new Error('Invalid crop card sprite sheet');
+  return sheet;
 }

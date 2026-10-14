@@ -3,6 +3,7 @@ import { expectFarmCash } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { shopFixture } from '../support/livestock';
 import { browserCrops } from '../support/crop-catalog';
+import { expectCropPhoto } from '../support/crop-photo';
 
 async function save(page: Page) {
   const pending = page.waitForEvent('download');
@@ -19,7 +20,7 @@ async function start(page: Page) {
   return game;
 }
 test('original Buy catalog keeps source geometry and ordering, exposes all crops and leaves browsing out of saves', async ({ page }) => {
-  await start(page); const before = await save(page);
+  const game=await start(page); const before = await save(page);
   await page.locator('#window-buy').click(); const catalog = page.getByRole('region', { name: 'Buy catalog' });
   // Shared frame around a 240×216 client built from components: no background bitmap or canvas.
   await expect(catalog.locator('img,canvas')).toHaveCount(0);
@@ -39,6 +40,7 @@ test('original Buy catalog keeps source geometry and ordering, exposes all crops
   for (let i = 0; i < 24; i++) {
     names.add((await page.locator('#buy-description').textContent())!);
     await expect(catalog.getByRole('img', { name: /illustration$/ })).toHaveCount(1);
+    await expectCropPhoto(catalog.locator('.buy-card .sprite'),game.getSnapshot().scenario.cropFiles[i].slice(0,-4));
     await catalog.getByRole('button', { name: 'Next item' }).click();
   }
   expect(names.size).toBe(24); await expect(page.locator('#buy-description')).toHaveText(first!);

@@ -1,5 +1,6 @@
 import { useMemo,useState,type RefObject } from 'react';
-import { assetUrl,type GameAssets } from '../assets/game-assets';
+import { type GameAssets } from '../assets/game-assets';
+import { cropCardFrame } from '../formats/crop-graphics';
 import { expertHeading,expertPage,expertTextBesideArt } from '../formats/expert-cards';
 import type { GameEvent } from '../simulation/events';
 import { GameWindow,useWindows } from './GameWindow';
@@ -37,7 +38,7 @@ export function ExpertWindow({assets,cropFiles,tiles,focusRef,onEvent}:{assets:G
         </div>;
         if(c.kind==='picture'&&(c.card<16||c.cropSlot!==undefined)){
           const item=crop(c.cropSlot??c.card);
-          return <Sprite className="expert-picture" key={i} image={assetUrl(`${item.id}.card.png`)} x={0} y={0} width={112} height={64} label={`${item.name}, original crop illustration`} style={style}/>;
+          return <Sprite className="expert-picture" key={i} image={assets.cropCards.src} {...cropCardFrame(item.id)} label={`${item.name}, original crop illustration`} style={style}/>;
         }
         if(c.kind==='picture')return <Sprite className="expert-picture" key={i} image={assets.buyCards.src} x={c.card%8*112} y={Math.floor(c.card/8)*64} width={112} height={64} style={style}/>;
         if(c.kind==='tiles')return <span className="expert-tiles" key={i} style={{...style,gridTemplateColumns:`repeat(${c.columns},16px)`}}>

@@ -1,5 +1,6 @@
 import { useState, type Ref } from 'react';
-import { assetUrl, type GameAssets } from '../assets/game-assets';
+import { type GameAssets } from '../assets/game-assets';
+import { cropCardFrame } from '../formats/crop-graphics';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
 import { sellProducts, type SellCategory, type SellProduct } from '../simulation/sell-products';
 import { ConditionBadge, CONDITION_WORDS } from './ConditionBadge';
@@ -38,7 +39,7 @@ export function SellWindow({assets,snapshot,tiles,onCommand,focusRef}:{assets:Ga
         <div className="sell-heading">
           <SunkenInset className="sell-photo">
             <div className="sell-card" role="img" aria-label={product?`${product.name} illustration`:'Nothing for sale'}>
-              {product?.cropId?<Sprite image={assetUrl(`${product.cropId}.card.png`)} x={0} y={0} width={112} height={64}/>
+              {product?.cropId?<Sprite image={assets.cropCards.src} {...cropCardFrame(product.cropId)}/>
                 :<Sprite image={assets.buyCards.src} x={card%8*112} y={Math.floor(card/8)*64} width={112} height={64}/>}
             </div>
           </SunkenInset>
