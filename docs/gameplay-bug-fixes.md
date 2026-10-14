@@ -7,7 +7,7 @@ User authorized these twelve native corrections on2026-10-13, one conventional c
 | SF-071 | Loan arrears settlement | Complete; principal, credit and town allocations settle once for direct/forced payments. |
 | SF-074 | Full payoff clears overdue loan state | Complete; repayment clears loan-only debt/countdown, including explicit legacy repair. |
 | SF-129 | Wind damage cadence | Complete; one nutrient per exposed field per full game day, with saved clock updates. |
-| SF-001 | Regional-condition subtraction | Pending |
+| SF-001 | Regional-condition subtraction | Complete |
 | SF-026 | Duplicate crop-income posting | Pending |
 | SF-041 | Report expense omissions | Pending |
 | SF-042 | Worker expense annual reset | Pending |
@@ -36,3 +36,10 @@ Checks: type checking/build,19loan/live unit cases(3.15s),3Bank browser cases(6.
 Accepted wind start now captures its animation tick; rejected starts keep the previous clock. Each accepted damage interval advances the canonical windReferenceTick. Native policy is one nutrient unit per exposed active field per full game day (`elapsed>dayDelay`), not each animation call. Retains the source tree protection threshold, sparse-record guard and unsigned16-bit elapsed/wrap. This is an explicitly authorized native cadence correction, not proof of original intent or absence of all indirect DOS writers. Uses the existing checkpoint field; loading does not reset it or replay damage.
 
 Checks: build/type checking;10wind/live-disaster cases(1.89s);1browser cadence/load scenario(2.4s). The first draft test overlooked odd-day soil recovery+1 and read fields from the serialized envelope rather than the decoded scenario; corrected only those assertions, then all passed. Paired no-wind baseline establishes exactly one unit of damage despite recovery; pause/save/restore/wrap and rejected starts are covered. Logs artifacts/bugfix-129-*.log.
+
+
+## SF-001 — native correction
+
+Regional toxicity, disease, pests, weeds and nutrient reductions now saturate at zero, matching local field subtraction. The reversed original branches and examples remain preservation evidence; unknown channels and unrelated nutrient modes remain unchanged.
+
+Checks: Build/type checking,22 focused simulation/treatment/weekly tests and1 browser all-treatment flow pass. Exhaustive256×256 reductions cover all five affected channels; unrelated regional bytes remain intact. Logs artifacts/bugfix-001-*.log.

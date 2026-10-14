@@ -8,13 +8,15 @@ Current triage: [2026-10-13 gameplay-impact review](original-bugs-gameplay-revie
 
 ## SF-001 — reversed regional-condition subtraction
 
-**Status:** confirmed arithmetic defect; preserved in the native port pending a compatibility decision.
+**Status:** original evidence retained; corrected natively on2026-10-13 by user request.
 
 The regional decrement helpers compare the current byte with the amount and jump on **above** to a branch that writes zero. Otherwise they subtract the amount in an eight-bit register. Thus `20 - 8` becomes 0, while `5 - 8` becomes 253. The matching field-local decrement saturates at zero, so field and region can diverge substantially.
 
 Evidence: branches at `0x1c5a5`, `0x1c63b`, `0x1c723`, `0x1c767`, `0x1c7fd`; regional offsets `2d56:01dd`, `:014d`, `:038d`, `:026d`, `:02fd`. Caller dispatch: `0x19846`–`0x19c61`. These helpers affect regional condition values used by field operations; exact downstream gameplay impact remains to be traced.
 
 Native handling: `changeFieldCondition` deliberately reproduces the comparison and byte wrap. Regression cases cover both examples. A future correction would clamp subtraction at zero; make that an explicit enhancement/compatibility decision and retain tests for the original mode.
+
+Native correction (2026-10-13): Regional toxicity, disease, pests, weeds and nutrient reductions now saturate at zero, matching local field subtraction. The reversed original branches and examples remain preservation evidence; unknown channels and unrelated nutrient modes remain unchanged. Earlier preservation/status notes above describe the pre-correction implementation. Build/type checking,22 focused simulation/treatment/weekly tests and1 browser all-treatment flow pass. Exhaustive256×256 reductions cover all five affected channels; unrelated regional bytes remain intact. Logs artifacts/bugfix-001-*.log.
 
 ## SF-002 — unassigned season at week 22
 

@@ -3872,3 +3872,10 @@ Type checking/build,19focused loan/live unit cases(3.15s),3Bank browser cases(6.
 After53357d1, accepted wind starts establish a fresh canonical windReferenceTick and accepted damage intervals advance it. Explicit native policy: one nutrient per exposed active field per full game day, preserving strict source elapsed gate,16-bit wrap,8-tree protection and sparse traversal. Existing checkpoint ownership resumes the interval through pause/load; no schema reset/replayed damage. This correction does not assert the original intended cadence or resolve indirect-writer research.
 
 Build/type checking,10wind/live unit cases(1.89s),1browser cadence/reload check(2.4s) and diff pass. Initial new test expectations missed odd-day soil recovery and decoded-fields versus serialized-envelope distinction; assertions corrected without runtime changes. Paired no-wind comparison proves one-unit damage. Logs artifacts/bugfix-129-*.log. Nine requested fixes remain; SF-001 regional subtraction follows. A full regression milestone is planned after the twelve related corrections, not per issue.
+
+
+## 2026-10-13 — requested corrections4/12: SF-001
+
+Regional toxicity, disease, pests, weeds and nutrient reductions now saturate at zero, matching local field subtraction. The reversed original branches and examples remain preservation evidence; unknown channels and unrelated nutrient modes remain unchanged.
+
+Build/type checking,22 focused simulation/treatment/weekly tests and1 browser all-treatment flow pass. Exhaustive256×256 reductions cover all five affected channels; unrelated regional bytes remain intact. Logs artifacts/bugfix-001-*.log. See docs/gameplay-bug-fixes.md. Original evidence retained; no source distribution changes or push.

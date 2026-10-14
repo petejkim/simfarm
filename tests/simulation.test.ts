@@ -61,7 +61,7 @@ test('original independent random streams, rejection-state quirk and monthly per
   assert.throws(() => rng.below(0));
 });
 
-test('field conditions retain saturation, resistance and original regional subtraction behavior', () => {
+test('field conditions retain saturation, resistance and corrected regional subtraction', () => {
   const field = readScenario(source('SCEN0.SSM')).fields[1], crop = definition('grapes');
   const regions = new Uint8Array(1008), region = (5 * 12 + 4) * 7;
   field.bytes[20] = 250;
@@ -69,10 +69,10 @@ test('field conditions retain saturation, resistance and original regional subtr
   assert.equal(field.bytes[20], 255); assert.equal(regions[region + 2], 16);
   regions[region + 6] = 5;
   changeFieldCondition(field, crop, regions, 13, 8);
-  assert.equal(field.bytes[29], 0); assert.equal(regions[region + 6], 253);
+  assert.equal(field.bytes[29], 0); assert.equal(regions[region + 6], 0);
   regions[region + 6] = 20;
   changeFieldCondition(field, crop, regions, 13, 8);
-  assert.equal(regions[region + 6], 0);
+  assert.equal(regions[region + 6], 12);
   field.bytes[30] = 2;
   changeFieldCondition(field, crop, regions, 17, 3);
   assert.equal(field.bytes[30], 2); // Original leaves this nutrient unchanged when amount exceeds it.
@@ -192,4 +192,20 @@ test('an original corn field grows through expiry, returns fertility and clears 
   clearFieldCrop(field, crop, scenario.regionalConditions, scenario.cells);
   assert.equal(field.bytes[29], Math.min(255, nutrient + 10));
   assert.deepEqual(updateGrowingField(field, crop, context), { updated: false, expired: false });
+});
+
+
+test('all five regional reductions saturate across the complete byte domain', () => {
+  const field=readScenario(source('SCEN0.SSM')).fields[1],crop=definition('grapes'),regions=new Uint8Array(1008);
+  const base=(5*12+4)*7;
+  for(const [mode,channel,offset] of [[2,5,32],[6,3,22],[8,2,20],[10,4,21],[13,6,29]]) {
+    regions.fill(71);
+    for(let current=0;current<256;current++)for(let amount=0;amount<256;amount++) {
+      regions[base+channel]=current;field.bytes[offset]=current;
+      changeFieldCondition(field,crop,regions,mode,amount);
+      assert.equal(regions[base+channel],Math.max(0,current-amount));
+      assert.equal(field.bytes[offset],Math.max(0,current-amount));
+    }
+    regions[base+channel]=71;assert.ok(regions.every(n=>n===71));
+  }
 });

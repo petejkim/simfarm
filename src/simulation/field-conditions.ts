@@ -11,10 +11,9 @@ export function changeFieldCondition(field: FieldRecord, crop: readonly number[]
   const subtract = (offset: number) => { bytes[offset] = Math.max(0, bytes[offset] - amount); };
   const changeRegion = (channel: number, increase: boolean) => {
     const index = region * 7 + channel;
-    // Preserve the original reversed comparison in 0x1c580/616/6fe/742/7d8.
-    // Reductions zero values ABOVE the amount and wrap values BELOW it.
+    // SF-001: native reductions saturate; original reversed branches remain documented.
     regions[index] = increase ? Math.min(255, regions[index] + amount)
-      : regions[index] > amount ? 0 : (regions[index] - amount) & 255;
+      : Math.max(0, regions[index] - amount);
   };
   switch (mode) {
     case 0: for (const m of [13, 17, 15]) changeFieldCondition(field, crop, regions, m, amount); break;
