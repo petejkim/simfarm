@@ -56,8 +56,11 @@ function Game({ assets }: { assets: GameAssets }) {
   const sound = useSound();
   const onGameEvent = useCallback((event: GameEvent) => {
     if (event.type === 'music') music.requestTrack(event.track);
-    else if(event.type==='sound') sound.play(event.sound);
-  }, [music.requestTrack, sound.play]);
+    else if(event.type==='sound') {
+      // Original action confirmations share the button-click voice and its persisted preference.
+      if(event.sound==='click')sound.click();else sound.play(event.sound);
+    }
+  }, [music.requestTrack, sound.play, sound.click]);
   if (!farm) return null;
   return <WindowDesktop artwork={assets.windowArtwork} onButtonClick={sound.click}>
     <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded} openNewGame={farm.firstStart} autosave={autosave} autosaveNow={farm.autosaveNow} startMessage={farm.notice}

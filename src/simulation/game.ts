@@ -730,6 +730,8 @@ export class GameSimulation {
       this.lastTreatmentResult = orderTreatment(this.scenario, command.fieldSlot, command.treatment, this.weather.soilMoisture);
       if (this.lastTreatmentResult.ok) {
         recordFieldPlanOrder(this.scenario, this.crops, command.fieldSlot, { kind: command.treatment });
+        // Successful Spray branches26dc7/26e56/26ef2/26f82 join26f86 with click.voc.
+        this.events.push({type:'sound',sound:'click'});
         appendEditStatus(this.editStatus,68); // Original26f8e clears the current prompt.
       } else if(this.lastTreatmentResult.reason==='field-busy')appendEditStatus(this.editStatus,21);
       else if(this.lastTreatmentResult.reason==='no-supplies'||this.lastTreatmentResult.reason==='insufficient-funds')appendEditStatus(this.editStatus,75);

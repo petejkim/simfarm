@@ -1,4 +1,7 @@
 import {test,expect,type Page} from '@playwright/test';
+import {disasterFixture} from '../support/disasters';
+import {browserCrops} from '../support/crop-catalog';
+import {readSaveText} from '../support/save-file';
 async function count(page:Page){return page.evaluate(()=>(window as any).__pcm.filter((e:any)=>e.kind==='start'&&e.length===2667).length);}
 test.beforeEach(async({page})=>{
   await page.addInitScript(()=>{
@@ -114,4 +117,48 @@ test('cached PCM preserves selective stopping and voice limits, and disposal rel
   expect(starts[2].buffer).not.toBe(starts[0].buffer);
   expect(starts.slice(3,12).every((e:any)=>e.buffer===starts[0].buffer)).toBe(true);
   expect(starts[12].buffer).not.toBe(starts[0].buffer);
+});
+
+for(const touch of [false,true])test.describe(touch?'touch Spray confirmation':'mouse Spray confirmation',()=>{
+  if(touch)test.use({hasTouch:true,isMobile:true,viewport:{width:390,height:844}});
+  test('successful treatments click once, rejected orders stay silent, and both audio preferences apply',async({page})=>{
+    async function load(text:string){await page.locator('#load-farm-file').setInputFiles({name:'spray.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
+    async function save(){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await(await pending).path())!));}
+    async function point(x:number,y:number){
+      await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-5)*16,Math.max(0,p.y-5)*16),{x,y});
+      const r=(await page.locator('#world').boundingBox())!,tile=r.width/96,p={x:r.x+(x+.5)*tile,y:r.y+(y+.5)*tile};
+      if(touch)await page.touchscreen.tap(p.x,p.y);else await page.mouse.click(p.x,p.y);
+    }
+    async function choose(label:string,audible:boolean){
+      const before=await count(page);await page.getByRole('button',{name:'SPRAY',exact:true}).click();
+      if(audible)await expect.poll(()=>count(page)).toBe(before+1);
+      await page.getByRole('menuitem',{name:label,exact:true}).click();
+      if(audible)await expect.poll(()=>count(page)).toBe(before+2);
+    }
+    const fixture=disasterFixture();fixture.state.disasters.enabled=false;fixture.state.scenario.farm.autoScroll=false;
+    for(const [kind,label] of [['fertilizer','Fertilizer'],['pesticide','Pesticide'],['herbicide','Herbicide'],['fungicide','Fungicide']] as const){
+      const game=fixture.load().withAllCrops(browserCrops);await load(game.save(4));await choose(label,true);
+      const before=await count(page);await point(30,30);expect(await count(page)).toBe(before);
+      await point(22,22);game.dispatch({type:'treat-field',fieldSlot:1,treatment:kind});
+      expect(game.getSnapshot().lastTreatmentResult?.ok).toBe(true);await expect.poll(()=>count(page)).toBe(before+1);
+      await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('');
+      await point(22,22);await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('Field is busy.');
+      expect(await count(page)).toBe(before+1);expect(await save()).toEqual(JSON.parse(game.save(4)));
+      const after=await count(page);await load(game.save(4));expect(await count(page)).toBe(after); // no replay
+    }
+    await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Button Click Sounds',exact:true}).click();
+    for(const masterMuted of [false,true]){
+      if(masterMuted){
+        // Restore the click option while muting the sound master: either preference must suppress confirmation.
+        await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Button Click Sounds',exact:true}).click();
+        await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true}).click();
+      }
+      const game=fixture.load().withAllCrops(browserCrops);await load(game.save(4));await choose('Fertilizer',false);
+      const before=await count(page);await point(22,22);game.dispatch({type:'treat-field',fieldSlot:1,treatment:'fertilizer'});
+      await expect(page.getByRole('button',{name:'Edit message history'})).toHaveText('');expect(await count(page)).toBe(before);
+      expect(await save()).toEqual(JSON.parse(game.save(4)));
+    }
+    const samples=await page.evaluate(()=>(window as any).__pcm.filter((e:any)=>e.kind==='start'&&e.length===2667));
+    expect(samples.every((e:any)=>e.audible&&e.state==='running')).toBe(true);
+  });
 });

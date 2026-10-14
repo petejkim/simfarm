@@ -51,6 +51,21 @@ Schedule opens through View object on an active field or its original window con
 
 Validation pins source descriptors, chains and instruction call sites; compares popup geometry and exact crop icon pixels; and exercises keyboard/cancellation without save mutations. Browser flows create all24 crops, reject occupied/out-of-bounds placements and missing seeds, apply all four treatments, reject busy/invalid fields, and compare saved outcomes/continued work with independently dispatched canonical commands. Full results are in [progress.md](progress.md). No new original defect was established; SF-018 remains recorded in [original-bugs.md](original-bugs.md).
 
+## Spray confirmation audio
+
+User report2026-10-13: successful field spraying lacked confirmation even with Button Click Sounds enabled. The native command had restored quick-message68 but omitted the preceding source sound call. Source hash of26d3c..26fa9 (end-exclusive26faa) is `4ed0328215db8173beeb07bc25ee47e5610910da41cc39e6d03f710973e1d6c8`; SIMFARM.EXE SHA256 is `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`. Initialized DS starts at file846f0.
+
+| Treatment | Successful filename push | DS filename |
+| --- | --- | --- |
+|Fertilizer|26dc7|5a95|
+|Pesticide|26e56|5a9f|
+|Fungicide|26ef2|5aa9|
+|Herbicide|26f82|5ab3|
+
+All four strings are exactly `click.voc\0`. The first three push DS and the filename pointer, then jump to26f86; the fourth falls through. Shared bytes26f86..26f8d are `9ab6082a2183c404` (call212a:08b6, then discard the pointer), followed by blank quick-message68 at26f8e. No-field exits26d42/26dd4/26e70/26f00 and busy/supply failures26f2e/26e5e bypass this success-only audio. Confidence high from exact caller bytes, shared branch destinations and resource strings; tests pin all of them. Source record boundaries, consumption/state/plan order and source PCM samples remain intact.
+
+The canonical `treat-field` success branch now emits one transient `sound:'click'` event. App routes it to the cached button-click voice so the user's Button Click Sounds preference applies, in addition to Sound Effects mute. Audio requests remain independent of treatment state and never enter checkpoints. This is a native reconstruction omission correction, not a new original bug. Rejections stay silent; clicking a Spray menu item still has ordinary HTML button feedback. Mouse/touch checks verify all four successes, failed/busy orders, both mute preferences and complete checkpoint equality without replay on reload. Other original window/driver arbitration remains a separate fidelity gap.
+
 ## Interim treatment form retirement
 
 Removed FieldCare and its Field information props/callbacks. All four immediate treatments now use the original Spray popup and repeated field-click interaction exclusively. Canonical state/equipment/supply guards, stored-stock use, delivery payment and plan recording remain unchanged; the source route26c75/26d3c..26f86 above is the evidence for this replacement. Migrated stored-supply and full farming-cycle checks to actual Spray clicks. The subsequent Field orders retirement removed the immediate existing-field replant/harvest UI; their internal command adapters do not establish original-route fidelity.
