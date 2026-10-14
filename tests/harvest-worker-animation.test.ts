@@ -3,7 +3,7 @@ import {test,expect} from 'bun:test';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {HarvestWorkerAnimation,harvestWorkerTile} from '../src/render/harvest-workers';
-import {drawWorld} from '../src/render/world-renderer';
+import {drawWorldBase} from '../src/render/world-renderer';
 import type {Scenario} from '../src/formats/scenario';
 
 const exe=readFileSync(new URL('../../simfarm-dos/SIMFARM.EXE',import.meta.url));
@@ -36,7 +36,7 @@ test('world composition animates only visible worker overlays without mutating s
     const before=structuredClone(scenario),calls:unknown[][]=[];
     const context={drawImage:(...args:unknown[])=>calls.push(args)} as unknown as CanvasRenderingContext2D;
     const base={} as CanvasImageSource,mask={} as CanvasImageSource;
-    drawWorld(context,scenario,base,mask,undefined,1);
+    drawWorldBase(context,scenario,base,mask,1);
     expect(calls).toHaveLength(terrain&0x800?2:1);
     if(terrain&0x800){const tile=harvestWorkerTile(overlay-848,1);expect(calls[1]).toEqual([mask,tile%32*16,Math.floor(tile/32)*16,16,16,0,0,16,16]);}
     expect(scenario).toEqual(before);

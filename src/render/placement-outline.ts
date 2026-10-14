@@ -1,6 +1,7 @@
 export interface PlacementFootprint { x: number; y: number; width: number; height: number }
 
-/** Source22684..2279d: eight inclusive XOR lines; overlaps toggle twice.
+/** Preservation reference (the live UI uses the user's fixed-color CSS border).
+ * Source22684..2279d: eight inclusive XOR lines; overlaps toggle twice.
  * Coordinates are world pixels, with the caller's16px snapping already applied.
  * Even-odd clipping reproduces the XOR coverage without GPU color inversion. */
 export function clipPlacementOutline(context: CanvasRenderingContext2D, footprint: PlacementFootprint): void {

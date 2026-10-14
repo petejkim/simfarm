@@ -12,7 +12,7 @@ import { readMessageButton } from '../src/formats/message-dialog';
 import { readExamineData, readExamineArtwork } from '../src/formats/examine';
 import { readScheduleArtwork, readFieldGauges } from '../src/formats/schedule-window';
 import { readMapArtwork } from '../src/formats/map-window';
-import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir, rm } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { PNG } from 'pngjs';
@@ -146,7 +146,7 @@ for (const name of (await readdir(join(source, 'CROPS'))).filter(n => /\.crp$/i.
 // Native sprite sheets (user request): every runtime tile atlas is an imported PNG file, so sprites share one file
 // instead of generated data: URLs. The terrain atlas holds all twenty-four shipped crops at fixed positions
 // (FIXED_CROP_FILES, slot i = SHIPPED_CROP_IDS[i]); drawing maps a farm's slots to them (fixedCropTiles). Each
-// atlas has rain/frost palette variants and an .inverted variant (palette index XOR 15) for outlines.
+// atlas has rain/frost palette variants. The requested CSS tool border needs no inverted terrain sheets.
 const weatherPalettes = [['', palette], ['.rain', readPalette(asset('rainpal.pal'))], ['.frost', readPalette(asset('frostpal.pal'))]] as const;
 const inverse = (colors: Palette): Palette => colors.map((_, index) => colors[index ^ 15]);
 const fixedTiles = patchCropGraphics(asset('ega16til.til'), FIXED_CROP_FILES.map(file => {
@@ -154,17 +154,18 @@ const fixedTiles = patchCropGraphics(asset('ega16til.til'), FIXED_CROP_FILES.map
 }));
 for (const [suffix, colors] of weatherPalettes) {
   await png(`terrain-tiles${suffix}.png`, tileAtlas(fixedTiles, colors));
-  await png(`terrain-tiles${suffix}.inverted.png`, tileAtlas(fixedTiles, inverse(colors)));
+  // Remove only obsolete generated highlight sheets when updating an older import.
+  await rm(join(output,`terrain-tiles${suffix}.inverted.png`),{force:true});
   for (const mode of [0, 1, 2] as const) {
     const bank = townEventTileBank(asset('twnevent.til'), mode);
     await png(`town-event-tiles-${mode}${suffix}.png`, tileAtlas(bank, colors, 7));
-    await png(`town-event-tiles-${mode}${suffix}.inverted.png`, tileAtlas(bank, inverse(colors), 7));
+    await rm(join(output,`town-event-tiles-${mode}${suffix}.inverted.png`),{force:true});
   }
 }
 // Map window miniature (overlay 8, 2×2 pixels per tile) in the gameplay palette, unlike mini-tiles.png (setup palette).
 await png('map-tiles.png', miniTileAtlas(asset('far_mapc.mbm'), palette));
 await png('map-tiles.inverted.png', miniTileAtlas(asset('far_mapc.mbm'), inverse(palette)));
-await png('masked-tiles.inverted.png', tileAtlas(asset('mskdtile.til'), inverse(palette), 32, 7));
+await rm(join(output,'masked-tiles.inverted.png'),{force:true});
 {
   const maps = renderRegionMaps(readRegionArtwork(asset('scenario.int'), readPalette(asset('scenario.pal'))), readScenarioChooser(exe).farms);
   await png('region-map.png', maps.map); await png('region-map.inverted.png', maps.inverted);

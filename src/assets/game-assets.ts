@@ -171,14 +171,13 @@ export async function loadNewFarmAssets(assets: GameAssets, signal: AbortSignal)
 }
 
 
-/** Imported sprite sheets (tools/import.ts): each atlas PNG with its .inverted outline variant, and the rain and
- * frost palette variants for terrain and town events. Every sprite and canvas draw shares these files. */
+/** Only the Map window needs a paired inverse atlas; terrain/tool highlighting uses a CSS border. */
 async function atlasFile(name: string, signal: AbortSignal): Promise<HTMLImageElement> {
   const [normal, inverse] = await Promise.all([image(`${name}.png`, signal), image(`${name}.inverted.png`, signal)]);
   return registerInvertedTiles(normal, inverse);
 }
 async function weatherAtlas(name: string, signal: AbortSignal): Promise<HTMLImageElement> {
-  const [normal, rain, frost] = await Promise.all(['', '.rain', '.frost'].map(suffix => atlasFile(name + suffix, signal)));
+  const [normal, rain, frost] = await Promise.all(['', '.rain', '.frost'].map(suffix => image(`${name}${suffix}.png`, signal)));
   return registerWeatherTiles(normal, rain, frost);
 }
 /** Original recreation banks share the global terrain palette; retain all three
@@ -187,5 +186,5 @@ function loadTownEventTiles(signal: AbortSignal): Promise<HTMLImageElement[]> {
   return Promise.all([0, 1, 2].map(mode => weatherAtlas(`town-event-tiles-${mode}`, signal)));
 }
 function loadMaskedTiles(signal: AbortSignal): Promise<HTMLImageElement> {
-  return atlasFile('masked-tiles', signal);
+  return image('masked-tiles.png', signal);
 }

@@ -727,8 +727,8 @@ html{touch-action:manipulation}
 #world{-webkit-touch-callout:none}
 /* The world canvas and its tool-highlight overlay (FarmMap); the overlay is placed in percent of the world, so it follows
    zoom and live pinch resizing of the world canvas, and never takes pointer input. */
-.world-stack{position:relative;width:max-content}
-.world-preview{position:absolute;pointer-events:none;max-width:none}
+.world-stack{position:relative;width:max-content;overflow:hidden}
+.world-preview{position:absolute;pointer-events:none;max-width:none;box-sizing:border-box;background:transparent;border:2px solid #9ac4e0}
 /* Fixed to the screen (user request) so page scrolling, rubber-banding or a focused field never shifts the game.
    In the installed iOS app this also cleared the system blur over the menu bar (user report, iOS 27), so the earlier
    flat top band is gone; the default status bar keeps the page below the status bar. */

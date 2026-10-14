@@ -7,7 +7,7 @@ import type { AircraftFlight } from '../simulation/aircraft-flight';
 import { useCallback, useEffect, useLayoutEffect, useRef, type MouseEvent, type PointerEvent, type RefObject } from 'react';
 import { WORLD_SIZE, worldIndex, type Scenario } from '../formats/scenario';
 import { pinchView, settledZoom } from './pinch-zoom';
-import { drawWorldPreview, WorldPainter, type MapPreview } from '../render/world-renderer';
+import { WorldPainter, type MapPreview } from '../render/world-renderer';
 
 export interface MapFocus { x: number; y: number }
 interface Props {
@@ -132,7 +132,6 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
     return () => cancelAnimationFrame(frame);
   }, [autoScroll, flight, zoom, updatePointer, viewportRef]);
   const workerAnimation=useRef(new HarvestWorkerAnimation()),paint=useRef(()=>{});
-  const previewRef=useRef<HTMLCanvasElement>(null);
   const hasWorkers=scenario.cells.some(cell=>(cell.terrain&0x0800)!==0&&((cell.overlay&0x07ff)===1036||(cell.overlay&0x07ff)===1037));
   useEffect(()=>{
     const clock=workerAnimation.current;
@@ -233,18 +232,9 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
       if (disasters) drawDisasters(context, disasters, disasterSprites);
     };paint.current();
   }, [scenario, tiles, townEventTiles, maskedTiles, flight, flightSprites, disasters, disasterSprites]);
-  // The placement preview (tool highlight) is a separate small canvas over the world, sized to the footprint plus a
-  // cell of border (native, user suggestion). Highlight changes repaint and re-upload only that canvas, never the
-  // 1536×1536 world, which made dragging in placement modes stutter on the iPhone; the look is the source's
-  // inverted cells clipped to the footprint outline.
-  const previewBox=preview&&!flight?{x:Math.max(0,preview.x-1),y:Math.max(0,preview.y-1),
-    right:Math.min(WORLD_SIZE,preview.x+preview.width+1),bottom:Math.min(WORLD_SIZE,preview.y+preview.height+1)}:null;
-  useLayoutEffect(()=>{
-    const overlay=previewRef.current;if(!overlay||!previewBox||!preview)return;
-    const context=overlay.getContext('2d')!;
-    context.clearRect(0,0,overlay.width,overlay.height);context.save();context.translate(-previewBox.x*16,-previewBox.y*16);
-    drawWorldPreview(context,scenario,tiles,maskedTiles,preview,workerAnimation.current.phase,townEventTiles);context.restore();
-  });
+  // Requested native highlight: a transparent CSS border, with no tile decoding or canvas drawing on hover.
+  // Percent positions/sizes follow the world canvas during zoom and live pinch resizing.
+  const previewBox=preview&&!flight?preview:null;
   useLayoutEffect(() => {
     const viewport = viewportRef.current!;
     const measure = () => {
@@ -380,10 +370,9 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
       }}
       onPointerLeave={event=>{if(event.pointerType!=='touch')clearPointer();}} onPointerCancel={event=>{stopPainting();if(event.pointerType==='touch')endTouch();else clearPointer();}} onLostPointerCapture={stopPainting}
       onPointerUp={event => { if (event.pointerType === 'touch') { touchUp(event); return; } if(stroke.current?.pointer===event.pointerId)stopPainting(); }} />
-    {previewBox&&<canvas id="world-preview" ref={previewRef} className="world-preview" aria-hidden="true"
-      width={(previewBox.right-previewBox.x)*16} height={(previewBox.bottom-previewBox.y)*16}
+    {previewBox&&<div id="world-preview" className="world-preview" aria-hidden="true"
       style={{left:`${previewBox.x/WORLD_SIZE*100}%`,top:`${previewBox.y/WORLD_SIZE*100}%`,
-        width:`${(previewBox.right-previewBox.x)/WORLD_SIZE*100}%`,height:`${(previewBox.bottom-previewBox.y)/WORLD_SIZE*100}%`}} />}
+        width:`${previewBox.width/WORLD_SIZE*100}%`,height:`${previewBox.height/WORLD_SIZE*100}%`}} />}
     </div>
   </div>;
 }

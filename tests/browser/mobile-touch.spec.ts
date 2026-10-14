@@ -7,6 +7,7 @@ import {worldIndex} from '../../src/formats/scenario';
 import {reveal,expectPaletteAction,expectNoHorizontalOverflow} from '../support/workspace';
 import {farmSnapshot} from '../support/field-checkpoint';
 import {terrainPixels} from '../support/terrain-pixels';
+import {previewFootprint} from '../support/map-preview';
 
 /** Touch screens zoom #app 1.2× (style.css); boxes are screen px, CSS lengths and scroll positions layout px. */
 const Z=1.2;
@@ -352,7 +353,8 @@ test('touch Buy placement highlights on the first tap and buys on a second tap o
   await page.locator('#viewport').evaluate(v=>v.scrollTo(0,0));
   const session=await page.context().newCDPSession(page),plain=await tilePixels(page,12,12);
   await tap(page,session,10,10);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
-  await tap(page,session,12,12);await expect.poll(()=>tilePixels(page,12,12)).not.toEqual(plain);
+  await tap(page,session,12,12);await expect.poll(async()=>(await previewFootprint(page)).slice(0,2)).toEqual([12,12]);
+  expect(await tilePixels(page,12,12)).toEqual(plain);
   expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   await tap(page,session,12,12);g.dispatch({type:'buy-equipment',equipmentType:0,x:12,y:12});
   await expect.poll(()=>save(page)).toEqual(JSON.parse(g.save(4)));
@@ -367,21 +369,21 @@ test('a touch highlights its tile at touchdown, keeps it there if it becomes som
   await page.locator('#viewport').evaluate(v=>v.scrollTo(0,0));
   const session=await page.context().newCDPSession(page),plain=await tilePixels(page,12,12);
   // Finger down on 12,12: highlighted while it is still down; lifting arms it without buying.
-  // The highlight is drawn on its own small overlay canvas; the 9,216-cell world is not repainted (stutter when dragging).
+  // The highlight is a CSS div: touchdown neither draws tiles nor repaints the world.
   await page.evaluate(()=>{const w=window as unknown as {draws:number;draw:typeof CanvasRenderingContext2D.prototype.drawImage};w.draws=0;const draw=w.draw=CanvasRenderingContext2D.prototype.drawImage;
     CanvasRenderingContext2D.prototype.drawImage=function(this:CanvasRenderingContext2D,...args:unknown[]){w.draws++;return (draw as (...a:unknown[])=>void).apply(this,args);} as typeof draw;});
   await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[await coords(page,12,12)]});
-  await expect.poll(()=>tilePixels(page,12,12)).not.toEqual(plain);
+  await expect.poll(async()=>(await previewFootprint(page)).slice(0,2)).toEqual([12,12]);
   expect(await page.evaluate(()=>{const w=window as unknown as {draws:number;draw:typeof CanvasRenderingContext2D.prototype.drawImage};
-    CanvasRenderingContext2D.prototype.drawImage=w.draw;return w.draws;})).toBeLessThan(500);
+    CanvasRenderingContext2D.prototype.drawImage=w.draw;return w.draws;})).toBe(0);
   await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-  expect(await tilePixels(page,12,12)).not.toEqual(plain);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+  expect((await previewFootprint(page)).slice(0,2)).toEqual([12,12]);expect(await tilePixels(page,12,12)).toEqual(plain);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   // A touch elsewhere moves the highlight there at once. When it turns into a pan, a cancelled touch or a long press,
   // the highlight stays on 16,12 (user request: no revert), while 12,12 remains the armed tile.
   const plain16=await tilePixels(page,16,12),from=await coords(page,16,12);
   const press=async()=>{await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[from]});
-    await expect.poll(()=>tilePixels(page,16,12)).not.toEqual(plain16);await expect.poll(()=>tilePixels(page,12,12)).toEqual(plain);};
-  const kept=async()=>{await page.waitForTimeout(100);expect(await tilePixels(page,16,12)).not.toEqual(plain16);expect(await tilePixels(page,12,12)).toEqual(plain);};
+    await expect.poll(async()=>(await previewFootprint(page)).slice(0,2)).toEqual([16,12]);expect(await tilePixels(page,16,12)).toEqual(plain16);expect(await tilePixels(page,12,12)).toEqual(plain);};
+  const kept=async()=>{await page.waitForTimeout(100);expect((await previewFootprint(page)).slice(0,2)).toEqual([16,12]);expect(await tilePixels(page,16,12)).toEqual(plain16);expect(await tilePixels(page,12,12)).toEqual(plain);};
   await press();await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:from.x-30,y:from.y-30}]});await kept();
   await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.locator('#viewport').evaluate(v=>v.scrollTo(0,0));
   await press();await session.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await kept();
