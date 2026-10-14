@@ -16,7 +16,7 @@ export function storedHarvestValue(item: InventoryRecord, world: Scenario): numb
 }
 
 /** Stored-crop sale 0x4c43c..0x4c4d3; immediate sale without a transport order.
- * SF-027: validate removal before payment. SF-026: retain duplicate income posting. */
+ * SF-027: validate removal before payment. SF-026: credit crop income once. */
 export function sellStoredHarvest(world: Scenario, slot: number, soilMoisture: number): HarvestSaleResult {
   const item = world.inventory[slot];
   if (!Number.isInteger(slot) || slot <= 0 || !item?.active || item.type < 168 || item.type >= 168 + world.cropFiles.length) {
@@ -34,7 +34,6 @@ export function sellStoredHarvest(world: Scenario, slot: number, soilMoisture: n
   }
   const value = storedHarvestValue(item, world);
   creditHarvest(world, value);
-  world.farm.cropIncome = (world.farm.cropIncome + value) >>> 0; // Original second posting at 0x4c496.
   if (building) {
     building.clearContent(index);
     toggleBuildingInterior(building, world); toggleBuildingInterior(building, world);

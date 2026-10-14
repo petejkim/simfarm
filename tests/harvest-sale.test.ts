@@ -37,7 +37,7 @@ test('sales remove every crop type from original barns, free storage and credit 
     assert.deepEqual(sellStoredHarvest(world, item.slot, 3), { ok: true, slot: item.slot, value });
     assert.equal(world.farm.cash, cash + value);
     assert.equal(world.farm.salesAccumulator, sales + value);
-    assert.equal(world.farm.cropIncome, income + value * 2); // SF-026, source ledger double-post.
+    assert.equal(world.farm.cropIncome, income + value); // SF-026: one posting.
     before[10] &= ~32; assert.deepEqual(item.bytes, before);
     for (const other of world.inventory) if (other.slot !== item.slot) assert.deepEqual(other.bytes, otherItems[other.slot]);
     assert.equal(world.harvestDefinitions[crop].count, 0);
@@ -59,7 +59,7 @@ test('worthless crop sales still remove their lot; cash cap and original ledger 
   second.world.farm.cash = 9_999_999; second.world.farm.cropIncome = 0xfffffff0; second.world.farm.salesAccumulator = 0xffffffff;
   sellStoredHarvest(second.world, second.item.slot, 0);
   assert.equal(second.world.farm.cash, 9_999_999);
-  assert.equal(second.world.farm.cropIncome, 8652); assert.equal(second.world.farm.salesAccumulator, 4333);
+  assert.equal(second.world.farm.cropIncome, 4318); assert.equal(second.world.farm.salesAccumulator, 4333);
 });
 
 test('inconsistent inventory and storage fail before money, map or item mutation (SF-027)', () => {

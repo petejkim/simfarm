@@ -220,11 +220,13 @@ Native behavior currently reproduces this broad cleanup and guards map boundarie
 
 ## SF-026 — manual stored-crop sale counts crop income twice
 
-**Status:** confirmed accounting defect in the stored-crop sale branch; preserved in native stored-crop sale.
+**Status:** original evidence retained; corrected natively on2026-10-13 by user request.
 
 The inventory sale handler at `0x4c43c` values the item through `0x1c3f2`, then calls cash credit `1a66:01c8` / `0x1ca28` with category 168 at `0x4c476`. That category already increments crop income `6190:3e60` at `0x1cb38`. The caller increments sales accumulator `3e44` at `0x4c488`, then adds the same amount to crop income again at `0x4c496`. Both far segment references `6190:cfcc` and `6190:cfce` contain `0x6190` in the initialized data segment, so this is not an alias-name error. Ordinary nonzero stored-crop sales therefore credit cash once but the crop-income ledger twice. Automatic harvest sale callers do not contain the second addition.
 
 The native sale port preserves this accounting quirk with a regression; a corrected ledger is a later enhancement. Cash is not doubled. No security vulnerability is claimed.
+
+Native correction (2026-10-13): Stored harvest sales now post income once through creditHarvest, matching cash and taxable sales. Removal validation, storage release, cash cap and unsigned ledger wrap remain intact; prior duplicated history is not rewritten. Earlier preservation/status notes above describe the pre-correction implementation. Build/type checking,21 harvest/default unit cases and1 browser all24-crop sale/reload flow pass. Independent browser assertions equate income and sales increments to proceeds. The forced-sale test expectation was updated after its retained double-post assertion failed. Logs artifacts/bugfix-026-*.log.
 
 ## SF-027 — stored-crop sale credits before checking whether removal succeeds
 

@@ -3879,3 +3879,10 @@ Build/type checking,10wind/live unit cases(1.89s),1browser cadence/reload check(
 Regional toxicity, disease, pests, weeds and nutrient reductions now saturate at zero, matching local field subtraction. The reversed original branches and examples remain preservation evidence; unknown channels and unrelated nutrient modes remain unchanged.
 
 Build/type checking,22 focused simulation/treatment/weekly tests and1 browser all-treatment flow pass. Exhaustive256×256 reductions cover all five affected channels; unrelated regional bytes remain intact. Logs artifacts/bugfix-001-*.log. See docs/gameplay-bug-fixes.md. Original evidence retained; no source distribution changes or push.
+
+
+## 2026-10-13 — requested corrections5/12: SF-026
+
+Stored harvest sales now post income once through creditHarvest, matching cash and taxable sales. Removal validation, storage release, cash cap and unsigned ledger wrap remain intact; prior duplicated history is not rewritten.
+
+Build/type checking,21 harvest/default unit cases and1 browser all24-crop sale/reload flow pass. Independent browser assertions equate income and sales increments to proceeds. The forced-sale test expectation was updated after its retained double-post assertion failed. Logs artifacts/bugfix-026-*.log. See docs/gameplay-bug-fixes.md. Original evidence retained; no source distribution changes or push.

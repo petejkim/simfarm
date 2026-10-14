@@ -88,7 +88,7 @@ test('crop payment retries preserve swapped tax/balance categories, wrap and sto
     const r = forceAssetSales(d.world, d.state, value, reason, d.effects, 8);
     assert.equal(r.paid, true); assert.equal(r.decision, null); assert.equal(r.paymentCategory, reason === 36 ? 1000 : 2500);
     assert.equal(r.attempts.length, 1); assert.equal(d.world.farm.cash, 0); assert.equal(d.world.farm.salesAccumulator, value);
-    assert.equal(d.world.farm.cropIncome, value * 2); assert.equal(d.world.inventory[2].active, true); assert.equal(d.world.animals[1].active, true);
+    assert.equal(d.world.farm.cropIncome, value); assert.equal(d.world.inventory[2].active, true); assert.equal(d.world.animals[1].active, true);
     assert.equal(d.state[reason === 36 ? 'balancePayments' : 'taxExpenses'], (0xfffffffe + value) >>> 0);
     assert.equal(d.state[reason === 36 ? 'taxExpenses' : 'balancePayments'], 0xfffffffe);
   }

@@ -61,7 +61,11 @@ test('Sell handles all24 crop identities, live prices, last-lot removal and sour
   const catalog=page.getByRole('region',{name:'Sell catalog'});const names=new Set<string>();
   for(let i=0;i<24;i++){names.add((await page.locator('#sell-item-name').textContent())!);if(i<23)await catalog.getByRole('button',{name:'Next item'}).click();}
   expect(names.size).toBe(24);await expect(page.locator('#sell-position')).toHaveText('Item: 24 of 24');
+  const before=expected.getSnapshot().scenario.farm;
   await page.locator('#catalog-sell').click();expected.dispatch({type:'sell-harvest',inventorySlot:24});
+  const after=readNativeSave(JSON.stringify(await save(page))).state.scenario.farm;
+  expect(after.cropIncome-before.cropIncome).toBe(after.cash-before.cash);
+  expect(after.salesAccumulator-before.salesAccumulator).toBe(after.cash-before.cash);
   await expect(page.locator('#harvest-stock')).toHaveText('23 stored harvests');
   expect(await save(page)).toEqual(JSON.parse(expected.save(4)));
   await page.getByRole('dialog',{name:'Sell',exact:true}).locator('.game-window-title').focus();await page.keyboard.press('ArrowRight');
