@@ -40,13 +40,7 @@ import { removeManualTarget, type RemovalTarget, type ManualRemovalResult } from
 import { sellManualAsset, type AssetSaleKind, type ManualAssetSaleResult } from './manual-asset-sale';
 import { advanceFlight, beginFlight, FLIGHT_CONTROLS, FLIGHT_SPEED, MAX_FLIGHT_INPUTS, type AircraftFlight, type FlightControl, type FlightEnd, type FlightStartResult } from './aircraft-flight';
 import type { CropDefinition } from '../formats/crop';
-import { FieldRecord } from '../formats/field';
-import { FieldSchedule } from '../formats/field-schedule';
-import { EquipmentRecord, EquipmentDefinition, padEquipment } from '../formats/equipment';
-import { AnimalRecord } from '../formats/animal';
-import { BuildingRecord, BuildingDefinition } from '../formats/building';
-import { InventoryRecord, GoodsDefinition } from '../formats/inventory';
-import { ChemicalRecord } from '../formats/chemical';
+import { copyScenario } from './scenario-snapshot';
 import type { Scenario } from '../formats/scenario';
 import { advanceCalendarDay, type FarmCalendar } from './calendar';
 import { changeFieldCondition } from './field-conditions';
@@ -93,7 +87,6 @@ import { updateClearingEffects } from './clearing-effects';
 import { updateHomestead, type HomesteadChange } from './homestead';
 import type { GameEvent, AnimalSound, AnimalVocal, CheatCode } from './events';
 import { purchaseBuilding, type BuildingPlacementResult } from './building-placement';
-import { copyIrrigation } from '../formats/irrigation';
 import { updateIrrigation } from './irrigation';
 import { placeIrrigation,toggleMapValve, type IrrigationTool, type IrrigationPlacementResult } from './irrigation-placement';
 import { createAnimalFrameState, type AnimalFrameState } from './animal-world';
@@ -227,25 +220,6 @@ export type GameCommand = { type: 'advance-day' } | { type: 'set-paused'; paused
 
 /** FUND cheat amount (source add 0x2710 at 0xf7a4); natively also the cash it costs (SF-180). */
 export const CHEAT_DONATION = 10000;
-
-function copyScenario(scenario: Scenario): Scenario {
-  return { ...scenario, irrigation: copyIrrigation(scenario.irrigation), schedule: new FieldSchedule(Uint8Array.from(scenario.schedule.bytes)), sourceBytes: scenario.sourceBytes === null ? null : Uint8Array.from(scenario.sourceBytes), cells: scenario.cells.map(c => ({ ...c })), cropFiles: [...scenario.cropFiles],
-    fields: scenario.fields.map(f => new FieldRecord(f.slot, Uint8Array.from(f.bytes))),
-    equipment: padEquipment(scenario.equipment.map(e => new EquipmentRecord(e.slot, Uint8Array.from(e.bytes)))),
-    equipmentDefinitions: scenario.equipmentDefinitions.map(e => new EquipmentDefinition(e.slot, Uint8Array.from(e.bytes))),
-    animals: scenario.animals.map(a => new AnimalRecord(a.slot, Uint8Array.from(a.bytes))),
-    buildings: scenario.buildings.map(b => new BuildingRecord(b.slot, Uint8Array.from(b.bytes))),
-    buildingDefinitions: scenario.buildingDefinitions.map(b => new BuildingDefinition(Uint8Array.from(b.bytes))),
-    inventory: scenario.inventory.map(i => new InventoryRecord(i.slot, Uint8Array.from(i.bytes))),
-    chemicals: scenario.chemicals.map(i => new ChemicalRecord(i.slot, Uint8Array.from(i.bytes))),
-    chemicalDefinitions: scenario.chemicalDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))),
-    seedDefinitions: scenario.seedDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))),
-    cropDefinitions: scenario.cropDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))),
-    harvestDefinitions: scenario.harvestDefinitions.map(d => new GoodsDefinition(Uint8Array.from(d.bytes))),
-    farm: { ...scenario.farm, calendar: { ...scenario.farm.calendar } },
-    regionalConditions: Uint8Array.from(scenario.regionalConditions),
-    climate: { wind: [...scenario.climate.wind], precipitation: [...scenario.climate.precipitation], temperature: [...scenario.climate.temperature] } };
-}
 
 /** Owns mutable game state. React receives detached snapshots and submits commands.
  * The scheduler covers calendar, climate, machinery, crops, irrigation and livestock.
@@ -1106,7 +1080,7 @@ export class GameSimulation {
     updateAnnualReport(this.scenario.farm, this.finances.accounts, report);
     const creditLimit = loanCreditLimit(this.scenario, this.finances.accounts.buildingBookValue, this.finances.loan.principal, this.weather.soilMoisture);
     this.snapshot = { setup: structuredClone(this.setup), retainedSetup: this.retainedSetup ? structuredClone(this.retainedSetup) : null, newFarm: this.newFarm ? structuredClone(this.newFarm) : null, traffic: snapshotTraffic(this.traffic), disasters: structuredClone(this.disasters), waterDisasters: { ...this.waterDisasters }, lastDisasterResult: this.lastDisasterResult ? structuredClone(this.lastDisasterResult) : null,
-      editStatuses:recentEditStatuses(this.editStatus), disasterNotices: [...this.disasterNotices], revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario),
+      editStatuses:recentEditStatuses(this.editStatus), disasterNotices: [...this.disasterNotices], revision: (this.snapshot?.revision ?? -1) + 1, scenario: copyScenario(this.scenario, this.snapshot?.scenario),
       farmReport: { income: report.reportIncome, expenses: report.reportExpenses, net: report.reportNet,
         fields: summarizeFieldStatus(this.scenario.fields, this.scenario.farm.cash) },
       townEvent: encodeTownEventCheckpoint(this.townEvent),
