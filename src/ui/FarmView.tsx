@@ -1,7 +1,8 @@
 import { TownEventMessage } from './TownEventMessage';
 import { BuildingMessage } from './BuildingMessage';
 import {FARM_OPTIONS,applyPreferredOptions,rememberPreference} from './preferences';
-import {tilesForWeather} from '../assets/weather-tiles';
+import {tilesForWeather,weatherPalette} from '../assets/weather-tiles';
+import {TOWN_EVENT_BANK_WIDTH,TOWN_EVENT_BANK_HEIGHT} from '../formats/town-event-graphics';
 import {EDIT_TOOL_STATUSES,SPRAY_STATUSES} from '../simulation/edit-status';
 import {EditStatus} from './EditStatus';
 import {toolCost} from './tool-cost';
@@ -40,7 +41,7 @@ const CONSTRUCTION_TOOLS:Record<ConstructionTool,EditTool>={'road-150':'Paved ro
 import type { GameWindow as WindowCommand } from './ControlBar';
 import { NewFarmControls } from './NewFarmControls';
 import { FLIGHT_KEY_REPEAT_MS, flightControlForKey, flightKeyRepeats } from './flight-keys';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
 import { worldPosition, worldIndex } from '../formats/scenario';
 import { ExpertWindow } from './ExpertWindow';
@@ -108,6 +109,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
   const [buyPlacement, setBuyPlacement] = useState<Pick<ShopProduct, 'type' | 'name'> | null>(null);
   const [toolPointer, setToolPointer] = useState<MapFocus | null>(null);
   const snapshot = useSyncExternalStore(simulation?.subscribe ?? subscribeEmpty, simulation?.getSnapshot ?? emptySnapshot);
+  const townEventMode=snapshot?.townEvent.artworkMode??0, townEventPalette=weatherPalette(snapshot?.weather??{current:0,temperature:0});
+  const townEventTiles=useMemo(()=>({image:assets.townEventTiles,x:townEventMode*TOWN_EVENT_BANK_WIDTH,
+    y:({normal:0,rain:1,frost:2}[townEventPalette])*TOWN_EVENT_BANK_HEIGHT}),[assets.townEventTiles,townEventMode,townEventPalette]);
   const objectMove=useObjectMove(simulation,snapshot,onGameEvent);
   const construction=useConstruction(simulation,snapshot);
   const bulldoze=useBulldoze(simulation,snapshot);
@@ -460,7 +464,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
       {snapshot&&<EditStatus codes={snapshot.editStatuses} text={assets.editStatusText} cost={toolCost(snapshot.scenario,snapshot.finances,
         construction.tool?{kind:'construction',tool:construction.tool}:bulldoze.active?{kind:'bulldoze'}:fieldMapTool?{kind:'field',tool:fieldMapTool}:null,snapshot.editStatuses[0])}/>}
       <section className={`map-panel${snapshot?.aircraftFlight ? ' is-flying' : ''}`} data-object-move={objectMove.active?(objectMove.selected?'drop':'pick'):undefined}>
-        <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") ${cursorHotspot} ${cursorHotspot}, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize} scenario={data.scenario} tiles={tilesForWeather(data.tiles,snapshot?.weather)} townEventTiles={tilesForWeather(assets.townEventTiles[snapshot?.townEvent.artworkMode ?? 0],snapshot?.weather)} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
+        <FarmMap cursor={mapCursor?`url("${assets.editCursors[mapCursor].src}") ${cursorHotspot} ${cursorHotspot}, crosshair`:undefined} animateWorkers={Boolean(snapshot && !snapshot.paused && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision && !snapshot.aircraftFlight)} autoScroll={Boolean(snapshot?.scenario.farm.autoScroll && !windows.active && !fieldMenu && !bulldoze.pending && !messages.length && !snapshot.pendingTown && !snapshot.townEvent.pending && !snapshot.finances.defaultDecision)} viewportRef={viewportRef} disasters={snapshot?.disasters ?? null} disasterSprites={assets.disasterSprites} flight={snapshot?.aircraftFlight ?? null} flightSprites={assets.flightSprites} onViewportSize={onViewportSize} scenario={data.scenario} tiles={tilesForWeather(data.tiles,snapshot?.weather)} townEventTiles={townEventTiles} maskedTiles={assets.maskedTiles} zoom={zoom} focus={focus}
           onStroke={active=>{mapStroke.current=active;}} onDrag={active=>{mapDrag.current=active;}} stopPaintingOutside={bulldoze.active} paintTool={bulldoze.enabled?'bulldoze':construction.enabled?construction.tool:undefined} onPaint={(index,initial)=>{if(initial&&!bulldoze.active&&enterMapWindow(index))return false;const {x,y}=worldPosition(index);return bulldoze.active?bulldoze.paint(x,y):construction.paint(x,y,initial);}}
           preview={preview} onPointer={onMapPointer} confirmTaps={confirmTaps} toolKey={toolKey} onZoom={onZoomChange} onSecondarySelect={interactWithMap} onSelect={index => {
             if(construction.tool||bulldoze.active)return;

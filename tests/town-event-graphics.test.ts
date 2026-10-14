@@ -1,10 +1,11 @@
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { PNG } from 'pngjs';
 import { createHash } from 'node:crypto';
 import { readArchive } from '../src/formats/archive';
-import { tileAtlas, readPalette } from '../src/formats/graphics';
-import { patchTownEventGraphics, townEventTileBank, type TownEventMode } from '../src/formats/town-event-graphics';
+import { tileAtlas, readPalette, type Palette } from '../src/formats/graphics';
+import { patchTownEventGraphics, townEventTileBank, townEventSpriteSheet, type TownEventMode } from '../src/formats/town-event-graphics';
 const source = (name: string) => readFileSync(new URL('../../simfarm-dos/' + name, import.meta.url));
 const exe = source('SIMFARM.EXE');
 const archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
@@ -56,4 +57,22 @@ test('town event decoder rejects malformed lengths/modes and preserves inputs on
   for (const size of [0, 517 * 128, 880 * 128 - 1])
     assert.throws(() => patchTownEventGraphics(new Uint8Array(size), raw, 0));
   assert.equal(hash(base), before);
+});
+
+test('the single imported sheet retains every source pixel across all banks and palettes, with no obsolete exports',()=>{
+  const palettes=['simfarm.pal','rainpal.pal','frostpal.pal'].map(name=>readPalette(asset(name))) as [Palette,Palette,Palette];
+  const before=hash(raw),sheet=townEventSpriteSheet(raw,palettes),imported=PNG.sync.read(readFileSync('public/assets/town-event-tiles.png'));
+  assert.equal(sheet.width,336);assert.equal(sheet.height,240);
+  assert.equal(imported.width,336);assert.equal(imported.height,240);
+  assert.deepEqual(Uint8Array.from(imported.data),sheet.rgba);
+  for(let row=0;row<3;row++)for(let mode=0;mode<3;mode++)for(let tile=0;tile<35;tile++)for(let y=0;y<16;y++)for(let x=0;x<16;x++){
+    let color=0;
+    for(let plane=0;plane<4;plane++)color|=((raw[mode*4480+tile*128+plane*32+y*2+(x>>3)]>>(7-(x&7)))&1)<<plane;
+    const at=((row*80+Math.floor(tile/7)*16+y)*336+mode*112+tile%7*16+x)*4;
+    assert.deepEqual(Array.from(sheet.rgba.subarray(at,at+4)),[...palettes[row][color],255]);
+  }
+  assert.equal(hash(raw),before);
+  assert.deepEqual(readdirSync('public/assets').filter(name=>/^town-event-.*\.png$/.test(name)),['town-event-tiles.png']);
+  for(const size of [13440,20479,20481])assert.throws(()=>townEventSpriteSheet(new Uint8Array(size),palettes),/resource/);
+  for(const count of [0,2,4])assert.throws(()=>townEventSpriteSheet(raw,Array(count).fill(palettes[0]) as [Palette,Palette,Palette]),/palettes/);
 });

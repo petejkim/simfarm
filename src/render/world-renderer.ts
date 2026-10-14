@@ -5,16 +5,17 @@ import { fixedCropTiles } from '../formats/crop-slots';
 import { maskedTile, terrainTile, worldPosition, worldIndex, type Scenario } from '../formats/scenario';
 
 export type MapPreview = PlacementFootprint;
+export interface TileSheetRegion { image: CanvasImageSource; x: number; y: number }
 
 /** Paints one world cell (terrain tile, then its masked overlay) from the given tile sheets. Crop tiles of the
  * farm's slots are drawn from their crops' fixed places in the imported terrain sheets (fixedCropTiles). */
 function cellPainter(context: CanvasRenderingContext2D, scenario: Scenario, workerPhase: number) {
   const crops = fixedCropTiles(scenario.cropFiles);
-  return (i: number, base: CanvasImageSource, mask: CanvasImageSource, events?: CanvasImageSource) => {
+  return (i: number, base: CanvasImageSource, mask: CanvasImageSource, events?: TileSheetRegion) => {
     const cell = scenario.cells[i], tile = crops[terrainTile(cell)], { x, y } = worldPosition(i);
     if (events && tile >= 483 && tile < 518) {
       const eventTile = tile - 483;
-      context.drawImage(events, eventTile % 7 * 16, Math.floor(eventTile / 7) * 16, 16, 16, x * 16, y * 16, 16, 16);
+      context.drawImage(events.image, events.x + eventTile % 7 * 16, events.y + Math.floor(eventTile / 7) * 16, 16, 16, x * 16, y * 16, 16, 16);
     } else context.drawImage(base, tile % 32 * 16, Math.floor(tile / 32) * 16, 16, 16, x * 16, y * 16, 16, 16);
     const storedOverlay = maskedTile(cell);
     const overlay = storedOverlay===null?null:harvestWorkerTile(storedOverlay,workerPhase);
@@ -27,7 +28,7 @@ function cellPainter(context: CanvasRenderingContext2D, scenario: Scenario, work
 /** Every cell and the field badges: the world without a placement preview. FarmMap overlays its requested
  * CSS border separately, so highlight changes never repaint all9,216 cells. */
 export function drawWorldBase(context: CanvasRenderingContext2D, scenario: Scenario, tiles: CanvasImageSource,
-  maskedTiles: CanvasImageSource, workerPhase=0, townEventTiles?: CanvasImageSource): void {
+  maskedTiles: CanvasImageSource, workerPhase=0, townEventTiles?: TileSheetRegion): void {
   context.imageSmoothingEnabled = false;
   const paintCell = cellPainter(context, scenario, workerPhase);
   for(let i=0;i<scenario.cells.length;i++)paintCell(i,tiles,maskedTiles,townEventTiles);
@@ -41,11 +42,11 @@ export function drawWorldBase(context: CanvasRenderingContext2D, scenario: Scena
  * repaint everything. */
 export class WorldPainter {
   private drawn: Int32Array | null = null;
-  private sheets: readonly (CanvasImageSource | undefined)[] = [];
+  private sheets: readonly (CanvasImageSource | number | undefined)[] = [];
 
   paint(context: CanvasRenderingContext2D, scenario: Scenario, tiles: CanvasImageSource, maskedTiles: CanvasImageSource,
-    workerPhase = 0, townEventTiles?: CanvasImageSource, full = false): number {
-    const looks = cellLooks(scenario, workerPhase, townEventTiles !== undefined), sheets = [tiles, maskedTiles, townEventTiles];
+    workerPhase = 0, townEventTiles?: TileSheetRegion, full = false): number {
+    const looks = cellLooks(scenario, workerPhase, townEventTiles !== undefined), sheets = [tiles, maskedTiles, townEventTiles?.image, townEventTiles?.x, townEventTiles?.y];
     const previous = this.drawn;
     if (full || !previous || previous.length !== looks.length || sheets.some((sheet, i) => sheet !== this.sheets[i])) {
       drawWorldBase(context, scenario, tiles, maskedTiles, workerPhase, townEventTiles);
@@ -57,7 +58,7 @@ export class WorldPainter {
       const at = i * 3;
       if (looks[at] === previous[at] && looks[at + 1] === previous[at + 1] && looks[at + 2] === previous[at + 2]) continue;
       const { x, y } = worldPosition(i), tile = looks[at], overlay = looks[at + 1], badge = looks[at + 2];
-      if (tile < 0) { const event = -tile - 1; context.drawImage(townEventTiles!, event % 7 * 16, Math.floor(event / 7) * 16, 16, 16, x * 16, y * 16, 16, 16); }
+      if (tile < 0) { const event = -tile - 1, sheet = townEventTiles!; context.drawImage(sheet.image, sheet.x + event % 7 * 16, sheet.y + Math.floor(event / 7) * 16, 16, 16, x * 16, y * 16, 16, 16); }
       else context.drawImage(tiles, tile % 32 * 16, Math.floor(tile / 32) * 16, 16, 16, x * 16, y * 16, 16, 16);
       if (overlay >= 0) context.drawImage(maskedTiles, overlay % 32 * 16, Math.floor(overlay / 32) * 16, 16, 16, x * 16, y * 16, 16, 16);
       if (badge >= 0) context.drawImage(tiles, badge % 32 * 16, Math.floor(badge / 32) * 16, 16, 16, x * 16, y * 16, 16, 16);

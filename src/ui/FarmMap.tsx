@@ -7,7 +7,7 @@ import type { AircraftFlight } from '../simulation/aircraft-flight';
 import { useCallback, useEffect, useLayoutEffect, useRef, type MouseEvent, type PointerEvent, type RefObject } from 'react';
 import { WORLD_SIZE, worldIndex, type Scenario } from '../formats/scenario';
 import { pinchView, settledZoom } from './pinch-zoom';
-import { WorldPainter, type MapPreview } from '../render/world-renderer';
+import { WorldPainter, type MapPreview, type TileSheetRegion } from '../render/world-renderer';
 
 export interface MapFocus { x: number; y: number }
 interface Props {
@@ -22,7 +22,7 @@ interface Props {
   disasterSprites: DisasterSprites;
   onViewportSize: (size: { columns: number; rows: number }) => void;
   tiles: CanvasImageSource;
-  townEventTiles?: CanvasImageSource;
+  townEventTiles?: TileSheetRegion;
   maskedTiles: CanvasImageSource;
   zoom: number;
   focus: MapFocus;

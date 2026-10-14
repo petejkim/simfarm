@@ -35,7 +35,7 @@ import { readBankArtwork } from '../src/formats/bank-artwork';
 import { readEditPalette } from '../src/formats/edit-palette';
 import { readControlBar, timeToggleFaces } from '../src/formats/control-bar';
 import { readPalette, readBitmap, tileAtlas, miniTileAtlas, decodePlanar, readInterleavedScreen, type Palette, type Raster } from '../src/formats/graphics';
-import { townEventTileBank } from '../src/formats/town-event-graphics';
+import { townEventSpriteSheet } from '../src/formats/town-event-graphics';
 import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
 import { readCrop, type CropDefinition } from '../src/formats/crop';
 
@@ -114,8 +114,6 @@ await png('bank-terminal.png', readBankArtwork(asset('bankterm.bmp'), palette));
 await png('edit-palette.png', readEditPalette(asset('editeasy.lzs'), palette));
 await png('control-bar.png', readControlBar(asset('cntlbtnh.bmp'), palette));
 await png('tiles.png', tileAtlas(asset('ega16til.til'), palette));
-for (const mode of [0, 1, 2] as const)
-  await png(`town-event-${mode}.png`, tileAtlas(townEventTileBank(asset('twnevent.til'), mode), palette, 7));
 // Window renderer2b09a: active title1, inactive237, left close control0.
 // These tiles contain artwork only; window titles stay HTML text.
 for (const [name, tile] of [['window-close', 0], ['window-title', 1], ['window-title-inactive', 237], ['window-title-end', 2], ['window-title-end-inactive', 119]] as const)
@@ -156,11 +154,13 @@ for (const [suffix, colors] of weatherPalettes) {
   await png(`terrain-tiles${suffix}.png`, tileAtlas(fixedTiles, colors));
   // Remove only obsolete generated highlight sheets when updating an older import.
   await rm(join(output,`terrain-tiles${suffix}.inverted.png`),{force:true});
-  for (const mode of [0, 1, 2] as const) {
-    const bank = townEventTileBank(asset('twnevent.til'), mode);
-    await png(`town-event-tiles-${mode}${suffix}.png`, tileAtlas(bank, colors, 7));
-    await rm(join(output,`town-event-tiles-${mode}${suffix}.inverted.png`),{force:true});
-  }
+}
+await png('town-event-tiles.png', townEventSpriteSheet(asset('twnevent.til'), [weatherPalettes[0][1], weatherPalettes[1][1], weatherPalettes[2][1]]));
+// Remove only the superseded generated banks (including older highlight exports).
+for (const mode of [0, 1, 2]) {
+  await rm(join(output, `town-event-${mode}.png`), { force: true });
+  for (const suffix of ['', '.rain', '.frost']) for (const inverseSuffix of ['', '.inverted'])
+    await rm(join(output, `town-event-tiles-${mode}${suffix}${inverseSuffix}.png`), { force: true });
 }
 // Map window miniature (overlay 8, 2×2 pixels per tile) in the gameplay palette, unlike mini-tiles.png (setup palette).
 await png('map-tiles.png', miniTileAtlas(asset('far_mapc.mbm'), palette));

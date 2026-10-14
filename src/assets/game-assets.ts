@@ -1,6 +1,7 @@
 import {readAboutCredits} from '../formats/about';
 import {registerInvertedTiles} from './inverted-tiles';
 import {registerWeatherTiles} from './weather-tiles';
+import {TOWN_EVENT_SHEET_WIDTH,TOWN_EVENT_SHEET_HEIGHT} from '../formats/town-event-graphics';
 import {readUiContentJson} from '../formats/ui-content';
 import type {EventMessageText} from '../formats/event-messages';
 import { readExamineDataJson, type ExamineData } from '../formats/examine';
@@ -50,7 +51,7 @@ export interface Catalog {
 export interface WindowArtwork { title: HTMLImageElement; inactive: HTMLImageElement; close: HTMLImageElement; end: HTMLImageElement; endInactive: HTMLImageElement; frame: HTMLImageElement }
 export interface WeatherArtwork {frame:HTMLImageElement;sky:HTMLImageElement;ground:HTMLImageElement;vane:HTMLImageElement}
 export interface AboutAssets {frame:HTMLImageElement;logo:HTMLImageElement;credits:string[][]}
-export interface GameAssets { editCursors:{pick:HTMLImageElement;drop:HTMLImageElement;view:HTMLImageElement;bulldoze:HTMLImageElement;spray:HTMLImageElement;buy:HTMLImageElement}; about:AboutAssets; townEventTiles: HTMLImageElement[]; townChoiceArtwork:HTMLImageElement; balanceArtwork:HTMLImageElement; weatherArtwork:WeatherArtwork; expertPortrait:HTMLImageElement; expertLauncher:HTMLImageElement; timeToggle:HTMLImageElement; expertDeck:ExpertDeck; aircraftArtwork:HTMLImageElement; messageArtwork:HTMLImageElement; eventText:readonly EventMessageText[]; editStatusText:readonly string[]; examineData: ExamineData; scheduleArtwork: HTMLImageElement; fieldGauges: HTMLImageElement; mapArtwork: HTMLImageElement; mapTiles: HTMLImageElement; catalog: Catalog; mainMenus: MainMenus; controlBar: HTMLImageElement; editPalette: HTMLImageElement; sellArtwork: HTMLImageElement; sellCondition: HTMLImageElement; buyArtwork: HTMLImageElement; buyCards: HTMLImageElement; buyCatalog: BuyCatalog; itemText: Uint8Array; windowArtwork: WindowArtwork; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
+export interface GameAssets { editCursors:{pick:HTMLImageElement;drop:HTMLImageElement;view:HTMLImageElement;bulldoze:HTMLImageElement;spray:HTMLImageElement;buy:HTMLImageElement}; about:AboutAssets; townEventTiles: HTMLImageElement; townChoiceArtwork:HTMLImageElement; balanceArtwork:HTMLImageElement; weatherArtwork:WeatherArtwork; expertPortrait:HTMLImageElement; expertLauncher:HTMLImageElement; timeToggle:HTMLImageElement; expertDeck:ExpertDeck; aircraftArtwork:HTMLImageElement; messageArtwork:HTMLImageElement; eventText:readonly EventMessageText[]; editStatusText:readonly string[]; examineData: ExamineData; scheduleArtwork: HTMLImageElement; fieldGauges: HTMLImageElement; mapArtwork: HTMLImageElement; mapTiles: HTMLImageElement; catalog: Catalog; mainMenus: MainMenus; controlBar: HTMLImageElement; editPalette: HTMLImageElement; sellArtwork: HTMLImageElement; sellCondition: HTMLImageElement; buyArtwork: HTMLImageElement; buyCards: HTMLImageElement; buyCatalog: BuyCatalog; itemText: Uint8Array; windowArtwork: WindowArtwork; maskedTiles: HTMLImageElement; townLayouts: TownLayouts; flightSprites: FlightSprites; disasterSprites: DisasterSprites }
 export const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}assets/${path}`;
 
 async function response(path: string, signal?: AbortSignal): Promise<Response> {
@@ -182,8 +183,11 @@ async function weatherAtlas(name: string, signal: AbortSignal): Promise<HTMLImag
 }
 /** Original recreation banks share the global terrain palette; retain all three
  * weather variants without modifying a farm's crop-expanded atlas. */
-function loadTownEventTiles(signal: AbortSignal): Promise<HTMLImageElement[]> {
-  return Promise.all([0, 1, 2].map(mode => weatherAtlas(`town-event-tiles-${mode}`, signal)));
+async function loadTownEventTiles(signal: AbortSignal): Promise<HTMLImageElement> {
+  const sheet = await image('town-event-tiles.png', signal);
+  if (sheet.naturalWidth !== TOWN_EVENT_SHEET_WIDTH || sheet.naturalHeight !== TOWN_EVENT_SHEET_HEIGHT)
+    throw new Error('Invalid town event sprite sheet');
+  return sheet;
 }
 function loadMaskedTiles(signal: AbortSignal): Promise<HTMLImageElement> {
   return image('masked-tiles.png', signal);

@@ -3,6 +3,7 @@ import { readNativeSave } from '../../src/formats/native-save';
 import { reveal , speedItem } from '../support/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { PNG } from 'pngjs';
 import { readArchive } from '../../src/formats/archive';
 import { decodePlanar, readPalette } from '../../src/formats/graphics';
 import { worldIndex } from '../../src/formats/scenario';
@@ -22,8 +23,12 @@ async function load(page: Page, text: string) {
 }
 
 test('saved recreation banks render original pixels at terrain scale through all weather palettes and reloads', async ({ page }) => {
+  const requests:string[]=[],completed:string[]=[];
+  page.on('request',r=>{if(/\/town-event-.*\.png$/.test(r.url()))requests.push(new URL(r.url()).pathname);});
+  page.on('requestfinished',r=>{if(/\/town-event-.*\.png$/.test(r.url()))completed.push(new URL(r.url()).pathname);});
   await page.clock.install({ time: new Date('1993-01-01') }); await page.clock.pauseAt(new Date('1993-01-01'));
   await page.goto('/'); await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  expect(completed).toEqual(['/assets/town-event-tiles.png']);
   const f = shopFixture(); f.state.paused = true;
   for (let tile = 0; tile < 35; tile++) Object.assign(f.state.scenario.cells[worldIndex(tile % 7, Math.floor(tile / 7))], { terrain: 483 + tile, overlay: 0 });
   Object.assign(f.state.scenario.cells[worldIndex(7, 0)], { terrain: 482, overlay: 0 });
@@ -55,6 +60,19 @@ test('saved recreation banks render original pixels at terrain scale through all
   }
   await page.locator('#viewport').evaluate(el => el.scrollTo(0, 0));
   await page.screenshot({ path: 'artifacts/browser-town-event-artwork.png' });
+  expect(completed).toEqual(['/assets/town-event-tiles.png']);
+  expect(requests.every(path=>path==='/assets/town-event-tiles.png')).toBe(true);
+});
+
+test('missing or malformed town-event sheets fail before gameplay and recover after retry',async({page})=>{
+  for(const malformed of [false,true]){
+    await page.route('**/assets/town-event-tiles.png',route=>malformed
+      ?route.fulfill({contentType:'image/png',body:PNG.sync.write(new PNG({width:16,height:16}))}):route.abort());
+    await page.goto('/');await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();
+    await expect(page.locator('.loading')).toContainText(malformed?'Invalid town event sprite sheet':'Cannot load town-event-tiles.png');
+    await expect(page.locator('#world')).toHaveCount(0);await page.unroute('**/assets/town-event-tiles.png');
+    await page.reload();await expect(page.locator('#map-status')).toContainText('Scenario 1');
+  }
 });
 
 
