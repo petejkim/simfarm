@@ -388,11 +388,13 @@ Annual collection tests the amount returned by debit with OR/JNE at `0x1d60d..0x
 
 ## SF-046 — default crop-sale retries post payment to the opposite debt category
 
-**Status:** confirmed caller/callee mismatch; forced-sale integration and correction deferred.
+**Status:** original evidence retained; corrected natively on2026-10-13 by user request.
 
 Monthly tax retry calls forced-sale `0x1d766` with reason 36 (`0xcd28`); the other monthly balance uses reason 39 (`0xcc7a`). After selling a stored crop, reason 36 at `0x1d838..0x1d848` debits category 1000, while reason 39 at `0x1d85e..0x1d86e` debits category 2500. Regular monthly tax uses 2500 and the other balance uses 1000. Cash is debited for the same requested amount, but the crop-sale recovery records the wrong ledger. Later livestock, equipment and land retries use category zero, creating another accounting mismatch. These are static source findings; full default/UI reachability and broader effects remain unverified.
 
 Native forced sales now preserve these mismatches with exact ledger tests; live calendar integration remains pending. Do not confuse an incorrect ledger category with duplicated cash debit or a proven security vulnerability. Category zero is identified as equipment expense in the implementation follow-up below.
+
+Native correction (2026-10-13): Every successful forced-sale payment posts to the actual debt: reason36 taxExpenses/category2500, reason39 balancePayments/category1000. Crop, animal, machinery, land and failed-sale retries share that routing. Asset sale proceeds retain their income categories and cash is debited once. Earlier preservation/status notes above describe the pre-correction implementation. Build/type checking,31 default/monthly/live-loan unit cases and1 browser direct/forced/mixed notices/default flow pass. Browser independently checks tax and loan liquidation postings. Original swapped-category source pins remain; stale monthly expectations were corrected. Logs artifacts/bugfix-046-*.log.
 
 ## SF-047 — signed recreation count can write before saved coordinate arrays
 

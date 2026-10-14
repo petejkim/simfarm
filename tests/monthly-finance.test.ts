@@ -58,7 +58,7 @@ test('inactive countdowns preserve debt, and insufficient-funds countdowns step 
   assert.equal(JSON.stringify([world, accounts, debt, effects]), before);
 });
 
-test('expired balance and tax countdowns invoke their source default categories and clear debt only after payment', () => {
+test('expired balance and tax countdowns invoke their actual debt categories and clear debt only after payment', () => {
   for (const tax of [false, true]) {
     const { world, accounts, debt, effects } = setup(); world.farm.cash = 0;
     const i = world.inventory[1]; i.bytes.fill(0); put(i.bytes, 0, 168); put(i.bytes, 2, 100); i.bytes[8] = i.bytes[9] = 90; i.bytes[10] = 32;
@@ -67,9 +67,9 @@ test('expired balance and tax countdowns invoke their source default categories 
     const payments = accounts.balancePayments, taxes = accounts.taxExpenses;
     const r = retryMonthlyDebts(world, accounts, debt, effects, 8, 1);
     assert.deepEqual(r.notices, [tax ? 165 : 168]); assert.equal(r.pendingDefault, null); assert.equal(r.forcedSales.length, 1);
-    assert.equal(r.forcedSales[0].reason, tax ? 36 : 39); assert.equal(r.forcedSales[0].paymentCategory, tax ? 1000 : 2500);
+    assert.equal(r.forcedSales[0].reason, tax ? 36 : 39); assert.equal(r.forcedSales[0].paymentCategory, tax ? 2500 : 1000);
     assert.equal(debt.unpaidTaxes, 0); assert.equal(debt.balanceDue, 0);
-    assert.equal(accounts.balancePayments, (payments + (tax ? 10 : 0)) >>> 0); assert.equal(accounts.taxExpenses, (taxes + (tax ? 0 : 10)) >>> 0);
+    assert.equal(accounts.balancePayments, (payments + (tax ? 0 : 10)) >>> 0); assert.equal(accounts.taxExpenses, (taxes + (tax ? 10 : 0)) >>> 0);
   }
 });
 

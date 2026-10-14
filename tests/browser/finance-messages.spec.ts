@@ -38,6 +38,8 @@ test('paid and forced-sale notices follow original balance-before-tax order and 
     for(const id of ids)await message(page,id);
     await expect(page.locator('#finance-message-ok')).toHaveCount(0);const checkpoint=await save(page);expect(checkpoint).toEqual(JSON.parse(game.save(4)));
     if(['loan-paid','loan-sale','both'].includes(kind))expect(checkpoint.runtime.finances.loan.principal).toBe(kind==='loan-sale'?999:900);
+    if(kind==='tax-sale')expect(checkpoint.runtime.finances.accounts.taxExpenses).toBe(1);
+    if(kind==='loan-sale')expect(checkpoint.runtime.finances.accounts.balancePayments).toBe(1);
     if(kind==='default'){await expect(page.getByRole('region',{name:'Financial default',exact:true})).toBeVisible();await page.locator('#default-exit').click();game.dispatch({type:'resolve-default',choice:'exit'});expect(await save(page)).toEqual(JSON.parse(game.save(4)));}
   }
 });

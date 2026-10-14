@@ -11,7 +11,7 @@ User authorized these twelve native corrections on2026-10-13, one conventional c
 | SF-026 | Duplicate crop-income posting | Complete |
 | SF-041 | Report expense omissions | Complete |
 | SF-042 | Worker expense annual reset | Complete |
-| SF-046 | Forced-sale debt expense category | Pending |
+| SF-046 | Forced-sale debt expense category | Complete |
 | SF-006 | Water-stress warning | Pending |
 | SF-007 | Fifth-cycle year-end temperature | Pending |
 | SF-119 | Stored crop loss-rate flag | Pending |
@@ -64,3 +64,10 @@ Checks: Build/type checking,5 annual-ledger unit cases and1 browser report/payme
 Worker expenses now reset with other annual costs after tax collection and any pending town choice. The same reset helper also applies to native fresh/restart setup; tax carry, reports and book values retain their existing ownership.
 
 Checks: Build/type checking,11 annual/live unit cases and1 browser annual collection/choice/loan/reload flow pass. Worker costs clear independently and remain zero through continuation. Updated stale annual assertions for the earlier SF-071 principal/town settlement; production loan rules were not changed again. Logs artifacts/bugfix-042-*.log.
+
+
+## SF-046 — native correction
+
+Every successful forced-sale payment posts to the actual debt: reason36 taxExpenses/category2500, reason39 balancePayments/category1000. Crop, animal, machinery, land and failed-sale retries share that routing. Asset sale proceeds retain their income categories and cash is debited once.
+
+Checks: Build/type checking,31 default/monthly/live-loan unit cases and1 browser direct/forced/mixed notices/default flow pass. Browser independently checks tax and loan liquidation postings. Original swapped-category source pins remain; stale monthly expectations were corrected. Logs artifacts/bugfix-046-*.log.

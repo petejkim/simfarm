@@ -30,8 +30,8 @@ export function validateDefaultAccounts(world: Scenario, state: DefaultState): v
 }
 
 /** 0x1d766..0x1db7e: invoked AFTER the caller's failed normal debit.
- * Slot-bounded scans correct SF-059; asset order and debit categories preserve
- * the original, including SF-046's ledger mismatch and failed-sale retries. */
+ * Slot-bounded scans correct SF-059; asset order and failed-sale retries preserve
+ * the original; SF-046 posts all successful retries to the actual debt category. */
 export function forceAssetSales(world: Scenario, state: DefaultState, amount: number, reason: DefaultReason,
   effects: ClearingEffects, soilMoisture: number): ForcedSaleResult {
   if (reason !== 36 && reason !== 39) throw new Error('Invalid default reason');
@@ -52,19 +52,19 @@ export function forceAssetSales(world: Scenario, state: DefaultState, amount: nu
     if (!i.slot || !i.active || i.type < 168 || i.type > 191) continue;
     const sale = sellStoredHarvest(world, i.slot, soilMoisture);
     result.attempts.push({ kind: 'crop', slot: i.slot, sold: sale.ok, value: sale.ok ? sale.value : 0 });
-    if (pay(reason === 36 ? 1000 : 2500)) return result;
+    if (pay(reason === 36 ? 2500 : 1000)) return result;
   }
   for (const a of world.animals) {
     if (!a.slot || !a.active) continue;
     const sale = sellAnimal(world, state.assets, a.slot);
     result.attempts.push({ kind: 'animal', slot: a.slot, sold: sale.ok, value: sale.ok ? sale.value : 0 });
-    if (pay(0)) return result;
+    if (pay(reason === 36 ? 2500 : 1000)) return result;
   }
   for (const e of world.equipment) {
     if (!e.slot || !e.active || (e.flags & 0x40)) continue;
     const sale = sellEquipment(world, state.assets, e.slot, soilMoisture);
     result.attempts.push({ kind: 'equipment', slot: e.slot, sold: sale.ok, value: sale.ok ? sale.value : 0 });
-    if (pay(0)) return result;
+    if (pay(reason === 36 ? 2500 : 1000)) return result;
   }
   for (let x = 0; x < 12; x++) for (let y = 0; y < 12; y++) {
     if (world.regionalConditions[(x * 12 + y) * 7 + 1] !== 1 || (x === state.homeRegionX && y === state.homeRegionY)) continue;
@@ -75,7 +75,7 @@ export function forceAssetSales(world: Scenario, state: DefaultState, amount: nu
     const sale = sellLand(world, state, x, y, effects, soilMoisture, false);
     if (!sale.ok) throw new Error('Owned default land became unavailable');
     result.attempts.push({ kind: 'land', regionX: x, regionY: y, sold: true, value: sale.price, demolishedBuildings: sale.demolishedBuildings });
-    if (pay(0)) return result;
+    if (pay(reason === 36 ? 2500 : 1000)) return result;
   }
   // The original terminal text claims the homestead was sold, but the scan
   // explicitly preserves that plot. Keep the world and debt; request a choice.

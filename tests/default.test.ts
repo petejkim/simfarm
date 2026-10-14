@@ -81,27 +81,27 @@ for (let id = 0; id < 8; id++) test(`unpayable default exhausts original farm ${
   assert.throws(() => resolveDefaultDecision(result.decision!, 'exit'));
 });
 
-test('crop payment retries preserve swapped tax/balance categories, wrap and stop immediately on payment', () => {
+test('crop payment retries use actual tax/balance categories, wrap and stop immediately on payment', () => {
   for (const reason of [36, 39] as const) {
     const d = empty(), value = crop(d); animal(d); equipment(d); crop(d, 2);
     d.state.balancePayments = d.state.taxExpenses = 0xfffffffe;
     const r = forceAssetSales(d.world, d.state, value, reason, d.effects, 8);
-    assert.equal(r.paid, true); assert.equal(r.decision, null); assert.equal(r.paymentCategory, reason === 36 ? 1000 : 2500);
+    assert.equal(r.paid, true); assert.equal(r.decision, null); assert.equal(r.paymentCategory, reason === 36 ? 2500 : 1000);
     assert.equal(r.attempts.length, 1); assert.equal(d.world.farm.cash, 0); assert.equal(d.world.farm.salesAccumulator, value);
     assert.equal(d.world.farm.cropIncome, value); assert.equal(d.world.inventory[2].active, true); assert.equal(d.world.animals[1].active, true);
-    assert.equal(d.state[reason === 36 ? 'balancePayments' : 'taxExpenses'], (0xfffffffe + value) >>> 0);
-    assert.equal(d.state[reason === 36 ? 'taxExpenses' : 'balancePayments'], 0xfffffffe);
+    assert.equal(d.state[reason === 36 ? 'taxExpenses' : 'balancePayments'], (0xfffffffe + value) >>> 0);
+    assert.equal(d.state[reason === 36 ? 'balancePayments' : 'taxExpenses'], 0xfffffffe);
   }
 });
 
-test('later stages retry the whole amount through equipment expenses and land adds no taxable sales', () => {
+test('later stages retry the whole amount through loan payments and land adds no taxable sales', () => {
   for (const target of ['animal', 'equipment', 'land'] as const) {
     const d = empty(), cv = crop(d), av = animal(d), ev = equipment(d);
     d.world.regionalConditions[1] = 1;
     const amount = cv + (target === 'animal' ? 1 : av + (target === 'equipment' ? 1 : ev + 1));
     const r = forceAssetSales(d.world, d.state, amount, 39, d.effects, 8);
-    assert.equal(r.paid, true); assert.equal(r.attempts.at(-1)!.kind, target); assert.equal(r.paymentCategory, 0);
-    assert.equal(d.state.equipmentExpenses, amount); assert.equal(d.state.balancePayments, 0); assert.equal(d.state.taxExpenses, 0);
+    assert.equal(r.paid, true); assert.equal(r.attempts.at(-1)!.kind, target); assert.equal(r.paymentCategory, 1000);
+    assert.equal(d.state.equipmentExpenses, 0); assert.equal(d.state.balancePayments, amount); assert.equal(d.state.taxExpenses, 0);
     assert.equal(d.world.farm.cash, r.attempts.reduce((n, a) => n + a.value, 0) - amount);
     assert.equal(d.world.farm.salesAccumulator, cv + av + (target === 'animal' ? 0 : ev));
   }
@@ -147,5 +147,5 @@ test('signed equipment proceeds can wrap cash into the cap before the original d
   d.state.equipmentExpenses = 0xffffffff;
   const r = forceAssetSales(d.world, d.state, 100000, 36, d.effects, 8);
   assert.equal(r.paid, true); assert.equal(r.attempts[0].value, -32768); assert.equal(d.world.farm.cash, 9899999);
-  assert.equal(d.state.equipmentExpenses, 99999); assert.equal(d.world.farm.salesAccumulator, (-32768) >>> 0);
+  assert.equal(d.state.equipmentExpenses, 0xffffffff); assert.equal(d.state.taxExpenses, 100000); assert.equal(d.world.farm.salesAccumulator, (-32768) >>> 0);
 });
