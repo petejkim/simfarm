@@ -252,7 +252,7 @@ test('all eight original farms advance a year without invalid terrain or missing
   }
 }, 30000); //Full eight-farm year matrix; wall duration is not a game-speed assertion.
 
-test('the fifth year-end retains the original temperature-table overread into wind (SF-007)', () => {
+test('the fifth year-end wraps the temperature table without reading wind (SF-007)', () => {
   const input = farm();
   input.scenario.farm.calendar = { day: 6, week: 3, month: 11, year: 1997, season: 0 };
   input.scenario.climate.temperature.fill(70); input.scenario.climate.wind.fill(12);
@@ -264,7 +264,7 @@ test('the fifth year-end retains the original temperature-table overread into wi
   const snapshot = game.getSnapshot();
   assert.equal(snapshot.scenario.farm.calendar.year, 1998);
   assert.equal(snapshot.weather.temperatureYear, 0);
-  assert.equal(snapshot.weather.temperature, 12);
+  assert.equal(snapshot.weather.temperature, 70);
 });
 
 test('player harvest commands complete on all original farms, publish inventory and permit the next planting', () => {

@@ -143,3 +143,15 @@ test('prolonged dry climate reaches the original cracked-soil artwork in the liv
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await focusEdit(page);await page.screenshot({path:'artifacts/browser-drought-cracked-soil.png'});
 });
+
+
+test('fifth climate year wraps to the first temperature without substituting wind',async({page})=>{
+  const f=fixture();Object.assign(f.state.scenario.farm.calendar,{month:11,week:3,day:6,year:1997});
+  Object.assign(f.state.weather,{temperatureYear:4,precipitationYear:4,windYear:4});
+  f.state.scenario.climate.temperature.fill(70);f.state.scenario.climate.wind.fill(12);f.state.finances.town.expansionFunds=0;
+  const game=f.load().withAllCrops(browserCrops);await start(page);await load(page,game.save(4));
+  await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});
+  const checkpoint=await save(page);expect(checkpoint.runtime.weather.temperatureYear).toBe(0);expect(checkpoint.runtime.weather.temperature).toBe(70);
+  expect(checkpoint.scenario.farm.calendar.year).toBe(1998);expect(checkpoint).toEqual(JSON.parse(game.save(4)));
+  await load(page,JSON.stringify(checkpoint));await open(page);await expect(page.locator('#weather-fahrenheit')).toHaveText(String(game.getSnapshot().weather.displayTemperature));
+});

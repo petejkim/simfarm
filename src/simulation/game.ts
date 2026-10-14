@@ -925,9 +925,9 @@ export class GameSimulation {
     s.farm.calendar = { ...before, day: 0, week: before.week + 1, season: next.calendar.season };
     developTown(s, this.finances.town, this.townLayouts, w.soilMoisture, this.random); // 0xcbb3, before field orders.
     this.lastScheduleResult = dispatchFieldSchedule(s, this.crops, this.market, this.random, this.equipmentRuntime, w.soilMoisture);
-    // 0xcbc6 indexes temperature before month/year rollover. Index 240 aliases DS:4368 (wind).
+    // 0xcbc6 indexes temperature before month/year rollover. SF-007 wraps the fifth year safely.
     const index = w.temperatureYear * 48 + before.month * 4 + before.week + 1;
-    w.temperature = index === 240 ? w.wind : s.climate.temperature[index];
+    w.temperature = s.climate.temperature[index % 240];
     if (next.monthEnded) {
       this.random.mixMonth(before.month + 1);
       const retry = retryMonthlyDebts(s, this.finances.accounts, this.finances.debt, this.finances.clearing,

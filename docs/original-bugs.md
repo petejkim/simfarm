@@ -64,11 +64,13 @@ Native correction (2026-10-13): Water warnings and growth share one classificati
 
 ## SF-007 — fifth year-end temperature reads the wind byte
 
-**Status:** confirmed table-boundary defect in the recovered calendar path; preserved without native out-of-bounds access.
+**Status:** original evidence retained; corrected natively on2026-10-13 by user request.
 
 At `0xcbc6`–`0xcbfc`, temperature is read using `temperatureYear * 48 + month * 4 + week` after week increments to four, but before month and year roll over. For temperature-year index four, month eleven and week four, the index is 240. The 240-byte table starts at `6190:4278`; the next byte at `6190:4368` is current wind. The temperature therefore becomes wind speed until the next weekly temperature update. Other year ends read the following year's first temperature entry, which remains in bounds.
 
 Native handling explicitly selects wind at index 240. A five-year calendar regression with distinct wind and temperature tables verifies this path. No correction made. This is a read into another known global, not evidence of an exploitable security vulnerability.
+
+Native correction (2026-10-13): Weekly temperature lookup now wraps the240-entry climate table at the fifth year-end, selecting entry0 instead of the adjacent wind global. Existing month/year phase order and climate-year rotation remain intact; source overread evidence stays documented. Earlier preservation/status notes above describe the pre-correction implementation. Build/type checking,2 focused calendar/timing unit cases and1 browser fifth-year rollover/weather/reload case pass. Temperature70 and wind12 independently distinguish the correction. A temporary test-file generation error was fixed before successful checks; no unrelated tests were replaced. Logs artifacts/bugfix-007-*.log.
 
 ## SF-008 — unchecked precipitation count indexes outside forecast stack tables
 

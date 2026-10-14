@@ -3914,3 +3914,10 @@ Build/type checking,31 default/monthly/live-loan unit cases and1 browser direct/
 Water warnings and growth share one classification using the recovered growth word tolerances, signed water and exclusive upper bound. Exact-upper water now warns wet; high modifiers no longer wrap warning thresholds as bytes. Random consumption and original stress-byte arithmetic remain unchanged.
 
 Build/type checking,16 simulation/report unit cases and2 focused Evaluation browser flows pass, including actual grape water28 wet warning and exact reload. Unit boundaries cover all24 definitions plus a synthetic high-word definition and modifier/water extremes. Updated stale SF-041 report totals; initial browser fixture lacked grapes until expanded to all24. Logs artifacts/bugfix-006-*.log. See docs/gameplay-bug-fixes.md. Original evidence retained; no source distribution changes or push.
+
+
+## 2026-10-13 — requested corrections10/12: SF-007
+
+Weekly temperature lookup now wraps the240-entry climate table at the fifth year-end, selecting entry0 instead of the adjacent wind global. Existing month/year phase order and climate-year rotation remain intact; source overread evidence stays documented.
+
+Build/type checking,2 focused calendar/timing unit cases and1 browser fifth-year rollover/weather/reload case pass. Temperature70 and wind12 independently distinguish the correction. A temporary test-file generation error was fixed before successful checks; no unrelated tests were replaced. Logs artifacts/bugfix-007-*.log. See docs/gameplay-bug-fixes.md. Original evidence retained; no source distribution changes or push.
