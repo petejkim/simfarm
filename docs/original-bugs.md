@@ -629,9 +629,12 @@ Native fresh imports now explicitly start building book value from the executabl
 
 ## SF-074 — full loan payoff leaves the overdue installment active
 
-**Status:** confirmed independent state paths; native preserved; ordinary UI sequence impact awaits integration tests.
+**Status:** original independent paths verified; native full payoff corrected2026-10-13 at user request.
 
 Full payoff `0x47623..0x4768a` debits principal and clears `6190:b3ae/b3b2`. It never clears overdue amount `2d9f:d5ba` or countdown `4d9f:fed6`, set by a failed scheduled installment. Monthly retries still consume that separate amount. Paying the main balance while an installment is overdue can therefore leave another payment due. Native payoff preserves those fields; the loan UI should show the separate overdue balance instead of implying that all debt disappears. Revisit any correction together with SF-071; no security claim is made.
+
+
+Native correction (2026-10-13): full payoff now clears overdue loan amount/countdown with principal/installment, retaining tax debt. Bank also permits explicit$0 cleanup of a previously paid loan's stale overdue state. Unit/browser checks verify no later loan collection and unchanged failed repayment. Earlier native preservation descriptions above are historical; see [correction tracker](gameplay-bug-fixes.md).
 
 ## SF-075 — borrowed cash-cap arithmetic can wrap in malformed/extreme states
 

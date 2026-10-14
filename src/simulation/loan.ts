@@ -31,18 +31,20 @@ export function borrowLoan(world: Scenario, loan: LoanState, buildingBookValue: 
   return { ok: true, amount, installment };
 }
 
-/** Full payoff 0x47623..0x4768a. Source does not clear separate overdue debt
- * or replenish cached available credit. Both are documented, not inferred. */
-export function repayLoanInFull(farm: Pick<SavedFarmState, 'cash'>, loan: LoanState, accounts: LoanPaymentAccounts): RepayResult {
-  validateLoan(loan); validatePaymentAccounts(farm, accounts);
+/** Full payoff0x47623..0x4768a; SF-074 clears loan arrears with principal.
+ * A zero-principal legacy save can explicitly clear its stale overdue state.
+ * Tax debt and the original cached-credit policy are independent. */
+export function repayLoanInFull(farm: Pick<SavedFarmState, 'cash'>, loan: LoanState, debt:MonthlyDebtState, accounts: LoanPaymentAccounts): RepayResult {
+  validateLoan(loan); validateMonthlyDebt(debt); validatePaymentAccounts(farm, accounts);
   const amount = loan.principal;
-  if (!amount) return { ok: false, reason: 'no-loan' };
+  if (!amount&&!debt.balanceDue&&!debt.balanceCountdown) return { ok: false, reason: 'no-loan' };
   if (farm.cash < amount) return { ok: false, reason: 'insufficient-cash' };
   farm.cash -= amount;
   accounts.balancePayments = (accounts.balancePayments + amount) >>> 0;
   accounts.expansionFunds = (accounts.expansionFunds + (amount >>> 1)) >>> 0;
   accounts.townRevenue = (accounts.townRevenue + (amount >>> 2)) >>> 0;
   loan.principal = loan.scheduledPayment = 0;
+  debt.balanceDue=debt.balanceCountdown=0;
   return { ok: true, amount };
 }
 

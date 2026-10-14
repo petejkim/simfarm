@@ -38,7 +38,7 @@ export function LoanPanel({ snapshot, onCommand, onClose, panelRef }: {
     return <BevelButton key={b.id} className={`bank-key ${className}`} id={b.id === 13 ? 'borrow-loan' : b.id === 18 ? 'repay-loan' : undefined}
       aria-label={b.id === 1 ? 'Clear loan amount' : b.id === 3 ? 'Bank help' : b.id === 13 ? 'Borrow' : b.id === 17 ? 'Close Bank terminal' : b.id === 18 ? 'Pay off loan' : b.label}
       aria-expanded={b.id === 3 ? help : undefined}
-      disabled={b.id === 17 || b.id === 3 ? false : blocked || (b.id === 13 && !valid) || (b.id === 18 && (!f.loan.principal || f.loan.principal > snapshot.scenario.farm.cash))}
+      disabled={b.id === 17 || b.id === 3 ? false : blocked || (b.id === 13 && !valid) || (b.id === 18 && ((!f.loan.principal&&!f.debt.balanceDue&&!f.debt.balanceCountdown) || f.loan.principal > snapshot.scenario.farm.cash))}
       onClick={() => key(b.label)}>{b.label}</BevelButton>; };
   return <>
     <section id="loan-panel" className="bank-terminal" ref={panelRef} tabIndex={-1} aria-label="Loans"

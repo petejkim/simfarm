@@ -1,3 +1,4 @@
+import {speedItem} from '../support/workspace';
 import {readSaveText} from '../support/save-file';
 import { test, expect, type Page } from '@playwright/test';
 
@@ -61,4 +62,25 @@ test('Bank entry clamps credit, keyboard period clears, zero OK and Close leave 
   await expect(page.locator('#loan-amount')).toHaveValue('999999'); await page.locator('#borrow-loan').click();
   await expect(page.locator('#farm-cash')).toHaveText('$9,999,999');
   await expect(page.locator('#loan-balance')).toHaveText('$999,999');
+});
+
+
+test('Bank payoff clears overdue installments, including legacy zero-principal debt, without later collection',async({page})=>{
+  await page.clock.install();await page.clock.pauseAt(new Date(Date.now()+1000));
+  await start(page);const original=await save(page);
+  for(const principal of [101,0]){
+    const checkpoint=structuredClone(original);checkpoint.runtime.paused=true;checkpoint.scenario.farm.cash=1000;
+    Object.assign(checkpoint.scenario.farm.calendar,{day:6,week:3,month:0});
+    Object.assign(checkpoint.runtime.finances.loan,{principal,scheduledPayment:principal?8:0});
+    Object.assign(checkpoint.runtime.finances.debt,{balanceDue:9,balanceCountdown:2,unpaidTaxes:0,taxCountdown:0});
+    await page.locator('#load-farm-file').setInputFiles({name:'payoff.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(checkpoint))});
+    await expect(page.locator('#save-status')).toHaveText('Farm loaded.');await page.locator('#window-bank').click();
+    await expect(page.locator('#repay-loan')).toBeEnabled();await page.locator('#repay-loan').click();
+    await expect(page.locator('#loan-balance')).toHaveText('$0');const paid=await save(page);
+    expect(paid.scenario.farm.cash).toBe(1000-principal);expect(paid.runtime.finances.debt.balanceDue).toBe(0);expect(paid.runtime.finances.debt.balanceCountdown).toBe(0);
+    await page.getByRole('dialog',{name:'Bank',exact:true}).getByRole('button',{name:'Close Bank terminal',exact:true}).click();
+    await (await speedItem(page,'#next-day')).click();const after=await save(page);
+    expect(after.runtime.finances.debt.balanceDue).toBe(0);expect(after.runtime.finances.debt.balanceCountdown).toBe(0);
+    expect(after.runtime.finances.accounts.balancePayments).toBe(paid.runtime.finances.accounts.balancePayments);
+  }
 });

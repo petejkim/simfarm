@@ -50,20 +50,21 @@ test('borrowing clamps to actual land credit and cash headroom and rejects inval
   }
 });
 
-test('full repayment uses canonical expense/town owners, wraps shares and preserves existing overdue debt and cached credit', () => {
+test('full repayment uses canonical expense/town owners, wraps shares and clears existing overdue loan debt while preserving cached credit and taxes', () => {
   const { world, f } = setup(); world.farm.cash = 101; Object.assign(f.loan, { principal: 101, scheduledPayment: 8, availableCredit: 777 });
-  f.debt.balanceDue = 9; f.debt.balanceCountdown = 2;
+  f.debt.balanceDue = 9; f.debt.balanceCountdown = 2;f.debt.unpaidTaxes=71;f.debt.taxCountdown=3;
   f.accounts.balancePayments = 0xffffffff; f.town.expansionFunds = f.town.townRevenue = 0xffffffff;
-  assert.deepEqual(repayLoanInFull(world.farm, f.loan, loanPaymentAccounts(f)), { ok: true, amount: 101 });
+  assert.deepEqual(repayLoanInFull(world.farm, f.loan, f.debt, loanPaymentAccounts(f)), { ok: true, amount: 101 });
   assert.equal(world.farm.cash, 0); assert.equal(f.loan.principal, 0); assert.equal(f.loan.scheduledPayment, 0);
   assert.equal(f.loan.availableCredit, 777); assert.equal(f.accounts.balancePayments, 100);
   assert.equal(f.town.expansionFunds, 49); assert.equal(f.town.townRevenue, 24);
-  assert.equal(f.debt.balanceDue, 9); assert.equal(f.debt.balanceCountdown, 2);
+  assert.equal(f.debt.balanceDue, 0); assert.equal(f.debt.balanceCountdown, 0);
+  assert.equal(f.debt.unpaidTaxes,71);assert.equal(f.debt.taxCountdown,3);
   const before = JSON.stringify([world, f]);
-  assert.deepEqual(repayLoanInFull(world.farm, f.loan, loanPaymentAccounts(f)), { ok: false, reason: 'no-loan' });
+  assert.deepEqual(repayLoanInFull(world.farm, f.loan, f.debt, loanPaymentAccounts(f)), { ok: false, reason: 'no-loan' });
   assert.equal(JSON.stringify([world, f]), before);
   f.loan.principal = 1;
-  assert.deepEqual(repayLoanInFull(world.farm, f.loan, loanPaymentAccounts(f)), { ok: false, reason: 'insufficient-cash' });
+  assert.deepEqual(repayLoanInFull(world.farm, f.loan, f.debt, loanPaymentAccounts(f)), { ok: false, reason: 'insufficient-cash' });
   assert.equal(f.loan.principal, 1);
 });
 
@@ -74,4 +75,17 @@ test('finance account views share all owners without cached copies', () => {
   assert.deepEqual([f.debt.unpaidTaxes, f.debt.taxCountdown, f.accounts.taxExpenses, f.taxFailures], [100, 3, 90, 2]);
   assert.equal(f.accounts.balancePayments, 8); assert.equal(tax.townRevenue, 12); assert.equal(loan.expansionFunds, 14);
   f.town.townRevenue = 25; assert.equal(loan.townRevenue, 25); assert.equal(tax.townRevenue, 25);
+});
+
+
+test('explicit payoff repairs zero-principal legacy arrears, and unaffordable payoff preserves every debt',()=>{
+  const {world,f}=setup();world.farm.cash=0;
+  Object.assign(f.loan,{principal:0,scheduledPayment:0});Object.assign(f.debt,{balanceDue:9,balanceCountdown:2,unpaidTaxes:71,taxCountdown:3});
+  const accounts=JSON.stringify([f.accounts,f.town]);
+  assert.deepEqual(repayLoanInFull(world.farm,f.loan,f.debt,loanPaymentAccounts(f)),{ok:true,amount:0});
+  assert.equal(world.farm.cash,0);assert.equal(f.debt.balanceDue,0);assert.equal(f.debt.balanceCountdown,0);
+  assert.equal(f.debt.unpaidTaxes,71);assert.equal(f.debt.taxCountdown,3);assert.equal(JSON.stringify([f.accounts,f.town]),accounts);
+  Object.assign(f.loan,{principal:101,scheduledPayment:8});Object.assign(f.debt,{balanceDue:9,balanceCountdown:2});
+  const before=JSON.stringify([world,f]);assert.deepEqual(repayLoanInFull(world.farm,f.loan,f.debt,loanPaymentAccounts(f)),{ok:false,reason:'insufficient-cash'});
+  assert.equal(JSON.stringify([world,f]),before);
 });

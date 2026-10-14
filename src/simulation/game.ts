@@ -612,7 +612,7 @@ export class GameSimulation {
       this.lastLoanResult = { kind: 'borrow', ...borrowLoan(this.scenario, this.finances.loan,
         this.finances.accounts.buildingBookValue, this.finances.loanRate, command.amount, this.weather.soilMoisture) };
     } else if (command.type === 'repay-loan') {
-      this.lastLoanResult = { kind: 'repay', ...repayLoanInFull(this.scenario.farm, this.finances.loan, loanPaymentAccounts(this.finances)) };
+      this.lastLoanResult = { kind: 'repay', ...repayLoanInFull(this.scenario.farm, this.finances.loan, this.finances.debt, loanPaymentAccounts(this.finances)) };
     } else if (command.type === 'set-paused') {
       if (this.paused === command.paused) return;
       this.paused = command.paused; this.elapsed = 0;

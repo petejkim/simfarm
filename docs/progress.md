@@ -3858,3 +3858,10 @@ Focused83existing unit tests across14files pass(9.72s), checking current loan/ar
 User authorized all twelve identified issues, one commit each. Tracker: docs/gameplay-bug-fixes.md. SF-071 now settles successful direct/forced loan arrears into canonical principal/credit/town funds exactly once after the debt phase, retaining the existing cash debit. Failures and unpaid defaults do not reduce principal; mixed debt/default continuation applies paid loan amounts before suspension. Source evidence and old native-preservation history remain in the updated ledger.
 
 Type checking/production build,21focused unit cases(3.32s) and1browser scenario(5.6s) pass. Browser covers all direct/forced/mixed notice branches with independent principal assertions and exact saves. Initial build/browser failure was missing Roboto/DM Serif packages from the merge; repository-local frozen Bun install added exactly those two locked packages, then checks passed. Logs artifacts/bugfix-071-*.log. No source/lock/schema mutation or push. Eleven requested corrections remain; SF-074 full payoff is next.
+
+
+## 2026-10-13 — requested corrections2/12: SF-074 full loan payoff
+
+After9585a6e, full payoff clears canonical overdue loan amount/countdown alongside principal/installment. Separate tax debt survives. The Repay button also handles an older zero-principal/stale-arrears checkpoint explicitly for$0; loading itself does not rewrite history. Failure remains atomic and no extra charge/refund is invented. Original evidence remains in SF-074, with current correction status.
+
+Type checking/build,19focused loan/live unit cases(3.15s),3Bank browser cases(6.4s) and diff checks pass. New browser case independently verifies both positive/zero-principal payoff, cash, overdue fields and no subsequent monthly collection. Logs artifacts/bugfix-074-*.log. No schema/source/dependency change or push. Ten requested issues remain; SF-129 wind cadence is next.
