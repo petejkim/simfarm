@@ -254,9 +254,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
   const data = resource.status === 'ready' && snapshot ? { tiles: resource.value.tiles, scenario: snapshot.scenario } : null;
   const field = data?.scenario.fields.find(f => f.slot === fieldSlot && f.active);
   const position = buyPlacement || fieldMapTool || objectMove.active || construction.tool || bulldoze.active ? toolPointer : selection !== null ? worldPosition(selection) : null;
-  // Source mode11 uses only hand cursors; other tools draw their footprint
-  // regardless of placement validity. Canonical commands validate actual clicks.
-  const preview = objectMove.active ? undefined : bulldoze.active ? bulldoze.preview(position)
+  // Requested native feedback: Move shares the one-tile highlight with Examine, alongside its source hand cursor.
+  // Other tools draw their footprint regardless of placement validity. Canonical commands validate actual clicks.
+  const preview = bulldoze.active ? bulldoze.preview(position)
     : !toolPointer||fieldMenu ? undefined
     : fieldMapTool?.kind==='plant' ? {...toolPointer,width:8,height:8}
     : buyPlacement&&data&&buyPlacement.type<8 ? {...toolPointer,
@@ -375,9 +375,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
     fieldMapTool?(fieldMapTool.kind==='plant'?'bulldoze':'spray'):buyPlacement?'buy':'view';
   const cursorHotspot=mapCursor==='pick'||mapCursor==='drop'?8:0;
   // Touch confirmation (native): tools that place a footprint or paint need a visible highlight before they commit.
-  // View object, Spray (whole fields) and Move object (pickup/drop cursors without a footprint) act on the first tap.
+  // View object, Spray (whole fields) and Move object (one-tile highlight) act on the first tap.
   const confirmTaps=Boolean(buyPlacement||fieldMapTool?.kind==='plant'||construction.tool||bulldoze.active);
-  const toolKey=`${mapCursor}:${buyPlacement?.type??''}:${fieldMapTool?.kind??''}:${construction.tool??''}`;
+  const toolKey=`${objectMove.active?'move':mapCursor}:${buyPlacement?.type??''}:${fieldMapTool?.kind??''}:${construction.tool??''}`;
   const cropFiles=snapshot?.scenario.cropFiles??data?.scenario.cropFiles;
   return <CropTilesContext value={cropFiles?fixedCropTiles(cropFiles):null}>
     {simulation && <SaveControls debug={{

@@ -114,6 +114,16 @@ Source range SHA256 (end exclusive):
 - 21726..217a7: `62efbed2889d61f4f2e274c829c0c21f177a86d4af16f4072366a7fd1771aeb3`
 - 209be..209f5: `4561b46735f7bd929a080c26aab55ee97c9562cf8565cc561f12b52f1e643819`
 - e6bc..e704: `c1a375c6517f9cd497e10510f21367069037b91e01ffa23ffe09d69f792f5900`
+
+### Requested native Move highlight (2026-10-13)
+
+The user requested the same one-tile highlight as Examine for both touch and mouse Move input. Native Move
+now draws the shared transparent CSS border under the mouse pointer and at touchdown. It stays on the touched
+world tile through scrolling, cancellation, rejected drops and pickup/drop cursor changes. Move keeps a stable
+tool identity through pickup/drop; switching to another tool still clears touch tracking. First-tap pickup/drop
+and the original hand cursor/hotspot remain intact. This explicitly supersedes the native no-outline choice
+described above; the executable evidence that original mode11 draws no rectangle remains unchanged. The border
+does not show an object's footprint or placement validity and does not redraw terrain or change saved rules.
 - 20449..20483: `96cd10bf762b3b6f555cb667dd80fcf52a9c28540ec8cf210b303fd3d50dda6b`
 - 137cf..13824: `8da109b8b9b0a0eb274b122671172fa91fcc6387db68647f2d5766e7fe70655a`
 - 14510..1454e: `39a6e59f5fa93ff5f406e7d3c4d1cacbf6723d3088e736942853d16bc2e250ac`

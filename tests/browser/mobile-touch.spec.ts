@@ -8,6 +8,7 @@ import {reveal,expectPaletteAction,expectNoHorizontalOverflow} from '../support/
 import {farmSnapshot} from '../support/field-checkpoint';
 import {terrainPixels} from '../support/terrain-pixels';
 import {previewFootprint} from '../support/map-preview';
+import {checkEquipmentPickup} from '../../src/simulation/manual-equipment-move';
 
 /** Touch screens zoom #app 1.2× (style.css); boxes are screen px, CSS lengths and scroll positions layout px. */
 const Z=1.2;
@@ -54,6 +55,42 @@ test.describe('phone screen',()=>{
     await tap(page,session,8,16);await expect(dialog).toBeVisible();
     await expect(page.locator('.examine-window[data-kind=terrain]')).toBeVisible();
     expect(await previewFootprint(page)).toEqual([8,16,1,1]);expect(await save(page)).toEqual(JSON.parse(initial));
+    await session.detach();
+  });
+  test('Move highlights touch pickup and drop tiles while acting on the first tap',async({page})=>{
+    const f=shopFixture();f.state.paused=true;f.state.disasters.enabled=false;f.state.scenario.farm.autoScroll=false;
+    f.state.scenario.cells[worldIndex(8,16)].overlay=0; // Unowned destination rejects the order.
+    const g=f.load().withAllCrops(browserCrops);g.dispatch({type:'buy-equipment',equipmentType:0,x:10,y:12});
+    expect(g.getSnapshot().lastEquipmentPurchaseResult?.ok).toBe(true);
+    const selected=checkEquipmentPickup(g.getSnapshot().scenario,10,12);if(!selected.ok)throw new Error('Missing machine');
+    const initial=g.save(4);await page.goto('/');await load(page,initial);
+    await page.getByRole('button',{name:'Move object',exact:true}).tap();
+    const viewport=page.locator('#viewport'),panel=page.locator('.map-panel');await viewport.evaluate(v=>v.scrollTo(0,0));
+    const session=await page.context().newCDPSession(page),plain=await tilePixels(page,10,12);
+    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[await coords(page,10,12)]});
+    await expect.poll(()=>previewFootprint(page)).toEqual([10,12,1,1]);await expect(panel).toHaveAttribute('data-object-move','pick');
+    await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await expect(panel).toHaveAttribute('data-object-move','drop');
+    expect(await previewFootprint(page)).toEqual([10,12,1,1]);expect(await tilePixels(page,10,12)).toEqual(plain);
+    expect(await save(page)).toEqual(JSON.parse(initial));
+    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[await coords(page,8,16)]});
+    await expect.poll(()=>previewFootprint(page)).toEqual([8,16,1,1]);
+    await session.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
+    await viewport.evaluate(v=>v.scrollBy(32,16));await expect.poll(()=>previewFootprint(page)).toEqual([8,16,1,1]);
+    await tap(page,session,8,16);await expect(panel).toHaveAttribute('data-object-move','drop');
+    expect(await previewFootprint(page)).toEqual([8,16,1,1]);expect(await save(page)).toEqual(JSON.parse(initial));
+    await tap(page,session,12,16);g.dispatch({type:'move-equipment',selected,x:12,y:16});
+    expect(g.getSnapshot().lastEquipmentMoveResult?.ok).toBe(true);
+    await expect(panel).toHaveAttribute('data-object-move','pick');
+    expect(await previewFootprint(page)).toEqual([12,16,1,1]);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
+    // Mouse Move shares the highlight, including a switch to/from touch on the same tile.
+    const mouse=await coords(page,12,16);await page.mouse.move(mouse.x,mouse.y);
+    await expect.poll(()=>previewFootprint(page)).toEqual([12,16,1,1]);
+    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[mouse]});
+    await expect.poll(()=>previewFootprint(page)).toEqual([12,16,1,1]);
+    await session.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
+    await page.keyboard.press('Escape');await expectPaletteAction(page,'View object');
+    await expect(page.locator('#world-preview')).toHaveCount(0);expect(await save(page)).toEqual(JSON.parse(g.save(4)));
     await session.detach();
   });
   test('oversized windows scale to fit the screen and return to 1x when there is room',async({page})=>{

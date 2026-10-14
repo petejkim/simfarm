@@ -11,6 +11,7 @@ import { cropPlantTile,cropHarvestTile } from '../../src/formats/crop-slots';
 import { worldIndex } from '../../src/formats/scenario';
 import { reveal, expectPaletteAction , speedItem } from '../support/workspace';
 import { GameSimulation } from '../support/game';
+import {expectPreview} from '../support/map-preview';
 async function load(page:Page,text:string){await page.locator('#load-farm-file').setInputFiles({name:'move.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
 async function save(page:Page){const p=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await p).path())!));}
 async function point(page:Page,x:number,y:number,button:'left'|'right'='left'){await page.locator('#viewport').evaluate((v,p)=>v.scrollTo(Math.max(0,p.x-20)*16,Math.max(0,p.y-15)*16),{x,y});const r=(await page.locator('#world').boundingBox())!;await page.mouse.click(r.x+x*16+8,r.y+y*16+8,{button});}
@@ -39,6 +40,7 @@ test('Move object picks stored machinery directly, cancels without withdrawal, r
   await move(page);await point(page,20,21);await point(page,60,60);await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','drop');expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   const selected=checkEquipmentPickup(g.getSnapshot().scenario,20,21);if(!selected.ok)throw new Error('Missing machine');
   await point(page,40,40);g.dispatch({type:'move-equipment',selected,x:40,y:40});await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');await expect(page.locator('#world')).toHaveCSS('cursor',/move-pick\.png.*8 8, crosshair/);
+  await expectPreview(page,{x:40,y:40,width:1,height:1});
   expect(await save(page)).toEqual(JSON.parse(g.save(4)));await page.screenshot({path:'artifacts/browser-object-move.png'});
   await page.reload();await load(page,g.save(4));await expectPaletteAction(page,'View object');
   for(let i=0;i<8;i++){await (await speedItem(page,'#next-day')).click();g.dispatch({type:'advance-day'});}

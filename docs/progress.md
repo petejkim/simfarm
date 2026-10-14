@@ -4111,3 +4111,26 @@ Runtime stayed fixed during browser checks. Logs: artifacts/examine-touch-{befor
 regression-browser}.log. No full suites repeated for this pointer/highlight correction; physical-device and
 WebKit-specific verification were not performed. This request is complete; commit stays local and broader
 preservation remains incomplete. No additional reconstruction work is started.
+
+## 2026-10-13 — requested Move highlight for touch and mouse
+
+Move now shares Examine's transparent one-tile CSS highlight at touchdown and under the mouse pointer, as
+requested. Pickup/drop share a stable tool identity so the touched world tile remains highlighted after either
+cursor transition. First-tap pickup/drop, rejected-order retention, original hand artwork/hotspots and canonical
+movement/storage commands retain their behavior. Tool changes still reset touched coordinates. The original
+mode11 no-rectangle evidence remains in manual-movement.md; this is an explicit native presentation enhancement,
+not a new original behavior or original-game defect. No simulation rule, checkpoint, dependency or supplied
+distribution changes.
+
+The new 390×844 phone regression fails on the previous runtime because Move hides the border, then passes with
+the correction. It checks touchdown before pickup, retained pickup/drop highlights, cancelled touch and scroll,
+unowned rejection, successful first-tap destination ordering, hybrid mouse/touch and Escape, terrain pixel
+equality and complete checkpoints. Desktop outline coverage checks single-tile geometry beside both hand
+cursors, rejection and pointer exit; the existing storage-movement flow also checks the successful mouse drop.
+Type checking/production build and all 30 focused movement/map-interaction/cursor/outline unit cases pass
+(7.05s). All 42 focused browser cases pass (38.2s), covering mobile Examine/Move/placement/paint/pinch, desktop
+outlines, all 24 supply identities, stored/loose machinery, storage transfers, rejection/cancellation, sound,
+secondary-click interactions and saved continuation. Runtime stayed fixed during browser validation. Logs:
+artifacts/move-touch-{before,browser,build,final-build,unit,regression-browser}.log. No full suites repeated for
+this presentation correction; physical-device and WebKit-specific verification remain unperformed. These
+requests are complete; commit stays local. Broader preservation remains incomplete; no additional work started.
