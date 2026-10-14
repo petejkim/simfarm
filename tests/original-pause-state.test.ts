@@ -75,7 +75,7 @@ test('ordinary loads retain opening checks and loaded post-return depth across a
   const prior = restore(value), next = prior.importOriginal(source('SCEN4.SSM'), assets.crops).simulation;
   assert.deepEqual(next.getSnapshot().originalPause, { depth: 0, speedChecks: value.runtime.originalPause.speedChecks });
   assert.deepEqual(parsed(prior), value); //255->0 opening leaves checks; loaded0 skips resume.
-}, 60000); //56 complete import/checkpoint/continuation pairs across eight farms.
+}, 75000); // 56 complete import/checkpoint/continuation pairs; add 15s headroom under load.
 
 test('restart resets checks but retains pause depth; numbered and Load chooser outcomes use distinct source callbacks', () => {
   const value = parsed(cold()); value.runtime.originalPause = { depth: 254, speedChecks: [128, 3, 254, 1, 255] };

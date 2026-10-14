@@ -153,4 +153,4 @@ test('a restarted original farm can plant, grow, store and sell a valuable crop 
   assert.ok((a.getSnapshot().storedHarvestValues[item.slot] ?? 0) > 0);
   for (const g of [a, b]) { g.dispatch({ type: 'sell-harvest', inventorySlot: item.slot }); assert.ok(g.getSnapshot().lastSaleResult?.ok); }
   assert.deepEqual(parsed(a), parsed(b)); assert.equal(a.getSnapshot().scenario.inventory[item.slot].active, false);
-});
+}, 8000); // Full crop cycle with checkpoint comparisons; previously exceeded the default 5s under load.

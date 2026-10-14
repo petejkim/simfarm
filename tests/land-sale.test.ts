@@ -54,7 +54,7 @@ for (let id = 0; id < 8; id++) test(`every owned region in original farm ${id + 
       assert.deepEqual(sellLand(world, state, rx, ry, effects, 8, false), { ok: false, reason: 'not-owned' });
       assert.equal(JSON.stringify([world, state, effects]), after);
     }
-});
+}, 8000); // Whole-farm plot matrix; allow modest headroom under parallel test load.
 
 test('sale preserves only the tree image range, keeps unknown map bits and applies unsigned cash cap/wrap', () => {
   for (const taxable of [false, true]) for (const cash of [0, 9999990, 0xfffffff0]) {

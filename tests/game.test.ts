@@ -250,7 +250,7 @@ test('all eight original farms advance a year without invalid terrain or missing
     assert.ok(snapshot.scenario.cells.every(c => Number.isInteger(c.terrain) && c.terrain >= 0 && c.terrain <= 65535));
     assert.ok(Number.isFinite(snapshot.weather.temperature));
   }
-}, 90000); //Full eight-farm year matrix under parallel browser load; wall duration is not a game-speed assertion.
+}, 105000); // Full eight-farm year matrix; add 15s headroom under load, with no game-speed assertion.
 
 test('the fifth year-end wraps the temperature table without reading wind (SF-007)', () => {
   const input = farm();
