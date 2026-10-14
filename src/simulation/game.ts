@@ -1055,7 +1055,7 @@ export class GameSimulation {
   private advanceDisasters(): void {
     const s = this.scenario;
     if (advanceStationaryDisasters(this.weather, this.disasters).includes('frost')) this.disasterNotice('The frost has ended.');
-    advanceWindDisaster(s, this.crops, this.disasters.flags, s.farm.animationTicks, this.disasters.windReferenceTick, s.farm.dayDelayTicks);
+    advanceWindDisaster(s, this.crops, this.disasters, s.farm.animationTicks, s.farm.dayDelayTicks);
     const step = advanceMovingDisasters(s, this.finances, this.disasters, s.farm.animationTicks, this.weather.soilMoisture, this.random);
     if (step.swarmEnded) this.disasterNotice('The locust swarm has dispersed.');
     if (step.hits.some(h => !h.result.ok && h.result.reason === 'insufficient-cash')) this.disasterNotice('Insufficient cash for disaster terrain clearing ($25).');

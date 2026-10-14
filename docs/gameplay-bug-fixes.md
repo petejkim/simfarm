@@ -6,7 +6,7 @@ User authorized these twelve native corrections on2026-10-13, one conventional c
 | --- | --- | --- |
 | SF-071 | Loan arrears settlement | Complete; principal, credit and town allocations settle once for direct/forced payments. |
 | SF-074 | Full payoff clears overdue loan state | Complete; repayment clears loan-only debt/countdown, including explicit legacy repair. |
-| SF-129 | Wind damage cadence | Pending |
+| SF-129 | Wind damage cadence | Complete; one nutrient per exposed field per full game day, with saved clock updates. |
 | SF-001 | Regional-condition subtraction | Pending |
 | SF-026 | Duplicate crop-income posting | Pending |
 | SF-041 | Report expense omissions | Pending |
@@ -29,3 +29,10 @@ Checks:21unit cases covering loan/monthly/live phases, direct cash and liquidati
 Full payoff validates and clears the canonical overdue amount/countdown with principal/installment. Tax debt remains independent. Repay is available when an older checkpoint has zero principal but stale loan arrears/countdown; that explicit action clears the stale state for$0 without refunding history or mutating accounts. Unaffordable/malformed repayment fails before changes. No load-time repair, new schema or duplicate debit is introduced.
 
 Checks: type checking/build,19loan/live unit cases(3.15s),3Bank browser cases(6.4s). Independent browser assertions cover ordinary payoff and zero-principal legacy state, exact principal/cash/debt, and a subsequent month with no stale installment collection. Unit checks retain tax debt, accounts and failed-payment atomicity. Logs artifacts/bugfix-074-*.log.
+
+
+## SF-129 — wind damage clock
+
+Accepted wind start now captures its animation tick; rejected starts keep the previous clock. Each accepted damage interval advances the canonical windReferenceTick. Native policy is one nutrient unit per exposed active field per full game day (`elapsed>dayDelay`), not each animation call. Retains the source tree protection threshold, sparse-record guard and unsigned16-bit elapsed/wrap. This is an explicitly authorized native cadence correction, not proof of original intent or absence of all indirect DOS writers. Uses the existing checkpoint field; loading does not reset it or replay damage.
+
+Checks: build/type checking;10wind/live-disaster cases(1.89s);1browser cadence/load scenario(2.4s). The first draft test overlooked odd-day soil recovery+1 and read fields from the serialized envelope rather than the decoded scenario; corrected only those assertions, then all passed. Paired no-wind baseline establishes exactly one unit of damage despite recovery; pause/save/restore/wrap and rejected starts are covered. Logs artifacts/bugfix-129-*.log.

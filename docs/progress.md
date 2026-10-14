@@ -3865,3 +3865,10 @@ Type checking/production build,21focused unit cases(3.32s) and1browser scenario(
 After9585a6e, full payoff clears canonical overdue loan amount/countdown alongside principal/installment. Separate tax debt survives. The Repay button also handles an older zero-principal/stale-arrears checkpoint explicitly for$0; loading itself does not rewrite history. Failure remains atomic and no extra charge/refund is invented. Original evidence remains in SF-074, with current correction status.
 
 Type checking/build,19focused loan/live unit cases(3.15s),3Bank browser cases(6.4s) and diff checks pass. New browser case independently verifies both positive/zero-principal payoff, cash, overdue fields and no subsequent monthly collection. Logs artifacts/bugfix-074-*.log. No schema/source/dependency change or push. Ten requested issues remain; SF-129 wind cadence is next.
+
+
+## 2026-10-13 — requested corrections3/12: SF-129 wind cadence
+
+After53357d1, accepted wind starts establish a fresh canonical windReferenceTick and accepted damage intervals advance it. Explicit native policy: one nutrient per exposed active field per full game day, preserving strict source elapsed gate,16-bit wrap,8-tree protection and sparse traversal. Existing checkpoint ownership resumes the interval through pause/load; no schema reset/replayed damage. This correction does not assert the original intended cadence or resolve indirect-writer research.
+
+Build/type checking,10wind/live unit cases(1.89s),1browser cadence/reload check(2.4s) and diff pass. Initial new test expectations missed odd-day soil recovery and decoded-fields versus serialized-envelope distinction; assertions corrected without runtime changes. Paired no-wind comparison proves one-unit damage. Logs artifacts/bugfix-129-*.log. Nine requested fixes remain; SF-001 regional subtraction follows. A full regression milestone is planned after the twelve related corrections, not per issue.

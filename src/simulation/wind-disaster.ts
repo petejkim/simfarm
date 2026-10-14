@@ -32,14 +32,16 @@ export function beginWindDisaster(world: Scenario, crops: readonly (readonly num
   d.flags = (d.flags & ~32) | 8;
   if (weather.wind < 30) weather.windAnomaly = (40 - weather.wind) << 24 >> 24;
   d.lastStartTick = tick;
+  d.windReferenceTick=tick; // SF-129: start a fresh one-day damage interval.
   return true;
 }
 
-/** 0x370f4: DS6aa8 is initialized zero and this branch never updates it.
+/** 0x370f4: SF-129 advances the damage clock once per full game day.
  * SF-120: visit actual active records rather than repeating sparse holes. */
-export function advanceWindDisaster(world: Scenario, crops: readonly (readonly number[])[], flags: number,
-  tick: number, referenceTick: number, delay: number): void {
-  if (!(flags & 8) || ((tick - referenceTick) & 65535) <= delay) return;
+export function advanceWindDisaster(world: Scenario, crops: readonly (readonly number[])[], state:Pick<MovingDisasterState,'flags'|'windReferenceTick'>,
+  tick: number, delay: number): void {
+  if (!(state.flags & 8) || ((tick - state.windReferenceTick) & 65535) <= delay) return;
+  state.windReferenceTick=tick;
   for (const field of world.fields) if (field.slot && field.active) {
     field.bytes[55] = fieldWindbreaks(world, field) & 255;
     if ((field.bytes[55] << 24 >> 24) < 8) changeFieldCondition(field, crops[field.cropSlot], world.regionalConditions, 13, 1);

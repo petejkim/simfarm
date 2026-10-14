@@ -1,3 +1,4 @@
+import {GameSimulation} from '../support/game';
 import {readSaveText} from '../support/save-file';
 import {toggleOption} from '../support/options-menu';
 import { farmSnapshot } from '../support/field-checkpoint';
@@ -105,3 +106,19 @@ test('saved toxic warning remains flag-only and ordinary play has no provisional
 
 // These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
 test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});
+
+
+test('wind removes one nutrient per game day and its saved clock prevents repeated damage',async({page})=>{
+  await page.clock.install();await page.clock.pauseAt(new Date(Date.now()+1000));await page.goto('/');
+  const f=disasterFixture();f.state.paused=true;f.state.scenario.farm.messages=false;
+  f.state.scenario.fields[1].bytes[2]=0;f.state.disasters.flags=8;f.state.disasters.enabled=false;f.state.disasters.windReferenceTick=0;
+  f.state.weather.wind=40;f.state.scenario.farm.animationTicks=f.state.scenario.farm.timerTicks=0;f.state.dayTicks=0;
+  const game=f.load().withAllCrops(browserCrops);await load(page,game.save(4));
+  for(const nutrient of [200,199]){
+    await (await speedItem(page,'#next-day')).click();const checkpoint=await save(page,'cadence');
+    const state=GameSimulation.load(JSON.stringify(checkpoint),browserCrops).simulation.getSnapshot();
+    expect(state.scenario.fields[1].bytes[29]).toBe(nutrient);
+    expect(checkpoint.runtime.disasters.windReferenceTick).toBe(checkpoint.scenario.farm.animationTicks);
+    await load(page,JSON.stringify(checkpoint));
+  }
+});

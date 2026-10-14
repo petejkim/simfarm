@@ -1113,9 +1113,12 @@ Native `prepareDisasterBuilding` preflights actual contents, closes over affecte
 
 ## SF-129 — wind damage does not advance its reference clock
 
-Status: verified branch behavior retained; a possible indirect clock writer remains unresolved. Confidence high for the dispatcher, limited for whole-program absence of indirect writes. No security implication.
+Status: original branch verified; native daily cadence corrected2026-10-13; possible original indirect writers remain unresolved. Confidence high for the dispatcher, limited for whole-program absence of indirect writes. No security implication.
 
 Wind branch0x370ff..0x3710b subtractsDS6aa8 and compares unsigned elapsed against day-delayDS1f8c. The branch through0x37169 does not writeDS6aa8; initialized data at0x8b198 is zero, and the current whole-code index identifies the read without another direct write. Consecutive eligible animation calls can therefore each remove one nutrient unit from unprotected fields rather than waiting another day. Native persists the reference word and retains that behavior, with equality/wrap/repeated-call tests. Revisit indirect writes and original timer initialization before declaring an unconditional original gameplay defect or replacing it with a cooldown.
+
+
+Native correction (2026-10-13): accepted wind starts establish a fresh damage clock; each eligible one-day interval advances the saved reference. Damage is one nutrient per exposed field per full day, with source windbreak protection and word-wrap semantics. Pause/checkpoint/browser tests verify cadence. Original-writer uncertainty remains; earlier native preservation text is historical. See [correction tracker](gameplay-bug-fixes.md).
 
 ## SF-130 — disaster crop-price adjustment wraps before its cap
 

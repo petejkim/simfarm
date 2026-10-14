@@ -14,18 +14,19 @@ test('wind start callback is price adjustment with no-op tornado/swarm modes; so
   assert.equal(exe.subarray(0x37103, 0x37107).toString('hex'), '2b06a86a');
 });
 
-test('two-cell windbreak boundary counts covered rows/columns once, protects at8 and damages sparse exposed fields on every eligible call', () => {
+test('two-cell windbreak boundary counts covered rows/columns once, protects at8 and damages sparse exposed fields once per day, with clock wrap', () => {
   const f = disasterFixture(), w = f.state.scenario, field = w.fields[1], crops = f.state.crops;
   assert.equal(fieldWindbreaks(w, field), 0);
   for (let x = 20; x < 28; x++) { w.cells[worldIndex(x, 18)].terrain = 131; w.cells[worldIndex(x, 19)].terrain = 146; }
   assert.equal(fieldWindbreaks(w, field), 8);
+  const d={flags:8,windReferenceTick:0};
   const other = w.fields[5]; other.bytes.set(field.bytes); other.bytes[10] = 50;
-  advanceWindDisaster(w, crops, 8, 64, 0, 64); assert.equal(other.bytes[29], 200);
-  advanceWindDisaster(w, crops, 8, 65, 0, 64); advanceWindDisaster(w, crops, 8, 66, 0, 64);
-  assert.equal(field.bytes[29], 200); assert.equal(field.bytes[55], 8); assert.equal(other.bytes[29], 198); assert.equal(other.bytes[55], 0);
+  advanceWindDisaster(w, crops, d, 64, 64); assert.equal(other.bytes[29], 200);
+  advanceWindDisaster(w, crops, d, 65, 64); advanceWindDisaster(w, crops, d, 66, 64);
+  assert.equal(field.bytes[29], 200); assert.equal(field.bytes[55], 8); assert.equal(other.bytes[29], 199);assert.equal(d.windReferenceTick,65); assert.equal(other.bytes[55], 0);
   w.cells[worldIndex(20, 18)].terrain = w.cells[worldIndex(20, 19)].terrain = 130;
-  advanceWindDisaster(w, crops, 8, 67, 0, 64); assert.equal(field.bytes[29], 199); assert.equal(field.bytes[55], 7);
-  advanceWindDisaster(w, crops, 8, 0, 65535, 0); assert.equal(field.bytes[29], 198);
+  advanceWindDisaster(w, crops, d, 130, 64); assert.equal(field.bytes[29], 199); assert.equal(field.bytes[55], 7);
+  d.windReferenceTick=65535;advanceWindDisaster(w, crops, d, 0, 0); assert.equal(field.bytes[29], 198);
   for (const [x, y] of [[0, 0], [88, 0], [0, 88], [88, 88]]) {
     field.bytes[10] = x; field.bytes[11] = y; assert.ok(fieldWindbreaks(w, field) >= 0);
   }
