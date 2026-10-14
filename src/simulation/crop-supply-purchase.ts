@@ -58,7 +58,7 @@ export function purchaseCropSupply(world: Scenario, type: number, x: number, y: 
     view.setUint16(18, 24, true);
   } else {
     view.setUint16(2, 10, true); view.setUint16(4, 0, true); view.setUint16(6, 0, true);
-    bytes[8] = result.x; bytes[9] = result.y; bytes[10] = 32; // Byte11 survives reuse.
+    bytes[8] = result.x; bytes[9] = result.y; bytes[10] = 36; // SF-119: stored seeds; byte11 survives reuse.
   }
   def.count = (def.count + 1) & 65535;
   world.farm.cash -= result.price + result.clearingCost;

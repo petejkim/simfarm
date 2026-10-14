@@ -65,7 +65,7 @@ export function deliverStoredHarvest(world: Scenario, buildingSlot: number, crop
   if (index === undefined || !free || free.slot > 255) return undefined;
   const def = world.harvestDefinitions[cropSlot];
   const item = createInventoryItem(world, def.type, quantity, loss, b.x + Math.floor(index / 3), b.y + index % 3)!;
-  def.count++;
+  def.count++; item.bytes[10] |= 4; // SF-119: delivered crops receive the same stored loss rate.
   // Tile-base table file 0x4f4be, entries 109..124, gives 816..831.
   b.setContent(index, cropHarvestTile(cropSlot), def.type, item.slot);
   toggleBuildingInterior(b, world); toggleBuildingInterior(b, world);

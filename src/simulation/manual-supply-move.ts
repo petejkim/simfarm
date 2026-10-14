@@ -98,7 +98,7 @@ function prepare(world: Scenario, finances: FinancialState, selected: SupplyMove
     // Insert first, using the preflight's space, matching the source transfer order.
     if (storage) {
       if (kind === 'chemical') { item.bytes[5] = dx; item.bytes[6] = dy; item.bytes[2] |= 4; }
-      else { item.bytes[8] = dx; item.bytes[9] = dy; } // SF-118 also updates harvest coordinates in66..69.
+      else { item.bytes[8] = dx; item.bytes[9] = dy; item.bytes[10] |= 4; } // SF-118/119: coordinates and storage loss flag.
       storage.setContent(storageIndex!, graphic(picked), type, slot); refresh(storage);
     }
     const source = world.cells[worldIndex(picked.x, picked.y)];
@@ -119,6 +119,7 @@ function prepare(world: Scenario, finances: FinancialState, selected: SupplyMove
       // Ground branch does not clear retained chemical flag4 in the source.
     } else {
       item.bytes[8] = x; item.bytes[9] = y;
+      if (kind === 'seed' || kind === 'harvest') item.bytes[10] &= ~4; // SF-119: ground loss resumes.
       if (kind === 'feed') {
         const quantity = world.inventory[slot].quantity;
         if (deleted) {

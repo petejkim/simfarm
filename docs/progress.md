@@ -3921,3 +3921,10 @@ Build/type checking,16 simulation/report unit cases and2 focused Evaluation brow
 Weekly temperature lookup now wraps the240-entry climate table at the fifth year-end, selecting entry0 instead of the adjacent wind global. Existing month/year phase order and climate-year rotation remain intact; source overread evidence stays documented.
 
 Build/type checking,2 focused calendar/timing unit cases and1 browser fifth-year rollover/weather/reload case pass. Temperature70 and wind12 independently distinguish the correction. A temporary test-file generation error was fixed before successful checks; no unrelated tests were replaced. Logs artifacts/bugfix-007-*.log. See docs/gameplay-bug-fixes.md. Original evidence retained; no source distribution changes or push.
+
+
+## 2026-10-13 — requested corrections11/12: SF-119
+
+Accepted seed/harvest storage transfers now set inventory bit4; accepted ground departures clear it. Automatic harvest delivery and seed purchase set the same flag, so new stored lots age by1 loss unit per week and ground lots by4. Unknown flags/bytes, chemical semantics and failed-transfer atomicity remain intact. Existing checkpoints retain raw flags until an explicit movement/new-lot operation; no load-time history rewrite.
+
+Build/type checking,26 storage/purchase/manual/live unit cases and1 browser storage/withdrawal/checkpoint flow pass. Independent browser assertions pin storage and ground flags. Unit checks actual aging, rejected drops, first-fit/slot boundaries and delivery flags. Logs artifacts/bugfix-119-*.log. See docs/gameplay-bug-fixes.md. Original evidence retained; no source distribution changes or push.

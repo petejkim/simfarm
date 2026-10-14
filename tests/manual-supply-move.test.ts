@@ -95,7 +95,7 @@ test('all building types preserve source compatibility; first-fit insertion prec
     if (!result.ok) { assert.equal(result.reason, 'incompatible-storage'); assert.equal(JSON.stringify([w, a]), before); continue; }
     assert.deepEqual([item.x, item.y], [20, 20]); assert.deepEqual(w.buildings[1].content(0), { graphic: image, type, slot: item.slot });
     if (type === 220) assert.equal(item.bytes[2] & 4, 4);
-    else assert.equal(item.bytes[10] & 4, 0); // Source crop insertion does not set stored flag.
+    else assert.equal(item.bytes[10] & 4, 4); // SF-119: stored crop/seed loss rate.
   }
   const f = setup(), { world: w, finances: a } = f;
   assert.ok(purchaseBuilding(w, a, 65, 20, 20, 0).ok); const { item } = goods(f, 168);
@@ -157,11 +157,11 @@ test('stored trough/feed departure clears its content only after accepted drop a
   }
 });
 
-test('relocated harvest remains sellable and chemicals consumable; original crop-loss flag behavior is retained', () => {
+test('relocated harvest remains sellable and chemicals consumable; stored crops age slowly and ground crops age faster', () => {
   const f = setup(), w = f.world, a = f.finances;
   assert.ok(purchaseBuilding(w, a, 67, 20, 20, 0).ok);
   const crop = goods(f, 168); assert.ok(moveManualSupply(w, a, selected(f), 20, 20, 0).ok);
-  assert.deepEqual([crop.item.x, crop.item.y], [20, 20]); ageInventoryAndRefillTroughs(w); assert.equal(w.inventory[crop.item.slot].loss, 13);
+  assert.deepEqual([crop.item.x, crop.item.y], [20, 20]); ageInventoryAndRefillTroughs(w); assert.equal(w.inventory[crop.item.slot].loss, 10);
   assert.ok(sellStoredHarvest(w, crop.item.slot, 0).ok); assert.equal(w.buildings[1].content(0).type, -1);
   const chemical = goods(f, 220); assert.ok(moveManualSupply(w, a, selected(f), 20, 20, 0).ok);
   // Chemical point selection is available in a closed building, exactly as the source finder.
@@ -196,4 +196,18 @@ test('original supply warning branches use the shared uhoh helper',()=>{
   assert.equal(exe.subarray(0x13da7,0x13dae).toString('hex'),'0bc07503e99e00');
   assert.equal(exe.subarray(0x13fd7,0x13fdb).toString('hex'),'0bc07479');
   assert.equal(exe.subarray(0x142a6,0x142ae).toString('hex'),'26833ec0f7007408');
+});
+
+
+test('stored seeds and crops retain unknown flags, reject drops atomically and restore ground loss rates',()=>{
+  for(const type of [168,192]) {
+    const f=setup(),w=f.world;assert.ok(purchaseBuilding(w,f.finances,65,20,20,0).ok);
+    const {item}=goods(f,type);item.bytes[10]|=0x80;item.bytes[11]=197;
+    assert.ok(moveManualSupply(w,f.finances,selected(f),20,20,0).ok);
+    assert.equal(item.bytes[10],0xa4);ageInventoryAndRefillTroughs(w);assert.equal(w.inventory[item.slot].loss,10);
+    toggleBuildingInterior(w.buildings[1],w);const picked=selected(f,20,20),before=JSON.stringify(f);
+    assert.equal(moveManualSupply(w,f.finances,picked,96,0,0).ok,false);assert.equal(JSON.stringify(f),before);
+    assert.ok(moveManualSupply(w,f.finances,picked,30,30,0).ok);assert.equal(item.bytes[10],0xa0);
+    ageInventoryAndRefillTroughs(w);assert.equal(w.inventory[item.slot].loss,14);assert.equal(item.bytes[11],197);
+  }
 });

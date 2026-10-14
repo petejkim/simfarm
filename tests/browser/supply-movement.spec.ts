@@ -1,3 +1,4 @@
+import { readNativeSave } from '../../src/formats/native-save';
 import {readSaveText} from '../support/save-file';
 import { clickFarmTile } from '../support/field-actions';
 import { reveal , speedItem, expectNoHorizontalOverflow } from '../support/workspace';
@@ -68,7 +69,8 @@ test('supplies transfer into original storage, reopen and leave it; empty feed i
     const s = game.getSnapshot(), selected = checkSupplyPickup(s.scenario, s.finances, sx, 10); if (!selected.ok) throw new Error('Missing supply');
     await clickFarmTile(page, sx, 10); await clickFarmTile(page, x, y);
     
-    game.dispatch({ type: 'move-supply', selected, x, y }); expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+    game.dispatch({ type: 'move-supply', selected, x, y }); const checkpoint=await save(page);expect(checkpoint).toEqual(JSON.parse(game.save(4)));
+    if(selected.kind==='seed'||selected.kind==='harvest')expect(readNativeSave(JSON.stringify(checkpoint)).state.scenario.inventory[selected.slot].bytes[10]&4).toBe(4);
   }
   await clickFarmTile(page,40,40);await expect(page.locator('.map-panel')).toHaveAttribute('data-object-move','pick');
   // Original secondary-button building entry keeps Move armed.
@@ -77,7 +79,8 @@ test('supplies transfer into original storage, reopen and leave it; empty feed i
   const s = game.getSnapshot(), selected = checkSupplyPickup(s.scenario, s.finances, 40, 40); if (!selected.ok) throw new Error('Missing stored harvest');
   await clickFarmTile(page,40,40);await clickFarmTile(page,25,25);await page.getByRole('button',{name:'Move object',exact:true}).click();
   game.dispatch({ type: 'move-supply', selected, x: 25, y: 25 }); await originalPixels(page, 40, 40, 217); await originalPixels(page, 25, 25, 816);
-  expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+  const departed=await save(page);expect(departed).toEqual(JSON.parse(game.save(4)));
+  expect(readNativeSave(JSON.stringify(departed)).state.scenario.inventory[selected.slot].bytes[10]&4).toBe(0);
   const empty = supplyMovementFixture(); empty.state.scenario.inventory[4].bytes[2] = empty.state.scenario.inventory[4].bytes[3] = 0;
   const emptyGame = empty.load().withAllCrops(browserCrops); await load(page, emptyGame.save(4)); await startMove(page);
   await clickFarmTile(page, 18, 10); await clickFarmTile(page, 20, 20);

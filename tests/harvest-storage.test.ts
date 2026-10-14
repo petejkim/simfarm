@@ -62,7 +62,7 @@ test('storage chooses nearest eligible building, first slot on ties, and fills r
   assert.deepEqual([first.x, first.y, second.x, second.y], [a.x, a.y, a.x, a.y + 1]);
   assert.deepEqual(a.content(0), { type: 171, slot: first.slot, graphic: 819 });
   assert.equal(s.cells[worldIndex(a.x, a.y)].terrain, 819);
-  assert.equal(s.harvestDefinitions[3].count, 1); assert.equal(first.quantity, 304); assert.equal(first.loss, 12345);
+  assert.equal(s.harvestDefinitions[3].count, 1); assert.equal(first.bytes[10]&4,4); assert.equal(second.bytes[10]&4,4); assert.equal(first.quantity, 304); assert.equal(first.loss, 12345);
 });
 
 test('all original farm storage can fill without duplicate reservations, then fails cleanly', () => {

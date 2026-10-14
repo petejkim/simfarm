@@ -53,7 +53,7 @@ test('all eight farms buy every seed and chemical with exact retained bytes, def
         for (const o of [8, 14, 16]) v.setUint16(o, 0, true); v.setUint16(18, 24, true);
       } else {
         v.setUint16(2, 10, true); v.setUint16(4, 0, true); v.setUint16(6, 0, true);
-        expected[8] = expected[9] = 10; expected[10] = 32;
+        expected[8] = expected[9] = 10; expected[10] = 36;
       }
       const account = chemical ? 'chemicalExpenses' : 'seedExpenses'; w.farm[account] = 0xfffffff0; d.count = 65535;
       const cash = w.farm.cash, other = JSON.stringify(f.finances), map = structuredClone(w.cells);

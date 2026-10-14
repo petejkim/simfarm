@@ -14,7 +14,7 @@ User authorized these twelve native corrections on2026-10-13, one conventional c
 | SF-046 | Forced-sale debt expense category | Complete |
 | SF-006 | Water-stress warning | Complete |
 | SF-007 | Fifth-cycle year-end temperature | Complete |
-| SF-119 | Stored crop loss-rate flag | Pending |
+| SF-119 | Stored crop loss-rate flag | Complete |
 | SF-051 | Recreation/airport demolition bookkeeping | Pending |
 
 ## SF-071 — loan arrears settlement
@@ -85,3 +85,10 @@ Checks: Build/type checking,16 simulation/report unit cases and2 focused Evaluat
 Weekly temperature lookup now wraps the240-entry climate table at the fifth year-end, selecting entry0 instead of the adjacent wind global. Existing month/year phase order and climate-year rotation remain intact; source overread evidence stays documented.
 
 Checks: Build/type checking,2 focused calendar/timing unit cases and1 browser fifth-year rollover/weather/reload case pass. Temperature70 and wind12 independently distinguish the correction. A temporary test-file generation error was fixed before successful checks; no unrelated tests were replaced. Logs artifacts/bugfix-007-*.log.
+
+
+## SF-119 — native correction
+
+Accepted seed/harvest storage transfers now set inventory bit4; accepted ground departures clear it. Automatic harvest delivery and seed purchase set the same flag, so new stored lots age by1 loss unit per week and ground lots by4. Unknown flags/bytes, chemical semantics and failed-transfer atomicity remain intact. Existing checkpoints retain raw flags until an explicit movement/new-lot operation; no load-time history rewrite.
+
+Checks: Build/type checking,26 storage/purchase/manual/live unit cases and1 browser storage/withdrawal/checkpoint flow pass. Independent browser assertions pin storage and ground flags. Unit checks actual aging, rejected drops, first-fit/slot boundaries and delivery flags. Logs artifacts/bugfix-119-*.log.
