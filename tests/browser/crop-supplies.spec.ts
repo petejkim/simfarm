@@ -80,7 +80,9 @@ test('supply controls buy original stock, plays feedback, preserves checkpoints 
     g.dispatch({type:'buy-crop-supply',productType,x:10,y:10});await expectFarmCash(page,g.getSnapshot().scenario.farm.cash);
     expect(await save(page)).toEqual(JSON.parse(g.save(4)));
   }
-  await expect.poll(async()=>(await played(page)).some(s=>s.length===1389 && s.peak>0.01)).toBe(true);
+  await expect.poll(async()=>(await played(page)).some(s=>s.length===7022 && s.peak>0.01)).toBe(true);
+  expect((await played(page)).filter(s=>s.length===7022)).toHaveLength(5);
+  expect((await played(page)).some(s=>s.length===1389)).toBe(false);
   await selectTile(page,12,12);
   await originalPixels(page,10,10,836);await originalPixels(page,10,11,217,915);await originalPixels(page,10,12,217,914);
   await originalPixels(page,11,10,217,913);await originalPixels(page,11,11,217,912);
@@ -122,3 +124,46 @@ test('supply shop explains storage and money limits, supports building and map s
 
 // These cases test explicit audio enabling/muting; default-on behavior is covered by options.spec.ts.
 test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:false})));});
+
+for(const touch of [false,true])test.describe(touch?'touch supply audio':'mouse supply audio',()=>{
+  if(touch)test.use({hasTouch:true,isMobile:true,viewport:{width:390,height:844}});
+  test('seeds and all four chemicals play one livestock plop per placement, respecting confirmation and mute',async({page})=>{
+    await audio(page);await page.goto('/');
+    const fixture=shopFixture();fixture.state.disasters.enabled=false;fixture.state.scenario.farm.autoScroll=false;
+    const game=fixture.load().withAllCrops(browserCrops);
+    game.dispatch({type:'build',buildingType:67,x:10,y:10});await load(page,game.save(4));
+    await toggleOption(page,'Sound Effects');
+    const plops=async()=> (await played(page)).filter(s=>s.length===7022||s.length===1389);
+    async function place(x:number,y:number){
+      await page.locator('#viewport').evaluate(v=>v.scrollTo(5*16,5*16));
+      const rect=(await page.locator('#world').boundingBox())!,tile=rect.width/96;
+      const point={x:rect.x+(x+.5)*tile,y:rect.y+(y+.5)*tile};
+      if(touch){
+        const before=await plops(),cash=game.getSnapshot().scenario.farm.cash;
+        await page.touchscreen.tap(point.x,point.y);
+        expect(await plops()).toEqual(before);await expectFarmCash(page,cash);
+        await page.touchscreen.tap(point.x,point.y);
+      }else await page.mouse.click(point.x,point.y);
+    }
+    for(const [index,productType] of [192,220,221,222,223].entries()){
+      await selectSupply(page,productType);await place(10,10);
+      game.dispatch({type:'buy-crop-supply',productType,x:10,y:10});
+      expect(game.getSnapshot().lastCropSupplyPurchaseResult?.ok).toBe(true);
+      await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
+      await expect.poll(async()=> (await plops()).map(s=>s.length)).toEqual(Array(index+1).fill(7022));
+    }
+    await expect.poll(async()=> (await plops()).every(s=>s.peak>.01)).toBe(true);
+    // Failed storage placement warns without adding either plop.
+    await selectSupply(page,192);await place(12,15);
+    await expect.poll(async()=> (await played(page)).some(s=>s.length===2293&&s.peak>.01)).toBe(true);
+    expect((await plops()).map(s=>s.length)).toEqual(Array(5).fill(7022));
+    expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+    // Reload never replays feedback; a muted successful purchase still updates stock/cash.
+    await load(page,game.save(4));expect((await plops()).map(s=>s.length)).toEqual(Array(5).fill(7022));
+    await toggleOption(page,'Sound Effects');await selectSupply(page,192);await place(10,10);
+    game.dispatch({type:'buy-crop-supply',productType:192,x:10,y:10});
+    await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);
+    expect((await plops()).map(s=>s.length)).toEqual(Array(5).fill(7022));
+    expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+  });
+});

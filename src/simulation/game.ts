@@ -696,7 +696,8 @@ export class GameSimulation {
       this.lastCropSupplyPurchaseResult = { productType: command.productType,
         ...purchaseCropSupply(this.scenario, command.productType, command.x, command.y, this.weather.soilMoisture) };
       if (this.lastCropSupplyPurchaseResult.ok) {
-        this.events.push({ type: 'sound', sound: 'plopitem' }, { type: 'sound', sound: 'ploptool' });
+        // One livestock placement plop, as for trees/feed (user request; docs/crop-supply-purchase.md).
+        this.events.push({ type: 'sound', sound: 'plopitem' });
       } else this.events.push({ type: 'sound', sound: 'uhoh' });
     } else if (command.type === 'buy-equipment') {
       this.lastEquipmentPurchaseResult = { equipmentType: command.equipmentType,

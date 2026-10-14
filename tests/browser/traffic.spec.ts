@@ -43,14 +43,14 @@ test('traffic paints original vehicle pixels and continues through weekly spawni
 test('traffic collision plays source PCM only when enabled, never replays on load and rejects malformed continuation atomically', async ({ page }) => {
   const requests: string[] = []; page.on('request', r => { if (r.url().endsWith('/smack.voc')) requests.push(r.url()); });
   await page.addInitScript(() => {
-    const Base = window.AudioContext, played: { length: number; peak: number }[] = [];
+    const Base = window.AudioContext, played: { length: number; peak: number; time: number }[] = [];
     Object.assign(window, { __trafficPlayed: played });
     window.AudioContext = class extends Base {
       constructor(options?: AudioContextOptions) {
         super(options); const create = this.createBufferSource.bind(this);
         this.createBufferSource = () => { const s = create(), start = s.start.bind(s);
           s.start = (...args) => { const samples = s.buffer!.getChannelData(0);
-            played.push({ length: samples.length, peak: Math.max(...samples.map(Math.abs)) }); start(...args); }; return s; };
+            played.push({ length: samples.length, peak: Math.max(...samples.map(Math.abs)), time: this.currentTime }); start(...args); }; return s; };
       }
     };
   });
@@ -68,6 +68,15 @@ test('traffic collision plays source PCM only when enabled, never replays on loa
   const migrated = GameSimulation.load(JSON.stringify(old), browserCrops).simulation.withAllCrops(browserCrops); await load(page, JSON.stringify(old));
   expect(await save(page, 'legacy')).toEqual(JSON.parse(migrated.save(4))); expect(migrated.getSnapshot().traffic.activeCount).toBe(0);
   expect(requests).toHaveLength(count);
+  // Audio audit: first-load deduplication hides the two source requests. Once cached, one collision starts two voices.
+  const hits=()=>page.evaluate(()=>(window as unknown as {__trafficPlayed:{length:number;peak:number;time:number}[]}).__trafficPlayed.filter(p=>p.length===1467));
+  const before=(await hits()).length;
+  await load(page,f.load().withAllCrops(browserCrops).save(4));expect(await hits()).toHaveLength(before);
+  await (await speedItem(page,'#next-day')).click();
+  await expect.poll(async()=>(await hits()).length).toBe(before+2);
+  const pair=(await hits()).slice(-2);expect(pair.every(p=>p.peak>.1)).toBe(true);
+  expect(Math.abs(pair[1].time-pair[0].time)).toBeLessThan(.01);
+  expect(requests).toHaveLength(count);expect(await save(page,'cached-double-hit')).toEqual(JSON.parse(game.save(4)));
 });
 
 

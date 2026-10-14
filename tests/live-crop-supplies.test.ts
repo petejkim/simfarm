@@ -25,7 +25,7 @@ test('live supply purchases retain every product and original accounting through
     assert.deepEqual(parsed(GameSimulation.load(g.save(4), f.crops).simulation), parsed(g));
   }
   assert.equal(g.getSnapshot().scenario.farm.cash, cash - total); assert.deepEqual(parsed(g).runtime.random, before.runtime.random);
-  assert.deepEqual(events, CROP_SUPPLY_TYPES.flatMap(() => [{ type: 'sound', sound: 'plopitem' }, { type: 'sound', sound: 'ploptool' }]));
+  assert.deepEqual(events, CROP_SUPPLY_TYPES.map(() => ({ type: 'sound', sound: 'plopitem' }))); // One livestock plop per purchase (user request).
   const save = g.save(4), snapshot = g.getSnapshot(); snapshot.scenario.inventory[1].bytes.fill(0);
   if (snapshot.lastCropSupplyPurchaseResult?.ok) snapshot.lastCropSupplyPurchaseResult.price = 999;
   assert.equal(g.save(4), save);
