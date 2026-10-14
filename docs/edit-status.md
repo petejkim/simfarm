@@ -18,6 +18,8 @@ The original history is held until primary-button release221cb..221d5. Native ac
 
 ## Lifetime, checks and remaining work
 
+Requested2026-10-13: import now predecodes all76 records into [ui-content.json](ui-content.md), alongside Expert cards and event messages. Browser display selects the original code's string without decoding binary bytes on each render. Empty records retain their slots, and the raw source/imported files and original boundary tests remain intact.
+
 History is transient and resets on native load/new simulation; it is excluded from v25 saves. Raw original scenario bytes remain preserved. Exact original startup/warm-restart/load history lifetime has not been fully audited; this reset policy is explicit, not claimed source-equivalent. Only verified Plant, palette and Spray selection codes are exposed as tool-selection commands; failed create-field posts51 internally. Existing modal guards precede either path. Other quick-message producers must be traced before being connected; no translated native failure is arbitrarily mapped to another original code.
 
 Tests pin producer/reader/renderer evidence, record hashes, all record truncation boundaries, input immutability, ring wrap across all76 codes, duplicate suppression, detached snapshots, unchanged rejected-placement saves, modal rejection and load reset. Six existing placement cases remain passing. Browser checks cover original position/height, exact text and recent order, repeat rejection, Escape/internal-click dismissal, canonical nonmutation, load reset, truncated-asset failure and existing all24-crop Plant/Spray/help flows. See progress.md for results. Whole-game preservation remains incomplete.

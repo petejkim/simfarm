@@ -1,12 +1,10 @@
 import { decodePlanar, type Palette, type Raster } from './graphics';
+import {readEventMessage,type EventMessages} from './event-messages';
 
 /** events.dat reader uses fixed256-byte records; retain physical rows and
  * ignore @ padding only for display. Raw imported data remains unchanged. */
-export function readBulldozeMessage(bytes: Uint8Array, kind: 'building' | 'field'): string {
-  const offset=(kind==='building'?46:47)*256;
-  if(bytes.length<offset+256)throw new Error('Truncated bulldoze message');
-  return new TextDecoder('ascii').decode(bytes.subarray(offset,offset+256)).split(/\r?\n/)
-    .map(line=>line.replace(/@/g,'').trim()).filter(Boolean).join('\n');
+export function readBulldozeMessage(bytes: EventMessages, kind: 'building' | 'field'): string {
+  return readEventMessage(bytes,kind==='building'?46:47,'Truncated bulldoze message').physicalText;
 }
 /** 9654/9c3a draws48×24 buttons from buttons.til at576-byte strides.
  * Retain the frame, replace its bitmap caption with actual HTML text. */

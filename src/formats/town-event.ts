@@ -1,4 +1,5 @@
 import { Binary } from './binary';
+import {readEventMessage,type EventMessages} from './event-messages';
 
 /** SSM0x21674..0x2167b, loader45be6..45c75, saver44bc4..44c53.
  * Preserve raw values; runtime validation belongs at the simulation boundary.
@@ -22,8 +23,6 @@ export function readTownEvent(bytes: Uint8Array): SavedTownEvent {
 
 /** Calendarcb45 loads events.dat record61 before the rodeo decision.
  * Source fixed-record reader exposes254 text bytes; last two remain untouched. */
-export function readRodeoInvitation(bytes: Uint8Array): string {
-  const record = new Binary(bytes).slice(61 * 256, 256);
-  return new TextDecoder('ascii').decode(record.subarray(0, 254)).split('\0')[0]
-    .replace(/@/g, ' ').replace(/\s+/g, ' ').trim();
+export function readRodeoInvitation(bytes: EventMessages): string {
+  return readEventMessage(bytes,61).paragraph;
 }

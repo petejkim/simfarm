@@ -8,7 +8,7 @@ DSbe9c has flags0061, position128,96 and400×240 outer dimensions. DSbe52 is `FA
 
 Loader4d25a formats DSc10d `card%d.hc`, opens the archive resource and copies its contents to DSbf06. DSc107 is the current page, initially1; c108 is the parser cursor; c10b/c10c count navigation/sound rectangles. Event17 reaches paint4c9f2. It clears the inner area to palette12 and dispatches through4d1ec. End-of-page resets the cursor. Event5 reaches primary-click4c858. Sound rectangles are checked first, then navigation rectangles; navigation plays DSbe6b `click.voc` at4c999. The target's low byte becomes the current page. Target255 closes and resets page1. Native uses HTML buttons and also resets to home on title Close/Escape; keyboard focus and bounds are browser presentation policies.
 
-The43 supplied resources are cards1,2,5–8,10–37,40–48, totaling8351 bytes, with individual sizes85–464. Their links form a complete graph reachable from page1. No missing page is synthesized in the original chapter graph. Native import and startup both validate each source record before use.
+The43 supplied resources are cards1,2,5–8,10–37,40–48, totaling8351 bytes, with individual sizes85–464. Their links form a complete graph reachable from page1. No missing page is synthesized in the original chapter graph. Native import validates each source record; startup validates its predecoded commands in the shared [UI content bundle](ui-content.md).
 
 | Opcode | Handler | Fields after opcode, little-endian words unless noted |
 |---|---|---|

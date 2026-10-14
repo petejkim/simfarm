@@ -113,11 +113,12 @@ test('Expert navigation and portrait play original PCM only when enabled, with m
 });
 
 test('missing or malformed Expert resources fail before creating a farm',async({page})=>{
-  for(const url of ['expert-portrait.png','expert-launcher.png','raw/card48.hc']){
+  for(const url of ['expert-portrait.png','expert-launcher.png','ui-content.json']){
     await page.route(`**/assets/${url}`,r=>r.fulfill({status:404,body:'Missing Expert asset'}));await page.goto('/');
     await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('.loading')).toContainText(url);await expect(page.locator('#world')).toHaveCount(0);await page.unroute(`**/assets/${url}`);
   }
-  await page.route('**/assets/raw/card1.hc',r=>r.fulfill({status:200,contentType:'application/octet-stream',body:Buffer.from([0x8b,0])}));await page.goto('/');
+  const data=JSON.parse(readFileSync('public/assets/ui-content.json','utf8'));data.expertCards.pop();
+  await page.route('**/assets/ui-content.json',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)}));await page.goto('/');
   await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('#world')).toHaveCount(0);
 });
 

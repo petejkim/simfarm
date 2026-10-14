@@ -44,6 +44,8 @@ Use **Save farm** to download a `.simfarm.json` checkpoint and **Load farm** to 
 
 Original files are never modified. Extracted resources are generated in ignored `public/assets`; they are not committed. Import precedes building so the browser bundle can run independently of the DOS distribution directory. Missing resources produce startup instructions.
 
+Importer JSON files are compact, without indentation or extra line breaks. The43 Farm Expert cards, event-dialog text and Edit status messages are predecoded into one `ui-content.json` request; original binary imports remain available for preservation checks. See [UI content](docs/ui-content.md).
+
 ## Validate
 
 ```sh

@@ -1,4 +1,5 @@
-import {parseEventText,type EventTextLine} from './event-text';
+import type {EventTextLine} from './event-text';
+import {readEventMessage,type EventMessages} from './event-messages';
 import type {DisasterNoticeId} from '../simulation/events';
 
 /** Overlay10 start36574/stop36d16; rows in events.dat, portraits in alltiles.btl. */
@@ -11,10 +12,8 @@ export const DISASTER_MESSAGES:Record<DisasterNoticeId,{record:number;portrait:n
   'drought-ended':{record:58,portrait:58,mandatory:false},'flood-ended':{record:56,portrait:62,mandatory:false},
 };
 /** Same bounded256-byte loader4a2ee and word renderer882e as financial messages; titles use its `~`/backtick markup. */
-export function readDisasterMessage(bytes:Uint8Array,id:DisasterNoticeId):EventTextLine[] {
+export function readDisasterMessage(bytes:EventMessages,id:DisasterNoticeId):readonly EventTextLine[] {
   const entry=DISASTER_MESSAGES[id];
   if(!entry)throw new Error('Unknown disaster message');
-  const offset=entry.record*256;
-  if(bytes.length<offset+256)throw new Error('Truncated disaster message');
-  return parseEventText(new TextDecoder('ascii').decode(bytes.subarray(offset,offset+254)).split('\0')[0]);
+  return readEventMessage(bytes,entry.record,'Truncated disaster message').lines;
 }

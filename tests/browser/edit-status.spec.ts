@@ -23,7 +23,8 @@ test('Plant shows original status text and a deduplicated recent history without
 });
 
 test('missing quick-message records fail before play',async({page})=>{
-  await page.route('**/assets/raw/qmessage.dat',r=>r.fulfill({status:200,body:Buffer.alloc(64)}));await page.goto('/');await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('#world')).toHaveCount(0);
+  const data=JSON.parse(readFileSync('public/assets/ui-content.json','utf8'));data.editStatuses.pop();
+  await page.route('**/assets/ui-content.json',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)}));await page.goto('/');await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('#world')).toHaveCount(0);
 });
 
 test('message bar reserves space before any tool selection and never covers the first terrain row',async({page})=>{

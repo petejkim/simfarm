@@ -3,7 +3,7 @@ import {readEditStatus} from '../formats/edit-status';
 import {formatToolCost} from './tool-cost';
 /** The selected tool's cost follows the current message: the original draws it in the Edit titlebar, which the
  * native workspace removed. */
-export function EditStatus({codes,text,cost=null}:{codes:readonly number[];text:Uint8Array;cost?:number|null}){
+export function EditStatus({codes,text,cost=null}:{codes:readonly number[];text:readonly string[];cost?:number|null}){
   const [open,setOpen]=useState(false),root=useRef<HTMLDivElement>(null),button=useRef<HTMLButtonElement>(null);
   useEffect(()=>{
     if(!open)return;

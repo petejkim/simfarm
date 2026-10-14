@@ -1,4 +1,5 @@
 import { readRodeoInvitation } from '../formats/town-event';
+import type {EventMessages} from '../formats/event-messages';
 import type { TownEventState } from '../simulation/town-events';
 
 /** Initialized DS6190 strings, file base846f0. The source uses seven-byte
@@ -25,7 +26,7 @@ export interface TownEventMessage {
 /** Presentation only: never draw an outcome, debit an entry or clear pending.
  * Dialog callbacks must dispatch to the canonical simulation owner. */
 export function townEventMessage(state: Pick<TownEventState, 'pending' | 'animalType'>,
-  eventText: Uint8Array): TownEventMessage | null {
+  eventText: EventMessages): TownEventMessage | null {
   const dialog = state.pending;
   if (!dialog) return null;
   const ok = [{ caption: 'OK', accept: true }] as const;
