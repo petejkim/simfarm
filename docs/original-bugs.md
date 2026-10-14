@@ -20,11 +20,15 @@ Native correction (2026-10-13): Regional toxicity, disease, pests, weeds and nut
 
 ## SF-002 — unassigned season at week 22
 
-**Status:** confirmed branch gap; gameplay defect severity unverified; preserved.
+**Status:** original branch-gap evidence retained; corrected natively on 2026-10-13 by user request. Adverse effects during normal original play remain unverified.
 
 Season assignment uses week-of-year ranges 0–9 / 45–47, 10–21, 23–33, and 34–44. Week 22 matches none and keeps the previous season. This may be an off-by-one defect or intended delayed transition; the intended boundary is not established.
 
-Evidence: `0xc94d`–`0xc9a9`, especially comparison with `0x17` at `0xc982`. Native handling: `advanceCalendarDay` retains the previous season and tests the boundary. No correction made.
+Evidence: `0xc94d`–`0xc9a9`, especially Spring's comparison with `0x16` at `0xc971` and Summer's comparison with `0x17` at `0xc982`. Executable SHA-256 is `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`; season block `[0xc94d,0xc9b0)` SHA-256 is `085e27bc1ae4d756c5131575dfb6bdd0a7b5d2c5643b8ef028ed9c17cd02371c`. The Weather boundary table at `6190:406e` / file `0x8875e` contains bytes `2d0a17222d` (45,10,23,34,45). Normal progression carries Spring through week 22 and enters Summer at week 23; the Weather countdown agrees. Intent is still not established. Native handling before correction reproduced the gap.
+
+Native correction (2026-10-13): `advanceCalendarDay` now explicitly assigns Spring for weeks 10–22, including every possible incoming season at week 22. Summer still starts at week 23. Normal season durations stay Winter 13 / Spring 13 / Summer 11 / Fall 11 weeks; Spring runs March 15–June 21 in the 28-day-month calendar. The corrected case is an inconsistent incoming season, which previously could show a wrong season and misleading next-season icon in Weather. Traced stored-season consumers are Weather artwork/icons and Evaluation labels/icons; growth and weather calculations use date/climate values. Exact loading and ordinary-day advancement retain the saved season until the existing weekly update. Schedule's separately recovered label boundaries remain distinct; this correction does not infer new original intent or resolve SF-166's other countdown quirks. Original evidence remains retained; no further SF-002 fix is deferred.
+
+Validation: type checking/production build, 24 focused simulation/Weather/Schedule unit cases and 3 Weather/Evaluation browser flows pass. The new unit case fails against the old branch, pins the original comparisons and checks all incoming seasons plus neighboring boundaries and ordinary days. The browser independently checks Spring artwork/icons/countdown/labels, exact pre-update and post-update saves, reload and the week-23 Summer transition. Logs: `artifacts/bugfix-002-{build,unit,browser}.log`.
 
 ## SF-003 — signed eight-bit field age wraps
 

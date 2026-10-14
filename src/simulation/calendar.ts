@@ -21,10 +21,11 @@ export function advanceCalendarDay(value: FarmCalendar): CalendarAdvance {
   if (weekEnded) {
     calendar.day = 0;
     calendar.week++;
-    // The executable evaluates seasons BEFORE month rollover. Week 22 deliberately retains the previous season.
+    // Evaluate seasons before month rollover, as in the executable.
+    // SF-002 native correction: assign Spring at the original week-22 branch gap.
     const weekOfYear = calendar.month * 4 + calendar.week;
     if ((weekOfYear >= 45 && weekOfYear <= 47) || weekOfYear < 10) calendar.season = 0;
-    if (weekOfYear >= 10 && weekOfYear < 22) calendar.season = 1;
+    if (weekOfYear >= 10 && weekOfYear < 23) calendar.season = 1;
     if (weekOfYear >= 23 && weekOfYear < 34) calendar.season = 2;
     if (weekOfYear >= 34 && weekOfYear < 45) calendar.season = 3;
     monthEnded = calendar.week === 4;

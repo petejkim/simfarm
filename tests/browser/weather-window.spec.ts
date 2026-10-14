@@ -86,6 +86,42 @@ test('Weather animation stays presentation-only, pauses and closes cleanly while
   await expect((await speedItem(page,'#next-day'))).toBeEnabled();await expect((await speedItem(page,'#play-pause'))).toHaveText('Resume');
 });
 
+test('SF-002 assigns Spring at week 22 in Weather and Evaluation and preserves exact checkpoint continuation',async({page})=>{
+  await start(page);
+  for(let season=0;season<4;season++){
+    const f=shopFixture();f.state.disasters.enabled=false;
+    Object.assign(f.state.scenario.farm.calendar,{month:5,week:1,day:6,season});
+    const game=f.load().withAllCrops(browserCrops),initial=game.save(4);
+    await load(page,initial);
+    // Loading preserves even an inconsistent saved season; the weekly update corrects it.
+    expect(await save(page)).toEqual(JSON.parse(initial));
+    await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});
+    await declineTownEventDialogs(page);declineTownEvents(game);
+    expect(game.getSnapshot().scenario.farm.calendar).toEqual({month:5,week:2,day:0,year:1993,season:1});
+    await openWindow(page,'weather');
+    await expect(page.locator('#weather-calendar')).toHaveText('Week 3 of Jun');
+    await expect(page.locator('#weather-summary')).toContainText('Spring');
+    await expect(page.locator('#weather-season-countdown')).toHaveText('1 Week Till');
+    expect(await tiles(page.locator('.weather-header'))).toEqual([tileAt(201),tileAt(202)]);
+    expect((await sprite(page.locator('.weather-ground'))).position).toBe(at(112,0));
+    await openWindow(page,'evaluation');await expect(page.locator('.evaluation-season')).toHaveText('Spring');
+    const checkpoint=await save(page);expect(checkpoint).toEqual(JSON.parse(game.save(4)));
+    await load(page,JSON.stringify(checkpoint));expect(await save(page)).toEqual(checkpoint);
+    if(season===3){
+      for(let day=0;day<7;day++){
+        await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});
+        await declineTownEventDialogs(page);declineTownEvents(game);
+      }
+      expect(game.getSnapshot().scenario.farm.calendar).toEqual({month:5,week:3,day:0,year:1993,season:2});
+      await openWindow(page,'weather');await expect(page.locator('#weather-summary')).toContainText('Summer');
+      await expect(page.locator('#weather-season-countdown')).toHaveText('11 Weeks Till');
+      expect(await tiles(page.locator('.weather-header'))).toEqual([tileAt(202),tileAt(203)]);
+      await openWindow(page,'evaluation');await expect(page.locator('.evaluation-season')).toHaveText('Summer');
+      expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+    }
+  }
+});
+
 test('missing Weather assets fail before creating a farm',async({page})=>{
   for(const name of ['weather-window.png','weather-sky.png','weather-ground.png','weather-vane.png']){
     await page.route('**/assets/'+name,r=>r.abort());await page.goto('/');await expect(page.getByRole('heading',{name:'SimFarm assets unavailable'})).toBeVisible();await expect(page.locator('.loading')).toContainText(name);await expect(page.locator('#world')).toHaveCount(0);await page.unroute('**/assets/'+name);

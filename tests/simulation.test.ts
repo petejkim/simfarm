@@ -30,22 +30,48 @@ test('all original farms restore cash, calendar, timing and regional records fro
   assert.throws(() => readScenario(corrupt), /calendar day/);
 });
 
-test('calendar reproduces 7-day weeks, 4-week months, original season gap and year rollover', () => {
+test('calendar reproduces 7-day weeks, 4-week months, corrected Spring boundary and year rollover', () => {
   let calendar: FarmCalendar = { day: 0, week: 0, month: 0, year: 1993, season: 0 };
   let weeks = 0, months = 0, years = 0;
+  const seasonWeeks = [0, 0, 0, 0];
   for (let day = 0; day < 336; day++) {
     const advance = advanceCalendarDay(calendar);
     calendar = advance.calendar;
     weeks += Number(advance.weekEnded); months += Number(advance.monthEnded); years += Number(advance.yearEnded);
+    if (advance.weekEnded) seasonWeeks[calendar.season]++;
     if (day === 69) assert.equal(calendar.season, 1); // Enter week 10.
-    if (day === 153) assert.equal(calendar.season, 1); // Week 22 has no assignment in source.
+    if (day === 153) assert.equal(calendar.season, 1); // SF-002: explicitly assign Spring at week 22.
     if (day === 160) assert.equal(calendar.season, 2);
     if (day === 237) assert.equal(calendar.season, 3);
     if (day === 314) assert.equal(calendar.season, 0);
   }
   assert.deepEqual([weeks, months, years], [48, 12, 1]);
+  assert.deepEqual(seasonWeeks, [13, 13, 11, 11]);
   assert.deepEqual(calendar, { day: 0, week: 0, month: 0, year: 1994, season: 0 });
   assert.equal(advanceCalendarDay({ day: 6, week: 3, month: 11, year: 65535, season: 0 }).calendar.year, 0);
+});
+
+test('SF-002 assigns week 22 to Spring for every incoming season and preserves adjacent boundaries', () => {
+  const exe = source('SIMFARM.EXE');
+  // Original Spring excludes 22; Summer starts at 23. Retain both source comparisons.
+  assert.equal(exe.subarray(0xc971, 0xc977).toString('hex'), '837ef6167d0b');
+  assert.equal(exe.subarray(0xc982, 0xc988).toString('hex'), '837ef6177c11');
+  for (const [week, expected] of [[9, 0], [10, 1], [21, 1], [22, 1], [23, 2], [33, 2], [34, 3], [44, 3], [45, 0], [47, 0]]) {
+    for (let season = 0; season < 4; season++) {
+      const before = { day: 6, week: (week - 1) % 4, month: Math.floor((week - 1) / 4), year: 1993, season };
+      const result = advanceCalendarDay(before);
+      assert.deepEqual(result.calendar, { day: 0, week: week % 4, month: Math.floor(week / 4), year: 1993, season: expected });
+      assert.equal(result.weekEnded, true);
+      assert.equal(result.monthEnded, week % 4 === 0);
+      assert.equal(result.yearEnded, false);
+      assert.equal(before.season, season);
+    }
+  }
+  // Exact loads and ordinary days retain their saved season until the weekly update.
+  for (let season = 0; season < 4; season++) {
+    assert.deepEqual(advanceCalendarDay({ day: 0, week: 2, month: 5, year: 1993, season }).calendar,
+      { day: 1, week: 2, month: 5, year: 1993, season });
+  }
 });
 
 test('original independent random streams, rejection-state quirk and monthly perturbation', () => {
