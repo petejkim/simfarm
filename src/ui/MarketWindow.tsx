@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import { WindowContents } from './GameWindow';
 import type {GameAssets} from '../assets/game-assets';
 import type {GameSnapshot} from '../simulation/game';
 import {marketWindowView} from '../simulation/market-view';
@@ -11,7 +12,10 @@ import {TileSprite} from './chrome/TileSprite';
 /** Original Market Value window (source 4a750/4a776) rebuilt from shared chrome: the 30-week history
  * inset with CSS bars, grid and reference line; the 4×4 crop badge buttons; crop and price insets;
  * futures owned and CLOSE. All twenty-four crops show at once in a 6×4 grid (the source pages 4×4). */
-export function MarketWindow({assets,snapshot,tiles}:{assets:GameAssets;snapshot:GameSnapshot;tiles:HTMLImageElement}){
+export function MarketWindow(props: Parameters<typeof MarketWindowBody>[0]) {
+  return <WindowContents windowKey="market"><MarketWindowBody {...props} /></WindowContents>;
+}
+function MarketWindowBody({assets,snapshot,tiles}:{assets:GameAssets;snapshot:GameSnapshot;tiles:HTMLImageElement}){
   const windows=useWindows(),[slot,setSlot]=useState(0);
   const world=snapshot.scenario,view=marketWindowView(world,snapshot.market,assets.catalog.crops,slot),palette=assets.catalog.palette;
   const rgb=(color:number)=>`rgb(${palette[color].join(',')})`;

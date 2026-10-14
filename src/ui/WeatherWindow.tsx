@@ -1,4 +1,5 @@
 import {useEffect,useState,type CSSProperties,type RefObject} from 'react';
+import { WindowContents } from './GameWindow';
 import {assetUrl,type GameAssets} from '../assets/game-assets';
 import type {GameSnapshot} from '../simulation/game';
 import {weatherWindowView,WEATHER_SEASONS,WEATHER_SKIES} from '../simulation/weather-view';
@@ -11,7 +12,10 @@ import {TileSprite} from './chrome/TileSprite';
  * header panels with season icons; thermometer, picture window and rain tube with HTML scales;
  * evaporation and wind-vane dials; forecast cells; caption and value insets. The instruments,
  * scenes, vane and needle are sprites; the column fills are palette-coloured spans. */
-export function WeatherWindow({assets,snapshot,tiles,focusRef}:{assets:GameAssets;snapshot:GameSnapshot;tiles:HTMLImageElement;focusRef:RefObject<HTMLElement|null>}){
+export function WeatherWindow(props: Parameters<typeof WeatherWindowBody>[0]) {
+  return <WindowContents windowKey="weather"><WeatherWindowBody {...props} /></WindowContents>;
+}
+function WeatherWindowBody({assets,snapshot,tiles,focusRef}:{assets:GameAssets;snapshot:GameSnapshot;tiles:HTMLImageElement;focusRef:RefObject<HTMLElement|null>}){
   const windows=useWindows(),[frame,setFrame]=useState(0);
   const view=weatherWindowView(snapshot.scenario.farm.calendar,snapshot.weather,snapshot.scenario.climate);
   useEffect(()=>{

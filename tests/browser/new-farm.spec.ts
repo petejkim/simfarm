@@ -85,6 +85,7 @@ test('a previewed farm plants on its starting land and delivers harvest into new
   await setAutoDoze(page,true);await plantField(page,field.x,field.y);
   await expectPaletteAction(page,'View object');
   generated.dispatch({ type: 'create-field', ...field, cropSlot: 0 });
+  await chooseField(page,1);
   expect(await fieldDescription(page)).toContain('Planting');
   view = generated.getSnapshot(); const storage = find((x, y) => checkBuildingPlacement(view.scenario, 65, x, y, view.weather.soilMoisture).ok);
   await buyBuilding(page,65,storage.x,storage.y); generated.dispatch({ type: 'build', ...storage, buildingType: 65 });
@@ -97,6 +98,7 @@ test('a previewed farm plants on its starting land and delivers harvest into new
   generated.dispatch({type:'edit-field-plan',fieldSlot:1,week,action:{kind:'harvest'}});
   generated.dispatch({type:'edit-field-plan',fieldSlot:1,week:week+1,action:{kind:'clear'}});
   for (let i = 0; i < daysUntil+12; i++) { await (await speedItem(page,'#next-day')).click(); generated.dispatch({ type: 'advance-day' }); }
+  await openWindow(page,'sell');
   await expect(page.locator('#harvest-stock')).toHaveText('1 stored harvest');
   const slot = generated.getSnapshot().scenario.inventory.find(i => i.active && i.type === 168)!.slot;
   await reveal(page, '.sell-harvest'); await page.locator('.sell-harvest').click(); generated.dispatch({ type: 'sell-harvest', inventorySlot: slot });

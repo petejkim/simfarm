@@ -217,6 +217,7 @@ for (const id of [0, 4]) test(`scheduled harvest controls complete ${id === 0 ? 
   for (let day = 0; day < daysUntil+12; day++) { await (await speedItem(page,'#next-day')).click();expectedGame.dispatch({type:'advance-day'}); }
   expect(await fieldDescription(page)).toContain(crop.rawDefinition[62] & 1 ? 'Growing' : 'Waiting');
   // SCEN0's other grape and almond fields also harvest on their saved annual dates.
+  await openWindow(page,'sell');
   await expect(page.locator('#harvest-stock')).toHaveText(id === 0 ? '13 stored harvests' : '1 stored harvest');
   await selectSaleOffer(page, name => name.startsWith(`Sell ${crop.name},`));
   const lot=expectedGame.getSnapshot().scenario.inventory.find(i=>i.active&&i.type===168+field.cropSlot)!;
@@ -251,6 +252,7 @@ test('a planted original corn crop grows, is harvested and sold through browser 
   const previousLots = await saleOffers(page);
   const {daysUntil}=await scheduleNextHarvest(page,initial.fields[1].x,initial.fields[1].y);
   for(let day=0;day<daysUntil+1;day++){await (await speedItem(page,'#next-day')).click();}
+  await openWindow(page,'sell');
   await expect(page.locator('#harvest-stock')).toHaveText('4 stored harvests');
   const newLots = (await saleOffers(page))
     .filter(name => !previousLots.some(old => old?.split(', for ')[0] === name.split(', for ')[0]));
@@ -291,6 +293,7 @@ test('map tools buy original land and complete a new-field planting and harvest 
   await setAutoDoze(page,true);await clickFarmTile(page,0,16);
   await expectPaletteAction(page,'PLANT'); // success also stays armed
   await page.getByRole('button',{name:'View object',exact:true}).click();await expectPaletteAction(page,'View object');
+  await chooseField(page,9);
   await expectSelectedField(page,9);
   expect((await farmSnapshot(page)).scenario.fields.filter(f=>f.active).length).toBe(9);
   expect(await fieldDescription(page)).toBe('Field 9 · Planting · 8 × 8 tiles at 0, 16');
@@ -302,6 +305,7 @@ test('map tools buy original land and complete a new-field planting and harvest 
   await page.screenshot({ path: 'artifacts/browser-new-field.png', fullPage: true });
   const {daysUntil}=await scheduleNextHarvest(page,0,16);
   for (let day = 0; day < daysUntil+12; day++) { await (await speedItem(page,'#next-day')).click(); }
+  await openWindow(page,'sell');
   await expect(page.locator('#harvest-stock')).toHaveText('1 stored harvest');
   await reveal(page, '.sell-harvest'); await page.locator('.sell-harvest').click();
   await expect(page.locator('#harvest-stock')).toHaveText('No stored harvests.');
@@ -331,6 +335,7 @@ test('fertilizing a new original plot produces a valuable corn harvest through b
   await buyPlot(page,0,2);await setAutoDoze(page,true);await plantField(page,0,16);
   await expectPaletteAction(page,'View object');
   for (let day = 0; day < 2; day++) { await (await speedItem(page,'#next-day')).click(); }
+  await chooseField(page,9);
   expect(await fieldDescription(page)).toContain('Growing');
   await sprayField(page,0,16,'fertilizer');
   expect(await fieldDescription(page)).toContain('Fertilize');
@@ -387,6 +392,7 @@ test('saved new-field work survives a page reload and finishes the valuable farm
   await expectPaletteAction(page,'View object');
   for (let day = 0; day < 2; day++) { await (await speedItem(page,'#next-day')).click(); }
   await sprayField(page,0,16,'fertilizer');
+  await chooseField(page,9);
   expect(await fieldDescription(page)).toContain('Fertilize');
   const date = await page.locator('#farm-date').textContent();
   const downloadPromise = page.waitForEvent('download');
@@ -539,6 +545,7 @@ test('a farm saved while a harvest truck drives to storage loads and completes d
   await chooseField(page,1);
   expect(await fieldDescription(page)).toContain('Harvest');
   for (let day = 0; day < 8; day++) { await (await speedItem(page,'#next-day')).click(); }
+  await openWindow(page,'sell');
   await expect(page.locator('#harvest-stock')).toHaveText('1 stored harvest');
   expect(await fieldDescription(page)).toContain('Waiting');
 });
@@ -558,6 +565,7 @@ test('original field plans harvest and replant automatically through the browser
   expect(await fieldDescription(page)).toContain('Planting');
   const plantedCash=Number((await page.locator('#farm-cash').textContent())!.replace(/[^0-9]/g,''));
   expect(plantedCash).toBeLessThan(40000); // Weekly seed quotes include the event RNG consumers.
+  await openWindow(page,'sell');
   await expect(page.locator('#harvest-stock')).toHaveText('4 stored harvests');
   await reveal(page, '.sell-harvest'); const sell = page.locator('.sell-harvest').first();
   const amount = Number((await sell.getAttribute('aria-label'))!.split(', for $')[1]);

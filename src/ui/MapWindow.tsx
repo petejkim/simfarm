@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type PointerEvent, type RefObject } from 'react';
+import { WindowContents } from './GameWindow';
 import type { GameAssets } from '../assets/game-assets';
 import { MAP_BUTTONS, MAP_MODES, type MapMode } from '../formats/map-window';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
@@ -14,7 +15,10 @@ import { spriteFace } from './chrome/Sprite';
 function measureView(el:HTMLElement,zoom:number){
   return {x:el.scrollLeft/(8*zoom),y:el.scrollTop/(8*zoom),width:el.clientWidth/(8*zoom),height:el.clientHeight/(8*zoom)};
 }
-export function MapWindow({ assets, snapshot, onCommand, viewportRef, zoom, onLocate }: {
+export function MapWindow(props: Parameters<typeof MapWindowBody>[0]) {
+  return <WindowContents windowKey="map"><MapWindowBody {...props} /></WindowContents>;
+}
+function MapWindowBody({ assets, snapshot, onCommand, viewportRef, zoom, onLocate }: {
   assets: GameAssets; snapshot: GameSnapshot; onCommand: (command: GameCommand) => void;
   viewportRef: RefObject<HTMLDivElement | null>; zoom: number;
   /** Centres the Edit view on a world point in tiles; scrolling clamps the view to the farm's edges. */

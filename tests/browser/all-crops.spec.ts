@@ -32,6 +32,8 @@ test('all crops are immediately plantable and plannable with source artwork and 
   const slot = 23, file = game.getSnapshot().scenario.cropFiles[slot], crop = browserCrops.find(c => `${c.id}.crp` === file)!;
   await plantField(page,40,40,slot);await expectPaletteAction(page,'View object');
   game.dispatch({ type: 'create-field', x: 40, y: 40, cropSlot: slot });
+  // Closed Schedule contents retain their last view; opening refreshes the selected field.
+  await openWindow(page, 'schedule');
   await expect(page.locator('#field-planner .schedule-crop-name')).toContainText(crop.name);
   await expect(page.locator('#plant-crop')).toHaveCount(0);
   const archive = readArchive(source('MEGADATA.IDX'), source('MEGADATA.EEA'));
@@ -40,7 +42,6 @@ test('all crops are immediately plantable and plannable with source artwork and 
   // The selected field draws a border over the badge's outside pixels.
   const interior = Array.from({ length: 12 }, (_, y) => [...pixels.slice(((y + 2) * 16 + 2) * 4, ((y + 2) * 16 + 14) * 4)]).flat();
   expect(await page.locator('#world').evaluate((canvas: HTMLCanvasElement) => Array.from(canvas.getContext('2d')!.getImageData(642, 642, 12, 12).data))).toEqual(interior);
-  await openWindow(page, 'schedule');
   await expect(page.locator('[data-plan-crop]')).toHaveCount(24);
   await page.locator('[data-plan-crop="22"]').click(); await page.locator('[data-plan-week="1"]').click();
   game.dispatch({ type: 'edit-field-plan', fieldSlot: 1, week: 1, action: { kind: 'plant', cropSlot: 22 } });

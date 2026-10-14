@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { WindowContents } from './GameWindow';
 import { type GameAssets } from '../assets/game-assets';
 import { cropCardFrame } from '../formats/crop-graphics';
 import { BUY_CATEGORIES, type BuyCategory } from '../formats/buy-window';
@@ -15,7 +16,10 @@ const title = (name: string) => name[0].toUpperCase() + name.slice(1);
 /** Original Buy window (buywndo.bmp) rebuilt from shared chrome in three flex columns:
  * category buttons; photo and description insets; map-graphic preview, browse arrows, Price/Own
  * readouts and BUY/CLOSE. Category icons and arrow glyphs are sprites from the source bitmap. */
-export function BuyWindow({ assets, snapshot, tiles, onBuy }: { assets: GameAssets; snapshot: GameSnapshot; tiles: HTMLImageElement; onBuy: (product: ShopProduct) => void }) {
+export function BuyWindow(props: Parameters<typeof BuyWindowBody>[0]) {
+  return <WindowContents windowKey="buy"><BuyWindowBody {...props} /></WindowContents>;
+}
+function BuyWindowBody({ assets, snapshot, tiles, onBuy }: { assets: GameAssets; snapshot: GameSnapshot; tiles: HTMLImageElement; onBuy: (product: ShopProduct) => void }) {
   const windows = useWindows(), [category, setCategory] = useState<BuyCategory>('livestock'), [index, setIndex] = useState(0);
   const products = category === 'seeds' ? snapshot.scenario.cropFiles.map((_,i)=>192+i) : assets.buyCatalog.groups[category];
   const product = shopProduct(snapshot.scenario,snapshot.finances,assets.catalog.crops,assets.buyCatalog,assets.itemText,products[index] ?? products[0]);

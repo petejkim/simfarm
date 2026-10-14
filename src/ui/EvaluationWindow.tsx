@@ -1,4 +1,5 @@
 import {useState,type RefObject} from 'react';
+import { WindowContents } from './GameWindow';
 import type {GameAssets} from '../assets/game-assets';
 import type {GameSnapshot} from '../simulation/game';
 import {evaluationWindowView,EVALUATION_TOPICS,EVALUATION_PROBLEMS} from '../simulation/evaluation-view';
@@ -11,7 +12,10 @@ import {TileSprite} from './chrome/TileSprite';
 
 /** Original Evaluation (evaluate.bmp) on shared chrome: five topic rows with sunken gauges, the season,
  * the Problems and Suggested Crops panels of 2×2-tile badges, page controls and CLOSE. */
-export function EvaluationWindow({assets,snapshot,tiles,focusRef}:{assets:GameAssets;snapshot:GameSnapshot;tiles:HTMLImageElement;focusRef:RefObject<HTMLElement|null>}){
+export function EvaluationWindow(props: Parameters<typeof EvaluationWindowBody>[0]) {
+  return <WindowContents windowKey="evaluation"><EvaluationWindowBody {...props} /></WindowContents>;
+}
+function EvaluationWindowBody({assets,snapshot,tiles,focusRef}:{assets:GameAssets;snapshot:GameSnapshot;tiles:HTMLImageElement;focusRef:RefObject<HTMLElement|null>}){
   const windows=useWindows(),[selectedPage,setPage]=useState(0);
   const view=evaluationWindowView(snapshot,assets.catalog.crops),pages=Math.max(1,Math.ceil(view.suggestions.length/8)),page=Math.min(selectedPage,pages-1);
   const close=()=>{windows.close('evaluation');},palette=assets.catalog.palette;

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type Ref } from 'react';
+import { WindowContents } from './GameWindow';
 import type { GameAssets } from '../assets/game-assets';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
 import type { FieldRecord } from '../formats/field';
@@ -17,7 +18,10 @@ import { TileSprite } from './chrome/TileSprite';
 const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
 interface Props { assets:GameAssets; snapshot:GameSnapshot; tiles:HTMLImageElement; field?:FieldRecord;
   inspection:{month:number}|null; focusRef:Ref<HTMLElement>; onCommand:(command:GameCommand)=>void }
-export function ScheduleWindow(props:Props){
+export function ScheduleWindow(props: Parameters<typeof ScheduleWindowBody>[0]) {
+  return <WindowContents windowKey="schedule"><ScheduleWindowBody {...props} /></WindowContents>;
+}
+function ScheduleWindowBody(props:Props){
   return <GameWindow windowKey="schedule" title="Schedule" framed>
     <ScheduleEditor key={`${props.field?.slot}-${props.snapshot.scenario.farm.calendar.year}`} {...props}/>
   </GameWindow>;

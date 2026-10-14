@@ -1,4 +1,5 @@
 import type {ReactNode, RefObject} from 'react';
+import { WindowContents } from './GameWindow';
 import type {GameAssets} from '../assets/game-assets';
 import type {GameSnapshot} from '../simulation/game';
 import {balanceWindowView} from '../simulation/balance-view';
@@ -11,7 +12,10 @@ interface Cell { label?:string; fill?:Fill; value?:ReactNode }
 
 /** Original Balance Sheet (cashflow.bmp) as a ledger page: 8px rows striped grey/white across both
  * halves, green section headers and dark total bars, punch-hole margins (source sprites), and CLOSE. */
-export function BalanceWindow({assets,snapshot,focusRef}:{assets:GameAssets;snapshot:GameSnapshot;focusRef:RefObject<HTMLElement|null>}){
+export function BalanceWindow(props: Parameters<typeof BalanceWindowBody>[0]) {
+  return <WindowContents windowKey="balance"><BalanceWindowBody {...props} /></WindowContents>;
+}
+function BalanceWindowBody({assets,snapshot,focusRef}:{assets:GameAssets;snapshot:GameSnapshot;focusRef:RefObject<HTMLElement|null>}){
   const windows=useWindows(),v=balanceWindowView(snapshot,assets.catalog.crops),close=()=>{windows.close('balance');};
   const out=(id:string,n:number,label:string)=><output id={`balance-${id}`} aria-label={label} title={String(n)}>{n}</output>;
   const left:Cell[]=[],right:Cell[]=[];

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
+import { createContext, memo, useCallback, useContext, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
 import { cssZoom } from './css-zoom';
 import type { WindowArtwork } from '../assets/game-assets';
 
@@ -9,6 +9,17 @@ interface Windows {
 }
 const Context = createContext<Windows | null>(null);
 export function useWindows() { const value = useContext(Context); if (!value) throw new Error('Missing game windows'); return value; }
+/** Keep the last rendered subtree mounted while closed. This preserves form/selection/scroll and frame
+ * placement state, but avoids passing each simulation snapshot through expensive hidden report/catalog
+ * components. Window context still reaches GameWindow to hide it, clean up observers and hand off focus.
+ * Initial contents render once; reopening always passes the latest props. */
+const RetainedContents = memo(function RetainedContents({ children }: { open: boolean; children: ReactNode }) {
+  return children;
+}, (_previous, next) => !next.open);
+export function WindowContents({ windowKey, children }: { windowKey: string; children: ReactNode }) {
+  const { order } = useWindows();
+  return <RetainedContents open={order.includes(windowKey)}>{children}</RetainedContents>;
+}
 export function WindowDesktop({ children, artwork, onButtonClick }: { children: ReactNode; artwork: WindowArtwork; onButtonClick?:()=>undefined|(()=>void) }) {
   const [state,setState]=useState<{order:string[];active:string|null}>({order:[],active:null});
   const buttonFeedback=useRef(new WeakMap<Event,()=>void>());

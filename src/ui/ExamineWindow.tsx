@@ -1,4 +1,5 @@
 import type { GameAssets } from '../assets/game-assets';
+import { WindowContents } from './GameWindow';
 import type { GameSnapshot } from '../simulation/game';
 import { examineObject, type ExamineObject, type ExamineTile } from '../simulation/examine-object';
 import { GameWindow } from './GameWindow';
@@ -10,7 +11,10 @@ import { TileSprite } from './chrome/TileSprite';
 /** Original Examine card (overlay12 38b4a): wooden frame, a sunken photo box and a sunken information box,
  * rebuilt from shared components. The photo comes from the buy-cards atlas; machinery, animal, chemical and
  * building-content sprites from the farm's tile atlases; name, damage, condition and value are HTML. */
-export function ExamineWindow({assets,snapshot,tiles,position}:{assets:GameAssets;snapshot:GameSnapshot;tiles:HTMLImageElement;position:{x:number;y:number}|null}){
+export function ExamineWindow(props: Parameters<typeof ExamineWindowBody>[0]) {
+  return <WindowContents windowKey="examine"><ExamineWindowBody {...props} /></WindowContents>;
+}
+function ExamineWindowBody({assets,snapshot,tiles,position}:{assets:GameAssets;snapshot:GameSnapshot;tiles:HTMLImageElement;position:{x:number;y:number}|null}){
   const world=snapshot.scenario;
   const view=position?examineObject(world,snapshot.finances,assets.catalog.crops,assets.buyCatalog,assets.examineData,assets.itemText,position.x,position.y):null;
   return <GameWindow windowKey="examine" title="Examine" framed>

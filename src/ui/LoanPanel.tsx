@@ -1,4 +1,5 @@
 import { useState, type Ref } from 'react';
+import { WindowContents } from './GameWindow';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
 import { BANK_BUTTONS } from '../formats/bank-artwork';
 import { BevelButton } from './chrome/BevelButton';
@@ -7,7 +8,10 @@ import { loanInstallment } from '../simulation/loan';
 const money = (n: number) => `$${n.toLocaleString('en-US')}`;
 /** Original bank terminal (bankterm.bmp) rebuilt in CSS: a raised bezel around a deep recess holding the dark
  * screen (green readouts) and, below a ledge, the keypad bay with shared BevelButtons. No artwork is drawn. */
-export function LoanPanel({ snapshot, onCommand, onClose, panelRef }: {
+export function LoanPanel(props: Parameters<typeof LoanPanelBody>[0]) {
+  return <WindowContents windowKey="bank"><LoanPanelBody {...props} /></WindowContents>;
+}
+function LoanPanelBody({ snapshot, onCommand, onClose, panelRef }: {
   snapshot: GameSnapshot; onCommand: (command: GameCommand) => void;
   onClose: () => void; panelRef: Ref<HTMLElement>;
 }) {

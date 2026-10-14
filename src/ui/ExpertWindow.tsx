@@ -1,4 +1,5 @@
 import { useMemo,useState,type RefObject } from 'react';
+import { WindowContents } from './GameWindow';
 import { type GameAssets } from '../assets/game-assets';
 import { cropCardFrame } from '../formats/crop-graphics';
 import { expertHeading,expertPage,expertTextBesideArt } from '../formats/expert-cards';
@@ -15,7 +16,10 @@ const topics:Record<number,string>={2:'Field icons',10:'Crops',26:'Sprays',30:'M
 /** Farm Expert (farmburo.bmp is only frame and face): the common frame around a client where each card
  * command is placed at its recorded coordinates, since the supplied cards are positional data. Pictures and
  * tile strips are sprites, captions are BevelButtons, text is HTML; links are transparent hotspots. */
-export function ExpertWindow({assets,cropFiles,tiles,focusRef,onEvent}:{assets:GameAssets;cropFiles:readonly string[];tiles:HTMLImageElement;focusRef:RefObject<HTMLElement|null>;onEvent:(event:GameEvent)=>void}){
+export function ExpertWindow(props: Parameters<typeof ExpertWindowBody>[0]) {
+  return <WindowContents windowKey="expert"><ExpertWindowBody {...props} /></WindowContents>;
+}
+function ExpertWindowBody({assets,cropFiles,tiles,focusRef,onEvent}:{assets:GameAssets;cropFiles:readonly string[];tiles:HTMLImageElement;focusRef:RefObject<HTMLElement|null>;onEvent:(event:GameEvent)=>void}){
   const windows=useWindows(),[pageId,setPageId]=useState(1);
   const page=useMemo(()=>expertPage(assets.expertDeck,pageId,cropFiles.length),[assets.expertDeck,pageId,cropFiles.length]);
   const crop=(slot:number)=>assets.catalog.crops.find(c=>`${c.id}.crp`===cropFiles[slot])!;

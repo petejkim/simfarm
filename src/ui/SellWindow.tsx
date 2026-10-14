@@ -1,4 +1,5 @@
 import { useState, type Ref } from 'react';
+import { WindowContents } from './GameWindow';
 import { type GameAssets } from '../assets/game-assets';
 import { cropCardFrame } from '../formats/crop-graphics';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
@@ -16,7 +17,10 @@ const grades=CONDITION_WORDS;
 /** Original Sell window (sellwndo.bmp) rebuilt from shared chrome: category buttons and the photo inset;
  * the item name; a scroll column beside the three-row sale list inset; position text; SELL/CLOSE.
  * Category icons, scroll arrows and the scroll track are sprites from the source bitmap. */
-export function SellWindow({assets,snapshot,tiles,onCommand,focusRef}:{assets:GameAssets;snapshot:GameSnapshot;tiles:HTMLImageElement;onCommand:(command:GameCommand)=>void;focusRef:Ref<HTMLElement>}) {
+export function SellWindow(props: Parameters<typeof SellWindowBody>[0]) {
+  return <WindowContents windowKey="sell"><SellWindowBody {...props} /></WindowContents>;
+}
+function SellWindowBody({assets,snapshot,tiles,onCommand,focusRef}:{assets:GameAssets;snapshot:GameSnapshot;tiles:HTMLImageElement;onCommand:(command:GameCommand)=>void;focusRef:Ref<HTMLElement>}) {
   const windows=useWindows(),[category,setCategory]=useState<SellCategory>('harvest'),[selection,setSelection]=useState({index:0,offset:0});
   const items=sellProducts(snapshot.scenario,snapshot.finances,assets.catalog.crops,assets.buyCatalog,assets.itemText,category,snapshot.weather.soilMoisture);
   const index=Math.min(selection.index,Math.max(0,items.length-1)), offset=Math.min(selection.offset,Math.max(0,items.length-3),index);

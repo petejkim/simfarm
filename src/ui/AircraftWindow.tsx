@@ -1,4 +1,5 @@
 import type { GameAssets } from '../assets/game-assets';
+import { WindowContents } from './GameWindow';
 import type { GameCommand, GameSnapshot } from '../simulation/game';
 import { checkAircraftService, type AircraftServiceAction } from '../simulation/aircraft';
 import { aircraftWindowView } from '../simulation/aircraft-view';
@@ -10,7 +11,10 @@ const money=(n:number)=>`$${n.toLocaleString('en-US')}`;
 const names:Record<number,string>={221:'Pesticide',222:'Herbicide',223:'Fungicide'};
 /** Original AIRPLANE window (airpwndo.bmp) rebuilt from shared chrome: refuel/load/repair picture buttons
  * with price insets; the gauge inset with field-gauge sprites; chemical picture buttons; FLY!/CLOSE. */
-export function AircraftWindow({assets,snapshot,selectedSlot,onCommand,onFly}:{
+export function AircraftWindow(props: Parameters<typeof AircraftWindowBody>[0]) {
+  return <WindowContents windowKey="aircraft"><AircraftWindowBody {...props} /></WindowContents>;
+}
+function AircraftWindowBody({assets,snapshot,selectedSlot,onCommand,onFly}:{
   assets:GameAssets;snapshot:GameSnapshot;selectedSlot:number|null;
   onCommand:(command:GameCommand)=>void;onFly:(slot:number)=>boolean;
 }){

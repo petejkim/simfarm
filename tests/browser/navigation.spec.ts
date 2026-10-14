@@ -71,8 +71,8 @@ test('Map and Plant lead through land purchase, field creation and planning with
   await page.locator('[data-field-tool="0"]').click();await clickFarmTile(page,0,16);
   await expectPaletteAction(page,'PLANT');await page.getByRole('button',{name:'View object',exact:true}).click(); // Plant stays armed
   await expectPaletteAction(page,'View object');
+  await chooseField(page,9);
   expect(await fieldDescription(page)).toContain('Field 9 · Planting');
-  await openWindow(page,'schedule');
   await expectSelectedField(page,9);
   await expect(page.locator('#field-planner')).toBeInViewport();
   await page.getByRole('button',{name:'Clear remaining plan',exact:true}).click(); await (await scheduleWeek(page,239)).click();
