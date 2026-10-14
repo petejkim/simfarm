@@ -13,6 +13,7 @@ export function useSound() {
   const [enabled, setEnabled] = useState(()=>readPreferences().sound??true), [error, setError] = useState('');
   const [buttonClicks,setButtonClicks]=useState(()=>readPreferences().buttonClicks??true);
   const clicksActive=useRef(buttonClicks);
+  const soundRequests=useRef(0);
   const [volume,setVolume]=useState(()=>readPreferences().soundVolume??100);
   useEffect(()=>{player.setVolume(volume/100);clickPlayer.setVolume(volume/100);},[player,clickPlayer]); // Apply the remembered volume once.
   const active = useRef(enabled), activated=useRef(false), flightRunning = useRef(false), planeFailed = useRef(false);
@@ -63,6 +64,7 @@ export function useSound() {
     // flight frame, never restarting each frame. Other effects overlap (native enhancement; the original had one voice).
     const cached = samples.current.get(id);
     if (id === 'plane' && (!flightRunning.current || requests.current.has(id) || (cached && player.isPlaying(cached)) || planeFailed.current)) return;
+    soundRequests.current++;
     if (cached) { player.play(cached); return; }
     if (requests.current.has(id)) return; // first load still in flight
     const controller = new AbortController(); requests.current.set(id, controller);
@@ -83,6 +85,7 @@ export function useSound() {
   },[clickPlayer]);
   const click=useCallback(()=>{
     if(!active.current||!activated.current||!clicksActive.current)return;
+    soundRequests.current++;
     if(clickSample.current){clickPlayer.play(clickSample.current);return;}
     clickRequest.current?.abort();const controller=new AbortController();clickRequest.current=controller;
     void loadSound('click',controller.signal).then(sample=>{
@@ -91,8 +94,15 @@ export function useSound() {
     }).catch(error=>{if(!controller.signal.aborted)setError(String(error));})
       .finally(()=>{if(clickRequest.current===controller)clickRequest.current=null;});
   },[clickPlayer]);
+  // Capture eligibility before preference toggles, but wait until the handler has issued its effects.
+  // A sound request supplies the action's feedback even when the sample is still loading.
+  const buttonClick=useCallback(()=>{
+    if(!active.current||!activated.current||!clicksActive.current)return;
+    const before=soundRequests.current;
+    return ()=>{if(soundRequests.current===before)click();};
+  },[click]);
   const changeVolume=useCallback((value:number)=>{
     setVolume(value);player.setVolume(value/100);clickPlayer.setVolume(value/100);rememberPreference('soundVolume',value);
   },[player,clickPlayer]);
-  return { enabled, volume, changeVolume, buttonClicks, toggleButtonClicks, error, toggle, play, click, setFlightRunning };
+  return { enabled, volume, changeVolume, buttonClicks, toggleButtonClicks, error, toggle, play, click, buttonClick, setFlightRunning };
 }

@@ -471,8 +471,9 @@ export class GameSimulation {
 
   private requestCollisionSounds(): void {
     for (const notice of this.equipmentRuntime.notices) if (notice.type === 'animal-hit') {
-      // 0x133d5/0x1357e both request smack.voc, at DS230e/DS2318.
-      this.events.push({ type: 'sound', sound: 'smack' }, { type: 'sound', sound: 'smack' });
+      // Original0x133d5/0x1357e both request smack.voc (DS230e/DS2318).
+      // User policy: one smack per hit, avoiding doubled cached voices (docs/traffic.md).
+      this.events.push({ type: 'sound', sound: 'smack' });
     }
     this.equipmentRuntime.notices.length = 0;
   }

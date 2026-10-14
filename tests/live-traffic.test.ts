@@ -62,7 +62,7 @@ test('weekly spawning uses current town coordinates, heading0 and the first free
   }
 });
 
-test('traffic collision follows the animal phase, preserves breeding, emits both source smack requests and never replays on restore', () => {
+test('traffic collision follows the animal phase, preserves breeding, emits one smack and never replays on restore', () => {
   const moving = trafficFixture(true); moving.state.dayTicks = 0; moving.state.animalFrame.lastMoveTick = 0;
   const departing = moving.load(), silent: unknown[] = []; departing.subscribeEvents(e => silent.push(e));
   departing.dispatch({ type: 'set-paused', paused: false }); departing.tick(250); // One tick at16 ticks/day.
@@ -75,7 +75,7 @@ test('traffic collision follows the animal phase, preserves breeding, emits both
   assert.equal(a.flags, 0x2a); assert.equal(a.bytes[30] | a.bytes[31] << 8, 16);
   assert.equal(s.traffic.records[0][0], 0x81); assert.equal(s.traffic.records[0][2], 21);
   assert.equal(s.scenario.cells[worldIndex(21, 20)].overlay & 2047, 1040);
-  assert.deepEqual(events, [{ type: 'sound', sound: 'smack' }, { type: 'sound', sound: 'smack' }]);
+  assert.deepEqual(events, [{ type: 'sound', sound: 'smack' }]); // User policy: one sound per collision; both original calls remain documented.
   const copy = GameSimulation.load(game.save(4), f.crops).simulation, restoredEvents: unknown[] = [];
   copy.subscribeEvents(e => restoredEvents.push(e)); copy.dispatch({ type: 'set-paused', paused: true });
   assert.deepEqual(restoredEvents, []); assert.equal(copy.save(4), game.save(4));

@@ -68,15 +68,14 @@ test('traffic collision plays source PCM only when enabled, never replays on loa
   const migrated = GameSimulation.load(JSON.stringify(old), browserCrops).simulation.withAllCrops(browserCrops); await load(page, JSON.stringify(old));
   expect(await save(page, 'legacy')).toEqual(JSON.parse(migrated.save(4))); expect(migrated.getSnapshot().traffic.activeCount).toBe(0);
   expect(requests).toHaveLength(count);
-  // Audio audit: first-load deduplication hides the two source requests. Once cached, one collision starts two voices.
+  // One voice per collision both before and after sample caching; loading never replays feedback.
   const hits=()=>page.evaluate(()=>(window as unknown as {__trafficPlayed:{length:number;peak:number;time:number}[]}).__trafficPlayed.filter(p=>p.length===1467));
   const before=(await hits()).length;
   await load(page,f.load().withAllCrops(browserCrops).save(4));expect(await hits()).toHaveLength(before);
   await (await speedItem(page,'#next-day')).click();
-  await expect.poll(async()=>(await hits()).length).toBe(before+2);
-  const pair=(await hits()).slice(-2);expect(pair.every(p=>p.peak>.1)).toBe(true);
-  expect(Math.abs(pair[1].time-pair[0].time)).toBeLessThan(.01);
-  expect(requests).toHaveLength(count);expect(await save(page,'cached-double-hit')).toEqual(JSON.parse(game.save(4)));
+  await expect.poll(async()=>(await hits()).length).toBe(before+1);
+  expect((await hits()).at(-1)!.peak).toBeGreaterThan(.1);
+  expect(requests).toHaveLength(count);expect(await save(page,'cached-single-hit')).toEqual(JSON.parse(game.save(4)));
 });
 
 

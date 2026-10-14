@@ -1,5 +1,9 @@
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page,type Locator} from '@playwright/test';
+import {readFileSync} from 'node:fs';
+import {decodeVoc} from '../../src/formats/voc';
 import {disasterFixture} from '../support/disasters';
+import {trafficFixture} from '../support/traffic';
+import {speedItem} from '../support/workspace';
 import {browserCrops} from '../support/crop-catalog';
 import {readSaveText} from '../support/save-file';
 async function count(page:Page){return page.evaluate(()=>(window as any).__pcm.filter((e:any)=>e.kind==='start'&&e.length===2667).length);}
@@ -22,6 +26,57 @@ test.beforeEach(async({page})=>{
   await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
 });
 
+for(const touch of [false,true])test.describe(touch?'touch action feedback':'mouse and keyboard action feedback',()=>{
+  if(touch)test.use({hasTouch:true,isMobile:true,viewport:{width:390,height:844}});
+  test('rooster, disaster and Next Day effects replace button clicks; silent actions retain one click',async({page})=>{
+    const activate=(button:Locator)=>touch?button.tap():button.click();
+    const starts=()=>page.evaluate(()=>(window as any).__pcm.filter((e:any)=>e.kind==='start'));
+    async function load(text:string){await page.locator('#load-farm-file').setInputFiles({name:'audio.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
+    async function save(){
+      const ok=page.locator('#finance-message-ok,#disaster-message-ok,#field-message-ok,#building-message-ok');
+      while(await ok.isVisible())await activate(ok);
+      const pending=page.waitForEvent('download');await activate(page.locator('#file-menu-button'));
+      await activate(page.getByRole('menuitem',{name:'Save to File...',exact:true}));return JSON.parse(readSaveText((await(await pending).path())!));
+    }
+    async function feedback(action:()=>Promise<unknown>,length:number){
+      const before=(await starts()).length;await action();
+      await expect.poll(async()=>(await starts()).slice(before).map((e:any)=>e.length)).toEqual([length]);
+      expect((await starts()).at(-1)).toMatchObject({audible:true,state:'running'});
+    }
+    await activate(page.locator('#windows-menu-button'));await activate(page.getByRole('menuitemcheckbox',{name:'Farm Expert',exact:true}));
+    await activate(page.getByRole('region',{name:'Farm Expert',exact:true}).getByRole('button',{name:'Livestock',exact:true}));
+    const rooster=page.getByRole('button',{name:'Play rooster sound',exact:true});
+    for(let n=0;n<2;n++)await feedback(()=>activate(rooster),13218); // Cold load and cached repeats.
+    for(const [kind,label,sound] of [['wind','Windstorm','wind'],['frost','Frost','wind'],['tornado','Tornado','tornado'],['swarm','Locusts','swarm'],['flood','Flood','flood'],['drought','Drought',null]] as const){
+      const fixture=disasterFixture();fixture.state.scenario.farm.messages=false;
+      const game=fixture.load().withAllCrops(browserCrops);await load(game.save(4));
+      await activate(page.locator('#disasters-menu-button'));
+      const choice=page.getByRole('menuitemcheckbox',{name:label,exact:true});
+      const length=sound?decodeVoc(readFileSync(`public/assets/raw/${sound}.voc`)).samples.length:2667;
+      await feedback(async()=>{if(touch)await choice.tap();else{await choice.focus();await page.keyboard.press('Enter');}},length);
+      game.dispatch({type:'disaster-menu',action:kind});expect(game.getSnapshot().lastDisasterResult?.ok).toBe(true);
+      expect(await save()).toEqual(JSON.parse(game.save(4)));
+    }
+    // No field: rejected Locusts still gets ordinary button feedback.
+    const rejected=disasterFixture();for(const field of rejected.state.scenario.fields)field.bytes[7]&=~1;
+    const invalid=rejected.load().withAllCrops(browserCrops);await load(invalid.save(4));await activate(page.locator('#disasters-menu-button'));
+    await feedback(()=>activate(page.getByRole('menuitemcheckbox',{name:'Locusts',exact:true})),2667);
+    invalid.dispatch({type:'disaster-menu',action:'swarm'});expect(await save()).toEqual(JSON.parse(invalid.save(4)));
+    for(const collision of [false,true,true]){
+      const game=trafficFixture(collision).load().withAllCrops(browserCrops);await load(game.save(4));
+      const next=await speedItem(page,'#next-day');
+      await feedback(()=>activate(next),collision?1467:2667);
+      game.dispatch({type:'advance-day'});expect(await save()).toEqual(JSON.parse(game.save(4)));
+    }
+    await activate(page.locator('#options-menu-button'));await activate(page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true}));
+    const muted=disasterFixture();muted.state.scenario.farm.messages=false;
+    const game=muted.load().withAllCrops(browserCrops);await load(game.save(4));await activate(page.locator('#disasters-menu-button'));
+    const before=(await starts()).length;await activate(page.getByRole('menuitemcheckbox',{name:'Windstorm',exact:true}));
+    game.dispatch({type:'disaster-menu',action:'wind'});expect(await save()).toEqual(JSON.parse(game.save(4)));
+    expect(await starts()).toHaveLength(before);
+  });
+});
+
 test('toolbar, menus, dialog controls and keyboard buttons share one original click, respect disabled controls and mute',async({page})=>{
   async function click(selector:string){const before=await count(page);await page.locator(selector).click();await expect.poll(()=>count(page)).toBe(before+1);}
   await click('#file-menu-button');await page.keyboard.press('Escape');await click('#window-bank');
@@ -38,8 +93,10 @@ test('toolbar, menus, dialog controls and keyboard buttons share one original cl
 test('button feedback does not stop an original gameplay sample',async({page})=>{
   await page.locator('#windows-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Farm Expert',exact:true}).click();
   await page.getByRole('region',{name:'Farm Expert',exact:true}).getByRole('button',{name:'Livestock',exact:true}).click();
+  const clicks=await count(page);
   await page.getByRole('button',{name:'Play rooster sound',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>(window as any).__pcm.some((e:any)=>e.kind==='start'&&e.length===13218))).toBe(true);
+  expect(await count(page)).toBe(clicks); // The rooster is the button's feedback; no layered click.
   const before=await count(page);await page.locator('#window-bank').click();await expect.poll(()=>count(page)).toBe(before+1);
   expect(await page.evaluate(()=>(window as any).__pcm.filter((e:any)=>e.kind==='stop'&&e.length===13218).length)).toBe(0);
 });

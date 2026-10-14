@@ -62,7 +62,7 @@ function Game({ assets }: { assets: GameAssets }) {
     }
   }, [music.requestTrack, sound.play, sound.click]);
   if (!farm) return null;
-  return <WindowDesktop artwork={assets.windowArtwork} onButtonClick={sound.click}>
+  return <WindowDesktop artwork={assets.windowArtwork} onButtonClick={sound.buttonClick}>
     <FarmView key={farm.serial} id={farm.id} loaded={farm.loaded} openNewGame={farm.firstStart} autosave={autosave} autosaveNow={farm.autosaveNow} startMessage={farm.notice}
       onRetry={() => setFarm(previous => previous && ({ ...previous, serial: previous.serial + 1 }))}
       audioControls={<>

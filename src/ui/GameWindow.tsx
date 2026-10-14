@@ -9,8 +9,9 @@ interface Windows {
 }
 const Context = createContext<Windows | null>(null);
 export function useWindows() { const value = useContext(Context); if (!value) throw new Error('Missing game windows'); return value; }
-export function WindowDesktop({ children, artwork, onButtonClick }: { children: ReactNode; artwork: WindowArtwork; onButtonClick?:()=>void }) {
+export function WindowDesktop({ children, artwork, onButtonClick }: { children: ReactNode; artwork: WindowArtwork; onButtonClick?:()=>undefined|(()=>void) }) {
   const [state,setState]=useState<{order:string[];active:string|null}>({order:[],active:null});
+  const buttonFeedback=useRef(new WeakMap<Event,()=>void>());
   // null focuses the permanent map; it is never a window or a stack entry.
   const show=useCallback((key:string|null)=>setState(old=>key===null
     ? old.active===null?old:{...old,active:null}
@@ -24,7 +25,11 @@ export function WindowDesktop({ children, artwork, onButtonClick }: { children: 
   const {order,active}=state;
   return <Context value={{ active, order, show, close, raise, reset }}><div className="game-desktop" onClickCapture={event=>{
     const button=event.target instanceof Element?event.target.closest('button'):null;
-    if(button&&!button.matches(':disabled')&&button.getAttribute('aria-disabled')!=='true')onButtonClick?.();
+    if(button&&!button.matches(':disabled')&&button.getAttribute('aria-disabled')!=='true'){
+      const finish=onButtonClick?.();if(finish)buttonFeedback.current.set(event.nativeEvent,finish);
+    }
+  }} onClick={event=>{
+    const finish=buttonFeedback.current.get(event.nativeEvent);buttonFeedback.current.delete(event.nativeEvent);finish?.();
   }} style={{
     '--window-title': `url("${artwork.title.src}")`, '--window-inactive': `url("${artwork.inactive.src}")`, '--window-close': `url("${artwork.close.src}")`,
     '--window-frame': `url("${artwork.frame.src}")`, '--window-title-end': `url("${artwork.end.src}")`, '--window-title-end-inactive': `url("${artwork.endInactive.src}")`,
