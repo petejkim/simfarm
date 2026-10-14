@@ -23,6 +23,7 @@ test('tax assessment is grounded in the original cash brackets, signed division 
   exact(0xcdf4, '9a640d661a9a360b661a'); // annual collection, then ledger reset
   exact(0x1d5d9, '2bc0a3463ea3443e'); // sales reset before debit
   exact(0x1d5e5, '68c409'); exact(0x1d5fe, '2669061275c800'); // taxes, low-word level*200
+  exact(0x1d60d, '8b46f60b46f4756f'); // source mistakes a zero debit for failed payment (SF-044)
   exact(0x1d622, 'd1ead1d8d1ead1d8'); // unsigned old-debt quarter
   exact(0x1d630, 'd1fbd1d9d1fbd1d9'); // signed assessment quarter
   exact(0x1d679, '26c606d7fe03'); exact(0x1d75c, '9ad210e624');
@@ -59,10 +60,21 @@ test('failed taxes clear sales, preserve cash and compound source debt with sign
   assert.equal(result.assessment.total, 180); assert.equal(result.paid, false); assert.equal(result.offerExpansion, false);
   assert.equal(s.farm.cash, 179); assert.equal(s.farm.salesAccumulator, 0);
   assert.deepEqual(account, { unpaidTaxes: 325, taxExpenses: 0, taxFailures: 0, taxCountdown: 3, townRevenue: (-180) >>> 0, expansionFunds: 777 });
-  // A zero debit returns zero and follows failure in the original.
-  account.unpaidTaxes = 0;
-  assert.equal(settleAnnualTax(s, 8, account).paid, false);
-  assert.equal(account.taxFailures, 1); assert.equal(account.taxCountdown, 3);
+});
+
+test('zero annual assessment succeeds without penalties or payment and still funds town maintenance', () => {
+  for (const cash of [0, 179, 40000]) for (const [revenue, reserves, nextRevenue, nextReserves, offer] of [
+    [0, 0, -200, 0, false], [0, 200, 0, 0, false], [200, 75, 0, 75, true],
+  ] as const) {
+    const { s, account } = settlementFarm();
+    s.farm.cash = cash; s.farm.salesAccumulator = 0;
+    Object.assign(account, { townRevenue: revenue, expansionFunds: reserves, taxFailures: 7, taxExpenses: 123 });
+    const result = settleAnnualTax(s, 8, account);
+    assert.equal(result.assessment.total, 0); assert.equal(result.paid, true); assert.equal(result.offerExpansion, offer);
+    assert.equal(result.maintenance, 200); assert.equal(s.farm.cash, cash); assert.equal(s.farm.salesAccumulator, 0);
+    assert.deepEqual(account, { unpaidTaxes: 0, taxExpenses: 123, taxFailures: 7, taxCountdown: 0,
+      townRevenue: nextRevenue >>> 0, expansionFunds: nextReserves });
+  }
 });
 
 test('annual success retains existing debt/countdown; funding uses word maintenance and signed dword comparisons', () => {

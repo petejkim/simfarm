@@ -89,6 +89,32 @@ test('failed recreation and random recreation keep the reserved plot pending; ru
   assert.equal(game.getSnapshot().paused, false); game.tick(4000); assert.equal(game.getSnapshot().daysAdvanced, 2);
 });
 
+test('zero annual tax completes year-end without arrears, a failure notice or payment after exact reload', () => {
+  const { game, crops } = fixture(s => {
+    const regions = Buffer.from(s.scenario.regions, 'hex');
+    for (let r = 0; r < 144; r++) if (regions[r * 7 + 1] === 1) regions[r * 7 + 1] = 0;
+    s.scenario.regions = regions.toString('hex');
+    Object.assign(s.scenario.farm, { cash: 0, salesAccumulator: 0 });
+    Object.assign(s.runtime.finances.town, { townRevenue: 0, expansionFunds: 0 });
+    s.runtime.finances.taxFailures = 7; s.runtime.finances.accounts.taxExpenses = 12;
+  });
+  const text = game.save(4), restored = GameSimulation.load(text, crops).simulation;
+  assert.equal(restored.save(4), text); // Boundary fixture; loading does not rewrite accounting.
+  for (const sim of [game, restored]) sim.dispatch({ type: 'advance-day' });
+  assert.equal(restored.save(4), game.save(4));
+  const after = game.getSnapshot();
+  assert.equal(after.lastTaxSettlement?.assessment.total, 0); assert.equal(after.lastTaxSettlement.paid, true);
+  assert.equal(after.lastTaxSettlement.maintenance, 12200); assert.equal(after.pendingTown, null);
+  assert.equal(after.scenario.farm.cash, 0); assert.equal(after.daysAdvanced, 1);
+  assert.equal(after.finances.taxFailures, 7); assert.equal(after.finances.debt.unpaidTaxes, 0);
+  assert.equal(after.finances.debt.taxCountdown, 0); assert.deepEqual(after.financeNotices, []);
+  assert.equal(after.finances.annual.priorTaxExpenses, 12); assert.equal(after.finances.accounts.taxExpenses, 0);
+  assert.equal(after.finances.town.townRevenue, (-12200) >>> 0);
+  const completed = game.save(4), continued = GameSimulation.load(completed, crops).simulation;
+  assert.equal(continued.save(4), completed); continued.dispatch({ type: 'advance-day' });
+  assert.equal(continued.getSnapshot().daysAdvanced, 2); assert.equal(continued.getSnapshot().finances.debt.taxCountdown, 0);
+});
+
 test('failed annual tax creates penalties and a three-month countdown without replaying a retry or skipping reset', () => {
   const { game } = fixture(s => {
     s.scenario.farm.cash = 0;

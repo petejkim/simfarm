@@ -95,3 +95,33 @@ test('unpaid annual taxes show the original penalty, persist and retry at the ne
   await page.locator('#finance-message-ok').click();
   const retried=(await farmSnapshot(page)).finances.debt;expect(retried.taxCountdown).toBe(2);expect(retried.unpaidTaxes).toBe(5893);
 });
+
+test('zero annual tax completes without an unpaid-tax popup or debt and saves the completed year', async ({ page }) => {
+  const initial = JSON.parse(yearEnd(0)), regions = Buffer.from(initial.scenario.regions, 'hex');
+  for (let r = 0; r < 144; r++) if (regions[r * 7 + 1] === 1) regions[r * 7 + 1] = 0;
+  initial.scenario.regions = regions.toString('hex'); initial.scenario.farm.salesAccumulator = 0;
+  Object.assign(initial.runtime.finances.town, { townRevenue: 0, expansionFunds: 0 });
+  initial.runtime.finances.taxFailures = 7; initial.runtime.finances.accounts.taxExpenses = 12;
+  await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(file(JSON.stringify(initial)));
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
+  const save = async () => {
+    const pending = page.waitForEvent('download'); await page.locator('#file-menu-button').click();
+    await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
+    return JSON.parse(readSaveText((await (await pending).path())!));
+  };
+  expect(await save()).toEqual(initial);
+  await openWindow(page, 'balance'); await expect(page.locator('#balance-tax')).toHaveText('0');
+  await (await speedItem(page, '#next-day')).click();
+  await expect(page.locator('#farm-date')).toContainText('January 1, 1994');
+  await expect(page.locator('#finance-message-ok')).toHaveCount(0); await expect(page.locator('#town-choice')).toHaveCount(0);
+  await expect(page.locator('[data-window=default]')).toHaveCount(0);
+  const completed = await save(), finances = completed.runtime.finances;
+  expect(completed.scenario.farm.cash).toBe(0); expect(completed.runtime.daysAdvanced).toBe(1);
+  expect(finances.debt.unpaidTaxes).toBe(0); expect(finances.debt.taxCountdown).toBe(0); expect(finances.taxFailures).toBe(7);
+  expect(finances.annual.priorTaxExpenses).toBe(12); expect(finances.accounts.taxExpenses).toBe(0);
+  expect(finances.town.townRevenue).toBe((-12200) >>> 0);
+  await page.reload(); await page.locator('#load-farm-file').setInputFiles(file(JSON.stringify(completed)));
+  await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); expect(await save()).toEqual(completed);
+  await (await speedItem(page, '#next-day')).click(); await expect(page.locator('#farm-date')).toContainText('January 2, 1994');
+  expect((await save()).runtime.finances.debt.taxCountdown).toBe(0);
+});

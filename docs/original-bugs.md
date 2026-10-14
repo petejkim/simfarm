@@ -384,9 +384,13 @@ Tax assessment reads sales accumulator `6190:3e44` at `0x1d57f` and calls signed
 
 ## SF-044 — zero annual tax enters the failed-payment branch
 
-**Status:** confirmed branch behavior; preserved natively; ordinary-play reachability unproven.
+**Status:** original branch behavior confirmed; corrected natively on 2026-10-13 by user request. Ordinary original-play reachability remains unproven.
 
 Annual collection tests the amount returned by debit with OR/JNE at `0x1d60d..0x1d613`. A zero assessment returns zero even with sufficient cash, so the routine increments failed-tax byte `3eed`, sets `fed7` to three and takes the unpaid-tax notification path. A zero-land/zero-sales/zero-debt fixture demonstrates the arithmetic; whether ordinary play reaches that state before game termination remains unproven. Native settlement preserves the branch and its countdown rather than treating zero as a successful payment. Revisit with bankruptcy/end-state behavior; no exploit claim.
+
+Native correction (2026-10-13): `settleAnnualTax` treats zero as affordable, returns `paid: true` and continues existing town funding/maintenance. Cash and tax expenses do not increase or decrease; no failed-tax count, penalty, countdown or notice 159 is created. Historical preservation wording above describes the pre-correction implementation. No other assessment arithmetic or existing nonzero arrears semantics change. The source branch bytes at `0x1d60d` are `8b46f60b46f4756f`, pinned against executable SHA-256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`.
+
+Validation: the new zero-assessment regression fails against the old code. Build/type checking, 22 tax/live-annual/ledger unit cases and all 3 annual browser cases pass. Coverage includes cash zero, maintenance funding/reserves, unchanged failure history, annual reset, absence of unpaid/default dialogs and exact checkpoint reload/continuation. The no-player-land fixture is an explicit boundary state, not proof of an ordinary original producer. Fix complete; no deferred native SF-044 work. SF-067's separate zero-amount retry/liquidation path is addressed alongside this request. Logs: `artifacts/bugfix-044-{before,unit,build,browser}.log`.
 
 ## SF-045 — town maintenance truncates residential-level multiplication to a word
 

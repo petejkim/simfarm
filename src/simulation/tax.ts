@@ -68,8 +68,9 @@ export function settleAnnualTax(world: Scenario, soilMoisture: number, account: 
   const amount = assessment.total;
   const maintenance = (townStatistics(world).residentialLevels * 200) & 65535;
   world.farm.salesAccumulator = 0;
-  // The source tests the amount returned by debit; zero also enters failure.
-  const paid = amount !== 0 && amount <= world.farm.cash;
+  // SF-044: a zero assessment is satisfied. Continue ordinary town funding
+  // and maintenance without inventing a failed tax payment or penalty.
+  const paid = amount <= world.farm.cash;
   if (!paid) {
     account.unpaidTaxes = (account.unpaidTaxes + (account.unpaidTaxes >>> 2) + ((amount | 0) >> 2) + amount) >>> 0;
     account.taxFailures = (account.taxFailures + 1) & 255;
