@@ -11,6 +11,9 @@ const MAX_VOICES=8;
 export class PcmPlayer {
   private context?: AudioContext;
   private master?: GainNode;
+  // Reuse uploaded PCM for overlapping/repeated playback; sources remain one-shot per voice.
+  // Weak keys let unused decoded sounds and their buffers be collected together.
+  private buffers = new WeakMap<PcmSound, AudioBuffer>();
   private voices: { source: AudioBufferSourceNode; sound: PcmSound }[] = [];
   private volume=1;
   get playing(): boolean { return this.voices.length > 0; }
@@ -29,8 +32,12 @@ export class PcmPlayer {
   play(sound: PcmSound): void {
     if (!this.context||!this.master) return;
     while (this.voices.length >= MAX_VOICES) this.end(this.voices[0]);
-    const buffer = this.context.createBuffer(1, sound.samples.length, sound.sampleRate);
-    buffer.copyToChannel(sound.samples, 0);
+    let buffer = this.buffers.get(sound);
+    if (!buffer) {
+      buffer = this.context.createBuffer(1, sound.samples.length, sound.sampleRate);
+      buffer.copyToChannel(sound.samples, 0);
+      this.buffers.set(sound, buffer);
+    }
     const source = this.context.createBufferSource(), voice = { source, sound };
     source.buffer = buffer; source.connect(this.master);
     source.onended = () => { source.disconnect(); this.voices = this.voices.filter(v => v !== voice); };
@@ -50,5 +57,5 @@ export class PcmPlayer {
     try { voice.source.stop(); } catch { /* not started */ }
     voice.source.disconnect();
   }
-  dispose(): void { this.stop(); this.master?.disconnect(); this.master=undefined; if (this.context) void this.context.close(); this.context = undefined; }
+  dispose(): void { this.stop(); this.buffers=new WeakMap(); this.master?.disconnect(); this.master=undefined; if (this.context) void this.context.close(); this.context = undefined; }
 }

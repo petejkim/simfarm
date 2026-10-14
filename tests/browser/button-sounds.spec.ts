@@ -4,10 +4,14 @@ test.beforeEach(async({page})=>{
   await page.addInitScript(()=>{
     if(!localStorage.getItem('simfarm.options.v1'))localStorage.setItem('simfarm.options.v1',JSON.stringify({music:false,sound:true}));
     const events:any[]=[];(window as any).__pcm=events;const Base=window.AudioContext;
+    const buffers=new WeakMap<AudioBuffer,number>();let nextBuffer=0;
     window.AudioContext=class extends Base{
-      constructor(options?:AudioContextOptions){super(options);const create=this.createBufferSource.bind(this);
+      constructor(options?:AudioContextOptions){super(options);const create=this.createBufferSource.bind(this),createBuffer=this.createBuffer.bind(this);
+        this.createBuffer=(...args)=>{const buffer=createBuffer(...args),id=++nextBuffer,copy=buffer.copyToChannel.bind(buffer);buffers.set(buffer,id);
+          events.push({kind:'buffer',length:buffer.length,id});
+          buffer.copyToChannel=(...args)=>{events.push({kind:'copy',length:buffer.length,id});copy(...args);};return buffer;};
         this.createBufferSource=()=>{const source=create(),start=source.start.bind(source),stop=source.stop.bind(source);
-          source.start=(...args)=>{events.push({kind:'start',length:source.buffer?.length,audible:source.buffer?.getChannelData(0).some(x=>x!==0),state:this.state});start(...args);};
+          source.start=(...args)=>{events.push({kind:'start',length:source.buffer?.length,buffer:source.buffer?buffers.get(source.buffer):undefined,audible:source.buffer?.getChannelData(0).some(x=>x!==0),state:this.state});start(...args);};
           source.stop=(...args)=>{events.push({kind:'stop',length:source.buffer?.length,delay:(args[0]??0)-this.currentTime});stop(...args);};return source;};
       }
     };
@@ -55,6 +59,10 @@ test('samples requested in rapid succession overlap instead of cutting each othe
   for(let i=0;i<4;i++)await page.locator('#window-bank').click({delay:0});
   await expect.poll(()=>count(page)).toBe(4);
   expect(await page.evaluate(()=>(window as any).__pcm.filter((e:any)=>e.kind==='stop').length)).toBe(0);
+  const events=await page.evaluate(()=>(window as any).__pcm.filter((e:any)=>e.length===2667));
+  expect(events.filter((e:any)=>e.kind==='buffer')).toHaveLength(1);
+  expect(events.filter((e:any)=>e.kind==='copy')).toHaveLength(1);
+  expect(new Set(events.filter((e:any)=>e.kind==='start').map((e:any)=>e.buffer)).size).toBe(1);
 });
 
 test('rapidly repeated gameplay samples load once and every request plays',async({page})=>{
@@ -67,4 +75,43 @@ test('rapidly repeated gameplay samples load once and every request plays',async
   // Each repeat starts at once from the cached decode, layered over the previous one.
   await expect.poll(starts).toBe(6);expect(requests).toHaveLength(1);
   expect(await page.evaluate(()=>(window as any).__pcm.filter((e:any)=>e.kind==='stop'&&e.length===13218).length)).toBe(0);
+  // Muting stops voices, but enabling again reuses the same sample and playback buffer.
+  await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true}).click();
+  await rooster.click();expect(await starts()).toBe(6);
+  await page.locator('#options-menu-button').click();await page.getByRole('menuitemcheckbox',{name:'Sound Effects',exact:true}).click();
+  await rooster.click();await expect.poll(starts).toBe(7);expect(requests).toHaveLength(1);
+  const events=await page.evaluate(()=>(window as any).__pcm.filter((e:any)=>e.length===13218));
+  expect(events.filter((e:any)=>e.kind==='buffer')).toHaveLength(1);
+  expect(events.filter((e:any)=>e.kind==='copy')).toHaveLength(1);
+  expect(new Set(events.filter((e:any)=>e.kind==='start').map((e:any)=>e.buffer)).size).toBe(1);
+  expect(events.filter((e:any)=>e.kind==='start').every((e:any)=>e.audible&&e.state==='running')).toBe(true);
+});
+
+test('cached PCM preserves selective stopping and voice limits, and disposal releases playback buffers',async({page})=>{
+  await page.locator('#window-bank').click();
+  const state=await page.evaluate(async()=>{
+    const playerPath='/src/audio/pcm-player.ts',decoderPath='/src/formats/voc.ts';
+    const {PcmPlayer}=await import(playerPath),{decodeVoc}=await import(decoderPath);
+    const bytes=new Uint8Array(await (await fetch('/assets/raw/rooster.voc')).arrayBuffer());
+    const first=decodeVoc(bytes),second=decodeVoc(bytes),player=new PcmPlayer();
+    await player.enable();player.play(first);player.play(first);player.play(second);
+    player.stop(first);
+    const selective=!player.isPlaying(first)&&player.isPlaying(second);
+    player.stop();
+    for(let i=0;i<9;i++)player.play(first);
+    const capped=(window as any).__pcm.filter((e:any)=>e.length===13218&&e.kind==='stop').length===4;
+    player.dispose();const disposed=!player.playing;
+    await player.enable();player.play(first);
+    const events=(window as any).__pcm.filter((e:any)=>e.length===13218);
+    const exact=events.filter((e:any)=>e.kind==='start').every((e:any)=>e.audible&&e.state==='running');
+    player.dispose();return {selective,capped,disposed,exact,events};
+  });
+  expect(state.selective).toBe(true);expect(state.capped).toBe(true);expect(state.disposed).toBe(true);expect(state.exact).toBe(true);
+  expect(state.events.filter((e:any)=>e.kind==='buffer')).toHaveLength(3);
+  expect(state.events.filter((e:any)=>e.kind==='copy')).toHaveLength(3);
+  const starts=state.events.filter((e:any)=>e.kind==='start');
+  expect(starts).toHaveLength(13);expect(starts[0].buffer).toBe(starts[1].buffer);
+  expect(starts[2].buffer).not.toBe(starts[0].buffer);
+  expect(starts.slice(3,12).every((e:any)=>e.buffer===starts[0].buffer)).toBe(true);
+  expect(starts[12].buffer).not.toBe(starts[0].buffer);
 });
