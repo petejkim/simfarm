@@ -3886,3 +3886,10 @@ Build/type checking,22 focused simulation/treatment/weekly tests and1 browser al
 Stored harvest sales now post income once through creditHarvest, matching cash and taxable sales. Removal validation, storage release, cash cap and unsigned ledger wrap remain intact; prior duplicated history is not rewritten.
 
 Build/type checking,21 harvest/default unit cases and1 browser all24-crop sale/reload flow pass. Independent browser assertions equate income and sales increments to proceeds. The forced-sale test expectation was updated after its retained double-post assertion failed. Logs artifacts/bugfix-026-*.log. See docs/gameplay-bug-fixes.md. Original evidence retained; no source distribution changes or push.
+
+
+## 2026-10-13 — requested corrections6/12: SF-041
+
+Annual report expense totals now include canonical worker and chemical expenses exactly once. Net reflects both charges. Loan principal repayments remain excluded from operating expense totals; unresolved source ledger meanings and prior-tax presentation are not reinterpreted.
+
+Build/type checking,5 annual-ledger unit cases and1 browser report/payment/reload flow pass. Independent totals include20 workers and30 chemicals and preserve cached checkpoint reports. Unsigned carry/borrow and malformed input are checked. Logs artifacts/bugfix-041-*.log. See docs/gameplay-bug-fixes.md. Original evidence retained; no source distribution changes or push.

@@ -9,7 +9,7 @@ User authorized these twelve native corrections on2026-10-13, one conventional c
 | SF-129 | Wind damage cadence | Complete; one nutrient per exposed field per full game day, with saved clock updates. |
 | SF-001 | Regional-condition subtraction | Complete |
 | SF-026 | Duplicate crop-income posting | Complete |
-| SF-041 | Report expense omissions | Pending |
+| SF-041 | Report expense omissions | Complete |
 | SF-042 | Worker expense annual reset | Pending |
 | SF-046 | Forced-sale debt expense category | Pending |
 | SF-006 | Water-stress warning | Pending |
@@ -50,3 +50,10 @@ Checks: Build/type checking,22 focused simulation/treatment/weekly tests and1 br
 Stored harvest sales now post income once through creditHarvest, matching cash and taxable sales. Removal validation, storage release, cash cap and unsigned ledger wrap remain intact; prior duplicated history is not rewritten.
 
 Checks: Build/type checking,21 harvest/default unit cases and1 browser all24-crop sale/reload flow pass. Independent browser assertions equate income and sales increments to proceeds. The forced-sale test expectation was updated after its retained double-post assertion failed. Logs artifacts/bugfix-026-*.log.
+
+
+## SF-041 — native correction
+
+Annual report expense totals now include canonical worker and chemical expenses exactly once. Net reflects both charges. Loan principal repayments remain excluded from operating expense totals; unresolved source ledger meanings and prior-tax presentation are not reinterpreted.
+
+Checks: Build/type checking,5 annual-ledger unit cases and1 browser report/payment/reload flow pass. Independent totals include20 workers and30 chemicals and preserve cached checkpoint reports. Unsigned carry/borrow and malformed input are checked. Logs artifacts/bugfix-041-*.log.

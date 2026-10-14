@@ -43,7 +43,7 @@ test('all eight saved annual ledgers preserve raw values, runtime inputs and dec
   }
 });
 
-test('report reproduces every included account, omissions and unsigned carry/borrow boundaries', () => {
+test('report reproduces every expense account, principal exclusion and unsigned carry/borrow boundaries', () => {
   const d = setup(), f = d.world.farm, a = d.accounts, l = d.ledger;
   Object.assign(f, { cropIncome: 0xffffffff, contractGains: 2, seedExpenses: 3, rentalExpenses: 5, contractLosses: 7, landExpenses: 11,
     workerExpenses: 0x80000000, chemicalExpenses: 0xffffffff });
@@ -52,8 +52,8 @@ test('report reproduces every included account, omissions and unsigned carry/bor
   Object.assign(l, { otherExpenses: 37, livestockExpenses: 41 });
   const before = JSON.stringify([d.world, a]); updateAnnualReport(f, a, l);
   assert.equal(l.reportIncome, 91 /* -1+2+17+29+31+13 */);
-  assert.equal(l.reportExpenses, 245 /* 37+5+29+41+23+19+17+23+11+7+11+19+3 */);
-  assert.equal(l.reportNet, (-154) >>> 0); assert.equal(JSON.stringify([d.world, a]), before);
+  assert.equal(l.reportExpenses, 2147483892 /* 37+5+29+41+23+19+17+23+11+7+11+19+3 */);
+  assert.equal(l.reportNet, (91 - 2147483892) >>> 0); assert.equal(JSON.stringify([d.world, a]), before);
   f.workerExpenses = f.chemicalExpenses = a.balancePayments = 0;
   updateAnnualReport(f, a, l); assert.equal(l.reportNet, (-154) >>> 0);
   l.otherExpenses = 0xffffffff; updateAnnualReport(f, a, l);
@@ -76,7 +76,7 @@ test('annual reset clears only original accounts, carries taxes, retains reports
     assert.deepEqual([a.buildingBookValue, a.assets.equipmentBookValue], book);
     assert.deepEqual([l.reportIncome, l.reportExpenses, l.reportNet], reports);
     assert.equal(JSON.stringify([d.world.cells, d.world.fields, d.world.inventory]), original);
-    updateAnnualReport(f, a, l); assert.deepEqual([l.reportIncome, l.reportExpenses, l.reportNet], [0, 0xffffffff, 1]);
+    updateAnnualReport(f, a, l); assert.deepEqual([l.reportIncome, l.reportExpenses, l.reportNet], [0, 998, (-998) >>> 0]);
     resetAnnualLedgers(f, a, l, d.weather); assert.equal(l.priorTaxExpenses, 0); assert.equal(f.workerExpenses, 999);
   }
 });

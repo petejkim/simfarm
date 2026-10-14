@@ -12,7 +12,7 @@ function validate(farm: SavedFarmState, accounts: DefaultState, ledger: AnnualLe
   }
 }
 
-/** Report 0x1d460..0x1d51e. Source omissions SF-041 are deliberate here;
+/** Report 0x1d460..0x1d51e. SF-041: include worker and chemical charges;
  * the returned/stored net is a raw dword, signed only at presentation time. */
 export function updateAnnualReport(farm: SavedFarmState, accounts: DefaultState, ledger: AnnualLedgerState): void {
   validate(farm, accounts, ledger);
@@ -20,7 +20,8 @@ export function updateAnnualReport(farm: SavedFarmState, accounts: DefaultState,
     farm.cropIncome, accounts.assets.livestockIncome, ledger.ds3e70];
   const expenses = [ledger.otherExpenses, farm.rentalExpenses, ledger.ds3e9c, ledger.livestockExpenses,
     ledger.ds3e94, ledger.ds3e90, ledger.ds3e8c, accounts.taxExpenses, ledger.priorTaxExpenses,
-    farm.contractLosses, farm.landExpenses, accounts.equipmentExpenses, farm.seedExpenses];
+    farm.contractLosses, farm.landExpenses, accounts.equipmentExpenses, farm.seedExpenses,
+    farm.workerExpenses, farm.chemicalExpenses];
   ledger.reportIncome = income.reduce((sum, n) => (sum + n) >>> 0, 0);
   ledger.reportExpenses = expenses.reduce((sum, n) => (sum + n) >>> 0, 0);
   ledger.reportNet = (ledger.reportIncome - ledger.reportExpenses) >>> 0;

@@ -346,11 +346,13 @@ Native decoding now dispatches 239 and preserves 231 as unknown. Byte-level regr
 
 ## SF-041 — report expenses omit worker and chemical charges
 
-**Status:** confirmed arithmetic omission; player report integration and any correction deferred.
+**Status:** original evidence retained; corrected natively on2026-10-13 by user request.
 
 Debits post workers to `6190:3e88` at `0x1c9c7` and chemicals to `3ea0` at `0x1c9ab`. Report routine `0x1d460..0x1d51e` never includes those locations in its expense sum, though both are charged to cash. Its income-minus-expense result can therefore overstate profit after ordinary paid work. The summation is statically verified; complete report UI reachability is still being traced. Category-1000 payment ledger `3ea4` is also omitted, but whether excluding that principal is a defect remains uncertain.
 
 Native worker/chemical charges remain correct to the recovered debit paths. The native report primitive now preserves these omissions with tests; live report presentation remains pending. No silent correction or security-vulnerability claim is made. Revisit when connecting the financial report; retain the source omission even if a corrected display is later offered.
+
+Native correction (2026-10-13): Annual report expense totals now include canonical worker and chemical expenses exactly once. Net reflects both charges. Loan principal repayments remain excluded from operating expense totals; unresolved source ledger meanings and prior-tax presentation are not reinterpreted. Earlier preservation/status notes above describe the pre-correction implementation. Build/type checking,5 annual-ledger unit cases and1 browser report/payment/reload flow pass. Independent totals include20 workers and30 chemicals and preserve cached checkpoint reports. Unsigned carry/borrow and malformed input are checked. Logs artifacts/bugfix-041-*.log.
 
 ## SF-042 — annual ledger reset leaves worker expenses intact
 
