@@ -1,3 +1,5 @@
+import { constructTownDistrict } from '../src/simulation/town-construction';
+import { animateTownEventMap, changeTownEventMap } from '../src/simulation/town-event-map';
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -117,7 +119,7 @@ test('development and decline obey signed revenue thresholds, level limits, demo
 });
 
 test('demolition protects origin, preserves trees/flags/unknown bytes and retargets using the original asymmetric search', () => {
-  const { world, state, cell, set } = setup(); set(4, 0); state.recreationCount = 2;
+  const { world, state, cell, set } = setup(); set(4, 0); state.recreationCount = 2; state.recreationCoordinates.set([32,40,24,32]);
   const coords = Uint8Array.from(state.recreationCoordinates), airports = state.airportCount;
   world.regionalConditions[ri(4, 5) + 2] = 93;
   for (let t = 38; t <= 69; t++) cell((t - 38) >> 3, (t - 38) & 7).terrain = 0xb800 | t;
@@ -125,7 +127,7 @@ test('demolition protects origin, preserves trees/flags/unknown bytes and retarg
   assert.equal(demolishTownDistrict(world, state, site, -3), true);
   assert.deepEqual(state.activeSite, { regionX: 3, regionY: 4 });
   assert.equal(state.recreationCount, 1); assert.equal(state.airportCount, airports);
-  assert.deepEqual(state.recreationCoordinates, coords); assert.equal(world.regionalConditions[ri(4, 5)], 4);
+  coords.set([24,32,0,0]); assert.deepEqual(state.recreationCoordinates, coords); assert.equal(world.regionalConditions[ri(4, 5)], 4);
   assert.equal(world.regionalConditions[ri(4, 5) + 2], 93);
   for (let t = 38; t <= 69; t++) {
     const c = cell((t - 38) >> 3, (t - 38) & 7);
@@ -137,6 +139,7 @@ test('demolition protects origin, preserves trees/flags/unknown bytes and retarg
   // Candidates on either origin axis are skipped, even when nearer.
   world.regionalConditions.fill(0); state.activeSite = { regionX: 7, regionY: 7 };
   world.regionalConditions[ri(6, 7) + 1] = 2; world.regionalConditions[ri(7, 6) + 1] = 2;
+  world.regionalConditions[ri(4,5)+1]=2;
   demolishTownDistrict(world, state, site, 8); assert.deepEqual(state.activeSite, { regionX: 6, regionY: 6 });
   state.activeSite = { regionX: 11, regionY: 11 };
   assert.doesNotThrow(() => demolishTownDistrict(world, state, site, 8));
@@ -159,4 +162,43 @@ test('development bounds reject malformed input atomically and original layouts 
       assert.doesNotThrow(() => repaintTownDistrict(s, layouts, { regionX: x, regionY: y }, r));
     }
   }
+});
+
+
+test('recreation removal compacts every active position, preserves unused bytes and is idempotent at all levels',()=>{
+  for(let count=1;count<=7;count++)for(let removed=0;removed<count;removed++)for(const level of [0,1,13,15]) {
+    const {world,state,set}=setup();set(4,level);state.recreationCount=count;
+    state.recreationCoordinates.fill(197);const active=Array.from({length:count},(_,i)=>[i*8,8]);active[removed]=[32,40];
+    state.recreationCoordinates.set(active.flat());const unused=state.recreationCoordinates.slice(count*2);
+    assert.equal(demolishTownDistrict(world,state,site,0),true);assert.equal(state.recreationCount,count-1);
+    assert.deepEqual([...state.recreationCoordinates.slice(0,(count-1)*2)],active.filter((_,i)=>i!==removed).flat());
+    assert.deepEqual([...state.recreationCoordinates.slice((count-1)*2,count*2)],[0,0]);
+    assert.deepEqual(state.recreationCoordinates.slice(count*2),unused);
+    const before=JSON.stringify([world.regionalConditions,state]);assert.equal(demolishTownDistrict(world,state,site,0),false);assert.equal(JSON.stringify([world.regionalConditions,state]),before);
+  }
+  const {world,state,set}=setup();set(4,0);state.recreationCount=0;
+  assert.equal(demolishTownDistrict(world,state,site,0),true);assert.equal(state.recreationCount,0);
+});
+
+test('airport demolition decrements once without underflow and protects the town origin',()=>{
+  for(const count of [0,1,2])for(const level of [0,1,10,15]) {
+    const {world,state,set}=setup();set(5,level);state.airportCount=count;
+    const coordinates=state.recreationCoordinates.slice();assert.equal(demolishTownDistrict(world,state,site,0),true);
+    assert.equal(state.airportCount,Math.max(0,count-1));assert.deepEqual(state.recreationCoordinates,coordinates);
+    assert.equal(demolishTownDistrict(world,state,site,0),false);assert.equal(state.airportCount,Math.max(0,count-1));
+  }
+});
+
+
+test('shrink then rebuild retains surviving recreation sites and carnival never repaints the demolished site',()=>{
+  const {world,state,set,random}=setup();for(let i=0;i<144;i++)world.regionalConditions[i*7+1]=2;
+  set(4,0);state.recreationCount=3;state.recreationCoordinates.set([24,32,32,40,40,32]);
+  assert.ok(demolishTownDistrict(world,state,site,0));assert.equal(state.recreationCount,2);
+  assert.ok(constructTownDistrict(world,state,layouts,{regionX:8,regionY:8},4).ok);
+  assert.deepEqual([...state.recreationCoordinates.slice(0,6)],[24,32,40,32,64,64]);
+  const removed=world.cells[worldIndex(35,42)].terrain;
+  const animation={mode:0 as 0|1|2,lastTick:0,rodeoFrame:0,rodeoX:0,rodeoY:0};
+  assert.ok(changeTownEventMap(world,state,animation,2));assert.ok(animateTownEventMap(world,state,animation,8,random));
+  assert.equal(world.cells[worldIndex(35,42)].terrain,removed);
+  for(const [x,y] of [[24,32],[40,32],[64,64]])assert.ok([492,526].includes(world.cells[worldIndex(x+3,y+2)].terrain));
 });

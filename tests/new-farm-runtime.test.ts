@@ -128,7 +128,7 @@ test('restart clears source accounts and clocks but retains omitted ledgers, rep
   raw.ds3e4c = 987; raw.ds3eb8 = 123; raw.ds4468.fill(567); raw.ds64c5 = 9; raw.s4d9fFedd = 199;
   const weather = { precipitationDays: 99 };
   resetSetupRuntime(state, weather);
-  assert.equal(farm.cash, 76543); assert.equal(farm.workerExpenses, 0xffffffff);
+  assert.equal(farm.cash, 76543); assert.equal(farm.workerExpenses, 0);
   assert.equal(f.annual.priorTaxExpenses, 0xfedcba98); assert.equal(f.accounts.taxExpenses, 0);
   for (const key of ['cropIncome', 'contractGains', 'contractLosses', 'seedExpenses', 'rentalExpenses', 'landExpenses', 'chemicalExpenses', 'salesAccumulator', 'timerTicks', 'animationTicks', 'precipitationDays'] as const) assert.equal(farm[key], 0, key);
   for (const key of ['equipmentExpenses', 'landIncome', 'balancePayments'] as const) assert.equal(f.accounts[key], 0, key);
@@ -147,7 +147,7 @@ test('restart clears source accounts and clocks but retains omitted ledgers, rep
   assert.ok(f.statistics.fieldPresence.every(n => n === 0)); assert.equal(f.statistics.distinctFieldStatuses, 0);
   assert.deepEqual([f.statistics.ds3e58, f.statistics.ds3e5c, f.statistics.nutrientDeficientFields, f.statistics.chemicallyStressedFields], [0, 0, 7, 8]);
   assert.deepEqual(raw, { ds3e4c: 0, ds3eb8: 0, ds4468: Array(19).fill(0), ds64c5: 0, s4d9fFedd: 199 });
-  resetSetupRuntime(state, weather); assert.equal(f.annual.priorTaxExpenses, 0); assert.equal(farm.workerExpenses, 0xffffffff);
+  resetSetupRuntime(state, weather); assert.equal(f.annual.priorTaxExpenses, 0); assert.equal(farm.workerExpenses, 0);
 });
 
 test('equipment pacing uses DSa8a0, independently of pause depth, and setup/resume restore its nonzero gate', () => {

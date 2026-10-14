@@ -69,7 +69,7 @@ test('unmarked restart retains soil/history and unknown source bytes through bot
     { ...preliminary, world, locations: sites.locations, random: random.snapshot(), terrainHistory: terrain.snapshot() });
   const a = game.restartGeographic(selected, assets), actual = state(a);
   assert.deepEqual(JSON.parse(a.save(null)), JSON.parse(writeNativeSave(expected, null))); assert.equal(game.save(null), before);
-  assert.equal(actual.weather.soilMoisture, 5); assert.equal(actual.scenario.farm.workerExpenses, 123456);
+  assert.equal(actual.weather.soilMoisture, 5); assert.equal(actual.scenario.farm.workerExpenses, 0);
   assert.deepEqual(actual.setup.sourceArchive, Uint8Array.from(source('SCEN4.SSM')));
   const b = load(a.save(null));
   for (let day = 0; day < 14; day++) { a.dispatch({ type: 'advance-day' }); b.dispatch({ type: 'advance-day' }); }

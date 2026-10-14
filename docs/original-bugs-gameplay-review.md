@@ -1,5 +1,6 @@
 # Original-bug review: adverse gameplay effects
 
+This is the pre-correction review snapshot. The user subsequently authorized twelve fixes; current status and validation are in [the correction tracker](gameplay-bug-fixes.md).
 Reviewed 2026-10-13 against `28df5a7` and the clean merged worktree. Scope: all 180 primary entries, SF-001 through SF-180, and their follow-up notes in [original-bugs.md](original-bugs.md). This is a triage review, not a claim that every suspected effect was reproduced or that all preserved quirks should be changed. No gameplay rules were changed.
 
 The ledger mixes historical implementation status, confirmed arithmetic, ordinary-play examples, malformed-save guards, and unresolved original intent. A green regression can deliberately preserve a bug. The assessments below distinguish current native behavior from evidence about the original DOS game; no DOS execution was used. Existing source addresses/hashes remain authoritative in the ledger. Native code was inspected for the principal candidates and several resolved hazards; the coverage appendix is a ledger-wide classification, not 180 new runtime reproductions.

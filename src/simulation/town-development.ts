@@ -107,13 +107,22 @@ function nextSite(world: Scenario, from: TownSite): TownSite {
   return origin;
 }
 
-/** 0x3be2c: the town origin cannot be removed. Keep the original count-only
- * recreation removal and unchanged airport count/coordinate slots (SF-051). */
+/** 0x3be2c: protect the origin. SF-051 removes matching recreation pairs and airport counts once. */
 export function demolishTownDistrict(world: Scenario, state: TownDevelopmentState, site: TownSite, soilMoisture: number): boolean {
   validateState(state, site, soilMoisture);
   if (site.regionX === world.farm.townRegionX && site.regionY === world.farm.townRegionY) return false;
   const index = regionIndex(site);
-  if (world.regionalConditions[index] === 4) state.recreationCount = (state.recreationCount - 1) & 255;
+  if (world.regionalConditions[index + 1] !== 2) return false;
+  const type = world.regionalConditions[index] & 15;
+  if (type === 4) {
+    const coordinates = state.recreationCoordinates, count = Math.min(state.recreationCount, coordinates.length / 2);
+    for (let i = 0; i < count; i++) {
+      if (coordinates[i * 2] !== site.regionX * 8 || coordinates[i * 2 + 1] !== site.regionY * 8) continue;
+      coordinates.copyWithin(i * 2, (i + 1) * 2, count * 2);
+      coordinates.fill(0, (count - 1) * 2, count * 2);
+      state.recreationCount--; break;
+    }
+  } else if (type === 5) state.airportCount = Math.max(0, state.airportCount - 1);
   world.regionalConditions[index + 1] = 0;
   state.activeSite = nextSite(world, state.activeSite);
   for (let x = site.regionX * 8; x < site.regionX * 8 + 8; x++) for (let y = site.regionY * 8; y < site.regionY * 8 + 8; y++) {

@@ -89,7 +89,7 @@ test('restart drafts retain entry state while the live farm advances; cancel and
   for (let i = 0; i < 3; i++) game.dispatch({ type: 'advance-day' });
   prior.random.visual ^= 65535; prior.scenario.farm.workerExpenses = 999;
   const accepted = draft.accept();
-  assert.equal(accepted.weather.soilMoisture, 5); assert.equal(accepted.scenario.farm.workerExpenses, 123456);
+  assert.equal(accepted.weather.soilMoisture, 5); assert.equal(accepted.scenario.farm.workerExpenses, 0);
   assert.deepEqual(accepted.newFarm!.provenance.options.seeds, before.random);
   assert.deepEqual(accepted.setup.terrainHistory, draft.getSnapshot().preview.terrainHistory);
   const clone = CustomFarmSetup.restart(before, settings, assets); assert.deepEqual(clone.accept(), accepted);

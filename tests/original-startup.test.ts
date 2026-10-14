@@ -84,7 +84,7 @@ test('retained startup uses prior climate choices and reset omissions, then load
     bytes.writeUInt16LE(333, 0x2171a); bytes.writeUInt16LE(1010, 0x216f7); bytes.writeUInt16LE(7, 0x216f9);
     const next = game.restartOriginalSave(bytes, options.date, assets), actual = state(next);
     assert.deepEqual(actual, readNativeSave(writeNativeSave(transferOriginalFarm(temporary, bytes, crops), null)).state);
-    assert.equal(actual.scenario.farm.workerExpenses, 123456); assert.equal(actual.finances.accounts.buildingBookValue, 234567);
+    assert.equal(actual.scenario.farm.workerExpenses, 0); assert.equal(actual.finances.accounts.buildingBookValue, 234567);
     assert.equal(actual.dayTicks, 27); assert.equal(actual.scenario.irrigation.lastTick, 0);
     assert.equal(actual.scenario.farm.dayDelayTicks, depth === 1 ? 256 : 333);
     assert.equal(actual.disasters.frameDelay, depth === 1 ? 4 : 43);

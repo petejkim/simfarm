@@ -52,7 +52,7 @@ test('all original farms restart with partial record/account resets, retained we
     assert.equal(next.scenario.fields[0].bytes[67], 173); assert.equal(next.scenario.equipment[0].bytes[55], 213);
     assert.equal(next.scenario.inventory[0].bytes[11], 0xab);
     for (const table of [next.scenario.fields, next.scenario.equipment, next.scenario.animals, next.scenario.buildings, next.scenario.inventory, next.scenario.chemicals]) assert.ok(table.every(r => !r.active));
-    assert.equal(next.scenario.farm.cash, 40000); assert.equal(next.scenario.farm.workerExpenses, 0xfedcba98);
+    assert.equal(next.scenario.farm.cash, 40000); assert.equal(next.scenario.farm.workerExpenses, 0);
     assert.equal(next.finances.accounts.buildingBookValue, 123456); assert.equal(next.finances.annual.priorTaxExpenses, 123);
     assert.equal(next.finances.annual.reportNet, 456); assert.equal(next.finances.loanRate, 29); assert.equal(next.finances.taxFailures, 7);
     assert.ok(Object.values(next.finances.loan).every(n => n === 0)); assert.ok(Object.values(next.finances.debt).every(n => n === 0));

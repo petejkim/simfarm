@@ -250,7 +250,7 @@ test('all eight original farms advance a year without invalid terrain or missing
     assert.ok(snapshot.scenario.cells.every(c => Number.isInteger(c.terrain) && c.terrain >= 0 && c.terrain <= 65535));
     assert.ok(Number.isFinite(snapshot.weather.temperature));
   }
-}, 30000); //Full eight-farm year matrix; wall duration is not a game-speed assertion.
+}, 90000); //Full eight-farm year matrix under parallel browser load; wall duration is not a game-speed assertion.
 
 test('the fifth year-end wraps the temperature table without reading wind (SF-007)', () => {
   const input = farm();
@@ -346,7 +346,7 @@ test('original corn completes a positive-value plant-grow-harvest-store-sell cyc
   const sold = game.getSnapshot();
   assert.deepEqual(sold.lastSaleResult, { ok: true, slot: item.slot, value });
   assert.equal(sold.scenario.farm.cash, harvested.scenario.farm.cash + value);
-  assert.equal(sold.scenario.farm.cropIncome, harvested.scenario.farm.cropIncome + value * 2); // SF-026.
+  assert.equal(sold.scenario.farm.cropIncome, harvested.scenario.farm.cropIncome + value); // SF-026 corrected.
   assert.equal(sold.storedHarvestValues[item.slot], null);
   assert.equal(sold.scenario.inventory[item.slot].active, false);
   assert.equal(sold.scenario.harvestDefinitions[0].count, harvested.scenario.harvestDefinitions[0].count - 1);

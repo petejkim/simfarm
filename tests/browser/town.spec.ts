@@ -1,3 +1,4 @@
+import { shopFixture } from '../support/livestock';
 import {readSaveText} from '../support/save-file';
 import { reveal, openWindow , speedItem } from '../support/workspace';
 import { browserCrops } from '../support/crop-catalog';
@@ -55,4 +56,22 @@ test('missing and truncated original town layouts prevent startup with a clear a
   await page.reload();
   await expect(page.locator('.loading')).toContainText('Invalid town layout size');
   await expect(page.locator('#speed-menu-button')).toHaveCount(0);
+});
+
+
+test('recreation decline removes its coordinate and checkpoints the surviving event site',async({page})=>{
+  const f=shopFixture(),w=f.state.scenario,t=f.state.finances.town;f.state.disasters.enabled=false;w.farm.messages=false;
+  Object.assign(w.farm.calendar,{day:6,week:0,month:1});w.farm.townRegionX=w.farm.townRegionY=6;
+  w.regionalConditions.fill(0);w.regionalConditions[(3*12)*7]=4;w.regionalConditions[(3*12)*7+1]=2;
+  w.regionalConditions[(5*12+5)*7]=4;w.regionalConditions[(5*12+5)*7+1]=2;
+  Object.assign(t,{activeSite:{regionX:3,regionY:0},townRevenue:(-26)>>>0,recreationCount:2});t.recreationCoordinates.set([24,0,40,40]);
+  const game=f.load().withAllCrops(browserCrops);await page.goto('/');
+  async function load(text:string){await page.locator('#load-farm-file').setInputFiles({name:'decline.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.locator('#save-status')).toHaveText('Farm loaded.');}
+  async function save(){const pending=page.waitForEvent('download');await page.locator('#file-menu-button').click();await page.getByRole('menuitem',{name:'Save to File...',exact:true}).click();return JSON.parse(readSaveText((await (await pending).path())!));}
+  await load(game.save(4));await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});
+  const checkpoint=await save();expect(checkpoint.runtime.finances.town.recreationCount).toBe(1);
+  expect(checkpoint.runtime.finances.town.recreationCoordinates.slice(0,4)).toEqual([40,40,0,0]);expect(checkpoint).toEqual(JSON.parse(game.save(4)));
+  await load(JSON.stringify(checkpoint));await page.locator('#debug-menu-button').click();await page.getByRole('menuitem',{name:'Start fair (carnival)',exact:true}).click();
+  game.dispatch({type:'debug-town-event',action:'fair'});await page.locator('#town-event-0').click();game.dispatch({type:'resolve-town-event',accept:true});
+  expect(await save()).toEqual(JSON.parse(game.save(4)));
 });

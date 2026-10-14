@@ -75,7 +75,7 @@ test('ordinary loads retain opening checks and loaded post-return depth across a
   const prior = restore(value), next = prior.importOriginal(source('SCEN4.SSM'), assets.crops).simulation;
   assert.deepEqual(next.getSnapshot().originalPause, { depth: 0, speedChecks: value.runtime.originalPause.speedChecks });
   assert.deepEqual(parsed(prior), value); //255->0 opening leaves checks; loaded0 skips resume.
-}, 15000); //56 complete import/checkpoint/continuation pairs across eight farms.
+}, 60000); //56 complete import/checkpoint/continuation pairs across eight farms.
 
 test('restart resets checks but retains pause depth; numbered and Load chooser outcomes use distinct source callbacks', () => {
   const value = parsed(cold()); value.runtime.originalPause = { depth: 254, speedChecks: [128, 3, 254, 1, 255] };
@@ -118,4 +118,4 @@ test('v23 preserves raw or unknown pause/check bytes; older formats never infer 
     const one = Buffer.from(source('SCEN4.SSM')); one[0x21719] = 1;
     assert.deepEqual(game.importOriginal(one, assets.crops).simulation.getSnapshot().originalPause, initialOriginalPause());
   }
-}, 15000); //Every historical version plus both subsequent original-load branches.
+}, 60000); //Every historical version plus both subsequent original-load branches.

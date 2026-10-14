@@ -432,9 +432,11 @@ Native constructor rejects every non-integer or out-of-range type before mutatio
 
 ## SF-051 — town demolition leaves recreation coordinates and airport count unchanged
 
-**Status:** confirmed incomplete bookkeeping; native behavior preserved; correction deferred.
+**Status:** original evidence retained; corrected natively on2026-10-13 by user request.
 
 `0x3be63..0x3be6a` decrements recreation count only for raw byte 4. The remainder of demolition neither removes/compacts the saved coordinate pairs nor decrements airport count. Removing an earlier recreational district can therefore leave a stale entry and make subsequent construction overwrite a different live site's last coordinate slot. Count zero underflows to 255 on a malformed recreation record; native construction subsequently rejects that count (SF-047). Native demolition retains source byte arithmetic, coordinates and airport count. Effects on consumers of these tables still require tracing before a safe correction; no proven exploit claim.
+
+Native correction (2026-10-13): Town demolition removes the matching active recreation coordinate, compacts surviving pairs and clears only the vacated pair. It uses the type nibble at any level, decrements airport counts without underflow and requires actual town ownership, making repeated removal inert. Aircraft purchase excludes unowned airport remnants while another airport survives. Origin protection, terrain cleanup, unknown regional channels and unused coordinate bytes remain intact. Legacy mismatches without a matching active recreation coordinate are not guessed or repaired. Earlier preservation/status notes above describe the pre-correction implementation. Build/type checking,23 focused town/aircraft/event-map unit cases and1 browser decline→save/load→carnival flow pass. Tests cover all removal positions/counts/level nibbles, shrink→rebuild→animation, airport underflow and phantom parking. Initial new matrix timeout was removed by avoiding serialization of unrelated source bytes; initial browser caption was corrected to the actual Debug item. Logs artifacts/bugfix-051-*.log. Full batch regression results are recorded below.
 
 ## SF-052 — next-town-site scan admits coordinate 12 and excludes the whole origin cross
 
@@ -1057,7 +1059,7 @@ Harvested goods168..191 enter the general66..69 storage branch when the64/65 spe
 
 ## SF-119 — manual crop insertion leaves the loss-rate flag unchanged
 
-Status: verified flag behavior retained; intended meaning and consistency with all producers remain open. Confidence high on the reconstructed call and consumer, not a proven exploit.
+Status: source flag omission verified; native storage-rate policy corrected on2026-10-13 by user request. Confidence high on the reconstructed call and consumer; original intent remains uncertain, and no exploit is claimed.
 
 The crop insertion body0x1a626..0x1a6f6 writes inventory coordinates and building contents but does not set inventory byte10 bit4. General storage sets this bit for feed at0x1a8ab and for chemicals in their separate record at0x1a861. Weekly inventory0xc230..0xc362 uses inventory bit4 to choose loss increments1 versus4. A newly created crop with that bit clear therefore continues the4-unit loss increment after manual insertion. Native retains the flag exactly and tests this loss behavior; it does not silently infer bit4 from physical storage. Similarly, chemical ground relocation0x13f37..0x13f95 does not clear chemical bit4 after storage, and native retains it. Further producer/consumer tracing is needed before choosing a correction.
 

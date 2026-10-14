@@ -32,8 +32,8 @@ export function checkAircraftPurchase(world: Scenario, finances: FinancialState)
   const slot = world.equipment.find(e => e.slot > 0 && e.slot <= MAX_EQUIPMENT_SLOT && !e.active)?.slot;
   if (!slot) return { ok: false, reason: 'no-equipment-slots' };
   for (let rx = 0; rx < 12; rx++) for (let ry = 0; ry < 12; ry++) {
-    const region = world.regionalConditions[(rx * 12 + ry) * 7];
-    if ((region & 15) !== 5) continue;
+    const index = (rx * 12 + ry) * 7, region = world.regionalConditions[index];
+    if ((region & 15) !== 5 || world.regionalConditions[index + 1] !== 2) continue; // SF-051: exclude demolished airport remnants.
     const offset = !(region & 0x20) ? 3 : !(region & 0x40) ? 5 : -1;
     if (offset < 0) continue;
     const x = rx * 8 + offset, y = ry * 8 + 6;

@@ -482,3 +482,8 @@ The previous aircraft work was abandoned at user request after the merge; do not
 
 
 User authorized twelve reviewed gameplay fixes, one commit per SF ID; current queue and validation are in docs/gameplay-bug-fixes.md. Complete this queue before other preservation work. SF-071 is implemented; SF-074 follows.
+
+
+## 2026-10-13 — requested twelve original-bug corrections completed
+
+Completed SF-071/074/129/001/026/041/042/046/006/007/119/051, one local conventional commit each. See [correction tracker](gameplay-bug-fixes.md) for native policy, evidence, focused checks and the full regression milestone with resolved initial failures. Keep the historical review and source evidence. The overall preservation goal remains incomplete; no additional speculative defect, original timing requirement, crop-file swapping or skipped weather-outline work is made a prerequisite. Future source work should reproduce remaining ordinary-play candidates before selecting further corrections.

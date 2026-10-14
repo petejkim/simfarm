@@ -45,7 +45,7 @@ test('all loaded restart outcomes reset before loading, retain date/history, fin
     assert.deepEqual(next.setup, { ...state.setup, climateSelection: selection, terrainHistory: preliminary.terrainHistory, previewRaw: preliminary.raw });
     assert.deepEqual(next.scenario.farm.calendar, file.farm.calendar);
     assert.deepEqual(next.scenario.climate, climateForSetup(assets.climate, selection));
-    assert.equal(next.scenario.farm.cash, 40000); assert.equal(next.scenario.farm.workerExpenses, 12345);
+    assert.equal(next.scenario.farm.cash, 40000); assert.equal(next.scenario.farm.workerExpenses, 0);
     assert.equal(next.finances.accounts.buildingBookValue, 76543); assert.equal(next.finances.homestead.rank, 255);
     assert.equal(next.finances.taxFailures, 7); assert.equal(next.finances.loanRate, 19);
     assert.deepEqual(next.finances.loan, fileFinances.loan);

@@ -156,7 +156,8 @@ test('weekly report records pre-water field flags and leaves annual history unto
   for (const sim of [game, copy]) sim.dispatch({ type: 'advance-day' });
   assert.deepEqual(JSON.parse(copy.save(4)), JSON.parse(game.save(4)));
   const after = game.getSnapshot();
-  assert.equal(after.finances.statistics.fieldPresence[1], 1); // Flooded before water pass.
+  assert.equal(after.finances.statistics.fieldPresence[1], 0); // SF-006: signed0xffff is dry in growth.
+  assert.equal(after.finances.statistics.fieldPresence[3], 1);
   assert.equal(after.farmReport.fields.presence[1], 0); // Water refresh clears the flag before current report.
   assert.deepEqual(after.finances.statistics.words, Array(14).fill(123));
   assert.deepEqual(after.finances.statistics.regions, [2, 3, 4, 5]);

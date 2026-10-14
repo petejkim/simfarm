@@ -14,7 +14,7 @@ function setup(id = 4) {
   for (const e of world.equipment) e.flags = 0;
   world.equipmentDefinitions[8].ownedCount = 0; world.regionalConditions.fill(0);
   world.farm.cash = 100000; finances.town.airportCount = 1;
-  world.regionalConditions[(1 * 12 + 1) * 7] = 5;
+  world.regionalConditions[(1 * 12 + 1) * 7] = 5; world.regionalConditions[(1 * 12 + 1) * 7 + 1] = 2;
   return { world, finances, service };
 }
 function buy(f: ReturnType<typeof setup>) {
@@ -65,7 +65,7 @@ test('airport construction flags, first-fit region order, capacity and rejected 
   const rebought = buy(f); assert.deepEqual([rebought.x, rebought.y], [93, 94]);
   w.regionalConditions[143 * 7] &= ~0x40;
   assert.deepEqual(checkAircraftPurchase(w, a), { ok: false, reason: 'parking-conflict' });
-  w.regionalConditions[13 * 7] = 5; w.regionalConditions[12 * 7] = 5;
+  w.regionalConditions[13 * 7] = 5; w.regionalConditions[12 * 7] = 5; w.regionalConditions[13 * 7+1] = w.regionalConditions[12 * 7+1] = 2;
   assert.equal(checkAircraftPurchase(w, a).ok, true); const earlier = buy(f); assert.deepEqual([earlier.x, earlier.y], [11, 6]);
   for (const e of w.equipment.slice(1)) e.flags |= 32;
   assert.deepEqual(checkAircraftPurchase(w, a), { ok: false, reason: 'no-equipment-slots' });
@@ -112,4 +112,12 @@ test('service failures are atomic and selector price remains shared across plane
   assert.equal(aircraftPayload(first), 0); assert.equal(aircraftChemical(first), 221);
   w.chemicalDefinitions[2].price = 65535; w.farm.cash = 2_000_000;
   assert.deepEqual(checkAircraftService(w, a, s, first.slot, { kind: 'load' }), { ok: true, slot: 1, price: 255 * 6553, refund: 0, changed: true });
+});
+
+
+test('aircraft purchase excludes demolished airport remnants even while another airport exists',()=>{
+  const {world,finances}=setup();world.regionalConditions[13*7+1]=0;
+  world.regionalConditions[26*7]=5;world.regionalConditions[26*7+1]=2;
+  const result=checkAircraftPurchase(world,finances);assert.ok(result.ok);assert.deepEqual([result.x,result.y],[19,22]);
+  world.regionalConditions[26*7+1]=0;assert.deepEqual(checkAircraftPurchase(world,finances),{ok:false,reason:'no-parking'});
 });
