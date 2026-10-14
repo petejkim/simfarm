@@ -4162,3 +4162,17 @@ wheel browser cases were repeated after it. Runtime files stayed fixed during br
 or full-suite reruns. Logs: artifacts/wheel-zoom-{build,final-build,unit,browser,regression-browser,speed-unit,
 speed-browser}.log. Physical desktop trackpads and WebKit/Firefox wheel delivery remain unverified. Requests
 complete; commit stays local. Broader preservation remains incomplete; no additional work started.
+
+## 2026-10-14 — requested 400% Settings zoom preset
+
+Settings now always offers50%,100%,200% and400%. The gesture-only option excludes all four presets, preventing
+a duplicate400% row when wheel/pinch reaches the existing maximum. No zoom math, simulation/save rule,
+source-format interpretation, original defect, asset or dependency changes. This is a requested native UI option.
+
+Type checking/production build and diff checks pass; all3 existing gesture unit cases and4 focused Chromium
+Settings/wheel browser cases pass (4.9s). Coverage checks the four preset captions, actual6144px terrain width
+after selecting400%, retention when reopening Settings, unchanged viewport geometry/complete checkpoint,
+one400% row at the wheel limit, desktop/hybrid cursor anchoring, scrolling and Settings/gesture transitions.
+Runtime files stayed fixed; no failed checks or full-suite reruns. Logs: artifacts/zoom-400-{build,unit,browser}.log.
+Physical devices and other browser engines were not retested for this option-only edit. Request complete;
+commit stays local. Broader preservation remains incomplete; no additional work started.

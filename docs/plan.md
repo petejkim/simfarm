@@ -503,3 +503,6 @@ cursor-anchor math, zoom limits and Settings, with 50% faster sensitivity per fo
 desktop/hybrid wheel checks and40 related mobile/map/flight browser cases pass; exact scope and remaining
 physical-device/browser limits are in progress.md. This is native presentation, with no newly recovered DOS
 rule or original defect. No additional preservation work is started.
+
+2026-10-14 Settings follow-up complete:400% is now a permanent zoom preset, with no duplicate entry at the
+gesture limit. Build,3 gesture units and4 focused Settings/wheel browser cases pass; see progress.md.

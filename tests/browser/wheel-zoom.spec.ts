@@ -79,6 +79,8 @@ test('wheel limits, small trackpad deltas, rapid events, Settings changes and di
   await reveal(page, '#viewport');
   await dispatch(-1, 1); await expect(page.locator('#zoom')).toHaveValue('2.1');
   await dispatch(-100000); await expect(page.locator('#zoom')).toHaveValue('4');
+  await expect(page.locator('#zoom option[value="4"]')).toHaveCount(1);
+  await expect(page.locator('#zoom option[value="4"]')).toHaveText('400%');
   expect(await dispatch(-100000)).toEqual([true]); // still prevents page zoom at the upper bound
   await dispatch(100000); await expect(page.locator('#zoom')).toHaveValue('0.5');
   expect(await dispatch(100000)).toEqual([true]);

@@ -414,9 +414,9 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
     }} simulation={simulation} scenarioId={id} tiles={data?.tiles??null} assets={assets} loaded={Boolean(loaded)} startMessage={startMessage} onSaveGame={async () => { const outcome = await autosave.save(); if (!outcome.ok) setSaveProblem(outcome); return outcome; }} onLoad={onLoad} onNewGame={() => setNewFarmOpen(true)} onWindow={openWindow} />}
     <GameWindow windowKey="options" title="Settings" framed><section className="native-window browser-settings" aria-label="View and audio settings">
       <label className="native-row"><span className="native-label">Zoom</span><select id="zoom" className="chrome-select" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
-        <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
+        <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option><option value={4}>400%</option>
         {/* A gesture zoom (native) is listed as it is; choosing a preset replaces it. */}
-        {![0.5,1,2].includes(zoom)&&<option value={zoom}>{Math.round(zoom*100)}%</option>}
+        {![0.5,1,2,4].includes(zoom)&&<option value={zoom}>{Math.round(zoom*100)}%</option>}
       </select></label>
       {audioControls}
     </section></GameWindow>

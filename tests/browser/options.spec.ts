@@ -118,12 +118,14 @@ test('Settings opens from Options, keeps native view/audio controls together and
   await expect(entry).not.toHaveAttribute('aria-checked');await entry.focus();await page.keyboard.press('Enter');
   const dialog=page.getByRole('dialog',{name:'Settings',exact:true});await expect(dialog).toBeVisible();
   await expect(dialog.locator('#audio-status')).toBeHidden();await expect(dialog.locator('#volume')).toBeVisible();await expect(dialog.locator('#volume')).toHaveValue('80');
+  expect(await dialog.locator('#zoom option').allTextContents()).toEqual(['50%','100%','200%','400%']);
   await dialog.locator('#zoom').selectOption('2');await expect(page.locator('#world')).toHaveCSS('width','3072px');
+  await dialog.locator('#zoom').selectOption('4');await expect(page.locator('#world')).toHaveCSS('width','6144px');
   await dialog.locator('#volume').fill('40');await dialog.locator('#music').selectOption('ffarm');
   await expect(dialog.locator('#audio-status')).toContainText('Playing ffarm');
   expect(await viewport.boundingBox()).toEqual(initial);expect(await save(page)).toEqual(before);
   await dialog.locator('.game-window-title').focus();await page.keyboard.press('Escape');await expect(dialog).toBeHidden();
-  await openWindow(page,'options');await expect(dialog.locator('#volume')).toHaveValue('40');await expect(dialog.locator('#zoom')).toHaveValue('2');
+  await openWindow(page,'options');await expect(dialog.locator('#volume')).toHaveValue('40');await expect(dialog.locator('#zoom')).toHaveValue('4');
   await expect(page.getByRole('dialog',{name:'Preservation progress',exact:true})).toHaveCount(0);
   await page.screenshot({path:'artifacts/browser-settings.png'});
 });

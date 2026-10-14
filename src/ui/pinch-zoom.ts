@@ -1,4 +1,4 @@
-/** Terrain gesture zoom range (native, user request); the Settings presets are 50%, 100% and 200%. */
+/** Terrain gesture zoom range (native, user request); the Settings presets are 50%, 100%, 200% and 400%. */
 export const MIN_ZOOM = 0.5, MAX_ZOOM = 4;
 export const clampZoom = (zoom: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
 /** The zoom a pinch leaves, kept to whole percent (high-density phone screens keep any zoom sharp; user request). */
