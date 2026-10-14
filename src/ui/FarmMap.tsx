@@ -6,7 +6,7 @@ import { drawAircraft, flightPixelPosition, type FlightSprites } from '../render
 import type { AircraftFlight } from '../simulation/aircraft-flight';
 import { useCallback, useEffect, useLayoutEffect, useRef, type MouseEvent, type PointerEvent, type RefObject } from 'react';
 import { WORLD_SIZE, worldIndex, type Scenario } from '../formats/scenario';
-import { pinchView, settledZoom } from './pinch-zoom';
+import { clampZoom, pinchView, settledZoom, wheelZoomRatio } from './pinch-zoom';
 import { WorldPainter, type MapPreview, type TileSheetRegion } from '../render/world-renderer';
 
 export interface MapFocus { x: number; y: number }
@@ -39,7 +39,7 @@ interface Props {
   confirmTaps?: boolean;
   /** Identifies the armed tool; a change clears the highlighted touch tile. */
   toolKey?: string;
-  /** A finished pinch settles on this zoom (the view already shows it, anchored under the fingers). */
+  /** Terrain gestures keep this zoom (the view already shows it, anchored at the gesture). */
   onZoom?: (zoom: number) => void;
   /** A touch drag (past the tap slop) or a pinch on the terrain started (true) or every finger lifted (false). */
   onDrag?: (active: boolean) => void;
@@ -149,6 +149,10 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
     return()=>{cancelAnimationFrame(frame);clock.suspend();document.removeEventListener('visibilitychange',visibility);};
   },[hasWorkers,animateWorkers]);
   const previousZoom = useRef(zoom), previousFocus = useRef<MapFocus | null>(null);
+  // Keep sub-percent wheel travel across renders, so small trackpad deltas accumulate. An external zoom change
+  // (Settings or touch pinch) replaces it; wheel publications already match its rounded value.
+  const wheelZoom = useRef(zoom);
+  useLayoutEffect(() => { if (settledZoom(wheelZoom.current) !== zoom) wheelZoom.current = zoom; }, [zoom]);
   // Pinch zoom (native, user request). Two touches take over from taps, strokes and native scrolling: the canvas is
   // resized and scrolled directly every move, so the gesture does not re-render the game, and the content point
   // under the fingers' midpoint stays beneath it (moving both fingers also pans). On release the zoom is kept as the
@@ -208,14 +212,35 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
       apply(settled, centerX * settled - viewport.clientWidth / 2, centerY * settled - viewport.clientHeight / 2);
       if (settled !== zoom) { previousZoom.current = settled; zoomCallback.current?.(settled); }
     };
+    const wheel = (event: WheelEvent) => {
+      if (!event.ctrlKey) return;
+      // This non-passive listener handles desktop trackpad pinch as well as Ctrl+mouse-wheel. Prevent browser
+      // page zoom even at the limits or during flight, which retains the touch gesture's fixed camera/zoom.
+      event.preventDefault();
+      if (pinch || flightRef.current) return;
+      const current = settledZoom(wheelZoom.current);
+      wheelZoom.current = clampZoom(wheelZoom.current * wheelZoomRatio(event.deltaY, event.deltaMode, viewport.clientHeight));
+      const value = settledZoom(wheelZoom.current);
+      if (value === current) return;
+      endTouch(); stopPainting();
+      const rect = viewport.getBoundingClientRect(), s = cssZoom(viewport);
+      const anchor = { x: (event.clientX - rect.left) / s - viewport.clientLeft,
+        y: (event.clientY - rect.top) / s - viewport.clientTop };
+      const view = pinchView({ zoom: current, contentX: (viewport.scrollLeft + anchor.x) / current,
+        contentY: (viewport.scrollTop + anchor.y) / current }, value / current, anchor);
+      apply(value, view.scrollLeft, view.scrollTop);
+      previousZoom.current = value; zoomCallback.current?.(value);
+    };
     // iOS Safari's own page pinch (gesture events) never applies to the map.
     const gesture = (event: Event) => event.preventDefault();
     viewport.addEventListener('touchstart', start, { passive: false }); viewport.addEventListener('touchmove', move, { passive: false });
     viewport.addEventListener('touchend', end); viewport.addEventListener('touchcancel', end);
+    viewport.addEventListener('wheel', wheel, { passive: false });
     viewport.addEventListener('gesturestart', gesture); viewport.addEventListener('gesturechange', gesture);
     return () => {
       viewport.removeEventListener('touchstart', start); viewport.removeEventListener('touchmove', move);
       viewport.removeEventListener('touchend', end); viewport.removeEventListener('touchcancel', end);
+      viewport.removeEventListener('wheel', wheel);
       viewport.removeEventListener('gesturestart', gesture); viewport.removeEventListener('gesturechange', gesture);
       if (pinch) apply(zoom, viewport.scrollLeft, viewport.scrollTop);
     };
@@ -342,7 +367,7 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
     active.last=index;
     if(!onPaint(index,initial))stopPainting();
   }
-  return <div id="viewport" ref={viewportRef} tabIndex={0} aria-label={flight ? "Farm map. Left and right arrows steer the aircraft. Home toggles spraying; End ends flight." : "Farm map. Scroll or use arrow keys to explore."}
+  return <div id="viewport" ref={viewportRef} tabIndex={0} aria-label={flight ? "Farm map. Left and right arrows steer the aircraft. Home toggles spraying; End ends flight." : "Farm map. Scroll or use arrow keys to explore. Pinch or Ctrl+wheel to zoom."}
     onKeyDown={event => {
       if (flight) return; // Flight keys are handled globally by FarmView; the camera follows the aircraft.
       const offset = directions[event.key];

@@ -92,6 +92,11 @@ test('Fly captures the map, original sprites follow keyboard steering, pause/ste
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); await freeze(page); await page.goto('/');
   const { game } = prepared(); await load(page, game.save(4)); await reveal(page, '#zoom'); await page.locator('#zoom').selectOption('2'); await launch(page, game);
   await expect((await speedItem(page,'#next-day'))).toBeDisabled();
+  // Terrain gesture zoom is locked during flight, as with mobile pinch; Ctrl+wheel still suppresses page zoom.
+  expect(await page.locator('#world').evaluate(c=>!c.dispatchEvent(new WheelEvent('wheel',{
+    bubbles:true,cancelable:true,ctrlKey:true,deltaY:-100,
+  })))).toBe(true);
+  await expect(page.locator('#zoom')).toHaveValue('2');
   await spritesMatch(page, game.getSnapshot().aircraftFlight!);
   await press(page, game, 'spray-toggle'); await press(page, game, 'right'); await press(page, game, 'climb'); await fly(page, game, 4000);
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));

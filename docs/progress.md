@@ -4134,3 +4134,31 @@ secondary-click interactions and saved continuation. Runtime stayed fixed during
 artifacts/move-touch-{before,browser,build,final-build,unit,regression-browser}.log. No full suites repeated for
 this presentation correction; physical-device and WebKit-specific verification remain unperformed. These
 requests are complete; commit stays local. Broader preservation remains incomplete; no additional work started.
+
+## 2026-10-14 — requested desktop terrain pinch / Ctrl+wheel zoom
+
+The terrain now handles native `wheel` events with `ctrlKey` through a non-passive viewport listener, covering
+desktop trackpad pinch and Ctrl+mouse-wheel. It suppresses page zoom, anchors terrain beneath the cursor through
+effective CSS scaling, preserves ordinary wheel scrolling, and publishes whole-percent Zoom settings within the
+existing 50%–400% range. Small trackpad deltas accumulate across events/renders; Settings and touch pinch replace
+the accumulated value. Active touch/paint input ends when wheel zoom changes, and the existing flight camera
+retains its gesture-zoom gate. Floating dialogs remain outside the listener. All state is presentation-owned;
+no original behavior/defect, simulation rule, checkpoint schema, dependency or supplied-distribution change is
+claimed. No new original-bug entry is warranted.
+
+The user's follow-up requested faster Ctrl+wheel zoom. Increased the native exponential sensitivity by 50%,
+from 0.002 to 0.003 per normalized pixel: a -100px delta changes 100% to135% instead of122%. Line deltas use16px,
+page deltas use viewport height; this sensitivity is a native UI choice, not a recovered DOS rule. Mobile pinch
+distance ratios are unchanged.
+
+Type checking/production build and diff checks pass. All11 focused gesture/map-interaction/outline unit cases
+passed (1.23s), and all3 gesture unit cases passed again after the sensitivity change. All3 new Chromium browser
+cases passed at both sensitivities (final4.3s), checking real Ctrl+wheel input on desktop and CSS-scaled hybrid
+screens, cursor anchoring, ordinary scrolling, toolbar/page scale, pointer highlights, complete checkpoints,
+rapid/sub-percent events, pixel/line/page deltas, limits, Settings reset and dialog isolation. All40 existing
+focused mobile-touch/pinch/map-interaction/outline/scrollbar/aircraft cases passed (41.1s), including the new
+flight wheel gate. Those40 ran before the coefficient-only follow-up; only the affected3 gesture units and3
+wheel browser cases were repeated after it. Runtime files stayed fixed during browser runs; no failed checks
+or full-suite reruns. Logs: artifacts/wheel-zoom-{build,final-build,unit,browser,regression-browser,speed-unit,
+speed-browser}.log. Physical desktop trackpads and WebKit/Firefox wheel delivery remain unverified. Requests
+complete; commit stays local. Broader preservation remains incomplete; no additional work started.

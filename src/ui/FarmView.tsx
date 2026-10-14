@@ -415,7 +415,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
     <GameWindow windowKey="options" title="Settings" framed><section className="native-window browser-settings" aria-label="View and audio settings">
       <label className="native-row"><span className="native-label">Zoom</span><select id="zoom" className="chrome-select" value={zoom} onChange={e => onZoomChange(Number(e.target.value))}>
         <option value={0.5}>50%</option><option value={1}>100%</option><option value={2}>200%</option>
-        {/* A pinched zoom (native) is listed as it is; choosing a preset replaces it. */}
+        {/* A gesture zoom (native) is listed as it is; choosing a preset replaces it. */}
         {![0.5,1,2].includes(zoom)&&<option value={zoom}>{Math.round(zoom*100)}%</option>}
       </select></label>
       {audioControls}

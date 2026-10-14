@@ -497,3 +497,9 @@ Completed SF-071/074/129/001/026/041/042/046/006/007/119/051, one local conventi
 2026-10-13 requested native performance batch: four separate local commits tracked in [performance.md](performance.md). Restore incremental map painting, reuse unchanged detached scenario sections, skip closed-window contents while preserving presentation state, then reuse painter buffers. These changes do not resume unrelated preservation work or alter original simulation/checkpoint rules.
 
 2026-10-13 native performance batch completed: four separate commits implement incremental map redraws, unchanged detached scenario reuse, retained closed-window rendering and painter buffer reuse. Full units pass1,003 cases; all377 distinct browser cases have passing evidence after11 test-only closed-window rechecks. Build/type checking passes. Measurements/limits are in performance.md and progress.md. No additional background work is started.
+
+2026-10-14 requested desktop terrain zoom completed: Ctrl+wheel and trackpad wheel pinch share the existing
+cursor-anchor math, zoom limits and Settings, with 50% faster sensitivity per follow-up. Focused units,
+desktop/hybrid wheel checks and40 related mobile/map/flight browser cases pass; exact scope and remaining
+physical-device/browser limits are in progress.md. This is native presentation, with no newly recovered DOS
+rule or original defect. No additional preservation work is started.
