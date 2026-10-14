@@ -586,11 +586,17 @@ The later default retry category zero is not an unclassified debit: `0x1c912..0x
 
 ## SF-067 — zero default amount still liquidates assets and reaches a terminal choice
 
-**Status:** verified arithmetic/control-flow behavior; native preserved; ordinary-play reachability unresolved.
+**Status:** original arithmetic/control-flow behavior verified; corrected natively on 2026-10-13 by user request. Ordinary original-play reachability remains unresolved.
 
 Debit returns the amount, so zero is tested as failure by forced-sale retries (`0x1d854`, `0x1d92f`, `0x1d9e8`, `0x1daeb`). Default does not guard a zero requested amount before selling. Both monthly callers test only their countdown before a normal debit (`0xcc40`, `0xccee`), and decrement toward default when that return is zero. Annual zero-assessment failure SF-044 can establish a zero tax debt/countdown in unusual states; full ordinary-game reachability is not yet demonstrated.
 
 Native forced-sale arithmetic retains this behavior with bounded scans, and a test verifies a zero-value demand still sells an available crop and requests a decision. Revisit a correction together with SF-044 during live monthly/annual integration; no security claim is made.
+
+Native correction (2026-10-13): `forceAssetSales` validates inputs, then returns `paid: true` for amount zero before any traversal, debit, ledger posting, field removal or restart/exit decision. Its payment category is null because no payment occurred. `retryMonthlyDebts` clears an active countdown whose debt is zero without notices, loan allocation or forced sales, then processes the other debt normally. Cash, assets and unknown bytes retain their existing values. Positive debts retain balance-before-tax order, full-payment semantics and pending-default suspension. Existing zero-debt/countdown checkpoints load exactly; cleanup occurs at the next monthly retry. Already terminal checkpoints and historical liquidations are not rewound or refunded.
+
+Original source pins retain `0bd07426` at `0x1d854` and `0bd07403` at `0x1d92f`, `0x1d9e8`, `0x1daeb` against executable SHA-256 `8b86a2d3d07e0b6f77ce491e27e538feeccf5d1af149f42bc0f6a0631c3e58ce`. The old native regression's destructive behavior is replaced by immutability assertions; source branch tests preserve the evidence. Historical preservation/monthly-follow-up notes describe pre-correction behavior. Native fix complete; normal original reachability/intent remain research questions, without a security claim.
+
+Validation: all three new zero/mixed-debt regressions fail against the old implementation. Build/type checking, 40 focused default/monthly/live-loan/loan unit cases (6.54s) and 4 browser flows (20.3s) pass. Coverage includes both reasons, zero cash, countdowns 1/2/3/255, unchanged complete asset/account/clearing records on zero liquidation, no spurious loan settlement, mixed positive/zero successful and unpaid debts, exact checkpoint load/continuation, positive liquidation and genuine terminal-default notices. Logs: `artifacts/bugfix-067-{before,unit,build,browser}.log`.
 
 ## SF-068 — terminal default text claims the protected homestead was sold
 
@@ -609,6 +615,8 @@ Native `ForcedSaleResult.paid` remains false on exhaustion, independent of later
 ### SF-067 / SF-069 monthly caller follow-up
 
 The monthly retry primitive now preserves the zero-debt failure/countdown behavior and tests its path into bounded liquidation. For exhausted defaults it stops further financial phases and preserves debt while the explicit restart/exit decision is pending, correcting SF-069 at the monthly caller. Choosing exit never clears the debt. Live calendar suspension, UI and checkpoint persistence remain pending; ordinary-play zero-debt reachability is still unresolved.
+
+Current follow-up (2026-10-13): SF-067's correction above supersedes the historical zero-debt failure behavior; live monthly processing silently retires that countdown. SF-069's positive-debt pending decision, exact checkpoint suspension and restart/exit semantics remain intact.
 
 ## SF-070 — final scheduled loan payment does not replenish available credit
 

@@ -18,6 +18,32 @@ const restored = (mutate: (s: any) => void) => {
 };
 const boundary = (s: any, month = 1) => Object.assign(s.scenario.farm.calendar, { day: 6, week: 3, month });
 
+test('legacy zero-debt countdowns load exactly then retire without liquidation or loan settlement', () => {
+  for (const countdown of [1, 3]) {
+    const { game, crops } = restored(s => {
+      boundary(s, 0); s.scenario.farm.cash = 0;
+      Object.assign(s.runtime.finances.debt, { balanceDue: 0, unpaidTaxes: 0, balanceCountdown: countdown, taxCountdown: countdown });
+      Object.assign(s.runtime.finances.loan, { principal: 1000, scheduledPayment: 0 });
+    });
+    const text = game.save(4), copy = GameSimulation.load(text, crops).simulation, before = game.getSnapshot();
+    assert.equal(copy.save(4), text);
+    for (const sim of [game, copy]) sim.dispatch({ type: 'advance-day' });
+    assert.equal(copy.save(4), game.save(4));
+    const after = game.getSnapshot();
+    assert.deepEqual(after.finances.debt, { balanceDue: 0, unpaidTaxes: 0, balanceCountdown: 0, taxCountdown: 0 });
+    assert.equal(after.finances.defaultDecision, null); assert.deepEqual(after.financeNotices, []);
+    assert.deepEqual(after.finances.loan, before.finances.loan);
+    assert.equal(after.finances.accounts.balancePayments, before.finances.accounts.balancePayments);
+    assert.equal(after.finances.accounts.taxExpenses, before.finances.accounts.taxExpenses);
+    assert.equal(after.scenario.farm.cash, 0); assert.equal(after.scenario.farm.cropIncome, before.scenario.farm.cropIncome);
+    assert.deepEqual(after.scenario.inventory.filter(i => i.active).map(i => i.slot), before.scenario.inventory.filter(i => i.active).map(i => i.slot));
+    assert.equal(after.daysAdvanced, 1);
+    const completed = game.save(4), continued = GameSimulation.load(completed, crops).simulation;
+    assert.equal(continued.save(4), completed); continued.dispatch({ type: 'advance-day' });
+    assert.equal(continued.getSnapshot().daysAdvanced, 2); assert.equal(continued.getSnapshot().finances.defaultDecision, null);
+  }
+});
+
 test('live borrowing and full payoff work on every original farm, preserve checkpoints and detach feedback', () => {
   for (let id = 0; id < 8; id++) {
     const { game, crops } = setup(id), before = game.getSnapshot(), cash = before.scenario.farm.cash;

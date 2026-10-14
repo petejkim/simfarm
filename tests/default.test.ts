@@ -42,6 +42,8 @@ test('default source pins ordered calls, reason-specific debit categories, home 
   const e = source('SIMFARM.EXE'), exact = (o: number, hex: string) => assert.equal(e.subarray(o, o + hex.length / 2).toString('hex'), hex);
   exact(0x1d830, '9ae20fe624'); exact(0x1d912, '9ae20fe624'); exact(0x1d9cb, '9ae20fe624'); exact(0x1dace, '9ae610e624');
   exact(0x1d844, '68e803'); exact(0x1d86a, '68c409'); exact(0x1d920, '6a00'); exact(0x1d9d9, '6a00'); exact(0x1dadc, '6a00');
+  exact(0x1d854, '0bd07426'); // zero debit falls through to more sales (SF-067)
+  for (const o of [0x1d92f, 0x1d9e8, 0x1daeb]) exact(o, '0bd07403');
   exact(0x1c921, '01067c3e'); exact(0x1d97d, 'a840'); exact(0x1db1a, '2639061000'); exact(0x1db28, '2639061200');
   exact(0x1db69, '26c606940102'); exact(0x1db76, '26c606940101'); exact(0x269e, '803e940102');
   exact(0x45d8b, '687c3e'); exact(0x45e1b, '68a43e'); exact(0x45e4b, '68b43e');
@@ -107,15 +109,22 @@ test('later stages retry the whole amount through loan payments and land adds no
   }
 });
 
-test('bounded traversal skips rentals/seeds, retries failed busy sales, and preserves source zero-amount behavior', () => {
+test('bounded traversal skips rentals/seeds and retries failed busy sales', () => {
   const d = empty(); equipment(d, 1, 0x60); equipment(d, 2, 0x29); d.world.farm.cash = 100;
   const seed = d.world.inventory[511]; seed.bytes.fill(0); put(seed.bytes, 0, 192); seed.bytes[10] = 32;
   const r = forceAssetSales(d.world, d.state, 50, 36, d.effects, 8);
   assert.deepEqual(r.attempts, [{ kind: 'equipment', slot: 2, sold: false, value: 0 }]);
   assert.equal(r.paid, true); assert.equal(d.world.farm.cash, 50); assert.equal(seed.active, true); assert.equal(d.world.equipment[1].active, true);
-  const zero = empty(); crop(zero); const zr = forceAssetSales(zero.world, zero.state, 0, 36, zero.effects, 8);
-  assert.equal(zr.paid, false); assert.equal(zero.world.inventory[1].active, false); assert.ok(zr.decision);
-  resolveDefaultDecision(zr.decision!, 'exit'); assert.deepEqual(zr.decision, { status: 'exit', originalExitCode: 1 });
+});
+
+test('zero liquidation demand is already satisfied for either debt without touching any assets or accounts', () => {
+  for (const reason of [36, 39] as const) for (const cash of [0, 100]) {
+    const d = setup(); d.world.farm.cash = cash; crop(d);
+    const before = JSON.stringify(d);
+    const r = forceAssetSales(d.world, d.state, 0, reason, d.effects, 8);
+    assert.deepEqual(r, { paid: true, amount: 0, reason, paymentCategory: null, attempts: [], removedFields: [], decision: null });
+    assert.equal(JSON.stringify(d), before);
+  }
 });
 
 test('invalid default inputs reject before any asset transaction or payment', () => {

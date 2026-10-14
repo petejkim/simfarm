@@ -68,6 +68,34 @@ test('Escape acknowledges only the current message; the next queued notice start
   const restored=GameSimulation.load(JSON.stringify(checkpoint),browserCrops).simulation;await page.reload();await load(page,restored.save(4));await expect(win).toHaveCount(0);
 });
 
+test('legacy zero arrears clear silently at month-end, retain assets and principal, and let positive debt settle',async({page})=>{
+  await start(page);
+  for(const kind of ['zero-expiring','zero-warning','tax-positive','loan-positive'] as const){
+    const initial=JSON.parse(financeMessageFixture('both').save(4)),f=initial.runtime.finances;
+    initial.scenario.farm.cash=kind.startsWith('zero')?0:100;f.loan.scheduledPayment=0;
+    Object.assign(f.debt,{balanceDue:kind==='loan-positive'?100:0,unpaidTaxes:kind==='tax-positive'?100:0,
+      balanceCountdown:kind==='zero-warning'?3:1,taxCountdown:kind==='zero-warning'?3:1});
+    await load(page,JSON.stringify(initial));expect(await save(page)).toEqual(initial);
+    await (await speedItem(page,'#next-day')).click();
+    if(kind==='tax-positive')await message(page,163);
+    if(kind==='loan-positive')await message(page,170);
+    await expect(page.locator('#finance-message-ok')).toHaveCount(0);await expect(page.locator('[data-window=default]')).toHaveCount(0);
+    await expect((await speedItem(page,'#next-day'))).toBeEnabled();
+    const completed=await save(page),after=completed.runtime.finances;
+    expect(after.debt).toEqual({balanceDue:0,unpaidTaxes:0,balanceCountdown:0,taxCountdown:0});expect(after.defaultDecision).toBeNull();
+    expect(completed.scenario.farm.cash).toBe(0);expect(after.loan.principal).toBe(kind==='loan-positive'?900:1000);
+    expect(after.accounts.balancePayments).toBe(f.accounts.balancePayments+(kind==='loan-positive'?100:0));
+    expect(after.accounts.taxExpenses).toBe(f.accounts.taxExpenses+(kind==='tax-positive'?100:0));
+    expect(completed.scenario.farm.cropIncome).toBe(initial.scenario.farm.cropIncome);
+    const game=GameSimulation.load(JSON.stringify(completed),browserCrops).simulation;
+    const original=GameSimulation.load(JSON.stringify(initial),browserCrops).simulation;
+    expect(game.getSnapshot().scenario.inventory.filter(i=>i.active).map(i=>i.slot)).toEqual(original.getSnapshot().scenario.inventory.filter(i=>i.active).map(i=>i.slot));
+    await page.reload();await load(page,JSON.stringify(completed));expect(await save(page)).toEqual(completed);
+    await (await speedItem(page,'#next-day')).click();await expect(page.locator('#finance-message-ok')).toHaveCount(0);
+    expect((await save(page)).runtime.daysAdvanced).toBe(2);
+  }
+});
+
 test('a running farm waits for acknowledgement and resumes without accumulated wall-clock time',async({page})=>{
   // Runs ~16 s of mocked frames; each simulated tick republishes and repaints the full map. Alone this takes
   // ~30 s (the default limit), so parallel load timed it out mid-run. Budget for that load.

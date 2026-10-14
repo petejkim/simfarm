@@ -83,12 +83,34 @@ test('an exhausted balance default preserves debt and stops before taxes while a
   resolveDefaultDecision(r.pendingDefault!.decision!, 'exit'); assert.equal(debt.balanceDue, 0xffffffff);
 });
 
-test('zero debt follows the original failure/countdown path without invented successful payment', () => {
-  const { world, accounts, debt, effects } = setup(); debt.taxCountdown = 2; debt.unpaidTaxes = 0;
-  const cash = world.farm.cash, r = retryMonthlyDebts(world, accounts, debt, effects, 8, 9);
-  assert.deepEqual(r.notices, [162]); assert.equal(debt.taxCountdown, 1); assert.equal(world.farm.cash, cash);
-  const next = retryMonthlyDebts(world, accounts, debt, effects, 8, 10);
-  assert.equal(next.pendingDefault?.amount, 0); assert.equal(next.pendingDefault?.paid, false); assert.equal(debt.unpaidTaxes, 0);
+test('active zero debts clear silently without payment, asset sales or default at every countdown boundary', () => {
+  for (const tax of [false, true]) for (const countdown of [1, 2, 3, 255]) for (const cash of [0, 100]) {
+    const { world, accounts, debt, effects } = setup();
+    Object.assign(debt, { unpaidTaxes: 0, balanceDue: 0, taxCountdown: 0, balanceCountdown: 0 });
+    debt[tax ? 'taxCountdown' : 'balanceCountdown'] = countdown; world.farm.cash = cash;
+    const before = JSON.stringify([world, accounts, effects]), events: number[] = [];
+    const r = retryMonthlyDebts(world, accounts, debt, effects, 8, 1, id => events.push(id));
+    assert.deepEqual(r, { notices: [], forcedSales: [], pendingDefault: null }); assert.deepEqual(events, []);
+    assert.deepEqual(debt, { unpaidTaxes: 0, balanceDue: 0, taxCountdown: 0, balanceCountdown: 0 });
+    assert.equal(JSON.stringify([world, accounts, effects]), before);
+  }
+});
+
+test('zero arrears do not stop or impersonate payment of the other positive debt', () => {
+  for (const tax of [false, true]) for (const cash of [0, 100]) {
+    const { world, accounts, debt, effects } = setup();
+    Object.assign(debt, { balanceDue: tax ? 0 : 100, unpaidTaxes: tax ? 100 : 0, taxCountdown: 2, balanceCountdown: 2 });
+    world.farm.cash = cash;
+    const payments = accounts.balancePayments, taxes = accounts.taxExpenses, events: number[] = [];
+    const r = retryMonthlyDebts(world, accounts, debt, effects, 8, 1, id => events.push(id));
+    assert.deepEqual(r.notices, [cash ? (tax ? 163 : 170) : (tax ? 162 : 169)]); assert.deepEqual(events, r.notices);
+    assert.equal(r.loanPayment, cash && !tax ? 100 : undefined); assert.deepEqual(r.forcedSales, []); assert.equal(r.pendingDefault, null);
+    assert.equal(debt[tax ? 'balanceCountdown' : 'taxCountdown'], 0);
+    assert.equal(debt[tax ? 'unpaidTaxes' : 'balanceDue'], cash ? 0 : 100);
+    assert.equal(debt[tax ? 'taxCountdown' : 'balanceCountdown'], cash ? 0 : 1); assert.equal(world.farm.cash, 0);
+    assert.equal(accounts.balancePayments, (payments + (cash && !tax ? 100 : 0)) >>> 0);
+    assert.equal(accounts.taxExpenses, (taxes + (cash && tax ? 100 : 0)) >>> 0);
+  }
 });
 
 test('tax warnings use incremented months 6/9, strict unsigned affordability and only the inactive-tax branch', () => {

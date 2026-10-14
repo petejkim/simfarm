@@ -30,7 +30,10 @@ export function retryMonthlyDebts(world: Scenario, accounts: DefaultState, debt:
     const due = tax ? 'unpaidTaxes' : 'balanceDue', countdown = tax ? 'taxCountdown' : 'balanceCountdown';
     if (!debt[countdown]) continue;
     const amount = debt[due];
-    if (amount && world.farm.cash >= amount) {
+    // SF-067: retire a stale zero-debt countdown without payment notices,
+    // loan settlement or liquidation. Loading itself keeps checkpoint history.
+    if (amount === 0) { debt[countdown] = 0; continue; }
+    if (world.farm.cash >= amount) {
       world.farm.cash -= amount;
       const expense = tax ? 'taxExpenses' : 'balancePayments';
       accounts[expense] = (accounts[expense] + amount) >>> 0;

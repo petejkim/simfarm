@@ -31,7 +31,8 @@ export function validateDefaultAccounts(world: Scenario, state: DefaultState): v
 
 /** 0x1d766..0x1db7e: invoked AFTER the caller's failed normal debit.
  * Slot-bounded scans correct SF-059; asset order and failed-sale retries preserve
- * the original; SF-046 posts all successful retries to the actual debt category. */
+ * the original; SF-046 posts all successful retries to the actual debt category.
+ * SF-067: a zero demand is satisfied before any asset traversal. */
 export function forceAssetSales(world: Scenario, state: DefaultState, amount: number, reason: DefaultReason,
   effects: ClearingEffects, soilMoisture: number): ForcedSaleResult {
   if (reason !== 36 && reason !== 39) throw new Error('Invalid default reason');
@@ -39,9 +40,9 @@ export function forceAssetSales(world: Scenario, state: DefaultState, amount: nu
   validateDefaultAccounts(world, state);
   validateClearingEffects(effects, soilMoisture);
   const result: ForcedSaleResult = { paid: false, amount, reason, paymentCategory: null, attempts: [], removedFields: [], decision: null };
+  if (amount === 0) { result.paid = true; return result; }
   const pay = (category: 0 | 1000 | 2500): boolean => {
-    // Debit returns the amount; zero therefore remains failure (SF-067).
-    if (!amount || world.farm.cash < amount) return false;
+    if (world.farm.cash < amount) return false;
     world.farm.cash -= amount;
     const key = category === 0 ? 'equipmentExpenses' : category === 1000 ? 'balancePayments' : 'taxExpenses';
     state[key] = (state[key] + amount) >>> 0;
