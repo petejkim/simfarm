@@ -42,15 +42,19 @@ export function drawWorldBase(context: CanvasRenderingContext2D, scenario: Scena
  * repaint everything. */
 export class WorldPainter {
   private drawn: Int32Array | null = null;
+  private spare: Int32Array | null = null;
   private sheets: readonly (CanvasImageSource | number | undefined)[] = [];
 
   paint(context: CanvasRenderingContext2D, scenario: Scenario, tiles: CanvasImageSource, maskedTiles: CanvasImageSource,
     workerPhase = 0, townEventTiles?: TileSheetRegion, full = false): number {
-    const looks = cellLooks(scenario, workerPhase, townEventTiles !== undefined), sheets = [tiles, maskedTiles, townEventTiles?.image, townEventTiles?.x, townEventTiles?.y];
+    const length = scenario.cells.length * 3;
+    const looks = this.spare?.length === length ? this.spare : new Int32Array(length);
+    cellLooks(scenario, workerPhase, townEventTiles !== undefined, looks);
+    const sheets = [tiles, maskedTiles, townEventTiles?.image, townEventTiles?.x, townEventTiles?.y];
     const previous = this.drawn;
     if (full || !previous || previous.length !== looks.length || sheets.some((sheet, i) => sheet !== this.sheets[i])) {
       drawWorldBase(context, scenario, tiles, maskedTiles, workerPhase, townEventTiles);
-      this.drawn = looks; this.sheets = sheets; return scenario.cells.length;
+      this.drawn = looks; this.spare = previous; this.sheets = sheets; return scenario.cells.length;
     }
     context.imageSmoothingEnabled = false;
     let repainted = 0;
@@ -64,14 +68,14 @@ export class WorldPainter {
       if (badge >= 0) context.drawImage(tiles, badge % 32 * 16, Math.floor(badge / 32) * 16, 16, 16, x * 16, y * 16, 16, 16);
       repainted++;
     }
-    this.drawn = looks; return repainted;
+    this.drawn = looks; this.spare = previous; return repainted;
   }
 }
 
 /** Three values per cell, as drawWorldBase paints it: terrain tile (or -1 - town-event tile), overlay (or -1),
  * and the field-badge tile drawn over it (or -1). */
-function cellLooks(scenario: Scenario, workerPhase: number, events: boolean): Int32Array {
-  const looks = new Int32Array(scenario.cells.length * 3), crops = fixedCropTiles(scenario.cropFiles);
+function cellLooks(scenario: Scenario, workerPhase: number, events: boolean, looks: Int32Array): void {
+  const crops = fixedCropTiles(scenario.cropFiles);
   for (let i = 0; i < scenario.cells.length; i++) {
     const cell = scenario.cells[i], tile = crops[terrainTile(cell)], stored = maskedTile(cell);
     const overlay = stored === null ? null : harvestWorkerTile(stored, workerPhase);
@@ -82,5 +86,4 @@ function cellLooks(scenario: Scenario, workerPhase: number, events: boolean): In
   for (const { x, y, badges } of fieldBadgeStacks(scenario)) badges.forEach((badge, row) => {
     for (let part = 0; part < 4; part++) looks[worldIndex(x + part % 2, y + row * 2 + (part >> 1)) * 3 + 2] = 539 + badge * 4 + part;
   });
-  return looks;
 }

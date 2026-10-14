@@ -69,3 +69,36 @@ test('new tile sheets or a forced paint repaint every cell',()=>{
   expect(painter.paint(context,scenario,wet,mask)).toBe(9216);
   expect(painter.paint(context,scenario,wet,mask,0,undefined,true)).toBe(9216);
 });
+
+test('repeated and resized paints allocate at most two comparison buffers per size and retain correct pixels',()=>{
+  const NativeArray=globalThis.Int32Array,allocations:number[]=[];
+  // Count actual typed-array storage requests, not private painter members. Restore before another test runs.
+  globalThis.Int32Array=new Proxy(NativeArray,{construct(target,args){
+    if(typeof args[0]==='number')allocations.push(args[0]);
+    return Reflect.construct(target,args);
+  }});
+  try{
+    const tiles={name:'tiles'} as unknown as CanvasImageSource,mask={name:'mask'} as unknown as CanvasImageSource;
+    const scenario={cells:Array.from({length:9216},()=>({terrain:5,overlay:0,attribute:0})),fields:[],cropFiles:FIXED_CROP_FILES} as unknown as Scenario;
+    const painter=new WorldPainter(),incremental=modelCanvas(new Set([tiles]));
+    for(let i=0;i<50;i++){
+      scenario.cells[0].terrain=i%2?6:5;
+      const changed=painter.paint(incremental.context,scenario,tiles,mask,0,undefined,i===20);
+      expect(changed).toBe(i===0||i===20?9216:1);
+      expect(painter.paint(incremental.context,scenario,tiles,mask)).toBe(0);
+      const full=modelCanvas(new Set([tiles]));drawWorldBase(full.context,scenario,tiles,mask);
+      expect(incremental.cells).toEqual(full.cells);
+    }
+    expect(allocations).toEqual([9216*3,9216*3]);
+    for(const length of [12,9216]){
+      scenario.cells=Array.from({length},()=>({terrain:8,overlay:0,attribute:0}));
+      const resized=modelCanvas(new Set([tiles]));
+      expect(painter.paint(resized.context,scenario,tiles,mask)).toBe(length);
+      expect(painter.paint(resized.context,scenario,tiles,mask)).toBe(0);
+      expect(painter.paint(resized.context,scenario,tiles,mask)).toBe(0);
+      const full=modelCanvas(new Set([tiles]));drawWorldBase(full.context,scenario,tiles,mask);
+      expect(resized.cells).toEqual(full.cells);
+    }
+    expect(allocations).toEqual([27648,27648,36,36,27648,27648]);
+  }finally{globalThis.Int32Array=NativeArray;}
+});
