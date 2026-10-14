@@ -4090,3 +4090,24 @@ All four requested optimizations are complete in four separate local conventiona
 Final type checking/production build and diff checks pass. Logs: artifacts/perf-regression-{unit,browser,browser-recheck,build}.log. Runtime files stayed fixed throughout full and focused browser runs. All377 distinct browser cases have passing evidence, including mobile/WebKit boot/audio/touch/pinch, floating-window geometry/stacking/resize/focus, original pixels, missing-resource failures, saves/autosave/writer locks and complete farming/finance/animal/equipment/disaster/town/aircraft continuation.
 
 Reproduced the initial draw-count audit with fixed runtime files, Scenario1 (SCEN0), paused clock, AutoScroll toggle then resume plus1,000ms. World drawImage calls fall9,281→0 for the paused toggle and575,544→67 for the one-second case. Evidence: artifacts/perf-browser-draw-counts.json. These are actual work counts, not frame-time/FPS/device-speed measurements. The scenario-copy microbenchmark and steady painter allocation checks establish their narrower improvements; closed contents render once at startup and still react to window-context events. Active aircraft/disasters, whole-world comparisons and other snapshot/report copying remain explicit limits. No source-distribution/dependency/save-schema change or push; broader preservation remains incomplete. This requested batch is complete; no additional optimization or reconstruction work is started.
+
+## 2026-10-13 — requested Examine touch highlight
+
+Examine now sets the existing transparent one-tile CSS highlight at touchdown, independently of placement
+confirmation. First-tap inspection still opens on release. Touch replaces stale mouse hover on hybrid devices;
+the touched world coordinates survive cancellation, scrolling and dialog updates. Existing tool resets,
+two-tap placement, strokes, long presses and flight gates retain their behavior. This corrects native browser
+presentation, with no newly claimed original-game behavior/defect, simulation rule, save schema, dependency or
+supplied-distribution change. See examine-window.md.
+
+The new 390×844 phone regression first failed with the highlight stuck at the old mouse tile (8,10) instead of
+the touched tile (12,12), then passed after correction. An initial fixture assertion used the wrong result
+property; that test-only typo was corrected before the behavioral reproduction. Coverage checks touchdown,
+first-tap building/terrain inspection, retained highlight, cancelled touch, scrolling, unchanged terrain pixels
+and complete checkpoint equality. Type checking/production build and all 16 focused Examine/map-interaction/
+cursor/outline unit cases pass (3.70s). All 38 focused browser cases pass (33.4s), covering mobile touch/pinch/
+timing/long press, two-tap Buy/paint confirmation, original Examine, desktop outlines and map interactions.
+Runtime stayed fixed during browser checks. Logs: artifacts/examine-touch-{before,browser,build,unit,
+regression-browser}.log. No full suites repeated for this pointer/highlight correction; physical-device and
+WebKit-specific verification were not performed. This request is complete; commit stays local and broader
+preservation remains incomplete. No additional reconstruction work is started.

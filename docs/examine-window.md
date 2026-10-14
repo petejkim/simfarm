@@ -67,3 +67,12 @@ Accepted 1px differences:
 - The common frame has an 8-row bottom where Examine's source is 9 rows.
 - The source's grey130 line just inside the left frame (column 8) is not drawn.
 - The wood grain's phase can differ by a few pixels (see ui-components.md).
+
+## Touch highlight (2026-10-13)
+
+Requested native touch behavior: Examine sets the existing transparent one-tile CSS highlight at touchdown and
+opens the object on the first completed tap. Touch pointer tracking is independent of placement confirmation;
+Buy/Plant/construction/Bulldoze retain their existing two-tap behavior. A finger replaces a previous mouse hover
+on hybrid devices. The touched world tile remains highlighted through cancellation, scrolling and dialog
+updates, using the existing tool-change reset. No new original executable behavior or original-game defect is
+claimed; this is a browser presentation correction, with no checkpoint or simulation-rule change.

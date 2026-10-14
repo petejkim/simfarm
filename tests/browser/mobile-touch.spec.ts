@@ -26,6 +26,36 @@ const tilePixels=(page:Page,x:number,y:number)=>terrainPixels(page,{x:x*16,y:y*1
 
 test.describe('phone screen',()=>{
   test.use({hasTouch:true,isMobile:true,viewport:{width:390,height:844}});
+  test('Examine highlights the touched tile at touchdown and opens on the first tap',async({page})=>{
+    const f=shopFixture();f.state.paused=true;f.state.disasters.enabled=false;f.state.scenario.farm.autoScroll=false;
+    const g=f.load().withAllCrops(browserCrops);g.dispatch({type:'build',buildingType:67,x:12,y:12});
+    expect(g.getSnapshot().lastBuildingResult?.ok).toBe(true);
+    const initial=g.save(4);await page.goto('/');await load(page,initial);
+    await page.getByRole('button',{name:'View object',exact:true}).tap();
+    const viewport=page.locator('#viewport'),dialog=page.getByRole('dialog',{name:'Examine',exact:true});
+    await viewport.evaluate(v=>v.scrollTo(0,0));
+    const session=await page.context().newCDPSession(page),plain=await tilePixels(page,12,12);
+    // A hybrid device's previous mouse hover must yield to the finger's world position.
+    const mouse=await coords(page,8,10);await page.mouse.move(mouse.x,mouse.y);
+    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[await coords(page,12,12)]});
+    await expect.poll(()=>previewFootprint(page)).toEqual([12,12,1,1]);await expect(dialog).toBeHidden();
+    await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await expect(dialog).toBeVisible();await expect(page.locator('#examine-text')).toHaveText('Large Shed');
+    expect(await previewFootprint(page)).toEqual([12,12,1,1]);expect(await save(page)).toEqual(JSON.parse(initial));
+    await dialog.getByRole('button',{name:'Close Examine',exact:true}).tap();
+    expect(await tilePixels(page,12,12)).toEqual(plain);
+    // Cancelled touches still move the highlight, and map scrolling keeps it on that world tile.
+    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[await coords(page,8,16)]});
+    await expect.poll(()=>previewFootprint(page)).toEqual([8,16,1,1]);
+    await session.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
+    await viewport.evaluate(v=>v.scrollBy(32,16));
+    await expect.poll(()=>previewFootprint(page)).toEqual([8,16,1,1]);await expect(dialog).toBeHidden();
+    // No confirmation tap is needed to inspect the next tile.
+    await tap(page,session,8,16);await expect(dialog).toBeVisible();
+    await expect(page.locator('.examine-window[data-kind=terrain]')).toBeVisible();
+    expect(await previewFootprint(page)).toEqual([8,16,1,1]);expect(await save(page)).toEqual(JSON.parse(initial));
+    await session.detach();
+  });
   test('oversized windows scale to fit the screen and return to 1x when there is room',async({page})=>{
     await page.goto('/');await expect(page.locator('#map-status')).toContainText('Scenario 1');
     // Resizes refit through a ResizeObserver, so the bounds are polled.

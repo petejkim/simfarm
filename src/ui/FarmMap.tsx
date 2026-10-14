@@ -288,8 +288,9 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
     const pan = Boolean(paintTool);
     if (pan) event.currentTarget.setPointerCapture(event.pointerId);
     const { clientX, clientY } = event;
-    // Two-tap tools highlight the touched tile at once (user request); it is armed only when the touch ends as a tap.
-    if (confirmTaps && tile && !flight) { touched.current = tile; onPointer(tile); }
+    // Touch sets the tool pointer immediately, including Examine (user request). Placement tools still arm only
+    // when the touch ends as a tap. A finger replaces any previous mouse hover on a hybrid device.
+    if (tile && !flight) { pointerRef.current = null; touched.current = tile; onPointer(tile); }
     touch.current = { pointer: event.pointerId, x: clientX, y: clientY, left: viewport.scrollLeft, top: viewport.scrollTop, moved: false, held: false, pan, paint,
       timer: paint ? 0 : window.setTimeout(() => {
         const active = touch.current; if (!active || active.moved || flight) return;
