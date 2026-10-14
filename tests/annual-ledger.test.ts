@@ -60,7 +60,7 @@ test('report reproduces every expense account, principal exclusion and unsigned 
   assert.equal(l.reportExpenses, 207); assert.equal(l.reportNet, (-116) >>> 0);
 });
 
-test('annual reset clears only original accounts, carries taxes, retains reports/workers and resets both precipitation views', () => {
+test('annual reset clears only original accounts, carries taxes, retains reports and resets both precipitation views', () => {
   for (let id = 0; id < 8; id++) {
     const d = setup(id), f = d.world.farm, a = d.accounts, l = d.ledger;
     f.workerExpenses = 999; f.chemicalExpenses = 777; f.salesAccumulator = 456;
@@ -68,16 +68,16 @@ test('annual reset clears only original accounts, carries taxes, retains reports
     const original = JSON.stringify([d.world.cells, d.world.fields, d.world.inventory]);
     const cash = f.cash, book = [a.buildingBookValue, a.assets.equipmentBookValue], reports = [l.reportIncome, l.reportExpenses, l.reportNet];
     resetAnnualLedgers(f, a, l, d.weather);
-    for (const key of ['cropIncome', 'contractGains', 'seedExpenses', 'rentalExpenses', 'landExpenses', 'contractLosses', 'chemicalExpenses', 'precipitationDays'] as const) assert.equal(f[key], 0);
+    for (const key of ['cropIncome', 'contractGains', 'seedExpenses', 'rentalExpenses', 'landExpenses', 'contractLosses', 'chemicalExpenses', 'workerExpenses', 'precipitationDays'] as const) assert.equal(f[key], 0);
     for (const key of ['ds3e70', 'ds3e8c', 'ds3e90', 'ds3e94', 'ds3e9c', 'livestockExpenses', 'otherExpenses'] as const) assert.equal(l[key], 0);
     assert.deepEqual([a.assets.equipmentIncome, a.assets.livestockIncome, a.landIncome, a.equipmentExpenses, a.balancePayments, a.taxExpenses], [0, 0, 0, 0, 0, 0]);
     assert.equal(l.priorTaxExpenses, 0xffffffff); assert.equal(d.weather.precipitationDays, 0);
-    assert.equal(f.workerExpenses, 999); assert.equal(f.salesAccumulator, 456); assert.equal(f.cash, cash);
+    assert.equal(f.workerExpenses, 0); assert.equal(f.salesAccumulator, 456); assert.equal(f.cash, cash);
     assert.deepEqual([a.buildingBookValue, a.assets.equipmentBookValue], book);
     assert.deepEqual([l.reportIncome, l.reportExpenses, l.reportNet], reports);
     assert.equal(JSON.stringify([d.world.cells, d.world.fields, d.world.inventory]), original);
-    updateAnnualReport(f, a, l); assert.deepEqual([l.reportIncome, l.reportExpenses, l.reportNet], [0, 998, (-998) >>> 0]);
-    resetAnnualLedgers(f, a, l, d.weather); assert.equal(l.priorTaxExpenses, 0); assert.equal(f.workerExpenses, 999);
+    updateAnnualReport(f, a, l); assert.deepEqual([l.reportIncome, l.reportExpenses, l.reportNet], [0, 0xffffffff, 1]);
+    resetAnnualLedgers(f, a, l, d.weather); assert.equal(l.priorTaxExpenses, 0); assert.equal(f.workerExpenses, 0);
   }
 });
 

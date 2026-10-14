@@ -356,13 +356,15 @@ Native correction (2026-10-13): Annual report expense totals now include canonic
 
 ## SF-042 — annual ledger reset leaves worker expenses intact
 
-**Status:** confirmed reset omission; native annual accounting integration and correction deferred.
+**Status:** original evidence retained; corrected natively on2026-10-13 by user request.
 
 Year-end calls reset `0x1d396` at `0xcdf9`. It clears dwords `3e60..3e84`, then skips `3e88` and resumes at `3e8c..3eac`. Worker debits post to skipped `3e88`, so that running ledger survives this annual reset. The loader separately fails to restore it (SF-014), and the aggregate report omits it (SF-041). The complete effects on player-visible financial views require their callers to be traced. This is an accounting defect, not evidence of a security vulnerability.
 
 The native annual-reset primitive now deliberately preserves worker expenses, with tests across all eight farms and repeated resets. Live calendar integration and any correction remain deferred; retain this evidence alongside ledger migration and reports.
 
 New-farm reset follow-up: restart0x40355 also calls the same0x1d396 ledger reset. The recovered account reset phase retains worker expenses, transfers the old tax ledger into prior taxes, and leaves report totals untouched. Native setup reset preserves these distinctions; tests seed nonzero accounts rather than relying on zero cold defaults. Later setup/finalization remains a separate phase, so this does not by itself prove every retained value remains visible after a complete original restart.
+
+Native correction (2026-10-13): Worker expenses now reset with other annual costs after tax collection and any pending town choice. The same reset helper also applies to native fresh/restart setup; tax carry, reports and book values retain their existing ownership. Earlier preservation/status notes above describe the pre-correction implementation. Build/type checking,11 annual/live unit cases and1 browser annual collection/choice/loan/reload flow pass. Worker costs clear independently and remain zero through continuation. Updated stale annual assertions for the earlier SF-071 principal/town settlement; production loan rules were not changed again. Logs artifacts/bugfix-042-*.log.
 
 ## SF-043 — annual sales tax interprets a wrapped sales accumulator as signed
 

@@ -3893,3 +3893,10 @@ Build/type checking,21 harvest/default unit cases and1 browser all24-crop sale/r
 Annual report expense totals now include canonical worker and chemical expenses exactly once. Net reflects both charges. Loan principal repayments remain excluded from operating expense totals; unresolved source ledger meanings and prior-tax presentation are not reinterpreted.
 
 Build/type checking,5 annual-ledger unit cases and1 browser report/payment/reload flow pass. Independent totals include20 workers and30 chemicals and preserve cached checkpoint reports. Unsigned carry/borrow and malformed input are checked. Logs artifacts/bugfix-041-*.log. See docs/gameplay-bug-fixes.md. Original evidence retained; no source distribution changes or push.
+
+
+## 2026-10-13 — requested corrections7/12: SF-042
+
+Worker expenses now reset with other annual costs after tax collection and any pending town choice. The same reset helper also applies to native fresh/restart setup; tax carry, reports and book values retain their existing ownership.
+
+Build/type checking,11 annual/live unit cases and1 browser annual collection/choice/loan/reload flow pass. Worker costs clear independently and remain zero through continuation. Updated stale annual assertions for the earlier SF-071 principal/town settlement; production loan rules were not changed again. Logs artifacts/bugfix-042-*.log. See docs/gameplay-bug-fixes.md. Original evidence retained; no source distribution changes or push.

@@ -29,7 +29,7 @@ export function updateAnnualReport(farm: SavedFarmState, accounts: DefaultState,
 
 /** Reset 0x1d396..0x1d456, after annual collection. No report recomputation:
  * the source only requests a window refresh after these mutations.
- * Worker expenses survive (SF-042); sales were cleared by collection. */
+ * SF-042: worker costs reset with other annual expenses; sales were cleared by collection. */
 export function resetAnnualLedgers(farm: SavedFarmState, accounts: DefaultState, ledger: AnnualLedgerState,
   weather: Pick<WeatherState, 'precipitationDays'>): void {
   validate(farm, accounts, ledger);
@@ -37,7 +37,7 @@ export function resetAnnualLedgers(farm: SavedFarmState, accounts: DefaultState,
     if (!Number.isInteger(n) || n < 0 || n > 65535) throw new Error('Invalid annual precipitation count');
   }
   farm.cropIncome = farm.contractGains = farm.seedExpenses = farm.rentalExpenses = 0;
-  farm.landExpenses = farm.contractLosses = farm.chemicalExpenses = 0;
+  farm.landExpenses = farm.contractLosses = farm.chemicalExpenses = farm.workerExpenses = 0;
   accounts.assets.equipmentIncome = accounts.assets.livestockIncome = accounts.landIncome = 0;
   accounts.equipmentExpenses = accounts.balancePayments = 0;
   ledger.ds3e70 = ledger.ds3e8c = ledger.ds3e90 = ledger.ds3e94 = ledger.ds3e9c = 0;

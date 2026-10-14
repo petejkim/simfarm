@@ -40,6 +40,7 @@ test('Balance Sheet tracks annual collection, town choice, loans and saved conti
   await openWindow(page,'bank');await page.locator('#loan-amount').fill('1000');await page.locator('#borrow-loan').click();game.dispatch({type:'borrow',amount:1000});
   for(let day=0;day<4;day++){
     await open(page);await values(page,balanceWindowView(game.getSnapshot(),browserCrops));expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+    if(day===1)expect((await save(page)).scenario.farm.workerExpenses).toBe(0);
     if(day===2)await load(page,JSON.stringify(await save(page)));
     await (await speedItem(page,'#next-day')).click();game.dispatch({type:'advance-day'});
     if(game.getSnapshot().pendingTown){await reveal(page,'#town-residential');await page.locator('#town-residential').click();game.dispatch({type:'choose-town',choice:'residential'});}

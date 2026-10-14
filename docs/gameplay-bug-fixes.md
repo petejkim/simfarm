@@ -10,7 +10,7 @@ User authorized these twelve native corrections on2026-10-13, one conventional c
 | SF-001 | Regional-condition subtraction | Complete |
 | SF-026 | Duplicate crop-income posting | Complete |
 | SF-041 | Report expense omissions | Complete |
-| SF-042 | Worker expense annual reset | Pending |
+| SF-042 | Worker expense annual reset | Complete |
 | SF-046 | Forced-sale debt expense category | Pending |
 | SF-006 | Water-stress warning | Pending |
 | SF-007 | Fifth-cycle year-end temperature | Pending |
@@ -57,3 +57,10 @@ Checks: Build/type checking,21 harvest/default unit cases and1 browser all24-cro
 Annual report expense totals now include canonical worker and chemical expenses exactly once. Net reflects both charges. Loan principal repayments remain excluded from operating expense totals; unresolved source ledger meanings and prior-tax presentation are not reinterpreted.
 
 Checks: Build/type checking,5 annual-ledger unit cases and1 browser report/payment/reload flow pass. Independent totals include20 workers and30 chemicals and preserve cached checkpoint reports. Unsigned carry/borrow and malformed input are checked. Logs artifacts/bugfix-041-*.log.
+
+
+## SF-042 — native correction
+
+Worker expenses now reset with other annual costs after tax collection and any pending town choice. The same reset helper also applies to native fresh/restart setup; tax carry, reports and book values retain their existing ownership.
+
+Checks: Build/type checking,11 annual/live unit cases and1 browser annual collection/choice/loan/reload flow pass. Worker costs clear independently and remain zero through continuation. Updated stale annual assertions for the earlier SF-071 principal/town settlement; production loan rules were not changed again. Logs artifacts/bugfix-042-*.log.

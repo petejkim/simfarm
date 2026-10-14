@@ -38,10 +38,10 @@ test('annual tax and reservation precede a saved modal choice; choice resumes re
   assert.equal(p.phase, 'annual-reset'); assert.equal(pending.paused, true); assert.equal(p.resumeRunning, false);
   assert.equal(pending.daysAdvanced, 0); assert.equal(pending.scenario.farm.cash, 40000 - 60 - 80 - 4715);
   assert.equal(pending.scenario.farm.salesAccumulator, 0); assert.equal(pending.scenario.farm.cropIncome, 500);
-  assert.equal(pending.finances.loan.principal, 1000); assert.equal(pending.finances.accounts.balancePayments, 60);
+  assert.equal(pending.finances.loan.principal, 940); assert.equal(pending.finances.accounts.balancePayments, 60);
   assert.equal(pending.finances.accounts.taxExpenses, 12 + 80 + 4715);
-  assert.equal(pending.finances.town.expansionFunds, 40000 + (4715 >> 2) - 15000);
-  assert.equal(pending.finances.town.townRevenue, 50000 + 4715 - (4715 >> 2) - 12200);
+  assert.equal(pending.finances.town.expansionFunds, 40000 + 30 + (4715 >> 2) - 15000);
+  assert.equal(pending.finances.town.townRevenue, 50000 + 15 + 4715 - (4715 >> 2) - 12200);
   assert.deepEqual(pending.finances.town.activeSite, p.site);
   assert.equal(pending.scenario.regionalConditions[(p.site.regionX * 12 + p.site.regionY) * 7 + 1], 2);
   assert.deepEqual(pending.scenario.schedule.bytes, before.scenario.schedule.bytes);
@@ -58,9 +58,9 @@ test('annual tax and reservation precede a saved modal choice; choice resumes re
   const after = game.getSnapshot(); assert.equal(after.pendingTown, null); assert.equal(after.paused, true);
   assert.equal(after.daysAdvanced, 1); assert.equal(after.scenario.farm.cash, 40000 - 60 - 80 - 4715 - 101);
   assert.equal(after.scenario.farm.seedExpenses, 0); assert.equal(after.scenario.farm.cropIncome, 0);
-  assert.equal(after.scenario.farm.workerExpenses, 77); // SF-042 retained.
+  assert.equal(after.scenario.farm.workerExpenses, 0); // SF-042 corrected.
   assert.equal(after.finances.annual.priorTaxExpenses, 12 + 80 + 4715); assert.equal(after.finances.accounts.taxExpenses, 0);
-  assert.equal(after.finances.accounts.balancePayments, 101); assert.equal(after.finances.loan.principal, 899);
+  assert.equal(after.finances.accounts.balancePayments, 101); assert.equal(after.finances.loan.principal, 839);
   assert.equal(after.finances.loanRate, rate); assert.equal(after.weather.temperatureYear, (before.weather.temperatureYear + 1) % 5);
   assert.ok(after.lastTownResult?.ok); assert.equal(after.lastTownResult.type, district);
   assert.equal(after.scenario.regionalConditions[(after.lastTownResult.site.regionX * 12 + after.lastTownResult.site.regionY) * 7], district);
