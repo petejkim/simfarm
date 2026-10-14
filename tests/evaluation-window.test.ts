@@ -1,7 +1,6 @@
 import {test,expect} from 'bun:test';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {PNG} from 'pngjs';
 import {readArchive} from '../src/formats/archive';
 import {readBitmap,readPalette} from '../src/formats/graphics';
 import {EVALUATION_LABELS,readEvaluationArtwork} from '../src/formats/evaluation-window';
@@ -32,7 +31,6 @@ test('Evaluation artwork removes lettering only, matches imported pixels and rej
     const i=(y*352+x)*4,p=Array.from(raw.rgba.subarray(i,i+4)),label=EVALUATION_LABELS.some(l=>x>=l.x&&x<l.x+l.width&&y>=l.y&&y<l.y+l.height);
     expect(Array.from(masked.rgba.subarray(i,i+4))).toEqual(label&&p.slice(0,3).every(n=>n===0)?[...palette[12],255]:p);
   }
-  const png=PNG.sync.read(readFileSync('public/assets/evaluation-window.png'));expect(Array.from(png.data)).toEqual(Array.from(masked.rgba));
   expect(Array.from(bytes)).toEqual(Array.from(before));
   for(let length=0;length<bytes.length;length++)expect(()=>readEvaluationArtwork(bytes.subarray(0,length),palette)).toThrow();
   expect(()=>readEvaluationArtwork(asset('weather.bmp'),palette)).toThrow('Invalid Evaluation artwork');

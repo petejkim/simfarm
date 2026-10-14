@@ -20,8 +20,7 @@ const data = decodeUiContent(read), roundTrip = () => JSON.parse(JSON.stringify(
 const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 
 test('every importer JSON output is compact while preserving spaces and line breaks inside strings', () => {
-  // Abandoned MP3 experiments left ignored *.audio.json files; the current importer never writes them.
-  const files = readdirSync('public/assets').filter(name => name.endsWith('.json') && !name.endsWith('.audio.json'));
+  const files = readdirSync('public/assets').filter(name => name.endsWith('.json'));
   expect(files.length).toBeGreaterThan(1);
   for (const file of files) {
     const bytes = readFileSync(`public/assets/${file}`, 'utf8');

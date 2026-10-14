@@ -21,7 +21,7 @@ for(const cancel of ['button','Escape','close'] as const)test(`File Load ${cance
   const replacement=new GameSimulation(readScenario(source),browserCrops).withAllCrops(browserCrops).save(4);
   let release!:()=>void,seen!:()=>void,finished!:()=>void;
   const gate=new Promise<void>(resolve=>release=resolve),requested=new Promise<void>(resolve=>seen=resolve),settled=new Promise<void>(resolve=>finished=resolve);
-  await page.route('**/assets/scenario4.tiles.png',async route=>{
+  await page.route('**/assets/raw/SCEN4.SSM',async route=>{
     seen();await gate;
     try{if(cancel==='Escape')await route.fulfill({status:404,body:'Late failure'});else await route.continue();}
     catch{/* The browser may already have cancelled the network request. */}
@@ -37,7 +37,7 @@ for(const cancel of ['button','Escape','close'] as const)test(`File Load ${cance
     await expect(dialog).toHaveCount(0);await expect(page.locator('#save-status')).toHaveText('Loading cancelled.');
     expect(await save(page)).toBe(before);
     await load(page,before);await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
-    release();await settled;await page.unroute('**/assets/scenario4.tiles.png');
+    release();await settled;await page.unroute('**/assets/raw/SCEN4.SSM');
     expect(await save(page)).toBe(before);await expect(page.getByRole('dialog',{name:'File error',exact:true})).toHaveCount(0);
     await load(page,replacement);await expect(page.locator('#map-status')).toContainText('Scenario 5');
     expect(await save(page)).toBe(replacement);await expect(dialog).toHaveCount(0);

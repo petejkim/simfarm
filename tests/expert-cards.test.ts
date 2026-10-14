@@ -28,8 +28,9 @@ test('Expert source descriptor, interpreter, crop reader, complete deck and fram
   expect(EXPERT_CARD_IDS).toHaveLength(43);
   expect(hash(Buffer.concat(EXPERT_CARD_IDS.map(id=>asset(`card${id}.hc`))))).toBe('52aca80ac8d649e09446a7368ee6360f9d89c109a2bc942a7a521d37c25cfdfc');
   expect(hash(asset('farmburo.bmp'))).toBe('f83003044612a61cf22a6b1cec08f6c2287a32ae1d841cd603bf993f51f4fc6f');
-  const expected=readBitmap(asset('farmburo.bmp'),readPalette(asset('simfarm.pal'))),png=PNG.sync.read(readFileSync(new URL('../public/assets/farmburo.bmp.png',import.meta.url)));
-  expect([png.width,png.height]).toEqual([400,224]);expect(Array.from(png.data)).toEqual(Array.from(expected.rgba));
+  const frame=readBitmap(asset('farmburo.bmp'),readPalette(asset('simfarm.pal')));
+  expect([frame.width,frame.height]).toEqual([400,224]);
+  expect(readFileSync('public/assets/raw/farmburo.bmp')).toEqual(Buffer.from(asset('farmburo.bmp')));
 });
 
 test('all source pages are reachable through exact original chapter links and bounded controls',()=>{

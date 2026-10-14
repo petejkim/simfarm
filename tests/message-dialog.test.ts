@@ -2,7 +2,6 @@ import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { PNG } from 'pngjs';
 import { readArchive } from '../src/formats/archive';
 import { readBitmap,readPalette,decodePlanar } from '../src/formats/graphics';
 import { readBulldozeMessage,readMessageButton,MESSAGE_BUTTON_FACE as F } from '../src/formats/message-dialog';
@@ -46,7 +45,6 @@ test('message button preserves the original frame and removes all bitmap caption
     const frame=decodePlanar(bytes.subarray(index*576,(index+1)*576),48,24,p);
     for(let y=0;y<24;y++)for(let x=0;x<48;x++)if(x<F.x||x>=F.x+F.width||y<F.y||y>=F.y+F.height){const o=(y*48+x)*4;assert.deepEqual(frame.rgba.subarray(o,o+4),original.rgba.subarray(o,o+4));}
   }
-  const imported=PNG.sync.read(readFileSync(new URL('../public/assets/message-button.png',import.meta.url)));assert.deepEqual([...imported.data],[...r.rgba]);
   assert.throws(()=>readMessageButton(bytes.subarray(1),p),/atlas/);
 });
 

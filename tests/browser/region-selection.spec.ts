@@ -51,6 +51,14 @@ test('region map selects source climate, supports keyboard and mobile layout, an
 });
 
 test('all eight map markers apply original post-load climate and town setup while preserving the saved date', async ({ page }) => {
+  const legacyRequests:string[]=[],terrainRequests:string[]=[];
+  await page.route('**/assets/scenario*.tiles.png',route=>{
+    legacyRequests.push(route.request().url());return route.abort();
+  });
+  page.on('request',request=>{
+    const name=new URL(request.url()).pathname.split('/').at(-1)!;
+    if(/^terrain-tiles(?:\.rain|\.frost)?\.png$/.test(name))terrainRequests.push(name);
+  });
   await page.goto('/');
   for (const [id, x, y] of [[0,0,8],[1,1,11],[2,1,3],[3,3,6],[4,9,7],[5,11,6],[6,13,11],[7,15,8]]) {
     await openMap(page); await page.locator(`[data-region="${x},${y}"]`).click();
@@ -62,6 +70,8 @@ test('all eight map markers apply original post-load climate and town setup whil
     const expected = GameSimulation.openGeographicRegion(world.sourceBytes!, locations[y * 18 + x], { visual: 9029, simulation: 9029, bounded: 9029 }, { ...newFarmAssets, crops }, 'selected-climate').withAllCrops(browserCrops);
     expect(await save(page, `preset-${id}`)).toEqual(JSON.parse(expected.save(id)));
   }
+  expect(legacyRequests).toEqual([]);
+  expect(terrainRequests.sort()).toEqual(['terrain-tiles.frost.png','terrain-tiles.png','terrain-tiles.rain.png']);
 });
 
 test('region asset failures allow custom creation or retry, and cancelled preset loads cannot replace the farm', async ({ page }) => {

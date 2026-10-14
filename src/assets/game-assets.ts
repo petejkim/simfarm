@@ -120,9 +120,7 @@ export async function loadGameAssets(signal: AbortSignal): Promise<GameAssets> {
   return { editCursors:{pick:movePick,drop:moveDrop,view:viewCursor,bulldoze:bulldozeCursor,spray:sprayCursor,buy:buyCursor},about:{frame:aboutFrame,logo:aboutLogo,credits:aboutCredits},townEventTiles,cropCards,townChoiceArtwork,balanceArtwork,weatherArtwork:{frame:weatherFrame,sky:weatherSky,ground:weatherGround,vane:weatherVane},expertPortrait:expert[1],expertLauncher:expert[2],timeToggle:expert[3],expertDeck:expert[0].expertDeck,aircraftArtwork,messageArtwork,eventText,editStatusText,examineData, scheduleArtwork, fieldGauges, mapArtwork, mapTiles, sellArtwork, sellCondition, catalog, mainMenus, controlBar, editPalette, buyArtwork, buyCards, buyCatalog, itemText, windowArtwork: { title: windowTitle, inactive: windowInactive, close: windowClose, end: windowEnd, endInactive: windowEndInactive, frame: windowFrame }, maskedTiles, townLayouts, flightSprites: { airplane, shadow, dust }, disasterSprites: { tornado, swarm } };
 }
 export async function loadScenarioAssets(id: number, signal: AbortSignal) {
-  const [buffer, tiles] = await Promise.all([
-    response(`raw/SCEN${id}.SSM`, signal).then(r => r.arrayBuffer()), image(`scenario${id}.tiles.png`, signal),
-  ]);
+  const buffer = await (await response(`raw/SCEN${id}.SSM`, signal)).arrayBuffer();
   const scenario = readScenario(new Uint8Array(buffer));
   return { scenario, tiles: await loadGeneratedTiles(scenario.cropFiles, signal) };
 }
@@ -158,7 +156,7 @@ function abortable<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
     work.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
   });
 }
-/** Native checkpoints may require either bundled or recomposed original tiles. */
+/** Checkpoints share terrain sheets; numbered farms also validate their original scenario bytes. */
 export async function loadSavedFarmTiles(world: Scenario, scenarioId: number | null, signal: AbortSignal): Promise<HTMLImageElement> {
   if (scenarioId === null) return loadGeneratedTiles(world.cropFiles, signal);
   const original = await loadScenarioAssets(scenarioId, signal);

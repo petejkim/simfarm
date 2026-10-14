@@ -4197,3 +4197,35 @@ constraints remain explicit. The four-second baseline remains documented in cale
 
 Reviewed the wording against the pre-edit file and ran `git diff --check`. Documentation only; no build or
 test suites rerun. Request complete; commit stays local. Broader preservation remains incomplete.
+
+## 2026-10-14 — remove obsolete public assets
+
+Removed the unused per-scenario PNG request from loadScenarioAssets: numbered farms still decode their
+original SSMs and obtain the shared normal/rain/frost terrain sheets. Import validates original scenario
+crop references, stops generating unused derivatives, and removes exact known obsolete filenames. Deleted
+58 existing files totaling3,697,128bytes:8 scenario sheets,21 duplicate bitmap previews,8 MIDI sequence JSONs,
+8 abandoned audio metadata files and13 retired window/sprite/screen PNGs. All76 remaining top-level files
+have runtime or manifest/placeholder purposes. All151 raw archive members,24 crops and8 scenarios remain
+as preservation evidence. SHA-256 checks confirm every retained asset, manifest and supplied DOS file is
+unchanged. No dependency, recovered format, simulation/save rule or original defect change. Full inventory
+and rationale: generated-assets.md; ignored artifacts/asset-cleanup-audit.json lists every removed file.
+
+Preserved source screen/miniature hashes, original artwork mask/boundary tests and crop-packing checks;
+removed only assertions requiring retired PNG exports. Pixel browser checks now read shared terrain sheets.
+Startup errors/retries target a required terrain PNG; current-farm load failures/cancellation target the
+original SSM. The all-eight-region check aborts any legacy PNG request, requires exactly one fetch per shared
+terrain palette and compares complete canonical saves. Added coverage for every imported raw archive member
+and absence of obsolete files. The new scenario cleanup test first failed on the existing legacy files,
+then passed after import.
+
+Import and type checking/production build pass. All61 focused unit cases across15 files pass (4.45s), covering
+source decoding, all crop slots/shared sheets, raw import equality, UI content, retired artwork decoders and
+XMIDI loops. Initial build caught a test-only typed-array generic mismatch; changed that pixel comparison to
+Buffer.equals, rebuilt successfully and rechecked all3 fixed-crop cases (174ms). All43 focused browser cases
+pass:36 asset/region/new-game/first-start/load-cancel/boot/sprite/crop/construction/irrigation/livestock/water
+cases (42.4s), then7 original pixel/scenario/MIDI/checkpoint/failure/mobile-audio cases (21.8s). Boot geometry
+also runs WebKit at three viewport sizes; mobile audio checks Chromium autoplay and main-thread fallback.
+No browser failures or runtime edits during runs. Logs: artifacts/asset-cleanup-{import,build,unit,
+unit-recheck,browser,browser-continuation}.log. Full suites were unnecessary for this asset-only batch;
+physical-device checks and wider unrelated gameplay were not repeated. Requests complete; commit stays
+local. Broader preservation remains incomplete; no additional work started.

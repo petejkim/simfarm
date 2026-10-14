@@ -14,13 +14,12 @@ const palette=readPalette(entries.find(e=>e.name==='simfarm.pal')!.bytes);
 const crops=new Map(SHIPPED_CROP_IDS.map(id=>[`${id}.crp`,source(`CROPS/${id.toUpperCase()}.CRP`)]));
 const hash=()=>createHash('sha256').update(Buffer.concat([...crops.values()])).digest('hex');
 
-test('both imported crop sheets preserve every growth-tile and photo pixel in fixed crop-ID order',()=>{
+test('crop packing preserves every source pixel and exported photos match fixed crop-ID order',()=>{
   const before=hash(),sheets=cropSpriteSheets(crops,palette);
-  for(const [name,raster] of [['crop-tiles.png',sheets.tiles],['crop-cards.png',sheets.cards]] as const){
-    const imported=PNG.sync.read(readFileSync(`public/assets/${name}`));
-    assert.deepEqual([imported.width,imported.height],[raster.width,raster.height]);
-    assert.deepEqual(Uint8Array.from(imported.data),raster.rgba);
-  }
+  const imported=PNG.sync.read(readFileSync('public/assets/crop-cards.png'));
+  assert.deepEqual([imported.width,imported.height],[sheets.cards.width,sheets.cards.height]);
+  assert.deepEqual(Uint8Array.from(imported.data),sheets.cards.rgba);
+  assert.equal(existsSync('public/assets/crop-tiles.png'),false); // Growth tiles already live in terrain-tiles.png.
   assert.deepEqual([sheets.tiles.width,sheets.tiles.height],[512,96]);
   assert.deepEqual([sheets.cards.width,sheets.cards.height],[896,192]);
   // Independent bitplane reading pins source boundaries and packing, rather than reproducing the decoder.

@@ -21,7 +21,7 @@ test('a startup error replaces the boot screen',async({page})=>{
 });
 
 test('a farm load error replaces the boot screen and its retry stays usable',async({page})=>{
-  await page.route('**/assets/scenario0.tiles.png',route=>route.abort());await page.goto('/');
+  await page.route('**/assets/terrain-tiles.png',route=>route.abort());await page.goto('/');
   await expect(page.getByRole('button',{name:'Retry loading farm',exact:true})).toBeVisible();await expect(page.locator('#boot')).toHaveCount(0);
 });
 

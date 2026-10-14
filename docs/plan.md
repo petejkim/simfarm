@@ -506,3 +506,8 @@ rule or original defect. No additional preservation work is started.
 
 2026-10-14 Settings follow-up complete:400% is now a permanent zoom preset, with no duplicate entry at the
 gesture limit. Build,3 gesture units and4 focused Settings/wheel browser cases pass; see progress.md.
+
+2026-10-14 requested asset cleanup complete: removed discarded scenario-atlas loads and58 obsolete generated
+files. Import now removes known retired exports while retaining raw preservation evidence. Shared terrain,
+original pixels, all-eight-region setup, exact checkpoints, cancellation/retry and audio pass focused checks;
+see generated-assets.md and progress.md. No format/rule/save change or additional reconstruction work.

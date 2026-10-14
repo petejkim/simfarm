@@ -39,7 +39,7 @@ test('purchased water pump wets original ditch pixels, refreshes fields and cont
   const pixel = () => page.locator('#world').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(14 * 16, 10 * 16, 16, 16).data));
   const before = await pixel(); await (await speedItem(page,'#next-day')).click(); game.dispatch({ type: 'advance-day' });
   const wet = await pixel(); expect(wet).not.toEqual(before);
-  const atlas = PNG.sync.read(readFileSync('public/assets/scenario4.tiles.png')), expected: number[] = [];
+  const atlas = PNG.sync.read(readFileSync('public/assets/terrain-tiles.png')), expected: number[] = [];
   for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
     const offset = ((3 * 16 + y) * atlas.width + 2 * 16 + x) * 4; // original wet ditch tile98.
     expected.push(...atlas.data.subarray(offset, offset + 4));
@@ -100,7 +100,7 @@ test('original palette controls dig a connected supply, install and operate a va
   // Remove the translucent placement preview; compare interior pixels against the original atlas.
   await page.getByRole('button',{name:'View object',exact:true}).click();
   const pixels = await page.locator('#world').evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(15 * 16 + 2, 10 * 16 + 2, 12, 12).data));
-  const atlas = PNG.sync.read(readFileSync('public/assets/scenario4.tiles.png')), expected: number[] = [];
+  const atlas = PNG.sync.read(readFileSync('public/assets/terrain-tiles.png')), expected: number[] = [];
   for (let y = 2; y < 14; y++) for (let x = 2; x < 14; x++) {
     const offset = ((3 * 16 + y) * atlas.width + 27 * 16 + x) * 4; // Closed valve123.
     expected.push(...atlas.data.subarray(offset, offset + 4));

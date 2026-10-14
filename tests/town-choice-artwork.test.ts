@@ -42,5 +42,4 @@ test('pressed overlay reverses only the two original bevel lines and leaves the 
     const light=(y===71&&x>=2&&x<=71)||(y===70&&x>=3&&x<=71)||(x===71&&y>=2&&y<=71)||(x===70&&y>=3&&y<=71);
     expect(Array.from(r.rgba.subarray((y*73+x)*4,(y*73+x+1)*4))).toEqual(light?[...palette[15],255]:dark?[...palette[13],255]:[0,0,0,0]);
   }
-  expect(Array.from(PNG.sync.read(readFileSync('public/assets/town-choice-pressed.png')).data)).toEqual(Array.from(r.rgba));
 });

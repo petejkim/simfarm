@@ -6,7 +6,7 @@ Schema version1 contains `expertCards` (source page ID and ordered decoded comma
 
 Each decoded event record contains its existing paragraph display, parsed `lines` with centered-heading flags, and `physicalText` for the two-line Bulldoze confirmations. This preserves the distinct existing consumers without re-decoding or normalizing records during rendering. Source-derived portrait, notice and record mappings retain their owners. JSON validation bounds command kinds, geometry, control counts, page targets, source picture/crop/tile indices, text lengths and all required record counts. Sound commands accept only the recovered rooster request. Missing/malformed bundles prevent startup with the existing asset error. Binary readers remain callable by preservation tests; browser message readers select the predecoded record.
 
-All importer JSON outputs now use compact `JSON.stringify(value)` with no indentation or physical line breaks. Spaces within prose and escaped newline characters remain intact. This includes catalog, manifest, setup/defaults, menus, Examine, Buy and MIDI sequence metadata. Older ignored `*.audio.json` files belong to the abandoned MP3 experiment and are not written by this importer.
+All importer JSON outputs use compact `JSON.stringify(value)` with no indentation or physical line breaks. Spaces within prose and escaped newline characters remain intact. This includes catalog, manifest, setup/defaults, menus, Examine and Buy. The 2026-10-14 [asset cleanup](generated-assets.md) removes unused MIDI sequence JSON and abandoned MP3 metadata; playback uses converted `.mid` files.
 
 ## Source evidence and retained bytes
 

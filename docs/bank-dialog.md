@@ -41,4 +41,4 @@ User request (ui-components.md). The terminal is no longer `bank-terminal.png` w
 
 Proportions are approximate (user rule: not pixel-perfect). Key ids, labels and the source switch semantics are unchanged.
 
-`bank-terminal.png` is no longer loaded at runtime. Its import, mask constants and unit test remain as preservation evidence, and its browser missing-asset test was removed.
+`bank-terminal.png` is no longer loaded at runtime, and the 2026-10-14 [asset cleanup](generated-assets.md) removes its unused export. Raw source bytes, mask constants and decoder tests remain as preservation evidence; its browser missing-asset test was removed.

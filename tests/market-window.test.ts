@@ -2,7 +2,6 @@ import {test} from 'bun:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {PNG} from 'pngjs';
 import {readArchive} from '../src/formats/archive';
 import {readBitmap,readPalette} from '../src/formats/graphics';
 import {readMarketArtwork,MARKET_TEXT_MASKS} from '../src/formats/market-window';
@@ -34,7 +33,7 @@ test('Market artwork removes bitmap lettering only and validates byte lengths an
     const p=(y*320+x)*4,mask=MARKET_TEXT_MASKS.some(r=>x>=r.x&&x<r.x+r.width&&y>=r.y&&y<r.y+r.height);
     assert.deepEqual(live.rgba.subarray(p,p+4),mask?Uint8Array.from([...palette[12],255]):original.rgba.subarray(p,p+4));
   }
-  assert.deepEqual(Uint8Array.from(b),before);assert.deepEqual(Uint8Array.from(PNG.sync.read(readFileSync('public/assets/market-window.png')).data),live.rgba);
+  assert.deepEqual(Uint8Array.from(b),before);
   for(const n of [0,7,8,16644,b.length-1])assert.throws(()=>readMarketArtwork(b.subarray(0,n),palette));
   const wrong=Uint8Array.from(b);wrong[0]=20;wrong[2]=160;wrong[3]=1;assert.throws(()=>readMarketArtwork(wrong,palette));
 });

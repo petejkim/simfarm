@@ -19,10 +19,10 @@ test('failed startup can retry the same farm without the interim scenario select
 });
 
 test('failed startup terrain artwork can be retried after the asset recovers',async({page})=>{
-  await page.route('**/assets/scenario0.tiles.png',route=>route.abort());
-  await page.goto('/');await expect(page.locator('.loading')).toContainText('Cannot load scenario0.tiles.png');
+  await page.route('**/assets/terrain-tiles.png',route=>route.abort());
+  await page.goto('/');await expect(page.locator('.loading')).toContainText('Cannot load terrain-tiles.png');
   await expect(page.locator('#world')).toHaveCount(0);
-  await page.unroute('**/assets/scenario0.tiles.png');
+  await page.unroute('**/assets/terrain-tiles.png');
   await page.getByRole('button',{name:'Retry loading farm',exact:true}).click();
   await expect(page.locator('#world')).toBeVisible();
   await expect(page.getByRole('button',{name:'Edit message history'})).toBeVisible();

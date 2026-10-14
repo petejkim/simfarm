@@ -41,7 +41,7 @@ test('original Buy purchases storage roofs and usable records and persists accou
   // No selection/preview after reload: compare all four roof tiles to the original atlas.
   const actual = await page.locator('#world').evaluate((c: HTMLCanvasElement, p) =>
     Array.from(c.getContext('2d')!.getImageData(p.x * 16, p.y * 16, 32, 32).data), { x, y });
-  const atlas = PNG.sync.read(readFileSync('public/assets/scenario4.tiles.png')), pixels: number[] = [];
+  const atlas = PNG.sync.read(readFileSync('public/assets/terrain-tiles.png')), pixels: number[] = [];
   for (let py = 0; py < 32; py++) for (let px = 0; px < 32; px++) {
     const tile = 441 + Math.floor(py / 16) * 2 + Math.floor(px / 16);
     const pos = ((Math.floor(tile / 32) * 16 + py % 16) * atlas.width + tile % 32 * 16 + px % 16) * 4;

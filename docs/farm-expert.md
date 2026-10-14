@@ -67,6 +67,10 @@ Absolute screen positions of hotspots, pictures and tile strips are unchanged. T
 
 ## 2026-10-13 — shared crop tile and photograph sheets
 
+2026-10-14 follow-up: the unused `crop-tiles.png` export and old full-window previews described below are
+now removed. Runtime continues using `crop-cards.png` and the shared terrain sheets. In-memory packing,
+source pixel and decoder tests remain; see [generated assets](generated-assets.md).
+
 User requested merging both sets of24 per-crop PNGs. Import now emits `crop-tiles.png` (512×96) and `crop-cards.png` (896×192), packed in the fixed `SHIPPED_CROP_IDS` order, independently of filesystem, scenario or saved slot order. Crop index`i` contributes its eight16×16 growth tiles at `x=(i%4)*128 + stage*16`, `y=floor(i/4)*16`. Its112×64 photograph begins at `x=(i%8)*112`, `y=floor(i/8)*64`. Buy, Sell and Expert select the photograph by crop ID via `cropCardFrame`; they retain their existing Sprite dimensions, artwork, text, controls and layout. GameAssets loads and validates the card sheet once up front. Growth tiles remain an export for preservation/inspection; gameplay already uses the separate shared terrain sheets and does not fetch `crop-tiles.png`.
 
 Original CRPs remain5890bytes each: the eight growth tiles occupy`0x0000..0x03ff`, and the photo's four896-byte planes occupy`0x0400..0x11ff`. Existing source upload evidence at executable`0x468c2..0x46a13` maps the growth tiles; loader`0x46654` reads the original`0x1500` graphics block before definitions. The image offsets and source pixels are retained without reinterpreting any trailing fields/text. SHA256 of all24 complete source CRPs concatenated in fixed ID order is `768620005db9029c888fe78b6a60db64f5ab08b4904bacd778df73a91991f4bf`. These byte layouts are verified against source; the shared PNG layout is explicit native packing, not a recovered DOS atlas. Original sixteen-slot decoding and actual farm slot order remain unchanged.

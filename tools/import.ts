@@ -1,15 +1,12 @@
 import {readEditCursor} from '../src/formats/edit-cursors';
 import {readAboutArtwork,readAboutLogo,readAboutCredits} from '../src/formats/about';
-import {readTownChoiceArtwork,townChoicePressedArtwork} from '../src/formats/town-choice';
+import {readTownChoiceArtwork} from '../src/formats/town-choice';
 import {readBalanceArtwork} from '../src/formats/balance-window';
-import {readEvaluationArtwork} from '../src/formats/evaluation-window';
-import { readMarketArtwork } from '../src/formats/market-window';
 import { readWeatherArtwork,readWeatherScenes,readWeatherVane,readWeatherWallpaper } from '../src/formats/weather-window';
 import { readExpertPortrait,expertLauncherFace } from '../src/formats/expert-cards';
 import { decodeUiContent, readUiContentJson } from '../src/formats/ui-content';
 import { readAircraftArtwork } from '../src/formats/aircraft-window';
-import { readMessageButton } from '../src/formats/message-dialog';
-import { readExamineData, readExamineArtwork } from '../src/formats/examine';
+import { readExamineData } from '../src/formats/examine';
 import { readScheduleArtwork, readFieldGauges } from '../src/formats/schedule-window';
 import { readMapArtwork } from '../src/formats/map-window';
 import { readFile, writeFile, mkdir, readdir, rm } from 'node:fs/promises';
@@ -31,7 +28,6 @@ import { readOriginalMainMenus } from '../src/formats/main-menus';
 import { readSellArtwork, readSellCondition } from '../src/formats/sell-window';
 import { readWindowFrame } from '../src/formats/window-frame';
 import { readBuyArtwork, readBuyCards, readBuyCatalog } from '../src/formats/buy-window';
-import { readBankArtwork } from '../src/formats/bank-artwork';
 import { readEditPalette } from '../src/formats/edit-palette';
 import { readControlBar, timeToggleFaces } from '../src/formats/control-bar';
 import { readPalette, readBitmap, tileAtlas, miniTileAtlas, decodePlanar, readInterleavedScreen, type Palette, type Raster } from '../src/formats/graphics';
@@ -75,9 +71,7 @@ await png('about-window.png',readAboutArtwork(asset('about.bmp'),palette));
 await png('about-logo.png',readAboutLogo(asset('lzrdlogo.bmp'),palette));
 readAboutCredits(asset('creditz.txt'));
 await png('town-choice.png',readTownChoiceArtwork(asset('twnchoic.bmp'),palette));
-await png('town-choice-pressed.png',townChoicePressedArtwork(palette));
 await png('balance-window.png',readBalanceArtwork(asset('cashflow.bmp'),palette));
-await png('evaluation-window.png',readEvaluationArtwork(asset('evaluate.bmp'),palette));
 await png('weather-window.png',readWeatherArtwork(asset('weather.bmp'),palette));
 await png('weather-sky.png',readWeatherScenes(asset('wethsky.btl'),palette));
 await png('weather-ground.png',readWeatherScenes(asset('wethgrnd.btl'),palette));
@@ -93,14 +87,13 @@ await json('traffic-defaults.json', readTrafficDefaults(exe));
 await json('main-menus.json', readOriginalMainMenus(exe));
 for (const e of entries) {
   await writeFile(join(output, 'raw', e.name), e.bytes);
-  if (e.name.endsWith('.bmp')) await png(`${e.name}.png`, readBitmap(e.bytes, palette));
+  // Only the message popup still uses a whole source bitmap; other UI images are prepared separately.
+  if (e.name === 'popup.bmp') await png(`${e.name}.png`, readBitmap(e.bytes, palette));
+  else if (e.name.endsWith('.bmp')) await rm(join(output, `${e.name}.png`), { force: true });
 }
-await png('message-button.png', readMessageButton(asset('buttons.til'), palette));
 await json('examine.json', readExamineData(exe));
-await png('examine-window.png', readExamineArtwork(asset('examine.bmp'), palette));
 await json('buy-catalog.json', readBuyCatalog(exe));
 await png('buy-cards.png', readBuyCards(asset('alltiles.btl'), palette));
-await png('market-window.png', readMarketArtwork(asset('futures.bmp'), palette));
 await png('aircraft-window.png', readAircraftArtwork(asset('airpwndo.bmp'), palette));
 await png('schedule-window.png', readScheduleArtwork(asset('fdstatus.bmp'), palette));
 await png('field-gauges.png', readFieldGauges(asset('fldgrph.til'), palette));
@@ -110,21 +103,18 @@ await png('window-frame.png', readWindowFrame(readBitmap(asset('sellwndo.bmp'), 
 await png('sell-condition.png', readSellCondition(asset('ega16til.til'), palette));
 await png('buy-window.png', readBuyArtwork(asset('buywndo.bmp'), palette));
 await png('time-toggle.png', timeToggleFaces(readBuyArtwork(asset('buywndo.bmp'), palette)));
-await png('bank-terminal.png', readBankArtwork(asset('bankterm.bmp'), palette));
 await png('edit-palette.png', readEditPalette(asset('editeasy.lzs'), palette));
 await png('control-bar.png', readControlBar(asset('cntlbtnh.bmp'), palette));
-await png('tiles.png', tileAtlas(asset('ega16til.til'), palette));
 // Window renderer2b09a: active title1, inactive237, left close control0.
 // These tiles contain artwork only; window titles stay HTML text.
 for (const [name, tile] of [['window-close', 0], ['window-title', 1], ['window-title-inactive', 237], ['window-title-end', 2], ['window-title-end-inactive', 119]] as const)
   await png(`${name}.png`, decodePlanar(asset('ega16til.til').subarray(tile * 128, (tile + 1) * 128), 16, 16, palette));
 for (const name of ['airplane', 'apshadow', 'cropdust', 'tornado', 'swarm']) await png(`${name}.sprites.png`, spriteAtlas(asset(`${name}.spr`), palette));
 await png('masked-tiles.png', tileAtlas(asset('mskdtile.til'), palette, 32, 7));
-for (const name of ['sftitle', 'scenario', 'prsnt480']) await png(`${name}.png`, readInterleavedScreen(asset(`${name}.int`), readPalette(asset(`${name}.pal`))));
+await png('sftitle.png', readInterleavedScreen(asset('sftitle.int'), readPalette(asset('sftitle.pal'))));
 // Custom setup inherits scenario.pal from the geographic chooser. The gameplay
 // palette is restored only after this screen returns to3f854.
 await png('defworld.png', readInterleavedScreen(asset('defworld.int'), readPalette(asset('scenario.pal'))));
-await png('mini-tiles.png', miniTileAtlas(asset('far_mapc.mbm'), readPalette(asset('scenario.pal'))));
 const crops: CropDefinition[] = [];
 const cropBytes = new Map<string, Uint8Array>();
 const inputs = [
@@ -141,7 +131,6 @@ for (const name of (await readdir(join(source, 'CROPS'))).filter(n => /\.crp$/i.
 }
 const cropSheets = cropSpriteSheets(cropBytes, palette);
 // CRP tiles/photos are opaque; lossless RGB avoids storing an unused alpha channel.
-await png('crop-tiles.png', cropSheets.tiles, { colorType: 2 });
 await png('crop-cards.png', cropSheets.cards, { colorType: 2 });
 // Exact obsolete generated crop exports only; keep raw CRPs and other illustrations.
 for (const file of FIXED_CROP_FILES) {
@@ -170,7 +159,7 @@ for (const mode of [0, 1, 2]) {
   for (const suffix of ['', '.rain', '.frost']) for (const inverseSuffix of ['', '.inverted'])
     await rm(join(output, `town-event-tiles-${mode}${suffix}${inverseSuffix}.png`), { force: true });
 }
-// Map window miniature (overlay 8, 2×2 pixels per tile) in the gameplay palette, unlike mini-tiles.png (setup palette).
+// Map window miniature (overlay 8, 2×2 pixels per tile) in the gameplay palette.
 await png('map-tiles.png', miniTileAtlas(asset('far_mapc.mbm'), palette));
 await png('map-tiles.inverted.png', miniTileAtlas(asset('far_mapc.mbm'), inverse(palette)));
 await rm(join(output,'masked-tiles.inverted.png'),{force:true});
@@ -191,18 +180,22 @@ for (let i = 0; i < 8; i++) {
   inputs.push({ name, size: bytes.length, sha256: sha256(bytes) });
   await writeFile(join(output, 'raw', name), bytes);
   const scenario = readScenario(bytes);
-  const loadedCrops = scenario.cropFiles.map(file => {
-    const crop = cropBytes.get(file); if (!crop) throw new Error(`Missing scenario crop ${file}`); return crop;
-  });
-  await png(`scenario${i}.tiles.png`, tileAtlas(patchCropGraphics(asset('ega16til.til'), loadedCrops), palette));
+  for (const file of scenario.cropFiles) if (!cropBytes.has(file)) throw new Error(`Missing scenario crop ${file}`);
+  // Exact legacy exports only: every farm now uses the shared fixed-crop terrain sheets.
+  await rm(join(output, `scenario${i}.tiles.png`), { force: true });
 }
 const music = [];
 for (const entry of entries.filter(e => e.name.endsWith('.xmi'))) {
   const id = entry.name.slice(0, -4), sequence = decodeXmidi(entry.bytes);
   await writeFile(join(output, `${id}.mid`), encodeMidi(sequence));
-  await json(`${id}.music.json`, sequence);
+  // Retire oscillator sequence metadata and the abandoned MP3 experiment for these known tracks only.
+  for (const suffix of ['music.json', 'audio.json', 'mp3']) await rm(join(output, `${id}.${suffix}`), { force: true });
   music.push({ id, duration: sequence.endTick / 120 });
 }
 await json('catalog.json', { crops, music, tileCount: asset('ega16til.til').length / 128, palette });
 await json('manifest.json', { inputs, entries: entries.map(({ name, offset, bytes }) => ({ name, offset, size: bytes.length, sha256: sha256(bytes) })) });
+// Obsolete derived exports only. Preserve raw originals and their decoders/tests as reconstruction evidence.
+for (const name of ['bank-terminal', 'evaluation-window', 'market-window', 'examine-window', 'message-button',
+  'town-choice-pressed', 'crop-tiles', 'mini-tiles', 'scenario', 'prsnt480', 'tiles', 'edit-help', 'sell-conditions'])
+  await rm(join(output, `${name}.png`), { force: true });
 console.log(`Imported ${entries.length} resources, ${crops.length} crops, ${asset('ega16til.til').length / 128} tiles. Source files unchanged.`);

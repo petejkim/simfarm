@@ -31,7 +31,7 @@ test('Build water storage collects from live irrigation, refills distant troughs
   await page.reload(); await page.locator('#load-farm-file').setInputFiles(path); await expect(page.locator('#save-status')).toHaveText('Farm loaded.');
   const actual = await page.locator('#world').evaluate((c: HTMLCanvasElement) =>
     Array.from(c.getContext('2d')!.getImageData(13 * 16, 11 * 16, 16, 16).data));
-  const atlas = PNG.sync.read(readFileSync('public/assets/scenario4.tiles.png')), pixels: number[] = [];
+  const atlas = PNG.sync.read(readFileSync('public/assets/terrain-tiles.png')), pixels: number[] = [];
   for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
     const offset = ((Math.floor(481 / 32) * 16 + y) * atlas.width + 481 % 32 * 16 + x) * 4;
     pixels.push(...atlas.data.subarray(offset, offset + 4));

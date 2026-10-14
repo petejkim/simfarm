@@ -42,7 +42,7 @@ test('original Buy and palette purchase a cow and usable supplies and save their
   // Verify source full-trough pixels after reload removes the selection border.
   const actual = await page.locator('#world').evaluate((c: HTMLCanvasElement) =>
     Array.from(c.getContext('2d')!.getImageData(12 * 16, 10 * 16, 16, 16).data));
-  const atlas = PNG.sync.read(readFileSync('public/assets/scenario4.tiles.png')), pixels: number[] = [];
+  const atlas = PNG.sync.read(readFileSync('public/assets/terrain-tiles.png')), pixels: number[] = [];
   for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
     const offset = ((Math.floor(176 / 32) * 16 + y) * atlas.width + 176 % 32 * 16 + x) * 4;
     pixels.push(...atlas.data.subarray(offset, offset + 4));
