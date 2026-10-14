@@ -225,7 +225,8 @@ export function FarmMap({ cursor, animateWorkers, autoScroll, viewportRef, scena
       const canvas = canvasRef.current!, context = canvas.getContext('2d')!, painted = painter.current;
       // Only cells whose look changed are repainted. Aircraft and disasters draw across cells, so a frame with
       // them (or just after them), or a new canvas, repaints the whole world.
-      const overlaid = Boolean(flight || disasters), full = overlaid || painted.overlaid || painted.canvas !== canvas;
+      // drawDisasters draws only tornado (1) and swarm (32); the state also exists when neither is visible.
+      const overlaid = Boolean(flight || (disasters && (disasters.flags & 33))), full = overlaid || painted.overlaid || painted.canvas !== canvas;
       painted.world.paint(context, scenario, tiles, maskedTiles, workerAnimation.current.phase, townEventTiles, full);
       painted.overlaid = overlaid; painted.canvas = canvas;
       if (flight) drawAircraft(context, flight, flightSprites);
