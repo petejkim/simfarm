@@ -60,7 +60,7 @@ test('Aircraft repairs preserve saved age, cash failures explain disabled servic
   await reveal(page, '#aircraft-repair'); await page.locator('#aircraft-repair').click(); game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind: 'repair' } });
   await expect(page.getByRole('meter',{name:'Damage',exact:true})).toHaveAttribute('aria-valuenow','0'); await expect(page.locator('#farm-cash')).toHaveText('$0');
   const path = 'artifacts/browser-aircraft-service.simfarm.json'; expect(await save(page, path)).toEqual(JSON.parse(game.save(4)));
-  const malformed = JSON.parse(game.save(4)); malformed.runtime.aircraftService.selectedChemical = 220;
+  const malformed = JSON.parse(game.save(4)); malformed.runtime.aircraftService.selectedChemical = 219; // 220 (fertilizer) is valid natively
   await page.locator('#load-farm-file').setInputFiles({ name: 'bad-aircraft.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(malformed)) });
   await expect(page.locator('#save-status')).toContainText('aircraft chemical'); expect(await save(page, path)).toEqual(JSON.parse(game.save(4)));
   await page.setViewportSize({ width: 1280, height: 844 }); await reveal(page, '#aircraft-panel'); await page.locator('#aircraft-panel').scrollIntoViewIfNeeded();

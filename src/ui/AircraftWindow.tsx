@@ -8,15 +8,20 @@ import { BevelButton } from './chrome/BevelButton';
 import { SunkenInset } from './chrome/SunkenInset';
 import { Sprite, spriteFace } from './chrome/Sprite';
 const money=(n:number)=>`$${n.toLocaleString('en-US')}`;
-export const CHEMICAL_NAMES:Record<number,string>={221:'Pesticide',222:'Herbicide',223:'Fungicide'};
+export const CHEMICAL_NAMES:Record<number,string>={220:'Fertilizer',221:'Pesticide',222:'Herbicide',223:'Fungicide'};
 const names=CHEMICAL_NAMES;
+/** First tile of field badge 23 (low nutrients), 539+23×4; parts are row-major 2×2. */
+const FERTILIZER_BADGE=631;
 /** Original AIRPLANE window (airpwndo.bmp) rebuilt from shared chrome: refuel/load/repair picture buttons
- * with price insets; the gauge inset with field-gauge sprites; chemical picture buttons; FLY!/CLOSE. */
+ * with price insets; the gauge inset with field-gauge sprites; chemical picture buttons; FLY!/CLOSE.
+ * Native (user request): a 2×2 chemical grid led by fertilizer, whose picture is the original "needs fertilizer"
+ * field badge 23 (tiles 631..634). The three original pictures are exactly field badges 16/20/21 with the 1px red
+ * edge in face grey, so the fertilizer badge gets the same grey edge. */
 export function AircraftWindow(props: Parameters<typeof AircraftWindowBody>[0]) {
   return <WindowContents windowKey="aircraft"><AircraftWindowBody {...props} /></WindowContents>;
 }
-function AircraftWindowBody({assets,snapshot,selectedSlot,onCommand,onFly}:{
-  assets:GameAssets;snapshot:GameSnapshot;selectedSlot:number|null;
+function AircraftWindowBody({assets,snapshot,tiles,selectedSlot,onCommand,onFly}:{
+  assets:GameAssets;snapshot:GameSnapshot;tiles:HTMLImageElement;selectedSlot:number|null;
   onCommand:(command:GameCommand)=>void;onFly:(slot:number)=>boolean;
 }){
   const windows=useWindows(),planes=snapshot.scenario.equipment.filter(e=>e.active&&e.type===8);
@@ -32,9 +37,12 @@ function AircraftWindowBody({assets,snapshot,selectedSlot,onCommand,onFly}:{
       <BevelButton id={`aircraft-${kind}`} className="aircraft-picture" shadow faceStyle={spriteFace(art,24,faceY)} disabled={blocked||!q?.ok||!q.changed} aria-label={label} title={label} onClick={()=>service({kind})}/>
       <SunkenInset className="aircraft-price-box"><output id={`aircraft-${kind}-price`} aria-label={`${kind} cost`}>{price??'—'}</output></SunkenInset>
     </div>;};
-  const chemicalButton=(chemical:221|222|223,faceY:number)=>{const q=quote({kind:'chemical',chemicalType:chemical});
-    return <BevelButton key={chemical} data-aircraft-chemical={chemical} className="aircraft-picture" shadow faceStyle={spriteFace(art,200,faceY)} aria-label={names[chemical]} title={names[chemical]}
-      pressed={snapshot.aircraftService.selectedChemical===chemical} disabled={blocked||!q?.ok} onClick={()=>service({kind:'chemical',chemicalType:chemical})}/>;};
+  const chemicalButton=(chemical:220|221|222|223,faceY:number|null)=>{const q=quote({kind:'chemical',chemicalType:chemical});
+    return <BevelButton key={chemical} data-aircraft-chemical={chemical} className="aircraft-picture" shadow faceStyle={faceY===null?undefined:spriteFace(art,200,faceY)} aria-label={names[chemical]} title={names[chemical]}
+      pressed={snapshot.aircraftService.selectedChemical===chemical} disabled={blocked||!q?.ok} onClick={()=>service({kind:'chemical',chemicalType:chemical})}>
+      {faceY===null&&<span className="aircraft-badge">{[0,1,2,3].map(p=>{const tile=FERTILIZER_BADGE+p;
+        return <Sprite key={p} image={tiles.src} x={tile%32*16} y={Math.floor(tile/32)*16} width={16} height={16}/>;})}</span>}
+    </BevelButton>;};
   return <GameWindow windowKey="aircraft" title="AIRPLANE" framed>
     <section id="aircraft-panel" aria-label="Aircraft service" className="aircraft-window">
       <div className="aircraft-services">{refill('fuel',6)}{refill('load',61)}{refill('repair',116)}</div>
@@ -48,7 +56,7 @@ function AircraftWindowBody({assets,snapshot,selectedSlot,onCommand,onFly}:{
         </div>)}
       </SunkenInset>
       <div className="aircraft-controls">
-        {chemicalButton(221,8)}{chemicalButton(222,48)}{chemicalButton(223,88)}
+        <div className="aircraft-chemicals">{chemicalButton(220,null)}{chemicalButton(221,8)}{chemicalButton(222,48)}{chemicalButton(223,88)}</div>
         <BevelButton id="fly-aircraft" className="aircraft-caption" shadow aria-label="Fly aircraft" disabled={blocked||!plane||Boolean(base&&!base.ok&&base.reason!=='insufficient-cash')}
           onClick={()=>{if(plane)onFly(plane.slot);}}>FLY!</BevelButton>
         <BevelButton className="aircraft-caption" shadow onClick={()=>windows.close('aircraft')}>CLOSE</BevelButton>

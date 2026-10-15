@@ -99,7 +99,7 @@ test('service failures are atomic and selector price remains shared across plane
   const reject = (slot: number, action: AircraftServiceAction, reason: string) => {
     const before = JSON.stringify(f); assert.deepEqual(serviceAircraft(w, a, s, slot, action), { ok: false, reason }); assert.equal(JSON.stringify(f), before);
   };
-  reject(0, { kind: 'repair' }, 'not-aircraft'); reject(first.slot, { kind: 'chemical', chemicalType: 220 }, 'invalid-service');
+  reject(0, { kind: 'repair' }, 'not-aircraft'); reject(first.slot, { kind: 'chemical', chemicalType: 219 }, 'invalid-service'); reject(first.slot, { kind: 'chemical', chemicalType: 224 }, 'invalid-service'); // 220 (fertilizer) is a native addition
   first.flags |= 2; reject(first.slot, { kind: 'fuel' }, 'not-parked'); first.flags &= ~2;
   const v = new DataView(first.bytes.buffer); v.setUint16(20, 256, true); reject(first.slot, { kind: 'fuel' }, 'invalid-supplies'); v.setUint16(20, 0, true);
   w.farm.cash = 254; reject(first.slot, { kind: 'fuel' }, 'insufficient-cash'); w.farm.cash = 100000;

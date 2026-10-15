@@ -72,3 +72,9 @@ Validation: all aircraft browser specs pass (9/9).
 ## Whole gauge dials (2026-10-12)
 
 The same cropping fixed in Schedule affected AIRPLANE's gauges. Each gauge now stacks the bitmap's 56×32 dial (96, 8+48i) with the 48×24 field-gauge frame at offset 8,8. The spec checks the dial size, the frame offset and the frame pixels. All aircraft specs pass (9/9).
+
+## Native fertilizer and 2×2 chemical grid (2026-10-14, user request)
+
+The chemical pictures form a 2×2 grid, row-major: **Fertilizer 220** (native), Pesticide 221, Herbicide 222, Fungicide 223. They are 38×38 and 2px apart, 4px right of the gauge inset, with the grid at client y19. FLY! and CLOSE (44×20) are centred beneath it at y113 and y136, leaving 12px below CLOSE; this spacing was hand-tuned by the user. The source column (x197; FLY! y125, CLOSE y146) no longer applies to these controls. FLY! closes AIRPLANE on a successful takeoff, as the source Fly handler 0x30b4a does; it previously only deactivated the window.
+
+Picture evidence: the three source pictures in airpwndo.bmp (client 200, 8/48/88) are exactly field-status badges 16/20/21 (tiles 539+4×badge, row-major 2×2). The only difference is the 1px edge, red `#c20404` in the badge and face grey `#c2c2c2` in the button; pesticide also has 4 interior white→grey pixels. No source fertilizer picture exists in the window art, so fertilizer uses badge 23 ("low nutrients", tiles 631..634, written by field status 0x19002 when +28 < 128) at 1×, with the same grey edge. The browser test compares every pixel of that face against the imported tiles. Disabled dimming matches the background-image pictures.

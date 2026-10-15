@@ -5,7 +5,8 @@ import { MAX_EQUIPMENT_SLOT, type EquipmentRecord } from '../formats/equipment';
 import { createEquipment } from './equipment-rental';
 import { validAircraftHome } from './aircraft-home';
 
-export const AIRCRAFT_CHEMICALS = [221, 222, 223] as const;
+/** 221..223 are original; fertilizer 220 is a native addition (user request, docs/aircraft.md "Aerial fertilizer"). */
+export const AIRCRAFT_CHEMICALS = [220, 221, 222, 223] as const;
 /** Original shared DS65fa/65fc selector; initialized221, independent of loaded word+34. */
 export interface AircraftServiceState { selectedChemical: number }
 export const createAircraftServiceState = (): AircraftServiceState => ({ selectedChemical: 221 });

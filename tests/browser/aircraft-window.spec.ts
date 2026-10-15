@@ -34,7 +34,7 @@ test('AIRPLANE source layout, gauges and real text stay1x, move independently an
   await expect(client.locator('img,canvas')).toHaveCount(0);
   expect(await win.locator('.game-window-title').textContent()).toBe('AIRPLANE');
   for(const label of ['Gas','Spray','Damage','FLY!','CLOSE'])await expect(client.getByText(label,{exact:true})).toBeVisible();
-  const controls=client.locator('button');expect(await controls.count()).toBe(8);
+  const controls=client.locator('button');expect(await controls.count()).toBe(9); // eight source controls plus native fertilizer
   const source=(n:string)=>readFileSync(new URL('../../../simfarm-dos/'+n,import.meta.url)),entries=readArchive(source('MEGADATA.IDX'),source('MEGADATA.EEA'));
   const asset=(n:string)=>entries.find(e=>e.name===n)!.bytes,palette=readPalette(asset('simfarm.pal'));
   for(const [i,frame] of [14,12,1].entries()){
@@ -87,4 +87,29 @@ test('chemical icon order and full-width payload price match paid service across
   await selectPlane(page,2);await expect(page.getByRole('meter',{name:'Payload',exact:true})).toHaveAttribute('aria-valuenow','0');await page.locator('[data-aircraft-chemical="223"]').click();game.dispatch({type:'service-aircraft',slot:2,action:{kind:'chemical',chemicalType:223}});
   await selectPlane(page,1);await expect(page.locator('[data-aircraft-chemical="223"]')).toHaveAttribute('aria-pressed','true');
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));await page.reload();await load(page,game.save(4));await openWindow(page,'aircraft');await expect(page.locator('[data-aircraft-chemical="223"]')).toHaveAttribute('aria-pressed','true');expect(await save(page)).toEqual(JSON.parse(game.save(4)));
+});
+
+test('native fertilizer leads a 2×2 chemical grid with the original low-nutrient badge, loads like the other chemicals and is saved',async({page})=>{
+  const game=fixture().load().withAllCrops(browserCrops);await page.goto('/');await load(page,game.save(4));await mapClick(page,21,22);
+  const client=page.locator('.aircraft-window'),c=(await client.boundingBox())!;
+  const at=async(selector:string)=>{const r=(await page.locator(selector).boundingBox())!;return [r.x-c.x,r.y-c.y,r.width,r.height];};
+  const [fx,fy]=await at('[data-aircraft-chemical="220"]');
+  // Row-major: fertilizer, pesticide / herbicide, fungicide; 38px buttons 2px apart.
+  for(const [type,col,row] of [[221,1,0],[222,0,1],[223,1,1]] as const)expect(await at(`[data-aircraft-chemical="${type}"]`)).toEqual([fx+col*40,fy+row*40,38,38]);
+  // Hand-tuned native layout (user edit): grid at y19, FLY!/CLOSE centred beneath it at y113/136.
+  expect(fy).toBe(19);expect(await at('#fly-aircraft')).toEqual([fx+17,113,44,20]);expect(await at('.aircraft-caption:last-child')).toEqual([fx+17,136,44,20]);
+  // Field badge 23 (tiles631..634) at 1×, its 1px edge in face grey like the source pictures.
+  const tiles=PNG.sync.read(readFileSync('public/assets/terrain-tiles.png')),expected:number[]=[];
+  for(let y=0;y<32;y++)for(let x=0;x<32;x++){
+    const tile=631+(y>>4)*2+(x>>4),i=((Math.floor(tile/32)*16+(y&15))*tiles.width+tile%32*16+(x&15))*4;
+    expected.push(...(x===0||y===0||x===31||y===31?[0xc2,0xc2,0xc2,255]:tiles.data.subarray(i,i+4)));
+  }
+  expect(Array.from(PNG.sync.read(await page.locator('.aircraft-badge').screenshot()).data)).toEqual(expected);
+  await expect(page.locator('[data-aircraft-chemical="220"]')).toHaveAccessibleName('Fertilizer');
+  await page.locator('[data-aircraft-chemical="220"]').click();game.dispatch({type:'service-aircraft',slot:1,action:{kind:'chemical',chemicalType:220}});
+  await expect(page.locator('[data-aircraft-chemical="220"]')).toHaveAttribute('aria-pressed','true');
+  await page.locator('#aircraft-load').click();game.dispatch({type:'service-aircraft',slot:1,action:{kind:'load'}});
+  await expectFarmCash(page,game.getSnapshot().scenario.farm.cash);await expect(page.getByRole('meter',{name:'Payload',exact:true})).toHaveAttribute('aria-valuenow','255');
+  const saved=await save(page);expect(saved).toEqual(JSON.parse(game.save(4)));expect(saved.runtime.aircraftService.selectedChemical).toBe(220);
+  await page.locator('.aircraft-window').screenshot({path:'artifacts/browser-aircraft-fertilizer.png'});
 });

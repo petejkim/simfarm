@@ -257,7 +257,7 @@ export function readNativeSave(text: string): { scenarioId: number | null; state
     waterDisasters: save.version >= 14 ? decodeWaterDisasters(r.waterDisasters) : createWaterDisasters(),
     equipmentAnimationTick: number(r.equipmentAnimationTick, 0, 65535, 'equipment animation tick'),
     animalFrame,
-    aircraftService: save.version >= 11 ? { selectedChemical: number(object(r.aircraftService, 'aircraft service').selectedChemical, 221, 223, 'aircraft chemical') }
+    aircraftService: save.version >= 11 ? { selectedChemical: number(object(r.aircraftService, 'aircraft service').selectedChemical, 220, 223, 'aircraft chemical') }
       : createAircraftServiceState(),
     aircraftFlight: save.version >= 12 ? decodeFlight(r.aircraftFlight, s, speed) : null,
     cropMarketPrices, market,

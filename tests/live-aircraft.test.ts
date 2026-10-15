@@ -38,10 +38,10 @@ test('current aircraft selection validates, v10 migrates once, failed commands/d
   const f = aircraftFixture(), game = f.load(); game.dispatch({ type: 'buy-aircraft' });
   let before = game.save(4); game.dispatch({ type: 'buy-aircraft' });
   assert.deepEqual(game.getSnapshot().lastAircraftPurchaseResult, { ok: false, reason: 'no-parking' }); assert.equal(game.save(4), before);
-  game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind: 'chemical', chemicalType: 220 } }); assert.equal(game.save(4), before);
+  game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind: 'chemical', chemicalType: 219 } }); assert.equal(game.save(4), before);
   game.dispatch({ type: 'service-aircraft', slot: 1, action: { kind: 'chemical', chemicalType: 222 } });
   const save = JSON.parse(game.save(4));
-  for (const value of [null, {}, { selectedChemical: 220 }, { selectedChemical: 224 }, { selectedChemical: 221.5 }])
+  for (const value of [null, {}, { selectedChemical: 219 }, { selectedChemical: 224 }, { selectedChemical: 221.5 }])
     assert.throws(() => readNativeSave(JSON.stringify({ ...save, runtime: { ...save.runtime, aircraftService: value } })), /aircraft/);
   save.version = 10; delete save.runtime.aircraftService;
   const old = GameSimulation.load(JSON.stringify(save), f.crops).simulation;

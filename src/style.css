@@ -571,7 +571,12 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .aircraft-gauge>*{grid-area:1/1}
 .aircraft-gauge-frame{margin:8px 0 0 8px}
 .aircraft-label{width:78px;height:10px;margin-top:1px;text-align:center}
-.aircraft-controls{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin:5px 0 0 32px}
+.aircraft-controls{display:flex;flex-direction:column;align-items:center;gap:2px;align-self:stretch;margin:5px 0 2px 4px}
+.aircraft-controls>.aircraft-caption:first-of-type{margin: 14px 0 2px 0}
+.aircraft-chemicals{display:grid;grid-template-columns:repeat(2,38px);gap:2px;margin-top:14px}
+.aircraft-badge{position:relative;display:grid;grid-template-columns:repeat(2,16px);width:32px;height:32px}
+.aircraft-badge::after{content:'';position:absolute;inset:0;border:1px solid #c2c2c2}
+.bevel-button:disabled .aircraft-badge::before{content:'';position:absolute;inset:0;z-index:1;background:#c2c2c260}
 .aircraft-caption{width:44px;height:20px;font:bold 10px/1 var(--font-ui)}
 .aircraft-caption:last-child{margin-top:-1px}
 

@@ -174,6 +174,9 @@ export function advanceFlight(world: Scenario, finances: FinancialState, crops: 
     if (f.sprayFrame === 0) {
       const { x, y } = flightPosition(f), field = world.fields.find(field => field.contains(x, y));
       const chemical = aircraftChemical(e), mode = chemical === 221 ? 8 : chemical === 222 ? 10 : chemical === 223 ? 6 : 0;
+      // Native aerial fertilizer (user request): the ground pass's nutrient effect (mode1, 255, capped at 255) on
+      // every hit, like the sprays' full ground effect, and no toxicity, matching ground fertilizer.
+      if (field && chemical === 220) changeFieldCondition(field, crops[field.cropSlot], world.regionalConditions, 1, 255);
       if (field && mode) {
         const offset = chemical === 221 ? 20 : chemical === 222 ? 21 : 22;
         changeFieldCondition(field, crops[field.cropSlot], world.regionalConditions, 3, 2);
