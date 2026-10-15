@@ -31,7 +31,7 @@ export const runtimePublicFiles = new Set([
     'map-window.png', 'masked-tiles.png', 'move-drop.png', 'move-pick.png', 'new-farm-records.json',
     'new-farm-runtime.json', 'new-farm-setup.json', 'popup.bmp.png', 'region-map.inverted.png',
     'region-map.png', 'rodeo.mid', 'schedule-window.png', 'sell-condition.png', 'sell-window.png',
-    'sftitle.png', 'swarm.sprites.png', 'terrain-tiles.frost.png', 'terrain-tiles.png',
+    'sftitle.png', 'share.jpg', 'swarm.sprites.png', 'terrain-tiles.frost.png', 'terrain-tiles.png',
     'terrain-tiles.rain.png', 'time-toggle.png', 'tornado.sprites.png', 'town-choice.png',
     'town-event-tiles.png', 'traffic-defaults.json', 'ui-content.json', 'weather-ground.png',
     'weather-sky.png', 'weather-vane.png', 'weather-wallpaper.png', 'weather-window.png',

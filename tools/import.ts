@@ -59,6 +59,8 @@ async function png(name: string, raster: Raster, options?: PackerOptions) {
 }
 await mkdir(join(output, 'raw'), { recursive: true });
 await mkdir(join(preservation, 'crops'), { recursive: true });
+// User-supplied sharing artwork is copied unchanged; keep docs/ outside the public/deployed tree.
+await writeFile(join(output, 'share.jpg'), await readFile(new URL('../docs/share.jpg', import.meta.url)));
 const [index, data, exe] = await Promise.all([read('MEGADATA.IDX'), read('MEGADATA.EEA'), read('SIMFARM.EXE')]);
 const entries = readArchive(index, data);
 const assets = new Map(entries.map(e => [e.name, e.bytes]));

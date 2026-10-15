@@ -65,6 +65,17 @@ Original title artwork and supplied files remain unchanged; all three generated 
 runtime deployment inventory. The production installability check compares every icon pixel to the
 source crop and checks opacity, served dimensions, manifest entries and the Apple link.
 
+## Social-sharing preview (2026-10-15)
+
+The user-supplied `docs/share.jpg` is the 1200×630 social preview. Import copies it unchanged to
+`public/assets/share.jpg`; the explicit runtime inventory includes it in `dist/assets/share.jpg`.
+Only that image is copied, not the documentation directory. Source JPEG size 453117 bytes, SHA-256
+`04575dab49ee2f638fdace02998dbbdcb4df5d3cf07754954b877ab51466b7b6`.
+
+The production browser check disables page JavaScript, reads the metadata, verifies the served JPEG
+matches docs/share.jpg byte-for-byte and decodes its actual 1200×630 dimensions. It does not claim that
+external sharing-platform caches have refreshed or that a deployment has occurred.
+
 ## Earlier generated-output cleanup (2026-10-14)
 
 The cleanup removed 58 existing files (3,697,128 bytes):
