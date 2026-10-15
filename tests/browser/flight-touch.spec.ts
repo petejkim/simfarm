@@ -53,6 +53,7 @@ test.describe('touch flight controls', () => {
     await expect(page.locator('#flight-landing')).toHaveText('lands at airport');
     await expectClearLayout(page);
     await page.screenshot({ path: 'artifacts/browser-flight-touch-portrait.png' });
+    await expect(button(page, 'End flight')).toHaveCSS('font-weight', '700');
 
     // 10px text, and no readout moves when another value's text changes width (W → NW, 9% → 100%, Spray → Spraying).
     await expect(page.locator('.flight-readouts')).toHaveCSS('font-size', '10px');

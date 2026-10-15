@@ -75,7 +75,7 @@ test('all existing message consumers produce identical display output from JSON 
   expect(readWaterStorageMessage(messages)).toBe(readWaterStorageMessage(bytes));
   expect(readRodeoInvitation(messages)).toBe(readRodeoInvitation(bytes));
   for (const kind of ['field', 'building'] as const) expect(readBulldozeMessage(messages, kind)).toBe(readBulldozeMessage(bytes, kind));
-  expect(readBulldozeMessage(messages, 'field')).toBe('Are you sure you want to\ndestroy this field?');
+  expect(readBulldozeMessage(messages, 'field')).toBe('Are you sure you want to destroy this field?');
 });
 
 test('bundle validation rejects missing IDs, unknown commands, invalid geometry and unsafe sound/links', () => {

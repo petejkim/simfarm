@@ -27,8 +27,8 @@ test('original popup caller geometry, event text, portrait and YES/CANCEL button
   exact(0x9a7b,'6a406a70');exact(0x9a82,'051800');exact(0x9a89,'054800'); //112×64 at72,24
   exact(0x9c40,'6a186a30689c00');exact(0x9493,'69c04002'); //48×24 at y156;576-byte stride
   const events=asset('events.dat');assert.equal(createHash('sha256').update(events).digest('hex'),'616d4c3c7de1e6f60718933a4cefacaacaf915c0c704d1dd179165eb45e346cb');
-  assert.equal(readBulldozeMessage(events,'building'),'Are you sure you want to\ndestroy this structure?');
-  assert.equal(readBulldozeMessage(events,'field'),'Are you sure you want to\ndestroy this field?');
+  assert.equal(readBulldozeMessage(events,'building'),'Are you sure you want to destroy this structure?');
+  assert.equal(readBulldozeMessage(events,'field'),'Are you sure you want to destroy this field?');
   assert.throws(()=>readBulldozeMessage(events.subarray(0,47*256-1),'building'),/Truncated/);
   assert.throws(()=>readBulldozeMessage(events.subarray(0,48*256-1),'field'),/Truncated/);
   assert.equal(exe.subarray(0x846f0+0x5a1a,0x846f0+0x5a1a+64).toString(),'You cannot bulldoze a field while equipment is operating in it.\0');

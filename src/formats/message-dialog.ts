@@ -4,7 +4,7 @@ import {readEventMessage,type EventMessages} from './event-messages';
 /** events.dat reader uses fixed256-byte records; retain physical rows and
  * ignore @ padding only for display. Raw imported data remains unchanged. */
 export function readBulldozeMessage(bytes: EventMessages, kind: 'building' | 'field'): string {
-  return readEventMessage(bytes,kind==='building'?46:47,'Truncated bulldoze message').physicalText;
+  return readEventMessage(bytes,kind==='building'?46:47,'Truncated bulldoze message').paragraph;
 }
 /** 9654/9c3a draws48×24 buttons from buttons.til at576-byte strides.
  * Retain the frame, replace its bitmap caption with actual HTML text. */

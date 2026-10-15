@@ -28,7 +28,9 @@ test('original movable MESSAGE confirmation cancels without mutation, blocks bac
   const f=breedingFixture(),g=f.load().withAllCrops(browserCrops);g.dispatch({type:'build',buildingType:67,x:40,y:40});g.dispatch({type:'buy-equipment',equipmentType:0,x:40,y:40});
   await load(page,g.save(4));await tool(page);await click(page,21,21);
   const dialog=page.getByRole('dialog',{name:'Message',exact:true});await expect(dialog).toBeVisible();
-  await expect(dialog.locator('#bulldoze-message-text')).toHaveText('Are you sure you want to\ndestroy this structure?');
+  await expect(dialog.locator('#bulldoze-message-text')).toHaveText('Are you sure you want to destroy this structure?');
+  // Same text style as the other message windows (shared .message-text: Roboto 10px, normal wrapping).
+  for(const [p,v] of [['font-size','10px'],['font-family','Roboto, Arial, Helvetica, sans-serif'],['white-space','normal']])await expect(dialog.locator('#bulldoze-message-text')).toHaveCSS(p,v);
   const photo=dialog.locator('.message-portrait');
   expect(await dialog.evaluate(d=>(d as HTMLDialogElement).open&&d.matches(':modal'))).toBe(true);
   // A map click outside the modal cannot demolish anything or switch tools.

@@ -4296,3 +4296,13 @@ User request: on touch screens, climb/descend now sit above turn left/right in o
 User request: the plane can load and spray fertilizer, matching the other chemicals. Loading/pricing/refunds are unchanged. Each hit applies the full ground fertilizer effect (mode1 255, capped), with no toxicity. The AIRPLANE chemical pictures are now a 2×2 grid led by fertilizer, using the original low-nutrient field badge 23 with the source pictures' grey edge (the source pictures were verified to be badges 16/20/21). FLY!/CLOSE are centred under the grid at y113/136, per the user's own CSS edit made during this change. FLY! now closes AIRPLANE on takeoff (user request, matching source 0x30b4a); before, it only deactivated the window. Saves accept selection 220 without a version bump. Details: aircraft.md "Aerial fertilizer", aircraft-window.md.
 
 Build passes. Full unit suite passes (1012 cases; two older fixtures that used 220 as invalid now use 219). Browser: aircraft-window (4, including the pixel-exact badge and grid/FLY/CLOSE geometry), aircraft, aircraft-flight (now also asserting AIRPLANE closes on takeoff), flight-touch and crop-supplies specs pass. The full browser suite was not rerun. Logs: artifacts/aerial-fertilizer-*.log; screenshot artifacts/browser-aircraft-fertilizer.png inspected.
+
+## 2026-10-15 — bulldoze message style, flight button weight
+
+User requests:
+- The Bulldoze confirmation uses the shared `.message-text` style and paragraph text like other message windows. `readBulldozeMessage` now returns the joined paragraph; decoder tests were updated.
+- Flight touch buttons use font weight 700.
+
+Loading fonts from Google Fonts was tried and reverted at the user's request after sizing showed the Latin font files are small (≈81 KB self-hosted; see ui-components.md Typography). Fonts remain self-hosted via @fontsource.
+
+Build passes. Unit: ui-content and message-dialog pass. Browser: about (Roboto Mono face loaded), direct-bulldoze (new style assertions), manual-removal, boot-screen, flight-touch (weight 700), new-game-layout and bulldoze pass. Full suites not rerun.
