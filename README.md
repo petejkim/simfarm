@@ -60,7 +60,7 @@ Open the local URL printed by Vite. To import from another directory, replace th
 ./tools/bun run import /path/to/simfarm-dos
 ```
 
-The importer reads original files without modifying them and generates browser assets in ignored `public/assets/`. Original game files and generated assets are not included in this repository. Re-run import after changes to the importer; see the [generated asset inventory](docs/generated-assets.md).
+The importer reads original files without modifying them and generates runtime browser assets in ignored `public/assets/`. Preservation copies and the source-hash manifest stay in ignored `artifacts/original-assets/`, outside the deployed site. Original game files and generated assets are not included in this repository. Re-run import after changes to the importer; see the [generated asset inventory](docs/generated-assets.md).
 
 Dependencies, downloaded tools and caches stay in repository-local `node_modules/`, `.tools/`, `.cache/` and, for optional analysis tools, `.venv/`. Use `./tools/bun` for project commands.
 
@@ -73,7 +73,7 @@ After installing dependencies and importing assets:
 ./tools/bun run preview
 ```
 
-`build` runs TypeScript checking and creates a production build in `dist/`. `preview` serves that build locally. The built site includes the imported assets and can run without access to the original DOS directory. Vite uses root-relative asset URLs; the current configuration expects hosting at the site root.
+`build` runs TypeScript checking and creates a production build in `dist/`. `preview` serves that build locally. The built site includes runtime assets, including the original files still decoded by the browser; unused preservation files, the source manifest and local dotfiles are excluded. Deploy `dist/` directly; it runs without access to the original DOS directory. Vite uses root-relative asset URLs; the current configuration expects hosting at the site root.
 
 ## Development and validation
 

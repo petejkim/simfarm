@@ -5,5 +5,5 @@
     "noEmit": true, "allowImportingTsExtensions": true, "esModuleInterop": true,
     "skipLibCheck": true, "jsx": "react-jsx", "types": ["bun", "vite/client"]
   },
-  "include": ["src", "tools", "tests", "playwright.config.ts", "vite.config.ts"]
+  "include": ["src", "tools", "tests", "playwright.config.ts", "playwright.production.config.ts", "vite.config.ts"]
 }

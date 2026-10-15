@@ -81,7 +81,7 @@ test('unpaid annual taxes show the original penalty, persist and retry at the ne
   await page.goto('/'); await page.locator('#load-farm-file').setInputFiles(file(yearEnd(0)));
   await expect(page.locator('#save-status')).toHaveText('Farm loaded.'); await (await speedItem(page,'#next-day')).click();
   await expect(page.locator('#town-choice')).toHaveCount(0);
-  await expect(page.locator('#finance-message-text')).toHaveText(readFinanceMessage(readFileSync('public/assets/raw/events.dat'),159));
+  await expect(page.locator('#finance-message-text')).toHaveText(readFinanceMessage(readFileSync('artifacts/original-assets/events.dat'),159));
   await page.locator('#finance-message-ok').click();
   const debt=(await farmSnapshot(page)).finances.debt;expect(debt.unpaidTaxes).toBe(5893);expect(debt.taxCountdown).toBe(3);
   const download = page.waitForEvent('download'); await page.locator('#file-menu-button').click(); await page.getByRole('menuitem', { name: 'Save to File...', exact: true }).click();
@@ -91,7 +91,7 @@ test('unpaid annual taxes show the original penalty, persist and retry at the ne
   expect((await farmSnapshot(page)).finances.debt.unpaidTaxes).toBe(5893);
   for (let day = 0; day < 28; day++) { await (await speedItem(page,'#next-day')).click(); }
   await expect(page.locator('#farm-date')).toContainText('February 1, 1994');
-  await expect(page.locator('#finance-message-text')).toHaveText(readFinanceMessage(readFileSync('public/assets/raw/events.dat'),162));
+  await expect(page.locator('#finance-message-text')).toHaveText(readFinanceMessage(readFileSync('artifacts/original-assets/events.dat'),162));
   await page.locator('#finance-message-ok').click();
   const retried=(await farmSnapshot(page)).finances.debt;expect(retried.taxCountdown).toBe(2);expect(retried.unpaidTaxes).toBe(5893);
 });

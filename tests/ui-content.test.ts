@@ -39,7 +39,7 @@ test('one generated bundle retains all source card commands, message IDs and raw
   expect([...decoded.expertDeck.keys()]).toEqual(EXPERT_CARD_IDS);
   for (const id of EXPERT_CARD_IDS) expect(decoded.expertDeck.get(id)).toEqual(readExpertCard(read(`card${id}.hc`)));
   for (const name of ['events.dat', 'qmessage.dat', ...EXPERT_CARD_IDS.map(id => `card${id}.hc`)]) {
-    expect(readFileSync(`public/assets/raw/${name}`)).toEqual(Buffer.from(read(name)));
+    expect(readFileSync(`artifacts/original-assets/${name}`)).toEqual(Buffer.from(read(name)));
   }
   expect(decoded.eventMessages).toHaveLength(63);expect(decoded.editStatuses).toHaveLength(76);
   // events.dat ends with154 bytes of an incomplete row63; qmessage.dat ends with CR/LF.

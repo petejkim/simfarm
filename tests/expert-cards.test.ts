@@ -30,7 +30,7 @@ test('Expert source descriptor, interpreter, crop reader, complete deck and fram
   expect(hash(asset('farmburo.bmp'))).toBe('f83003044612a61cf22a6b1cec08f6c2287a32ae1d841cd603bf993f51f4fc6f');
   const frame=readBitmap(asset('farmburo.bmp'),readPalette(asset('simfarm.pal')));
   expect([frame.width,frame.height]).toEqual([400,224]);
-  expect(readFileSync('public/assets/raw/farmburo.bmp')).toEqual(Buffer.from(asset('farmburo.bmp')));
+  expect(readFileSync('artifacts/original-assets/farmburo.bmp')).toEqual(Buffer.from(asset('farmburo.bmp')));
 });
 
 test('all source pages are reachable through exact original chapter links and bounded controls',()=>{

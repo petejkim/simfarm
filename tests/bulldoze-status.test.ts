@@ -11,7 +11,7 @@ test('Bulldoze source checks town ownership before unsigned cash25 and posts42 b
   expect(b.subarray(0x259c0,0x259c6).toString('hex')).toBe('26f687254c40');
   expect(b.subarray(0x259cf,0x259df).toString('hex')).toBe('26833e4a3e00752526833e483e19731d');
   expect(b.subarray(0x259eb,0x259f2).toString('hex')).toBe('6a2a9ab42b751d');
-  expect(readEditStatus(readFileSync(new URL('../public/assets/raw/qmessage.dat',import.meta.url)),42)).toBe('Not enough money.');
+  expect(readEditStatus(readFileSync(new URL('../artifacts/original-assets/qmessage.dat',import.meta.url)),42)).toBe('Not enough money.');
 });
 
 test('canonical Bulldoze cash feedback honors town priority and the25 boundary without changing rejected saves',()=>{

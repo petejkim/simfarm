@@ -4306,3 +4306,47 @@ User requests:
 Loading fonts from Google Fonts was tried and reverted at the user's request after sizing showed the Latin font files are small (≈81 KB self-hosted; see ui-components.md Typography). Fonts remain self-hosted via @fontsource.
 
 Build passes. Unit: ui-content and message-dialog pass. Browser: about (Roboto Mono face loaded), direct-bulldoze (new style assertions), manual-removal, boot-screen, flight-touch (weight 700), new-game-layout and bulldoze pass. Full suites not rerun.
+
+## 2026-10-15 — runtime-only public and deployment assets
+
+User requested excluding unused deployment files and keeping unused originals out of public/assets/raw.
+Importer now writes all 151 archive members, 24 crops, eight farms and the source/member hash manifest to
+ignored artifacts/original-assets. Only 36 browser-used originals remain public: 21 GameSound VOC samples,
+eight SSM farms and seven data/artwork files. Exact legacy unused raw/crop exports and the old public
+manifest are removed on import; unrelated local files are retained. Tests for preserved files now read
+the private copies; runtime-byte tests still compare actual public inputs against the DOS distribution.
+The first-start test's same-origin lock tab now opens manifest.webmanifest instead of the removed hash
+manifest. No simulation, checkpoint, dependency, original format or original-defect change.
+
+Vite copies only the explicit runtime public inventory, with the normal blanket public-dir copy disabled.
+This also excludes dotfiles, arbitrary local extras and non-runtime raw leftovers from older imports.
+An actual isolated Vite build verifies inclusion/exclusion and exact copied bytes. An isolated import
+starts with legacy raw originals/crops/manifest and verifies cleanup plus preservation and local-file
+retention. Public files drop259→111 (110 runtime files and .gitkeep);148 files/2,025,890bytes move out of
+public. Production drops315→165files,8,844,386→6,810,300bytes (23.0%), including dotfile exclusion.
+Every retained public asset, removed file's preservation copy and all61 supplied DOS files match their
+before hashes. Full inventory metrics: artifacts/runtime-assets-audit.json; originals remain untouched.
+
+Import and type checking/production build pass.58 distinct focused unit cases across15files pass,
+including source decoders/pixels, all24 crop artwork, all original raw members, runtime inventory,
+legacy cleanup, packaging boundaries, VOCs, XMIDI and actual libADLMIDI rendering. Initial focused run
+passes50cases, decoder coverage adds17 executions with overlap; packaging's4cases pass again after
+adding the explicit public allowlist. The final allowlisted production tree is byte-identical to the
+already browser-validated build, independently compared across all165files.
+
+61 distinct Chromium production browser cases have passing evidence across33 startup/asset/region/
+terrain/Expert/music checks,26 notice/effect/annual/town-event checks (one inventory overlap) and3 native
+pixel/eight-farm/audio/load-cancellation flows. All36 raw endpoints are checked byte-for-byte, and the
+complete built public inventory excludes preservation files and dotfiles. One additional selected PCM
+lifecycle fixture initially failed against production because it directly imports /src TypeScript;
+it passes on the development server, where it belongs. No game assertion failed. Eight development
+browser cases pass, covering that PCM fixture, raw inventory, startup errors and Chromium/WebKit boot
+geometry at desktop/phone sizes. A final production inventory recheck also passes after the allowlist.
+Runtime files stayed fixed within every browser run. No full unrelated simulation/browser regression or
+physical-device checks were needed for this packaging-only change. Existing bundle-size warning remains.
+
+Logs: artifacts/runtime-assets-{import,build,final-build,unit,decoders,packaging-recheck,production-browser,
+production-flows,production-native,development-browser,allowlist-build,allowlist-unit,allowlist-browser}.log.
+README, generated-assets.md, source-manifest references and the plan document the new layout and rebuild
+steps. Deploy only dist; future runtime assets must be added to tools/runtime-assets.ts. Overall game
+reconstruction remains incomplete; no further work or deployment started.

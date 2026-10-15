@@ -21,7 +21,7 @@ test('Spray source branches share busy21, supply75 and blank68 status producers'
     if(push!==0x26f82){expect(exe[push+4]).toBe(0xe9);expect(push+7+exe.readInt16LE(push+5)).toBe(0x26f86);}
   }
   expect(exe.subarray(0x26f86,0x26f8e).toString('hex')).toBe('9ab6082a2183c404');
-  const text=readFileSync(new URL('../public/assets/raw/qmessage.dat',import.meta.url));
+  const text=readFileSync(new URL('../artifacts/original-assets/qmessage.dat',import.meta.url));
   expect([21,68,75].map(code=>readEditStatus(text,code))).toEqual(['Field is busy.','','Not enough sprays to spray field.']);
 });
 

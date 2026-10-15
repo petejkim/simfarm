@@ -48,7 +48,7 @@ test('a first start without saved data generates a random farm in Region 9, 14 a
 
 test('first-launch New Game does not reopen on refresh when another tab holds the save slot', async ({ context, page }) => {
   // Another same-origin tab owns the single-writer lock, so the generated farm is never stored.
-  const other = await context.newPage(); await other.goto('/assets/manifest.json');
+  const other = await context.newPage(); await other.goto('/manifest.webmanifest');
   await other.evaluate(() => new Promise<void>(held => { void navigator.locks.request('simfarm-current-game', () => { held(); return new Promise<void>(() => {}); }); }));
   const setup = page.getByRole('region', { name: 'New farm', exact: true });
   await page.goto('/'); await expect(page.locator('#map-status')).toHaveText('Generated farm · original terrain'); await expect(setup).toBeVisible();

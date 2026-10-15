@@ -9,7 +9,7 @@ import { readAircraftArtwork } from '../src/formats/aircraft-window';
 import { readExamineData } from '../src/formats/examine';
 import { readScheduleArtwork, readFieldGauges } from '../src/formats/schedule-window';
 import { readMapArtwork } from '../src/formats/map-window';
-import { readFile, writeFile, mkdir, readdir, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir, rm, rmdir } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { PNG, type PackerOptions } from 'pngjs';
@@ -34,9 +34,11 @@ import { readPalette, readBitmap, tileAtlas, miniTileAtlas, decodePlanar, readIn
 import { townEventSpriteSheet } from '../src/formats/town-event-graphics';
 import { decodeXmidi, encodeMidi } from '../src/formats/xmidi';
 import { readCrop, type CropDefinition } from '../src/formats/crop';
+import { runtimeRawFiles } from './runtime-assets.ts';
 
 const source = resolve(process.argv[2] ?? '../simfarm-dos');
 const output = resolve('public/assets');
+const preservation = resolve('artifacts/original-assets');
 const sha256 = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 const read = (name: string) => readFile(join(source, name));
 const json = (name: string, value: unknown) => writeFile(join(output, name), JSON.stringify(value));
@@ -56,7 +58,8 @@ async function png(name: string, raster: Raster, options?: PackerOptions) {
   image.data = Buffer.from(raster.rgba);
   await writeFile(join(output, name), PNG.sync.write(image, options));
 }
-await mkdir(join(output, 'raw/crops'), { recursive: true });
+await mkdir(join(output, 'raw'), { recursive: true });
+await mkdir(join(preservation, 'crops'), { recursive: true });
 const [index, data, exe] = await Promise.all([read('MEGADATA.IDX'), read('MEGADATA.EEA'), read('SIMFARM.EXE')]);
 const entries = readArchive(index, data);
 const assets = new Map(entries.map(e => [e.name, e.bytes]));
@@ -86,7 +89,9 @@ await json('new-farm-runtime.json', readNewFarmRuntimeDefaults(exe));
 await json('traffic-defaults.json', readTrafficDefaults(exe));
 await json('main-menus.json', readOriginalMainMenus(exe));
 for (const e of entries) {
-  await writeFile(join(output, 'raw', e.name), e.bytes);
+  await writeFile(join(preservation, e.name), e.bytes);
+  if (runtimeRawFiles.has(e.name)) await writeFile(join(output, 'raw', e.name), e.bytes);
+  else await rm(join(output, 'raw', e.name), { force: true });
   // Only the message popup still uses a whole source bitmap; other UI images are prepared separately.
   if (e.name === 'popup.bmp') await png(`${e.name}.png`, readBitmap(e.bytes, palette));
   else if (e.name.endsWith('.bmp')) await rm(join(output, `${e.name}.png`), { force: true });
@@ -125,7 +130,8 @@ const inputs = [
 for (const name of (await readdir(join(source, 'CROPS'))).filter(n => /\.crp$/i.test(n)).sort()) {
   const bytes = await read(`CROPS/${name}`), id = name.toLowerCase().replace('.crp', '');
   crops.push(readCrop(id, bytes));
-  await writeFile(join(output, 'raw/crops', name.toLowerCase()), bytes);
+  await writeFile(join(preservation, 'crops', name.toLowerCase()), bytes);
+  await rm(join(output, 'raw/crops', name.toLowerCase()), { force: true });
   cropBytes.set(name.toLowerCase(), bytes);
   inputs.push({ name: `CROPS/${name}`, size: bytes.length, sha256: sha256(bytes) });
 }
@@ -179,6 +185,7 @@ for (let i = 0; i < 8; i++) {
   const name = `SCEN${i}.SSM`, bytes = await read(name);
   inputs.push({ name, size: bytes.length, sha256: sha256(bytes) });
   await writeFile(join(output, 'raw', name), bytes);
+  await writeFile(join(preservation, name), bytes);
   const scenario = readScenario(bytes);
   for (const file of scenario.cropFiles) if (!cropBytes.has(file)) throw new Error(`Missing scenario crop ${file}`);
   // Exact legacy exports only: every farm now uses the shared fixed-crop terrain sheets.
@@ -193,7 +200,11 @@ for (const entry of entries.filter(e => e.name.endsWith('.xmi'))) {
   music.push({ id, duration: sequence.endTick / 120 });
 }
 await json('catalog.json', { crops, music, tileCount: asset('ega16til.til').length / 128, palette });
-await json('manifest.json', { inputs, entries: entries.map(({ name, offset, bytes }) => ({ name, offset, size: bytes.length, sha256: sha256(bytes) })) });
+await writeFile(join(preservation, 'manifest.json'), JSON.stringify({ inputs, entries: entries.map(({ name, offset, bytes }) => ({ name, offset, size: bytes.length, sha256: sha256(bytes) })) }));
+await rm(join(output, 'manifest.json'), { force: true });
+// Remove the old generated crop directory only when empty; leave unrelated local files alone.
+try { await rmdir(join(output, 'raw/crops')); }
+catch (error) { if (!['ENOENT', 'ENOTEMPTY'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error; }
 // Obsolete derived exports only. Preserve raw originals and their decoders/tests as reconstruction evidence.
 for (const name of ['bank-terminal', 'evaluation-window', 'market-window', 'examine-window', 'message-button',
   'town-choice-pressed', 'crop-tiles', 'mini-tiles', 'scenario', 'prsnt480', 'tiles', 'edit-help', 'sell-conditions'])

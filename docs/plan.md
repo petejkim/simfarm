@@ -2,6 +2,15 @@
 
 The end state is the original SimFarm running as native browser code, with MIDI music and replaceable graphics/audio/UI. A data viewer or invented farming simulation is an intermediate artifact, not completion.
 
+## 2026-10-15 — runtime-only deployment assets
+
+Requested asset packaging is implemented: only browser-used originals go in `public/assets/raw`.
+All preservation copies and the source/member hash manifest live in ignored `artifacts/original-assets`.
+Production packaging also excludes hidden metadata and stale non-runtime raw exports. Generated asset
+inventory and validation scope are in generated-assets.md/progress.md. No simulation, original format or
+checkpoint behavior changes. Future asset additions must keep the explicit public-file inventory, typed
+sound inventory and browser dependencies in sync; preservation copies must remain outside the public tree.
+
 ## Current user priorities (updated 2026-10-11)
 
 Scope clarification: mobile adaptation and enhanced graphics/audio are excluded from the active preservation goal. Complete the native original game with the original desktop layout/assets and the explicitly requested adaptations (MIDI, native pacing, all24 crops, fixed Edit, real text and recorded corrections). Do not make excluded enhancements a completion gate.

@@ -1,6 +1,6 @@
 # Predecoded UI content
 
-User request2026-10-13: decode the43 `card*.hc` resources during import and combine them with `events.dat` and `qmessage.dat` in one JSON. `tools/import.ts` generates ignored `public/assets/ui-content.json` reproducibly from the supplied archive; the browser fetches it once at startup. This replaces45 binary requests with one JSON request. Original resources are still imported unchanged under `public/assets/raw`, and the supplied DOS distribution is never modified.
+User request2026-10-13: decode the43 `card*.hc` resources during import and combine them with `events.dat` and `qmessage.dat` in one JSON. `tools/import.ts` generates ignored `public/assets/ui-content.json` reproducibly from the supplied archive; the browser fetches it once at startup. This replaces45 binary requests with one JSON request. Original resources are still imported unchanged under `artifacts/original-assets`, and the supplied DOS distribution is never modified.
 
 Schema version1 contains `expertCards` (source page ID and ordered decoded commands), `eventMessages` (source record indices0–62), and `editStatuses` (source quick-message indices0–75). Empty strings and blank records retain their indices. All24 crop pages continue to use the original deck plus the established native page extension; no generated extra page is written into the source deck. Crops' separate expert descriptions remain in the catalog.
 

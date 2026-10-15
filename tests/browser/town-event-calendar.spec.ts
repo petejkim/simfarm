@@ -33,7 +33,7 @@ async function save(page: Page) {
   return JSON.parse(readSaveText((await (await download).path())!));
 }
 async function checkMessage(page: Page, game: InstanceType<typeof GameSimulation>) {
-  const state = game.getSnapshot().townEvent, model = townEventMessage(state, readFileSync('public/assets/raw/events.dat'))!;
+  const state = game.getSnapshot().townEvent, model = townEventMessage(state, readFileSync('artifacts/original-assets/events.dat'))!;
   const win = page.locator('[data-window=town-event-message]');
   await expect(win).toBeVisible(); await expect(win.locator('[data-town-event]')).toHaveAttribute('data-town-event', state.pending!.kind);
   await expect(page.locator('#town-event-message-text')).toHaveText(model.text);

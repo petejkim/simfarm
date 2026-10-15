@@ -40,7 +40,7 @@ test('crop packing preserves every source pixel and exported photos match fixed 
     assert.deepEqual(cropCardFrame(id),{x:index%8*112,y:Math.floor(index/8)*64,width:112,height:64});
     assert.equal(existsSync(`public/assets/${id}.png`),false);
     assert.equal(existsSync(`public/assets/${id}.card.png`),false);
-    assert.deepEqual(readFileSync(`public/assets/raw/crops/${id}.crp`),crop);
+    assert.deepEqual(readFileSync(`artifacts/original-assets/crops/${id}.crp`),crop);
   }
   assert.equal(hash(),before);
   const reverse=new Map([...crops].reverse());

@@ -5,7 +5,7 @@ import {readEditStatus} from '../src/formats/edit-status';
 import {shopFixture} from './support/livestock';
 import type {EditToolStatusCode} from '../src/simulation/edit-status';
 const exe=readFileSync(new URL('../../simfarm-dos/SIMFARM.EXE',import.meta.url));
-const messages=readFileSync(new URL('../public/assets/raw/qmessage.dat',import.meta.url));
+const messages=readFileSync(new URL('../artifacts/original-assets/qmessage.dat',import.meta.url));
 
 test('source Move handler posts destination7 for all pickup categories and wrong busy62 at both equipment checks',()=>{
   expect(createHash('sha256').update(exe.subarray(0x136c6,0x1454d)).digest('hex')).toBe('7560e5339b2d2e0575722b5aeb8acbebaae79e45c9a0c1573de34be45db20e8b');

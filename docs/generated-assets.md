@@ -1,8 +1,53 @@
 # Generated asset cleanup
 
-`./tools/bun run import` generates ignored files in `public/assets`. As of 2026-10-14, it writes runtime
-images, MIDI tracks and data, plus raw preservation imports and `manifest.json`. Retired derived exports
-are removed by exact known names during import; unrelated files are not swept or deleted.
+`./tools/bun run import` generates runtime files in ignored `public/assets` and preservation copies in
+ignored `artifacts/original-assets`. The runtime-only split below supersedes the 2026-10-14 inventory.
+Retired generated exports are removed by exact known names during import; unrelated files are not swept
+or deleted.
+
+## Runtime-only public assets (2026-10-15)
+
+`public/assets/raw` contains only the original files still fetched by `src/assets/game-assets.ts`:
+
+- 21 VOC samples represented by the canonical `GameSound` type (the birds, computer beep and thunder
+  samples have no current playback request).
+- All eight `SCEN0.SSM`–`SCEN7.SSM` farms, including the source data needed to validate saved numbered farms.
+- Seven data/artwork files: `creditz.txt`, `townly0.cmp`, `itemtext.dat`, `scenario.odt`, `scenario.int`,
+  `scenario.pal` and `far_mapc.mbm`.
+
+The importer retains every archive member, all 24 crop files and eight farms byte-for-byte under
+`artifacts/original-assets`, along with `manifest.json` containing source/member hashes and offsets.
+Original-format/pixel tests read these preservation copies when the files are no longer runtime inputs.
+Import removes their exact obsolete `public/assets/raw` copies, including the old crop subdirectory
+when empty, and the former public source manifest. Required runtime originals are unchanged.
+
+This removes 148 public files (2,025,890 bytes): 147 unused raw originals and the source manifest.
+The local public tree now contains 110 runtime files plus the tracked `.gitkeep`. The checked production
+build drops from 315 files / 8,844,386 bytes to 165 files / 6,810,300 bytes, also excluding dotfiles.
+Sizes include bundled fonts and the MIDI synthesizer; these figures describe this build, not a promise
+that every future build has the same size. All retained public-asset hashes and all 61 supplied DOS file
+hashes remain unchanged.
+
+Vite's production public-asset plugin copies only the explicit runtime inventory in tools/runtime-assets.ts,
+excluding dotfiles, local extras, the old public manifest and any non-runtime raw files left by an older
+import. It emits the runtime files unchanged; the ordinary Vite
+bundle still supplies the compiled app, fonts and MIDI worklet/WASM. Development retains access to the
+local imported assets; deployment requires only `dist/`, with no manual cleanup step.
+
+Re-run import before building after upgrading to this layout. `tests/imported-assets.test.ts` covers
+the exact raw inventory, source equality, preservation completeness and a legacy-import cleanup in an
+isolated temporary output tree. `tests/browser/deployment-assets.spec.ts` checks every retained endpoint
+and confirms preservation files are not served as assets. After build, run the production inventory check:
+
+```sh
+./tools/bun run test:browser --config playwright.production.config.ts tests/browser/deployment-assets.spec.ts
+```
+
+The production configuration uses a dedicated preview server on port 5191. Other browser specs can be
+selected explicitly, but fixtures that import `/src` modules or intercept the development entry script
+require the ordinary development-server configuration. Runtime files must stay fixed during browser runs.
+
+## Earlier generated-output cleanup (2026-10-14)
 
 The cleanup removed 58 existing files (3,697,128 bytes):
 
