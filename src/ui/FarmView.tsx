@@ -430,8 +430,8 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
     {simulation && snapshot && <LoanPanel snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
       onClose={() => windows.close('bank')} panelRef={loansRef} />}
     </GameWindow>
-    {snapshot && simulation && <AircraftWindow assets={assets} selectedSlot={aircraftSlot} snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
-      onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); if (simulation.getSnapshot().aircraftFlight) windows.show(null); return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
+    {data && snapshot && simulation && <AircraftWindow assets={assets} tiles={data.tiles} selectedSlot={aircraftSlot} snapshot={snapshot} onCommand={command => simulation.dispatch(command)}
+      onFly={slot => { simulation.dispatch({ type: 'start-flight', slot, ...mapSize.current }); if (simulation.getSnapshot().aircraftFlight) { windows.close('aircraft'); viewportRef.current?.focus({ preventScroll: true }); } return Boolean(simulation.getSnapshot().aircraftFlight); }} />}
     {data && snapshot && <ScheduleWindow inspection={fieldInspection} assets={assets} snapshot={snapshot} tiles={data.tiles} field={field} focusRef={plannerRef}
       onCommand={command=>simulation?.dispatch(command)}/>}
     {data && <ExpertWindow assets={assets} cropFiles={data.scenario.cropFiles} tiles={data.tiles} focusRef={expertRef} onEvent={onGameEvent}/>}

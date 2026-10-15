@@ -39,6 +39,7 @@ async function launch(page: Page, game: ReturnType<typeof prepared>['game']) {
   });
   await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click(); game.dispatch({ type: 'start-flight', slot: 1, ...dimensions });
   await expect(page.locator('.map-panel')).toHaveClass(/is-flying/);
+  await expect(page.getByRole('dialog', { name: 'AIRPLANE', exact: true })).toHaveCount(0); // Fly closes AIRPLANE (source 0x30b4a)
   await expect(page.locator('#flight-controls')).toHaveCount(0); // no interim flight panel
   // Fine pointer: the translucent overlay shows readouts and key hints, without touch buttons.
   await expect(page.locator('#flight-overlay .flight-keys')).toBeVisible(); await expect(page.locator('.flight-button')).toHaveCount(0);
