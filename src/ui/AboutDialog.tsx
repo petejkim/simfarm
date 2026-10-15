@@ -28,6 +28,8 @@ export function AboutDialog({assets,onClose}:{assets:AboutAssets;onClose:()=>voi
         </RaisedPanel>
         <Sprite className="about-apples" image={art} x={23} y={75} width={120} height={90}/>
       </div>
+      <p className="about-footer">An unofficial fan remake of the original game by Maxis &amp; Eric Albers.<br/>
+        <a href="https://github.com/petejkim/simfarm"  target="_blank" rel="noopener noreferrer">Source code (CC0 1.0 Universal)</a></p>
     </div>
   </GameWindow>;
 }

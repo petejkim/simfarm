@@ -27,3 +27,7 @@ About now uses the common frame and a 384×216 flex client. The full `about-wind
 - **Text and logo:** credit text keeps its source rectangle (client 136,72, 224×104; checked by the browser spec). The Leaping Lizard logo and its HTML caption sit at the panel's right on the first page.
 
 Validation: about spec passes (1/1).
+
+## Credits font (2026-10-15, user request)
+
+The credits panel text (intro and creditz.txt pages) uses Roboto Mono 8px with the existing 8px line pitch (9px on the intro page). It is self-hosted through `@fontsource/roboto-mono` (400, imported in `src/main.tsx`) and exposed as `--font-mono` with Menlo/Consolas/monospace fallbacks. A monospaced face also lines up the source's leading-space alignment. The lizard logo caption keeps Roboto. The browser spec checks the 8px size, the computed family and that the Roboto Mono face actually loaded; every credits page still fits the source 224×104 rectangle.

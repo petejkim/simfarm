@@ -1,10 +1,12 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './ui/App';
-// Self-hosted Google Fonts (via @fontsource): Roboto for all UI text, DM Serif Display for the New Game titles.
+// Self-hosted Google Fonts (via @fontsource): Roboto for all UI text, DM Serif Display for the New Game titles,
+// Roboto Mono for the About credits.
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/700.css';
 import '@fontsource/dm-serif-display/400.css';
+import '@fontsource/roboto-mono/400.css';
 import './style.css';
 
 // The game is fixed to the screen and the page never scrolls, but iOS can leave the document or visual viewport
