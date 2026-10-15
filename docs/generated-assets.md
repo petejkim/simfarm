@@ -47,6 +47,24 @@ The production configuration uses a dedicated preview server on port 5191. Other
 selected explicitly, but fixtures that import `/src` modules or intercept the development entry script
 require the ordinary development-server configuration. Runtime files must stay fixed during browser runs.
 
+## Cow-head home-screen icons (2026-10-15)
+
+The importer now derives the home-screen icons from the original title artwork, using the exact
+192×192 rectangle at x240,y200 (exclusive right/bottom432,392) in the decoded 640×480 `sftitle.png`.
+`apple-touch-icon.png` and `app-icon-192.png` are identical unscaled copies of that crop.
+`app-icon-512.png` enlarges it with nearest-neighbor sampling, preserving the source palette and opaque
+pixels without extra borders. The Apple link in index.html declares192×192; manifest sizes remain192/512.
+The16/32-pixel browser favicons continue to use the Apples crop artwork.
+
+Source evidence in MEGADATA.EEA: `sftitle.int` at0x17d84f,153600bytes, SHA-256
+`afe829e3a4e823295a32af21e2d3ba0f8bd88bd8f1f655db5f6dc1cbcf953cc5`;
+`sftitle.pal` at0x1a310f,48bytes, SHA-256
+`521aa38f525cb5f5c9e44b2e0c9e6c7c127812e0e8cf46a21ba95fa7230ba93b`.
+Crop placement and icon sizing are requested native presentation choices, not recovered DOS behavior.
+Original title artwork and supplied files remain unchanged; all three generated icon paths stay in the
+runtime deployment inventory. The production installability check compares every icon pixel to the
+source crop and checks opacity, served dimensions, manifest entries and the Apple link.
+
 ## Earlier generated-output cleanup (2026-10-14)
 
 The cleanup removed 58 existing files (3,697,128 bytes):

@@ -4350,3 +4350,23 @@ production-flows,production-native,development-browser,allowlist-build,allowlist
 README, generated-assets.md, source-manifest references and the plan document the new layout and rebuild
 steps. Deploy only dist; future runtime assets must be added to tools/runtime-assets.ts. Overall game
 reconstruction remains incomplete; no further work or deployment started.
+
+## 2026-10-15 — title-cow home-screen icons
+
+User requested a192×192 crop of the cow's head from sftitle.png for the Apple and192px app icons,
+plus a512px version. Import now reuses the decoded original title raster and takes x240,y200,width192,
+height192. Both smaller files are byte-identical, unpadded crops;512px uses nearest-neighbor enlargement.
+The Apple link now declares192×192 instead of180×180. Manifest names/sizes and runtime asset inventory
+remain valid. The browser favicons still use Apples. Source offsets/hashes and the native crop policy
+are documented in generated-assets.md; no original files, simulation rules, save format or dependencies
+changed. Generated artwork remains ignored and is reproducible with import.
+
+Import and type checking/production build pass.13 relevant unit cases across4files pass, covering title
+decode/source pixels, existing crop favicons, full preservation inventory, legacy cleanup and production
+packaging. All3 focused Chromium production browser cases pass(1.9s): installation metadata and every
+icon pixel/opacity, unchanged title/terrain pixels, and deployment inventory/raw bytes. Both generated
+icon sizes were visually inspected. Direct checks confirm PNG dimensions192/192/512, identical192px
+files and exact public/dist copies. Runtime files stayed fixed during browser checks. No full unrelated
+suite or physical-device installation check was needed for this icon-only change. Logs:
+artifacts/cow-icons-{import,build,unit,browser}.log. Overall reconstruction remains incomplete; no push
+or deployment was performed.

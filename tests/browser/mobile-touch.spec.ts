@@ -513,11 +513,21 @@ test('the installable web app manifest and home-screen icons are served',async({
   expect(await page.locator('link[rel=manifest]').getAttribute('href')).toBe('/manifest.webmanifest');
   const manifest=await (await request.get('/manifest.webmanifest')).json();
   expect(manifest).toMatchObject({name:'SimFarm',short_name:'SimFarm',display:'standalone',start_url:'./'});
-  for(const icon of [...manifest.icons.map((i:{src:string;sizes:string})=>({src:'/'+i.src,size:Number(i.sizes.split('x')[0])})),{src:'/assets/apple-touch-icon.png',size:180}]){
+  expect(await page.locator('link[rel=apple-touch-icon]').getAttribute('sizes')).toBe('192x192');
+  const title=PNG.sync.read(await (await request.get('/assets/sftitle.png')).body());
+  const crop=Buffer.alloc(192*192*4);
+  for(let row=0;row<192;row++)title.data.copy(crop,row*192*4,((200+row)*title.width+240)*4,((200+row)*title.width+432)*4);
+  for(const icon of [...manifest.icons.map((i:{src:string;sizes:string})=>({src:'/'+i.src,size:Number(i.sizes.split('x')[0])})),{src:'/assets/apple-touch-icon.png',size:192}]){
     const response=await request.get(icon.src);expect(response.ok()).toBe(true);
     const png=PNG.sync.read(await response.body());expect([png.width,png.height]).toEqual([icon.size,icon.size]);
     // Opaque: launchers render transparency as black.
     for(let i=3;i<png.data.length;i+=4)if(png.data[i]!==255)throw new Error(`${icon.src} has transparent pixels`);
+    const expected=Buffer.alloc(icon.size*icon.size*4);
+    for(let y=0;y<icon.size;y++)for(let x=0;x<icon.size;x++){
+      const from=(Math.floor(y*192/icon.size)*192+Math.floor(x*192/icon.size))*4;
+      crop.copy(expected,(y*icon.size+x)*4,from,from+4);
+    }
+    expect(png.data.equals(expected),`${icon.src} matches the cow-head crop`).toBe(true);
   }
   expect(await page.locator('meta[name=apple-mobile-web-app-capable]').getAttribute('content')).toBe('yes');
   // iOS zooms the page into focused fields under 16px (map seed, loan amount) and the full-screen game has no way

@@ -43,13 +43,12 @@ const sha256 = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest(
 const read = (name: string) => readFile(join(source, name));
 const json = (name: string, value: unknown) => writeFile(join(output, name), JSON.stringify(value));
 function appIcon(source: Raster, size: number): Raster {
-  const scale = Math.floor(size * 0.875 / Math.max(source.width, source.height));
-  const left = (size - source.width * scale) >> 1, top = (size - source.height * scale) >> 1, rgba = new Uint8Array(size * size * 4);
-  for (let i = 0; i < size * size; i++) rgba.set([0xc2, 0xc2, 0xc2, 255], i * 4);
-  for (let y = 0; y < source.height * scale; y++) for (let x = 0; x < source.width * scale; x++) {
-    const from = (Math.floor(y / scale) * source.width + Math.floor(x / scale)) * 4, alpha = source.rgba[from + 3] / 255;
-    const to = ((top + y) * size + left + x) * 4;
-    for (let c = 0; c < 3; c++) rgba[to + c] = Math.round(source.rgba[from + c] * alpha + rgba[to + c] * (1 - alpha));
+  // Exact 192×192 cow-head crop at (240,200) in the original 640×480 title screen.
+  // Nearest-neighbor enlargement keeps its source palette and pixel edges at 512×512.
+  const rgba = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const from = ((200 + Math.floor(y * 192 / size)) * source.width + 240 + Math.floor(x * 192 / size)) * 4;
+    rgba.set(source.rgba.subarray(from, from + 4), (y * size + x) * 4);
   }
   return { width: size, height: size, rgba };
 }
@@ -116,7 +115,8 @@ for (const [name, tile] of [['window-close', 0], ['window-title', 1], ['window-t
   await png(`${name}.png`, decodePlanar(asset('ega16til.til').subarray(tile * 128, (tile + 1) * 128), 16, 16, palette));
 for (const name of ['airplane', 'apshadow', 'cropdust', 'tornado', 'swarm']) await png(`${name}.sprites.png`, spriteAtlas(asset(`${name}.spr`), palette));
 await png('masked-tiles.png', tileAtlas(asset('mskdtile.til'), palette, 32, 7));
-await png('sftitle.png', readInterleavedScreen(asset('sftitle.int'), readPalette(asset('sftitle.pal'))));
+const titleArtwork = readInterleavedScreen(asset('sftitle.int'), readPalette(asset('sftitle.pal')));
+await png('sftitle.png', titleArtwork);
 // Custom setup inherits scenario.pal from the geographic chooser. The gameplay
 // palette is restored only after this screen returns to3f854.
 await png('defworld.png', readInterleavedScreen(asset('defworld.int'), readPalette(asset('scenario.pal'))));
@@ -177,10 +177,9 @@ await rm(join(output,'masked-tiles.inverted.png'),{force:true});
 const appleIcons = readCropIcons(cropBytes.get('apples.crp')!, palette);
 await png('favicon-16.png', appleIcons.plant);
 await png('favicon-32.png', appleIcons.badge);
-// Home-screen icons (native, for the installed web app): the same badge enlarged by whole pixels and centred on
-// the control-bar grey, because launchers draw transparency as black.
-for (const [name, size] of [['apple-touch-icon.png', 180], ['app-icon-192.png', 192], ['app-icon-512.png', 512]] as const)
-  await png(name, appIcon(appleIcons.badge, size));
+// Home-screen icons use the title cow's head; both 192px files are the identical unscaled crop.
+for (const [name, size] of [['apple-touch-icon.png', 192], ['app-icon-192.png', 192], ['app-icon-512.png', 512]] as const)
+  await png(name, appIcon(titleArtwork, size));
 for (let i = 0; i < 8; i++) {
   const name = `SCEN${i}.SSM`, bytes = await read(name);
   inputs.push({ name, size: bytes.length, sha256: sha256(bytes) });
