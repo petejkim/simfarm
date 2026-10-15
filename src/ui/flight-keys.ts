@@ -1,7 +1,7 @@
 import type { FlightControl } from '../simulation/aircraft-flight';
 
 /** Native flight keys (user request), by physical key so they work on any keyboard layout:
- * S climb, W descend, A/D turn, E end flight, Space toggles spraying. There is no flight panel. */
+ * S climb, W descend, A/D turn, E end flight, Space toggles spraying. FlightOverlay shows them as hints (touch: buttons). */
 const keys: Record<string, FlightControl> = { KeyS: 'climb', KeyW: 'descend', KeyA: 'left', KeyD: 'right', KeyE: 'end', Space: 'spray-toggle' };
 export function flightControlForKey(event: Pick<KeyboardEvent, 'code' | 'altKey' | 'ctrlKey' | 'metaKey' | 'repeat'>): FlightControl | null {
   if (event.altKey || event.ctrlKey || event.metaKey) return null;

@@ -748,3 +748,26 @@ html,body{overscroll-behavior:none}
 .game-desktop{padding:var(--top-band,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) calc(env(safe-area-inset-left,0px) + var(--menu-column,0px))}
 /* Two-finger pinch on the terrain is FarmMap's zoom, never the browser's page zoom; one finger still scrolls natively. */
 .game-desktop #viewport{touch-action:pan-x pan-y}
+/* In-flight overlay (native, user request; FlightOverlay.tsx): fixed translucent layer over the terrain, clear of its
+   16px scrollbars. Only the touch buttons take pointer input. Touch buttons appear with a coarse primary pointer. */
+.game-desktop .map-panel{position:relative}
+.flight-overlay{position:absolute;inset:0 16px 16px 0;z-index:2;pointer-events:none;font:10px var(--font-ui);color:#fff;text-shadow:0 1px 1px #000}
+.flight-readouts{position:absolute;top:6px;left:6px;display:flex;flex-wrap:wrap;gap:2px 12px;margin:0;padding:4px 8px;width:max-content;max-width:calc(100% - 12px);background:#000a;border-radius:4px}
+.flight-readout{display:flex;gap:4px;white-space:nowrap}
+.flight-readout dt{color:#e4ce83}
+.flight-readout dd{margin:0;font-variant-numeric:tabular-nums}
+.flight-fixed{display:inline-grid}
+.flight-fixed>*{grid-area:1/1}
+.flight-sizer{visibility:hidden}
+.flight-keys{position:absolute;bottom:6px;left:6px;margin:0;padding:4px 8px;background:#000a;border-radius:4px}
+.flight-keys kbd{font:inherit;padding:0 4px;border:1px solid #fff8;border-radius:3px;background:#fff2}
+.flight-pad{position:absolute;bottom:10px;display:grid;gap:8px;pointer-events:none}
+.flight-pad-steer{left:10px;grid-template-columns:repeat(2,52px)}
+.flight-pad-actions{right:10px;grid-template-columns:repeat(2,52px)}
+.flight-button{pointer-events:auto;width:52px;height:52px;padding:0;border:2px solid #fff9;border-radius:50%;background:#0006;color:#fff;font:600 13px var(--font-ui);text-shadow:0 1px 1px #000;
+  touch-action:none;-webkit-tap-highlight-color:transparent}
+.flight-button:hover{background:#0006}
+.flight-arrow{display:block;width:16px;height:16px;margin:auto}
+.flight-button.is-held,.flight-button[aria-pressed=true]{background:#e4ce8399;color:#000;text-shadow:none}
+.flight-button:disabled{opacity:.35;cursor:default}
+.flight-button.flight-end{border-color:#f99a;background:#7008}

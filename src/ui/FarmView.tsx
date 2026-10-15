@@ -40,7 +40,9 @@ import type { ConstructionTool } from './useConstruction';
 const CONSTRUCTION_TOOLS:Record<ConstructionTool,EditTool>={'road-150':'Paved road','road-161':'Dirt road',fence:'Fence',gate:'Gate',ditch:'Ditch',valve:'Valve',hay:'Hay',trough:'Trough',trees:'Trees'};
 import type { GameWindow as WindowCommand } from './ControlBar';
 import { NewFarmControls } from './NewFarmControls';
-import { FLIGHT_KEY_REPEAT_MS, flightControlForKey, flightKeyRepeats } from './flight-keys';
+import { flightControlForKey } from './flight-keys';
+import { createFlightInput } from './flight-input';
+import { FlightOverlay } from './FlightOverlay';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { loadScenarioAssets, type GameAssets } from '../assets/game-assets';
 import { worldPosition, worldIndex } from '../formats/scenario';
@@ -137,35 +139,30 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
   }), [simulation, onGameEvent]);
   const flightRunning = Boolean(snapshot?.aircraftFlight && !snapshot.paused);
   const flying = Boolean(snapshot?.aircraftFlight);
+  // One held-control tracker per game, shared by flight keys and the touch overlay's buttons.
+  const flightInput = useMemo(() => simulation ? createFlightInput(simulation) : null, [simulation]);
   useEffect(() => {
-    if (!simulation || !flying) return;
+    if (!flightInput || !flying) return;
     // Flight keys work wherever focus is, except while typing in a form field. One control per press; a held
     // turn/altitude key repeats only after the flight consumed the last control, so the queue never floods.
-    const held = new Map<string, number>();
-    const release = (code: string) => { const timer = held.get(code); if (timer !== undefined) { clearInterval(timer); held.delete(code); } };
-    const releaseAll = () => { for (const code of [...held.keys()]) release(code); };
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (target?.closest('input,textarea,select,[contenteditable="true"]')) return;
-      if (event.repeat && held.has(event.code)) { event.preventDefault(); return; }
+      if (event.repeat && flightInput.isHeld(event.code)) { event.preventDefault(); return; }
       const control = flightControlForKey(event); if (!control) return;
       event.preventDefault(); event.stopPropagation();
-      simulation.dispatch({ type: 'flight-control', control });
-      if (flightKeyRepeats(control) && !held.has(event.code)) held.set(event.code, window.setInterval(() => {
-        const flight = simulation.getSnapshot().aircraftFlight;
-        if (!flight) { releaseAll(); return; }
-        if (!flight.inputs.length) simulation.dispatch({ type: 'flight-control', control });
-      }, FLIGHT_KEY_REPEAT_MS));
+      flightInput.press(event.code, control);
     };
     const onKeyUp = (event: KeyboardEvent) => {
-      release(event.code);
+      flightInput.release(event.code);
       // Space activates a focused button on key-up; while flying it only toggles spraying.
       const target = event.target as HTMLElement | null;
       if (!target?.closest('input,textarea,select,[contenteditable="true"]') && flightControlForKey({ code: event.code, altKey: event.altKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey, repeat: false })) { event.preventDefault(); event.stopPropagation(); }
     };
+    const releaseAll = () => flightInput.releaseAll();
     window.addEventListener('keydown', onKeyDown, true); window.addEventListener('keyup', onKeyUp, true); window.addEventListener('blur', releaseAll);
     return () => { releaseAll(); window.removeEventListener('keydown', onKeyDown, true); window.removeEventListener('keyup', onKeyUp, true); window.removeEventListener('blur', releaseAll); };
-  }, [simulation, flying]);
+  }, [flightInput, flying]);
   useEffect(() => { onFlightRunning(flightRunning); return () => onFlightRunning(false); }, [flightRunning, onFlightRunning]);
   const mapSize = useRef({ columns: 20, rows: 16 }), mapStroke = useRef(false), mapDrag = useRef(false);
   const onViewportSize = useCallback((size: { columns: number; rows: number }) => { mapSize.current = size; }, []);
@@ -481,6 +478,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
             if(!selected)windows.close('schedule');
             windows.show(selected?'schedule':'examine');
           }} />
+        {snapshot?.aircraftFlight&&flightInput&&<FlightOverlay world={snapshot.scenario} flight={snapshot.aircraftFlight} input={flightInput}/>}
       </section>
       </div>
       {bulldoze.pending&&<BulldozeDialog pending={bulldoze.pending} assets={assets} onConfirm={bulldoze.confirm} onCancel={bulldoze.dismiss}/>}

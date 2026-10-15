@@ -4276,3 +4276,17 @@ preserving the current week and contracts. Reviewed against schedule-window.md's
 existing reset-field-plan UI command. This is a default-plan reset rather than a history-based undo.
 Documentation only; local links, table structure and whitespace checked, with no runtime tests rerun.
 Existing unrelated README edits remain preserved and unstaged.
+
+## 2026-10-14 — on-screen flight controls
+
+User request: make flight playable on touch screens, using a fixed translucent overlay with status readouts. Desktop shows readouts and key hints only; End is immediate. Added `FlightOverlay` over the terrain, `createFlightInput`, which now carries the keyboard's hold/repeat rules for both keys and buttons, and the simulation-side `aircraftFlightView` readouts. No simulation rule, save format or original-defect change. Details and the input/touch decisions: aircraft.md "On-screen flight overlay".
+
+Type checking/production build pass. Unit: 23 cases across the new flight-overlay and existing aircraft/flight/window tests pass. Browser: 36 cases pass across aircraft-flight, aircraft-window, aircraft, mobile-touch and the new flight-touch spec (40.7s). The worktree first needed `./tools/bun run import` (generated assets are ignored); the first touch run also exposed `:active` not showing for held touches, so held state became React state. A later run showed the plane can leave the airport while turning, so the End assertion now follows the readout. Logs: artifacts/flight-overlay-{build,import,touch,browser}.log. The full suites were not rerun (UI-only change; the flight command path is unchanged). Not tested on physical devices or WebKit. Request complete; broader preservation remains incomplete.
+
+## 2026-10-14 — flight readout text size and stable widths
+
+User request: 10px overlay text, and no shift when the heading changes between one and two letters. Readouts and key hints are now 10px; touch-button captions remain 13px. Each changing value, and the Spray/Spraying label, is as wide as its widest possible text: hidden sizer copies share its grid cell. Readout ids moved to the visible value spans so sizers stay out of their text. flight-touch.spec.ts checks the 10px size and swaps every readout through its extreme values while asserting that no label or value moves. Build passes; flight-touch and aircraft-flight specs pass (6/6, 43.1s). Landscape screenshot inspected. Full suites not rerun (overlay presentation only).
+
+## 2026-10-14 — touch flight pad layout and arrows
+
+User request: on touch screens, climb/descend now sit above turn left/right in one bottom-left pad; spray/End stay bottom-right. Arrows are a single rotated inline SVG triangle instead of ◀ ▶ ▲ ▼ glyphs, which mixed colour emoji with plain symbols. Build passes; flight-touch.spec.ts passes (layout clearance, taps, held turning, End). Portrait/landscape screenshots inspected. Not checked on a physical iPhone.

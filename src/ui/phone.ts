@@ -10,3 +10,12 @@ export function usePhone(): boolean {
     return () => query.removeEventListener('change', change);
   }, () => matchMedia(PHONE_QUERY).matches);
 }
+
+/** Touch-first devices (primary pointer is coarse), as used by TouchNotice and the #app zoom in style.css. */
+export const COARSE_POINTER_QUERY = '(pointer: coarse)';
+export function useCoarsePointer(): boolean {
+  return useSyncExternalStore(change => {
+    const query = matchMedia(COARSE_POINTER_QUERY); query.addEventListener('change', change);
+    return () => query.removeEventListener('change', change);
+  }, () => matchMedia(COARSE_POINTER_QUERY).matches);
+}

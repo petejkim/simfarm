@@ -8,7 +8,8 @@ import { BevelButton } from './chrome/BevelButton';
 import { SunkenInset } from './chrome/SunkenInset';
 import { Sprite, spriteFace } from './chrome/Sprite';
 const money=(n:number)=>`$${n.toLocaleString('en-US')}`;
-const names:Record<number,string>={221:'Pesticide',222:'Herbicide',223:'Fungicide'};
+export const CHEMICAL_NAMES:Record<number,string>={221:'Pesticide',222:'Herbicide',223:'Fungicide'};
+const names=CHEMICAL_NAMES;
 /** Original AIRPLANE window (airpwndo.bmp) rebuilt from shared chrome: refuel/load/repair picture buttons
  * with price insets; the gauge inset with field-gauge sprites; chemical picture buttons; FLY!/CLOSE. */
 export function AircraftWindow(props: Parameters<typeof AircraftWindowBody>[0]) {

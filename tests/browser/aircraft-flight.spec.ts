@@ -40,6 +40,8 @@ async function launch(page: Page, game: ReturnType<typeof prepared>['game']) {
   await reveal(page, '#fly-aircraft'); await page.locator('#fly-aircraft').click(); game.dispatch({ type: 'start-flight', slot: 1, ...dimensions });
   await expect(page.locator('.map-panel')).toHaveClass(/is-flying/);
   await expect(page.locator('#flight-controls')).toHaveCount(0); // no interim flight panel
+  // Fine pointer: the translucent overlay shows readouts and key hints, without touch buttons.
+  await expect(page.locator('#flight-overlay .flight-keys')).toBeVisible(); await expect(page.locator('.flight-button')).toHaveCount(0);
   await pause(page, game);
 }
 /** Pause/resume through the ordinary Speed controls (no flight panel), mirrored in the expected game. */
@@ -102,6 +104,8 @@ test('Fly captures the map, original sprites follow keyboard steering, pause/ste
   expect(await save(page)).toEqual(JSON.parse(game.save(4)));
   await spritesMatch(page, game.getSnapshot().aircraftFlight!);
   const flown = game.getSnapshot().aircraftFlight!; expect([flown.heading, flown.altitude, flown.spraying]).toEqual([7, 11, true]);
+  await expect(page.locator('#flight-altitude')).toHaveText('11'); await expect(page.locator('#flight-heading')).toHaveText('NW');
+  await expect(page.locator('#flight-payload-label')).toHaveText('Spraying');
   await page.setViewportSize({ width: 1280, height: 844 });
   await expect.poll(() => page.locator('#viewport').evaluate((v, f) => {
     const canvas = document.querySelector('#world')!.getBoundingClientRect(), bounds = v.getBoundingClientRect();
@@ -115,6 +119,7 @@ test('Fly captures the map, original sprites follow keyboard steering, pause/ste
   await page.screenshot({ path: 'artifacts/browser-flight.png', fullPage: true });
   await press(page, game, 'end'); await fly(page, game, 2000); expect(game.getSnapshot().lastFlightEnd?.kind).toBe('landed');
   await expect(page.locator('.map-panel')).not.toHaveClass(/is-flying/); await expect(page.locator('#flight-result')).toHaveCount(0); // no result screen
+  await expect(page.locator('#flight-overlay')).toHaveCount(0);
   await expect((await speedItem(page,'#next-day'))).toBeEnabled();
   expect(await save(page)).toEqual(JSON.parse(game.save(4))); expect(errors).toEqual([]);
 });
