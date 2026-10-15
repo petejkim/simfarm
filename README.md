@@ -1,10 +1,51 @@
-# SimFarm native preservation
+<div align="center">
 
-Incremental reconstruction of the supplied 16-bit DOS SimFarm as a native TypeScript/React/Vite browser game, developed with Bun. No DOS runtime or x86 emulator is used. The current build supports land purchase, new fields, planting, crop treatments, growing, harvesting, storage and crop sales, with machinery, weather, calendar progression and converted MIDI music. Positive-value corn farming cycles on existing fields and newly purchased/fertilized land are verified in the browser. Original weekly markets now update crop sale and seed purchase prices; planting and disasters affect the next market update. Native save/load is available; DOS-compatible export and many other original systems remain unfinished.
+# SimFarm Web Remake
 
-## Run locally
+A remake of SimFarm, the 1993 Maxis classic, as a native TypeScript/React browser game, built with Vite and Bun. No DOS runtime or x86 emulator is used. **Original game assets are not included in this repository.**
 
-Requires your original game files at `../simfarm-dos`. The bootstrap downloads Bun 1.4.2 into `.tools/bun` on macOS or Linux. No global installation or separate Node/npm runtime is needed.
+<img src="docs/screenshot-1.png" width="760" />
+<img src="docs/screenshot-2.png" width="200" />
+
+</div>
+
+## Differences from the original
+
+The goal is to preserve the original game while adding unobtrusive enhancements:
+
+| Area | Remake behavior |
+| --- | --- |
+| Crops | All 24 supplied crops are available simultaneously, instead of the original 16 active crop slots and crop-file swapping. Crop definitions and artwork still come from the original files. |
+| Timing | Browser pacing, pause, stepping and speed controls replace DOS interrupt timing. At the default 1× speed, one game day takes four real seconds. |
+| Saves | The current farm is saved in-browser using IndexedDB, with automatic weekly saves and manual saving. Compressed `.simfarm.json.gz` files provide portable checkpoints. |
+| Interface | React controls and HTML text retain original artwork and much of the original layout. Browser fonts replace bitmap lettering. Updated planting menus, crop planners, shops and market views display all 24 crops, with mobile support and touch controls for phone play. |
+| Windows | Terrain stays permanently behind dialogs without window chrome. Floating dialogs have movable titlebars; their positions stay outside simulation saves. |
+| Browser and touch input | Touch interactions, terrain pinch and Ctrl+wheel zoom, and full-screen home-screen installation supplement the original desktop interface. |
+| Audio | Original XMIDI tracks are converted to MIDI and played through libadlmidi-js. Original PCM effects play separately, with overlapping sound effects and cached playback buffers. |
+| Machinery | Farms support up to 255 machines, increased from the original limit of 126. Crop dusters can now load and spray fertilizer.|
+| Field condition badges | Multiple field problems display together as stacked badges instead of cycling through a single badge slot. |
+| Repeated planting | Plant stays selected after placing a field, allowing several fields of the same crop without reopening the menu. |
+| Schedule reset | A RESET button in the Schedule window undoes future plan edits by restoring the current crop's default schedule, while preserving the current week and contracts. |
+| Debug controls | An expanded Debug menu can trigger town events, expand towns, grow districts and access otherwise hidden content. |
+| Preferences | Options are remembered in the browser, including separate music and sound-effects volume controls. |
+| Navigation | Spacebar pause, a toolbar pause button, a Farm Expert shortcut and overview-map clicks that center the terrain view provide convenient access. |
+| Performance | Incremental terrain redraws, reduced simulation-snapshot copying and fewer updates to closed dialogs reduce unnecessary browser work. |
+| Gameplay corrections | Selected original defects are corrected, including, but not limited to spraying more than two fields at a time, crop-income accounting, loan arrears, stored-crop aging and certain crop/climate calculations. Other original quirks remain documented rather than silently changed. |
+
+## Requirements and setup
+
+The provided Bun bootstrap supports macOS and Linux on ARM64 and x86-64. It requires `curl` and `unzip` and downloads the pinned Bun version into the repository. No global Bun installation or separate Node/npm runtime is needed.
+
+**Supply your own original DOS game files** in `../simfarm-dos`, including `SIMFARM.EXE`, `MEGADATA.IDX`, `MEGADATA.EEA`, `CROPS/*.CRP` and `SCEN0.SSM` through `SCEN7.SSM`. 
+
+The archive files used for this reconstruction have these SHA-256 checksums:
+
+| File | SHA-256 |
+| --- | --- |
+| `MEGADATA.IDX` | `61c7dc75ffe97258c796c353b6dc6420e29477257de145126f1d020f8f3e2a35` |
+| `MEGADATA.EEA` | `fc606502cd14cd2de8b84b3769ac273aaefa09872da9608855b206a25e7b7416` |
+
+Run these commands from the repository root:
 
 ```sh
 sh tools/setup-bun.sh
@@ -13,96 +54,66 @@ sh tools/setup-bun.sh
 ./tools/bun run dev
 ```
 
-The importer removes obsolete generated exports while retaining raw preservation inputs. See the
-[asset inventory and cleanup](docs/generated-assets.md).
+Open the local URL printed by Vite. To import from another directory, replace the import command with:
 
-Open the local URL printed by Vite. The Edit workspace stays maximized beneath the original toolbar, with the tool palette on its left. Scroll or use arrow keys to explore. Drag a floating window by its wooden titlebar to move it; its position is remembered when reopened. A focused titlebar also moves with arrow keys (Shift for one pixel). Edit stays fixed and maximized. Desktop spacing is fixed; mobile layout changes are deferred. To import from another directory: `./tools/bun run import /path/to/simfarm-dos`.
+```sh
+./tools/bun run import /path/to/simfarm-dos
+```
 
-Use **File → New Game / Save / Save As / Load Game** for farms and checkpoints. Saves download as compressed `.simfarm.json.gz` files; Load Game also accepts older uncompressed JSON and original `.SSM` files. **Windows → Bank** opens loans; **Map** opens land purchase; **Sell** opens stored harvest; **Farm Expert** opens the crop guide. **Edit** returns focus to the map without closing or resizing it. Click **Plant**, choose a crop, then click the top-left corner of a new field on owned land. **Spray** chooses a treatment to apply by clicking an existing field. **View object** on a field opens its original **SCHEDULE** window. With **View object**, other map tiles open the original **Examine** card: photograph, description, building contents/damage or item condition/value. **Open building / Close building** reveals stored items; **Object actions** reaches the remaining temporary controls. **?** opens Edit tools, including the map-tool selector, zoom, original scenarios and machinery/livestock/aircraft controls. Its **Farm controls** button exposes the remaining navigation shortcuts.
+The importer reads original files without modifying them and generates browser assets in ignored `public/assets/`. Original game files and generated assets are not included in this repository. Re-run import after changes to the importer; see the [generated asset inventory](docs/generated-assets.md).
 
-**Buy → Machinery → Crop Duster → BUY** purchases an aircraft at an available airport. Click any tile of a parked plane to open **AIRPLANE**: use the gas can to refuel, barrel to load the selected chemical, wrench to repair, and **FLY!** to take off. The three right-side icons choose Pesticide, Herbicide and Fungicide.
+Dependencies, downloaded tools and caches stay in repository-local `node_modules/`, `.tools/`, `.cache/` and, for optional analysis tools, `.venv/`. Use `./tools/bun` for project commands.
 
-**Speed** opens the native slider, pause and Next day controls. **Options** opens MIDI/sound controls. **Disasters** opens disaster controls. **Debug** starts the rodeo or fair (carnival) and advances their event countdown without changing the farm date; these require an existing recreation district. These windows currently retain the working native forms; their individual original interiors and exact tool interactions are still being reconstructed. **Market Value** shows the original 30-week crop price chart; its crop pages cover all24 crops. Click town shops to open Market, Sell, Bank, Buy or Farm Expert. All24 supplied crops are available without loading/swapping files. See [workspace evidence and limitations](docs/edit-workspace.md).
+## Build and preview
 
-Choose **File → New Game** to choose rainfall, temperature, wind, rivers/lakes and a starting year. **Restart current session** retains the reconstructed original session state; choose **Start fresh session** to reset history and set a reproducible map seed. **Create farm** starts in April with $40,000, a homestead and nine owned plots; the view centers on your home. Use **Plant** to choose a crop and place a field on that land, and **Map tool → Build** for crop storage. Save the current farm first if you want to keep it. Generated farms support normal Save farm / Load farm without an original scenario template. **New farm → Use region map** opens the original geographic chooser. Numbered squares open the eight supplied farms with region climate and starting-town setup; other selectable squares set the climate for a new farm. Use arrow keys or Home/End to select locations, or **Design your own** to edit climate manually. Financial default opens this same chooser. Older saves missing terrain history can open a numbered farm or start a fresh session. Original preview/reroll, menu timing and complete interface fidelity remain unfinished.
+After installing dependencies and importing assets:
 
-Road traffic now moves automatically while the farm runs, using the original vehicle graphics, routing and livestock collisions. New vehicles arrive weekly from town. Traffic follows pause/speed controls and survives Save farm / Load farm. Enable sounds to hear the original collision effect; music remains MIDI.
+```sh
+./tools/bun run build
+./tools/bun run preview
+```
 
-Farms start paused. To replant an existing field immediately, open **? → Field orders**, select a field, choose **Crop to plant**, and press **Plant crop**; these controls remain transitional while original object interactions are reconstructed. Planting replaces the existing crop, consumes stored seed or purchases it with a delivery surcharge, and uses owned or automatically rented machinery according to the farm's saved settings. Use **Next day** to step or **Play** to run. The **Speed** slider adjusts pacing from **0.25× to 16×**; at the default **1×**, one game day takes four real seconds (the previous 0.25× pace). **Pause** stops progression, and **Next day** always advances one day regardless of speed. Machinery completes two field passes and returns home; crops then age, change appearance and can expire. Work already underway must finish before another planting order. Saved crop plans run automatically each week, including planting, harvest and field care. Weekly boundaries finish outstanding field work. Manual planting rebuilds that field’s future crop plan; care orders record the current week when it is available. To open the planner, use **View object** and click an existing field, or choose **? → Farm controls → Crop planner**. Choose a crop or treatment icon, then click a week to apply it. Hover or focus a week to read its date/order without editing. The month arrows/scrollbar browse the full five-year plan; **TODAY** returns to the current month. **CUT**, followed by a future week, clears the remaining plan. The small arrows beside the crop icons expose all24 crops. Future weeks support planting, field care and harvest; planting replaces the plan from that week onward. Crops with fixed annual harvest dates cannot have their harvest moved. To lock a growing crop's current price, choose the **Contract** icon and click the current week. The water/thermometer controls toggle crop requirements and climate annotations. All plan edits are included in native saves. See [Schedule evidence and limitations](docs/schedule-window.md).
+`build` runs TypeScript checking and creates a production build in `dist/`. `preview` serves that build locally. The built site includes the imported assets and can run without access to the original DOS directory. Vite uses root-relative asset URLs; the current configuration expects hosting at the site root.
 
+## Development and validation
 
-To expand, choose **Windows → Map**, select a plot in its miniature map and press **BUY**. Then click **Plant** on the Edit palette, select a crop and click the top-left corner of a new 8×8 field. The crop-menu arrows expose all24 crops. The preview and feedback show blocked placements; fields need a one-tile gap and owned land beneath the entire field. **Escape** or **Cancel field tool** cancels placement. The alternate **Farm controls → New field** form still exposes automatic clearing settings. New land retains its original soil conditions, often too poor for a valuable crop without fertilization.
-
-To add storage, open **Buy** and choose **Buildings** (or **Map tool → Build** in Edit tools), choose a building, click its top-left corner, and press **Build**. Small and large crop storage hold one or four harvested lots; returning equipment can use the other four storage buildings. The map preview and status show placement problems and clearing costs. **Automatically clear trees** shares the farm's clearing setting. Construction costs, buildings, contents and accounts survive **Save farm** / **Load farm**. The same menu offers **Water pump** and **Wind-powered irrigation**. A pump needs nearby water; wind-powered irrigation supplies its lower-left outlet when wind reaches 9 mph. Connected original ditches alternate wet and dry passes while time advances, affecting field water and crop condition. Choose **Map tool → Irrigation** to dig ditches, install valves, and open or close them.
-
-To clear your farm, choose **Map tool → Bulldoze**, click a field, building, loose supply, chemical or removable terrain, review the highlighted footprint, and press **Confirm removal · $25**. Field removal destroys its crop; building demolition destroys all stored contents without sale proceeds. Working fields must reach Waiting or Growing first. **Cancel selection** leaves the farm unchanged. Clearing continues while time advances, after which you can reuse the space. Loose supplies and chemicals lose their remaining contents. Terrain removal updates connected roads, fences, ditches and shoreline; town-owned tiles cannot be cleared. Terrain changes immediately, while removed objects use the clearing animation.
-
-For immediate treatment, click **Spray**, choose **Fertilize**, then click an existing field to restore its nutrients. The same popup offers **Pesticide**, **Herbicide** and **Fungicide**. Invalid targets leave the tool selected; **Escape** cancels it. Pesticide, herbicide and fungicide remove current pests, weeds or fungus and reduce their pressure, but add soil toxicity. Treatments use one stored supply or automatically buy it for $275 according to the original shared supply-buying setting. A tractor and sprayer complete the job while time advances; missing machines may incur rental fees. Wait for planting/harvest work to finish before ordering treatment. Fertilizer does not undo damage already accumulated by the crop, so treating poor soil early matters.
-
-Open **? → Field orders**, select the field and press **Harvest crop** to send machinery or workers to a growing crop. Maturity and estimated value help with timing; early or damaged crops can be worth $0. Harvests enter available storage, or sell automatically when storage is unavailable. Open **SELL**, choose its **Harvest** category, select a lot with the row/scroll controls and press **SELL** to free its storage space. Worker fees and missing equipment rentals can reduce returns. Other fields also follow their saved plans, and planting changes live crop prices, including the sale value of stored lots.
-
-Choose **Windows → Bank** for the original terminal. Enter a loan amount with its keypad or by typing, then choose **OK** to borrow; **C** clears the amount, **REPAY** pays off the whole loan, and **CLOSE** returns to the farm. **?** explains the controls. OK with a zero amount also closes the terminal. Installments run at the start of January, March, July and October; unpaid installments retry monthly and can trigger forced asset sales. The overdue installment is shown separately from the main loan balance. If available assets cannot cover a debt, the game stops and offers **Restart this farm** or **End session**. Loan balances and pending decisions survive native saves. Annual tax collection, town choices and development are active; expand **Taxes** and **Farm report** for their current figures.
-
-Use **Save farm** to download a `.simfarm.json` checkpoint and **Load farm** to resume it, including after closing or reloading the page. Saves retain work in progress, weather, random state, prices, financial accounts, pending default decisions, pause and speed. Load requires the same imported original assets; invalid files leave the current farm intact. You can also select an original **.SSM** in **Load farm**. It imports the saved farm into the current session, retaining runtime state the original loader omits, and starts paused. Save it afterward as a native checkpoint for complete continuation. Export remains native JSON; DOS-compatible SSM export is not implemented. Switching scenarios starts a fresh paused simulation at 1× speed, so save first to keep your work. Clock pacing is a browser convenience, not the recovered DOS interrupt rate. Seed/rental charges, loan installments, monthly debt retries, annual taxes/reset and town development run. Remaining disaster types, scenario-specific behavior and other documented systems remain incomplete.
-
-Original files are never modified. Extracted resources are generated in ignored `public/assets`; they are not committed. Import precedes building so the browser bundle can run independently of the DOS distribution directory. Missing resources produce startup instructions.
-
-Importer JSON files are compact, without indentation or extra line breaks. The43 Farm Expert cards, event-dialog text and Edit status messages are predecoded into one `ui-content.json` request; original binary imports remain available for preservation checks. See [UI content](docs/ui-content.md).
-
-## Validate
+Run unit tests and TypeScript/production-build checks:
 
 ```sh
 ./tools/bun test
 ./tools/bun run build
-PLAYWRIGHT_BROWSERS_PATH=.tools/playwright ./tools/bun run playwright install chromium
+```
+
+Install the repository-local browser binaries, then run browser checks:
+
+```sh
+PLAYWRIGHT_BROWSERS_PATH=.tools/playwright ./tools/bun run playwright install chromium webkit
 ./tools/bun run test:browser
 ```
 
-Browser checks cover all maps, source-exact crop/overlay pixels, field inspection, crop selection, zoom, actual audio output, stopping playback, pending-load cancellation, missing-asset recovery, time and speed controls, land purchases, new-field creation, planting/treatment commands, worker/machine harvesting, storage and complete plant/grow/harvest/sell cycles, including fertilized new land. See `docs/progress.md` for the latest completed validation and any environment limitations. Tests read the original source distribution. `./tools/bun run preview` serves the production build.
+Tests read the original distribution at `../simfarm-dos`; an alternate importer path does not change test fixture paths. Browser tests also require imported assets and start their own Vite server on port 5190. Keep that port free and runtime files unchanged during a browser run. Some platforms may require Playwright system libraries in addition to the downloaded browsers.
 
-## Static reconstruction tools
+Tests cover source-byte and pixel comparisons, decoder boundaries, recovered simulation rules, checkpoint continuation and browser interactions. See the progress log for the latest results and coverage limits.
 
-```sh
-sh tools/setup-analysis.sh
-./tools/bun run analyze --start 0x4543c --size 0x1000
-```
+Simulation state and rules live in plain TypeScript under `src/simulation`. React subscribes to snapshots and sends commands; UI state stays in `src/ui`, canvas drawing in `src/render`, binary decoding in `src/formats`, asset loading in `src/assets`, and playback in `src/audio`. Optional static-analysis setup is documented in [binary evidence](docs/reverse-engineering.md#static-analysis-tools).
 
-Capstone and its dependencies are installed only in `.venv`. The analyzer writes an overlay map and requested disassembly ranges to ignored `artifacts`. Bun downloads use `.cache/bun`; browser binaries use `.tools/playwright`. `tools/bun` sets repository-local tool/cache paths, and `bunfig.toml` runs script dependencies with Bun even when they declare Node shebangs. See [Bun's runtime configuration](https://bun.sh/docs/runtime/bunfig) and [Vite's React plugin support](https://vite.dev/guide/features.html).
+## Documentation
 
-React components in `src/ui` own menus, selections and lifecycle. `src/render` draws the native canvas, `src/formats` decodes original data, `src/assets` loads resources, and `src/audio` plays MIDI and original PCM effects. Recovered simulation belongs outside React so game rules can be tested independently and future graphics/UI changes can reuse them.
+- [Progress and validation](docs/progress.md)
+- [Reconstruction plan](docs/plan.md)
+- [Binary evidence and static analysis](docs/reverse-engineering.md)
+- [Browser saves and autosave](docs/autosave.md)
+- [Native checkpoints and compatibility](docs/native-save.md)
+- [All-crops adaptation](docs/all-crops.md)
+- [Original defects and suspected hazards](docs/original-bugs.md)
+- [Intentional gameplay corrections](docs/gameplay-bug-fixes.md)
 
-`src/simulation/GameSimulation` (implemented in `game.ts`) owns global game state, provides detached snapshots through `getSnapshot`/`subscribe`, and accepts commands. React uses `useSyncExternalStore`; hooks do not own simulation state. Recovered calendar, weather, field conditions, growth and expiry routines are tested against original data and executable-derived cases. Random streams are deterministic with explicit seeds; complete DOS startup/frame random consumption is not reproduced yet.
+Subsystem documents in `docs/` record source offsets, hashes, hypotheses, confidence and implementation limits. Some sections describe earlier stages; consult later updates and the progress log for current behavior.
 
-See [the plan](docs/plan.md), [progress](docs/progress.md), and [binary evidence](docs/reverse-engineering.md). The world decoder, crop graphics substitution, masked tile layer, moving machinery and field operations come from original executable evidence. Remaining render passes and game rules require more reconstruction. Music plays converted `.mid` files through libadlmidi-js’s light build with bank 58 (WOPL, The Fat Man 2op set). It starts on the first tap or key press, including on phones; where AudioWorklet is unavailable (for example a plain-http LAN address) it renders on the main thread instead. The original `genfarm` loop is exported as MIDI loop markers; `amain` plays once before farm music. See [music playback](docs/adlmidi-playback.md).
+## Credits and license
 
-At year-end your homestead changes with the original cash bands. Upgrade/downgrade notices include **View home** to center the map. **Play music** also enables automatic original track changes from farm conditions and home upgrades; **Stop music** keeps those requests silent. **Enable sounds** separately enables the original cheers/boos and horse, cow, pig and sheep effects. Music and sound effects default on and remember Options preferences; browser audio starts on interaction. Native saves retain the house and its last applied rank without replaying its sounds on load.
+The original SimFarm was published by Maxis and developed by Eric Albers at Leaping Lizard Software. The reconstructed About dialog retains the original credit pages.
 
-Open **Livestock** above the map for counts, ages, breeding progress and care notices, then **Buy animals and supplies** (also available under **Map tool → Animals & supplies**). Choose a horse, cow, pig, sheep, water trough or feed, select a map tile, then buy. Keep feed and water near your animals. Animals move, drink, eat, graze, use storage, mature, reproduce and eventually die of old age. Their ongoing state resumes after saving/loading. Troughs start with256 water units and feed with512 units. Move the pointer near an animal on the map to influence its direction when it is not seeking food/water. Enable sounds to hear original animal voices; muting does not change simulation behavior. Original audio arbitration and other fidelity gaps remain documented.
+Remake by [Pete Kim](https://x.com/petejkim). Most of the initial work was done using OpenAI Codex. Claude Code was also used for UI development and polishing.
 
-For automatic trough refills, choose **Map tool → Build → Water storage** and place it beside a wet ditch supplied by a pump or wind-powered irrigation. It collects water on odd days and supplies empty troughs anywhere on the farm each week. The Livestock panel shows stored water and worn-out locations; select a water store with the Build tool for its quantity and condition. Buildings and inventory now age weekly, including the original stored-crop/seed loss rules.
-
-Open **Machinery** above the map to inspect owned/rented counts, wear and automatic sale notices. Time and travel wear machines; at maximum wear an available owned machine is sold using the original accounting, with a clearing effect and original sound when enabled. Stored chemicals also age using the original counters without reducing treatment strength. To replace or add machines, choose **Machinery → Buy machinery** or **Map tool → Buy machinery**, choose a machine, click clear ground or an equipment storage building, then press **Buy machinery**. Prices, clearing costs and placement problems appear before purchase. Bought machines join the owned fleet automatically and survive native saves. Use **Machinery → Sell machinery** to select an owned machine, review its quote and sell it; busy machines must finish their work, and rentals cannot be sold. **Livestock → Sell livestock** offers the corresponding controls for animals, including newborns and stored animals.
-
-To move ground equipment, choose **Move object** in the Edit palette, click a machine, then click its destination on your land. Resume play or advance days to let it travel. Towed implements need a tractor and may use automatic rental. For stored machinery, **right-click its building** to open it while keeping Move object selected; right-click again to close. **View object → Open building** remains available. **Escape** or **Cancel move** cancels selection without withdrawing the machine. Moving machinery, towing and open interiors survive native saves. Aircraft use their flight controls. The older **Machinery → Move machinery** form remains available as secondary access.
-
-Choose **Farm controls → Seeds & chemicals** (or **Map tool → Buy seeds & chemicals**) to buy supplies in advance. Choose a product, select **Deliver to** storage or use **Choose on map**, then press **Buy supply**. Seeds fit in crop or equipment storage; chemicals require equipment storage. Prices, stock and free space appear before purchase. **Build storage** opens construction if you need room. **Open building** reveals the delivered supplies. Planting and field care use stocked supplies automatically, avoiding automatic-buy delivery surcharges. Purchases survive Save farm / Load farm.
-
-Choose **Bulldoze** in the Edit palette, then click or drag to remove terrain and loose supplies. Buildings and fields open the original **MESSAGE** dialog: **YES** destroys the selected object and **CANCEL** keeps it. Each successful removal costs $25. The game waits while you decide; **Escape** cancels a dialog or stops the tool.
-
-Choose **Paved road**, **Dirt road**, **Fence**, **Gate**, **Ditch**, **Valve**, **Trees**, **Hay** or **Trough** in the Edit palette, then click or drag across the map to build directly. Each tile is charged separately; roads and ditches connect automatically. Gates and valves require straight fence/ditch sections. Trees require owned grass; Hay and Trough place usable animal supplies directly. **Escape** or **Stop construction** ends the tool and keeps completed work. **Right-click gates and valves** to open/close them for free. The older **Farm controls → Roads & fences** and irrigation forms remain available. Construction and gate/valve state survive Save/Load.
-
-To relocate seeds, harvested crops, chemicals, feed or troughs, choose the same **Move object** icon. Click the supply, then click owned clear grass or compatible storage. Transfers are immediate and free; **Escape** or **Cancel move** changes nothing. Right-click buildings, or use **View object → Open building**, to reveal stored supplies. Empty feed is discarded on transfer. The older **Map tool → Move supplies** form remains available.
-
-Open **Aircraft** above the map to buy an aircraft at an available airport, refuel, load pesticide/herbicide/fungicide, or repair wear. **Show on map** locates the selected plane. Changing the loading chemical sells that plane’s remaining payload; the loading choice is shared by all aircraft. Press **Fly aircraft** to open flight controls above the map. Turn, change altitude and spray using the buttons or the keys shown under **Flight help**. End over an airport to land; ending elsewhere crashes the plane. Farm work and the calendar stop during flight; pause, step and speed controls remain available. Native saves preserve the loading choice, aircraft records and a flight in progress; older saves migrate automatically.
-
-
-Expand **Disasters** below **Machinery** to allow or disable new disasters, manually **Start tornado**, **Start locust swarm**, **Start drought** or **Start flood**, and locate an active effect or shoreline. Disabling new disasters lets an existing event finish. Tornadoes destroy buildings and damage crops; locusts damage a field. Floods spread beside permanent water and can destroy fields and buildings with their contents. Droughts dry shallow shoreline water. Advance time for recovery; floods can last several weeks. High winds can remove nutrients from exposed fields; surrounding trees provide protection. July and weekly wind triggers run automatically. Use **Enable sounds** for the original effects. Native saves preserve active disasters and flood progress; loading does not replay start sounds. Tornadoes continue during aircraft flight and can cause turbulence or a crash. Original event-trigger, dialog and audio-lifecycle fidelity remains unfinished.
-
-
-In **Disasters**, **Start frost** damages sensitive crops and disperses an active locust swarm. **Create crop circles** chooses a field; wheat, barley, oats and sorghum are eligible. Successful circles play the original alien MIDI when music is enabled; **Locate crop circles** finds the resulting pattern. **Start high winds** invokes the original wind event. **Show toxic-land warning** records the original warning without adding a new pollution mechanic. Active effects and warnings survive Save farm / Load farm, which does not replay their start audio.
-
-Original UI artwork uses1× source pixels, matching default terrain zoom: the640×32 control strip and48×208 Edit palette retain their original spacing. Edit stays maximized. Small-screen layout changes remain a future task.
-
-Right-click an irrigation valve to open or close it directly on the map. This original interaction also preserves the source adjacent-field flag write; its orientation difference is documented in [SF-162](docs/original-bugs.md#sf-162--valve-orientations-write-the-adjacent-field-flag-differently).
-
-Browser tests start their own Vite server on port5190 and never reuse a running development server. Keep that port free for tests; the normal development server remains on its usual port.
+The work contributed to this repository is dedicated under [CC0 1.0 Universal](LICENSE). This dedication does not cover the original SimFarm executable, game data, artwork, music, trademarks or third-party components.

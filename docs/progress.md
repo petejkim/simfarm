@@ -4229,3 +4229,50 @@ No browser failures or runtime edits during runs. Logs: artifacts/asset-cleanup-
 unit-recheck,browser,browser-continuation}.log. Full suites were unnecessary for this asset-only batch;
 physical-device checks and wider unrelated gameplay were not repeated. Requests complete; commit stays
 local. Broader preservation remains incomplete; no additional work started.
+
+## 2026-10-14 — public README cleanup
+
+Replaced the historical gameplay walkthrough with a project overview, intentional-differences table,
+current status/limitations, original-file requirements, repository-local setup, production build/preview,
+validation commands, architecture summary, documentation index, AI acknowledgment, and credits/license
+scope. Records that Codex did the bulk of initial reconstruction and Claude Code supported UI work and
+polishing. Distinguishes accepted adaptations and selected original-bug corrections from incomplete
+preservation; documents IndexedDB saving, paused startup restore and portable native checkpoints. Removed stale UI/mobile
+and uncompressed-download instructions. Browser setup now installs both Chromium and WebKit, matching
+the existing boot checks. Optional analysis-tool setup moved into reverse-engineering.md.
+
+Reviewed commands and claims against package.json, bootstrap/import/analyzer scripts, Playwright config,
+home-screen manifest, audio bank constant and existing evidence docs. Local Markdown links, the analysis
+anchor, fenced blocks and git diff whitespace checks pass. Documentation only: no import, build, unit or
+browser suites rerun; runtime files and original distribution unchanged. Broader reconstruction remains
+incomplete. No new source behavior or original defect is claimed.
+
+README follow-up: replaced the save-format compatibility summary with in-browser IndexedDB saving,
+automatic weekly/manual saves and paused restoration; retained portable compressed checkpoints and added
+autosave documentation links. Removed older-save, original-file import and DOS-export discussion from the
+saves entry as requested. Reviewed against storage/autosave.ts, storage/restore.ts and autosave.md; local
+links and whitespace checks pass. Documentation only; no runtime checks rerun. Amended into the README
+cleanup commit at the user's request.
+
+Further README follow-up: added spraying more than two fields at a time to the gameplay-correction
+examples, grounded in SF-178's staggered six-field dispatcher regression. Included the user's existing
+README edits when amending the cleanup commit. Whitespace review passes; documentation only, with no
+runtime changes or repeated game tests. The status/limitations section continues to describe remaining gaps.
+
+Interface README follow-up: described the UI's 24-crop planting/planning/shop/market views and mobile/touch
+support, consistent with all-crops.md and the recorded mobile checks. Included the user's existing Audio
+and Gameplay corrections wording edits in the amended README commit. Whitespace checks pass; documentation
+only, with no runtime changes or repeated game tests. Physical-device/browser limits remain stated above.
+
+Enhancement README follow-up: added all nine requested examples: 255-machine capacity, stacked condition
+badges, persistent planting, expanded Debug controls, save protection, remembered preferences/volumes,
+overlapping cached effects, navigation shortcuts and native performance improvements. Reviewed against
+the corresponding progress entries, autosave.md, options-menu.md and performance.md. Preserved the user's
+removal of the extra differences-section reference paragraph. Documentation links, table structure and
+whitespace checks pass; no runtime changes or repeated game tests. Included in the amended cleanup commit.
+
+Added Schedule RESET to the differences table: it restores the current crop's default future schedule,
+preserving the current week and contracts. Reviewed against schedule-window.md's RESET evidence and the
+existing reset-field-plan UI command. This is a default-plan reset rather than a history-based undo.
+Documentation only; local links, table structure and whitespace checked, with no runtime tests rerun.
+Existing unrelated README edits remain preserved and unstaged.

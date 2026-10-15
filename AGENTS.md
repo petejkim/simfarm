@@ -1,4 +1,4 @@
-# SimFarm native preservation
+# SimFarm TypeScript/React remake
 
 Reconstruct `../simfarm-dos/SIMFARM.EXE` incrementally as a native TypeScript/React/Vite browser game, using Bun. Never run or embed a DOS/x86 emulator.
 

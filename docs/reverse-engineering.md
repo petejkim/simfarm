@@ -4,6 +4,20 @@ Original defects and suspicious arithmetic are tracked separately in [original-b
 
 All executable addresses below are **file offsets**, not runtime addresses. Run `./tools/bun run analyze --start 0x4543c --size 0x1000` to reproduce the scenario-loader disassembly. The analyzer pins the exact executable SHA-256; the importer records every input and archive member in generated `public/assets/manifest.json`.
 
+## Static analysis tools
+
+Optional disassembly tools require Python 3 with `venv` support, in addition to the repository-local Bun
+setup described in the README. Install Capstone and its dependencies into the ignored local `.venv`:
+
+```sh
+sh tools/setup-analysis.sh
+./tools/bun run analyze --start 0x4543c --size 0x1000
+```
+
+The analyzer reads `../simfarm-dos/SIMFARM.EXE`, checks its pinned SHA-256, and writes an overlay map and
+requested disassembly ranges to ignored `artifacts/`. Python package downloads use `.cache/pip`.
+It inspects source bytes without executing the DOS program or modifying the distribution.
+
 ## Executable and overlays — recovered
 
 MZ header: 8,704 bytes, 2,155 relocations, declared resident file size 171,742 bytes, entry `24e6:076c` / file `0x277cc`. The physical file is 595,897 bytes. The startup code jumps to C startup `0084:0010`, which selects DS `0x6190`.
