@@ -1,5 +1,5 @@
 import {applyPreferredOptions} from './preferences';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { loadGeneratedTiles, loadSavedFarmTiles, loadNewFarmAssets, loadRegionAssets, loadScenarioAssets, loadTerrainPreviewAssets, type TerrainPreviewAssets, type GameAssets, type RegionAssets } from '../assets/game-assets';
 import { GameSimulation } from '../simulation/game';
 import { CustomFarmSetup } from '../simulation/custom-farm-setup';
@@ -21,7 +21,8 @@ export function NewFarmControls({ assets, open, onOpenChange, onCreate }: {
   const [selected, setSelected] = useState(0), [regionError, setRegionError] = useState('');
   const regionPending = useRef<AbortController | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const pending = useRef<AbortController | null>(null), form = useRef<HTMLFormElement>(null);
+  const pending = useRef<AbortController | null>(null);
+  const seedInput = useRef<HTMLInputElement>(null), yearInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (open) { setOptions(o => ({...o, seeds: randomSetupSeeds()})); setDraft(null); setBusy(false); setError(''); void chooseRegion(); }
     return () => { pending.current?.abort(); pending.current = null; regionPending.current?.abort(); };
@@ -90,6 +91,14 @@ export function NewFarmControls({ assets, open, onOpenChange, onCreate }: {
       if (!controller.signal.aborted) { pending.current = null; setBusy(false); }
     }
   }
+  function tryCreate(custom: boolean) {
+    if (!busy && seedInput.current?.reportValidity() && yearInput.current?.reportValidity()) void create(custom);
+  }
+  function onOptionKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== 'Enter' || event.altKey || event.ctrlKey || event.metaKey) return;
+    event.preventDefault();
+    if (region) tryCreate(false);
+  }
   if (!open) return null;
   if (draft) return <section className="new-farm-panel" aria-label="New farm">
     <TerrainDesign draft={draft.setup} assets={draft.artwork} error={error}
@@ -107,23 +116,25 @@ export function NewFarmControls({ assets, open, onOpenChange, onCreate }: {
         const file = event.currentTarget.files?.[0]; event.currentTarget.value = '';
         if (file) void loadFile(file);
       }} />
-    <form ref={form} onSubmit={event => { event.preventDefault(); if (!busy && region) void create(); }}>
+    <div>
       {region ? <RegionMap assets={region} selected={selected} disabled={busy} unavailable={false} onSelect={selectRegion}
-        onDesign={() => { if (form.current?.reportValidity()) void create(true); }}
+        onUse={() => tryCreate(false)} onDesign={() => tryCreate(true)}
         onLoad={() => { setError(''); fileInput.current?.click(); }} />
         : <div className="setup-loading">
           {regionError ? <p id="region-error" role="alert">Could not load regions: {regionError}</p> : <p role="status">Loading regions…</p>}
           <div className="native-actions">
             <BevelButton id="choose-region" className="native-button" onClick={() => void chooseRegion()}>Retry region map</BevelButton>
-            <BevelButton id="design-farm" className="native-button" disabled={busy} onClick={() => { if(form.current?.reportValidity()) void create(true); }}>Design your own</BevelButton>
+            <BevelButton id="design-farm" className="native-button" disabled={busy} onClick={() => tryCreate(true)}>Design your own</BevelButton>
           </div>
         </div>}
       <fieldset className="setup-options" disabled={busy} aria-label="Farm options">
-        <label className="native-row"><span className="native-label">Map seed</span><input id="new-farm-seed" className="chrome-input" type="number" min="1" max="65535" step="1" required value={options.seeds.simulation}
+        <label className="native-row"><span className="native-label">Map seed</span><input ref={seedInput} id="new-farm-seed" className="chrome-input" type="number" min="1" max="65535" step="1" required value={options.seeds.simulation}
           title="Reproduce a map using the same seed and settings."
+          onKeyDown={onOptionKeyDown}
           onChange={e => { const seed = Number(e.target.value); setOptions(o => ({ ...o, seeds: { visual: seed, simulation: seed, bounded: seed } })); }} /></label>
-        <label className="native-row"><span className="native-label">Starting year</span><input id="new-farm-year" className="chrome-input" type="number" min="1" max="65535" step="1" required disabled={Boolean(preset)} value={options.date.year}
+        <label className="native-row"><span className="native-label">Starting year</span><input ref={yearInput} id="new-farm-year" className="chrome-input" type="number" min="1" max="65535" step="1" required disabled={Boolean(preset)} value={options.date.year}
           title={preset ? 'Original farms retain their saved year.' : 'Year for a generated farm.'}
+          onKeyDown={onOptionKeyDown}
           onChange={e => setOptions(o => ({ ...o, date: { ...o.date, year: Number(e.target.value) } }))} /></label>
       </fieldset>
       <div className="setup-footer">
@@ -131,6 +142,6 @@ export function NewFarmControls({ assets, open, onOpenChange, onCreate }: {
         <BevelButton className="native-button" onClick={() => { pending.current?.abort(); regionPending.current?.abort(); onOpenChange(false); }}>Cancel</BevelButton>
       </div>
       {error && <p id="new-farm-error" role="alert">Could not open farm: {error}</p>}
-    </form>
+    </div>
   </section>;
 }

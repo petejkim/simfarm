@@ -80,7 +80,7 @@ function SellWindowBody({assets,snapshot,tiles,onCommand,focusRef}:{assets:GameA
 /** One 32px sale row (source 4c610): the item graphic, its condition badge and price. */
 function SellRow({product:p,selected,assets,atlas,onSelect}:{product:SellProduct;selected:boolean;assets:GameAssets;atlas:string;onSelect:()=>void}){
   const showTiles=p.tile!==null&&p.width<=4&&p.height<=4;
-  return <button role="option" aria-selected={selected} className="sell-row" data-slot={p.slot} data-value={p.value} data-name={p.name}
+  return <button type="button" role="option" aria-selected={selected} className="sell-row" data-slot={p.slot} data-value={p.value} data-name={p.name}
     aria-label={`${p.name}, ${p.kind==='harvest'?'lot':'item'} ${p.slot}, ${grades[p.quality]}, $${p.value.toLocaleString('en-US')}`} onClick={onSelect}>
     <span className="sell-tiles" style={{gridTemplateColumns:`repeat(${showTiles?p.width:1}, 16px)`}}>
       {showTiles&&Array.from({length:p.width*p.height},(_,i)=><TileSprite key={i} tile={p.tile!+i} atlas={atlas} masked={assets.maskedTiles.src}/>)}

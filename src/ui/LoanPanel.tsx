@@ -54,7 +54,7 @@ function LoanPanelBody({ snapshot, onCommand, onClose, panelRef }: {
         else if (event.key === 'Enter' && !(event.target instanceof HTMLButtonElement)) { event.preventDefault(); confirm(); }
       }}>
       <div className="bank-bezel"><div className="bank-recess">
-        <form className="bank-screen" onSubmit={event => { event.preventDefault(); confirm(); }}>
+        <div className="bank-screen">
           <div className="bank-readouts">
             <span className="bank-label">›CASH AVAILABLE :</span><output className="bank-value">{money(snapshot.scenario.farm.cash)}</output>
             <span className="bank-label">›TOTAL DEBTS :</span><output id="loan-balance" className="bank-value">{money(f.loan.principal)}</output>
@@ -71,10 +71,13 @@ function LoanPanelBody({ snapshot, onCommand, onClose, panelRef }: {
               <input id="loan-amount" className="bank-box" aria-label="Amount to borrow" type="text" inputMode="numeric" pattern="[0-9]+" autoComplete="off"
                 value={amount} disabled={blocked} onChange={event => enter(event.target.value)}
                 title={installment === null ? 'Enter an amount within your available credit.' : `Adds ${money(installment)} to each scheduled installment.`}
-                onKeyDown={event => { if (event.key === '.') { event.preventDefault(); setAmount('0'); } }} />
+                onKeyDown={event => {
+                  if (event.key === 'Enter') { event.preventDefault(); confirm(); }
+                  else if (event.key === '.') { event.preventDefault(); setAmount('0'); }
+                }} />
             </div>
           </>}
-        </form>
+        </div>
         <div className="bank-ledge" aria-hidden="true" />
         <div className="bank-bay">
           <div className="bank-keypad">{['7','8','9','C','4','5','6','?','1','2','3','0'].map(label => keyButton(label, 'bank-digit'))}</div>

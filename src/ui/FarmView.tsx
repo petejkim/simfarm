@@ -445,7 +445,7 @@ export function FarmView({ audioControls, audioOptions, id, loaded, openNewGame,
     {data && snapshot && simulation && <ExamineWindow assets={assets} snapshot={snapshot} tiles={data.tiles} position={position}/>}
     {data && snapshot && <BuyWindow assets={assets} snapshot={snapshot} tiles={data.tiles} onBuy={beginPurchase} />}
     {resource.status !== 'ready' && <div className="loading"><p role="status">{resource.status === 'error' ? resource.error : 'Loading farm…'}</p>
-      {resource.status === 'error' && <button onClick={onRetry}>Retry loading farm</button>}
+      {resource.status === 'error' && <button type="button" onClick={onRetry}>Retry loading farm</button>}
       </div>}
       {simulation&&snapshot?.finances.defaultDecision&&!messages.length&&!newFarmOpen&&<DefaultDialog
         decision={snapshot.finances.defaultDecision} assets={assets} onCommand={command=>simulation.dispatch(command)}

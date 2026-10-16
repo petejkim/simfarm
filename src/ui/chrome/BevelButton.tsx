@@ -11,12 +11,12 @@ import { useEffect, useRef, useState, type ButtonHTMLAttributes, type CSSPropert
 export function BevelButton({ frame = 'all', pressed, shadow, className, faceClassName, faceStyle, children, ...button }: {
   frame?: 'all' | 'top-left'; pressed?: boolean; shadow?: boolean; className?: string; faceClassName?: string;
   faceStyle?: CSSProperties; children?: ReactNode; ref?: Ref<HTMLButtonElement>;
-} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'children'>) {
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'children' | 'type'>) {
   const [held, setHeld] = useState(false), timer = useRef(0);
   const release = () => { clearTimeout(timer.current); setHeld(false); };
   useEffect(() => () => clearTimeout(timer.current), []);
   const touch = (event: PointerEvent<HTMLButtonElement>) => event.pointerType !== 'mouse';
-  return <button type="button" {...button} data-frame={frame} data-shadow={shadow || undefined}
+  return <button {...button} type="button" data-frame={frame} data-shadow={shadow || undefined}
     aria-pressed={pressed === undefined ? button['aria-pressed'] : pressed}
     className={`bevel-button${pressed ? ' is-pressed' : ''}${held ? ' is-held' : ''}${className ? ` ${className}` : ''}`}
     onPointerDown={event => { if (touch(event) && event.isPrimary && !button.disabled) { clearTimeout(timer.current); setHeld(true); } button.onPointerDown?.(event); }}

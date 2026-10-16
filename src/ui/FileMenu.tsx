@@ -71,11 +71,11 @@ export function FileMenu({ about, data, busy, onSave, onSaveToFile, onLoad, onNe
     else if (index === 3) void onSaveToFile();
     else if (index === 4) onLoad();
   }
-  const itemButton = (item: {label:string;offset:number}, index: number) => <button key={item.offset} role={choices && open!==5 ? 'menuitemcheckbox' : 'menuitem'} aria-checked={open===5?undefined:choices?.checked[index]} tabIndex={-1}
+  const itemButton = (item: {label:string;offset:number}, index: number) => <button key={item.offset} type="button" role={choices && open!==5 ? 'menuitemcheckbox' : 'menuitem'} aria-checked={open===5?undefined:choices?.checked[index]} tabIndex={-1}
           disabled={busy || choices?.disabled || choices?.disabledItems?.[index]} title={choices?.hints?.[index]}
           onPointerMove={event=>{if(event.pointerType==='mouse'&&document.activeElement!==event.currentTarget)event.currentTarget.focus({preventScroll:true});}}
           onClick={() => { if (open === 0) select(index); else if (choices) { closeMenu(); choices.choose(index); } else { closeMenu(); onWindow(GAME_WINDOWS[index]); } }}>{choices && open!==5 && <span className="menu-check" aria-hidden="true">{choices.checked[index] ? '✓' : ''}</span>}{open === 0 ? FILE_LABELS[index] ?? item.label : item.label}</button>;
-  const actionButton = (action: MenuAction) => <button key={action.id??action.label} id={action.id} role="menuitem" tabIndex={-1} disabled={busy || choices?.disabled || action.disabled} title={action.hint}
+  const actionButton = (action: MenuAction) => <button key={action.id??action.label} id={action.id} type="button" role="menuitem" tabIndex={-1} disabled={busy || choices?.disabled || action.disabled} title={action.hint}
     onPointerMove={event=>{if(event.pointerType==='mouse'&&document.activeElement!==event.currentTarget)event.currentTarget.focus({preventScroll:true});}}
     onClick={()=>{closeMenu();action.choose();}}><span className="menu-check" aria-hidden="true" />{action.label}</button>;
   const popup = (active: typeof menus[number]) =>
@@ -108,7 +108,7 @@ export function FileMenu({ about, data, busy, onSave, onSaveToFile, onLoad, onNe
       // reopen its menu. Outside presses close menus through the document listener instead.
       onBlur={event => { if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
       {menus.map((entry, index) => <div key={entry.offset} className="original-menu">
-        <button ref={index === 0 ? button : undefined} className="original-menu-heading"
+        <button ref={index === 0 ? button : undefined} type="button" className="original-menu-heading"
           id={`${entry.title.toLowerCase()}-menu-button`} disabled={busy}
           aria-haspopup="menu" aria-expanded={open === index}
           aria-controls={`original-${entry.title.toLowerCase()}-menu`}

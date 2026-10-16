@@ -4388,3 +4388,23 @@ rename; the focused rerun passes after updating that assertion. Browser checks u
 `/xplayer.html` path; the extensionless `/xplayer` URL in its metadata depends on host routing and was
 not verified here. No simulation, save, original asset or DOS distribution changes. Full unrelated
 regression was not rerun for this packaging-only change; broader game reconstruction remains incomplete.
+
+## 2026-10-16 — form-free controls in sandboxed iframes
+
+The native region chooser had the only explicit `type="submit"` button. It opened a farm through the
+New Game form's submit event, which a sandboxed iframe without `allow-forms` can block. The Bank also used
+a form submit event for Enter on the loan amount. Both panels now use ordinary containers and direct
+button/keyboard handlers. New Game still checks the seed and year constraints before creating or
+designing a farm; Enter in either option field still starts the selected region. Bank Enter still confirms
+a valid amount. The shared bevel component and every remaining raw UI button explicitly render as
+`type="button"`. A source audit found no form, submit button, or submit handler in `src`.
+
+Validation: TypeScript and production build pass; 18 focused region and bank decoder/simulation unit cases
+pass. Production Chromium browser checks pass for 34 distinct cases across region selection, new farm,
+Bank, Schedule, Sell, Edit status, window stacking and sandboxed iframe flows. The iframe test omits
+`allow-forms`, exercises both `/` and `/xplayer.html`, clicks and keyboard-activates Use This Region,
+checks invalid setup inputs, confirms a loan with Enter, and checks for blocked-submission console
+messages and page errors. The first preview attempt hit the sandbox's unavailable local port; the same
+built runtime passed outside the sandbox. Runtime files stayed fixed during browser runs. No DOS source,
+simulation rule, checkpoint format, asset or dependency changed; a full unrelated regression was not
+needed for this focused native control fix. Broader reconstruction remains incomplete.

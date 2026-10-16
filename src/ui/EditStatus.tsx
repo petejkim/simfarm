@@ -11,7 +11,7 @@ export function EditStatus({codes,text,cost=null}:{codes:readonly number[];text:
     document.addEventListener('pointerdown',outside);return()=>document.removeEventListener('pointerdown',outside);
   },[open]);
   return <div ref={root} className="edit-status" onKeyDown={event=>{if(event.key==='Escape'&&open){event.preventDefault();event.stopPropagation();setOpen(false);button.current?.focus();}}}>
-    <button ref={button} className="edit-status-current" aria-label="Edit message history" aria-expanded={open} onClick={()=>setOpen(!open)}>{codes.length?readEditStatus(text,codes[0]):''}{cost!==null&&<span className="edit-status-cost">{` (${formatToolCost(cost)})`}</span>}</button>
+    <button ref={button} type="button" className="edit-status-current" aria-label="Edit message history" aria-expanded={open} onClick={()=>setOpen(!open)}>{codes.length?readEditStatus(text,codes[0]):''}{cost!==null&&<span className="edit-status-cost">{` (${formatToolCost(cost)})`}</span>}</button>
     {open&&<ol className="edit-status-history" aria-label="Recent Edit messages" onClick={()=>{setOpen(false);button.current?.focus();}}>{codes.map((code,i)=><li key={i}>{readEditStatus(text,code)}</li>)}</ol>}
   </div>;
 }

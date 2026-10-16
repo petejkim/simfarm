@@ -526,3 +526,7 @@ gesture limit. Build,3 gesture units and4 focused Settings/wheel browser cases p
 files. Import now removes known retired exports while retaining raw preservation evidence. Shared terrain,
 original pixels, all-eight-region setup, exact checkpoints, cancellation/retry and audio pass focused checks;
 see generated-assets.md and progress.md. No format/rule/save change or additional reconstruction work.
+
+2026-10-16 iframe control fix: New Game and Bank actions now use direct button and Enter handlers, with
+no form submission path. All game buttons explicitly use `type="button"`; production iframe checks for
+both entry pages and affected UI flows pass. See progress.md. No further form work is pending.

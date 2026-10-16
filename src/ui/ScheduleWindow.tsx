@@ -84,7 +84,7 @@ function ScheduleEditor({assets,snapshot,tiles,field,inspection,focusRef,onComma
         <div className="schedule-badge-column"><SunkenInset className="schedule-badge-box">{field&&badgeOf([0,1,2,3].map(i=>cropBadgeTile(field.cropSlot,i)))}</SunkenInset><span className="schedule-label">Crop</span></div>
         {weatherButton('water')}
         <SunkenInset className="schedule-crops">
-          {scenario.cropFiles.map((_,slot)=>{return <button key={slot} data-plan-crop={slot}
+          {scenario.cropFiles.map((_,slot)=>{return <button key={slot} type="button" data-plan-crop={slot}
             className="schedule-icon" aria-label={`Plant ${crop(slot).name}`} title={`Plant ${crop(slot).name}`}
             aria-pressed={action.kind==='plant'&&action.cropSlot===slot} onClick={()=>chooseAction({kind:'plant',cropSlot:slot})}>
             {tile(cropPlantTile(slot))}
@@ -97,14 +97,14 @@ function ScheduleEditor({assets,snapshot,tiles,field,inspection,focusRef,onComma
       <div className="schedule-months">{[0,1,2].map(i=><SunkenInset key={i} className="schedule-month">{months[(month+i)%12].slice(0,3)}</SunkenInset>)}</div>
       <div className="schedule-middle">
         <SunkenInset className="schedule-actions">
-          {SCHEDULE_ACTIONS.map(a=><button key={a.kind} data-plan-action={a.kind} className="schedule-icon"
+          {SCHEDULE_ACTIONS.map(a=><button key={a.kind} type="button" data-plan-action={a.kind} className="schedule-icon"
             aria-label={a.label} title={a.label} aria-pressed={action.kind===a.kind} onClick={()=>chooseAction({kind:a.kind})}>{tile(a.tile)}</button>)}
         </SunkenInset>
         <div className="schedule-center">
           <div className="schedule-strip">
             <Sprite className="schedule-ruler" image={art} x={72} y={62} width={192} height={9}/>
             <div className="plan-calendar" aria-label="Twelve-week field plan">
-              {weeks.map((row,i)=><button key={row} data-plan-week={row} className="schedule-icon" disabled={!field||blocked}
+              {weeks.map((row,i)=><button key={row} type="button" data-plan-week={row} className="schedule-icon" disabled={!field||blocked}
                 aria-label={`${date(row)}: ${description(row)}`} title={`${date(row)}: ${description(row)}`} aria-current={row===now?'date':undefined}
                 onClick={()=>{if(field)onCommand({type:'edit-field-plan',fieldSlot:field.slot,week:row,action});}}>
                 {field&&tile(scenario.schedule.get(row,field.slot-1))}

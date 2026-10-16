@@ -157,7 +157,7 @@ export function GameWindow({ windowKey, title, children, forced = false, modal =
         move({ left: start.left + (event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0),
           top: start.top + (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0) });
       }}><span>{title}</span>
-      <button aria-label={`Close ${title}`} title={`Close ${title}`} disabled={forced && !onClose} onClick={close} /></div>
+      <button type="button" aria-label={`Close ${title}`} title={`Close ${title}`} disabled={forced && !onClose} onClick={close} /></div>
     <div className={`game-window-body${framed ? ' window-frame' : ''}`}>{children}</div>
   </Frame>;
 }
