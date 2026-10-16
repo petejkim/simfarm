@@ -311,9 +311,9 @@ summary:focus-visible{outline:2px solid #e4ce83;outline-offset:3px}
 .toolbar-readouts{display:flex;flex-direction:column;gap:1px;flex:0 1 auto;min-width:0;padding:1px 1px 0 0}
 .toolbar-status{display:flex;flex:0 1 auto;max-width:100%;min-width:0;margin-left:auto}
 .toolbar-pause{flex:none}
-.toolbar-readout-row{display:flex;gap:4px;height:15px;min-width:0}
+.toolbar-readout-row{display:flex;gap:4px;height:15px;min-width:0;justify-content:flex-end}
 .toolbar-forecast{width:52px;height:20px}
-.toolbar-readout-label{display:flex;justify-content:flex-end;align-items:center;width:41px;font-weight:bold}
+.toolbar-readout-label{display:flex;justify-content:flex-end;align-items:center;font-weight:bold}
 .toolbar-readout{width:100px;min-width:0;flex:0 1 100px;height:15px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;padding-left:1px;font-size:10px}
 
 /* Permanent desktop workspace. No phone breakpoint rearranges this frame. */
