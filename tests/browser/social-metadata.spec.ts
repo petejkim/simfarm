@@ -30,3 +30,12 @@ test('sharing metadata and the supplied JPEG are accessible without JavaScript',
   });
   expect(dimensions).toEqual([1200,630]);
 });
+
+test('the separate player page serves player metadata without JavaScript', async ({ page, request }) => {
+  const response=await request.get('/xplayer.html');
+  expect(response.ok()).toBe(true);
+  expect(response.headers()['content-type']).toContain('text/html');
+  await page.goto('/xplayer.html');
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content','player');
+  await expect(page.locator('meta[name="twitter:player"]')).toHaveAttribute('content','https://simfarm.petekim.xyz/xplayer');
+});

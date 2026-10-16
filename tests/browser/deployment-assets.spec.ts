@@ -13,8 +13,8 @@ test('the deployed asset tree contains only runtime originals and every retained
     const files=readdirSync(directory,{recursive:true,withFileTypes:true}).filter(entry=>entry.isFile())
       .map(entry=>`${entry.parentPath}/${entry.name}`.replace(`${directory}/`,''));
     // Hashed JS/CSS/font/synth files belong to Vite; every copied public file is allowlisted.
-    const bundled=/^assets\/(?:index-|libadlmidi\.|(?:roboto|dm-serif-display)-)/;
-    expect(files.filter(file=>file!=='index.html'&&!bundled.test(file)).sort()).toEqual([...runtimePublicFiles].sort());
+    const bundled=/^assets\/(?:main-[\w-]+\.(?:js|css)$|libadlmidi\.|(?:roboto|dm-serif-display)-)/;
+    expect(files.filter(file=>file!=='index.html'&&file!=='xplayer.html'&&!bundled.test(file)).sort()).toEqual([...runtimePublicFiles].sort());
   }
   expect(readdirSync(`${directory}/assets/raw`).sort()).toEqual([...runtimeRawFiles].sort());
   for(const name of runtimeRawFiles){
@@ -32,5 +32,7 @@ test('the deployed asset tree contains only runtime originals and every retained
     // Vite/Pages may serve the app's HTML fallback for an absent file.
     expect(response.status()===404||response.headers()['content-type']?.includes('text/html'),path).toBeTruthy();
   }
+  await page.goto('/xplayer.html');
+  await expect(page.locator('#map-status')).toContainText('Scenario 1');
   expect(errors).toEqual([]);
 });

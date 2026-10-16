@@ -11,6 +11,12 @@ inventory and validation scope are in generated-assets.md/progress.md. No simula
 checkpoint behavior changes. Future asset additions must keep the explicit public-file inventory, typed
 sound inventory and browser dependencies in sync; preservation copies must remain outside the public tree.
 
+## 2026-10-16 — player HTML packaging
+
+The build now has two HTML entries, `index.html` and `xplayer.html`, sharing the same game bundle.
+Keep the production inventory and no-JavaScript metadata checks aware of both pages when changing
+social sharing or deployment packaging. The wider original-game reconstruction sequence below is unchanged.
+
 ## Current user priorities (updated 2026-10-11)
 
 Scope clarification: mobile adaptation and enhanced graphics/audio are excluded from the active preservation goal. Complete the native original game with the original desktop layout/assets and the explicitly requested adaptations (MIDI, native pacing, all24 crops, fixed Edit, real text and recorded corrections). Do not make excluded enhancements a completion gate.

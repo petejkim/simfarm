@@ -4370,3 +4370,21 @@ files and exact public/dist copies. Runtime files stayed fixed during browser ch
 suite or physical-device installation check was needed for this icon-only change. Logs:
 artifacts/cow-icons-{import,build,unit,browser}.log. Overall reconstruction remains incomplete; no push
 or deployment was performed.
+
+## 2026-10-16 — player page in production builds
+
+The user supplied `xplayer.html` with Twitter player metadata and the existing React game entry. Vite
+now treats it and `index.html` as HTML entries, so the production build emits `dist/xplayer.html` alongside
+`dist/index.html` and both reference one shared game JS/CSS bundle. The explicit public-asset allowlist
+is unchanged. The production inventory check now recognizes both HTML outputs and the shared bundle's
+`main-*` name; it also loads the game through the player page.
+
+Validation: `./tools/bun run build` (TypeScript plus production build), the isolated public-assets unit
+test, two production social-metadata browser cases, and the corrected production deployment-assets
+browser case pass. The emitted player file carries the player card and its page loads Scenario 1. The
+first browser run could not start its local preview server inside the sandbox; rerunning outside it
+reached the tests. The first deployment assertion then exposed the expected `index-*` to `main-*` bundle
+rename; the focused rerun passes after updating that assertion. Browser checks used the built
+`/xplayer.html` path; the extensionless `/xplayer` URL in its metadata depends on host routing and was
+not verified here. No simulation, save, original asset or DOS distribution changes. Full unrelated
+regression was not rerun for this packaging-only change; broader game reconstruction remains incomplete.
